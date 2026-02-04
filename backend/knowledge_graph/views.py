@@ -341,26 +341,9 @@ class GraphInaccessibleView(APIView):
 
 @extend_schema(
     summary="Get knowledge graph",
-    description="Returns the knowledge graph accessible to the user with pagination support.",
-    parameters=[
-        OpenApiParameter(
-            name="page",
-            type=int,
-            location=OpenApiParameter.QUERY,
-            description="Page number for pagination",
-            default=1,
-        ),
-        OpenApiParameter(
-            name="page_size",
-            type=int,
-            location=OpenApiParameter.QUERY,
-            description="Number of relations per page. Max 200.",
-            default=100,
-        ),
-    ],
+    description="Returns the full knowledge graph accessible to the user.",
     responses={
         200: TotalPagesPagination().get_paginated_response_serializer(SubGraphSerializer),
-        400: {"description": "Invalid pagination parameters"},
         401: {"description": "User is not authenticated"},
     },
 )
@@ -369,12 +352,9 @@ class KnowledgeGraphView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        # Get all relations accessible to the user
         rels = Relation.objects.accessible(user=request.user)
 
-        # Check if there are any relations
         if not rels.exists():
-            # Return empty graph with pagination metadata
             return Response(
                 {
                     "page": 1,
@@ -390,29 +370,15 @@ class KnowledgeGraphView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        # Handle page_size parameter
-        try:
-            page_size = int(request.query_params.get("page_size", 100))
-        except ValueError:
-            return Response(
-                {"error": "Invalid page_size value. Must be an integer."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if page_size > 200:
-            return Response(
-                {"error": "page_size cannot be greater than 200."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Apply pagination
-        paginator = TotalPagesPagination(page_size=page_size)
-        paginated_rels = paginator.paginate_queryset(rels, request)
-
-        if paginated_rels is not None:
-            serializer = SubGraphSerializer.from_relations(list(paginated_rels))
-            return paginator.get_paginated_response(serializer.data)
-
-        # Fallback if pagination is not applied
-        serializer = SubGraphSerializer.from_relations(list(rels.all()))
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Return full graph in one response (Cosmograph-style)
+        rels_list = list(rels.all())
+        serializer = SubGraphSerializer.from_relations(rels_list)
+        return Response(
+            {
+                "page": 1,
+                "count": len(rels_list),
+                "total_pages": 1,
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )

@@ -1103,32 +1103,6 @@ export class CradleEditor {
                         );
                         return false;
                     } else if (node.name === 'CradleLink') {
-                        if (
-                            node.lastChild &&
-                            node.lastChild.name !== 'CradleLinkTimestamp'
-                        ) {
-                            diagnostics.push({
-                                from: node.from,
-                                to: node.to,
-                                severity: 'warning',
-                                message:
-                                    'Add a timestamp to this link for better tracking',
-                                actions: [
-                                    {
-                                        name: 'Add Timestamp',
-                                        apply(view, from, to) {
-                                            view.dispatch({
-                                                changes: {
-                                                    from: node.to,
-                                                    to: node.to,
-                                                    insert: `(${dayjs().format('DD-MM-YYYY')})`,
-                                                },
-                                            });
-                                        },
-                                    },
-                                ],
-                            });
-                        }
                         return true;
                     } else if (node.name === 'CradleLinkAlias') {
                         return false;

@@ -42,6 +42,7 @@ export interface QueryListRequest {
     page?: number;
     pageSize?: number;
     referencedIn?: string;
+    search?: string;
     subtype?: Array<string>;
     type?: string;
 }
@@ -138,6 +139,10 @@ export class QueryApi extends runtime.BaseAPI {
 
         if (requestParameters['referencedIn'] != null) {
             queryParameters['referenced_in'] = requestParameters['referencedIn'];
+        }
+
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
         }
 
         if (requestParameters['subtype'] != null) {

@@ -218,7 +218,9 @@ export default function EntitiesPage() {
     });
     const search = useSearch({ strict: false });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(
+        () => (search as any)?.entities_search ?? '',
+    );
     const [page, setPage] = useState((search as any)?.entities_page || 1);
     const [pageSize, setPageSize] = useState((search as any)?.entities_pagesize || 20);
     const { isAdmin } = useAuthState();
@@ -239,10 +241,22 @@ export default function EntitiesPage() {
         setRowSelection({});
     }, []);
 
-    // Query for entities with server-side pagination (page/pageSize from URL)
+    // Query for entities with server-side pagination and search
+    const searchTerm = searchQuery.trim() || undefined;
+    const listFilters = {
+        page,
+        pageSize,
+        ...(searchTerm ? { search: searchTerm } : {}),
+    };
     const { data: entitiesData, isPending } = useQuery({
-        queryKey: queryKeys.entities.list({ page, pageSize }),
-        queryFn: () => queryApi.queryList({ type: 'entity', page, pageSize }),
+        queryKey: queryKeys.entities.list(listFilters),
+        queryFn: () =>
+            queryApi.queryList({
+                type: 'entity',
+                page,
+                pageSize,
+                ...(searchTerm && { search: searchTerm }),
+            }),
         meta: {
             showErrorToast: false,
             suppressNotification: true,
@@ -303,32 +317,46 @@ export default function EntitiesPage() {
         });
     }, [selectedEntityIds, router]);
 
-    // Client-side filter by search (within current page only when using server pagination)
-    const filteredEntities = useMemo(() => {
-        if (!searchQuery.trim()) return entities;
-        const query = searchQuery.toLowerCase();
-        return entities.filter(
-            (entity) =>
-                entity.name?.toLowerCase().includes(query) ||
-                entity.subtype?.toLowerCase().includes(query) ||
-                entity.description?.toLowerCase().includes(query),
-        );
-    }, [entities, searchQuery]);
-
-    // Server-side pagination: use API totalPages and show current page (filtered by search)
+    // Server-side search: entities are already filtered by API
     const totalPages = useMemo(
         () => Math.max(1, entitiesData?.totalPages ?? 1),
         [entitiesData?.totalPages],
     );
-    const paginatedEntities = filteredEntities;
+    const paginatedEntities = entities;
 
     // Sync URL params to page state
     useEffect(() => {
         const pageFromParams = (search as any)?.entities_page || 1;
         const pageSizeFromParams = (search as any)?.entities_pagesize || 20;
+        const searchFromParams = (search as any)?.entities_search ?? '';
         if (pageFromParams !== page) setPage(pageFromParams);
         if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
-    }, [(search as any)?.entities_page, (search as any)?.entities_pagesize]);
+        if (searchFromParams !== searchQuery) setSearchQuery(searchFromParams);
+    }, [
+        (search as any)?.entities_page,
+        (search as any)?.entities_pagesize,
+        (search as any)?.entities_search,
+    ]);
+
+    // Update URL when search changes (server-side search), reset to page 1
+    const handleSearchChange = useCallback(
+        (value: string) => {
+            setSearchQuery(value);
+            setPage(1);
+            const searchAny = search as any;
+            const newSearch: any = {
+                ...searchAny,
+                entities_page: 1,
+                entities_search: value.trim() || undefined,
+            };
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch as any,
+                replace: true,
+            });
+        },
+        [search, router, location.pathname],
+    );
 
     // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
@@ -523,8 +551,8 @@ export default function EntitiesPage() {
                                 <ActionBarSearch
                                     placeholder='Search entities...'
                                     value={searchQuery}
-                                    onDebouncedChange={setSearchQuery}
-                                    onSubmit={setSearchQuery}
+                                    onDebouncedChange={handleSearchChange}
+                                    onSubmit={handleSearchChange}
                                 />
                             }
                         />

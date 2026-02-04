@@ -16,10 +16,12 @@ class EntryFilter(django_filters.FilterSet):
     # Accept multiple values via repeated params: ?name_exact=a&name_exact=b
     name_exact = django_filters.CharFilter(method="filter_name_exact")
     referenced_in = django_filters.UUIDFilter(field_name="notes__id", lookup_expr="exact")
+    # Single search term: OR across name, subtype, description (for entities page)
+    search = django_filters.CharFilter(method="filter_search")
 
     class Meta:
         model = Entry
-        fields = ["type", "subtype", "name", "name_exact", "referenced_in"]
+        fields = ["type", "subtype", "name", "name_exact", "referenced_in", "search"]
 
     def _getlist(self, param_name: str, value):
         # Prefer repeated query params; fall back to single value
@@ -54,3 +56,11 @@ class EntryFilter(django_filters.FilterSet):
         if not values:
             return queryset
         return queryset.filter(entry_class__subtype__in=values)
+
+    def filter_search(self, queryset, name, value):
+        if not value or not value.strip():
+            return queryset
+        term = value.strip()
+        return queryset.filter(
+            Q(name__icontains=term) | Q(entry_class__subtype__icontains=term) | Q(description__icontains=term)
+        )

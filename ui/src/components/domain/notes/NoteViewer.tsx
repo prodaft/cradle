@@ -830,7 +830,6 @@ export default function NoteViewer() {
                                                         note && (
                                                             <div className='h-[55%] rich-editor markdown-body static-render'>
                                                                 <StaticRender
-                                                                    note={note}
                                                                     markdownContent={
                                                                         markdownContent
                                                                     }
@@ -905,7 +904,6 @@ export default function NoteViewer() {
                                             ) : (
                                                 note && (
                                                     <StaticRender
-                                                        note={note}
                                                         markdownContent={
                                                             markdownContent
                                                         }

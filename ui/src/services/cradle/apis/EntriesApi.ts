@@ -113,6 +113,7 @@ export interface EntryClassesListRequest {
     showCount?: boolean;
     page?: number;
     pageSize?: number;
+    search?: string;
 }
 
 export interface EntryClassesRetrieveRequest {
@@ -794,6 +795,9 @@ export class EntriesApi extends runtime.BaseAPI {
         }
         if (requestParameters['pageSize'] != null) {
             queryParameters['page_size'] = requestParameters['pageSize'];
+        }
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

@@ -153,7 +153,7 @@ function UserSettingsPage({ userId }: { userId: string }) {
                 <div className='flex w-full overflow-y-hidden p-1'>
                     <div className='flex flex-1 flex-col'>
                         <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
-                            <CardContent>
+                            <CardContent className='px-0'>
                                 <div className='flex-none mb-4'>
                                     <h3 className='text-lg font-medium'>
                                         {currentTab?.label || 'Settings'}
@@ -186,7 +186,9 @@ export default function UsersPage() {
     });
     const search = useSearch({ strict: false });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(
+        () => (search as any)?.users_search ?? '',
+    );
     const [page, setPage] = useState((search as any)?.users_page || 1);
     const [pageSize, setPageSize] = useState((search as any)?.users_pagesize || 20);
     const { usersApi } = useApi();
@@ -205,9 +207,15 @@ export default function UsersPage() {
         setRowSelection({});
     }, []);
 
+    const searchTerm = searchQuery.trim() || undefined;
+    const usersListFilters = {
+        page,
+        pageSize,
+        ...(searchTerm ? { search: searchTerm } : {}),
+    };
     const { data: usersData, isPending } = useQuery({
-        queryKey: queryKeys.users.list({ page, pageSize }),
-        queryFn: () => usersApi.usersList({ page, pageSize }),
+        queryKey: queryKeys.users.list(usersListFilters),
+        queryFn: () => usersApi.usersList(usersListFilters),
         meta: {
             showErrorToast: false,
             suppressNotification: true,
@@ -287,32 +295,44 @@ export default function UsersPage() {
         router.navigate({ to: `/manage/users/${userId}` as any });
     }, [selectedUserIds, router]);
 
-    const filteredUsers = useMemo(() => {
-        if (!searchQuery.trim()) {
-            return users;
-        }
-        const query = searchQuery.toLowerCase();
-        return users.filter(
-            (user) =>
-                user.username?.toLowerCase().includes(query) ||
-                user.email?.toLowerCase().includes(query) ||
-                user.role?.toLowerCase().includes(query),
-        );
-    }, [users, searchQuery]);
-
     const totalPages = useMemo(
         () => Math.max(1, usersData?.totalPages ?? 1),
         [usersData?.totalPages],
     );
-    const paginatedUsers = filteredUsers;
+    const paginatedUsers = users;
 
     // Sync URL params to page state
     useEffect(() => {
         const pageFromParams = (search as any)?.users_page || 1;
         const pageSizeFromParams = (search as any)?.users_pagesize || 20;
+        const searchFromParams = (search as any)?.users_search ?? '';
         if (pageFromParams !== page) setPage(pageFromParams);
         if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
-    }, [(search as any)?.users_page, (search as any)?.users_pagesize]);
+        if (searchFromParams !== searchQuery) setSearchQuery(searchFromParams);
+    }, [
+        (search as any)?.users_page,
+        (search as any)?.users_pagesize,
+        (search as any)?.users_search,
+    ]);
+
+    const handleSearchChange = useCallback(
+        (value: string) => {
+            setSearchQuery(value);
+            setPage(1);
+            const searchAny = search as any;
+            const newSearch: any = {
+                ...searchAny,
+                users_page: 1,
+                users_search: value.trim() || undefined,
+            };
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch as any,
+                replace: true,
+            });
+        },
+        [search, router, location.pathname],
+    );
 
     // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
@@ -501,8 +521,8 @@ export default function UsersPage() {
                                 <ActionBarSearch
                                     placeholder='Search users...'
                                     value={searchQuery}
-                                    onDebouncedChange={setSearchQuery}
-                                    onSubmit={setSearchQuery}
+                                    onDebouncedChange={handleSearchChange}
+                                    onSubmit={handleSearchChange}
                                 />
                             }
                         />

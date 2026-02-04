@@ -113,7 +113,7 @@ export const queryKeys = {
     users: {
         all: ['users'] as const,
         lists: () => [...queryKeys.users.all, 'list'] as const,
-        list: (filters?: { page?: number; pageSize?: number }) =>
+        list: (filters?: { page?: number; pageSize?: number; search?: string }) =>
             [...queryKeys.users.lists(), filters] as const,
         details: () => [...queryKeys.users.all, 'detail'] as const,
         detail: (id: string) => [...queryKeys.users.details(), id] as const,
@@ -124,7 +124,7 @@ export const queryKeys = {
     entities: {
         all: ['entities'] as const,
         lists: () => [...queryKeys.entities.all, 'list'] as const,
-        list: (filters?: { page?: number; pageSize?: number }) =>
+        list: (filters?: { page?: number; pageSize?: number; search?: string }) =>
             [...queryKeys.entities.lists(), filters] as const,
         details: () => [...queryKeys.entities.all, 'detail'] as const,
         detail: (id: string) => [...queryKeys.entities.details(), id] as const,
@@ -134,7 +134,7 @@ export const queryKeys = {
     entryTypes: {
         all: ['entryTypes'] as const,
         lists: () => [...queryKeys.entryTypes.all, 'list'] as const,
-        list: (filters?: { page?: number; pageSize?: number }) =>
+        list: (filters?: { page?: number; pageSize?: number; search?: string }) =>
             [...queryKeys.entryTypes.lists(), filters] as const,
         details: () => [...queryKeys.entryTypes.all, 'detail'] as const,
         detail: (id: string) => [...queryKeys.entryTypes.details(), id] as const,

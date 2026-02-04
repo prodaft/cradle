@@ -82,8 +82,13 @@ export class ReferenceLinkWidget extends WidgetType {
 /**
  * Widget to display the reference image.
  * It renders as a standard img tag, hiding the underlying markdown syntax.
+ * Uses a static cache to preserve image URLs across widget recreations (e.g., when scrolling).
  */
 export class ReferenceImageWidget extends WidgetType {
+    // Static cache to store resolved presigned URLs by file ID
+    // This prevents images from unloading when scrolling out of view and back
+    private static urlCache = new Map<string, string>();
+
     text: string;
     file: FileReference;
     resolveMinioLink: (
@@ -113,19 +118,43 @@ export class ReferenceImageWidget extends WidgetType {
         img.style.maxWidth = '40%';
         img.style.cursor = 'default';
 
-        this.resolveMinioLink({
-            fileId: this.file.id!,
-        }).then((fdownload) => {
-            const { presignedUrl } = fdownload;
-            img.src = presignedUrl;
-        });
-        console.log(img);
+        const fileId = this.file.id!;
+        const cachedUrl = ReferenceImageWidget.urlCache.get(fileId);
+
+        if (cachedUrl) {
+            // Use cached URL immediately to prevent image flicker
+            img.src = cachedUrl;
+        } else {
+            // Fetch and cache the URL
+            this.resolveMinioLink({
+                fileId: fileId,
+            }).then((fdownload) => {
+                const { presignedUrl } = fdownload;
+                ReferenceImageWidget.urlCache.set(fileId, presignedUrl);
+                img.src = presignedUrl;
+            });
+        }
 
         return img;
     }
 
     ignoreEvent(e: Event) {
         return false;
+    }
+
+    /**
+     * Clear the URL cache. Useful when files are updated or when
+     * presigned URLs need to be refreshed.
+     */
+    static clearCache() {
+        ReferenceImageWidget.urlCache.clear();
+    }
+
+    /**
+     * Remove a specific file from the cache.
+     */
+    static invalidateFile(fileId: string) {
+        ReferenceImageWidget.urlCache.delete(fileId);
     }
 }
 

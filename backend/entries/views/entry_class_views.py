@@ -62,6 +62,12 @@ from ..serializers import (
                 location=OpenApiParameter.QUERY,
                 description="Number of results per page",
             ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by subtype or description (case-insensitive substring)",
+            ),
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(EntryClassSerializerCount),
@@ -99,8 +105,13 @@ class EntryClassList(APIView):
         return False
 
     def get(self, request: Request) -> Response:
+        from django.db.models import Q
+
         # Optimize queries to prevent N+1 issues
         entities = EntryClass.objects.prefetch_related("children")
+        search = (request.query_params.get("search") or "").strip()
+        if search:
+            entities = entities.filter(Q(subtype__icontains=search) | Q(description__icontains=search))
 
         if request.query_params.get("show_count") == "true":
             if not request.user.is_entry_manager:

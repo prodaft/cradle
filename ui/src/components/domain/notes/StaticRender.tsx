@@ -3,7 +3,7 @@ import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
 import { handleLinkClick, NavigateHandler } from '@/utils/editor/textEditor';
 import { parseMarkdown } from '@/utils/parser/parse';
-import type { FileReferenceWithNote, NoteRetrieve } from '@services/cradle/models';
+import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useRouter } from '@tanstack/react-router';
 import DOMPurify from 'dompurify';
 import Prism from 'prismjs';
@@ -13,7 +13,6 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import { useCallback, useEffect, useState } from 'react';
 
 interface StaticRenderProps {
-    note: NoteRetrieve;
     markdownContent: string;
     fileData: FileReferenceWithNote[];
 }
@@ -22,11 +21,7 @@ interface StaticRenderProps {
  * StaticRender component - renders markdown content statically (without editing)
  * with proper styling to match RichEditor appearance
  */
-export default function StaticRender({
-    note,
-    markdownContent,
-    fileData,
-}: StaticRenderProps) {
+export default function StaticRender({ markdownContent, fileData }: StaticRenderProps) {
     const [htmlContent, setHtmlContent] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [previewElement, setPreviewElement] = useState<HTMLDivElement | null>(null);

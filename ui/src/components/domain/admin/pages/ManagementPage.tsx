@@ -105,7 +105,7 @@ export default function ManagementPage() {
                     <div className='flex w-full overflow-y-hidden p-1'>
                         <div className='flex flex-1 flex-col'>
                             <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
-                                <CardContent>
+                                <CardContent className='px-0'>
                                     <div className='flex-none mb-4'>
                                         <h3 className='text-lg font-medium'>
                                             {currentTab?.label || 'Settings'}

@@ -3,13 +3,7 @@ import { ButtonGroup } from '@/components/ui/button-group';
 import { Spinner } from '@/components/ui/spinner';
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import { logger } from '@/utils/logger';
-import {
-    FunnelIcon,
-    GearIcon,
-    MagnifyingGlassIcon,
-    PauseIcon,
-    PlayIcon,
-} from '@phosphor-icons/react';
+import { FunnelIcon, GearIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import {
     ControlsContainer,
     SigmaContainer,
@@ -548,48 +542,6 @@ export default function GraphViewer({
                             </span>{' '}
                             edges
                         </span>
-                        {fetchProgress && (
-                            <>
-                                <span className='text-border'>|</span>
-                                <Spinner className='size-10' />
-                                <span className='text-muted-foreground'>
-                                    {fetchProgress.currentPage}/
-                                    {fetchProgress.totalPages}
-                                    {fetchProgress.isPaused && ' (paused)'}
-                                </span>
-                                {fetchControls && (
-                                    <Button
-                                        variant='ghost'
-                                        size='icon-sm'
-                                        className='size-5'
-                                        onClick={() => {
-                                            if (fetchProgress.isPaused) {
-                                                fetchControls.resume();
-                                            } else {
-                                                fetchControls.pause();
-                                            }
-                                        }}
-                                        title={
-                                            fetchProgress.isPaused
-                                                ? 'Resume loading'
-                                                : 'Pause loading'
-                                        }
-                                    >
-                                        {fetchProgress.isPaused ? (
-                                            <PlayIcon
-                                                className='size-3'
-                                                weight='fill'
-                                            />
-                                        ) : (
-                                            <PauseIcon
-                                                className='size-3'
-                                                weight='fill'
-                                            />
-                                        )}
-                                    </Button>
-                                )}
-                            </>
-                        )}
                     </div>
 
                     <div className='absolute top-2 left-2 z-10 flex flex-col gap-1'>
@@ -662,46 +614,8 @@ export default function GraphViewer({
                         {isLoading ? (
                             <>
                                 <Spinner className='size-10 mx-auto mb-3' />
-                                <p className='text-lg'>Loading graph data...</p>
-                                {fetchProgress && (
-                                    <p className='text-sm mt-1'>
-                                        Page {fetchProgress.currentPage} of{' '}
-                                        {fetchProgress.totalPages}
-                                        {fetchProgress.isPaused && ' (paused)'}
-                                    </p>
-                                )}
-                                {fetchControls && fetchProgress && (
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        className='mt-3'
-                                        onClick={() => {
-                                            if (fetchProgress.isPaused) {
-                                                fetchControls.resume();
-                                            } else {
-                                                fetchControls.pause();
-                                            }
-                                        }}
-                                    >
-                                        {fetchProgress.isPaused ? (
-                                            <>
-                                                <PlayIcon
-                                                    className='size-4 mr-1'
-                                                    weight='fill'
-                                                />
-                                                Resume
-                                            </>
-                                        ) : (
-                                            <>
-                                                <PauseIcon
-                                                    className='size-4 mr-1'
-                                                    weight='fill'
-                                                />
-                                                Pause
-                                            </>
-                                        )}
-                                    </Button>
-                                )}
+                                <p className='text-lg'>Loading</p>
+                                <p className='text-sm mt-1'>Downloading data…</p>
                             </>
                         ) : (
                             <>

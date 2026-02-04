@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { parseAPIError } from '@/utils/api';
-import { useRouter } from '@tanstack/react-router';
-
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
@@ -19,22 +16,11 @@ interface Alert {
     color: string;
 }
 
-interface FetchProgress {
-    currentPage: number;
-    totalPages: number;
-    isPaused: boolean;
-}
-
 interface KnowledgeGraphSearchProps {
     addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
     addBoth?: (nodes: Node[], edges: EdgeRelation[]) => void;
     onLoadingChange?: (isLoading: boolean) => void;
-    onFetchProgressChange?: (progress: FetchProgress | null) => void;
-    onFetchControlsReady?: (controls: {
-        pause: () => void;
-        resume: () => void;
-    }) => void;
 }
 
 export default function KnowledgeGraphSearch({
@@ -42,237 +28,93 @@ export default function KnowledgeGraphSearch({
     addNodes,
     addBoth,
     onLoadingChange,
-    onFetchProgressChange,
-    onFetchControlsReady,
 }: KnowledgeGraphSearchProps) {
-    const [isGraphFetching, setIsGraphFetching] = useState(false);
     const [alert, setAlert] = useState<Alert>({
         show: false,
         message: '',
         color: 'red',
     });
+    const appliedRef = useRef(false);
     const { knowledgeGraphApi } = useApi();
-    const router = useRouter();
-    const hasFetchedRef = useRef(false);
-    const isPausedRef = useRef(false);
-    const resumeResolverRef = useRef<(() => void) | null>(null);
-    const pageSize = 100;
 
-    const fetchGraphPage = async (
-        page: number,
-    ): Promise<{
-        nodes: Node[];
-        edges: EdgeRelation[];
-        colors: Record<string, string>;
-        totalPages: number;
-        hasMore: boolean;
-    }> => {
-        const response = await knowledgeGraphApi.knowledgeGraphRetrieveRaw({
-            page,
-            pageSize,
-        });
+    const { data, isPending: loading } = useQuery({
+        queryKey: [...queryKeys.knowledgeGraph.all, 'full'],
+        queryFn: async () => {
+            const response = await knowledgeGraphApi.knowledgeGraphRetrieveRaw({});
+            const rawData = await response.raw.json();
+            const graphData = rawData.results;
 
-        const rawData = await response.raw.json();
+            if (!graphData?.entries) {
+                return { nodes: [], edges: [], colors: {} };
+            }
 
-        const graphData = rawData.results;
-        const totalPages = rawData.total_pages ?? 1;
+            const entries = graphData.entries;
+            const relations = graphData.relations;
+            const colors = graphData.colors ?? {};
+            let nodes: Node[] = [];
 
-        if (!graphData) {
-            return {
-                nodes: [],
-                edges: [],
-                colors: {},
-                totalPages,
-                hasMore: page < totalPages,
-            };
-        }
-
-        const entries = graphData.entries;
-        const relations = graphData.relations;
-        const colors = graphData.colors;
-
-        if (entries == null) {
-            return {
-                nodes: [],
-                edges: [],
-                colors: {},
-                totalPages,
-                hasMore: page < totalPages,
-            };
-        }
-
-        let nodes: Node[] = [];
-
-        if (entries) {
             try {
                 const flattenedEntries = LinkTreeFlattener.flatten(entries);
-
-                if (flattenedEntries && flattenedEntries.length > 0) {
-                    nodes = flattenedEntries.map((e: any) => {
-                        let label = `${e.subtype}: ${e.name || e.id}`;
-
-                        // For note nodes, show "note: title"
-                        if (e.subtype === 'note') {
-                            label = `note: ${e.name || 'untitled'}`;
-                        }
-
-                        const nodeColor = colors?.[e.subtype] || 'var(--color-primary)';
-
-                        return {
-                            id: String(e.id),
+                if (flattenedEntries?.length > 0) {
+                    const byId = new Map<string, Node>();
+                    for (const e of flattenedEntries) {
+                        const id = e.id != null ? String(e.id) : '';
+                        if (!id || byId.has(id)) continue;
+                        const label =
+                            e.subtype === 'note'
+                                ? `note: ${e.name || 'untitled'}`
+                                : `${e.subtype}: ${e.name || e.id}`;
+                        byId.set(id, {
+                            id,
                             degree: e.degree,
                             type: e.type || e.subtype,
                             subtype: e.subtype,
                             label,
-                            color: nodeColor,
+                            color: colors?.[e.subtype] || 'var(--color-primary)',
                             location: e.location,
-                        };
-                    });
+                        });
+                    }
+                    nodes = Array.from(byId.values());
                 }
             } catch (e) {
                 logger.error('[KnowledgeGraphSearch] Error processing entries:', e);
             }
-        }
 
-        const edges =
-            relations != null && Array.isArray(relations) && relations.length > 0
-                ? relations
-                : [];
+            const edges =
+                Array.isArray(relations) && relations.length > 0 ? relations : [];
 
-        return {
-            nodes,
-            edges,
-            colors: colors ?? {},
-            totalPages,
-            hasMore: page < totalPages,
-        };
-    };
-
-    // Query for first page to get total pages
-    const { data: firstPageData, isPending: loading } = useQuery({
-        queryKey: queryKeys.knowledgeGraph.graph(1),
-        queryFn: () => fetchGraphPage(1),
-        enabled: !hasFetchedRef.current,
+            return { nodes, edges, colors };
+        },
         meta: {
             showErrorToast: true,
             errorMessage: 'Failed to fetch graph data',
         },
     });
 
-    const isLoading = loading || isGraphFetching;
     useEffect(() => {
-        onLoadingChange?.(isLoading);
-    }, [isLoading, onLoadingChange]);
+        onLoadingChange?.(loading);
+    }, [loading, onLoadingChange]);
 
     useEffect(() => {
-        const controls = {
-            pause: () => {
-                isPausedRef.current = true;
-                onFetchProgressChange?.({
-                    currentPage: 0,
-                    totalPages: 0,
-                    isPaused: true,
-                });
-            },
-            resume: () => {
-                isPausedRef.current = false;
-                if (resumeResolverRef.current) {
-                    resumeResolverRef.current();
-                    resumeResolverRef.current = null;
-                }
-            },
-        };
-        onFetchControlsReady?.(controls);
-    }, [onFetchControlsReady, onFetchProgressChange]);
+        if (!data || appliedRef.current) return;
+        appliedRef.current = true;
 
-    // Fetch remaining pages when first page loads
-    useEffect(() => {
-        if (!firstPageData || hasFetchedRef.current) return;
-
-        hasFetchedRef.current = true;
-        setIsGraphFetching(true);
-
-        // Process first page
-        if (firstPageData.nodes.length > 0 || firstPageData.edges.length > 0) {
+        if (data.nodes.length > 0 || data.edges.length > 0) {
             if (addBoth) {
-                addBoth(firstPageData.nodes, firstPageData.edges);
+                addBoth(data.nodes, data.edges);
             } else {
-                addNodes(firstPageData.nodes);
-                addEdges(firstPageData.edges);
+                addNodes(data.nodes);
+                addEdges(data.edges);
             }
+            setAlert({ show: false, message: '', color: 'red' });
+        } else {
+            setAlert({
+                show: true,
+                message: 'No graph data available.',
+                color: 'yellow',
+            });
         }
-
-        // Fetch remaining pages incrementally
-        const fetchRemainingPages = async () => {
-            try {
-                const totalPages = firstPageData.totalPages;
-
-                for (let page = 2; page <= totalPages; page++) {
-                    // Check if paused, wait for resume
-                    if (isPausedRef.current) {
-                        onFetchProgressChange?.({
-                            currentPage: page - 1,
-                            totalPages,
-                            isPaused: true,
-                        });
-                        await new Promise<void>((resolve) => {
-                            resumeResolverRef.current = resolve;
-                        });
-                    }
-
-                    onFetchProgressChange?.({
-                        currentPage: page,
-                        totalPages,
-                        isPaused: false,
-                    });
-
-                    const pageData = await fetchGraphPage(page);
-
-                    if (pageData.nodes.length > 0 || pageData.edges.length > 0) {
-                        if (addBoth) {
-                            addBoth(pageData.nodes, pageData.edges);
-                        } else {
-                            addNodes(pageData.nodes);
-                            addEdges(pageData.edges);
-                        }
-                    }
-                }
-
-                onFetchProgressChange?.(null);
-
-                // If no data was processed
-                if (
-                    firstPageData.nodes.length === 0 &&
-                    firstPageData.edges.length === 0
-                ) {
-                    setAlert({
-                        show: true,
-                        message: 'No graph data available.',
-                        color: 'yellow',
-                    });
-                } else {
-                    setAlert({ show: false, message: '', color: 'red' });
-                }
-            } catch (error: any) {
-                logger.error(
-                    '[KnowledgeGraphSearch] Error fetching remaining pages:',
-                    error,
-                );
-                const parsed = await parseAPIError(error);
-                setAlert({
-                    show: true,
-                    message:
-                        parsed.detail || 'An error occurred while loading the graph.',
-                    color: 'red',
-                });
-                onFetchProgressChange?.(null);
-            } finally {
-                setIsGraphFetching(false);
-            }
-        };
-
-        fetchRemainingPages();
-    }, [firstPageData, addBoth, addNodes, addEdges]);
+    }, [data, addBoth, addNodes, addEdges]);
 
     return (
         <div className='px-2 mt-2 w-full'>

@@ -151,7 +151,7 @@ function EntryTypeSettingsPage({ subtype }: { subtype: string }) {
                     <div className='flex flex-1 flex-col'>
                         {tab === 'activity' ? (
                             <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth'>
-                                <CardContent>
+                                <CardContent className='px-0'>
                                     <div className='flex-none mb-4'>
                                         <h3 className='text-lg font-medium'>
                                             {currentTab?.label || 'Settings'}
@@ -174,7 +174,7 @@ function EntryTypeSettingsPage({ subtype }: { subtype: string }) {
                             </div>
                         ) : (
                             <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
-                                <CardContent>
+                                <CardContent className='px-0'>
                                     <div className='flex-none mb-4'>
                                         <h3 className='text-lg font-medium'>
                                             {currentTab?.label || 'Settings'}
@@ -223,7 +223,9 @@ export default function EntryTypesPage() {
     });
     const search = useSearch({ strict: false });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(
+        () => (search as any)?.entry_types_search ?? '',
+    );
     const [page, setPage] = useState((search as any)?.entry_types_page || 1);
     const [pageSize, setPageSize] = useState(
         (search as any)?.entry_types_pagesize || 20,
@@ -250,14 +252,18 @@ export default function EntryTypesPage() {
         setRowSelection({});
     }, []);
 
-    // Query for entry types
+    const searchTerm = searchQuery.trim() || undefined;
+    const entryTypesListFilters = {
+        page,
+        pageSize,
+        ...(searchTerm ? { search: searchTerm } : {}),
+    };
     const { data: entryTypesData, isPending } = useQuery({
-        queryKey: queryKeys.entryTypes.list({ page, pageSize }),
+        queryKey: queryKeys.entryTypes.list(entryTypesListFilters),
         queryFn: () =>
             entriesApi.entryClassesList({
                 showCount: true,
-                page,
-                pageSize,
+                ...entryTypesListFilters,
             }),
         refetchOnWindowFocus: false,
         meta: {
@@ -325,27 +331,44 @@ export default function EntryTypesPage() {
         });
     }, [selectedEntryTypeIds, router]);
 
-    const filteredEntryTypes = useMemo(() => {
-        if (!searchQuery.trim()) return entryTypes;
-        const query = searchQuery.toLowerCase();
-        return entryTypes.filter((entryType) =>
-            entryType.subtype?.toLowerCase().includes(query),
-        );
-    }, [entryTypes, searchQuery]);
-
     const totalPages = useMemo(
         () => Math.max(1, entryTypesData?.totalPages ?? 1),
         [entryTypesData?.totalPages],
     );
-    const paginatedEntryTypes = filteredEntryTypes;
+    const paginatedEntryTypes = entryTypes;
 
     // Sync URL params to page state
     useEffect(() => {
         const pageFromParams = (search as any)?.entry_types_page || 1;
         const pageSizeFromParams = (search as any)?.entry_types_pagesize || 20;
+        const searchFromParams = (search as any)?.entry_types_search ?? '';
         if (pageFromParams !== page) setPage(pageFromParams);
         if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
-    }, [(search as any)?.entry_types_page, (search as any)?.entry_types_pagesize]);
+        if (searchFromParams !== searchQuery) setSearchQuery(searchFromParams);
+    }, [
+        (search as any)?.entry_types_page,
+        (search as any)?.entry_types_pagesize,
+        (search as any)?.entry_types_search,
+    ]);
+
+    const handleSearchChange = useCallback(
+        (value: string) => {
+            setSearchQuery(value);
+            setPage(1);
+            const searchAny = search as any;
+            const newSearch: any = {
+                ...searchAny,
+                entry_types_page: 1,
+                entry_types_search: value.trim() || undefined,
+            };
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch as any,
+                replace: true,
+            });
+        },
+        [search, router, location.pathname],
+    );
 
     // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
@@ -525,8 +548,8 @@ export default function EntryTypesPage() {
                                 <ActionBarSearch
                                     placeholder='Search entry types...'
                                     value={searchQuery}
-                                    onDebouncedChange={setSearchQuery}
-                                    onSubmit={setSearchQuery}
+                                    onDebouncedChange={handleSearchChange}
+                                    onSubmit={handleSearchChange}
                                 />
                             }
                         />

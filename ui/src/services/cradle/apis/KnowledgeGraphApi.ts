@@ -54,8 +54,6 @@ export interface KnowledgeGraphPathsRetrieveRequest {
 }
 
 export interface KnowledgeGraphRetrieveRequest {
-    page?: number;
-    pageSize?: number;
 }
 
 /**
@@ -257,20 +255,11 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns the knowledge graph accessible to the user with pagination support.
+     * Returns the full knowledge graph.
      * Get knowledge graph
      */
-    async knowledgeGraphRetrieveRaw(requestParameters: KnowledgeGraphRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedSubGraphSerializerResponse>> {
+    async knowledgeGraphRetrieveRaw(requestParameters: KnowledgeGraphRetrieveRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedSubGraphSerializerResponse>> {
         const queryParameters: any = {};
-
-        if (requestParameters['page'] != null) {
-            queryParameters['page'] = requestParameters['page'];
-        }
-
-        if (requestParameters['pageSize'] != null) {
-            queryParameters['page_size'] = requestParameters['pageSize'];
-        }
-
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.accessToken) {
@@ -295,7 +284,7 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns the knowledge graph accessible to the user with pagination support.
+     * Returns the full knowledge graph.
      * Get knowledge graph
      */
     async knowledgeGraphRetrieve(requestParameters: KnowledgeGraphRetrieveRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedSubGraphSerializerResponse> {

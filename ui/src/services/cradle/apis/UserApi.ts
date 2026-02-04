@@ -93,6 +93,7 @@ export interface UsersDestroyRequest {
 export interface UsersListRequest {
     page?: number;
     pageSize?: number;
+    search?: string;
 }
 
 export interface UsersManageRetrieveRequest {
@@ -565,6 +566,9 @@ export class UserApi extends runtime.BaseAPI {
         }
         if (requestParameters['pageSize'] != null) {
             queryParameters['page_size'] = requestParameters['pageSize'];
+        }
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

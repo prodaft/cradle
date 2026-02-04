@@ -12,6 +12,7 @@ export const Route = createFileRoute(
     validateSearch: z.object({
         entry_types_page: z.coerce.number().optional(),
         entry_types_pagesize: z.coerce.number().optional(),
+        entry_types_search: z.string().optional(),
     }),
     component: EntryTypesPage,
 });

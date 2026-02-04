@@ -76,6 +76,12 @@ from ..serializers import (
                 location=OpenApiParameter.QUERY,
                 description="Number of results per page",
             ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by username, email or role (case-insensitive substring)",
+            ),
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(UserRetrieveSerializer),
@@ -108,7 +114,14 @@ class UserList(APIView):
         return super().get_permissions()
 
     def get(self, request):
+        from django.db.models import Q
+
         users_qs = CradleUser.objects.all()
+        search = (request.query_params.get("search") or "").strip()
+        if search:
+            users_qs = users_qs.filter(
+                Q(username__icontains=search) | Q(email__icontains=search) | Q(role__icontains=search)
+            )
         page_size = request.query_params.get("page_size", "10")
         if not page_size.isdigit() or int(page_size) <= 0:
             page_size = 10
