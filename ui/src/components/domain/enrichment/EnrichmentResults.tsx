@@ -114,7 +114,6 @@ const mapRelationsForEntry = (
 
 // Render entry badge if subtype is not "enrichment"
 const renderEntryBadge = (entry: EnricherArtifact) => {
-    console.log(entry);
     return (
         <Badge
             className={`rounded-full flex-shrink-0 ${!entry.color || entry.subtype === 'enrichment' ? 'bg-muted' : ''}`}

@@ -156,15 +156,13 @@ export async function resolveMinioLinks(
     baseURL: string,
 ): Promise<void> {
     if (token.type === 'link_open' || token.type === 'image') {
-        console.log(token);
         let hrefIndex = token.attrIndex('href');
         hrefIndex = hrefIndex < 0 ? token.attrIndex('src') : hrefIndex;
         if (hrefIndex < 0) return;
         const href = token.attrs![hrefIndex][1];
         if (!href.startsWith('/file-transfer/download/')) return;
 
-        const url = new URL('https://localhost:8000' + href);
-        console.log(url);
+        const url = new URL(baseURL + href);
 
         const params = new URLSearchParams(url.search);
         const fileId = params.get('fileId');
@@ -314,8 +312,7 @@ export async function parseWithExtensions(
                 yaml: (data) => {
                     try {
                         return jsYaml.load(data) as Record<string, any>;
-                    } catch (e) {
-                        console.log(e);
+                    } catch {
                         return {};
                     }
                 },
@@ -325,8 +322,7 @@ export async function parseWithExtensions(
             // If the content ends with '---' or note is not empty, there exists frontmatter
             mdContent = note.content;
         metadata = note.data;
-    } catch (error) {
-        console.log(error);
+    } catch {
         metadata = {};
     }
 

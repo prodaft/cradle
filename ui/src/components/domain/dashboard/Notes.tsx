@@ -44,7 +44,6 @@ export default function Notes({ obj }: NotesProps) {
     }, [obj?.id]);
 
     const handleSearchSubmit = (value?: string) => {
-        console.log(searchFiltersRef.current);
         const next = {
             ...searchFiltersRef.current,
             content: value ?? searchFiltersRef.current.content,

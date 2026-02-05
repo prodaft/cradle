@@ -282,7 +282,6 @@ export class CradleEditor {
             this.buildCombinedRegex();
             return true;
         } catch (error) {
-            console.log(error);
             if (this._onError) this._onError(error as Error);
             else throw error;
             return false;
