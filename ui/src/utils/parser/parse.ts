@@ -1,8 +1,13 @@
+import { HashIcon } from '@phosphor-icons/react';
 import { EntriesApi, FileTransferApi } from '@services/cradle/apis';
 import MarkdownIt from 'markdown-it';
 import markdownItAnchor from 'markdown-it-anchor';
 import Prism from 'prismjs';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { parseWithExtensions, parseWithExtensionsInline } from './extensions';
+
+const hashIcon = renderToStaticMarkup(createElement(HashIcon, { size: 16 }));
 
 export async function parseMarkdown(
     mdContent: string,
@@ -10,7 +15,6 @@ export async function parseMarkdown(
     fileTransferApi: FileTransferApi,
     baseURL: string,
     fileData?: any[],
-    addLinks = false,
 ): Promise<{ html: string; metadata: Record<string, any> } | undefined> {
     try {
         const response = await entriesApi.entryClassesList({});
@@ -32,7 +36,10 @@ export async function parseMarkdown(
             },
         }).use(markdownItAnchor, {
             permalink: markdownItAnchor.permalink.linkInsideHeader({
-                placement: 'before',
+                symbol: hashIcon,
+                placement: 'after',
+                ariaHidden: false,
+                class: 'header-anchor',
             }),
             slugify: (s: string) =>
                 encodeURIComponent(String(s).trim().toLowerCase().replace(/\s+/g, '-')),

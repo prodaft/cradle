@@ -19,7 +19,7 @@ import {
     DotsThreeVerticalIcon,
     FileTextIcon,
     FloppyDiskIcon,
-    Graph,
+    GraphIcon,
     LightbulbIcon,
     MagnifyingGlassIcon,
     SparkleIcon,
@@ -132,7 +132,7 @@ export default function ActionsDropdown({
                             onClick={() => setActiveView(ViewMode.GRAPH)}
                             data-testid='graph-view-menu-item'
                         >
-                            <Graph width='16' height='16' />
+                            <GraphIcon width='16' height='16' />
                             <span className='flex-1'>Graph</span>
                             {activeView === ViewMode.GRAPH && (
                                 <CheckIcon size={16} weight='bold' />

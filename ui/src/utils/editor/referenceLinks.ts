@@ -545,21 +545,18 @@ function createReferenceDecoration(
 
     let key = linkText;
     const labelNode = node.node.getChild('ExternalReferenceLabel');
-    console.log(labelNode);
     if (labelNode) {
         const label = text.slice(labelNode.from, labelNode.to);
         if (label.trim() !== '') {
             key = label;
         }
     }
-    console.log(key);
 
     const reference = mappings[key] || mappings[key.toLowerCase()];
 
     if (reference) {
         let widget: WidgetType;
         if (node.node.name === 'ExternalReferenceImage') {
-            console.log(reference);
             widget = new ReferenceImageWidget(linkText, reference, resolveMinioLink);
         } else {
             widget = new ReferenceLinkWidget(

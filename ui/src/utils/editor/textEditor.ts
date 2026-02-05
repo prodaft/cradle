@@ -43,7 +43,6 @@ export interface Link {
  * @param fileTransferApi - API instance for file transfers
  * @param baseURL - Base URL of the backend
  * @param fileData - Information about the files that will be linked
- * @param addLinks - Whether to add anchor links to headings
  * @returns Parsed and sanitized HTML with metadata
  */
 export const parseContent = async (
@@ -52,7 +51,6 @@ export const parseContent = async (
     fileTransferApi: any,
     baseURL: string,
     fileData?: FileReferenceWithNote[],
-    addLinks: boolean = false,
 ): Promise<ParseResult> => {
     const result = await parseMarkdown(
         content,
@@ -60,7 +58,6 @@ export const parseContent = async (
         fileTransferApi,
         baseURL,
         fileData,
-        addLinks,
     );
     if (!result) return { html: '', metadata: {} };
     return {

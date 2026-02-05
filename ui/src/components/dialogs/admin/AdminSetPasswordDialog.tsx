@@ -113,9 +113,9 @@ export default function AdminSetPasswordDialog({
     };
 
     return (
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-            <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className='sm:max-w-md'>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className='sm:max-w-md'>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
                     <DialogHeader>
                         <DialogTitle>Confirm</DialogTitle>
                         <DialogDescription>
@@ -123,7 +123,7 @@ export default function AdminSetPasswordDialog({
                             this password to log in.
                         </DialogDescription>
                     </DialogHeader>
-                    <FieldGroup className='gap-4'>
+                    <FieldGroup className='gap-4 py-4'>
                         <Controller
                             name='newPassword'
                             control={form.control}
@@ -264,8 +264,8 @@ export default function AdminSetPasswordDialog({
                             {setPasswordMutation.isPending ? 'Setting...' : 'Confirm'}
                         </Button>
                     </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </form>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

@@ -152,6 +152,10 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
         appliedVarsRef.current = cssVars;
     }, [activeTheme]);
 
+    useEffect(() => {
+        document.documentElement.dataset.theme = isDarkMode ? 'dark' : 'light';
+    }, [isDarkMode]);
+
     // Set theme explicitly - persists to source of truth
     const setTheme = useCallback(
         (theme: ThemeConfig) => {

@@ -13,6 +13,13 @@ import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
@@ -26,6 +33,7 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import {
     ArrowClockwiseIcon,
+    DotsThreeIcon,
     DownloadSimpleIcon,
     TrashIcon,
     WarningCircleIcon,
@@ -621,6 +629,9 @@ export default function FilesList({
             {
                 id: 'actions',
                 header: '',
+                size: 40,
+                minSize: 40,
+                maxSize: 40,
                 cell: ({ row }) => {
                     const file = row.original;
                     return (
@@ -629,19 +640,55 @@ export default function FilesList({
                             onClick={(e) => e.stopPropagation()}
                         >
                             {file.id && (
-                                <Button
-                                    variant='ghost'
-                                    size='icon-sm'
-                                    onClick={() => handleDownloadFile(file)}
-                                    className='text-primary hover:text-primary/80'
-                                    title='Download'
-                                >
-                                    <DownloadSimpleIcon
-                                        className='w-4 h-4'
-                                        weight='bold'
-                                        aria-hidden='true'
-                                    />
-                                </Button>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            className='text-muted-foreground hover:text-foreground'
+                                            title='Actions'
+                                        >
+                                            <DotsThreeIcon
+                                                className='w-4 h-4'
+                                                weight='bold'
+                                                aria-hidden='true'
+                                            />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end'>
+                                        <DropdownMenuItem
+                                            onClick={() => handleDownloadFile(file)}
+                                        >
+                                            <DownloadSimpleIcon
+                                                size={16}
+                                                weight='bold'
+                                            />
+                                            Download
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                reprocessFileMutation.mutate(file.id!)
+                                            }
+                                        >
+                                            <ArrowClockwiseIcon
+                                                size={16}
+                                                weight='bold'
+                                            />
+                                            Reprocess
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            variant='destructive'
+                                            onClick={() => {
+                                                setDeletingFileId(file.id!);
+                                                setDeleteDialogOpen(true);
+                                            }}
+                                        >
+                                            <TrashIcon size={16} weight='bold' />
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             )}
                         </div>
                     );
@@ -649,7 +696,14 @@ export default function FilesList({
                 enableSorting: false,
             },
         ],
-        [copyToClipboard, router, handleDownloadFile],
+        [
+            copyToClipboard,
+            router,
+            handleDownloadFile,
+            reprocessFileMutation,
+            setDeletingFileId,
+            setDeleteDialogOpen,
+        ],
     );
 
     // Convert sortField and sortDirection to TanStack Table sorting state
@@ -692,6 +746,9 @@ export default function FilesList({
             pagination: {
                 pageIndex: page - 1,
                 pageSize,
+            },
+            columnPinning: {
+                right: ['actions'],
             },
         },
         getRowId: (row, index) => String(row.id ?? index),

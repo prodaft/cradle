@@ -12,7 +12,15 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -24,6 +32,7 @@ import { parseMarkdownInline } from '@/utils/parser';
 import {
     ArrowClockwiseIcon,
     ChartBarIcon,
+    DotsThreeIcon,
     PlusCircleIcon,
     SparkleIcon,
     TrashIcon,
@@ -789,8 +798,114 @@ export default function NotesList({
                     </div>
                 ),
             },
+            {
+                id: 'actions',
+                header: '',
+                size: 40,
+                minSize: 40,
+                maxSize: 40,
+                cell: ({ row }) => {
+                    const note = row.original;
+                    return (
+                        <div
+                            className='text-right flex justify-end'
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {note.id && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            className='text-muted-foreground hover:text-foreground'
+                                            title='Actions'
+                                        >
+                                            <DotsThreeIcon
+                                                className='w-4 h-4'
+                                                weight='bold'
+                                                aria-hidden='true'
+                                            />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end'>
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                handleRetrySelected([String(note.id)])
+                                            }
+                                        >
+                                            <ArrowClockwiseIcon
+                                                size={16}
+                                                weight='bold'
+                                            />
+                                            Relink
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                setReportSelectedNotes([
+                                                    {
+                                                        id: String(note.id),
+                                                        title:
+                                                            note.metadata?.title ||
+                                                            note.title ||
+                                                            'Untitled',
+                                                    },
+                                                ]);
+                                                setReportDialogOpen(true);
+                                            }}
+                                        >
+                                            <ChartBarIcon size={16} weight='bold' />
+                                            Report
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                setEnrichmentNotesList([
+                                                    {
+                                                        id: String(note.id),
+                                                        title: (note.metadata?.title ||
+                                                            note.title ||
+                                                            'Untitled') as string,
+                                                        entities: (note.entities ||
+                                                            []) as OptimizedEntryResponse[],
+                                                    },
+                                                ]);
+                                                setEnrichmentDialogOpen(true);
+                                            }}
+                                        >
+                                            <SparkleIcon size={16} weight='bold' />
+                                            Enrich
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            variant='destructive'
+                                            onClick={() => {
+                                                setDeletingNoteId(String(note.id));
+                                                setSingleDeleteDialogOpen(true);
+                                            }}
+                                        >
+                                            <TrashIcon size={16} weight='bold' />
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                        </div>
+                    );
+                },
+                enableSorting: false,
+            },
         ],
-        [columnFilters, router, handleStatusChange],
+        [
+            columnFilters,
+            router,
+            handleStatusChange,
+            handleRetrySelected,
+            setReportSelectedNotes,
+            setReportDialogOpen,
+            setEnrichmentNotesList,
+            setEnrichmentDialogOpen,
+            setDeletingNoteId,
+            setSingleDeleteDialogOpen,
+        ],
     );
 
     const table = useReactTable({
@@ -802,6 +917,9 @@ export default function NotesList({
             pagination: {
                 pageIndex: page - 1,
                 pageSize,
+            },
+            columnPinning: {
+                right: ['actions'],
             },
         },
         getRowId: (row, index) => String(row.id ?? index),

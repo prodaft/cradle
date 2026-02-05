@@ -528,34 +528,37 @@ export default function AdminUserSettings({
                 {showSection('administrative') && (
                     <section id='administrative'>
                         <div className='flex flex-col gap-4'>
-                            <Controller
-                                name='emailConfirmed'
-                                control={control}
-                                render={({ field }) => (
-                                    <Field orientation='responsive'>
-                                        <FieldContent className='flex-1'>
-                                            <FieldLabel
-                                                htmlFor='emailConfirmed'
-                                                className='text-sm block mb-0.5'
-                                            >
-                                                Email Confirmed
-                                            </FieldLabel>
-                                            <FieldDescription>
-                                                User's email confirmation status
-                                            </FieldDescription>
-                                        </FieldContent>
-                                        <Switch
-                                            id='emailConfirmed'
-                                            name={field.name}
-                                            data-testid='emailConfirmed-toggle'
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </Field>
-                                )}
-                            />
-
                             <FieldGroup className='gap-4'>
+                                <Controller
+                                    name='emailConfirmed'
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Field orientation='responsive'>
+                                            <FieldContent className='flex-1'>
+                                                <FieldLabel
+                                                    htmlFor='emailConfirmed'
+                                                    className='text-sm block mb-0.5'
+                                                >
+                                                    Email Confirmed
+                                                </FieldLabel>
+                                                <FieldDescription>
+                                                    User's email confirmation status
+                                                </FieldDescription>
+                                            </FieldContent>
+                                            <Switch
+                                                id='emailConfirmed'
+                                                name={field.name}
+                                                data-testid='emailConfirmed-toggle'
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                                className='self-start md:self-center'
+                                            />
+                                        </Field>
+                                    )}
+                                />
+
+                                <Separator />
+
                                 <Controller
                                     name='isActive'
                                     control={control}

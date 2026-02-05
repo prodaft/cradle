@@ -39,6 +39,7 @@ interface AddEntityFormProps {
 interface SubtypeOption extends SelectOption<string> {
     value: string;
     label: string;
+    prefix?: string;
 }
 
 interface AliasOption extends SelectOption<number> {
@@ -138,6 +139,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
         const options = entityClasses.map((c) => ({
             value: c.subtype,
             label: c.subtype,
+            prefix: c.prefix || '',
         }));
         setSubtypeOptions(options);
         if (options.length > 0) {
@@ -146,14 +148,34 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
         }
     }, [entryClassesData, reset]);
 
-    // Auto-fill name when subtype changes (always regenerate to subtype-1)
-    const handleSubtypeChange = (subtype: SubtypeOption | null) => {
+    // Auto-fill name when subtype changes
+    const handleSubtypeChange = async (subtype: SubtypeOption | null) => {
         if (!subtype) return;
+        const namePrefix = subtype.prefix || `${subtype.value}-`;
+
         reset((prev: any) => ({
             ...prev,
             subtype,
-            name: `${subtype.value}-1`,
+            name: `${namePrefix}...`,
         }));
+
+        try {
+            const result = await entriesApi.entriesNextNameRetrieve({
+                classSubtype: subtype.value,
+            });
+
+            reset((prev: any) => ({
+                ...prev,
+                subtype,
+                name: result.name || `${namePrefix}1`,
+            }));
+        } catch (error) {
+            reset((prev: any) => ({
+                ...prev,
+                subtype,
+                name: namePrefix,
+            }));
+        }
     };
 
     const createEntityMutation = useMutation({

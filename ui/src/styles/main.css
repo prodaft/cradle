@@ -28,6 +28,8 @@
     -moz-osx-font-smoothing: grayscale;
 
     --pm-header-mark-color: oklch(82.8% 0.111 230.318);
+    --pm-heading-color: oklch(0% 0 0);
+    --pm-list-mark-color: oklch(82.8% 0.111 230.318);
     --pm-link-color: oklch(58.8% 0.158 241.966);
     --pm-muted-color: oklch(37.2% 0.044 257.287);
     --pm-code-background-color: oklch(92.9% 0.013 255.508);
@@ -65,6 +67,8 @@
    ============================================ */
 :root[data-theme='dark'] {
     --pm-header-mark-color: oklch(44.3% 0.11 240.79);
+    --pm-heading-color: oklch(100% 0 0);
+    --pm-list-mark-color: oklch(44.3% 0.11 240.79);
     --pm-link-color: oklch(58.8% 0.158 241.966);
     --pm-muted-color: oklch(55.4% 0.046 257.417);
     --pm-code-background-color: oklch(27.9% 0.041 260.031);
@@ -219,6 +223,41 @@
 .markdown-body h6 {
     font-size: 0.85em;
     color: var(--pm-muted-color);
+}
+
+/* Header anchor links - show on hover */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.markdown-body .header-anchor {
+    opacity: 0;
+    margin-left: 0.5rem;
+    color: var(--muted-foreground);
+    text-decoration: none;
+    transition: opacity 0.15s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+}
+
+.markdown-body .header-anchor:hover {
+    color: var(--foreground);
+}
+
+.markdown-body h1:hover .header-anchor,
+.markdown-body h2:hover .header-anchor,
+.markdown-body h3:hover .header-anchor,
+.markdown-body h4:hover .header-anchor,
+.markdown-body h5:hover .header-anchor,
+.markdown-body h6:hover .header-anchor {
+    opacity: 1;
 }
 
 /* Ensure heading lines carry typography so widgets inherit size/weight. */
