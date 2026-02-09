@@ -28,6 +28,7 @@ export interface LogsListRequest {
     endDate?: Date;
     objectId?: string;
     page?: number;
+    pageSize?: number;
     startDate?: Date;
     type?: string;
     user?: string;
@@ -60,6 +61,10 @@ export class LogsApi extends runtime.BaseAPI {
 
         if (requestParameters['page'] != null) {
             queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['page_size'] = requestParameters['pageSize'];
         }
 
         if (requestParameters['startDate'] != null) {

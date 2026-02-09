@@ -544,9 +544,7 @@ function DigestList({
                                         to: '',
                                     }
                                 }
-                                onChange={(v) =>
-                                    onColumnFilterChange('createdAt', v)
-                                }
+                                onChange={(v) => onColumnFilterChange('createdAt', v)}
                             />
                         )}
                     </div>

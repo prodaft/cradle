@@ -1018,9 +1018,7 @@ export default function NotesList({
                                 <DateRangeFilterButton
                                     title='Created At'
                                     value={columnFilters.createdAt}
-                                    onChange={(v) =>
-                                        handleColumnFilter('createdAt', v)
-                                    }
+                                    onChange={(v) => handleColumnFilter('createdAt', v)}
                                 />
                                 <DateRangeFilterButton
                                     title='Updated At'

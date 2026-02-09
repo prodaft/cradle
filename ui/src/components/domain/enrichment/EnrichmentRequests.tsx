@@ -41,7 +41,7 @@ export default function EnrichmentRequests() {
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ from: '/_authenticated/enrich' });
+    const search = useSearch({ from: '/_authenticated/enrichment' });
     const { intelioApi } = useApi();
     const [enrichmentDialogOpen, setEnrichmentDialogOpen] = useState(false);
 
@@ -277,9 +277,7 @@ export default function EnrichmentRequests() {
             {/* Header Section */}
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div className='space-y-1'>
-                    <h2 className='text-2xl font-bold tracking-tight'>
-                        Enrichment Requests
-                    </h2>
+                    <h2 className='text-2xl font-bold tracking-tight'>Enrichment</h2>
                     <p className='text-muted-foreground'>
                         Browse & Manage Enrichment Requests
                     </p>

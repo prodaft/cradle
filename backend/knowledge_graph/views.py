@@ -10,9 +10,12 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.enums import AccessType
 from access.models import Access
+from core.exceptions import BadRequestException
 from core.pagination import LazyPaginator, TotalPagesPagination
 from entries.enums import EntryType
+from entries.exceptions import EntryNotFoundException
 from entries.models import Entry, Relation
+from knowledge_graph.exceptions import InvalidDepthException, InvalidQuerySyntaxException
 from knowledge_graph.utils import filter_valid_edges, get_edges_for_paths, get_neighbors, get_neighbors_paginated
 from query.filters import EntryFilter
 from query.utils import parse_query
@@ -74,17 +77,17 @@ class GraphPathFindView(APIView):
         start = request.query_params.get("src")
 
         if not start:
-            return Response({"error": "Missing src parameter."}, status=400)
+            raise BadRequestException(detail="Missing src parameter.")
 
         if not start.isdigit():
-            return Response({"error": "src must be an integer."}, status=400)
+            raise BadRequestException(detail="src must be an integer.")
 
         ends = request.query_params.getlist("dsts")
         if not ends:
-            return Response({"error": "Missing dsts parameter."}, status=400)
+            raise BadRequestException(detail="Missing dsts parameter.")
         for end in ends:
             if not end.isdigit():
-                return Response({"error": "dsts must be integers."}, status=400)
+                raise BadRequestException(detail="dsts must be integers.")
 
         ends = [int(end) for end in ends]
 
@@ -182,27 +185,27 @@ class GraphNeighborsView(APIView):
     def get(self, request: Request) -> Response:
         source_id = request.query_params.get("src")
         if not source_id:
-            return Response({"error": "Missing src parameter."}, status=400)
+            raise BadRequestException(detail="Missing src parameter.")
 
         try:
             depth = int(request.query_params.get("depth", 1))
             page_size = int(request.query_params.get("page_size", 200))
         except ValueError:
-            return Response({"error": "depth, page and page_size must be integers."}, status=400)
+            raise BadRequestException(detail="depth, page and page_size must be integers.")
 
         if depth < 0 or depth > 5:
-            return Response({"error": "depth must be between 0 and 5."}, status=400)
+            raise InvalidDepthException(detail="depth must be between 0 and 5.")
 
         # Retrieve the source entry (404 if not found)
         source_entry = Entry.objects.filter(pk=source_id).first()
 
         if not source_entry:
-            return Response({"error": f"Entry with ID {source_id} not found."}, status=404)
+            raise EntryNotFoundException(detail=f"Entry with ID {source_id} not found.")
 
         if source_entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
             request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
         ):
-            return Response({"error": f"Entry with ID {source_id} not found."}, status=404)
+            raise EntryNotFoundException(detail=f"Entry with ID {source_id} not found.")
 
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
@@ -215,10 +218,7 @@ class GraphNeighborsView(APIView):
             try:
                 query_filter = parse_query(request.query_params.get("query"))
             except Exception as e:
-                return Response(
-                    {"error": f"Invalid query syntax: {str(e)}"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                raise InvalidQuerySyntaxException(detail=f"Invalid query syntax: {str(e)}")
 
             neighbors_qs = get_neighbors_paginated(
                 sourceset,
@@ -247,9 +247,8 @@ class GraphNeighborsView(APIView):
                     order_by="-last_seen",
                 )
             else:
-                return Response(
-                    {"error": f"Invalid query syntax: {filterset.errors}"},
-                    status=status.HTTP_400_BAD_REQUEST,
+                raise InvalidQuerySyntaxException(
+                    detail=f"Invalid query syntax: {filterset.errors}"
                 )
 
         serializer = EntryWithDepthSerializer(neighbors_qs, many=True)
@@ -295,15 +294,15 @@ class GraphInaccessibleView(APIView):
     def get(self, request: Request) -> Response:
         source_id = request.query_params.get("src")
         if not source_id:
-            return Response({"error": "Missing src parameter."}, status=400)
+            raise BadRequestException(detail="Missing src parameter.")
 
         try:
             depth = int(request.query_params.get("depth", 0))
         except ValueError:
-            return Response({"error": "depth must be integer."}, status=400)
+            raise BadRequestException(detail="depth must be an integer.")
 
         if depth < 0 or depth > 5:
-            return Response({"error": "depth must be between 0 and 5."}, status=400)
+            raise InvalidDepthException(detail="depth must be between 0 and 5.")
 
         if depth == 0:
             return Response(
@@ -314,12 +313,12 @@ class GraphInaccessibleView(APIView):
         source_entry = Entry.objects.filter(pk=source_id).first()
 
         if not source_entry:
-            return Response({"error": f"Entry with ID {source_id} not found."}, status=404)
+            raise EntryNotFoundException(detail=f"Entry with ID {source_id} not found.")
 
         if source_entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
             request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
         ):
-            return Response({"error": f"Entry with ID {source_id} not found."}, status=404)
+            raise EntryNotFoundException(detail=f"Entry with ID {source_id} not found.")
 
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 

@@ -6,7 +6,7 @@ const EnrichmentRequests = lazy(
     () => import('@/components/domain/enrichment/EnrichmentRequests'),
 );
 
-export const Route = createFileRoute('/_authenticated/enrich')({
+export const Route = createFileRoute('/_authenticated/enrichment')({
     staticData: {
         breadcrumb: 'Enrichment',
     },

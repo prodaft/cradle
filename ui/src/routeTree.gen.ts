@@ -25,7 +25,7 @@ import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedManageRouteImport } from './routes/_authenticated/manage'
 import { Route as AuthenticatedKnowledgeGraphRouteImport } from './routes/_authenticated/knowledge-graph'
 import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/files'
-import { Route as AuthenticatedEnrichRouteImport } from './routes/_authenticated/enrich'
+import { Route as AuthenticatedEnrichmentRouteImport } from './routes/_authenticated/enrichment'
 import { Route as AuthenticatedDigestDataRouteImport } from './routes/_authenticated/digest-data'
 import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes/index'
 import { Route as AuthenticatedManageIndexRouteImport } from './routes/_authenticated/manage/index'
@@ -126,9 +126,9 @@ const AuthenticatedFilesRoute = AuthenticatedFilesRouteImport.update({
   path: '/files',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedEnrichRoute = AuthenticatedEnrichRouteImport.update({
-  id: '/enrich',
-  path: '/enrich',
+const AuthenticatedEnrichmentRoute = AuthenticatedEnrichmentRouteImport.update({
+  id: '/enrichment',
+  path: '/enrichment',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDigestDataRoute = AuthenticatedDigestDataRouteImport.update({
@@ -159,9 +159,9 @@ const AuthenticatedManageManageAuthRoute =
   } as any)
 const AuthenticatedEnrichmentIdRoute =
   AuthenticatedEnrichmentIdRouteImport.update({
-    id: '/enrichment/$id',
-    path: '/enrichment/$id',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedEnrichmentRoute,
   } as any)
 const AuthenticatedManageManageAuthUsersRoute =
   AuthenticatedManageManageAuthUsersRouteImport.update({
@@ -252,7 +252,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/digest-data': typeof AuthenticatedDigestDataRoute
-  '/enrich': typeof AuthenticatedEnrichRoute
+  '/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren
   '/files': typeof AuthenticatedFilesRoute
   '/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute
   '/manage': typeof AuthenticatedManageManageAuthRouteWithChildren
@@ -288,7 +288,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/digest-data': typeof AuthenticatedDigestDataRoute
-  '/enrich': typeof AuthenticatedEnrichRoute
+  '/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren
   '/files': typeof AuthenticatedFilesRoute
   '/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -321,7 +321,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/digest-data': typeof AuthenticatedDigestDataRoute
-  '/_authenticated/enrich': typeof AuthenticatedEnrichRoute
+  '/_authenticated/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren
   '/_authenticated/files': typeof AuthenticatedFilesRoute
   '/_authenticated/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute
   '/_authenticated/manage': typeof AuthenticatedManageRouteWithChildren
@@ -360,7 +360,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/digest-data'
-    | '/enrich'
+    | '/enrichment'
     | '/files'
     | '/knowledge-graph'
     | '/manage'
@@ -396,7 +396,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/digest-data'
-    | '/enrich'
+    | '/enrichment'
     | '/files'
     | '/knowledge-graph'
     | '/reports'
@@ -428,7 +428,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/_authenticated/digest-data'
-    | '/_authenticated/enrich'
+    | '/_authenticated/enrichment'
     | '/_authenticated/files'
     | '/_authenticated/knowledge-graph'
     | '/_authenticated/manage'
@@ -583,11 +583,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFilesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/enrich': {
-      id: '/_authenticated/enrich'
-      path: '/enrich'
-      fullPath: '/enrich'
-      preLoaderRoute: typeof AuthenticatedEnrichRouteImport
+    '/_authenticated/enrichment': {
+      id: '/_authenticated/enrichment'
+      path: '/enrichment'
+      fullPath: '/enrichment'
+      preLoaderRoute: typeof AuthenticatedEnrichmentRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/digest-data': {
@@ -627,10 +627,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/enrichment/$id': {
       id: '/_authenticated/enrichment/$id'
-      path: '/enrichment/$id'
+      path: '/$id'
       fullPath: '/enrichment/$id'
       preLoaderRoute: typeof AuthenticatedEnrichmentIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedEnrichmentRoute
     }
     '/_authenticated/manage/_manage-auth/users': {
       id: '/_authenticated/manage/_manage-auth/users'
@@ -725,6 +725,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedEnrichmentRouteChildren {
+  AuthenticatedEnrichmentIdRoute: typeof AuthenticatedEnrichmentIdRoute
+}
+
+const AuthenticatedEnrichmentRouteChildren: AuthenticatedEnrichmentRouteChildren =
+  {
+    AuthenticatedEnrichmentIdRoute: AuthenticatedEnrichmentIdRoute,
+  }
+
+const AuthenticatedEnrichmentRouteWithChildren =
+  AuthenticatedEnrichmentRoute._addFileChildren(
+    AuthenticatedEnrichmentRouteChildren,
+  )
 
 interface AuthenticatedManageManageAuthEntitiesRouteChildren {
   AuthenticatedManageManageAuthEntitiesIdRoute: typeof AuthenticatedManageManageAuthEntitiesIdRoute
@@ -839,27 +853,25 @@ const AuthenticatedNotesRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedDigestDataRoute: typeof AuthenticatedDigestDataRoute
-  AuthenticatedEnrichRoute: typeof AuthenticatedEnrichRoute
+  AuthenticatedEnrichmentRoute: typeof AuthenticatedEnrichmentRouteWithChildren
   AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute
   AuthenticatedKnowledgeGraphRoute: typeof AuthenticatedKnowledgeGraphRoute
   AuthenticatedManageRoute: typeof AuthenticatedManageRouteWithChildren
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRouteWithChildren
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedEnrichmentIdRoute: typeof AuthenticatedEnrichmentIdRoute
   AuthenticatedDashboardsSubtypeNameRoute: typeof AuthenticatedDashboardsSubtypeNameRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDigestDataRoute: AuthenticatedDigestDataRoute,
-  AuthenticatedEnrichRoute: AuthenticatedEnrichRoute,
+  AuthenticatedEnrichmentRoute: AuthenticatedEnrichmentRouteWithChildren,
   AuthenticatedFilesRoute: AuthenticatedFilesRoute,
   AuthenticatedKnowledgeGraphRoute: AuthenticatedKnowledgeGraphRoute,
   AuthenticatedManageRoute: AuthenticatedManageRouteWithChildren,
   AuthenticatedNotesRoute: AuthenticatedNotesRouteWithChildren,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedEnrichmentIdRoute: AuthenticatedEnrichmentIdRoute,
   AuthenticatedDashboardsSubtypeNameRoute:
     AuthenticatedDashboardsSubtypeNameRoute,
 }

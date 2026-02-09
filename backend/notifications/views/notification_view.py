@@ -15,8 +15,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.exceptions import BadRequestException
 from core.openapi import get_common_error_responses
 from core.pagination import TotalPagesPagination
+from notifications.exceptions import InvalidPageSizeException, NotificationNotFoundException
 from user.models import CradleUser
 
 from ..models import MessageNotification
@@ -89,16 +91,10 @@ class NotificationList(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            return Response(
-                {"message": "Invalid page_size value. Must be an integer."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 200:
-            return Response(
-                {"message": "page_size cannot be greater than 200."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise InvalidPageSizeException(detail="page_size cannot be greater than 200.")
 
         notifications = (
             MessageNotification.objects.filter(user=cast(CradleUser, request.user))
@@ -156,14 +152,14 @@ class NotificationDetail(APIView):
         try:
             notification: MessageNotification = MessageNotification.objects.get(id=notification_id, user=request.user)
         except MessageNotification.DoesNotExist:
-            return Response({"message": "The notification does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            raise NotificationNotFoundException(detail="The notification does not exist.")
 
         serializer = UpdateNotificationSerializer(notification, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Notification updated successfully"}, status=status.HTTP_200_OK)
 
-        return Response({"message": "Request body is invalid."}, status=status.HTTP_400_BAD_REQUEST)
+        raise BadRequestException(detail="Request body is invalid.")
 
 
 @extend_schema_view(

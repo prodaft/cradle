@@ -1,16 +1,19 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CaretDownIcon, CaretUpIcon, FunnelIcon, XIcon } from '@phosphor-icons/react';
-import React, { Dispatch, SetStateAction } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { XIcon } from '@phosphor-icons/react';
+import { PlusCircle, XCircle } from 'lucide-react';
+import React, { Dispatch, SetStateAction, useState } from 'react';
 
 /**
  * SearchFilterSection component props
  */
 export interface SearchFilterSectionProps {
-    /** Whether to show the filters */
-    showFilters: boolean;
-    /** Function to toggle the filters */
-    setShowFilters: Dispatch<SetStateAction<boolean>>;
+    /** @deprecated No longer used — popover manages its own state */
+    showFilters?: boolean;
+    /** @deprecated No longer used — popover manages its own state */
+    setShowFilters?: Dispatch<SetStateAction<boolean>>;
     /** Available entry subtypes */
     entrySubtypes: string[];
     /** Current entry subtype filters */
@@ -23,7 +26,7 @@ export interface SearchFilterSectionProps {
 
 /**
  * Section for filters in the search dialog
- * Contains collapsible filters for entry type organized by hierarchy
+ * Contains popover filters for entry type organized by hierarchy
  *
  * @example
  * ```tsx
@@ -37,59 +40,78 @@ export interface SearchFilterSectionProps {
  * ```
  */
 export default function SearchFilterSection({
-    showFilters,
-    setShowFilters,
     entrySubtypes,
     entrySubtypeFilters,
     setEntrySubtypeFilters,
     entryClassColors,
 }: SearchFilterSectionProps): React.JSX.Element {
-    const toggleFilters = () => {
-        setShowFilters(!showFilters);
-    };
-
+    const [open, setOpen] = useState(false);
     const hasFilters = entrySubtypeFilters.length > 0;
 
-    return (
-        <div className='border-b border-border'>
-            {/* Filter Toggle Button */}
-            <Button
-                variant='ghost'
-                onClick={toggleFilters}
-                className='w-full px-4 py-2.5 flex items-center justify-between hover:bg-secondary group h-auto rounded-none'
-            >
-                <div className='flex items-center gap-2'>
-                    <FunnelIcon
-                        className='size-4 text-muted-foreground group-hover:text-primary transition-colors'
-                        weight='bold'
-                    />
-                    <span className='text-sm text-foreground font-medium'>
-                        Filter by type
-                    </span>
-                    {hasFilters && (
-                        <Badge variant='default'>{entrySubtypeFilters.length}</Badge>
-                    )}
-                </div>
-                {showFilters ? (
-                    <CaretUpIcon
-                        className='size-4 text-muted-foreground'
-                        weight='bold'
-                    />
-                ) : (
-                    <CaretDownIcon
-                        className='size-4 text-muted-foreground'
-                        weight='bold'
-                    />
-                )}
-            </Button>
+    const handleClear = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setEntrySubtypeFilters([]);
+    };
 
-            {/* Collapsible Filter Content */}
-            <div
-                className={`overflow-hidden transition-all duration-200 ease-in-out ${
-                    showFilters ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
-                }`}
-            >
-                <div className='px-4 py-3 bg-secondary/50 overflow-y-auto max-h-56 flex flex-wrap gap-1.5 items-center'>
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant='outline'
+                    size='sm'
+                    className='border-dashed font-normal'
+                >
+                    {hasFilters ? (
+                        <XCircle
+                            className='opacity-70 hover:opacity-100'
+                            onClick={handleClear}
+                        />
+                    ) : (
+                        <PlusCircle />
+                    )}
+                    Type
+                    {hasFilters && (
+                        <>
+                            <Separator
+                                orientation='vertical'
+                                className='mx-0.5 data-[orientation=vertical]:h-4'
+                            />
+                            {entrySubtypeFilters.length <= 2 ? (
+                                entrySubtypeFilters.map((filter) => {
+                                    const color = entryClassColors.get(filter);
+                                    return (
+                                        <Badge
+                                            key={filter}
+                                            variant='secondary'
+                                            className='rounded-sm px-1 font-normal'
+                                            style={
+                                                color
+                                                    ? {
+                                                          backgroundColor: color,
+                                                          borderColor: color,
+                                                          color: '#fff',
+                                                      }
+                                                    : undefined
+                                            }
+                                        >
+                                            {filter}
+                                        </Badge>
+                                    );
+                                })
+                            ) : (
+                                <Badge
+                                    variant='secondary'
+                                    className='rounded-sm px-1 font-normal'
+                                >
+                                    {entrySubtypeFilters.length} selected
+                                </Badge>
+                            )}
+                        </>
+                    )}
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className='w-60 p-0' align='start'>
+                <div className='p-3 overflow-y-auto max-h-56 flex flex-wrap gap-1.5 items-center'>
                     {[...entrySubtypes]
                         .sort((a, b) => a.localeCompare(b))
                         .map((subtype) => {
@@ -124,51 +146,22 @@ export default function SearchFilterSection({
                             );
                         })}
                 </div>
-            </div>
-
-            {/* Active Filters Display */}
-            {hasFilters && (
-                <div className='px-4 py-2 flex items-center gap-2 flex-wrap'>
-                    <span className='text-xs text-muted-foreground uppercase tracking-wider'>
-                        Active:
-                    </span>
-                    {entrySubtypeFilters.map((filter) => {
-                        const color = entryClassColors.get(filter);
-                        return (
-                            <Badge
-                                key={filter}
-                                variant='outline'
-                                onClick={() =>
-                                    setEntrySubtypeFilters((prev) =>
-                                        prev.filter((f) => f !== filter),
-                                    )
-                                }
-                                className='cursor-pointer'
-                                style={
-                                    color
-                                        ? {
-                                              backgroundColor: color,
-                                              borderColor: color,
-                                              color: '#fff',
-                                          }
-                                        : undefined
-                                }
+                {hasFilters && (
+                    <>
+                        <Separator />
+                        <div className='p-1.5'>
+                            <Button
+                                variant='ghost'
+                                size='sm'
+                                onClick={handleClear}
+                                className='w-full text-xs'
                             >
-                                {filter}
-                                <XIcon className='size-3' weight='bold' />
-                            </Badge>
-                        );
-                    })}
-                    <Button
-                        variant='ghost'
-                        size='sm'
-                        onClick={() => setEntrySubtypeFilters([])}
-                        className='text-xs h-auto cursor-pointer'
-                    >
-                        Clear all
-                    </Button>
-                </div>
-            )}
-        </div>
+                                Clear filters
+                            </Button>
+                        </div>
+                    </>
+                )}
+            </PopoverContent>
+        </Popover>
     );
 }

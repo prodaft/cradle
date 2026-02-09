@@ -1,4 +1,5 @@
-import Pagination from '@/components/base/Pagination/Pagination';
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
+import { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
 import {
     ActionBar,
     ActionBarClose,
@@ -11,11 +12,7 @@ import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
@@ -35,15 +32,21 @@ import {
 } from '@/components/ui/table';
 import useApi from '@/hooks/api/useApi';
 import { createDashboardLink } from '@/utils/dashboard';
-import {
-    ActionBarSearch,
-    ActionBar as BaseActionBar,
-} from '@components/base/ActionBar/ActionBar';
 import SearchFilterSection from '@components/domain/search/SearchFilterSection';
 import { CaretDownIcon, CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+    type ColumnDef,
+    type ExpandedState,
+    type RowSelectionState,
+    type VisibilityState,
+    flexRender,
+    getCoreRowModel,
+    getExpandedRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
+import React, { MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 interface Alert {
@@ -76,32 +79,14 @@ const truncate = (str: string, n: number) => {
     return str.length > n ? str.slice(0, n - 1) + '...' : str;
 };
 
-interface RelationRowProps {
-    srcId: number;
-    result: Result;
-    isSelected: boolean;
-    onToggleSelection: (checked: boolean) => void;
-    isOpen: boolean;
-    onToggleOpen: (open: boolean) => void;
-    router: any;
-}
-
-function RelationRow({
-    srcId,
-    result,
-    isSelected,
-    onToggleSelection,
-    isOpen,
-    onToggleOpen,
-    router,
-}: RelationRowProps) {
-    const dashboardLink = createDashboardLink(result);
+// Expanded row detail — fetches path data and renders stepper
+function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }) {
     const { knowledgeGraphApi } = useApi();
+    const router = useRouter();
+    const [activeStepId, setActiveStepId] = useState<string | null>(null);
 
     const isSameEntry = result.id !== undefined && result.id === srcId;
     const canExpand = !isSameEntry && result.id !== undefined;
-
-    const [activeStepId, setActiveStepId] = useState<string | null>(null);
 
     const { data: pathData, isPending: isPathPending } = useQuery({
         queryKey: ['graph', 'paths', { src: String(srcId), dst: result.id }],
@@ -110,7 +95,7 @@ function RelationRow({
                 src: String(srcId),
                 dsts: [result.id!],
             }),
-        enabled: isOpen && canExpand,
+        enabled: canExpand,
     });
 
     const pathSteps = useMemo(() => {
@@ -139,10 +124,7 @@ function RelationRow({
         processEntries(pathData.entries.entities);
         processEntries(pathData.entries.artifacts);
 
-        // Path reconstruction logic
         const adj = new Map<number, number[]>();
-        // Add edges in both directions to ensure connectivity for the path finding
-        // since the graph is effectively undirected for "connection" purposes here
         pathData.relations.forEach((rel: any) => {
             if (!adj.has(rel.src)) adj.set(rel.src, []);
             if (!adj.has(rel.dst)) adj.set(rel.dst, []);
@@ -150,7 +132,6 @@ function RelationRow({
             adj.get(rel.dst)!.push(rel.src);
         });
 
-        // BFS
         const queue: number[][] = [[srcId]];
         const visited = new Set<number>([srcId]);
         let foundPath: number[] = [];
@@ -178,9 +159,6 @@ function RelationRow({
         }
 
         if (foundPath.length === 0) {
-            // Fallback: just show all nodes if no path found (disconnected subgraph?)
-            // Or maybe just the start and end?
-            // Let's fallback to just showing all nodes as before if path finding fails
             return Array.from(nodes.values()).map((node) => ({
                 id: String(node.id),
                 title: node.name,
@@ -220,126 +198,51 @@ function RelationRow({
         [pathSteps, activeStepId],
     );
 
-    const handleNavigate = (e: MouseEvent) => {
-        e.stopPropagation();
-        router.navigate({ to: dashboardLink as any });
-    };
-
     return (
-        <Collapsible
-            open={isOpen}
-            onOpenChange={onToggleOpen}
-            asChild
-            disabled={!canExpand}
-        >
-            <>
-                <CollapsibleTrigger asChild>
-                    <TableRow
-                        className={`cursor-pointer hover:bg-muted/50 ${!canExpand ? 'opacity-70' : ''}`}
-                    >
-                        <TableCell
-                            onClick={(e) => e.stopPropagation()}
-                            className='w-[50px]'
-                        >
-                            <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={(checked) =>
-                                    onToggleSelection(!!checked)
-                                }
-                                aria-label='Select row'
-                            />
-                        </TableCell>
-                        <TableCell onClick={handleNavigate}>
-                            <Badge
-                                className={`rounded-full ${!result.color ? 'bg-muted' : ''}`}
-                                style={
-                                    result.color
-                                        ? {
-                                              backgroundColor: result.color,
-                                          }
-                                        : undefined
-                                }
-                            >
-                                {result.subtype}
-                            </Badge>
-                        </TableCell>
-                        <TableCell onClick={handleNavigate}>
-                            <div className='flex items-center gap-2'>
-                                <span className='truncate block max-w-[300px]'>
-                                    {result.name}
-                                </span>
-                                <span className='text-muted-foreground text-xs ml-auto whitespace-nowrap'>
-                                    {result.depth} step{result.depth !== 1 ? 's' : ''}
-                                </span>
-                            </div>
-                        </TableCell>
-                        <TableCell className='w-[50px]'>
-                            <div className='flex items-center justify-end'>
-                                {canExpand && (
-                                    <CaretDownIcon
-                                        className={`size-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                                    />
-                                )}
-                            </div>
-                        </TableCell>
-                    </TableRow>
-                </CollapsibleTrigger>
-                <CollapsibleContent asChild>
-                    <TableRow>
-                        <TableCell colSpan={4} className='p-0 border-b-0'>
-                            <div className='bg-muted/30 border-t'>
-                                <div className='p-4 flex flex-col gap-6'>
-                                    {isPathPending ? (
-                                        <div className='flex justify-center p-4'>
-                                            <Spinner className='size-10' />
-                                        </div>
-                                    ) : pathSteps.length > 0 ? (
-                                        <>
-                                            <PathStepper
-                                                steps={pathSteps}
-                                                activeStepId={
-                                                    activeStepId || pathSteps[0].id
-                                                }
-                                                onStepClick={setActiveStepId}
-                                            />
-                                            {activeStep && (
-                                                <div className='pt-4 border-t flex flex-col gap-2'>
-                                                    <div className='flex items-center gap-2'>
-                                                        <Badge
-                                                            variant='secondary'
-                                                            className='text-[10px] px-1.5 py-0 h-4'
-                                                            style={{
-                                                                backgroundColor:
-                                                                    activeStep.color
-                                                                        ? activeStep.color
-                                                                        : undefined,
-                                                            }}
-                                                        >
-                                                            {activeStep.subtype}
-                                                        </Badge>
-                                                        <span className='text-sm font-semibold'>
-                                                            {activeStep.title}
-                                                        </span>
-                                                    </div>
-                                                    <div className='text-xs text-muted-foreground'>
-                                                        {/* Placeholder for future details */}
-                                                        ID: {activeStep.entryId}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <div className='text-sm text-muted-foreground text-center p-4'>
-                                            No path found or error loading path.
-                                        </div>
-                                    )}
+        <div className='bg-muted/30 border-t'>
+            <div className='p-4 flex flex-col gap-6'>
+                {isPathPending ? (
+                    <div className='flex justify-center p-4'>
+                        <Spinner className='size-10' />
+                    </div>
+                ) : pathSteps.length > 0 ? (
+                    <>
+                        <PathStepper
+                            steps={pathSteps}
+                            activeStepId={activeStepId || pathSteps[0].id}
+                            onStepClick={setActiveStepId}
+                        />
+                        {activeStep && (
+                            <div className='pt-4 border-t flex flex-col gap-2'>
+                                <div className='flex items-center gap-2'>
+                                    <Badge
+                                        variant='secondary'
+                                        className='text-[10px] px-1.5 py-0 h-4'
+                                        style={{
+                                            backgroundColor: activeStep.color
+                                                ? activeStep.color
+                                                : undefined,
+                                        }}
+                                    >
+                                        {activeStep.subtype}
+                                    </Badge>
+                                    <span className='text-sm font-semibold'>
+                                        {activeStep.title}
+                                    </span>
+                                </div>
+                                <div className='text-xs text-muted-foreground'>
+                                    ID: {activeStep.entryId}
                                 </div>
                             </div>
-                        </TableCell>
-                    </TableRow>
-                </CollapsibleContent>
-            </>
-        </Collapsible>
+                        )}
+                    </>
+                ) : (
+                    <div className='text-sm text-muted-foreground text-center p-4'>
+                        No path found or error loading path.
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }
 
@@ -391,7 +294,6 @@ function PathStepper({
 export default function Relations({ obj }: RelationsProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [depth, setDepth] = useState(2);
-    const [showFilters, setShowFilters] = useState(false);
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState<string[]>([]);
     const [results, setResults] = useState<Result[] | null>(null);
     const [alert, setAlert] = useState<Alert>({
@@ -403,16 +305,15 @@ export default function Relations({ obj }: RelationsProps) {
     const [hasNextPage, setHasNextPage] = useState(false);
     const [inaccessibleEntities, setInaccessibleEntities] = useState<string[]>([]);
     const [isRequestingAccess, setIsRequestingAccess] = useState(false);
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-    const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-
     const [pageSize, setPageSize] = useState(10);
 
-    const clearSelection = useCallback(() => {
-        setSelectedIds(new Set());
-    }, []);
+    // TanStack Table state
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+    const [expanded, setExpanded] = useState<ExpandedState>({});
 
     const { entriesApi, knowledgeGraphApi, accessApi } = useApi();
+    const router = useRouter();
 
     const requestAccessMutation = useMutation({
         mutationFn: async (entities: string[]) => {
@@ -434,8 +335,6 @@ export default function Relations({ obj }: RelationsProps) {
             setInaccessibleEntities([]);
         },
     });
-
-    const router = useRouter();
 
     // Query for entry subtypes
     const { data: entrySubtypesData } = useQuery({
@@ -604,34 +503,6 @@ export default function Relations({ obj }: RelationsProps) {
         }
     };
 
-    const copyToCSV = useCallback(() => {
-        if (!results || results.length === 0 || selectedIds.size === 0) return;
-
-        let csvContent = '"type","name"\n';
-
-        const itemsToCopy = results.filter(
-            (r) => r.id !== undefined && selectedIds.has(r.id),
-        );
-
-        if (itemsToCopy.length > 0) {
-            itemsToCopy.forEach((result) => {
-                const type = String(result.subtype).replace(/"/g, '""');
-                const name = String(result.name).replace(/"/g, '""');
-                csvContent += `"${type}","${name}"\n`;
-            });
-        }
-        navigator.clipboard
-            .writeText(csvContent)
-            .then(() => {
-                toast.success(
-                    `Copied ${itemsToCopy.length} relation${itemsToCopy.length > 1 ? 's' : ''} to clipboard`,
-                );
-            })
-            .catch(() => {
-                toast.error('Failed to copy to clipboard');
-            });
-    }, [results, selectedIds]);
-
     // Trigger search when page changes
     useEffect(() => {
         performSearch(depth, page);
@@ -644,40 +515,168 @@ export default function Relations({ obj }: RelationsProps) {
 
     const calculatedTotalPages = hasNextPage ? page + 1 : page;
 
-    // Handlers for table
-    const toggleAllSelection = (checked: boolean) => {
-        if (checked && results) {
-            const allIds = results
-                .map((r) => r.id)
-                .filter((id): id is number => id !== undefined);
-            setSelectedIds(new Set(allIds));
-        } else {
-            setSelectedIds(new Set());
-        }
-    };
+    // Column definitions
+    const columns = useMemo<ColumnDef<Result>[]>(
+        () => [
+            {
+                id: 'select',
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={
+                            table.getIsAllPageRowsSelected() ||
+                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        }
+                        onCheckedChange={(checked) =>
+                            table.toggleAllPageRowsSelected(!!checked)
+                        }
+                        aria-label='Select all'
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(checked) => row.toggleSelected(!!checked)}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label='Select row'
+                    />
+                ),
+                size: 50,
+                enableHiding: false,
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'subtype',
+                id: 'type',
+                header: 'Type',
+                meta: { label: 'Type' },
+                cell: ({ row }) => (
+                    <Badge
+                        className={`rounded-full ${!row.original.color ? 'bg-muted' : ''}`}
+                        style={
+                            row.original.color
+                                ? { backgroundColor: row.original.color }
+                                : undefined
+                        }
+                    >
+                        {row.original.subtype}
+                    </Badge>
+                ),
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'name',
+                id: 'name',
+                header: 'Name',
+                meta: { label: 'Name' },
+                cell: ({ row }) => (
+                    <span className='truncate block max-w-[300px]'>
+                        {row.original.name}
+                    </span>
+                ),
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'depth',
+                id: 'steps',
+                header: 'Steps',
+                meta: { label: 'Steps' },
+                size: 80,
+                cell: ({ row }) => (
+                    <span className='text-muted-foreground text-xs whitespace-nowrap'>
+                        {row.original.depth} step
+                        {row.original.depth !== 1 ? 's' : ''}
+                    </span>
+                ),
+                enableSorting: false,
+            },
+            {
+                id: 'expand',
+                header: '',
+                size: 50,
+                enableHiding: false,
+                enableSorting: false,
+                cell: ({ row }) => {
+                    const isSameEntry =
+                        row.original.id !== undefined && row.original.id === obj.id;
+                    const canExpand = !isSameEntry && row.original.id !== undefined;
+                    return canExpand ? (
+                        <div className='flex items-center justify-end'>
+                            <CaretDownIcon
+                                className={`size-4 text-muted-foreground transition-transform ${row.getIsExpanded() ? 'rotate-180' : ''}`}
+                            />
+                        </div>
+                    ) : null;
+                },
+            },
+        ],
+        [obj.id],
+    );
 
-    const toggleRowSelection = (id: number, checked: boolean) => {
-        const newSelected = new Set(selectedIds);
-        if (checked) {
-            newSelected.add(id);
-        } else {
-            newSelected.delete(id);
-        }
-        setSelectedIds(newSelected);
-    };
+    const table = useReactTable({
+        data: results ?? [],
+        columns,
+        state: {
+            rowSelection,
+            columnVisibility,
+            expanded,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize,
+            },
+        },
+        getRowId: (row, index) =>
+            row.id !== undefined ? String(row.id) : String(index),
+        onRowSelectionChange: setRowSelection,
+        onColumnVisibilityChange: setColumnVisibility,
+        onExpandedChange: setExpanded,
+        onPaginationChange: (updater) => {
+            const current = { pageIndex: page - 1, pageSize };
+            const next = typeof updater === 'function' ? updater(current) : updater;
+            if (next.pageSize !== pageSize) {
+                setPageSize(next.pageSize);
+                setPage(1);
+            } else if (next.pageIndex + 1 !== page) {
+                setPage(next.pageIndex + 1);
+            }
+        },
+        getCoreRowModel: getCoreRowModel(),
+        getExpandedRowModel: getExpandedRowModel(),
+        manualPagination: true,
+        pageCount: calculatedTotalPages,
+        enableRowSelection: true,
+    });
 
-    const toggleRowExpansion = (id: number, open: boolean) => {
-        const newExpanded = new Set(expandedRows);
-        if (open) {
-            newExpanded.add(id);
-        } else {
-            newExpanded.delete(id);
-        }
-        setExpandedRows(newExpanded);
-    };
+    const selectedCount = table.getFilteredSelectedRowModel().rows.length;
+
+    const copyToCSV = useCallback(() => {
+        const selectedRows = table.getFilteredSelectedRowModel().rows;
+        if (selectedRows.length === 0) return;
+
+        let csvContent = '"type","name"\n';
+        selectedRows.forEach((row) => {
+            const type = String(row.original.subtype).replace(/"/g, '""');
+            const name = String(row.original.name).replace(/"/g, '""');
+            csvContent += `"${type}","${name}"\n`;
+        });
+
+        navigator.clipboard
+            .writeText(csvContent)
+            .then(() => {
+                toast.success(
+                    `Copied ${selectedRows.length} relation${selectedRows.length > 1 ? 's' : ''} to clipboard`,
+                );
+            })
+            .catch(() => {
+                toast.error('Failed to copy to clipboard');
+            });
+    }, [table]);
+
+    const clearSelection = useCallback(() => {
+        table.toggleAllRowsSelected(false);
+    }, [table]);
 
     return (
-        <div className='flex flex-col space-y-4'>
+        <div className='flex w-full flex-col gap-2.5 overflow-auto'>
             {alert.show && (
                 <AlertComponent
                     variant={
@@ -701,167 +700,185 @@ export default function Relations({ obj }: RelationsProps) {
                 </AlertComponent>
             )}
 
-            <BaseActionBar
-                left={
-                    <div className='flex items-center gap-3'>
-                        <ActionBarSearch
-                            placeholder='Search relations...'
-                            value={searchQuery}
-                            defaultExpanded={Boolean(searchQuery)}
-                            debounceMs={300}
-                            onDebouncedChange={(value) => {
-                                setSearchQuery(value);
-                                performSearch(depth, 1);
-                            }}
-                            onSubmit={(value) => {
-                                setSearchQuery(value ?? '');
-                                performSearch(depth, 1);
-                            }}
-                            onClear={() => performSearch(depth, 1)}
-                        />
-                        <div className='flex items-center gap-2'>
-                            <span className='text-sm text-muted-foreground whitespace-nowrap'>
-                                Max. Steps:
-                            </span>
-                            <Select
-                                value={String(depth)}
-                                onValueChange={handleDepthChange}
-                            >
-                                <SelectTrigger className='w-16 h-8'>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {[1, 2, 3, 4, 5].map((d) => (
-                                        <SelectItem key={d} value={String(d)}>
-                                            {d}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+            <div
+                role='toolbar'
+                aria-orientation='horizontal'
+                className='flex w-full items-start justify-between gap-2 py-1'
+            >
+                <div className='flex flex-1 flex-wrap items-center gap-2'>
+                    <Input
+                        placeholder='Search relations...'
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            performSearch(depth, 1);
+                        }}
+                        className='h-8 w-40 lg:w-56'
+                    />
+                    <SearchFilterSection
+                        entrySubtypes={entrySubtypes}
+                        entrySubtypeFilters={entrySubtypeFilters}
+                        setEntrySubtypeFilters={setEntrySubtypeFilters}
+                        entryClassColors={entryClassColors}
+                    />
+                    <div className='flex items-center gap-2'>
+                        <span className='text-sm text-muted-foreground whitespace-nowrap'>
+                            Max. Steps:
+                        </span>
+                        <Select value={String(depth)} onValueChange={handleDepthChange}>
+                            <SelectTrigger className='w-16 h-8'>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {[1, 2, 3, 4, 5].map((d) => (
+                                    <SelectItem key={d} value={String(d)}>
+                                        {d}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
-                }
-            />
-
-            <SearchFilterSection
-                showFilters={showFilters}
-                setShowFilters={setShowFilters}
-                entrySubtypes={entrySubtypes}
-                entrySubtypeFilters={entrySubtypeFilters}
-                setEntrySubtypeFilters={setEntrySubtypeFilters}
-                entryClassColors={entryClassColors}
-            />
-
-            <div className='grid grid-cols-1 gap-2'>
-                <div className='border rounded-md'>
-                    {isPending ? (
-                        <div className='flex min-h-[200px] items-center justify-center'>
-                            <Spinner className='size-10' />
-                        </div>
-                    ) : (
-                        <div className='flex flex-col'>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className='w-[50px]'>
-                                            <Checkbox
-                                                checked={
-                                                    results &&
-                                                    results.length > 0 &&
-                                                    selectedIds.size === results.length
-                                                        ? true
-                                                        : selectedIds.size > 0
-                                                          ? 'indeterminate'
-                                                          : false
-                                                }
-                                                onCheckedChange={(checked) =>
-                                                    toggleAllSelection(!!checked)
-                                                }
-                                                aria-label='Select all'
-                                            />
-                                        </TableHead>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead className='w-[50px]'></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {results && results.length > 0 ? (
-                                        results.map((result, index) => (
-                                            <RelationRow
-                                                key={result.id || index}
-                                                srcId={obj.id!}
-                                                result={result}
-                                                isSelected={
-                                                    result.id !== undefined &&
-                                                    selectedIds.has(result.id)
-                                                }
-                                                onToggleSelection={(checked) =>
-                                                    result.id !== undefined &&
-                                                    toggleRowSelection(
-                                                        result.id,
-                                                        checked,
-                                                    )
-                                                }
-                                                isOpen={
-                                                    result.id !== undefined &&
-                                                    expandedRows.has(result.id)
-                                                }
-                                                onToggleOpen={(open) =>
-                                                    result.id !== undefined &&
-                                                    toggleRowExpansion(result.id, open)
-                                                }
-                                                router={router}
-                                            />
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={4}
-                                                className='h-24 text-center'
-                                            >
-                                                No relations found.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
                 </div>
-                {!isPending && (
-                    <div className='py-2'>
-                        <Pagination
-                            currentPage={page}
-                            totalPages={calculatedTotalPages}
-                            onPageChange={(newPage) => setPage(newPage)}
-                            pageSize={pageSize}
-                            onPageSizeChange={(newSize) => {
-                                setPageSize(newSize);
-                                setPage(1);
-                            }}
-                            selectedCount={selectedIds.size}
-                            totalRows={results ? results.length : 0}
-                        />
-                    </div>
-                )}
+                <div className='flex items-center gap-2'>
+                    <DataTableViewOptions table={table} align='end' />
+                </div>
             </div>
 
+            {isPending ? (
+                <div className='flex min-h-[200px] items-center justify-center'>
+                    <Spinner className='size-10' />
+                </div>
+            ) : (
+                <>
+                    <div className='overflow-hidden rounded-md border'>
+                        <Table>
+                            <TableHeader>
+                                {table.getHeaderGroups().map((headerGroup) => (
+                                    <TableRow key={headerGroup.id}>
+                                        {headerGroup.headers.map((header) => (
+                                            <TableHead
+                                                key={header.id}
+                                                colSpan={header.colSpan}
+                                            >
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(
+                                                          header.column.columnDef
+                                                              .header,
+                                                          header.getContext(),
+                                                      )}
+                                            </TableHead>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </TableHeader>
+                            <TableBody>
+                                {table.getRowModel().rows?.length ? (
+                                    table.getRowModel().rows.map((row) => {
+                                        const result = row.original;
+                                        const isSameEntry =
+                                            result.id !== undefined &&
+                                            result.id === obj.id;
+                                        const canExpand =
+                                            !isSameEntry && result.id !== undefined;
+                                        const dashboardLink =
+                                            createDashboardLink(result);
+
+                                        const handleNavigate = (e: MouseEvent) => {
+                                            e.stopPropagation();
+                                            router.navigate({
+                                                to: dashboardLink as any,
+                                            });
+                                        };
+
+                                        return (
+                                            <React.Fragment key={row.id}>
+                                                <TableRow
+                                                    data-state={
+                                                        row.getIsSelected() &&
+                                                        'selected'
+                                                    }
+                                                    className={`cursor-pointer hover:bg-muted/50 ${!canExpand ? 'opacity-70' : ''}`}
+                                                    onClick={() =>
+                                                        canExpand &&
+                                                        row.toggleExpanded()
+                                                    }
+                                                >
+                                                    {row
+                                                        .getVisibleCells()
+                                                        .map((cell) => (
+                                                            <TableCell
+                                                                key={cell.id}
+                                                                onClick={
+                                                                    cell.column.id !==
+                                                                        'select' &&
+                                                                    cell.column.id !==
+                                                                        'expand'
+                                                                        ? handleNavigate
+                                                                        : undefined
+                                                                }
+                                                            >
+                                                                {flexRender(
+                                                                    cell.column
+                                                                        .columnDef.cell,
+                                                                    cell.getContext(),
+                                                                )}
+                                                            </TableCell>
+                                                        ))}
+                                                </TableRow>
+                                                {row.getIsExpanded() && (
+                                                    <TableRow>
+                                                        <TableCell
+                                                            colSpan={
+                                                                row.getVisibleCells()
+                                                                    .length
+                                                            }
+                                                            className='p-0 border-b-0'
+                                                        >
+                                                            <ExpandedRowContent
+                                                                srcId={obj.id!}
+                                                                result={result}
+                                                            />
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })
+                                ) : (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={table.getAllColumns().length}
+                                            className='h-24 text-center'
+                                        >
+                                            No relations found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <div className='flex flex-col gap-2.5'>
+                        <DataTablePagination table={table} />
+                    </div>
+                </>
+            )}
+
             <ActionBar
-                open={selectedIds.size > 0}
+                open={selectedCount > 0}
                 onOpenChange={(open) => {
                     if (!open) clearSelection();
                 }}
             >
                 <ActionBarSelection>
-                    {selectedIds.size} relation
-                    {selectedIds.size !== 1 ? 's' : ''} selected
+                    {selectedCount} relation
+                    {selectedCount !== 1 ? 's' : ''} selected
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
                     <ActionBarItem
                         onClick={copyToCSV}
-                        disabled={isPending || selectedIds.size === 0}
+                        disabled={isPending || selectedCount === 0}
                     >
                         <CopyIcon size={18} weight='bold' />
                         Copy to CSV

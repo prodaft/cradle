@@ -10,8 +10,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { StatusIcon, type StatusType } from '@components/domain/notes/StatusIcon';
-import { Check, PlusCircle, XCircle } from 'lucide-react';
 import { startCase } from 'lodash';
+import { Check, PlusCircle, XCircle } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
 export type StatusOption = StatusType;

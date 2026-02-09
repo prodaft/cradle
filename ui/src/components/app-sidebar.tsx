@@ -13,7 +13,6 @@ import {
     HelpCircle,
     Layers,
     Link2,
-    Network,
     Settings,
     Sparkles,
     Users,
@@ -87,16 +86,18 @@ export function AppSidebar({
         },
         {
             title: 'Enrichment',
-            url: '/enrich',
+            url: '/enrichment',
             icon: Sparkles,
-            isActive: !!matchRoute({ to: '/enrich' }),
+            isActive: !!matchRoute({ to: '/enrichment' }),
         },
+        /*
         {
             title: 'Graph Explorer',
             url: '/knowledge-graph',
             icon: Network,
             isActive: !!matchRoute({ to: '/knowledge-graph' }),
         },
+        */
     ];
 
     const footerItems = [

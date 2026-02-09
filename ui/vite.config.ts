@@ -42,9 +42,11 @@ export default defineConfig(({ mode }) => {
                 '@services': path.resolve(__dirname, './src/services'),
                 '@utils': path.resolve(__dirname, './src/utils'),
                 '@types': path.resolve(__dirname, './src/types'),
+                '@styles': path.resolve(__dirname, './styles'),
                 src: path.resolve(__dirname, './src'),
             },
             dedupe: [
+                'three',
                 '@codemirror/state',
                 '@codemirror/view',
                 '@codemirror/language',

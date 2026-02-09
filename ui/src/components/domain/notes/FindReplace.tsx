@@ -165,12 +165,12 @@ export default function FindReplace({
 
     const handleReplace = () => {
         if (!view || !searchTerm.trim()) return;
-        replaceNext(view);
+        replaceNext(view as never);
     };
 
     const handleReplaceAll = () => {
         if (!view || !searchTerm.trim()) return;
-        replaceAll(view);
+        replaceAll(view as never);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {

@@ -1,7 +1,6 @@
 import { ThemeProvider } from '@/contexts/ui';
-import '@/styles/fonts.css';
-import '@/styles/main.css';
 import * as Sentry from '@sentry/react';
+import '@styles/main.css';
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
