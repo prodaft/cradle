@@ -49,7 +49,7 @@ function cradleLinksPlugin(
             const value = match[2];
             const alias = match[3];
             const timestamp = match[4];
-            const color = entryColors.get(linkType) || '#FF8C00';
+            const color = entryColors.get(linkType) || 'var(--pm-link-color)';
 
             const token = state.push('cradle_link', '', 0);
             token.meta = { linkType, value, alias, timestamp, color };
@@ -111,11 +111,28 @@ class TableWidget extends WidgetType {
     }
 
     eq(other: TableWidget): boolean {
-        return (
-            JSON.stringify(this.rows) === JSON.stringify(other.rows) &&
-            JSON.stringify(this.headers) === JSON.stringify(other.headers) &&
-            JSON.stringify(this.alignments) === JSON.stringify(other.alignments)
-        );
+        if (
+            this.headers.length !== other.headers.length ||
+            this.rows.length !== other.rows.length ||
+            this.alignments.length !== other.alignments.length
+        ) {
+            return false;
+        }
+        for (let i = 0; i < this.alignments.length; i++) {
+            if (this.alignments[i] !== other.alignments[i]) return false;
+        }
+        for (let i = 0; i < this.headers.length; i++) {
+            if (this.headers[i] !== other.headers[i]) return false;
+        }
+        for (let i = 0; i < this.rows.length; i++) {
+            const a = this.rows[i];
+            const b = other.rows[i];
+            if (a.length !== b.length) return false;
+            for (let j = 0; j < a.length; j++) {
+                if (a[j] !== b[j]) return false;
+            }
+        }
+        return true;
     }
 
     toDOM(): HTMLElement {

@@ -87,8 +87,8 @@ export class CradleLinkWidget extends WidgetType {
         a.href = `${path}#${url}`;
 
         a.textContent = displayName;
-        a.style.color = this.color || '#FF8C00'; // Explicitly set color on the 'a' tag
-        linkSpan.style.color = this.color || '#FF8C00';
+        a.style.color = this.color || 'var(--pm-link-color)';
+        linkSpan.style.color = this.color || 'var(--pm-link-color)';
         linkSpan.style.cursor = 'pointer';
         linkSpan.style.textDecoration = 'underline';
         linkSpan.style.display = 'inline';
@@ -117,7 +117,7 @@ export class CradleLinkWidget extends WidgetType {
     createTimestampElement(): HTMLSpanElement {
         const timestampSpan = document.createElement('span');
         timestampSpan.textContent = this.timestamp;
-        timestampSpan.style.color = this.color || '#FF8C00';
+        timestampSpan.style.color = this.color || 'var(--pm-link-color)';
         timestampSpan.style.marginLeft = '4px';
         timestampSpan.style.textDecoration = 'underline';
         timestampSpan.style.display = 'inline';
@@ -461,7 +461,7 @@ function parseCradleLink(
         (diagnostic) => diagnostic.from < widgetEnd && diagnostic.to > from,
     );
 
-    const color = entryColors.get(type) || '#FF8C00';
+    const color = entryColors.get(type) || 'var(--pm-link-color)';
 
     return Decoration.replace({
         widget: new CradleLinkWidget(
@@ -529,7 +529,7 @@ function createColorMarks(
             return marks;
         }
 
-        const color = entryColors.get(type) || '#FF8C00';
+        const color = entryColors.get(type) || 'var(--pm-link-color)';
 
         marks.push(
             Decoration.mark({
