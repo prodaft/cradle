@@ -1,23 +1,28 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+    Command,
+    CommandGroup,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { StatusIcon, type StatusType } from '@components/domain/notes/StatusIcon';
-import { useState } from 'react';
+import { Check, PlusCircle, XCircle } from 'lucide-react';
+import { startCase } from 'lodash';
+import { useCallback, useState } from 'react';
 
 export type StatusOption = StatusType;
 
 interface StatusHeaderDropdownProps {
     onStatusChange: (status: string) => void;
     status?: string | null;
-    hideFleetingNotes?: boolean;
     statusOptions: StatusOption[];
+    /** @deprecated No longer needed — kept for backwards compat */
+    hideFleetingNotes?: boolean;
+    /** @deprecated No longer needed — kept for backwards compat */
     triggerClassName?: string;
 }
 
@@ -25,88 +30,101 @@ export default function StatusHeaderDropdown({
     onStatusChange,
     status = null,
     statusOptions,
-    triggerClassName,
 }: StatusHeaderDropdownProps) {
-    const [currentStatus, setCurrentStatus] = useState(status || 'all');
+    const [open, setOpen] = useState(false);
+    const currentStatus = status || 'all';
+    const isFiltered = currentStatus !== 'all';
 
-    // Default status options based on context
-    const options = statusOptions;
+    const handleSelect = useCallback(
+        (value: string) => {
+            onStatusChange(value);
+            setOpen(false);
+        },
+        [onStatusChange],
+    );
 
-    const getStatusIcon = (status: string) => {
-        return <StatusIcon status={status as StatusType} />;
-    };
-
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'all':
-                return 'All';
-            case 'fleeting':
-                return 'Fleeting';
-            case 'healthy':
-                return 'Healthy';
-            case 'done':
-                return 'Done';
-            case 'warning':
-                return 'Warning';
-            case 'waiting':
-                return 'Waiting';
-            case 'invalid':
-                return 'Invalid';
-            case 'error':
-                return 'Error';
-            case 'processing':
-                return 'Processing';
-            case 'working':
-                return 'Working';
-            case 'info':
-                return 'Info';
-            default:
-                return 'Unknown';
-        }
-    };
-
-    const handleStatusSelect = (selectedStatus: string) => {
-        setCurrentStatus(selectedStatus);
-        onStatusChange(selectedStatus);
-    };
+    const handleReset = useCallback(
+        (e?: React.MouseEvent) => {
+            e?.stopPropagation();
+            onStatusChange('all');
+        },
+        [onStatusChange],
+    );
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
                 <Button
-                    variant='ghost'
-                    size='icon-sm'
-                    className={cn(
-                        'inline-flex items-center justify-center hover:bg-secondary hover:text-foreground',
-                        triggerClassName,
+                    variant='outline'
+                    size='sm'
+                    className='border-dashed font-normal'
+                >
+                    {isFiltered ? (
+                        <div
+                            role='button'
+                            aria-label='Clear status filter'
+                            tabIndex={0}
+                            className='rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+                            onClick={handleReset}
+                        >
+                            <XCircle />
+                        </div>
+                    ) : (
+                        <PlusCircle />
                     )}
-                >
-                    {getStatusIcon(currentStatus)}
+                    Status
+                    {isFiltered && (
+                        <>
+                            <Separator
+                                orientation='vertical'
+                                className='mx-0.5 data-[orientation=vertical]:h-4'
+                            />
+                            <Badge
+                                variant='secondary'
+                                className='rounded-sm px-1 font-normal'
+                            >
+                                <StatusIcon
+                                    status={currentStatus as StatusType}
+                                    size={14}
+                                />
+                                {startCase(currentStatus)}
+                            </Badge>
+                        </>
+                    )}
                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='center' className='min-w-0 w-auto p-1'>
-                <DropdownMenuRadioGroup
-                    value={currentStatus}
-                    onValueChange={handleStatusSelect}
-                    className='flex flex-col items-center gap-1'
-                >
-                    {options.map((statusOption) => (
-                        <Tooltip key={statusOption}>
-                            <TooltipTrigger asChild>
-                                <DropdownMenuRadioItem
-                                    value={statusOption}
-                                    className={`flex items-center justify-center w-9 h-9 p-0 pl-0 pr-0 gap-0 [&>span]:hidden ${currentStatus === statusOption ? 'bg-secondary ring-1 ring-primary' : ''}`}
-                                >
-                                    {getStatusIcon(statusOption)}
-                                </DropdownMenuRadioItem>
-                            </TooltipTrigger>
-                            <TooltipContent side='right'>
-                                {getStatusLabel(statusOption)}
-                            </TooltipContent>
-                        </Tooltip>
-                    ))}
-                </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
+            </PopoverTrigger>
+            <PopoverContent className='w-44 p-0' align='start'>
+                <Command>
+                    <CommandList className='max-h-full'>
+                        <CommandGroup className='max-h-[300px] overflow-y-auto'>
+                            {statusOptions.map((opt) => {
+                                const isSelected = currentStatus === opt;
+                                return (
+                                    <CommandItem
+                                        key={opt}
+                                        onSelect={() => handleSelect(opt)}
+                                    >
+                                        <div
+                                            className={cn(
+                                                'flex size-4 items-center justify-center rounded-sm border border-primary',
+                                                isSelected
+                                                    ? 'bg-primary'
+                                                    : 'opacity-50 [&_svg]:invisible',
+                                            )}
+                                        >
+                                            <Check className='size-3 text-primary-foreground' />
+                                        </div>
+                                        <StatusIcon status={opt} size={16} />
+                                        <span className='truncate'>
+                                            {startCase(opt)}
+                                        </span>
+                                    </CommandItem>
+                                );
+                            })}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
     );
 }

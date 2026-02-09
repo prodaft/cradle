@@ -1,6 +1,7 @@
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/data-table/data-table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
@@ -8,7 +9,12 @@ import { truncateText } from '@/utils/dashboard';
 import { DownloadSimpleIcon } from '@phosphor-icons/react';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
+import {
+    ColumnDef,
+    getCoreRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
 
@@ -69,7 +75,9 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
             {
                 accessorKey: 'name',
                 id: 'name',
-                header: 'Name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Name' />
+                ),
                 cell: ({ row }) => (
                     <div className='truncate w-32'>
                         {truncateText(row.original.fileName, 32)}
@@ -79,7 +87,9 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
             {
                 accessorKey: 'entities',
                 id: 'entities',
-                header: 'Entities',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Entities' />
+                ),
                 cell: ({ row }) => (
                     <div className='flex flex-wrap gap-1'>
                         {row.original.entities?.slice(0, 3).map((entity) => (
@@ -104,7 +114,9 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
             {
                 accessorKey: 'mimetype',
                 id: 'mimetype',
-                header: 'MimeType',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='MimeType' />
+                ),
                 cell: ({ row }) => (
                     <div className='truncate w-32'>
                         {row.original.mimetype
@@ -117,7 +129,9 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
             {
                 accessorKey: 'sha256',
                 id: 'sha256',
-                header: 'SHA256',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='SHA256' />
+                ),
                 cell: ({ row }) =>
                     row.original.sha256Hash ? (
                         <Tooltip>
@@ -142,7 +156,9 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
             {
                 accessorKey: 'uploadedAt',
                 id: 'uploadedAt',
-                header: 'Uploaded At',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Uploaded At' />
+                ),
                 cell: ({ row }) =>
                     row.original.timestamp
                         ? format(new Date(row.original.timestamp), 'dd/MM/yyyy, HH:mm')
@@ -183,18 +199,19 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
         [copyToClipboard, handleDownload],
     );
 
+    const table = useReactTable({
+        data: files,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getRowId: (row, index) => row.id ?? String(index),
+    });
+
     return (
         <ScrollArea className='w-full h-full'>
             <div className='flex items-start justify-center w-full min-h-full py-4 px-4'>
                 <div className='w-full flex flex-col'>
-                    <DataTable
-                        columns={columns}
-                        data={files}
-                        loading={false}
-                        emptyMessage='No files found!'
-                        manualPagination={true}
-                        manualSorting={true}
-                    />
+                    <DataTable table={table} showViewOptions />
                 </div>
             </div>
         </ScrollArea>

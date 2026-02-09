@@ -1,5 +1,6 @@
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import { DateRangeFilterButton } from '@/components/data-table/data-table-date-range-filter';
 import ActionConfirmationDialog from '@/components/dialogs/base/ActionConfirmationDialog';
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
 import EnrichmentRequestDialog from '@/components/dialogs/enrichment/EnrichmentRequestDialog';
@@ -12,6 +13,7 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -51,11 +53,7 @@ import { format } from 'date-fns';
 import { startCase } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import {
-    ActionBarButton,
-    ActionBarSearch,
-    ActionBar as BaseActionBar,
-} from '../../base/ActionBar/ActionBar';
+import { ActionBarButton, ActionBarSearch } from '../../base/ActionBar/ActionBar';
 import { DateRangeFilter, type SortDirection } from '../../base/ListView/types';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import StatusHeaderDropdown from '../../base/StatusHeaderDropdown/StatusHeaderDropdown';
@@ -615,26 +613,42 @@ export default function NotesList({
                 enableHiding: false,
             },
             {
+                id: 'status',
+                header: 'Status',
+                cell: ({ row }) => {
+                    const status = row.original.fleeting
+                        ? 'fleeting'
+                        : row.original.status;
+                    if (!status) return null;
+                    const label = row.original.fleeting
+                        ? 'Fleeting'
+                        : startCase(status);
+                    return (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Badge
+                                    variant='outline'
+                                    className='py-1 [&>svg]:size-3.5 capitalize'
+                                >
+                                    <StatusIcon status={status} size={14} />
+                                    <span>{label}</span>
+                                </Badge>
+                            </TooltipTrigger>
+                            {row.original.statusMessage && (
+                                <TooltipContent>
+                                    {row.original.statusMessage}
+                                </TooltipContent>
+                            )}
+                        </Tooltip>
+                    );
+                },
+                enableSorting: false,
+                enableHiding: false,
+            },
+            {
                 accessorKey: 'title',
                 id: 'title',
-                header: () => (
-                    <div className='flex items-center gap-2'>
-                        <StatusHeaderDropdown
-                            onStatusChange={handleStatusChange}
-                            status={columnFilters.status}
-                            statusOptions={[
-                                'all',
-                                'fleeting',
-                                'healthy',
-                                'warning',
-                                'invalid',
-                                'processing',
-                            ]}
-                            triggerClassName='size-[18px] p-0'
-                        />
-                        <span>Title</span>
-                    </div>
-                ),
+                header: 'Title',
                 cell: ({ row }) => (
                     <PreviewTip
                         content={renderNotePreview(row.original)}
@@ -654,43 +668,14 @@ export default function NotesList({
                                 }
                             }}
                         >
-                            <div className='flex items-center gap-2 min-w-0'>
-                                {row.original.fleeting ? (
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <span className='inline-flex items-center align-middle flex-shrink-0'>
-                                                <StatusIcon status='fleeting' />
-                                            </span>
-                                        </TooltipTrigger>
-                                        <TooltipContent>Fleeting Note</TooltipContent>
-                                    </Tooltip>
-                                ) : (
-                                    row.original.status && (
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <span className='inline-flex items-center align-middle flex-shrink-0'>
-                                                    <StatusIcon
-                                                        status={row.original.status}
-                                                    />
-                                                </span>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                {row.original.statusMessage ||
-                                                    startCase(row.original.status)}
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    )
+                            <span className='truncate'>
+                                {truncateText(
+                                    parseMarkdownInline(
+                                        row.original.metadata?.title || '',
+                                    ),
+                                    64,
                                 )}
-
-                                <span className='truncate'>
-                                    {truncateText(
-                                        parseMarkdownInline(
-                                            row.original.metadata?.title || '',
-                                        ),
-                                        64,
-                                    )}
-                                </span>
-                            </div>
+                            </span>
                         </div>
                     </PreviewTip>
                 ),
@@ -751,17 +736,9 @@ export default function NotesList({
             {
                 accessorKey: 'createdAt',
                 id: 'createdAt',
-                header: ({ column }) => {
-                    const filterValue = columnFilters.createdAt as DateRangeFilter;
-                    return (
-                        <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} label='Created At' />
-                            {filterValue?.from && filterValue?.to && (
-                                <span className='text-xs text-accent'>●</span>
-                            )}
-                        </div>
-                    );
-                },
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Created At' />
+                ),
                 cell: ({ row }) => (
                     <div className='w-36'>
                         {row.original.timestamp
@@ -776,17 +753,9 @@ export default function NotesList({
             {
                 accessorKey: 'lastChanged',
                 id: 'lastChanged',
-                header: ({ column }) => {
-                    const filterValue = columnFilters.lastChanged as DateRangeFilter;
-                    return (
-                        <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} label='Updated At' />
-                            {filterValue?.from && filterValue?.to && (
-                                <span className='text-xs text-accent'>●</span>
-                            )}
-                        </div>
-                    );
-                },
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Updated At' />
+                ),
                 cell: ({ row }) => (
                     <div className='w-36'>
                         {row.original.editTimestamp
@@ -982,46 +951,6 @@ export default function NotesList({
     return (
         <PreviewTipProvider delayDuration={800}>
             <div ref={containerRef} className='flex flex-col space-y-4'>
-                <BaseActionBar
-                    left={
-                        <>
-                            {onCreateNote && hideActionBar && (
-                                <ActionBarButton
-                                    tooltip={
-                                        <>
-                                            Create new note{' '}
-                                            <KbdGroup>
-                                                <Kbd>Ctrl</Kbd>
-                                                <Kbd>N</Kbd>
-                                            </KbdGroup>
-                                        </>
-                                    }
-                                    variant='circle'
-                                    icon={<PlusCircleIcon width={18} height={18} />}
-                                    iconActive={true}
-                                    onClick={onCreateNote}
-                                    disabled={loading}
-                                />
-                            )}
-
-                            {contentSearch && (
-                                <ActionBarSearch
-                                    placeholder='Search content...'
-                                    value={contentSearch.value || ''}
-                                    defaultExpanded={Boolean(contentSearch.value)}
-                                    debounceMs={300}
-                                    onDebouncedChange={(v) => {
-                                        contentSearch.onChange?.(v);
-                                        // Many parents execute the search on submit; provide the value so they don't rely on potentially-stale state.
-                                        contentSearch.onSubmit?.(v);
-                                    }}
-                                    onSubmit={(v) => contentSearch.onSubmit?.(v)}
-                                />
-                            )}
-                        </>
-                    }
-                />
-
                 {isPaused && (
                     <div className='mb-4'>
                         <OfflineIndicator />
@@ -1036,10 +965,72 @@ export default function NotesList({
                     ) : (
                         <DataTable
                             table={table}
+                            showViewOptions
                             onRowClick={(note) =>
                                 router.navigate({ to: `/notes/${note.id}` as any })
                             }
-                        />
+                            getRowHref={(note) => `/notes/${note.id}`}
+                        >
+                            <div className='flex items-center gap-2'>
+                                {onCreateNote && hideActionBar && (
+                                    <ActionBarButton
+                                        tooltip={
+                                            <>
+                                                Create new note{' '}
+                                                <KbdGroup>
+                                                    <Kbd>Ctrl</Kbd>
+                                                    <Kbd>N</Kbd>
+                                                </KbdGroup>
+                                            </>
+                                        }
+                                        variant='circle'
+                                        icon={<PlusCircleIcon width={18} height={18} />}
+                                        iconActive={true}
+                                        onClick={onCreateNote}
+                                        disabled={loading}
+                                    />
+                                )}
+                                {contentSearch && (
+                                    <ActionBarSearch
+                                        placeholder='Search content...'
+                                        value={contentSearch.value || ''}
+                                        defaultExpanded={Boolean(contentSearch.value)}
+                                        debounceMs={300}
+                                        onDebouncedChange={(v) => {
+                                            contentSearch.onChange?.(v);
+                                            contentSearch.onSubmit?.(v);
+                                        }}
+                                        onSubmit={(v) => contentSearch.onSubmit?.(v)}
+                                    />
+                                )}
+                                <StatusHeaderDropdown
+                                    onStatusChange={handleStatusChange}
+                                    status={columnFilters.status}
+                                    statusOptions={[
+                                        'all',
+                                        'fleeting',
+                                        'healthy',
+                                        'warning',
+                                        'invalid',
+                                        'processing',
+                                    ]}
+                                />
+                                <DateRangeFilterButton
+                                    title='Created At'
+                                    value={columnFilters.createdAt}
+                                    onChange={(v) =>
+                                        handleColumnFilter('createdAt', v)
+                                    }
+                                />
+                                <DateRangeFilterButton
+                                    title='Updated At'
+                                    value={columnFilters.lastChanged}
+                                    onChange={(v) =>
+                                        handleColumnFilter('lastChanged', v)
+                                    }
+                                />
+                            </div>
+                        </DataTable>
                     )}
                 </div>
             </div>

@@ -3,8 +3,8 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { yamlFrontmatter, yamlLanguage } from '@codemirror/lang-yaml';
 import { LanguageSupport, LRLanguage, syntaxTree } from '@codemirror/language';
 import { Diagnostic, linter } from '@codemirror/lint';
+import { EditorState } from '@codemirror/state';
 import { MarkdownExtension } from '@lezer/markdown';
-import { basicSetup, EditorState } from '@uiw/react-codemirror';
 import dayjs from 'dayjs';
 import jsyaml from 'js-yaml';
 import type { LspApi } from '../../services/cradle/apis/LspApi';
@@ -1366,11 +1366,7 @@ export class CradleEditor {
             content: markdown({
                 base: markdownLanguage,
                 codeLanguages: config.codeLanguages || [],
-                extensions: [
-                    basicSetup,
-                    this.extension(),
-                    ...(config.extensions || []),
-                ],
+                extensions: [this.extension(), ...(config.extensions || [])],
             }),
         });
     }

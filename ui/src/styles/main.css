@@ -106,7 +106,9 @@
 #codemirror-container {
     min-height: 100px;
     width: 100%;
-    --font: Inter;
+    --font:
+        Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 #codemirror-container * {
     margin-top: 0;

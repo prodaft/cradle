@@ -1,7 +1,4 @@
-import {
-    ActionBarSearch,
-    ActionBar as BaseActionBar,
-} from '@/components/base/ActionBar/ActionBar';
+import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
@@ -441,12 +438,7 @@ export default function EntitiesPage() {
                     <DataTableColumnHeader column={column} label='Name' />
                 ),
                 cell: ({ row }) => (
-                    <div
-                        className='font-medium cursor-pointer'
-                        onClick={() => handleEditClick(row.original)}
-                    >
-                        {row.original.name}
-                    </div>
+                    <div className='font-medium'>{row.original.name}</div>
                 ),
             },
             {
@@ -545,25 +537,25 @@ export default function EntitiesPage() {
                     }
                 />
                 <div className='px-4 flex-1 flex flex-col'>
-                    <div className='pb-4'>
-                        <BaseActionBar
-                            left={
-                                <ActionBarSearch
-                                    placeholder='Search entities...'
-                                    value={searchQuery}
-                                    onDebouncedChange={handleSearchChange}
-                                    onSubmit={handleSearchChange}
-                                />
-                            }
-                        />
-                    </div>
                     <div className='flex-1 space-y-4'>
                         {isPending ? (
                             <div className='flex min-h-[200px] items-center justify-center'>
                                 <Spinner className='size-10' />
                             </div>
                         ) : (
-                            <DataTable table={table} onRowClick={handleEditClick} />
+                            <DataTable
+                                table={table}
+                                showViewOptions
+                                onRowClick={handleEditClick}
+                                getRowHref={(entity) => `/manage/entities/${entity.id}`}
+                            >
+                                <ActionBarSearch
+                                    placeholder='Search entities...'
+                                    value={searchQuery}
+                                    onDebouncedChange={handleSearchChange}
+                                    onSubmit={handleSearchChange}
+                                />
+                            </DataTable>
                         )}
                     </div>
                 </div>

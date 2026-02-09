@@ -44,6 +44,22 @@ export default defineConfig(({ mode }) => {
                 '@types': path.resolve(__dirname, './src/types'),
                 src: path.resolve(__dirname, './src'),
             },
+            dedupe: [
+                '@codemirror/state',
+                '@codemirror/view',
+                '@codemirror/language',
+                '@codemirror/commands',
+                '@codemirror/autocomplete',
+                '@codemirror/search',
+                '@codemirror/lint',
+                '@codemirror/lang-markdown',
+                '@codemirror/lang-yaml',
+                '@codemirror/language-data',
+                '@lezer/common',
+                '@lezer/highlight',
+                '@lezer/lr',
+                '@lezer/markdown',
+            ],
         },
     };
 });

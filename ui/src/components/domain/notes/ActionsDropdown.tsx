@@ -32,7 +32,6 @@ interface ActionsDropdownProps {
     activeView: ViewMode;
     richEditor: boolean;
     enableEditing: boolean;
-    toggleEditing: () => void;
     setActiveView: (view: ViewMode) => void;
     setRichEditor: (rich: boolean) => void;
     showOutline: boolean;

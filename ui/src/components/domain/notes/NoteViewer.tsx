@@ -689,7 +689,6 @@ export default function NoteViewer() {
                                     activeView={activeView}
                                     richEditor={richEditor}
                                     enableEditing={enableEditing}
-                                    toggleEditing={toggleEditing}
                                     setActiveView={handleViewChange}
                                     setRichEditor={handleRichEditorChange}
                                     showOutline={showOutline}

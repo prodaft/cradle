@@ -26,10 +26,7 @@ import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
-import {
-    ActionBarSearch,
-    ActionBar as BaseActionBar,
-} from '@components/base/ActionBar/ActionBar';
+import { ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import { useDroppable } from '@dnd-kit/core';
 import {
     ArrowClockwiseIcon,
@@ -786,24 +783,6 @@ export default function FilesList({
                     </AlertComponent>
                 )}
 
-                {/* Compact Control Bar - Actions and Pagination */}
-                <BaseActionBar
-                    left={
-                        <>
-                            <ActionBarSearch
-                                placeholder='Search files...'
-                                debounceMs={300}
-                                onDebouncedChange={(v) => {
-                                    setSearchQuery(v);
-                                    resetToFirstPage();
-                                }}
-                                onSubmit={() => resetToFirstPage()}
-                                onClear={() => resetToFirstPage()}
-                            />
-                        </>
-                    }
-                />
-
                 {isPaused && (
                     <div className='mb-4'>
                         <OfflineIndicator />
@@ -816,7 +795,18 @@ export default function FilesList({
                             <Spinner className='size-10' />
                         </div>
                     ) : (
-                        <DataTable table={table} />
+                        <DataTable table={table} showViewOptions>
+                            <ActionBarSearch
+                                placeholder='Search files...'
+                                debounceMs={300}
+                                onDebouncedChange={(v) => {
+                                    setSearchQuery(v);
+                                    resetToFirstPage();
+                                }}
+                                onSubmit={() => resetToFirstPage()}
+                                onClear={() => resetToFirstPage()}
+                            />
+                        </DataTable>
                     )}
                 </div>
             </div>

@@ -16,10 +16,7 @@ import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import { ReportList } from '@/services/cradle';
 import { truncateText } from '@/utils/dashboard';
-import {
-    ActionBarSearch,
-    ActionBar as BaseActionBar,
-} from '@components/base/ActionBar/ActionBar';
+import { ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import { DateRangeFilter } from '@components/base/ListView/types';
 import PageHeader from '@components/base/PageHeader';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
@@ -508,17 +505,7 @@ export default function Reports() {
             {
                 accessorKey: 'title',
                 id: 'title',
-                header: () => (
-                    <div className='flex items-center gap-2'>
-                        <StatusHeaderDropdown
-                            onStatusChange={handleStatusChange}
-                            status={columnFilters.status}
-                            statusOptions={['all', 'done', 'working', 'error']}
-                            triggerClassName='size-[18px] p-0'
-                        />
-                        <span>Title</span>
-                    </div>
-                ),
+                header: 'Title',
                 cell: ({ row }) => (
                     <div className='flex items-center gap-2 min-w-0'>
                         <span className='inline-flex items-center flex-shrink-0'>
@@ -623,23 +610,6 @@ export default function Reports() {
 
             {/* Content Area */}
             <div className='flex flex-col space-y-4 px-4 pb-4'>
-                <BaseActionBar
-                    left={
-                        <>
-                            <ActionBarSearch
-                                placeholder='Search reports...'
-                                debounceMs={300}
-                                onDebouncedChange={(v) => {
-                                    setSearchQuery(v);
-                                    resetToFirstPage();
-                                }}
-                                onSubmit={() => resetToFirstPage()}
-                                onClear={() => resetToFirstPage()}
-                            />
-                        </>
-                    }
-                />
-
                 {loading ? (
                     <div className='flex min-h-[200px] items-center justify-center'>
                         <Spinner className='size-10' />
@@ -647,6 +617,7 @@ export default function Reports() {
                 ) : (
                     <DataTable
                         table={table}
+                        showViewOptions
                         onRowClick={async (report) => {
                             try {
                                 const details = await fetchReportMutation.mutateAsync({
@@ -665,7 +636,25 @@ export default function Reports() {
                                 // Error handled by mutation
                             }
                         }}
-                    />
+                    >
+                        <div className='flex items-center gap-2'>
+                            <ActionBarSearch
+                                placeholder='Search reports...'
+                                debounceMs={300}
+                                onDebouncedChange={(v) => {
+                                    setSearchQuery(v);
+                                    resetToFirstPage();
+                                }}
+                                onSubmit={() => resetToFirstPage()}
+                                onClear={() => resetToFirstPage()}
+                            />
+                            <StatusHeaderDropdown
+                                onStatusChange={handleStatusChange}
+                                status={columnFilters.status}
+                                statusOptions={['all', 'done', 'working', 'error']}
+                            />
+                        </div>
+                    </DataTable>
                 )}
             </div>
             <ActionBar

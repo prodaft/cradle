@@ -14,10 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { truncateText } from '@/utils/dashboard';
-import {
-    ActionBarSearch,
-    ActionBar as BaseActionBar,
-} from '@components/base/ActionBar/ActionBar';
+import { ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import { ArrowsClockwiseIcon, TrashIcon } from '@phosphor-icons/react';
 import type { EnrichmentRequestList } from '@services/cradle/models';
@@ -305,17 +302,7 @@ function EnrichmentRequestsList({
             {
                 accessorKey: 'title',
                 id: 'title',
-                header: () => (
-                    <div className='flex items-center gap-2'>
-                        <StatusHeaderDropdown
-                            onStatusChange={handleStatusChange}
-                            status={columnFilters.status}
-                            statusOptions={['all', 'done', 'waiting', 'error', 'info']}
-                            triggerClassName='size-[18px] p-0'
-                        />
-                        <span>Title</span>
-                    </div>
-                ),
+                header: 'Title',
                 cell: ({ row }) => (
                     <div
                         className='truncate max-w-xs cursor-pointer'
@@ -423,10 +410,14 @@ function EnrichmentRequestsList({
 
     return (
         <div className='flex flex-col space-y-4'>
-            {/* Compact Control Bar - Actions and Pagination */}
-            <BaseActionBar
-                left={
-                    <>
+            {/* Table */}
+            {loading ? (
+                <div className='flex min-h-[200px] items-center justify-center'>
+                    <Spinner className='size-10' />
+                </div>
+            ) : (
+                <DataTable table={table} showViewOptions>
+                    <div className='flex items-center gap-2'>
                         <ActionBarSearch
                             placeholder='Search requests...'
                             initialValue={searchFilters?.title || ''}
@@ -449,18 +440,13 @@ function EnrichmentRequestsList({
                                 onSearchSubmit(event);
                             }}
                         />
-                    </>
-                }
-                right={null}
-            />
-
-            {/* Table */}
-            {loading ? (
-                <div className='flex min-h-[200px] items-center justify-center'>
-                    <Spinner className='size-10' />
-                </div>
-            ) : (
-                <DataTable table={table} />
+                        <StatusHeaderDropdown
+                            onStatusChange={handleStatusChange}
+                            status={columnFilters.status}
+                            statusOptions={['all', 'done', 'waiting', 'error', 'info']}
+                        />
+                    </div>
+                </DataTable>
             )}
             <ActionBar
                 open={selectedRequestIds.length > 0}

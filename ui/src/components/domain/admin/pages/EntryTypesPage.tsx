@@ -1,7 +1,4 @@
-import {
-    ActionBarSearch,
-    ActionBar as BaseActionBar,
-} from '@/components/base/ActionBar/ActionBar';
+import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
@@ -449,12 +446,7 @@ export default function EntryTypesPage() {
                     <DataTableColumnHeader column={column} label='Entry Type' />
                 ),
                 cell: ({ row }) => (
-                    <div
-                        className='font-medium cursor-pointer'
-                        onClick={() => handleEditClick(row.original)}
-                    >
-                        {row.original.subtype}
-                    </div>
+                    <div className='font-medium'>{row.original.subtype}</div>
                 ),
             },
             {
@@ -542,25 +534,27 @@ export default function EntryTypesPage() {
                     }
                 />
                 <div className='px-4 flex-1 flex flex-col'>
-                    <div className='pb-4'>
-                        <BaseActionBar
-                            left={
-                                <ActionBarSearch
-                                    placeholder='Search entry types...'
-                                    value={searchQuery}
-                                    onDebouncedChange={handleSearchChange}
-                                    onSubmit={handleSearchChange}
-                                />
-                            }
-                        />
-                    </div>
                     <div className='flex-1 space-y-4'>
                         {isPending ? (
                             <div className='flex min-h-[200px] items-center justify-center'>
                                 <Spinner className='size-10' />
                             </div>
                         ) : (
-                            <DataTable table={table} onRowClick={handleEditClick} />
+                            <DataTable
+                                table={table}
+                                showViewOptions
+                                onRowClick={handleEditClick}
+                                getRowHref={(entryType) =>
+                                    `/manage/entry-types/${encodeURIComponent(entryType.subtype)}`
+                                }
+                            >
+                                <ActionBarSearch
+                                    placeholder='Search entry types...'
+                                    value={searchQuery}
+                                    onDebouncedChange={handleSearchChange}
+                                    onSubmit={handleSearchChange}
+                                />
+                            </DataTable>
                         )}
                     </div>
                 </div>

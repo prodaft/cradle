@@ -1,11 +1,7 @@
 import { Button } from '@/components/ui/button';
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-} from '@/components/ui/input-group';
+import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { DotsThreeIcon, MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
+import { DotsThreeIcon } from '@phosphor-icons/react';
 import { debounce } from 'lodash';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -141,34 +137,20 @@ export const ActionBarSearch = memo(function ActionBarSearch({
     }, [isControlled, debounced, onDebouncedChange, onClear, onSubmit]);
 
     return (
-        <InputGroup className='min-w-[280px]'>
-            <InputGroupInput
-                ref={inputRef}
-                placeholder={placeholder}
-                value={currentValue}
-                onChange={(e) => {
-                    const next = e.target.value;
-                    // Always update local value immediately to avoid "laggy" controlled inputs when the parent debounces state updates.
-                    setInternalValue(next);
-                    debounced?.(next);
-                }}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter') submit();
-                }}
-            />
-            <InputGroupAddon>
-                <MagnifyingGlassIcon size={16} weight='bold' />
-            </InputGroupAddon>
-            {currentValue && (
-                <InputGroupAddon
-                    align='inline-end'
-                    onClick={handleClear}
-                    className='cursor-pointer'
-                >
-                    <XIcon size={16} weight='bold' />
-                </InputGroupAddon>
-            )}
-        </InputGroup>
+        <Input
+            ref={inputRef}
+            placeholder={placeholder}
+            value={currentValue}
+            onChange={(e) => {
+                const next = e.target.value;
+                setInternalValue(next);
+                debounced?.(next);
+            }}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter') submit();
+            }}
+            className='h-8 w-40 lg:w-56'
+        />
     );
 });
 

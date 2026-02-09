@@ -1,6 +1,7 @@
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { ConfirmDeletionDialog } from '@/components/dialogs';
 import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/data-table/data-table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useApi } from '@/hooks';
 import type { FileReference } from '@/types';
@@ -12,7 +13,12 @@ import {
     TrashIcon,
 } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
+import {
+    ColumnDef,
+    getCoreRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 
 /**
@@ -89,7 +95,9 @@ export default function FileTable({
             {
                 accessorKey: 'fileName',
                 id: 'fileName',
-                header: 'File',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='File' />
+                ),
                 cell: ({ row }) => {
                     const data = row.original;
                     return (
@@ -108,7 +116,9 @@ export default function FileTable({
             {
                 accessorKey: 'tag',
                 id: 'tag',
-                header: 'Reference Tag',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Reference Tag' />
+                ),
                 cell: ({ row }) => {
                     const data = row.original;
                     const tag =
@@ -229,6 +239,14 @@ export default function FileTable({
         [copyToClipboard, handleDownload, insertTextCallback],
     );
 
+    const table = useReactTable({
+        data: fileData,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getRowId: (row, index) => row.id ?? String(index),
+    });
+
     return (
         <div className='w-full h-full text-sm [&_.rounded-md.border]:rounded-none [&_.rounded-md.border]:border-0'>
             {!fileData || fileData.length === 0 ? (
@@ -236,14 +254,7 @@ export default function FileTable({
                     No files uploaded yet.
                 </p>
             ) : (
-                <DataTable
-                    columns={columns}
-                    data={fileData}
-                    loading={false}
-                    emptyMessage='No files uploaded yet.'
-                    manualPagination={true}
-                    manualSorting={true}
-                />
+                <DataTable table={table} showViewOptions />
             )}
             {deletingFile && (
                 <ConfirmDeletionDialog

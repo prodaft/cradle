@@ -62,12 +62,20 @@ export class ReferenceLinkWidget extends WidgetType {
         span.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            if (!this.file.id) return;
             this.resolveMinioLink({
-                fileId: this.file.id!,
-            }).then((fdownload) => {
-                const { presignedUrl } = fdownload;
-                window.open(presignedUrl, '_blank', 'noopener,noreferrer');
-            });
+                fileId: this.file.id,
+            })
+                .then((fdownload) => {
+                    const { presignedUrl } = fdownload;
+                    window.open(presignedUrl, '_blank', 'noopener,noreferrer');
+                })
+                .catch(() => {
+                    console.error(
+                        'Failed to resolve download link for file:',
+                        this.file.id,
+                    );
+                });
         });
 
         return span;
@@ -118,7 +126,9 @@ export class ReferenceImageWidget extends WidgetType {
         img.style.maxWidth = '40%';
         img.style.cursor = 'default';
 
-        const fileId = this.file.id!;
+        const fileId = this.file.id;
+        if (!fileId) return img;
+
         const cachedUrl = ReferenceImageWidget.urlCache.get(fileId);
 
         if (cachedUrl) {
@@ -128,11 +138,16 @@ export class ReferenceImageWidget extends WidgetType {
             // Fetch and cache the URL
             this.resolveMinioLink({
                 fileId: fileId,
-            }).then((fdownload) => {
-                const { presignedUrl } = fdownload;
-                ReferenceImageWidget.urlCache.set(fileId, presignedUrl);
-                img.src = presignedUrl;
-            });
+            })
+                .then((fdownload) => {
+                    const { presignedUrl } = fdownload;
+                    ReferenceImageWidget.urlCache.set(fileId, presignedUrl);
+                    img.src = presignedUrl;
+                })
+                .catch(() => {
+                    img.alt = `Failed to load: ${this.text}`;
+                    console.error('Failed to resolve image URL for file:', fileId);
+                });
         }
 
         return img;
@@ -223,14 +238,11 @@ export function referenceLinkSyntax(
                     let labelStart = -1;
                     let labelEnd = -1;
                     let labelContent = '';
-                    let isCollapsed = false;
                     let isShortcut = false;
 
                     let lookahead = p;
-                    let hasSpace = false;
                     if (lookahead < cx.end && cx.char(lookahead) === 32) {
                         lookahead++;
-                        hasSpace = true;
                     }
                     if (lookahead < cx.end && cx.char(lookahead) === 40) {
                         return -1;
@@ -273,7 +285,6 @@ export function referenceLinkSyntax(
                     if (!isShortcut) {
                         if (labelContent.trim() === '') {
                             key = textContent;
-                            isCollapsed = true;
                         } else {
                             key = labelContent;
                         }
@@ -348,14 +359,11 @@ export function referenceLinkSyntax(
                     let labelStart = -1;
                     let labelEnd = -1;
                     let labelContent = '';
-                    let isCollapsed = false;
                     let isShortcut = false;
 
                     let lookahead = p;
-                    let hasSpace = false;
                     if (lookahead < cx.end && cx.char(lookahead) === 32) {
                         lookahead++;
-                        hasSpace = true;
                     }
                     if (lookahead < cx.end && cx.char(lookahead) === 40) {
                         return -1;
@@ -398,7 +406,6 @@ export function referenceLinkSyntax(
                     if (!isShortcut) {
                         if (labelContent.trim() === '') {
                             key = textContent;
-                            isCollapsed = true;
                         } else {
                             key = labelContent;
                         }

@@ -2,6 +2,7 @@ import { flexRender, type Table as TanstackTable } from '@tanstack/react-table';
 import type * as React from 'react';
 
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
+import { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
 import {
     Table,
     TableBody,
@@ -17,22 +18,47 @@ interface DataTableProps<TData> extends React.ComponentProps<'div'> {
     table: TanstackTable<TData>;
     actionBar?: React.ReactNode;
     onRowClick?: (row: TData) => void;
+    getRowHref?: (row: TData) => string;
+    showViewOptions?: boolean;
 }
 
 export function DataTable<TData>({
     table,
     actionBar,
     onRowClick,
+    getRowHref,
+    showViewOptions = false,
     children,
     className,
     ...props
 }: DataTableProps<TData>) {
+    const handleRowClick = (row: TData, event: React.MouseEvent) => {
+        const href = getRowHref?.(row);
+        if (href && (event.ctrlKey || event.metaKey)) {
+            window.open(href, '_blank');
+            return;
+        }
+        onRowClick?.(row);
+    };
     return (
         <div
             className={cn('flex w-full flex-col gap-2.5 overflow-auto', className)}
             {...props}
         >
-            {children}
+            {(children || showViewOptions) && (
+                <div
+                    role='toolbar'
+                    aria-orientation='horizontal'
+                    className='flex w-full items-start justify-between gap-2 py-1'
+                >
+                    <div className='flex flex-1 flex-wrap items-center gap-2'>
+                        {children}
+                    </div>
+                    <div className='flex items-center gap-2'>
+                        {showViewOptions && <DataTableViewOptions table={table} />}
+                    </div>
+                </div>
+            )}
             <div className='overflow-hidden rounded-md border'>
                 <Table>
                     <TableHeader>
@@ -71,7 +97,7 @@ export function DataTable<TData>({
                                     )}
                                     onClick={
                                         onRowClick
-                                            ? () => onRowClick(row.original)
+                                            ? (e) => handleRowClick(row.original, e)
                                             : undefined
                                     }
                                 >

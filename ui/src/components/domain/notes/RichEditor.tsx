@@ -36,7 +36,13 @@ import {
 } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
-import { EditorState, Extension, StateEffect, Transaction } from '@codemirror/state';
+import {
+    EditorState,
+    Extension,
+    Prec,
+    StateEffect,
+    Transaction,
+} from '@codemirror/state';
 import {
     drawSelection,
     EditorView,
@@ -62,7 +68,6 @@ import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
 import { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { Prec } from '@uiw/react-codemirror';
 import {
     forwardRef,
     memo,
@@ -185,6 +190,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const [showFileList, setShowFileList] = useState(false);
     const [showFileUploadDialog, setShowFileUploadDialog] = useState(false);
     const [clipboardFiles, setClipboardFiles] = useState<File[]>([]);
+    const [editorReady, setEditorReady] = useState(false);
     const { usersApi } = useApi();
     const { isLoggedIn } = useAuthActions();
     const { data: profile } = useQuery({
@@ -196,12 +202,15 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const { isDarkMode } = useTheme();
     const { entriesApi, fileTransferApi } = useApi();
     const router = useRouter();
-    const navigate = (url: string) => {
+    const routerRef = useRef(router);
+    routerRef.current = router;
+    // Stable navigate function — uses ref to avoid invalidating extensions memo
+    const navigate = useCallback((url: string) => {
         // Parse dashboard URLs to extract params
         const dashboardMatch = url.match(/^\/dashboards\/([^/]+)\/([^/]+)\/?$/);
         if (dashboardMatch) {
             const [, subtype, name] = dashboardMatch;
-            router.navigate({
+            routerRef.current.navigate({
                 to: '/dashboards/$subtype/$name',
                 params: {
                     subtype: decodeURIComponent(subtype),
@@ -209,13 +218,15 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 },
             });
         } else {
-            // For other URLs, use the old method
-            router.navigate({ to: url as any });
+            routerRef.current.navigate({ to: url as any });
         }
-    };
+    }, []);
     const editorRef = useRef<HTMLDivElement>(null);
     const editorViewRef = useRef<EditorView | null>(null);
     const markdownContentRef = useRef(markdownContent);
+    const setMarkdownContentRef = useRef(setMarkdownContent);
+    const saveNoteRef = useRef(saveNote);
+    const setLineNumberRef = useRef(setLineNumber);
     const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
 
     const downloadFileMutation = useMutation({
@@ -249,13 +260,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         setEntryColors(colorMap);
     }, [entryClassesData]);
 
-    // Memoize the file download function to prevent recreation on every render
-    const fileDownloadFn = useMemo(
-        () =>
-            async (file: { fileId: string }): Promise<FileDownload> => {
-                return await downloadFileMutation.mutateAsync(file.fileId);
-            },
-        [downloadFileMutation],
+    const downloadMutateRef = useRef(downloadFileMutation.mutateAsync);
+    downloadMutateRef.current = downloadFileMutation.mutateAsync;
+
+    const fileDownloadFn = useCallback(
+        async (file: { fileId: string }): Promise<FileDownload> => {
+            return await downloadMutateRef.current(file.fileId);
+        },
+        [],
     );
 
     // Theme uses CSS variables, so we only need to update when isDarkMode changes for the dark flag
@@ -274,6 +286,12 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     useEffect(() => {
         markdownContentRef.current = markdownContent;
     }, [markdownContent]);
+
+    useEffect(() => {
+        setMarkdownContentRef.current = setMarkdownContent;
+        saveNoteRef.current = saveNote;
+        setLineNumberRef.current = setLineNumber;
+    }, [setMarkdownContent, saveNote, setLineNumber]);
 
     // Memoize code block copy handler
     const codeBlockCopyExtension = useMemo(() => {
@@ -407,8 +425,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     key: 'Ctrl-s',
                     run: (cm: EditorView) => {
                         if (!enableEditing) return false;
-                        setMarkdownContent(cm.state.doc.toString());
-                        saveNote(true);
+                        setMarkdownContentRef.current(cm.state.doc.toString());
+                        saveNoteRef.current(true);
                         return true;
                     },
                 },
@@ -436,16 +454,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         }
 
         if (profile?.vimMode) {
-            Vim.defineEx('write', 'w', (cm: CodeMirror) => {
-                try {
-                    setMarkdownContent(cm.cm6.state.doc.toString());
-                    saveNote(true);
-                } catch (error) {
-                    toast.error('Failed to save note. Please try again with Ctrl-S.');
-                    logger.error('Failed to save note:', error);
-                }
-                return true;
-            });
             exts = exts.concat(vim());
         }
 
@@ -455,17 +463,30 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         profile?.vimMode,
         additionalExtensions,
         entryColors,
-        navigate,
         source,
         enableEditing,
         cradleTheme,
-        setMarkdownContent,
-        saveNote,
         codeBlockCopyExtension,
         pasteHandler,
         referenceMappings,
+        navigate,
         fileDownloadFn,
     ]);
+
+    useEffect(() => {
+        if (profile?.vimMode) {
+            Vim.defineEx('write', 'w', (cm: CodeMirror) => {
+                try {
+                    setMarkdownContentRef.current(cm.cm6.state.doc.toString());
+                    saveNoteRef.current(true);
+                } catch (error) {
+                    toast.error('Failed to save note. Please try again with Ctrl-S.');
+                    logger.error('Failed to save note:', error);
+                }
+                return true;
+            });
+        }
+    }, [profile?.vimMode]);
 
     // Reconfigure extensions when they change
     useEffect(() => {
@@ -498,19 +519,20 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                         if (tr.docChanged) {
                             const newContent = tr.state.doc.toString();
                             if (newContent !== markdownContentRef.current) {
-                                setMarkdownContent(newContent);
+                                setMarkdownContentRef.current(newContent);
                             }
                         }
                         if (tr.selection) {
                             const line = tr.state.doc.lineAt(
                                 tr.state.selection.main.head,
                             ).number;
-                            setLineNumber(line);
+                            setLineNumberRef.current(line);
                         }
                     },
                 });
 
                 editorViewRef.current = view;
+                setEditorReady(true);
             } catch (error) {
                 logger.error('Failed to initialize RichEditor:', error);
                 toast.error(
@@ -518,7 +540,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 );
             }
         }
-    }, [extensions]);
+    }, [noteid, markdownContent, extensions]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -526,6 +548,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             if (editorViewRef.current) {
                 editorViewRef.current.destroy();
                 editorViewRef.current = null;
+                setEditorReady(false);
             }
         };
     }, []);
@@ -553,6 +576,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     // Update search panel labels - only observe when editor exists
     useEffect(() => {
+        if (!editorReady) return;
         const view = editorViewRef.current;
         if (!view) return;
 
@@ -588,7 +612,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         requestAnimationFrame(updateLabels);
 
         return () => observer.disconnect();
-    }, []);
+    }, [editorReady]);
 
     const insertTextToCodeMirror = useCallback((text: string) => {
         const view = editorViewRef.current;
@@ -673,9 +697,7 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.source === nextProps.source &&
         prevProps.enableEditing === nextProps.enableEditing &&
         prevProps.editorUtils === nextProps.editorUtils &&
-        prevProps.setMarkdownContent === nextProps.setMarkdownContent &&
         prevProps.setFileData === nextProps.setFileData &&
-        prevProps.saveNote === nextProps.saveNote &&
         prevProps.referenceMappings === nextProps.referenceMappings
     );
 });

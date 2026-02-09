@@ -1,5 +1,6 @@
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import { DateRangeFilterButton } from '@/components/data-table/data-table-date-range-filter';
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
 import {
     ActionBar,
@@ -15,10 +16,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
-import {
-    ActionBarSearch,
-    ActionBar as BaseActionBar,
-} from '@components/base/ActionBar/ActionBar';
+import { ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import { DateRangeFilter } from '@components/base/ListView/types';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import { TrashIcon } from '@phosphor-icons/react';
@@ -285,17 +283,7 @@ function DigestList({
             {
                 accessorKey: 'title',
                 id: 'title',
-                header: () => (
-                    <div className='flex items-center gap-2'>
-                        <StatusHeaderDropdown
-                            onStatusChange={handleStatusChange}
-                            status={columnFilters.status || 'all'}
-                            statusOptions={['all', 'done', 'working', 'error']}
-                            triggerClassName='size-[18px] p-0'
-                        />
-                        <span>Title</span>
-                    </div>
-                ),
+                header: 'Title',
                 cell: ({ row }) => (
                     <div className='truncate max-w-xs' title={row.original.title}>
                         <div className='flex items-center gap-2 min-w-0'>
@@ -403,17 +391,9 @@ function DigestList({
             {
                 accessorKey: 'createdAt',
                 id: 'createdAt',
-                header: ({ column }) => {
-                    const filterValue = columnFilters.createdAt as DateRangeFilter;
-                    return (
-                        <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} label='Created At' />
-                            {filterValue?.from && filterValue?.to && (
-                                <span className='text-xs text-accent'>●</span>
-                            )}
-                        </div>
-                    );
-                },
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Created At' />
+                ),
                 cell: ({ row }) => (
                     <div className='w-36'>
                         {row.original.createdAt
@@ -523,9 +503,13 @@ function DigestList({
 
     return (
         <>
-            <BaseActionBar
-                left={
-                    <>
+            {loading ? (
+                <div className='flex min-h-[200px] items-center justify-center'>
+                    <Spinner className='size-10' />
+                </div>
+            ) : (
+                <DataTable table={table} showViewOptions>
+                    <div className='flex items-center gap-2'>
                         <ActionBarSearch
                             placeholder='Search by title...'
                             initialValue={searchFilters.title || ''}
@@ -546,17 +530,27 @@ function DigestList({
                                 onSearchSubmit(event);
                             }}
                         />
-                    </>
-                }
-                right={null}
-            />
-
-            {loading ? (
-                <div className='flex min-h-[200px] items-center justify-center'>
-                    <Spinner className='size-10' />
-                </div>
-            ) : (
-                <DataTable table={table} />
+                        <StatusHeaderDropdown
+                            onStatusChange={handleStatusChange}
+                            status={columnFilters.status || 'all'}
+                            statusOptions={['all', 'done', 'working', 'error']}
+                        />
+                        {onColumnFilterChange && (
+                            <DateRangeFilterButton
+                                title='Created At'
+                                value={
+                                    (columnFilters.createdAt as DateRangeFilter) || {
+                                        from: '',
+                                        to: '',
+                                    }
+                                }
+                                onChange={(v) =>
+                                    onColumnFilterChange('createdAt', v)
+                                }
+                            />
+                        )}
+                    </div>
+                </DataTable>
             )}
             <ActionBar
                 open={selectedDigestIds.length > 0}

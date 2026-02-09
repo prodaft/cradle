@@ -1,18 +1,33 @@
-import { ActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
+import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import TableActionsButton from '@/components/base/TableActionsButton';
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import ActionConfirmationDialog from '@/components/dialogs/base/ActionConfirmationDialog';
+import {
+    ActionBar,
+    ActionBarClose,
+    ActionBarGroup,
+    ActionBarItem,
+    ActionBarSelection,
+    ActionBarSeparator,
+} from '@/components/ui/action-bar';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable, type BulkAction } from '@/components/ui/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions } from '@/hooks/auth/useAuth';
 import { UserSession } from '@/services/cradle/models';
 import { TrashIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { ColumnDef, SortingState } from '@tanstack/react-table';
+import {
+    ColumnDef,
+    RowSelectionState,
+    SortingState,
+    getCoreRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -25,7 +40,7 @@ interface ActiveSessionsProps {
  * ActiveSessions component - Displays and manages active user sessions
  */
 export default function ActiveSessions({ userId }: ActiveSessionsProps) {
-    const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
@@ -41,6 +56,15 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     });
     const search = useSearch({ strict: false });
     const queryClient = useQueryClient();
+
+    const selectedSessionIds = useMemo(
+        () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
+        [rowSelection],
+    );
+
+    const clearSelection = useCallback(() => {
+        setRowSelection({});
+    }, []);
 
     // Query for sessions
     const { data: sessions = [], isPending } = useQuery<UserSession[]>({
@@ -101,9 +125,11 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     // Clear tokens and log out
                     logOut();
                 } else {
-                    setSelectedSessions((prev) =>
-                        prev.filter((id) => id !== sessionId),
-                    );
+                    setRowSelection((prev) => {
+                        const next = { ...prev };
+                        delete next[sessionId];
+                        return next;
+                    });
                 }
             } catch (error) {
                 // Error already handled by mutation
@@ -153,13 +179,21 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     queryClient.invalidateQueries({
                         queryKey: [`users`, `detail`, `${userId}-sessions`],
                     });
-                    setSelectedSessions([]);
+                    clearSelection();
                 }
             } catch (error) {
                 toast.error('Failed to revoke sessions');
             }
         },
-        [userId, usersApi, sessions, queryClient, getCurrentSessionJti, logOut],
+        [
+            userId,
+            usersApi,
+            sessions,
+            queryClient,
+            getCurrentSessionJti,
+            logOut,
+            clearSelection,
+        ],
     );
 
     const openRevokeConfirmationDialog = useCallback((sessionId: string) => {
@@ -220,11 +254,6 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         const end = start + pageSize;
         return filteredSessions.slice(start, end);
     }, [filteredSessions, page, pageSize]);
-
-    // Handle row selection
-    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
-        setSelectedSessions(selectedIds);
-    }, []);
 
     // Handle sorting change
     const handleSortingChange = useCallback((newSorting: SortingState) => {
@@ -324,7 +353,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             {
                 accessorKey: 'deviceInfo',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Device' />
+                    <DataTableColumnHeader column={column} label='Device' />
                 ),
                 cell: ({ row }) => {
                     const session = row.original;
@@ -345,7 +374,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             {
                 accessorKey: 'ipAddress',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='IP Address' />
+                    <DataTableColumnHeader column={column} label='IP Address' />
                 ),
                 cell: ({ row }) => {
                     const ip = row.original.ipAddress;
@@ -359,7 +388,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             {
                 accessorKey: 'createdAt',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Created' />
+                    <DataTableColumnHeader column={column} label='Created' />
                 ),
                 cell: ({ row }) => (
                     <span className='text-sm text-muted-foreground'>
@@ -370,7 +399,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             {
                 accessorKey: 'lastActivity',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Last Activity' />
+                    <DataTableColumnHeader column={column} label='Last Activity' />
                 ),
                 cell: ({ row }) => (
                     <span className='text-sm text-muted-foreground'>
@@ -381,7 +410,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             {
                 accessorKey: 'expiresAt',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Expires' />
+                    <DataTableColumnHeader column={column} label='Expires' />
                 ),
                 cell: ({ row }) => (
                     <span className='text-sm text-muted-foreground'>
@@ -425,28 +454,51 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         [openRevokeConfirmationDialog],
     );
 
-    const bulkActions: BulkAction[] = [
-        {
-            id: 'revoke',
-            label: 'Revoke',
-            icon: <TrashIcon size={18} weight='bold' />,
-            onClick: () => {
-                if (selectedSessions.length > 0) {
-                    setBulkRevokeDialogOpen(true);
-                }
+    const table = useReactTable({
+        data: paginatedSessions,
+        columns,
+        state: {
+            rowSelection,
+            sorting,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize,
             },
-            disabled:
-                isPending ||
-                selectedSessions.length === 0 ||
-                paginatedSessions.length === 0,
-            variant: 'destructive',
         },
-    ];
+        getRowId: (row, index) => row.id ?? String(index),
+        onRowSelectionChange: setRowSelection,
+        onSortingChange: (updater) => {
+            const newSorting =
+                typeof updater === 'function' ? updater(sorting) : updater;
+            handleSortingChange(newSorting);
+        },
+        onPaginationChange: (updater) => {
+            const currentPagination = { pageIndex: page - 1, pageSize };
+            const nextPagination =
+                typeof updater === 'function' ? updater(currentPagination) : updater;
+            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+        },
+        getCoreRowModel: getCoreRowModel(),
+        enableRowSelection: true,
+        manualPagination: true,
+        manualSorting: true,
+        pageCount: totalPages,
+    });
+
+    const handleBulkRevoke = useCallback(() => {
+        if (selectedSessionIds.length > 0) {
+            setBulkRevokeDialogOpen(true);
+        }
+    }, [selectedSessionIds.length]);
 
     return (
         <div className='w-full space-y-4'>
-            <ActionBar
-                left={
+            {isPending ? (
+                <div className='flex min-h-[200px] items-center justify-center'>
+                    <Spinner className='size-10' />
+                </div>
+            ) : (
+                <DataTable table={table} showViewOptions>
                     <ActionBarSearch
                         placeholder='Search sessions...'
                         value={searchQuery}
@@ -461,28 +513,34 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                             setPage(1);
                         }}
                     />
-                }
-            />
-            <DataTable
-                columns={columns}
-                data={paginatedSessions}
-                loading={isPending}
-                emptyMessage='No active sessions'
-                enableRowSelection={true}
-                selectedRows={selectedSessions}
-                onRowSelectionChange={handleRowSelectionChange}
-                sorting={sorting}
-                onSortingChange={handleSortingChange}
-                manualPagination={true}
-                manualSorting={true}
-                pageCount={totalPages}
-                initialPageIndex={page - 1}
-                initialPageSize={pageSize}
-                onPaginationChange={handlePaginationChange}
-                showPagination={true}
-                bulkActions={bulkActions}
-                itemLabel='session'
-            />
+                </DataTable>
+            )}
+            <ActionBar
+                open={selectedSessionIds.length > 0}
+                onOpenChange={(open) => {
+                    if (!open) clearSelection();
+                }}
+            >
+                <ActionBarSelection>
+                    {selectedSessionIds.length} session
+                    {selectedSessionIds.length !== 1 ? 's' : ''} selected
+                </ActionBarSelection>
+                <ActionBarSeparator />
+                <ActionBarGroup>
+                    <ActionBarItem
+                        onClick={handleBulkRevoke}
+                        disabled={isPending || selectedSessionIds.length === 0}
+                        className='text-destructive'
+                    >
+                        <TrashIcon size={18} weight='bold' />
+                        Revoke
+                    </ActionBarItem>
+                </ActionBarGroup>
+                <ActionBarSeparator />
+                <ActionBarClose className='px-2 text-sm' onClick={clearSelection}>
+                    Clear
+                </ActionBarClose>
+            </ActionBar>
             {revokeSessionId !== null &&
                 (() => {
                     const session = sessions.find((s) => s.id === revokeSessionId);
@@ -512,8 +570,8 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             <ActionConfirmationDialog
                 open={bulkRevokeDialogOpen}
                 onOpenChange={setBulkRevokeDialogOpen}
-                onConfirm={() => revokeSessions(selectedSessions)}
-                text={`Are you sure you want to revoke ${selectedSessions.length} session${selectedSessions.length > 1 ? 's' : ''}? The device${selectedSessions.length > 1 ? 's' : ''} will be signed out and will need to sign in again.`}
+                onConfirm={() => revokeSessions(selectedSessionIds)}
+                text={`Are you sure you want to revoke ${selectedSessionIds.length} session${selectedSessionIds.length > 1 ? 's' : ''}? The device${selectedSessionIds.length > 1 ? 's' : ''} will be signed out and will need to sign in again.`}
             />
         </div>
     );
