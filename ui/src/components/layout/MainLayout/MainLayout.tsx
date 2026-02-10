@@ -71,7 +71,7 @@ export default function MainLayout(): React.JSX.Element {
                 <Navbar />
 
                 {/* Content Area */}
-                <div className='flex-1 overflow-hidden relative md:rounded-b-xl'>
+                <div className='flex-1 overflow-hidden relative'>
                     <div className='absolute inset-0 overflow-y-auto overflow-x-hidden'>
                         <Suspense
                             fallback={

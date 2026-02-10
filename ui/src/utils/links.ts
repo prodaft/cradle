@@ -34,7 +34,7 @@ export const prependLinks = (
     const mdLinks = fileData
         .map((file) => {
             const apiDownloadPath = createDownloadPath(file, apiBaseUrl);
-            return `[${file.id}-${file.fileName}]: ${apiDownloadPath} "${file.fileName}"\n\n`;
+            return `[${file.id}]: ${apiDownloadPath} "${file.fileName}"\n\n`;
         })
         .join('');
 

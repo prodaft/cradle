@@ -6,11 +6,12 @@ import { parseMarkdown } from '@/utils/parser/parse';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useRouter } from '@tanstack/react-router';
 import DOMPurify from 'dompurify';
+import { toast } from 'sonner';
 import Prism from 'prismjs';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface StaticRenderProps {
     markdownContent: string;
@@ -24,14 +25,13 @@ interface StaticRenderProps {
 export default function StaticRender({ markdownContent, fileData }: StaticRenderProps) {
     const [htmlContent, setHtmlContent] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
-    const [previewElement, setPreviewElement] = useState<HTMLDivElement | null>(null);
+    const previewRef = useRef<HTMLDivElement>(null);
     const { entriesApi, fileTransferApi } = useApi();
     const router = useRouter();
 
     // Create a NavigateHandler adapter for handleLinkClick
     const navigateHandler: NavigateHandler = useCallback(
         (path: string) => {
-            // Parse dashboard URLs to extract params
             const dashboardMatch = path.match(/^\/dashboards\/([^/]+)\/([^/]+)\/?$/);
             if (dashboardMatch) {
                 const [, subtype, name] = dashboardMatch;
@@ -49,21 +49,6 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
         [router],
     );
 
-    const previewRef = useCallback(
-        (node: HTMLDivElement | null) => {
-            if (node) {
-                setPreviewElement(node);
-                // Set content immediately when ref is attached
-                if (htmlContent) {
-                    const sanitizedContent = DOMPurify.sanitize(htmlContent);
-                    node.innerHTML = sanitizedContent;
-                    Prism.highlightAllUnder(node);
-                }
-            }
-        },
-        [htmlContent],
-    );
-
     const handleContentClick = (event: React.MouseEvent<HTMLDivElement>) => {
         handleLinkClick(navigateHandler)(event.nativeEvent);
     };
@@ -73,6 +58,13 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
         let isMounted = true;
 
         const parseContent = async () => {
+            if (markdownContent === '') {
+                if (isMounted) {
+                    setHtmlContent('');
+                    setIsLoading(false);
+                }
+                return;
+            }
             setIsLoading(true);
             try {
                 const baseURL = import.meta.env.VITE_CRADLE_API_ENDPOINT || '';
@@ -82,14 +74,16 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
                     fileTransferApi,
                     baseURL,
                     fileData,
-                    false,
                 );
 
                 if (isMounted && result) {
                     setHtmlContent(result.html);
                 }
-            } catch (error) {
-                console.error('Failed to parse markdown:', error);
+            } catch (err) {
+                console.error('Failed to parse markdown:', err);
+                if (isMounted) {
+                    toast.error('Failed to load content');
+                }
             } finally {
                 if (isMounted) {
                     setIsLoading(false);
@@ -104,14 +98,14 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
         };
     }, [markdownContent, fileData, entriesApi, fileTransferApi]);
 
-    // Update preview element when HTML content changes
+    // Single place: update preview DOM when HTML content changes
     useEffect(() => {
-        if (previewElement && htmlContent) {
-            const sanitizedContent = DOMPurify.sanitize(htmlContent);
-            previewElement.innerHTML = sanitizedContent;
-            Prism.highlightAllUnder(previewElement);
+        const el = previewRef.current;
+        if (el && htmlContent !== undefined) {
+            el.innerHTML = DOMPurify.sanitize(htmlContent);
+            Prism.highlightAllUnder(el);
         }
-    }, [htmlContent, previewElement]);
+    }, [htmlContent]);
 
     if (isLoading) {
         return (
@@ -127,60 +121,10 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
             <ScrollArea className='h-full w-full'>
                 <div
                     className='rich-editor markdown-body static-render'
-                    style={{
-                        padding: '1rem',
-                        backgroundColor: 'transparent',
-                    }}
                     ref={previewRef}
                     onClick={handleContentClick}
                 ></div>
             </ScrollArea>
-            <style>{`
-                .static-render h1:first-child,
-                .static-render h2:first-child,
-                .static-render h3:first-child,
-                .static-render h4:first-child,
-                .static-render h5:first-child,
-                .static-render h6:first-child {
-                    margin-top: 0 !important;
-                }
-
-                .static-render h1,
-                .static-render h2,
-                .static-render h3,
-                .static-render h4,
-                .static-render h5,
-                .static-render h6 {
-                    border-bottom: none !important;
-                    padding-bottom: 0 !important;
-                }
-
-                .static-render ul,
-                .static-render ol {
-                    list-style-position: outside !important;
-                    padding-left: 1.5em !important;
-                    margin-left: 0 !important;
-                    color: var(--foreground) !important;
-                }
-
-                .static-render ul {
-                    list-style-type: disc !important;
-                }
-
-                .static-render ol {
-                    list-style-type: decimal !important;
-                }
-
-                .static-render li {
-                    display: list-item !important;
-                    color: var(--foreground) !important;
-                }
-
-                .static-render ul > li::marker,
-                .static-render ol > li::marker {
-                    color: var(--foreground) !important;
-                }
-            `}</style>
         </div>
     );
 }

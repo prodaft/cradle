@@ -318,6 +318,56 @@
     color: var(--pm-syntax-invalid);
 }
 
+/* Static render (read-only note preview) */
+.static-render {
+    padding: 1rem;
+}
+
+.static-render h1:first-child,
+.static-render h2:first-child,
+.static-render h3:first-child,
+.static-render h4:first-child,
+.static-render h5:first-child,
+.static-render h6:first-child {
+    margin-top: 0 !important;
+}
+
+.static-render h1,
+.static-render h2,
+.static-render h3,
+.static-render h4,
+.static-render h5,
+.static-render h6 {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+}
+
+.static-render ul,
+.static-render ol {
+    list-style-position: outside !important;
+    padding-left: 1.5em !important;
+    margin-left: 0 !important;
+    color: var(--foreground) !important;
+}
+
+.static-render ul {
+    list-style-type: disc !important;
+}
+
+.static-render ol {
+    list-style-type: decimal !important;
+}
+
+.static-render li {
+    display: list-item !important;
+    color: var(--foreground) !important;
+}
+
+.static-render ul > li::marker,
+.static-render ol > li::marker {
+    color: var(--foreground) !important;
+}
+
 /* ============================================
    CODE BLOCKS
    ============================================ */

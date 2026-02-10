@@ -162,7 +162,12 @@ export async function resolveMinioLinks(
         const href = token.attrs![hrefIndex][1];
         if (!href.startsWith('/file-transfer/download/')) return;
 
-        const url = new URL(baseURL + href);
+        let url: URL;
+        try {
+            url = new URL(baseURL + href);
+        } catch {
+            return;
+        }
 
         const params = new URLSearchParams(url.search);
         const fileId = params.get('fileId');

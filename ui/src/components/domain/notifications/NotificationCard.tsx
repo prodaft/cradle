@@ -15,7 +15,6 @@ import {
     EnrichmentErrorNotification,
     NewUserNotification,
     Notification,
-    ReportProcessingErrorNotification,
     ReportRenderNotification,
 } from 'src/services/cradle';
 
@@ -243,15 +242,8 @@ export default function NotificationCard({
                             variant='outline'
                             size='sm'
                             className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:border-primary hover:text-primary'
-                            onClick={(e) => {
-                                const notif =
-                                    notification as ReportProcessingErrorNotification;
-                                router.navigate({
-                                    to: '/reports/$report_id',
-                                    params: {
-                                        report_id: notif.publishedReportId.toString(),
-                                    },
-                                });
+                            onClick={() => {
+                                router.navigate({ to: '/reports' });
                             }}
                         >
                             View Details

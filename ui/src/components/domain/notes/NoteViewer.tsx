@@ -1,4 +1,17 @@
 import FileUploadDialog from '@/components/dialogs/notes/FileUploadDialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    Field,
+    FieldGroup,
+    FieldLabel,
+    FieldSet,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
     ResizableHandle,
@@ -18,7 +31,8 @@ import extractHeaderHierarchy, { HeaderNode } from '@/utils/editor/outline';
 import { logger } from '@/utils/logger';
 import { Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
-import { BookOpenIcon, PencilSimpleIcon } from '@phosphor-icons/react';
+import { BookOpenIcon, InfoIcon, PencilSimpleIcon } from '@phosphor-icons/react';
+import { format } from 'date-fns';
 import type {
     FileReferenceWithNote,
     FileUploadFinalizeResponse,
@@ -35,6 +49,7 @@ import { debounce } from 'lodash';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import ConfirmDeletionDialog from '../../dialogs/base/ConfirmDeletionDialog';
 import ReportGenerationDialog from '../../dialogs/reports/ReportGenerationDialog';
@@ -48,11 +63,9 @@ import ActionsDropdown from './ActionsDropdown';
 import { ViewMode } from './constants';
 import FilesView from './FilesView';
 import FindReplace from './FindReplace';
-import NoteMetadata from './NoteMetadata';
 import NoteOutline from './NoteOutline';
 import RichEditor from './RichEditor';
 import StaticRender from './StaticRender';
-import StatusIndicators from './StatusIndicators';
 
 interface LocationState {
     from?: { pathname: string };
@@ -117,6 +130,7 @@ export default function NoteViewer() {
     const [reportDialogOpen, setReportDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [fileUploadDialogOpen, setFileUploadDialogOpen] = useState(false);
+    const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
     const [fileData, setFileData] = useState<FileReferenceWithNote[]>([]);
     // Separate state for FileInput component (expects FileUploadFinalizeResponse[])
     const [uploadedFileData, setUploadedFileData] = useState<
@@ -145,7 +159,14 @@ export default function NoteViewer() {
     const rawContentRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<any>(null);
     const lastLoadedNoteIdRef = useRef<string | null>(null);
+    const [navbarActionsEl, setNavbarActionsEl] = useState<HTMLElement | null>(null);
     const { managementApi, notesApi, lspApi } = useApi();
+
+    useEffect(() => {
+        const el = document.getElementById('navbar-actions');
+        setNavbarActionsEl(el);
+        return () => setNavbarActionsEl(null);
+    }, []);
 
     const finalizeNoteMutation = useMutation({
         mutationFn: async (noteId: string) => {
@@ -635,19 +656,10 @@ export default function NoteViewer() {
 
     return (
         <>
-            <div className='w-[100%] h-full flex flex-col'>
-                <div className='w-full border-b border-border px-4 py-3 flex items-center justify-between'>
-                    <div className='flex items-center gap-4'>
-                        {!noteId?.startsWith('guide_') && note && (
-                            <StatusIndicators
-                                markdownContent={markdownContent}
-                                saving={saving}
-                                hasUnsavedChanges={hasUnsavedChanges}
-                                isFleeting={!!note.fleeting}
-                                noteStatus={note.status || null}
-                                noteStatusMessage={note.statusMessage}
-                            />
-                        )}
+            {/* Portal note actions into Navbar */}
+            {navbarActionsEl &&
+                createPortal(
+                    <>
                         {profile?.vimMode && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -659,10 +671,22 @@ export default function NoteViewer() {
                                 <TooltipContent>Vim mode enabled</TooltipContent>
                             </Tooltip>
                         )}
-                        {note && <NoteMetadata note={note} isFleeting={isFleeting} />}
-                    </div>
-
-                    <div className='flex items-center gap-2'>
+                        {note && !noteId?.startsWith('guide_') && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant='ghost'
+                                        size='icon'
+                                        onClick={() => setAboutDialogOpen(true)}
+                                        className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground border-border'
+                                        data-testid='about-note-btn'
+                                    >
+                                        <InfoIcon size={20} weight='bold' />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>About</TooltipContent>
+                            </Tooltip>
+                        )}
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
@@ -684,35 +708,35 @@ export default function NoteViewer() {
                             </TooltipContent>
                         </Tooltip>
                         {!noteId?.startsWith('guide_') && (
-                            <>
-                                <ActionsDropdown
-                                    activeView={activeView}
-                                    richEditor={richEditor}
-                                    enableEditing={enableEditing}
-                                    setActiveView={handleViewChange}
-                                    setRichEditor={handleRichEditorChange}
-                                    showOutline={showOutline}
-                                    toggleOutline={toggleOutline}
-                                    lspLoaded={lspLoaded}
-                                    smartLink={smartLink}
-                                    isAdmin={isAdmin}
-                                    handleRelinkNote={handleRelinkNote}
-                                    isFleeting={isFleeting}
-                                    hasFiles={fileData.length > 0}
-                                    handleSaveAsFinal={handleSaveAsFinal}
-                                    saving={saving}
-                                    handlePublish={handlePublish}
-                                    handleDelete={handleDeleteWithConfirmation}
-                                    handleUploadFiles={handleUploadFiles}
-                                    handleFind={handleFind}
-                                    handleReplace={handleReplace}
-                                    enrichData={handleEnrichData}
-                                />
-                            </>
+                            <ActionsDropdown
+                                activeView={activeView}
+                                richEditor={richEditor}
+                                enableEditing={enableEditing}
+                                setActiveView={handleViewChange}
+                                setRichEditor={handleRichEditorChange}
+                                showOutline={showOutline}
+                                toggleOutline={toggleOutline}
+                                lspLoaded={lspLoaded}
+                                smartLink={smartLink}
+                                isAdmin={isAdmin}
+                                handleRelinkNote={handleRelinkNote}
+                                isFleeting={isFleeting}
+                                hasFiles={fileData.length > 0}
+                                handleSaveAsFinal={handleSaveAsFinal}
+                                saving={saving}
+                                handlePublish={handlePublish}
+                                handleDelete={handleDeleteWithConfirmation}
+                                handleUploadFiles={handleUploadFiles}
+                                handleFind={handleFind}
+                                handleReplace={handleReplace}
+                                enrichData={handleEnrichData}
+                            />
                         )}
-                    </div>
-                </div>
+                    </>,
+                    navbarActionsEl,
+                )}
 
+            <div className='w-[100%] h-full flex flex-col'>
                 {/* File Upload Section */}
                 {showFileUpload && (
                     <div className='w-full px-4 py-2 border-b bg-muted'>
@@ -816,6 +840,10 @@ export default function NoteViewer() {
                                                                 setLineNumber={
                                                                     setLineNumber
                                                                 }
+                                                                saving={saving}
+                                                                hasUnsavedChanges={
+                                                                    hasUnsavedChanges
+                                                                }
                                                             />
                                                             {/* Reference Tree below the editor */}
                                                             {note && (
@@ -827,14 +855,12 @@ export default function NoteViewer() {
                                                         </>
                                                     ) : (
                                                         note && (
-                                                            <div className='h-[55%] rich-editor markdown-body static-render'>
-                                                                <StaticRender
-                                                                    markdownContent={
-                                                                        markdownContent
-                                                                    }
-                                                                    fileData={fileData}
-                                                                />
-                                                            </div>
+                                                            <StaticRender
+                                                                markdownContent={
+                                                                    markdownContent
+                                                                }
+                                                                fileData={fileData}
+                                                            />
                                                         )
                                                     )}
                                                 </div>
@@ -891,6 +917,10 @@ export default function NoteViewer() {
                                                         enableEditing={enableEditing}
                                                         editorUtils={editorUtils}
                                                         setLineNumber={setLineNumber}
+                                                        saving={saving}
+                                                        hasUnsavedChanges={
+                                                            hasUnsavedChanges
+                                                        }
                                                     />
                                                     {/* Reference Tree below the editor */}
                                                     {note && (
@@ -961,6 +991,109 @@ export default function NoteViewer() {
                 onFilesChange={handleFilesChange}
                 noteId={noteId}
             />
+            {note && (
+                <Dialog open={aboutDialogOpen} onOpenChange={setAboutDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>About</DialogTitle>
+                        </DialogHeader>
+                        <FieldSet className='gap-3 pt-1'>
+                            <FieldGroup>
+                                <Field>
+                                    <FieldLabel htmlFor='about-created'>
+                                        Created at
+                                    </FieldLabel>
+                                    <Input
+                                        id='about-created'
+                                        readOnly
+                                        className='text-muted-foreground bg-muted/50'
+                                        value={
+                                            note.timestamp
+                                                ? format(
+                                                      new Date(note.timestamp),
+                                                      'dd/MM/yyyy, HH:mm',
+                                                  )
+                                                : 'N/A'
+                                        }
+                                    />
+                                </Field>
+                                {!isFleeting && (
+                                    <Field>
+                                        <FieldLabel htmlFor='about-author'>
+                                            Author
+                                        </FieldLabel>
+                                        <Input
+                                            id='about-author'
+                                            readOnly
+                                            className='bg-muted/50'
+                                            value={
+                                                note?.author
+                                                    ? note.author.username
+                                                    : 'Unknown'
+                                            }
+                                        />
+                                    </Field>
+                                )}
+                                {!isFleeting && note.editor && (
+                                    <>
+                                        <Field>
+                                            <FieldLabel htmlFor='about-edited'>
+                                                Edited at
+                                            </FieldLabel>
+                                            <Input
+                                                id='about-edited'
+                                                readOnly
+                                                className='text-muted-foreground bg-muted/50'
+                                                value={
+                                                    note.editTimestamp
+                                                        ? format(
+                                                              new Date(
+                                                                  note.editTimestamp,
+                                                              ),
+                                                              'dd/MM/yyyy, HH:mm',
+                                                          )
+                                                        : 'N/A'
+                                                }
+                                            />
+                                        </Field>
+                                        <Field>
+                                            <FieldLabel htmlFor='about-editor'>
+                                                Editor
+                                            </FieldLabel>
+                                            <Input
+                                                id='about-editor'
+                                                readOnly
+                                                className='bg-muted/50'
+                                                value={
+                                                    note?.editor
+                                                        ? note.editor.username
+                                                        : 'Unknown'
+                                                }
+                                            />
+                                        </Field>
+                                    </>
+                                )}
+                                {note.lastLinked && (
+                                    <Field>
+                                        <FieldLabel htmlFor='about-last-linked'>
+                                            Last linked
+                                        </FieldLabel>
+                                        <Input
+                                            id='about-last-linked'
+                                            readOnly
+                                            className='text-muted-foreground bg-muted/50'
+                                            value={format(
+                                                new Date(note.lastLinked),
+                                                'dd/MM/yyyy, HH:mm',
+                                            )}
+                                        />
+                                    </Field>
+                                )}
+                            </FieldGroup>
+                        </FieldSet>
+                    </DialogContent>
+                </Dialog>
+            )}
         </>
     );
 }

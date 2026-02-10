@@ -53,6 +53,8 @@ export default function Navbar(): React.JSX.Element {
                     </KbdGroup>
                 </Button>
             </div>
+            {/* Portal target for page-specific actions */}
+            <div id='navbar-actions' className='ml-auto flex items-center gap-2' />
             <SearchDialog
                 isOpen={isDialogOpen}
                 onClose={() => setIsDialogOpen(false)}

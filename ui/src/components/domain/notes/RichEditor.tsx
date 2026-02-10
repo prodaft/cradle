@@ -41,7 +41,6 @@ import {
     Extension,
     Prec,
     StateEffect,
-    Transaction,
 } from '@codemirror/state';
 import {
     drawSelection,
@@ -79,8 +78,10 @@ import {
     useState,
 } from 'react';
 import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import FileUploadDialog from '../../dialogs/notes/FileUploadDialog';
 import FileTable from '../files/FileTable';
+import { getSaveStatus } from './StatusIndicators';
 
 // Type alias for compatibility with referenceLinks
 type FileReference = FileReferenceWithNote;
@@ -98,6 +99,8 @@ interface RichEditorProps {
     setLineNumber: (lineNumber: number) => void;
     editorUtils: CradleEditor;
     referenceMappings?: Record<string, FileReference>;
+    saving?: boolean;
+    hasUnsavedChanges?: boolean;
 }
 
 export interface RichEditorRef {
@@ -184,6 +187,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         editorUtils,
         setLineNumber,
         referenceMappings: propReferenceMappings,
+        saving = false,
+        hasUnsavedChanges = false,
     },
     ref,
 ) {
@@ -227,7 +232,21 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const setMarkdownContentRef = useRef(setMarkdownContent);
     const saveNoteRef = useRef(saveNote);
     const setLineNumberRef = useRef(setLineNumber);
+    const prevNoteIdRef = useRef(noteid);
     const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
+
+    const onUpdate = useMemo(
+        () =>
+            EditorView.updateListener.of((u) => {
+                if (u.docChanged)
+                    setMarkdownContentRef.current(u.state.doc.toString());
+                const line = u.state.doc.lineAt(
+                    u.state.selection.main.head,
+                ).number;
+                setLineNumberRef.current(line);
+            }),
+        [],
+    );
 
     const downloadFileMutation = useMutation({
         mutationFn: async (fileId: string) => {
@@ -257,7 +276,17 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 colorMap.set(entry.subtype, entry.color);
             }
         }
-        setEntryColors(colorMap);
+        setEntryColors((prev) => {
+            if (
+                prev.size !== colorMap.size ||
+                [...prev.entries()].some(
+                    ([k, v]) => colorMap.get(k) !== v,
+                ) ||
+                [...colorMap.entries()].some(([k, v]) => prev.get(k) !== v)
+            )
+                return colorMap;
+            return prev;
+        });
     }, [entryClassesData]);
 
     const downloadMutateRef = useRef(downloadFileMutation.mutateAsync);
@@ -310,7 +339,13 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                         setTimeout(() => {
                             target.innerText = originalText;
                         }, 900);
-                        navigator.clipboard.writeText(code);
+                        navigator.clipboard
+                            .writeText(code)
+                            .catch(() =>
+                                toast.error(
+                                    'Copy failed. Check permissions or try again.',
+                                ),
+                            );
                     }
                     return true;
                 }
@@ -328,23 +363,26 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     if (!items) return false;
 
                     const files: File[] = [];
+                    let hasText = false;
                     for (let i = 0; i < items.length; i++) {
                         const item = items[i];
                         if (item.kind === 'file') {
                             const file = item.getAsFile();
-                            if (file) {
-                                files.push(file);
-                            }
+                            if (file) files.push(file);
+                        } else if (
+                            item.kind === 'string' &&
+                            (item.type === 'text/plain' || item.type === 'text/html')
+                        ) {
+                            hasText = true;
                         }
                     }
 
-                    if (files.length > 0) {
+                    if (files.length > 0 && !hasText) {
                         event.preventDefault();
                         setClipboardFiles(files);
                         setShowFileUploadDialog(true);
                         return true;
                     }
-
                     return false;
                 },
             }),
@@ -356,6 +394,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         if (propReferenceMappings) return propReferenceMappings;
         const mappings: Record<string, FileReference> = {};
         for (const file of fileData) {
+            if (file.id) mappings[file.id] = file;
             mappings[`${file.id}-${file.fileName}`] = file;
         }
         return mappings;
@@ -420,9 +459,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             ] as any) as any,
             EditorState.readOnly.of(!enableEditing),
             EditorView.editable.of(enableEditing),
+            onUpdate,
             keymap.of([
                 {
-                    key: 'Ctrl-s',
+                    key: 'Mod-s',
                     run: (cm: EditorView) => {
                         if (!enableEditing) return false;
                         setMarkdownContentRef.current(cm.state.doc.toString());
@@ -471,6 +511,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         referenceMappings,
         navigate,
         fileDownloadFn,
+        onUpdate,
     ]);
 
     useEffect(() => {
@@ -497,6 +538,17 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         }
     }, [extensions]);
 
+    useEffect(() => {
+        if (prevNoteIdRef.current !== noteid) {
+            if (editorViewRef.current) {
+                editorViewRef.current.destroy();
+                editorViewRef.current = null;
+                setEditorReady(false);
+            }
+            prevNoteIdRef.current = noteid;
+        }
+    }, [noteid]);
+
     // Initialize editor
     useEffect(() => {
         if (!editorViewRef.current && editorRef.current && extensions.length > 0) {
@@ -514,21 +566,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 const view = new EditorView({
                     state,
                     parent: editorRef.current,
-                    dispatch: (tr: Transaction) => {
-                        view.update([tr]);
-                        if (tr.docChanged) {
-                            const newContent = tr.state.doc.toString();
-                            if (newContent !== markdownContentRef.current) {
-                                setMarkdownContentRef.current(newContent);
-                            }
-                        }
-                        if (tr.selection) {
-                            const line = tr.state.doc.lineAt(
-                                tr.state.selection.main.head,
-                            ).number;
-                            setLineNumberRef.current(line);
-                        }
-                    },
                 });
 
                 editorViewRef.current = view;
@@ -548,7 +585,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             if (editorViewRef.current) {
                 editorViewRef.current.destroy();
                 editorViewRef.current = null;
-                setEditorReady(false);
             }
         };
     }, []);
@@ -623,6 +659,17 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     const toggleFileList = useCallback(() => setShowFileList((prev) => !prev), []);
 
+    const wordCount = useMemo(
+        () =>
+            markdownContent
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean).length,
+        [markdownContent],
+    );
+    const charCount = markdownContent.length;
+    const saveStatus = getSaveStatus(markdownContent, saving, hasUnsavedChanges);
+
     const handleFilesChange = useCallback(
         (files: FileReferenceWithNote[]) => {
             setFileData(files as FileReference[]);
@@ -641,7 +688,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     aria-label='Rich text editor'
                     aria-multiline='true'
                     tabIndex={0}
-                    style={{ backgroundColor: 'transparent' }}
                 />
             </div>
             {fileData && fileData.length > 0 && (
@@ -672,6 +718,49 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 </div>
             )}
 
+            {/* Bottom toolbar: word count, character count, check icon, save status */}
+            <div className='flex-none flex items-center justify-end gap-4 px-3 py-1.5 border-t border-border bg-muted/30 text-muted-foreground text-xs'>
+                <span>{wordCount} words</span>
+                <span>{charCount} chars</span>
+                <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    width='14'
+                    height='14'
+                    fill='currentColor'
+                    viewBox='0 0 256 256'
+                    className='text-primary shrink-0'
+                    aria-hidden
+                >
+                    <path d='M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z' />
+                </svg>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div
+                            className={`flex items-center justify-center w-1.5 h-1.5 rounded-full shrink-0 ${
+                                saveStatus === 'saved'
+                                    ? 'bg-primary'
+                                    : saveStatus === 'saving'
+                                      ? 'bg-accent'
+                                      : saveStatus === 'unsaved'
+                                        ? 'bg-destructive'
+                                        : 'bg-muted-foreground'
+                            }`}
+                            data-testid='save-status-dot'
+                            data-state={saveStatus}
+                        />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        {saveStatus === 'saved'
+                            ? 'All changes saved'
+                            : saveStatus === 'saving'
+                              ? 'Saving...'
+                              : saveStatus === 'unsaved'
+                                ? 'Unsaved changes'
+                                : 'Cannot save empty note'}
+                    </TooltipContent>
+                </Tooltip>
+            </div>
+
             {/* File Upload Dialog */}
             <FileUploadDialog
                 open={showFileUploadDialog}
@@ -698,6 +787,11 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.enableEditing === nextProps.enableEditing &&
         prevProps.editorUtils === nextProps.editorUtils &&
         prevProps.setFileData === nextProps.setFileData &&
-        prevProps.referenceMappings === nextProps.referenceMappings
+        prevProps.setMarkdownContent === nextProps.setMarkdownContent &&
+        prevProps.saveNote === nextProps.saveNote &&
+        prevProps.setLineNumber === nextProps.setLineNumber &&
+        prevProps.referenceMappings === nextProps.referenceMappings &&
+        prevProps.saving === nextProps.saving &&
+        prevProps.hasUnsavedChanges === nextProps.hasUnsavedChanges
     );
 });
