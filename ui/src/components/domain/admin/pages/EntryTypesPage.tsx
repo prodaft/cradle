@@ -43,7 +43,7 @@ import {
 } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import AddEntryTypeDialog from '../../../dialogs/admin/AddEntryTypeDialog';
+import AddEntryTypeDialog from '@/components/domain/admin/dialogs/AddEntryTypeDialog';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
 import ActivityList from '../../activity/ActivityList';
 import AdminPageLayout from '../AdminPageLayout';

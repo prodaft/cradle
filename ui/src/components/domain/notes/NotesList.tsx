@@ -3,8 +3,8 @@ import { DataTableColumnHeader } from '@/components/data-table/data-table-column
 import { DateRangeFilterButton } from '@/components/data-table/data-table-date-range-filter';
 import ActionConfirmationDialog from '@/components/dialogs/base/ActionConfirmationDialog';
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
-import EnrichmentRequestDialog from '@/components/dialogs/enrichment/EnrichmentRequestDialog';
-import ReportGenerationDialog from '@/components/dialogs/reports/ReportGenerationDialog';
+import EnrichmentRequestDialog from '@/components/domain/enrichment/dialogs/EnrichmentRequestDialog';
+import ReportGenerationDialog from '@/components/domain/reports/dialogs/ReportGenerationDialog';
 import {
     ActionBar,
     ActionBarClose,

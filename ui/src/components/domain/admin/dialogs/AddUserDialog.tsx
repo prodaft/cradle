@@ -5,36 +5,36 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { EntryClass } from '@services/cradle/models';
-import AddEntryForm from '../../domain/admin/forms/AddEntryForm';
+import { UserRetrieve } from '@services/cradle/models';
+import AddUserForm from '../forms/AddUserForm';
 
-interface AddEntryTypeDialogProps {
+interface AddUserDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onAdd?: (result: EntryClass) => void;
+    onAdd?: (result: UserRetrieve) => void;
 }
 
-export default function AddEntryTypeDialog({
+export default function AddUserDialog({
     open,
     onOpenChange,
     onAdd,
-}: AddEntryTypeDialogProps) {
-    const handleAdd = (newEntryType: EntryClass) => {
+}: AddUserDialogProps) {
+    const handleAdd = (newUser: UserRetrieve) => {
         if (onAdd) {
-            onAdd(newEntryType);
+            onAdd(newUser);
         }
         onOpenChange(false);
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className='sm:max-w-md'>
                 <DialogHeader>
-                    <DialogTitle>New Entry</DialogTitle>
-                    <DialogDescription>Create new entry class</DialogDescription>
+                    <DialogTitle>Add User</DialogTitle>
+                    <DialogDescription>Create a new user account</DialogDescription>
                 </DialogHeader>
                 <div className='no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4'>
-                    <AddEntryForm onAdd={handleAdd} />
+                    <AddUserForm onAdd={handleAdd} />
                 </div>
             </DialogContent>
         </Dialog>

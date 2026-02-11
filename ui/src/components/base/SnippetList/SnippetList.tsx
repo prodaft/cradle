@@ -1,5 +1,5 @@
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
-import MarkdownEditorDialog from '@/components/dialogs/notes/MarkdownEditorDialog';
+import MarkdownEditorDialog from '@/components/dialogs/base/MarkdownEditorDialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';

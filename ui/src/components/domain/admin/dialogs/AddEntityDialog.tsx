@@ -6,7 +6,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Entity } from '@services/cradle/models';
-import AddEntityForm from '../../domain/admin/forms/AddEntityForm';
+import AddEntityForm from '../forms/AddEntityForm';
 
 interface AddEntityDialogProps {
     open: boolean;

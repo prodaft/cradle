@@ -46,7 +46,7 @@ import {
 } from '@tanstack/react-table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import AddUserDialog from '../../../dialogs/admin/AddUserDialog';
+import AddUserDialog from '@/components/domain/admin/dialogs/AddUserDialog';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
 import AdminPageLayout from '../AdminPageLayout';
 import AdminUserSettings from './AdminUserSettings';

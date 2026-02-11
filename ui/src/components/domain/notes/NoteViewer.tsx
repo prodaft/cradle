@@ -1,4 +1,4 @@
-import FileUploadDialog from '@/components/dialogs/notes/FileUploadDialog';
+import FileUploadDialog from '@/components/domain/notes/dialogs/FileUploadDialog';
 import {
     Dialog,
     DialogContent,
@@ -40,9 +40,9 @@ import type {
 } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+    useLocation,
     useParams,
     useRouter,
-    useRouterState,
     useSearch,
 } from '@tanstack/react-router';
 import { debounce } from 'lodash';
@@ -52,7 +52,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import ConfirmDeletionDialog from '../../dialogs/base/ConfirmDeletionDialog';
-import ReportGenerationDialog from '../../dialogs/reports/ReportGenerationDialog';
+import ReportGenerationDialog from '@/components/domain/reports/dialogs/ReportGenerationDialog';
 import FileInput from '../../forms/FileInput';
 import ActivityList from '../activity/ActivityList';
 import { EnrichmentRequestDialog } from '../enrichment';
@@ -85,9 +85,7 @@ export default function NoteViewer() {
     });
     const router = useRouter();
     const queryClient = useQueryClient();
-    const location = useRouterState({
-        select: (state) => state.location,
-    });
+    const location = useLocation();
     const noteId = useMemo(() => {
         const routeId = (params as { id?: string }).id;
         if (routeId) {

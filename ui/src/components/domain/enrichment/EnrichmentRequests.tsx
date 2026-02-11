@@ -1,4 +1,4 @@
-import EnrichmentRequestDialog from '@/components/dialogs/enrichment/EnrichmentRequestDialog';
+import EnrichmentRequestDialog from '@/components/domain/enrichment/dialogs/EnrichmentRequestDialog';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';

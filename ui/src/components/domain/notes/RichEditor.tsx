@@ -79,7 +79,7 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import FileUploadDialog from '../../dialogs/notes/FileUploadDialog';
+import FileUploadDialog from '@/components/domain/notes/dialogs/FileUploadDialog';
 import FileTable from '../files/FileTable';
 import { getSaveStatus } from './StatusIndicators';
 

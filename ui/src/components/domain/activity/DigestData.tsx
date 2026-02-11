@@ -1,4 +1,4 @@
-import UploadDigestDialog from '@/components/dialogs/files/UploadDigestDialog';
+import UploadDigestDialog from '@/components/domain/activity/dialogs/UploadDigestDialog';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';

@@ -1,8 +1,8 @@
-import ApiKeyGenerateDialog from '@/components/dialogs/auth/ApiKeyGenerateDialog';
-import ChangePasswordDialog from '@/components/dialogs/auth/ChangePasswordDialog';
-import TwoFactorSetupDialog from '@/components/dialogs/auth/TwoFactorSetupDialog';
+import ApiKeyGenerateDialog from '@/components/domain/user/dialogs/ApiKeyGenerateDialog';
+import ChangePasswordDialog from '@/components/domain/user/dialogs/ChangePasswordDialog';
+import TwoFactorSetupDialog from '@/components/domain/user/dialogs/TwoFactorSetupDialog';
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
-import MarkdownEditorDialog from '@/components/dialogs/notes/MarkdownEditorDialog';
+import MarkdownEditorDialog from '@/components/dialogs/base/MarkdownEditorDialog';
 import { Button } from '@/components/ui/button';
 import {
     Command,
