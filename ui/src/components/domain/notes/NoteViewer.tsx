@@ -75,6 +75,8 @@ interface LocationState {
     };
 }
 
+const EMPTY_FILES: FileReferenceWithNote[] = [];
+
 /**
  * NoteViewer component - displays note content with editing capabilities
  */
@@ -398,7 +400,7 @@ export default function NoteViewer() {
         }
         setMarkdownContent(noteData.content);
         setInitialMarkdown(noteData.content);
-        setFileData(noteData.files || []);
+        setFileData(noteData.files || EMPTY_FILES);
         setHasUnsavedChanges(false);
         setIsLoading(false);
     }, [noteData]);

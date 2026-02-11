@@ -160,11 +160,11 @@ export async function resolveMinioLinks(
         hrefIndex = hrefIndex < 0 ? token.attrIndex('src') : hrefIndex;
         if (hrefIndex < 0) return;
         const href = token.attrs![hrefIndex][1];
-        if (!href.startsWith('/file-transfer/download/')) return;
+        if (!href.includes('/file-transfer/download/')) return;
 
         let url: URL;
         try {
-            url = new URL(baseURL + href);
+            url = new URL(href, window.location.origin);
         } catch {
             return;
         }

@@ -102,21 +102,22 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
     useEffect(() => {
         const el = previewRef.current;
         if (el && htmlContent !== undefined) {
-            el.innerHTML = DOMPurify.sanitize(htmlContent);
+            el.innerHTML = DOMPurify.sanitize(htmlContent, {
+                ADD_ATTR: ['style'],
+            });
             Prism.highlightAllUnder(el);
         }
     }, [htmlContent]);
 
-    if (isLoading) {
-        return (
-            <div className='flex items-center justify-center h-full w-full py-8'>
-                <Spinner className='size-10' />
-            </div>
-        );
-    }
+    const isInitialLoad = isLoading && !htmlContent;
 
     return (
-        <div className='h-full w-full flex flex-col'>
+        <div className='h-full w-full flex flex-col relative'>
+            {isInitialLoad && (
+                <div className='absolute inset-0 flex items-center justify-center z-10'>
+                    <Spinner className='size-10' />
+                </div>
+            )}
             {/* Rendered markdown content with proper styling */}
             <ScrollArea className='h-full w-full'>
                 <div
