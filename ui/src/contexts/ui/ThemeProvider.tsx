@@ -83,12 +83,12 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
         meta: { showErrorToast: false },
     });
 
-    // Local state for fallback (when no profile). SSR-safe: no localStorage on server.
-    const [localTheme, setLocalTheme] = useState<ThemeConfig | null>(() =>
-        typeof window === 'undefined'
-            ? null
-            : parseStoredTheme(localStorage.getItem('theme')),
-    );
+    const [localTheme, setLocalTheme] = useState<ThemeConfig | null>(null);
+
+    useEffect(() => {
+        const stored = parseStoredTheme(localStorage.getItem('theme'));
+        if (stored) setLocalTheme(stored);
+    }, []);
     const appliedVarsRef = useRef<string[]>([]);
 
     // Mutation to update theme on server

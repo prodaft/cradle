@@ -114,11 +114,16 @@ interface AuthProviderProps {
  * Automatically refreshes tokens before expiration.
  */
 export function AuthProvider({ children }: AuthProviderProps) {
-    const [role, setRole] = useState(() => getStorageItem('role') || '');
-    const [userId, setUserId] = useState<string | null>(
-        () => getStorageItem('user_id') || null,
-    );
+    const [role, setRole] = useState('');
+    const [userId, setUserId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const storedRole = getStorageItem('role');
+        const storedUserId = getStorageItem('user_id');
+        if (storedRole) setRole(storedRole);
+        if (storedUserId) setUserId(storedUserId);
+    }, []);
     const basePath = getBaseUrl();
 
     const authApi = useMemo(() => {
