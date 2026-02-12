@@ -650,17 +650,6 @@ export default function NoteViewer() {
             {navbarActionsEl &&
                 createPortal(
                     <>
-                        {profile?.vimMode && (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <span className='inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'>
-                                        <span className='w-1.5 h-1.5 rounded-full bg-green-500' />
-                                        <span className='cradle-mono'>Vim</span>
-                                    </span>
-                                </TooltipTrigger>
-                                <TooltipContent>Vim mode enabled</TooltipContent>
-                            </Tooltip>
-                        )}
                         {note && !noteId?.startsWith('guide_') && (
                             <Tooltip>
                                 <TooltipTrigger asChild>

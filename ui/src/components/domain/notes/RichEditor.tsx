@@ -708,6 +708,17 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             <div className='flex-none flex items-center justify-end gap-4 px-3 py-1.5 border-t border-border bg-muted/30 text-muted-foreground text-xs'>
                 <span>{wordCount} words</span>
                 <span>{charCount} chars</span>
+                {profile?.vimMode && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <span className='inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'>
+                                <span className='w-1.5 h-1.5 rounded-full bg-green-500' />
+                                <span className='cradle-mono'>Vim</span>
+                            </span>
+                        </TooltipTrigger>
+                        <TooltipContent>Vim mode enabled</TooltipContent>
+                    </Tooltip>
+                )}
                 <svg
                     xmlns='http://www.w3.org/2000/svg'
                     width='14'
