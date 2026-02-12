@@ -29,9 +29,6 @@ export default function GraphSettingsForm() {
         onSuccess: () => {
             toast.success('Refresh Materialized Graph action triggered!');
         },
-        onError: () => {
-            toast.error('Failed to refresh materialized graph');
-        },
     });
 
     const recalculatePositionsMutation = useMutation({
@@ -45,9 +42,6 @@ export default function GraphSettingsForm() {
         },
         onSuccess: () => {
             toast.success('Re-calculate Node Positions action triggered!');
-        },
-        onError: () => {
-            toast.error('Failed to re-calculate node positions');
         },
     });
 

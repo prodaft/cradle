@@ -28,7 +28,6 @@ import { Entity } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 import { z } from 'zod';
 import { SelectOption } from '../../../forms';
 
@@ -186,13 +185,9 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
         },
         meta: {
             successMessage: 'Entity created successfully!',
-            errorMessage: 'Failed to create entity',
         },
         onSuccess: (result) => {
             if (onAdd) onAdd(result);
-        },
-        onError: () => {
-            toast.error('Failed to create entity');
         },
     });
 

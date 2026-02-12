@@ -30,6 +30,7 @@ export const queryKeys = {
             sortField?: string;
             sortDirection?: 'asc' | 'desc';
             statusFilter?: string;
+            search?: string;
         }) => [...queryKeys.reports.lists(), filters] as const,
         details: () => [...queryKeys.reports.all, 'detail'] as const,
         detail: (id: string) => [...queryKeys.reports.details(), id] as const,

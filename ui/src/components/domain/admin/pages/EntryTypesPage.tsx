@@ -2,6 +2,7 @@ import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import AddEntryTypeDialog from '@/components/domain/admin/dialogs/AddEntryTypeDialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -43,7 +44,6 @@ import {
 } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import AddEntryTypeDialog from '@/components/domain/admin/dialogs/AddEntryTypeDialog';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
 import ActivityList from '../../activity/ActivityList';
 import AdminPageLayout from '../AdminPageLayout';
@@ -189,7 +189,7 @@ function EntryTypeSettingsPage({ subtype }: { subtype: string }) {
                                         id={subtype}
                                         onAdd={(newEntryType: EntryClass) => {
                                             queryClient.invalidateQueries({
-                                                queryKey: ['entryTypes', 'list'],
+                                                queryKey: queryKeys.entryTypes.lists(),
                                             });
                                             if (
                                                 newEntryType.subtype &&
@@ -505,7 +505,7 @@ export default function EntryTypesPage() {
     };
 
     const handleEntryTypeAdded = (newEntryType: EntryClass) => {
-        queryClient.invalidateQueries({ queryKey: ['entryTypes', 'list'] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.entryTypes.lists() });
         if (newEntryType.subtype) {
             router.navigate({
                 to: `/manage/entry-types/${encodeURIComponent(newEntryType.subtype)}` as any,

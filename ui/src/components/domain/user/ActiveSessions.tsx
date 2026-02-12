@@ -18,6 +18,7 @@ import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions } from '@/hooks/auth/useAuth';
 import { UserSession } from '@/services/cradle/models';
+import { parseAPIError } from '@/utils/api';
 import { TrashIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
@@ -182,7 +183,8 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     clearSelection();
                 }
             } catch (error) {
-                toast.error('Failed to revoke sessions');
+                const parsed = await parseAPIError(error);
+                toast.error(parsed.detail);
             }
         },
         [

@@ -27,9 +27,6 @@ export default function EntriesManagement() {
         onSuccess: () => {
             toast.success('Propagate Access Vectors action triggered successfully!');
         },
-        onError: () => {
-            toast.error('Error occurred while propagating access vectors.');
-        },
     });
 
     const deleteHangingArtifactsMutation = useMutation({
@@ -46,9 +43,6 @@ export default function EntriesManagement() {
             toast.success(
                 (response as any)?.message || 'Action completed successfully!',
             );
-        },
-        onError: () => {
-            toast.error('Error occurred while deleting hanging artifacts.');
         },
     });
 

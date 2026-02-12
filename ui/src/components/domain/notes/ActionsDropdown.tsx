@@ -6,6 +6,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
     ArrowClockwiseIcon,
@@ -244,9 +245,7 @@ export default function ActionsDropdown({
                     >
                         <FloppyDiskIcon size={16} weight='bold' />
                         <span className='flex-1'>Save As Final</span>
-                        {saving && (
-                            <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-foreground' />
-                        )}
+                        {saving && <Spinner />}
                     </DropdownMenuItem>
                 )}
                 {activeView !== ViewMode.GRAPH && (

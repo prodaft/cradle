@@ -17,9 +17,11 @@ import {
     InputGroupInput,
 } from '@/components/ui/input-group';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
 import { Enable2FA } from '@/services/cradle/models';
 import { Alert } from '@/types';
+import { parseAPIError } from '@/utils/api';
 import { CopyIcon, QrCodeIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
@@ -143,19 +145,10 @@ export default function TwoFactorSetupDialog({
                 onSuccess?.();
                 onOpenChange(false);
             } catch (err) {
-                const errorMessage =
-                    err instanceof Error
-                        ? err.message
-                        : 'Invalid verification code. Please try again.';
+                const parsed = await parseAPIError(err);
                 setAlert({
                     show: true,
-                    message:
-                        errorMessage.includes('Invalid') ||
-                        errorMessage.includes('verification')
-                            ? errorMessage
-                            : 'Failed to ' +
-                              (isDisabling ? 'disable' : 'enable') +
-                              ' 2FA. Please try again.',
+                    message: parsed.detail,
                     color: 'red',
                 });
             } finally {
@@ -176,7 +169,7 @@ export default function TwoFactorSetupDialog({
                         </DialogDescription>
                     </DialogHeader>
                     <div className='flex justify-center py-12'>
-                        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+                        <Spinner className='size-8' />
                     </div>
                 </DialogContent>
             </Dialog>
@@ -184,9 +177,9 @@ export default function TwoFactorSetupDialog({
     }
 
     return (
-        <form onSubmit={handleSubmit}>
-            <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className='sm:max-w-md'>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className='sm:max-w-md'>
+                <form onSubmit={handleSubmit} className='grid gap-4'>
                     <DialogHeader>
                         <DialogTitle>
                             {isDisabling ? 'Disable' : 'Set up'} Two-Factor Auth
@@ -299,8 +292,8 @@ export default function TwoFactorSetupDialog({
                                   : 'Enable'}
                         </Button>
                     </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </form>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

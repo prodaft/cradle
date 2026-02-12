@@ -24,6 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
 import {
     CodeIcon,
@@ -318,9 +319,7 @@ export default function ReportGenerationDialog({
                         variant='default'
                         size='sm'
                     >
-                        {generateReportMutation.isPending && (
-                            <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-current' />
-                        )}
+                        {generateReportMutation.isPending && <Spinner />}
                         {generateReportMutation.isPending
                             ? 'Generating...'
                             : 'Generate Report'}

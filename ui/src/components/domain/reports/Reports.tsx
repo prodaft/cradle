@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import { ReportList } from '@/services/cradle';
+import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import { DateRangeFilter } from '@components/base/ListView/types';
@@ -164,6 +165,7 @@ export default function Reports() {
             sortField,
             sortDirection,
             statusFilter: columnFilters.status,
+            search: searchQuery || undefined,
         }),
         queryFn: () =>
             reportsApi.reportsList({
@@ -309,7 +311,8 @@ export default function Reports() {
 
             setRowSelection({});
         } catch (error) {
-            toast.error('An unexpected error occurred while deleting reports');
+            const parsed = await parseAPIError(error);
+            toast.error(parsed.detail);
         }
     };
 
@@ -351,7 +354,8 @@ export default function Reports() {
             // Important: do NOT refetch here; retry is async and refetching causes a full table rerender.
             setRowSelection({});
         } catch (error) {
-            toast.error('Failed to retry report(s).');
+            const parsed = await parseAPIError(error);
+            toast.error(parsed.detail);
         }
     };
 
@@ -429,7 +433,8 @@ export default function Reports() {
                 `${idsArray.length > 1 ? 'Reports' : 'Report'} downloaded successfully`,
             );
         } catch (error) {
-            toast.error('Failed to download report(s)');
+            const parsed = await parseAPIError(error);
+            toast.error(parsed.detail);
         }
     };
 
@@ -726,9 +731,6 @@ export default function Reports() {
                             deleteMutation.mutate(deletingReportId, {
                                 onSuccess: () => {
                                     toast.success('Report deleted successfully');
-                                },
-                                onError: () => {
-                                    toast.error('Failed to delete report');
                                 },
                             });
                         }

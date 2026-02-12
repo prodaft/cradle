@@ -2,6 +2,7 @@ import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import AddUserDialog from '@/components/domain/admin/dialogs/AddUserDialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -46,7 +47,6 @@ import {
 } from '@tanstack/react-table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import AddUserDialog from '@/components/domain/admin/dialogs/AddUserDialog';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
 import AdminPageLayout from '../AdminPageLayout';
 import AdminUserSettings from './AdminUserSettings';
@@ -228,10 +228,10 @@ export default function UsersPage() {
             );
         },
         meta: {
-            errorMessage: 'Failed to delete users',
+            invalidateQueries: [{ queryKey: queryKeys.users.lists() }],
+            suppressNotification: true,
         },
         onSuccess: (_, userIds) => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
             toast.success(
                 `Successfully deleted ${userIds.length} user${userIds.length > 1 ? 's' : ''}`,
             );
@@ -272,9 +272,6 @@ export default function UsersPage() {
         deleteUsersMutation.mutate(userIds, {
             onSuccess: () => {
                 clearSelection();
-            },
-            onError: () => {
-                toast.error('Failed to delete users');
             },
         });
     };

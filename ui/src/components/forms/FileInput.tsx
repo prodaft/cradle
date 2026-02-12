@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import { useApi } from '@hooks';
 import { CheckIcon, CloudArrowUpIcon, XIcon } from '@phosphor-icons/react';
 import type {
@@ -255,9 +256,7 @@ export default function FileInput({
     const renderStatusIcon = (status: FileUploadStatus) => {
         switch (status) {
             case 'uploading':
-                return (
-                    <div className='w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin' />
-                );
+                return <Spinner />;
             case 'success':
                 return <CheckIcon className='w-4 h-4 text-primary' weight='bold' />;
             case 'error':
@@ -286,9 +285,7 @@ export default function FileInput({
                     onClick={handleUpload}
                     disabled={isUploading || pendingFiles.length === 0}
                 >
-                    {isUploading && (
-                        <div className='w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin' />
-                    )}
+                    {isUploading && <Spinner />}
                     <CloudArrowUpIcon className='w-5 h-5' weight='bold' />
                 </Button>
             </div>

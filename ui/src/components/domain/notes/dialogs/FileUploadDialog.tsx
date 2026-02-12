@@ -19,6 +19,8 @@ import {
     FileUploadList,
     FileUploadTrigger,
 } from '@/components/ui/file-upload';
+import { Spinner } from '@/components/ui/spinner';
+import { parseAPIError } from '@/utils/api';
 import { useApi } from '@hooks';
 import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
 import type {
@@ -149,9 +151,8 @@ export default function FileUploadDialog({
                     fileName: finalizeResponse.fileName,
                 } as FileReferenceWithNote);
             } catch (error) {
-                const errorMessage =
-                    error instanceof Error ? error.message : 'Upload failed';
-                updateFileStatus(file, 'error', 0, errorMessage);
+                const parsed = await parseAPIError(error);
+                updateFileStatus(file, 'error', 0, parsed.detail);
                 failedFiles.push(file);
             }
         }
@@ -333,7 +334,7 @@ export default function FileUploadDialog({
                         >
                             {isUploading ? (
                                 <>
-                                    <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-current' />
+                                    <Spinner />
                                     <span>Uploading...</span>
                                 </>
                             ) : (

@@ -27,7 +27,7 @@ import { Entity } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
+
 import { z } from 'zod';
 import OfflineIndicator from '../../../feedback/OfflineIndicator';
 import { SelectOption } from '../../../forms';
@@ -92,10 +92,13 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         },
         meta: {
             successMessage: 'Entity updated successfully!',
-            errorMessage: 'Failed to update entity',
+            invalidateQueries: [
+                { queryKey: queryKeys.entities.lists() },
+                { queryKey: queryKeys.entities.detail(String(id)) },
+            ],
         },
-        onError: () => {
-            toast.error('Failed to update entity');
+        onSuccess: (result) => {
+            if (onAdd) onAdd(result);
         },
     });
 
@@ -168,8 +171,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         meta: {
             showErrorToast: true,
             errorMessage: 'Failed to fetch entity',
-            suppressNotification: true,
-        } as any,
+        },
     });
 
     const resolvedSubtypeOptions = useMemo(() => {

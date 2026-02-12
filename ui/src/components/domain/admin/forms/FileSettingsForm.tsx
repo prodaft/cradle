@@ -112,9 +112,6 @@ export default function FileSettingsForm() {
         onSuccess: () => {
             toast.success('Files are being re-processed');
         },
-        onError: () => {
-            toast.error('Failed to re-process files');
-        },
     });
 
     const { data: entryClassesData } = useQuery({
@@ -157,13 +154,9 @@ export default function FileSettingsForm() {
         },
         meta: {
             successMessage: 'File settings updated successfully!',
-            errorMessage: 'Failed to save file settings',
         },
         onSuccess: (_, variables) => {
             reset(variables);
-        },
-        onError: () => {
-            toast.error('Failed to save file settings');
         },
     });
 

@@ -75,13 +75,9 @@ export default function NoteSettingsForm() {
         },
         meta: {
             successMessage: 'Settings updated successfully!',
-            errorMessage: 'Failed to save settings',
         },
         onSuccess: (_, variables) => {
             reset(variables);
-        },
-        onError: () => {
-            toast.error('Failed to save settings');
         },
     });
 
@@ -96,9 +92,6 @@ export default function NoteSettingsForm() {
         },
         onSuccess: () => {
             toast.success('Re-Link all Notes action triggered!');
-        },
-        onError: () => {
-            toast.error('Failed to trigger Re-Link action');
         },
     });
 

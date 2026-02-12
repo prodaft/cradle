@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { cn } from '@/lib/utils';
+import { parseAPIError } from '@/utils/api';
 import Logo from '@components/base/Logo/Logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
@@ -54,22 +55,21 @@ export default function ForgotPassword() {
             });
         },
         meta: {
-            successMessage: 'Password change email sent to your inbox!',
-            errorMessage: 'Failed to send reset email. Please try again.',
+            suppressNotification: true,
         },
-        onError: (error: any) => {
+        onError: async (error) => {
+            const parsed = await parseAPIError(error);
             setAlert({
                 show: true,
-                message:
-                    error?.detail || 'Failed to send reset email. Please try again.',
+                message: parsed.detail,
                 color: 'red',
             });
         },
         onSuccess: () => {
             setAlert({
-                show: false,
-                message: '',
-                color: 'red',
+                show: true,
+                message: 'Password change email sent to your inbox!',
+                color: 'green',
             });
         },
     });

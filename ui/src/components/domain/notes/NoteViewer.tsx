@@ -1,18 +1,14 @@
 import FileUploadDialog from '@/components/domain/notes/dialogs/FileUploadDialog';
+import ReportGenerationDialog from '@/components/domain/reports/dialogs/ReportGenerationDialog';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    Field,
-    FieldGroup,
-    FieldLabel,
-    FieldSet,
-} from '@/components/ui/field';
+import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import {
     ResizableHandle,
     ResizablePanel,
@@ -32,19 +28,14 @@ import { logger } from '@/utils/logger';
 import { Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
 import { BookOpenIcon, InfoIcon, PencilSimpleIcon } from '@phosphor-icons/react';
-import { format } from 'date-fns';
 import type {
     FileReferenceWithNote,
     FileUploadFinalizeResponse,
     NoteRetrieve,
 } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-    useLocation,
-    useParams,
-    useRouter,
-    useSearch,
-} from '@tanstack/react-router';
+import { useLocation, useParams, useRouter, useSearch } from '@tanstack/react-router';
+import { format } from 'date-fns';
 import { debounce } from 'lodash';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
@@ -52,7 +43,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import ConfirmDeletionDialog from '../../dialogs/base/ConfirmDeletionDialog';
-import ReportGenerationDialog from '@/components/domain/reports/dialogs/ReportGenerationDialog';
 import FileInput from '../../forms/FileInput';
 import ActivityList from '../activity/ActivityList';
 import { EnrichmentRequestDialog } from '../enrichment';

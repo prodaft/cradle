@@ -1,8 +1,8 @@
+import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
+import MarkdownEditorDialog from '@/components/dialogs/base/MarkdownEditorDialog';
 import ApiKeyGenerateDialog from '@/components/domain/user/dialogs/ApiKeyGenerateDialog';
 import ChangePasswordDialog from '@/components/domain/user/dialogs/ChangePasswordDialog';
 import TwoFactorSetupDialog from '@/components/domain/user/dialogs/TwoFactorSetupDialog';
-import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
-import MarkdownEditorDialog from '@/components/dialogs/base/MarkdownEditorDialog';
 import { Button } from '@/components/ui/button';
 import {
     Command,
@@ -31,6 +31,7 @@ import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { UserConfig, UserRetrieve } from '@/services/cradle/models';
+import { parseAPIError } from '@/utils/api';
 import { PRESET_THEMES } from '@/utils/themes';
 import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -472,8 +473,9 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
             setOauthConnections((prev) => ({ ...prev, [provider]: false }));
             toast.success(`${provider} disconnected.`);
         },
-        onError: () => {
-            toast.error('Failed to disconnect OAuth provider.');
+        onError: async (error) => {
+            const parsed = await parseAPIError(error);
+            toast.error(parsed.detail);
         },
     });
 

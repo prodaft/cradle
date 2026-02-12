@@ -29,6 +29,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import type { OptimizedEntryResponse } from '@/services/cradle';
+import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { parseMarkdownInline } from '@/utils/parser';
 import {
@@ -531,10 +532,11 @@ export default function NotesList({
 
             setRowSelection({});
         } catch (error) {
+            const parsed = await parseAPIError(error);
             setAlert({
                 show: true,
                 color: 'red',
-                message: 'An unexpected error occurred while deleting notes',
+                message: parsed.detail,
             });
         }
     };

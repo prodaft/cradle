@@ -2,6 +2,7 @@ import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import AddEntityDialog from '@/components/domain/admin/dialogs/AddEntityDialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -43,7 +44,6 @@ import {
 } from '@tanstack/react-table';
 import { Plus, Shield } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import AddEntityDialog from '@/components/domain/admin/dialogs/AddEntityDialog';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
 import ActivityList from '../../activity/ActivityList';
 import AdminPageLayout from '../AdminPageLayout';
@@ -184,7 +184,8 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
                                             id={Number(entityId)}
                                             onAdd={(newEntity: Entity) => {
                                                 queryClient.invalidateQueries({
-                                                    queryKey: ['entities', 'list'],
+                                                    queryKey:
+                                                        queryKeys.entities.lists(),
                                                 });
                                                 queryClient.invalidateQueries({
                                                     queryKey: queryKeys.entities.detail(
@@ -510,7 +511,7 @@ export default function EntitiesPage() {
     };
 
     const handleEntityAdded = (newEntity: Entity) => {
-        queryClient.invalidateQueries({ queryKey: ['entities', 'list'] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.entities.lists() });
         if (newEntity.id) {
             router.navigate({ to: `/manage/entities/${newEntity.id}` as any });
         }

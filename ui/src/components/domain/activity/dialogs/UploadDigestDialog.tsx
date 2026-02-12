@@ -28,6 +28,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import { DigestSubclass } from '@/services/cradle/models/DigestSubclass';
@@ -95,7 +96,7 @@ export default function UploadDigestDialog({
 
     // Fetch data type options if not provided
     const { data: dataTypesResponse } = useQuery({
-        queryKey: ['digestDataTypes'],
+        queryKey: [...queryKeys.digests.all, 'options'],
         queryFn: () => intelioApi.intelioDigestOptionsList(),
         meta: {
             showErrorToast: true,
@@ -509,7 +510,7 @@ export default function UploadDigestDialog({
                         >
                             {form.formState.isSubmitting ? (
                                 <>
-                                    <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-current' />
+                                    <Spinner />
                                     <span>Uploading...</span>
                                 </>
                             ) : (

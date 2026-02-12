@@ -1,5 +1,6 @@
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
+import { parseAPIError } from '@/utils/api';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -82,6 +83,7 @@ export default function DashboardEnrichmentRequests({
             page,
             pageSize,
             entryId: entryId.toString(),
+            ...queryParams,
         }),
         queryFn: () => intelioApi.enrichmentRequestList(queryParams),
         meta: {
@@ -157,7 +159,8 @@ export default function DashboardEnrichmentRequests({
             toast.success(`Deleted ${ids.length} enrichment request(s)`);
             setSelectedRequests([]);
         } catch (error) {
-            toast.error('Failed to delete enrichment requests');
+            const parsed = await parseAPIError(error);
+            toast.error(parsed.detail);
         }
     };
 
@@ -173,7 +176,8 @@ export default function DashboardEnrichmentRequests({
             );
             setSelectedRequests([]);
         } catch (error) {
-            toast.error('Failed to retry enrichment requests');
+            const parsed = await parseAPIError(error);
+            toast.error(parsed.detail);
         }
     };
 

@@ -1,3 +1,5 @@
+import FileUploadDialog from '@/components/domain/notes/dialogs/FileUploadDialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from '@/contexts/ui';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions } from '@/hooks/auth/useAuth';
@@ -36,12 +38,7 @@ import {
 } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
-import {
-    EditorState,
-    Extension,
-    Prec,
-    StateEffect,
-} from '@codemirror/state';
+import { EditorState, Extension, Prec, StateEffect } from '@codemirror/state';
 import {
     drawSelection,
     EditorView,
@@ -78,8 +75,6 @@ import {
     useState,
 } from 'react';
 import { toast } from 'sonner';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import FileUploadDialog from '@/components/domain/notes/dialogs/FileUploadDialog';
 import FileTable from '../files/FileTable';
 import { getSaveStatus } from './StatusIndicators';
 
@@ -238,11 +233,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const onUpdate = useMemo(
         () =>
             EditorView.updateListener.of((u) => {
-                if (u.docChanged)
-                    setMarkdownContentRef.current(u.state.doc.toString());
-                const line = u.state.doc.lineAt(
-                    u.state.selection.main.head,
-                ).number;
+                if (u.docChanged) setMarkdownContentRef.current(u.state.doc.toString());
+                const line = u.state.doc.lineAt(u.state.selection.main.head).number;
                 setLineNumberRef.current(line);
             }),
         [],
@@ -279,9 +271,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         setEntryColors((prev) => {
             if (
                 prev.size !== colorMap.size ||
-                [...prev.entries()].some(
-                    ([k, v]) => colorMap.get(k) !== v,
-                ) ||
+                [...prev.entries()].some(([k, v]) => colorMap.get(k) !== v) ||
                 [...colorMap.entries()].some(([k, v]) => prev.get(k) !== v)
             )
                 return colorMap;
@@ -660,11 +650,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const toggleFileList = useCallback(() => setShowFileList((prev) => !prev), []);
 
     const wordCount = useMemo(
-        () =>
-            markdownContent
-                .trim()
-                .split(/\s+/)
-                .filter(Boolean).length,
+        () => markdownContent.trim().split(/\s+/).filter(Boolean).length,
         [markdownContent],
     );
     const charCount = markdownContent.length;

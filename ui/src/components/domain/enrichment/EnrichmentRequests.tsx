@@ -4,6 +4,7 @@ import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
+import { parseAPIError } from '@/utils/api';
 import InProgress from '@components/feedback/InProgress';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
@@ -105,6 +106,7 @@ export default function EnrichmentRequests() {
         queryKey: queryKeys.enrichment.requests.list({
             page,
             pageSize,
+            ...queryParams,
         }),
         queryFn: () => intelioApi.enrichmentRequestList(queryParams!),
         enabled: queryParams != null,
@@ -251,7 +253,8 @@ export default function EnrichmentRequests() {
             toast.success(`Deleted ${ids.length} enrichment request(s)`);
             setSelectedRequests([]);
         } catch (error) {
-            toast.error('Failed to delete enrichment requests');
+            const parsed = await parseAPIError(error);
+            toast.error(parsed.detail);
         }
     };
 
@@ -268,7 +271,8 @@ export default function EnrichmentRequests() {
             );
             setSelectedRequests([]);
         } catch (error) {
-            toast.error('Failed to retry enrichment requests');
+            const parsed = await parseAPIError(error);
+            toast.error(parsed.detail);
         }
     };
 
@@ -339,8 +343,9 @@ export default function EnrichmentRequests() {
                 onSuccess={() => {
                     toast.success('Enrichment request created successfully');
                 }}
-                onError={(error: Error) => {
-                    toast.error(`Error creating enrichment request: ${error.message}`);
+                onError={async (error: Error) => {
+                    const parsed = await parseAPIError(error);
+                    toast.error(parsed.detail);
                 }}
             />
         </div>

@@ -47,7 +47,6 @@ import {
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 import { z } from 'zod';
 import OfflineIndicator from '../../../feedback/OfflineIndicator';
 import { SelectOption } from '../../../forms';
@@ -211,13 +210,9 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         },
         meta: {
             successMessage: 'Entry type updated successfully!',
-            errorMessage: 'Failed to update entry type',
         },
         onSuccess: (result) => {
             if (onAdd) onAdd(result);
-        },
-        onError: () => {
-            toast.error('Failed to update entry type');
         },
     });
 

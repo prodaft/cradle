@@ -1,5 +1,5 @@
-import AdminSetPasswordDialog from '@/components/domain/admin/dialogs/AdminSetPasswordDialog';
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
+import AdminSetPasswordDialog from '@/components/domain/admin/dialogs/AdminSetPasswordDialog';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {

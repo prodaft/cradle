@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import type { Alert, StateSetter } from '@/types';
+import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import { useDroppable } from '@dnd-kit/core';
@@ -328,7 +329,8 @@ export default function FilesList({
                 `Attempted to download ${downloads.length} file(s). Your browser may block some.`,
             );
         } catch (error) {
-            toast.error('Failed to download files. Please try again.');
+            const parsed = await parseAPIError(error);
+            toast.error(parsed.detail);
         }
     }, [selectedFileIds, downloadFileMutation]);
 
@@ -372,7 +374,8 @@ export default function FilesList({
             );
             setRowSelection({});
         } catch (error) {
-            toast.error('Failed to delete files');
+            const parsed = await parseAPIError(error);
+            toast.error(parsed.detail);
         }
     };
 
