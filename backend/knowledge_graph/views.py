@@ -170,6 +170,22 @@ class GraphPathFindView(APIView):
             description="Use wildcard matching for query",
             default=False,
         ),
+        OpenApiParameter(
+            name="subtype",
+            type={"type": "array", "items": {"type": "string"}},
+            location=OpenApiParameter.QUERY,
+            description="Filter by entry subtype(s). Supports repeated params: ?subtype=a&subtype=b",
+            required=False,
+            explode=True,
+        ),
+        OpenApiParameter(
+            name="name",
+            type={"type": "array", "items": {"type": "string"}},
+            location=OpenApiParameter.QUERY,
+            description="Filter by entry name (case-insensitive contains). Supports repeated params.",
+            required=False,
+            explode=True,
+        ),
     ],
     responses={
         200: LazyPaginator().get_paginated_response_serializer(EntryWithDepthSerializerView),

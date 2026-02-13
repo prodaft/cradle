@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import SearchDialog from '@components/domain/search/SearchDialog';
+import SearchDialog from '@components/domain/search/search-command';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import React, { useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';

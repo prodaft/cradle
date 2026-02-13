@@ -16,7 +16,7 @@ import ActivityList from '../activity/ActivityList';
 import DashboardEnrichmentRequests from './DashboardEnrichmentRequests';
 import Files from './Files';
 import Notes from './Notes';
-import Relations from './Relations';
+import Relations from './relations';
 
 /**
  * Dashboard component

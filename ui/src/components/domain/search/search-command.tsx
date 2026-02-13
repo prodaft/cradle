@@ -30,7 +30,7 @@ import { useApi } from '@hooks';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import React, { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import SearchFilterSection from './SearchFilterSection';
+import SearchFilterSection from './search-filter';
 
 /**
  * Search result from API

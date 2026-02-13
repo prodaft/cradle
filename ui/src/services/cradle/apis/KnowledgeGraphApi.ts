@@ -44,6 +44,8 @@ export interface KnowledgeGraphNeighborsRetrieveRequest {
     pageSize?: number;
     query?: string;
     wildcard?: boolean;
+    subtype?: Array<string>;
+    name?: Array<string>;
 }
 
 export interface KnowledgeGraphPathsRetrieveRequest {
@@ -151,6 +153,14 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
 
         if (requestParameters['wildcard'] != null) {
             queryParameters['wildcard'] = requestParameters['wildcard'];
+        }
+
+        if (requestParameters['subtype'] != null) {
+            queryParameters['subtype'] = requestParameters['subtype'];
+        }
+
+        if (requestParameters['name'] != null) {
+            queryParameters['name'] = requestParameters['name'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

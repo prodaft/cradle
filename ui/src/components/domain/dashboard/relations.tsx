@@ -32,8 +32,20 @@ import {
 } from '@/components/ui/table';
 import useApi from '@/hooks/api/useApi';
 import { createDashboardLink } from '@/utils/dashboard';
-import SearchFilterSection from '@components/domain/search/SearchFilterSection';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 import { CaretDownIcon, CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { Check, PlusCircle, XCircle } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import {
@@ -46,18 +58,8 @@ import {
     getExpandedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import React, { MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { MouseEvent, useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
-    button?: {
-        text: string;
-        onClick: () => void;
-    };
-}
 
 interface Result {
     id?: number;
@@ -70,23 +72,16 @@ interface Result {
 interface RelationsProps {
     obj: {
         id?: number;
-        type?: string;
         [key: string]: any;
     };
 }
 
-const truncate = (str: string, n: number) => {
-    return str.length > n ? str.slice(0, n - 1) + '...' : str;
-};
-
 // Expanded row detail — fetches path data and renders stepper
 function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }) {
     const { knowledgeGraphApi } = useApi();
-    const router = useRouter();
-    const [activeStepId, setActiveStepId] = useState<string | null>(null);
+    const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
 
-    const isSameEntry = result.id !== undefined && result.id === srcId;
-    const canExpand = !isSameEntry && result.id !== undefined;
+    const canExpand = result.id !== undefined && result.id !== srcId;
 
     const { data: pathData, isPending: isPathPending } = useQuery({
         queryKey: ['graph', 'paths', { src: String(srcId), dst: result.id }],
@@ -136,24 +131,20 @@ function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }
         const visited = new Set<number>([srcId]);
         let foundPath: number[] = [];
 
-        if (srcId === result.id) {
-            foundPath = [srcId];
-        } else {
-            while (queue.length > 0) {
-                const path = queue.shift()!;
-                const curr = path[path.length - 1];
+        while (queue.length > 0) {
+            const path = queue.shift()!;
+            const curr = path[path.length - 1];
 
-                if (curr === result.id) {
-                    foundPath = path;
-                    break;
-                }
+            if (curr === result.id) {
+                foundPath = path;
+                break;
+            }
 
-                const neighbors = adj.get(curr) || [];
-                for (const next of neighbors) {
-                    if (!visited.has(next)) {
-                        visited.add(next);
-                        queue.push([...path, next]);
-                    }
+            const neighbors = adj.get(curr) || [];
+            for (const next of neighbors) {
+                if (!visited.has(next)) {
+                    visited.add(next);
+                    queue.push([...path, next]);
                 }
             }
         }
@@ -185,18 +176,8 @@ function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }
             .filter(Boolean) as any[];
     }, [pathData, srcId, result.id]);
 
-    useEffect(() => {
-        if (pathSteps.length > 0 && !activeStepId) {
-            setActiveStepId(pathSteps[0].id);
-        }
-    }, [pathSteps, activeStepId]);
-
-    const activeStep = useMemo(
-        () =>
-            pathSteps.find((s) => s.id === activeStepId) ||
-            (pathSteps.length > 0 ? pathSteps[0] : null),
-        [pathSteps, activeStepId],
-    );
+    const activeStepId = selectedStepId ?? pathSteps[0]?.id ?? null;
+    const activeStep = pathSteps.find((s) => s.id === activeStepId) ?? null;
 
     return (
         <div className='bg-muted/30 border-t'>
@@ -210,7 +191,7 @@ function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }
                         <PathStepper
                             steps={pathSteps}
                             activeStepId={activeStepId || pathSteps[0].id}
-                            onStepClick={setActiveStepId}
+                            onStepClick={setSelectedStepId}
                         />
                         {activeStep && (
                             <div className='pt-4 border-t flex flex-col gap-2'>
@@ -276,7 +257,7 @@ function PathStepper({
                             className='max-w-[120px] truncate'
                             title={step.title}
                         >
-                            {truncate(step.title, 128)}
+                            {step.title}
                         </Stepper.Title>
                         <Stepper.Description
                             className='max-w-[120px] truncate'
@@ -291,20 +272,147 @@ function PathStepper({
     );
 }
 
+function SubtypeFilter({
+    options,
+    selected,
+    onSelectedChange,
+    colorMap,
+}: {
+    options: string[];
+    selected: string[];
+    onSelectedChange: React.Dispatch<React.SetStateAction<string[]>>;
+    colorMap: Map<string, string>;
+}) {
+    const [open, setOpen] = React.useState(false);
+    const selectedSet = useMemo(() => new Set(selected), [selected]);
+    const sorted = useMemo(() => [...options].sort((a, b) => a.localeCompare(b)), [options]);
+
+    const toggle = (value: string) => {
+        onSelectedChange((prev) =>
+            prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+        );
+    };
+
+    const clear = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        onSelectedChange([]);
+    };
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button variant='outline' size='sm' className='border-dashed font-normal'>
+                    {selected.length > 0 ? (
+                        <div
+                            role='button'
+                            aria-label='Clear type filter'
+                            tabIndex={0}
+                            className='rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+                            onClick={clear}
+                        >
+                            <XCircle />
+                        </div>
+                    ) : (
+                        <PlusCircle />
+                    )}
+                    Type
+                    {selected.length > 0 && (
+                        <>
+                            <Separator
+                                orientation='vertical'
+                                className='mx-0.5 data-[orientation=vertical]:h-4'
+                            />
+                            <Badge
+                                variant='secondary'
+                                className='rounded-sm px-1 font-normal lg:hidden'
+                            >
+                                {selected.length}
+                            </Badge>
+                            <div className='hidden items-center gap-1 lg:flex'>
+                                {selected.length > 2 ? (
+                                    <Badge
+                                        variant='secondary'
+                                        className='rounded-sm px-1 font-normal'
+                                    >
+                                        {selected.length} selected
+                                    </Badge>
+                                ) : (
+                                    selected.map((s) => (
+                                        <Badge
+                                            key={s}
+                                            variant='secondary'
+                                            className='rounded-sm px-1 font-normal'
+                                        >
+                                            {s}
+                                        </Badge>
+                                    ))
+                                )}
+                            </div>
+                        </>
+                    )}
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className='w-50 p-0' align='start'>
+                <Command>
+                    <CommandInput placeholder='Search types...' />
+                    <CommandList className='max-h-full'>
+                        <CommandEmpty>No types found.</CommandEmpty>
+                        <CommandGroup className='max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden'>
+                            {sorted.map((subtype) => {
+                                const isSelected = selectedSet.has(subtype);
+                                const color = colorMap.get(subtype);
+                                return (
+                                    <CommandItem
+                                        key={subtype}
+                                        value={subtype}
+                                        onSelect={() => toggle(subtype)}
+                                    >
+                                        <div
+                                            className={cn(
+                                                'flex size-4 items-center justify-center rounded-sm border border-primary',
+                                                isSelected
+                                                    ? 'bg-primary'
+                                                    : 'opacity-50 [&_svg]:invisible',
+                                            )}
+                                        >
+                                            <Check />
+                                        </div>
+                                        {color && (
+                                            <span
+                                                className='size-2 rounded-full shrink-0'
+                                                style={{ backgroundColor: color }}
+                                            />
+                                        )}
+                                        <span className='truncate'>{subtype}</span>
+                                    </CommandItem>
+                                );
+                            })}
+                        </CommandGroup>
+                        {selected.length > 0 && (
+                            <>
+                                <CommandSeparator />
+                                <CommandGroup>
+                                    <CommandItem
+                                        onSelect={() => clear()}
+                                        className='justify-center text-center'
+                                    >
+                                        Clear filters
+                                    </CommandItem>
+                                </CommandGroup>
+                            </>
+                        )}
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    );
+}
+
 export default function Relations({ obj }: RelationsProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [depth, setDepth] = useState(2);
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState<string[]>([]);
-    const [results, setResults] = useState<Result[] | null>(null);
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'red',
-    });
     const [page, setPage] = useState(1);
-    const [hasNextPage, setHasNextPage] = useState(false);
-    const [inaccessibleEntities, setInaccessibleEntities] = useState<string[]>([]);
-    const [isRequestingAccess, setIsRequestingAccess] = useState(false);
     const [pageSize, setPageSize] = useState(10);
 
     // TanStack Table state
@@ -331,19 +439,13 @@ export default function Relations({ obj }: RelationsProps) {
         meta: {
             successMessage: 'Access request submitted successfully',
         },
-        onSuccess: () => {
-            setInaccessibleEntities([]);
-        },
     });
 
     // Query for entry subtypes
     const { data: entrySubtypesData } = useQuery({
         queryKey: ['entrySubtypes'],
         queryFn: () => entriesApi.entryClassesList(),
-        meta: {
-            showErrorToast: true,
-            errorMessage: 'Failed to load entry subtypes',
-        },
+        meta: { showErrorToast: true },
     });
 
     const entrySubtypes = useMemo(() => {
@@ -360,18 +462,6 @@ export default function Relations({ obj }: RelationsProps) {
         return colors;
     }, [entrySubtypesData?.results]);
 
-    const relationsQueryParams = useMemo(() => {
-        if (!obj.id) return null;
-        return {
-            src: String(obj.id),
-            depth: depth,
-            page: page,
-            pageSize: pageSize,
-            query: searchQuery || undefined,
-            wildcard: true,
-        };
-    }, [obj.id, depth, page, pageSize, searchQuery]);
-
     const { data: relationsData, isPending } = useQuery({
         queryKey: [
             'graph',
@@ -382,57 +472,29 @@ export default function Relations({ obj }: RelationsProps) {
                 page,
                 pageSize,
                 query: searchQuery,
-                filters: entrySubtypeFilters,
+                subtype: entrySubtypeFilters,
             },
         ],
-        queryFn: () => {
-            if (entrySubtypeFilters.length === 0) {
-                return knowledgeGraphApi.knowledgeGraphNeighborsRetrieve({
-                    src: String(obj.id),
-                    depth: depth,
-                    page: page,
-                    pageSize: pageSize,
-                    query: searchQuery,
-                    wildcard: true,
-                });
-            } else {
-                return knowledgeGraphApi.knowledgeGraphNeighborsRetrieve({
-                    src: String(obj.id),
-                    depth: depth,
-                    page: page,
-                    pageSize: pageSize,
-                    query: searchQuery,
-                });
-            }
-        },
-        enabled: !!obj.id && !!relationsQueryParams,
-        meta: {
-            showErrorToast: true,
-            errorMessage: 'Failed to fetch relations',
-        },
+        queryFn: () =>
+            knowledgeGraphApi.knowledgeGraphNeighborsRetrieve({
+                src: String(obj.id),
+                depth,
+                page,
+                pageSize,
+                name: searchQuery ? [searchQuery] : undefined,
+                subtype: entrySubtypeFilters.length > 0 ? entrySubtypeFilters : undefined,
+            }),
+        enabled: !!obj.id,
+        meta: { showErrorToast: true },
     });
 
-    // Process relations data
-    useEffect(() => {
-        if (relationsData) {
-            setHasNextPage(relationsData.hasNext);
-            const resultsWithDepth = relationsData.results as unknown as Result[];
-            if (entrySubtypeFilters.length === 0) {
-                resultsWithDepth.sort((a, b) => a.depth - b.depth);
-                setResults(resultsWithDepth);
-            } else {
-                const filteredResults =
-                    entrySubtypeFilters.length > 0
-                        ? resultsWithDepth.filter((r) =>
-                              entrySubtypeFilters.includes(r.subtype),
-                          )
-                        : resultsWithDepth;
-                setResults(filteredResults);
-            }
-        } else {
-            setResults([]);
-        }
-    }, [relationsData, entrySubtypeFilters]);
+    const hasNextPage = relationsData?.hasNext ?? false;
+
+    const results = useMemo(() => {
+        if (!relationsData) return [];
+        const items = relationsData.results as unknown as Result[];
+        return [...items].sort((a, b) => a.depth - b.depth);
+    }, [relationsData]);
 
     // Query for inaccessible entities
     const { data: inaccessibleData } = useQuery({
@@ -450,68 +512,16 @@ export default function Relations({ obj }: RelationsProps) {
                 depth: depth,
             }),
         enabled: !!obj.id && depth > 0,
-        meta: {
-            suppressNotification: true,
-            errorMessage: 'Failed to check inaccessible entities',
-        },
+        meta: { suppressNotification: true },
     });
 
-    const handleRequestAccess = useCallback(
-        (entities: string[]) => () => {
-            setIsRequestingAccess(true);
-            requestAccessMutation.mutate(entities, {
-                onSettled: () => {
-                    setIsRequestingAccess(false);
-                },
-            });
-        },
-        [requestAccessMutation],
-    );
-
-    useEffect(() => {
-        if (
-            inaccessibleData?.inaccessible &&
-            inaccessibleData.inaccessible.length > 0
-        ) {
-            setInaccessibleEntities(inaccessibleData.inaccessible);
-            setAlert({
-                show: true,
-                message: `${inaccessibleData.inaccessible.length} related ${inaccessibleData.inaccessible.length === 1 ? 'entity is' : 'entities are'} not accessible`,
-                color: 'yellow',
-                button: {
-                    text: 'Request Access',
-                    onClick: handleRequestAccess(inaccessibleData.inaccessible),
-                },
-            });
-        }
-    }, [inaccessibleData, handleRequestAccess]);
-
-    const performSearch = useCallback((_depth: number, page: number) => {
-        setAlert((prev) => ({ ...prev, show: false }));
-        setInaccessibleEntities([]);
-        setPage(page);
-    }, []);
+    const inaccessibleEntities = inaccessibleData?.inaccessible ?? [];
+    const hasInaccessible = inaccessibleEntities.length > 0;
 
     const handleDepthChange = (value: string) => {
-        const newDepth = parseInt(value, 10);
-        setDepth(newDepth);
-
-        if (page === 1) {
-            performSearch(newDepth, 1);
-        } else {
-            setPage(1);
-        }
-    };
-
-    // Trigger search when page changes
-    useEffect(() => {
-        performSearch(depth, page);
-    }, [page, depth, pageSize, performSearch]);
-
-    // Reset to page 1 when pageSize changes
-    useEffect(() => {
+        setDepth(parseInt(value, 10));
         setPage(1);
-    }, [pageSize]);
+    };
 
     const calculatedTotalPages = hasNextPage ? page + 1 : page;
 
@@ -613,7 +623,7 @@ export default function Relations({ obj }: RelationsProps) {
     );
 
     const table = useReactTable({
-        data: results ?? [],
+        data: results,
         columns,
         state: {
             rowSelection,
@@ -677,26 +687,26 @@ export default function Relations({ obj }: RelationsProps) {
 
     return (
         <div className='flex w-full flex-col gap-2.5 overflow-auto'>
-            {alert.show && (
-                <AlertComponent
-                    variant={
-                        alert.color === 'red' || alert.color === 'error'
-                            ? 'destructive'
-                            : 'default'
-                    }
-                >
+            {hasInaccessible && (
+                <AlertComponent variant='default'>
                     <WarningCircleIcon size={18} weight='bold' />
-                    <AlertDescription>{alert.message}</AlertDescription>
-                    {alert.button && (
-                        <Button
-                            variant='outline'
-                            size='sm'
-                            className='ml-auto'
-                            onClick={alert.button.onClick}
-                        >
-                            {alert.button.text}
-                        </Button>
-                    )}
+                    <AlertDescription>
+                        {inaccessibleEntities.length} related{' '}
+                        {inaccessibleEntities.length === 1
+                            ? 'entity is'
+                            : 'entities are'}{' '}
+                        not accessible
+                    </AlertDescription>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        className='ml-auto'
+                        onClick={() =>
+                            requestAccessMutation.mutate(inaccessibleEntities)
+                        }
+                    >
+                        Request Access
+                    </Button>
                 </AlertComponent>
             )}
 
@@ -711,15 +721,15 @@ export default function Relations({ obj }: RelationsProps) {
                         value={searchQuery}
                         onChange={(e) => {
                             setSearchQuery(e.target.value);
-                            performSearch(depth, 1);
+                            setPage(1);
                         }}
                         className='h-8 w-40 lg:w-56'
                     />
-                    <SearchFilterSection
-                        entrySubtypes={entrySubtypes}
-                        entrySubtypeFilters={entrySubtypeFilters}
-                        setEntrySubtypeFilters={setEntrySubtypeFilters}
-                        entryClassColors={entryClassColors}
+                    <SubtypeFilter
+                        options={entrySubtypes}
+                        selected={entrySubtypeFilters}
+                        onSelectedChange={setEntrySubtypeFilters}
+                        colorMap={entryClassColors}
                     />
                     <div className='flex items-center gap-2'>
                         <span className='text-sm text-muted-foreground whitespace-nowrap'>
