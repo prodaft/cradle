@@ -37,8 +37,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useParams, useRouter, useSearch } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import { debounce } from 'lodash';
-import 'prismjs/plugins/autoloader/prism-autoloader.js';
-import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';

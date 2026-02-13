@@ -149,7 +149,6 @@ export default function EntityPermissionsForm({
         saveChangesMutation.mutate();
     };
 
-
     if (isPending) {
         return (
             <div className='flex items-center justify-center min-h-[200px] text-foreground'>

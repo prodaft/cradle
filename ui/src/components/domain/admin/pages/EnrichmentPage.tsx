@@ -10,12 +10,12 @@ import {
 } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/use-api';
+import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import { EnrichmentSubclass } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import AdminPageLayout from '../AdminPageLayout';
 import EnrichmentSettingsForm from '../forms/EnrichmentSettingsForm';
 

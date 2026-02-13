@@ -443,8 +443,6 @@ export default function FilesList({
         [page, pageSize, handlePageChange, handlePageSizeChange],
     );
 
-
-
     // Memoize columns to prevent recreation on every render
     const columns = useMemo<ColumnDef<FileReferenceWithNote>[]>(
         () => [

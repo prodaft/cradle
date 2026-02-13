@@ -1,18 +1,16 @@
+import { ApiProvider } from '@/contexts/api/api-provider';
+import { QueryProvider } from '@/contexts/query/query-provider';
 import { ThemeProvider } from '@/contexts/ui';
 import * as Sentry from '@sentry/react';
 import '@styles/main.css';
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
-import 'prismjs/themes/prism-tomorrow.css';
 import type { ReactNode } from 'react';
 import { Suspense, useEffect } from 'react';
 import Loading from 'src/components/base/Loading/Loading';
 import { AuthProvider } from 'src/components/domain/auth/AuthProvider';
 import { Toaster } from 'src/components/ui/sonner';
 import { TooltipProvider } from 'src/components/ui/tooltip';
-import { ApiProvider } from '@/contexts/api/api-provider';
-import { QueryProvider } from '@/contexts/query/query-provider';
 
 export const Route = createRootRoute({
     head: () => ({

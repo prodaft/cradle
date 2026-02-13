@@ -2,7 +2,6 @@ import { HashIcon } from '@phosphor-icons/react';
 import { EntriesApi, FileTransferApi } from '@services/cradle/apis';
 import MarkdownIt from 'markdown-it';
 import markdownItAnchor from 'markdown-it-anchor';
-import Prism from 'prismjs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { parseWithExtensions, parseWithExtensionsInline } from './extensions';
@@ -26,14 +25,6 @@ export async function parseMarkdown(
 
         const md = new MarkdownIt({
             html: true,
-            highlight: (code: string, lang: string): string => {
-                if (lang && Prism.languages[lang]) {
-                    try {
-                        return Prism.highlight(code, Prism.languages[lang], lang);
-                    } catch {}
-                }
-                return '';
-            },
         }).use(markdownItAnchor, {
             permalink: markdownItAnchor.permalink.linkInsideHeader({
                 symbol: hashIcon,

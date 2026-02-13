@@ -1,7 +1,3 @@
-import {
-    AuthTokenException,
-    SessionExpiredException,
-} from './auth-exceptions';
 import { AuthApi } from '@/services/cradle';
 import { parseAPIError } from '@/utils/api';
 import {
@@ -19,6 +15,7 @@ import {
     useRef,
     useState,
 } from 'react';
+import { AuthTokenException, SessionExpiredException } from './auth-exceptions';
 
 /**
  * Get the base URL from environment variable

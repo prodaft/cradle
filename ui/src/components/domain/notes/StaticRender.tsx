@@ -7,9 +7,6 @@ import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useRouter } from '@tanstack/react-router';
 import DOMPurify from 'dompurify';
 import Prism from 'prismjs';
-import 'prismjs/plugins/autoloader/prism-autoloader.js';
-import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
-import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 

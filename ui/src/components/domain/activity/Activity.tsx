@@ -4,8 +4,7 @@ import { format } from 'date-fns';
 import { diff_match_patch } from 'diff-match-patch';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-diff';
-import 'prismjs/themes/prism-tomorrow.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface ActivityLog {
     timestamp: string;
@@ -28,13 +27,16 @@ interface ActivityProps {
  */
 export default function Activity({ log }: ActivityProps) {
     const [formattedTimestamp, setFormattedTimestamp] = useState('');
+    const cardRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setFormattedTimestamp(format(new Date(log.timestamp), 'dd/MM/yyyy, HH:mm'));
     }, [log.timestamp]);
 
     useEffect(() => {
-        Prism.highlightAll();
+        if (cardRef.current) {
+            Prism.highlightAllUnder(cardRef.current);
+        }
     }, [log.details]);
 
     // Alternative version with line-by-line display
@@ -159,7 +161,7 @@ export default function Activity({ log }: ActivityProps) {
     };
 
     return (
-        <Card className='mt-3 dark:!bg-card/70 relative'>
+        <Card ref={cardRef} className='mt-3 dark:!bg-card/70 relative'>
             <Badge
                 variant='outline'
                 className='absolute top-2 right-2 text-xs uppercase tracking-wide border-primary text-primary bg-primary/8 rounded-[var(--radius-sm)] z-10'

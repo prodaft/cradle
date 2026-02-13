@@ -1,14 +1,11 @@
 import DOMPurify from 'dompurify';
 
 import Prism from 'prismjs';
-import 'prismjs/plugins/autoloader/prism-autoloader.js';
-import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
-import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { handleLinkClick, NavigateHandler } from '@/utils/editor/text-editor';
+import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface PreviewProps {

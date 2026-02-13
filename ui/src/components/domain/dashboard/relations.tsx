@@ -12,7 +12,17 @@ import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
+} from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -20,6 +30,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { defineStepper } from '@/components/ui/stepper';
 import {
@@ -31,21 +42,9 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import useApi from '@/hooks/api/use-api';
-import { createDashboardLink } from '@/utils/dashboard';
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-    CommandSeparator,
-} from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { createDashboardLink } from '@/utils/dashboard';
 import { CaretDownIcon, CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
-import { Check, PlusCircle, XCircle } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import {
@@ -58,6 +57,7 @@ import {
     getExpandedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
+import { Check, PlusCircle, XCircle } from 'lucide-react';
 import React, { MouseEvent, useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -285,7 +285,10 @@ function SubtypeFilter({
 }) {
     const [open, setOpen] = React.useState(false);
     const selectedSet = useMemo(() => new Set(selected), [selected]);
-    const sorted = useMemo(() => [...options].sort((a, b) => a.localeCompare(b)), [options]);
+    const sorted = useMemo(
+        () => [...options].sort((a, b) => a.localeCompare(b)),
+        [options],
+    );
 
     const toggle = (value: string) => {
         onSelectedChange((prev) =>
@@ -301,7 +304,11 @@ function SubtypeFilter({
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button variant='outline' size='sm' className='border-dashed font-normal'>
+                <Button
+                    variant='outline'
+                    size='sm'
+                    className='border-dashed font-normal'
+                >
                     {selected.length > 0 ? (
                         <div
                             role='button'
@@ -482,7 +489,8 @@ export default function Relations({ obj }: RelationsProps) {
                 page,
                 pageSize,
                 name: searchQuery ? [searchQuery] : undefined,
-                subtype: entrySubtypeFilters.length > 0 ? entrySubtypeFilters : undefined,
+                subtype:
+                    entrySubtypeFilters.length > 0 ? entrySubtypeFilters : undefined,
             }),
         enabled: !!obj.id,
         meta: { showErrorToast: true },

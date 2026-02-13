@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Command,
     CommandEmpty,
@@ -9,16 +10,10 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { FunnelIcon, XIcon } from '@phosphor-icons/react';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import React, {
-    Dispatch,
-    SetStateAction,
-    useMemo,
-    useState,
-} from 'react';
+import React, { Dispatch, SetStateAction, useMemo, useState } from 'react';
 
 /**
  * SearchFilterSection component props
@@ -33,7 +28,6 @@ export interface SearchFilterSectionProps {
     /** Map of subtype to color */
     entryClassColors: Map<string, string>;
 }
-
 
 function resolveColor(
     subtype: string,
@@ -106,54 +100,50 @@ export default function SearchFilterSection({
 
             {/* Chips area — single line, no wrap */}
             <div className='flex flex-1 items-center gap-1 min-w-0 overflow-hidden'>
-                {hasFilters ? (
-                    entrySubtypeFilters.map((subtype) => {
-                        const color = resolveColor(subtype, entryClassColors);
-                        return (
-                            <Badge
-                                key={subtype}
-                                variant='outline'
-                                onClick={() => handleToggle(subtype)}
-                                className='shrink-0 cursor-pointer text-[11px] px-1.5 py-0 h-5 gap-0.5'
-                                style={
-                                    color
-                                        ? {
-                                              backgroundColor: color,
-                                              borderColor: color,
-                                              color: '#fff',
-                                          }
-                                        : undefined
-                                }
-                            >
-                                {subtype}
-                                <XIcon
-                                    className='size-2.5 cursor-pointer opacity-70 hover:opacity-100'
-                                    weight='bold'
-                                    onClick={(e) => handleRemove(subtype, e)}
-                                />
-                            </Badge>
-                        );
-                    })
-                ) : (
-                    sorted.map((subtype) => {
-                        const color = resolveColor(subtype, entryClassColors);
-                        return (
-                            <Badge
-                                key={subtype}
-                                variant='outline'
-                                onClick={() => handleToggle(subtype)}
-                                className='shrink-0 cursor-pointer select-none text-[11px] px-1.5 py-0 h-5 opacity-50 hover:opacity-80 transition-opacity'
-                                style={
-                                    color
-                                        ? { borderColor: color, color }
-                                        : undefined
-                                }
-                            >
-                                {subtype}
-                            </Badge>
-                        );
-                    })
-                )}
+                {hasFilters
+                    ? entrySubtypeFilters.map((subtype) => {
+                          const color = resolveColor(subtype, entryClassColors);
+                          return (
+                              <Badge
+                                  key={subtype}
+                                  variant='outline'
+                                  onClick={() => handleToggle(subtype)}
+                                  className='shrink-0 cursor-pointer text-[11px] px-1.5 py-0 h-5 gap-0.5'
+                                  style={
+                                      color
+                                          ? {
+                                                backgroundColor: color,
+                                                borderColor: color,
+                                                color: '#fff',
+                                            }
+                                          : undefined
+                                  }
+                              >
+                                  {subtype}
+                                  <XIcon
+                                      className='size-2.5 cursor-pointer opacity-70 hover:opacity-100'
+                                      weight='bold'
+                                      onClick={(e) => handleRemove(subtype, e)}
+                                  />
+                              </Badge>
+                          );
+                      })
+                    : sorted.map((subtype) => {
+                          const color = resolveColor(subtype, entryClassColors);
+                          return (
+                              <Badge
+                                  key={subtype}
+                                  variant='outline'
+                                  onClick={() => handleToggle(subtype)}
+                                  className='shrink-0 cursor-pointer select-none text-[11px] px-1.5 py-0 h-5 opacity-50 hover:opacity-80 transition-opacity'
+                                  style={
+                                      color ? { borderColor: color, color } : undefined
+                                  }
+                              >
+                                  {subtype}
+                              </Badge>
+                          );
+                      })}
             </div>
 
             {/* Right side: popover trigger + clear */}

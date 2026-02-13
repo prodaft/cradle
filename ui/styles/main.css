@@ -279,7 +279,7 @@
 }
 
 .markdown-body blockquote {
-    margin: 0;
+    margin: 0 0 1rem;
     padding: 0 1em;
     color: var(--pm-muted-color);
     border-left: 0.25em solid var(--pm-blockquote-vertical-line-background-color);
@@ -328,7 +328,11 @@
 }
 
 .static-render h1,
-.static-render h2,
+.static-render h2 {
+    border-bottom: 1px solid var(--border) !important;
+    padding-bottom: 0.3em !important;
+}
+
 .static-render h3,
 .static-render h4,
 .static-render h5,
@@ -380,7 +384,7 @@
 
 .markdown-body pre {
     margin-top: 0;
-    margin-bottom: 0;
+    margin-bottom: 1rem;
     font-family: monospace !important;
     font-size: 1em;
     word-wrap: normal;

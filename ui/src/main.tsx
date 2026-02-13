@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import 'prismjs/themes/prism-tomorrow.css';
 import React from 'react';
 import { createRoot } from 'react-dom/client';

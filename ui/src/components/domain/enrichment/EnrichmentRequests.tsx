@@ -1,11 +1,11 @@
 import EnrichmentRequestDialog from '@/components/domain/enrichment/dialogs/EnrichmentRequestDialog';
+import InProgress from '@/components/feedback/in-progress';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { parseAPIError } from '@/utils/api';
-import InProgress from '@/components/feedback/in-progress';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Sparkles } from 'lucide-react';

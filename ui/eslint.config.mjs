@@ -1,13 +1,19 @@
 import pluginJs from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import pluginReactConfig from 'eslint-plugin-react/configs/recommended.js';
-import pluginReactHooks from 'eslint-plugin-react-hooks';
 import pluginImport from 'eslint-plugin-import';
+import pluginReactHooks from 'eslint-plugin-react-hooks';
+import pluginReactConfig from 'eslint-plugin-react/configs/recommended.js';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 export default [
     {
-        ignores: ['*out/*', 'node_modules/*', 'docs/*', 'src/services/**', 'src/components/ui/**'],
+        ignores: [
+            '*out/*',
+            'node_modules/*',
+            'docs/*',
+            'src/services/**',
+            'src/components/ui/**',
+        ],
     },
     { languageOptions: { globals: globals.browser } },
     pluginJs.configs.recommended,

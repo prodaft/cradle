@@ -8,899 +8,893 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as RegisterRouteImport } from './routes/register'
-import { Route as NotFoundRouteImport } from './routes/not-found'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as ConfirmEmailRouteImport } from './routes/confirm-email'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as SplatRouteImport } from './routes/$'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as OauthCallbackRouteImport } from './routes/oauth/callback'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
-import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
-import { Route as AuthenticatedManageRouteImport } from './routes/_authenticated/manage'
-import { Route as AuthenticatedKnowledgeGraphRouteImport } from './routes/_authenticated/knowledge-graph'
-import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/files'
-import { Route as AuthenticatedEnrichmentRouteImport } from './routes/_authenticated/enrichment'
-import { Route as AuthenticatedDigestDataRouteImport } from './routes/_authenticated/digest-data'
-import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes/index'
-import { Route as AuthenticatedManageIndexRouteImport } from './routes/_authenticated/manage/index'
-import { Route as AuthenticatedNotesIdRouteImport } from './routes/_authenticated/notes/$id'
-import { Route as AuthenticatedManageManageAuthRouteImport } from './routes/_authenticated/manage/_manage-auth'
-import { Route as AuthenticatedEnrichmentIdRouteImport } from './routes/_authenticated/enrichment/$id'
-import { Route as AuthenticatedManageManageAuthUsersRouteImport } from './routes/_authenticated/manage/_manage-auth/users'
-import { Route as AuthenticatedManageManageAuthTypeMappingsRouteImport } from './routes/_authenticated/manage/_manage-auth/type-mappings'
-import { Route as AuthenticatedManageManageAuthSettingsRouteImport } from './routes/_authenticated/manage/_manage-auth/settings'
-import { Route as AuthenticatedManageManageAuthEntryTypesRouteImport } from './routes/_authenticated/manage/_manage-auth/entry-types'
-import { Route as AuthenticatedManageManageAuthEntitiesRouteImport } from './routes/_authenticated/manage/_manage-auth/entities'
-import { Route as AuthenticatedManageManageAuthEnrichmentRouteImport } from './routes/_authenticated/manage/_manage-auth/enrichment'
-import { Route as AuthenticatedDashboardsSubtypeNameRouteImport } from './routes/_authenticated/dashboards/$subtype/$name'
-import { Route as AuthenticatedManageManageAuthUsersIndexRouteImport } from './routes/_authenticated/manage/_manage-auth/users/index'
-import { Route as AuthenticatedManageManageAuthEntryTypesIndexRouteImport } from './routes/_authenticated/manage/_manage-auth/entry-types/index'
-import { Route as AuthenticatedManageManageAuthEntitiesIndexRouteImport } from './routes/_authenticated/manage/_manage-auth/entities/index'
-import { Route as AuthenticatedManageManageAuthUsersIdRouteImport } from './routes/_authenticated/manage/_manage-auth/users/$id'
-import { Route as AuthenticatedManageManageAuthEntryTypesIdRouteImport } from './routes/_authenticated/manage/_manage-auth/entry-types/$id'
-import { Route as AuthenticatedManageManageAuthEntitiesIdRouteImport } from './routes/_authenticated/manage/_manage-auth/entities/$id'
+import { Route as SplatRouteImport } from './routes/$';
+import { Route as rootRouteImport } from './routes/__root';
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated';
+import { Route as AuthenticatedDashboardsSubtypeNameRouteImport } from './routes/_authenticated/dashboards/$subtype/$name';
+import { Route as AuthenticatedDigestDataRouteImport } from './routes/_authenticated/digest-data';
+import { Route as AuthenticatedEnrichmentRouteImport } from './routes/_authenticated/enrichment';
+import { Route as AuthenticatedEnrichmentIdRouteImport } from './routes/_authenticated/enrichment/$id';
+import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/files';
+import { Route as AuthenticatedKnowledgeGraphRouteImport } from './routes/_authenticated/knowledge-graph';
+import { Route as AuthenticatedManageRouteImport } from './routes/_authenticated/manage';
+import { Route as AuthenticatedManageManageAuthRouteImport } from './routes/_authenticated/manage/_manage-auth';
+import { Route as AuthenticatedManageManageAuthEnrichmentRouteImport } from './routes/_authenticated/manage/_manage-auth/enrichment';
+import { Route as AuthenticatedManageManageAuthEntitiesRouteImport } from './routes/_authenticated/manage/_manage-auth/entities';
+import { Route as AuthenticatedManageManageAuthEntitiesIdRouteImport } from './routes/_authenticated/manage/_manage-auth/entities/$id';
+import { Route as AuthenticatedManageManageAuthEntitiesIndexRouteImport } from './routes/_authenticated/manage/_manage-auth/entities/index';
+import { Route as AuthenticatedManageManageAuthEntryTypesRouteImport } from './routes/_authenticated/manage/_manage-auth/entry-types';
+import { Route as AuthenticatedManageManageAuthEntryTypesIdRouteImport } from './routes/_authenticated/manage/_manage-auth/entry-types/$id';
+import { Route as AuthenticatedManageManageAuthEntryTypesIndexRouteImport } from './routes/_authenticated/manage/_manage-auth/entry-types/index';
+import { Route as AuthenticatedManageManageAuthSettingsRouteImport } from './routes/_authenticated/manage/_manage-auth/settings';
+import { Route as AuthenticatedManageManageAuthTypeMappingsRouteImport } from './routes/_authenticated/manage/_manage-auth/type-mappings';
+import { Route as AuthenticatedManageManageAuthUsersRouteImport } from './routes/_authenticated/manage/_manage-auth/users';
+import { Route as AuthenticatedManageManageAuthUsersIdRouteImport } from './routes/_authenticated/manage/_manage-auth/users/$id';
+import { Route as AuthenticatedManageManageAuthUsersIndexRouteImport } from './routes/_authenticated/manage/_manage-auth/users/index';
+import { Route as AuthenticatedManageIndexRouteImport } from './routes/_authenticated/manage/index';
+import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes';
+import { Route as AuthenticatedNotesIdRouteImport } from './routes/_authenticated/notes/$id';
+import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes/index';
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports';
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings';
+import { Route as ConfirmEmailRouteImport } from './routes/confirm-email';
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password';
+import { Route as IndexRouteImport } from './routes/index';
+import { Route as LoginRouteImport } from './routes/login';
+import { Route as NotFoundRouteImport } from './routes/not-found';
+import { Route as OauthCallbackRouteImport } from './routes/oauth/callback';
+import { Route as RegisterRouteImport } from './routes/register';
+import { Route as ResetPasswordRouteImport } from './routes/reset-password';
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: '/reset-password',
+    path: '/reset-password',
+    getParentRoute: () => rootRouteImport,
+} as any);
 const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: '/register',
+    path: '/register',
+    getParentRoute: () => rootRouteImport,
+} as any);
 const NotFoundRoute = NotFoundRouteImport.update({
-  id: '/not-found',
-  path: '/not-found',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: '/not-found',
+    path: '/not-found',
+    getParentRoute: () => rootRouteImport,
+} as any);
 const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: '/login',
+    path: '/login',
+    getParentRoute: () => rootRouteImport,
+} as any);
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: '/forgot-password',
+    path: '/forgot-password',
+    getParentRoute: () => rootRouteImport,
+} as any);
 const ConfirmEmailRoute = ConfirmEmailRouteImport.update({
-  id: '/confirm-email',
-  path: '/confirm-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: '/confirm-email',
+    path: '/confirm-email',
+    getParentRoute: () => rootRouteImport,
+} as any);
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: '/_authenticated',
+    getParentRoute: () => rootRouteImport,
+} as any);
 const SplatRoute = SplatRouteImport.update({
-  id: '/$',
-  path: '/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: '/$',
+    path: '/$',
+    getParentRoute: () => rootRouteImport,
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: '/',
+    path: '/',
+    getParentRoute: () => rootRouteImport,
+} as any);
 const OauthCallbackRoute = OauthCallbackRouteImport.update({
-  id: '/oauth/callback',
-  path: '/oauth/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
+    id: '/oauth/callback',
+    path: '/oauth/callback',
+    getParentRoute: () => rootRouteImport,
+} as any);
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedRoute,
+} as any);
 const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
+    id: '/reports',
+    path: '/reports',
+    getParentRoute: () => AuthenticatedRoute,
+} as any);
 const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
-  id: '/notes',
-  path: '/notes',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
+    id: '/notes',
+    path: '/notes',
+    getParentRoute: () => AuthenticatedRoute,
+} as any);
 const AuthenticatedManageRoute = AuthenticatedManageRouteImport.update({
-  id: '/manage',
-  path: '/manage',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedKnowledgeGraphRoute =
-  AuthenticatedKnowledgeGraphRouteImport.update({
+    id: '/manage',
+    path: '/manage',
+    getParentRoute: () => AuthenticatedRoute,
+} as any);
+const AuthenticatedKnowledgeGraphRoute = AuthenticatedKnowledgeGraphRouteImport.update({
     id: '/knowledge-graph',
     path: '/knowledge-graph',
     getParentRoute: () => AuthenticatedRoute,
-  } as any)
+} as any);
 const AuthenticatedFilesRoute = AuthenticatedFilesRouteImport.update({
-  id: '/files',
-  path: '/files',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
+    id: '/files',
+    path: '/files',
+    getParentRoute: () => AuthenticatedRoute,
+} as any);
 const AuthenticatedEnrichmentRoute = AuthenticatedEnrichmentRouteImport.update({
-  id: '/enrichment',
-  path: '/enrichment',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
+    id: '/enrichment',
+    path: '/enrichment',
+    getParentRoute: () => AuthenticatedRoute,
+} as any);
 const AuthenticatedDigestDataRoute = AuthenticatedDigestDataRouteImport.update({
-  id: '/digest-data',
-  path: '/digest-data',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
+    id: '/digest-data',
+    path: '/digest-data',
+    getParentRoute: () => AuthenticatedRoute,
+} as any);
 const AuthenticatedNotesIndexRoute = AuthenticatedNotesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedNotesRoute,
-} as any)
-const AuthenticatedManageIndexRoute =
-  AuthenticatedManageIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedNotesRoute,
+} as any);
+const AuthenticatedManageIndexRoute = AuthenticatedManageIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedManageRoute,
-  } as any)
+} as any);
 const AuthenticatedNotesIdRoute = AuthenticatedNotesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedNotesRoute,
-} as any)
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedNotesRoute,
+} as any);
 const AuthenticatedManageManageAuthRoute =
-  AuthenticatedManageManageAuthRouteImport.update({
-    id: '/_manage-auth',
-    getParentRoute: () => AuthenticatedManageRoute,
-  } as any)
-const AuthenticatedEnrichmentIdRoute =
-  AuthenticatedEnrichmentIdRouteImport.update({
+    AuthenticatedManageManageAuthRouteImport.update({
+        id: '/_manage-auth',
+        getParentRoute: () => AuthenticatedManageRoute,
+    } as any);
+const AuthenticatedEnrichmentIdRoute = AuthenticatedEnrichmentIdRouteImport.update({
     id: '/$id',
     path: '/$id',
     getParentRoute: () => AuthenticatedEnrichmentRoute,
-  } as any)
+} as any);
 const AuthenticatedManageManageAuthUsersRoute =
-  AuthenticatedManageManageAuthUsersRouteImport.update({
-    id: '/users',
-    path: '/users',
-    getParentRoute: () => AuthenticatedManageManageAuthRoute,
-  } as any)
+    AuthenticatedManageManageAuthUsersRouteImport.update({
+        id: '/users',
+        path: '/users',
+        getParentRoute: () => AuthenticatedManageManageAuthRoute,
+    } as any);
 const AuthenticatedManageManageAuthTypeMappingsRoute =
-  AuthenticatedManageManageAuthTypeMappingsRouteImport.update({
-    id: '/type-mappings',
-    path: '/type-mappings',
-    getParentRoute: () => AuthenticatedManageManageAuthRoute,
-  } as any)
+    AuthenticatedManageManageAuthTypeMappingsRouteImport.update({
+        id: '/type-mappings',
+        path: '/type-mappings',
+        getParentRoute: () => AuthenticatedManageManageAuthRoute,
+    } as any);
 const AuthenticatedManageManageAuthSettingsRoute =
-  AuthenticatedManageManageAuthSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedManageManageAuthRoute,
-  } as any)
+    AuthenticatedManageManageAuthSettingsRouteImport.update({
+        id: '/settings',
+        path: '/settings',
+        getParentRoute: () => AuthenticatedManageManageAuthRoute,
+    } as any);
 const AuthenticatedManageManageAuthEntryTypesRoute =
-  AuthenticatedManageManageAuthEntryTypesRouteImport.update({
-    id: '/entry-types',
-    path: '/entry-types',
-    getParentRoute: () => AuthenticatedManageManageAuthRoute,
-  } as any)
+    AuthenticatedManageManageAuthEntryTypesRouteImport.update({
+        id: '/entry-types',
+        path: '/entry-types',
+        getParentRoute: () => AuthenticatedManageManageAuthRoute,
+    } as any);
 const AuthenticatedManageManageAuthEntitiesRoute =
-  AuthenticatedManageManageAuthEntitiesRouteImport.update({
-    id: '/entities',
-    path: '/entities',
-    getParentRoute: () => AuthenticatedManageManageAuthRoute,
-  } as any)
+    AuthenticatedManageManageAuthEntitiesRouteImport.update({
+        id: '/entities',
+        path: '/entities',
+        getParentRoute: () => AuthenticatedManageManageAuthRoute,
+    } as any);
 const AuthenticatedManageManageAuthEnrichmentRoute =
-  AuthenticatedManageManageAuthEnrichmentRouteImport.update({
-    id: '/enrichment',
-    path: '/enrichment',
-    getParentRoute: () => AuthenticatedManageManageAuthRoute,
-  } as any)
+    AuthenticatedManageManageAuthEnrichmentRouteImport.update({
+        id: '/enrichment',
+        path: '/enrichment',
+        getParentRoute: () => AuthenticatedManageManageAuthRoute,
+    } as any);
 const AuthenticatedDashboardsSubtypeNameRoute =
-  AuthenticatedDashboardsSubtypeNameRouteImport.update({
-    id: '/dashboards/$subtype/$name',
-    path: '/dashboards/$subtype/$name',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
+    AuthenticatedDashboardsSubtypeNameRouteImport.update({
+        id: '/dashboards/$subtype/$name',
+        path: '/dashboards/$subtype/$name',
+        getParentRoute: () => AuthenticatedRoute,
+    } as any);
 const AuthenticatedManageManageAuthUsersIndexRoute =
-  AuthenticatedManageManageAuthUsersIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedManageManageAuthUsersRoute,
-  } as any)
+    AuthenticatedManageManageAuthUsersIndexRouteImport.update({
+        id: '/',
+        path: '/',
+        getParentRoute: () => AuthenticatedManageManageAuthUsersRoute,
+    } as any);
 const AuthenticatedManageManageAuthEntryTypesIndexRoute =
-  AuthenticatedManageManageAuthEntryTypesIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedManageManageAuthEntryTypesRoute,
-  } as any)
+    AuthenticatedManageManageAuthEntryTypesIndexRouteImport.update({
+        id: '/',
+        path: '/',
+        getParentRoute: () => AuthenticatedManageManageAuthEntryTypesRoute,
+    } as any);
 const AuthenticatedManageManageAuthEntitiesIndexRoute =
-  AuthenticatedManageManageAuthEntitiesIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedManageManageAuthEntitiesRoute,
-  } as any)
+    AuthenticatedManageManageAuthEntitiesIndexRouteImport.update({
+        id: '/',
+        path: '/',
+        getParentRoute: () => AuthenticatedManageManageAuthEntitiesRoute,
+    } as any);
 const AuthenticatedManageManageAuthUsersIdRoute =
-  AuthenticatedManageManageAuthUsersIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedManageManageAuthUsersRoute,
-  } as any)
+    AuthenticatedManageManageAuthUsersIdRouteImport.update({
+        id: '/$id',
+        path: '/$id',
+        getParentRoute: () => AuthenticatedManageManageAuthUsersRoute,
+    } as any);
 const AuthenticatedManageManageAuthEntryTypesIdRoute =
-  AuthenticatedManageManageAuthEntryTypesIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedManageManageAuthEntryTypesRoute,
-  } as any)
+    AuthenticatedManageManageAuthEntryTypesIdRouteImport.update({
+        id: '/$id',
+        path: '/$id',
+        getParentRoute: () => AuthenticatedManageManageAuthEntryTypesRoute,
+    } as any);
 const AuthenticatedManageManageAuthEntitiesIdRoute =
-  AuthenticatedManageManageAuthEntitiesIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedManageManageAuthEntitiesRoute,
-  } as any)
+    AuthenticatedManageManageAuthEntitiesIdRouteImport.update({
+        id: '/$id',
+        path: '/$id',
+        getParentRoute: () => AuthenticatedManageManageAuthEntitiesRoute,
+    } as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/$': typeof SplatRoute
-  '/confirm-email': typeof ConfirmEmailRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/login': typeof LoginRoute
-  '/not-found': typeof NotFoundRoute
-  '/register': typeof RegisterRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/digest-data': typeof AuthenticatedDigestDataRoute
-  '/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren
-  '/files': typeof AuthenticatedFilesRoute
-  '/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute
-  '/manage': typeof AuthenticatedManageManageAuthRouteWithChildren
-  '/notes': typeof AuthenticatedNotesRouteWithChildren
-  '/reports': typeof AuthenticatedReportsRoute
-  '/settings': typeof AuthenticatedSettingsRoute
-  '/oauth/callback': typeof OauthCallbackRoute
-  '/enrichment/$id': typeof AuthenticatedEnrichmentIdRoute
-  '/notes/$id': typeof AuthenticatedNotesIdRoute
-  '/manage/': typeof AuthenticatedManageIndexRoute
-  '/notes/': typeof AuthenticatedNotesIndexRoute
-  '/dashboards/$subtype/$name': typeof AuthenticatedDashboardsSubtypeNameRoute
-  '/manage/enrichment': typeof AuthenticatedManageManageAuthEnrichmentRoute
-  '/manage/entities': typeof AuthenticatedManageManageAuthEntitiesRouteWithChildren
-  '/manage/entry-types': typeof AuthenticatedManageManageAuthEntryTypesRouteWithChildren
-  '/manage/settings': typeof AuthenticatedManageManageAuthSettingsRoute
-  '/manage/type-mappings': typeof AuthenticatedManageManageAuthTypeMappingsRoute
-  '/manage/users': typeof AuthenticatedManageManageAuthUsersRouteWithChildren
-  '/manage/entities/$id': typeof AuthenticatedManageManageAuthEntitiesIdRoute
-  '/manage/entry-types/$id': typeof AuthenticatedManageManageAuthEntryTypesIdRoute
-  '/manage/users/$id': typeof AuthenticatedManageManageAuthUsersIdRoute
-  '/manage/entities/': typeof AuthenticatedManageManageAuthEntitiesIndexRoute
-  '/manage/entry-types/': typeof AuthenticatedManageManageAuthEntryTypesIndexRoute
-  '/manage/users/': typeof AuthenticatedManageManageAuthUsersIndexRoute
+    '/': typeof IndexRoute;
+    '/$': typeof SplatRoute;
+    '/confirm-email': typeof ConfirmEmailRoute;
+    '/forgot-password': typeof ForgotPasswordRoute;
+    '/login': typeof LoginRoute;
+    '/not-found': typeof NotFoundRoute;
+    '/register': typeof RegisterRoute;
+    '/reset-password': typeof ResetPasswordRoute;
+    '/digest-data': typeof AuthenticatedDigestDataRoute;
+    '/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren;
+    '/files': typeof AuthenticatedFilesRoute;
+    '/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute;
+    '/manage': typeof AuthenticatedManageManageAuthRouteWithChildren;
+    '/notes': typeof AuthenticatedNotesRouteWithChildren;
+    '/reports': typeof AuthenticatedReportsRoute;
+    '/settings': typeof AuthenticatedSettingsRoute;
+    '/oauth/callback': typeof OauthCallbackRoute;
+    '/enrichment/$id': typeof AuthenticatedEnrichmentIdRoute;
+    '/notes/$id': typeof AuthenticatedNotesIdRoute;
+    '/manage/': typeof AuthenticatedManageIndexRoute;
+    '/notes/': typeof AuthenticatedNotesIndexRoute;
+    '/dashboards/$subtype/$name': typeof AuthenticatedDashboardsSubtypeNameRoute;
+    '/manage/enrichment': typeof AuthenticatedManageManageAuthEnrichmentRoute;
+    '/manage/entities': typeof AuthenticatedManageManageAuthEntitiesRouteWithChildren;
+    '/manage/entry-types': typeof AuthenticatedManageManageAuthEntryTypesRouteWithChildren;
+    '/manage/settings': typeof AuthenticatedManageManageAuthSettingsRoute;
+    '/manage/type-mappings': typeof AuthenticatedManageManageAuthTypeMappingsRoute;
+    '/manage/users': typeof AuthenticatedManageManageAuthUsersRouteWithChildren;
+    '/manage/entities/$id': typeof AuthenticatedManageManageAuthEntitiesIdRoute;
+    '/manage/entry-types/$id': typeof AuthenticatedManageManageAuthEntryTypesIdRoute;
+    '/manage/users/$id': typeof AuthenticatedManageManageAuthUsersIdRoute;
+    '/manage/entities/': typeof AuthenticatedManageManageAuthEntitiesIndexRoute;
+    '/manage/entry-types/': typeof AuthenticatedManageManageAuthEntryTypesIndexRoute;
+    '/manage/users/': typeof AuthenticatedManageManageAuthUsersIndexRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/$': typeof SplatRoute
-  '/confirm-email': typeof ConfirmEmailRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/login': typeof LoginRoute
-  '/not-found': typeof NotFoundRoute
-  '/register': typeof RegisterRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/digest-data': typeof AuthenticatedDigestDataRoute
-  '/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren
-  '/files': typeof AuthenticatedFilesRoute
-  '/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute
-  '/reports': typeof AuthenticatedReportsRoute
-  '/settings': typeof AuthenticatedSettingsRoute
-  '/oauth/callback': typeof OauthCallbackRoute
-  '/enrichment/$id': typeof AuthenticatedEnrichmentIdRoute
-  '/manage': typeof AuthenticatedManageIndexRoute
-  '/notes/$id': typeof AuthenticatedNotesIdRoute
-  '/notes': typeof AuthenticatedNotesIndexRoute
-  '/dashboards/$subtype/$name': typeof AuthenticatedDashboardsSubtypeNameRoute
-  '/manage/enrichment': typeof AuthenticatedManageManageAuthEnrichmentRoute
-  '/manage/settings': typeof AuthenticatedManageManageAuthSettingsRoute
-  '/manage/type-mappings': typeof AuthenticatedManageManageAuthTypeMappingsRoute
-  '/manage/entities/$id': typeof AuthenticatedManageManageAuthEntitiesIdRoute
-  '/manage/entry-types/$id': typeof AuthenticatedManageManageAuthEntryTypesIdRoute
-  '/manage/users/$id': typeof AuthenticatedManageManageAuthUsersIdRoute
-  '/manage/entities': typeof AuthenticatedManageManageAuthEntitiesIndexRoute
-  '/manage/entry-types': typeof AuthenticatedManageManageAuthEntryTypesIndexRoute
-  '/manage/users': typeof AuthenticatedManageManageAuthUsersIndexRoute
+    '/': typeof IndexRoute;
+    '/$': typeof SplatRoute;
+    '/confirm-email': typeof ConfirmEmailRoute;
+    '/forgot-password': typeof ForgotPasswordRoute;
+    '/login': typeof LoginRoute;
+    '/not-found': typeof NotFoundRoute;
+    '/register': typeof RegisterRoute;
+    '/reset-password': typeof ResetPasswordRoute;
+    '/digest-data': typeof AuthenticatedDigestDataRoute;
+    '/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren;
+    '/files': typeof AuthenticatedFilesRoute;
+    '/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute;
+    '/reports': typeof AuthenticatedReportsRoute;
+    '/settings': typeof AuthenticatedSettingsRoute;
+    '/oauth/callback': typeof OauthCallbackRoute;
+    '/enrichment/$id': typeof AuthenticatedEnrichmentIdRoute;
+    '/manage': typeof AuthenticatedManageIndexRoute;
+    '/notes/$id': typeof AuthenticatedNotesIdRoute;
+    '/notes': typeof AuthenticatedNotesIndexRoute;
+    '/dashboards/$subtype/$name': typeof AuthenticatedDashboardsSubtypeNameRoute;
+    '/manage/enrichment': typeof AuthenticatedManageManageAuthEnrichmentRoute;
+    '/manage/settings': typeof AuthenticatedManageManageAuthSettingsRoute;
+    '/manage/type-mappings': typeof AuthenticatedManageManageAuthTypeMappingsRoute;
+    '/manage/entities/$id': typeof AuthenticatedManageManageAuthEntitiesIdRoute;
+    '/manage/entry-types/$id': typeof AuthenticatedManageManageAuthEntryTypesIdRoute;
+    '/manage/users/$id': typeof AuthenticatedManageManageAuthUsersIdRoute;
+    '/manage/entities': typeof AuthenticatedManageManageAuthEntitiesIndexRoute;
+    '/manage/entry-types': typeof AuthenticatedManageManageAuthEntryTypesIndexRoute;
+    '/manage/users': typeof AuthenticatedManageManageAuthUsersIndexRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/$': typeof SplatRoute
-  '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/confirm-email': typeof ConfirmEmailRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/login': typeof LoginRoute
-  '/not-found': typeof NotFoundRoute
-  '/register': typeof RegisterRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/_authenticated/digest-data': typeof AuthenticatedDigestDataRoute
-  '/_authenticated/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren
-  '/_authenticated/files': typeof AuthenticatedFilesRoute
-  '/_authenticated/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute
-  '/_authenticated/manage': typeof AuthenticatedManageRouteWithChildren
-  '/_authenticated/notes': typeof AuthenticatedNotesRouteWithChildren
-  '/_authenticated/reports': typeof AuthenticatedReportsRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/oauth/callback': typeof OauthCallbackRoute
-  '/_authenticated/enrichment/$id': typeof AuthenticatedEnrichmentIdRoute
-  '/_authenticated/manage/_manage-auth': typeof AuthenticatedManageManageAuthRouteWithChildren
-  '/_authenticated/notes/$id': typeof AuthenticatedNotesIdRoute
-  '/_authenticated/manage/': typeof AuthenticatedManageIndexRoute
-  '/_authenticated/notes/': typeof AuthenticatedNotesIndexRoute
-  '/_authenticated/dashboards/$subtype/$name': typeof AuthenticatedDashboardsSubtypeNameRoute
-  '/_authenticated/manage/_manage-auth/enrichment': typeof AuthenticatedManageManageAuthEnrichmentRoute
-  '/_authenticated/manage/_manage-auth/entities': typeof AuthenticatedManageManageAuthEntitiesRouteWithChildren
-  '/_authenticated/manage/_manage-auth/entry-types': typeof AuthenticatedManageManageAuthEntryTypesRouteWithChildren
-  '/_authenticated/manage/_manage-auth/settings': typeof AuthenticatedManageManageAuthSettingsRoute
-  '/_authenticated/manage/_manage-auth/type-mappings': typeof AuthenticatedManageManageAuthTypeMappingsRoute
-  '/_authenticated/manage/_manage-auth/users': typeof AuthenticatedManageManageAuthUsersRouteWithChildren
-  '/_authenticated/manage/_manage-auth/entities/$id': typeof AuthenticatedManageManageAuthEntitiesIdRoute
-  '/_authenticated/manage/_manage-auth/entry-types/$id': typeof AuthenticatedManageManageAuthEntryTypesIdRoute
-  '/_authenticated/manage/_manage-auth/users/$id': typeof AuthenticatedManageManageAuthUsersIdRoute
-  '/_authenticated/manage/_manage-auth/entities/': typeof AuthenticatedManageManageAuthEntitiesIndexRoute
-  '/_authenticated/manage/_manage-auth/entry-types/': typeof AuthenticatedManageManageAuthEntryTypesIndexRoute
-  '/_authenticated/manage/_manage-auth/users/': typeof AuthenticatedManageManageAuthUsersIndexRoute
+    __root__: typeof rootRouteImport;
+    '/': typeof IndexRoute;
+    '/$': typeof SplatRoute;
+    '/_authenticated': typeof AuthenticatedRouteWithChildren;
+    '/confirm-email': typeof ConfirmEmailRoute;
+    '/forgot-password': typeof ForgotPasswordRoute;
+    '/login': typeof LoginRoute;
+    '/not-found': typeof NotFoundRoute;
+    '/register': typeof RegisterRoute;
+    '/reset-password': typeof ResetPasswordRoute;
+    '/_authenticated/digest-data': typeof AuthenticatedDigestDataRoute;
+    '/_authenticated/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren;
+    '/_authenticated/files': typeof AuthenticatedFilesRoute;
+    '/_authenticated/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute;
+    '/_authenticated/manage': typeof AuthenticatedManageRouteWithChildren;
+    '/_authenticated/notes': typeof AuthenticatedNotesRouteWithChildren;
+    '/_authenticated/reports': typeof AuthenticatedReportsRoute;
+    '/_authenticated/settings': typeof AuthenticatedSettingsRoute;
+    '/oauth/callback': typeof OauthCallbackRoute;
+    '/_authenticated/enrichment/$id': typeof AuthenticatedEnrichmentIdRoute;
+    '/_authenticated/manage/_manage-auth': typeof AuthenticatedManageManageAuthRouteWithChildren;
+    '/_authenticated/notes/$id': typeof AuthenticatedNotesIdRoute;
+    '/_authenticated/manage/': typeof AuthenticatedManageIndexRoute;
+    '/_authenticated/notes/': typeof AuthenticatedNotesIndexRoute;
+    '/_authenticated/dashboards/$subtype/$name': typeof AuthenticatedDashboardsSubtypeNameRoute;
+    '/_authenticated/manage/_manage-auth/enrichment': typeof AuthenticatedManageManageAuthEnrichmentRoute;
+    '/_authenticated/manage/_manage-auth/entities': typeof AuthenticatedManageManageAuthEntitiesRouteWithChildren;
+    '/_authenticated/manage/_manage-auth/entry-types': typeof AuthenticatedManageManageAuthEntryTypesRouteWithChildren;
+    '/_authenticated/manage/_manage-auth/settings': typeof AuthenticatedManageManageAuthSettingsRoute;
+    '/_authenticated/manage/_manage-auth/type-mappings': typeof AuthenticatedManageManageAuthTypeMappingsRoute;
+    '/_authenticated/manage/_manage-auth/users': typeof AuthenticatedManageManageAuthUsersRouteWithChildren;
+    '/_authenticated/manage/_manage-auth/entities/$id': typeof AuthenticatedManageManageAuthEntitiesIdRoute;
+    '/_authenticated/manage/_manage-auth/entry-types/$id': typeof AuthenticatedManageManageAuthEntryTypesIdRoute;
+    '/_authenticated/manage/_manage-auth/users/$id': typeof AuthenticatedManageManageAuthUsersIdRoute;
+    '/_authenticated/manage/_manage-auth/entities/': typeof AuthenticatedManageManageAuthEntitiesIndexRoute;
+    '/_authenticated/manage/_manage-auth/entry-types/': typeof AuthenticatedManageManageAuthEntryTypesIndexRoute;
+    '/_authenticated/manage/_manage-auth/users/': typeof AuthenticatedManageManageAuthUsersIndexRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/$'
-    | '/confirm-email'
-    | '/forgot-password'
-    | '/login'
-    | '/not-found'
-    | '/register'
-    | '/reset-password'
-    | '/digest-data'
-    | '/enrichment'
-    | '/files'
-    | '/knowledge-graph'
-    | '/manage'
-    | '/notes'
-    | '/reports'
-    | '/settings'
-    | '/oauth/callback'
-    | '/enrichment/$id'
-    | '/notes/$id'
-    | '/manage/'
-    | '/notes/'
-    | '/dashboards/$subtype/$name'
-    | '/manage/enrichment'
-    | '/manage/entities'
-    | '/manage/entry-types'
-    | '/manage/settings'
-    | '/manage/type-mappings'
-    | '/manage/users'
-    | '/manage/entities/$id'
-    | '/manage/entry-types/$id'
-    | '/manage/users/$id'
-    | '/manage/entities/'
-    | '/manage/entry-types/'
-    | '/manage/users/'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/$'
-    | '/confirm-email'
-    | '/forgot-password'
-    | '/login'
-    | '/not-found'
-    | '/register'
-    | '/reset-password'
-    | '/digest-data'
-    | '/enrichment'
-    | '/files'
-    | '/knowledge-graph'
-    | '/reports'
-    | '/settings'
-    | '/oauth/callback'
-    | '/enrichment/$id'
-    | '/manage'
-    | '/notes/$id'
-    | '/notes'
-    | '/dashboards/$subtype/$name'
-    | '/manage/enrichment'
-    | '/manage/settings'
-    | '/manage/type-mappings'
-    | '/manage/entities/$id'
-    | '/manage/entry-types/$id'
-    | '/manage/users/$id'
-    | '/manage/entities'
-    | '/manage/entry-types'
-    | '/manage/users'
-  id:
-    | '__root__'
-    | '/'
-    | '/$'
-    | '/_authenticated'
-    | '/confirm-email'
-    | '/forgot-password'
-    | '/login'
-    | '/not-found'
-    | '/register'
-    | '/reset-password'
-    | '/_authenticated/digest-data'
-    | '/_authenticated/enrichment'
-    | '/_authenticated/files'
-    | '/_authenticated/knowledge-graph'
-    | '/_authenticated/manage'
-    | '/_authenticated/notes'
-    | '/_authenticated/reports'
-    | '/_authenticated/settings'
-    | '/oauth/callback'
-    | '/_authenticated/enrichment/$id'
-    | '/_authenticated/manage/_manage-auth'
-    | '/_authenticated/notes/$id'
-    | '/_authenticated/manage/'
-    | '/_authenticated/notes/'
-    | '/_authenticated/dashboards/$subtype/$name'
-    | '/_authenticated/manage/_manage-auth/enrichment'
-    | '/_authenticated/manage/_manage-auth/entities'
-    | '/_authenticated/manage/_manage-auth/entry-types'
-    | '/_authenticated/manage/_manage-auth/settings'
-    | '/_authenticated/manage/_manage-auth/type-mappings'
-    | '/_authenticated/manage/_manage-auth/users'
-    | '/_authenticated/manage/_manage-auth/entities/$id'
-    | '/_authenticated/manage/_manage-auth/entry-types/$id'
-    | '/_authenticated/manage/_manage-auth/users/$id'
-    | '/_authenticated/manage/_manage-auth/entities/'
-    | '/_authenticated/manage/_manage-auth/entry-types/'
-    | '/_authenticated/manage/_manage-auth/users/'
-  fileRoutesById: FileRoutesById
+    fileRoutesByFullPath: FileRoutesByFullPath;
+    fullPaths:
+        | '/'
+        | '/$'
+        | '/confirm-email'
+        | '/forgot-password'
+        | '/login'
+        | '/not-found'
+        | '/register'
+        | '/reset-password'
+        | '/digest-data'
+        | '/enrichment'
+        | '/files'
+        | '/knowledge-graph'
+        | '/manage'
+        | '/notes'
+        | '/reports'
+        | '/settings'
+        | '/oauth/callback'
+        | '/enrichment/$id'
+        | '/notes/$id'
+        | '/manage/'
+        | '/notes/'
+        | '/dashboards/$subtype/$name'
+        | '/manage/enrichment'
+        | '/manage/entities'
+        | '/manage/entry-types'
+        | '/manage/settings'
+        | '/manage/type-mappings'
+        | '/manage/users'
+        | '/manage/entities/$id'
+        | '/manage/entry-types/$id'
+        | '/manage/users/$id'
+        | '/manage/entities/'
+        | '/manage/entry-types/'
+        | '/manage/users/';
+    fileRoutesByTo: FileRoutesByTo;
+    to:
+        | '/'
+        | '/$'
+        | '/confirm-email'
+        | '/forgot-password'
+        | '/login'
+        | '/not-found'
+        | '/register'
+        | '/reset-password'
+        | '/digest-data'
+        | '/enrichment'
+        | '/files'
+        | '/knowledge-graph'
+        | '/reports'
+        | '/settings'
+        | '/oauth/callback'
+        | '/enrichment/$id'
+        | '/manage'
+        | '/notes/$id'
+        | '/notes'
+        | '/dashboards/$subtype/$name'
+        | '/manage/enrichment'
+        | '/manage/settings'
+        | '/manage/type-mappings'
+        | '/manage/entities/$id'
+        | '/manage/entry-types/$id'
+        | '/manage/users/$id'
+        | '/manage/entities'
+        | '/manage/entry-types'
+        | '/manage/users';
+    id:
+        | '__root__'
+        | '/'
+        | '/$'
+        | '/_authenticated'
+        | '/confirm-email'
+        | '/forgot-password'
+        | '/login'
+        | '/not-found'
+        | '/register'
+        | '/reset-password'
+        | '/_authenticated/digest-data'
+        | '/_authenticated/enrichment'
+        | '/_authenticated/files'
+        | '/_authenticated/knowledge-graph'
+        | '/_authenticated/manage'
+        | '/_authenticated/notes'
+        | '/_authenticated/reports'
+        | '/_authenticated/settings'
+        | '/oauth/callback'
+        | '/_authenticated/enrichment/$id'
+        | '/_authenticated/manage/_manage-auth'
+        | '/_authenticated/notes/$id'
+        | '/_authenticated/manage/'
+        | '/_authenticated/notes/'
+        | '/_authenticated/dashboards/$subtype/$name'
+        | '/_authenticated/manage/_manage-auth/enrichment'
+        | '/_authenticated/manage/_manage-auth/entities'
+        | '/_authenticated/manage/_manage-auth/entry-types'
+        | '/_authenticated/manage/_manage-auth/settings'
+        | '/_authenticated/manage/_manage-auth/type-mappings'
+        | '/_authenticated/manage/_manage-auth/users'
+        | '/_authenticated/manage/_manage-auth/entities/$id'
+        | '/_authenticated/manage/_manage-auth/entry-types/$id'
+        | '/_authenticated/manage/_manage-auth/users/$id'
+        | '/_authenticated/manage/_manage-auth/entities/'
+        | '/_authenticated/manage/_manage-auth/entry-types/'
+        | '/_authenticated/manage/_manage-auth/users/';
+    fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  SplatRoute: typeof SplatRoute
-  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  ConfirmEmailRoute: typeof ConfirmEmailRoute
-  ForgotPasswordRoute: typeof ForgotPasswordRoute
-  LoginRoute: typeof LoginRoute
-  NotFoundRoute: typeof NotFoundRoute
-  RegisterRoute: typeof RegisterRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
-  OauthCallbackRoute: typeof OauthCallbackRoute
+    IndexRoute: typeof IndexRoute;
+    SplatRoute: typeof SplatRoute;
+    AuthenticatedRoute: typeof AuthenticatedRouteWithChildren;
+    ConfirmEmailRoute: typeof ConfirmEmailRoute;
+    ForgotPasswordRoute: typeof ForgotPasswordRoute;
+    LoginRoute: typeof LoginRoute;
+    NotFoundRoute: typeof NotFoundRoute;
+    RegisterRoute: typeof RegisterRoute;
+    ResetPasswordRoute: typeof ResetPasswordRoute;
+    OauthCallbackRoute: typeof OauthCallbackRoute;
 }
 
 declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
+    interface FileRoutesByPath {
+        '/reset-password': {
+            id: '/reset-password';
+            path: '/reset-password';
+            fullPath: '/reset-password';
+            preLoaderRoute: typeof ResetPasswordRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        '/register': {
+            id: '/register';
+            path: '/register';
+            fullPath: '/register';
+            preLoaderRoute: typeof RegisterRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        '/not-found': {
+            id: '/not-found';
+            path: '/not-found';
+            fullPath: '/not-found';
+            preLoaderRoute: typeof NotFoundRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        '/login': {
+            id: '/login';
+            path: '/login';
+            fullPath: '/login';
+            preLoaderRoute: typeof LoginRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        '/forgot-password': {
+            id: '/forgot-password';
+            path: '/forgot-password';
+            fullPath: '/forgot-password';
+            preLoaderRoute: typeof ForgotPasswordRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        '/confirm-email': {
+            id: '/confirm-email';
+            path: '/confirm-email';
+            fullPath: '/confirm-email';
+            preLoaderRoute: typeof ConfirmEmailRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        '/_authenticated': {
+            id: '/_authenticated';
+            path: '';
+            fullPath: '/';
+            preLoaderRoute: typeof AuthenticatedRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        '/$': {
+            id: '/$';
+            path: '/$';
+            fullPath: '/$';
+            preLoaderRoute: typeof SplatRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        '/': {
+            id: '/';
+            path: '/';
+            fullPath: '/';
+            preLoaderRoute: typeof IndexRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        '/oauth/callback': {
+            id: '/oauth/callback';
+            path: '/oauth/callback';
+            fullPath: '/oauth/callback';
+            preLoaderRoute: typeof OauthCallbackRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        '/_authenticated/settings': {
+            id: '/_authenticated/settings';
+            path: '/settings';
+            fullPath: '/settings';
+            preLoaderRoute: typeof AuthenticatedSettingsRouteImport;
+            parentRoute: typeof AuthenticatedRoute;
+        };
+        '/_authenticated/reports': {
+            id: '/_authenticated/reports';
+            path: '/reports';
+            fullPath: '/reports';
+            preLoaderRoute: typeof AuthenticatedReportsRouteImport;
+            parentRoute: typeof AuthenticatedRoute;
+        };
+        '/_authenticated/notes': {
+            id: '/_authenticated/notes';
+            path: '/notes';
+            fullPath: '/notes';
+            preLoaderRoute: typeof AuthenticatedNotesRouteImport;
+            parentRoute: typeof AuthenticatedRoute;
+        };
+        '/_authenticated/manage': {
+            id: '/_authenticated/manage';
+            path: '/manage';
+            fullPath: '/manage';
+            preLoaderRoute: typeof AuthenticatedManageRouteImport;
+            parentRoute: typeof AuthenticatedRoute;
+        };
+        '/_authenticated/knowledge-graph': {
+            id: '/_authenticated/knowledge-graph';
+            path: '/knowledge-graph';
+            fullPath: '/knowledge-graph';
+            preLoaderRoute: typeof AuthenticatedKnowledgeGraphRouteImport;
+            parentRoute: typeof AuthenticatedRoute;
+        };
+        '/_authenticated/files': {
+            id: '/_authenticated/files';
+            path: '/files';
+            fullPath: '/files';
+            preLoaderRoute: typeof AuthenticatedFilesRouteImport;
+            parentRoute: typeof AuthenticatedRoute;
+        };
+        '/_authenticated/enrichment': {
+            id: '/_authenticated/enrichment';
+            path: '/enrichment';
+            fullPath: '/enrichment';
+            preLoaderRoute: typeof AuthenticatedEnrichmentRouteImport;
+            parentRoute: typeof AuthenticatedRoute;
+        };
+        '/_authenticated/digest-data': {
+            id: '/_authenticated/digest-data';
+            path: '/digest-data';
+            fullPath: '/digest-data';
+            preLoaderRoute: typeof AuthenticatedDigestDataRouteImport;
+            parentRoute: typeof AuthenticatedRoute;
+        };
+        '/_authenticated/notes/': {
+            id: '/_authenticated/notes/';
+            path: '/';
+            fullPath: '/notes/';
+            preLoaderRoute: typeof AuthenticatedNotesIndexRouteImport;
+            parentRoute: typeof AuthenticatedNotesRoute;
+        };
+        '/_authenticated/manage/': {
+            id: '/_authenticated/manage/';
+            path: '/';
+            fullPath: '/manage/';
+            preLoaderRoute: typeof AuthenticatedManageIndexRouteImport;
+            parentRoute: typeof AuthenticatedManageRoute;
+        };
+        '/_authenticated/notes/$id': {
+            id: '/_authenticated/notes/$id';
+            path: '/$id';
+            fullPath: '/notes/$id';
+            preLoaderRoute: typeof AuthenticatedNotesIdRouteImport;
+            parentRoute: typeof AuthenticatedNotesRoute;
+        };
+        '/_authenticated/manage/_manage-auth': {
+            id: '/_authenticated/manage/_manage-auth';
+            path: '';
+            fullPath: '/manage';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthRouteImport;
+            parentRoute: typeof AuthenticatedManageRoute;
+        };
+        '/_authenticated/enrichment/$id': {
+            id: '/_authenticated/enrichment/$id';
+            path: '/$id';
+            fullPath: '/enrichment/$id';
+            preLoaderRoute: typeof AuthenticatedEnrichmentIdRouteImport;
+            parentRoute: typeof AuthenticatedEnrichmentRoute;
+        };
+        '/_authenticated/manage/_manage-auth/users': {
+            id: '/_authenticated/manage/_manage-auth/users';
+            path: '/users';
+            fullPath: '/manage/users';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthUsersRouteImport;
+            parentRoute: typeof AuthenticatedManageManageAuthRoute;
+        };
+        '/_authenticated/manage/_manage-auth/type-mappings': {
+            id: '/_authenticated/manage/_manage-auth/type-mappings';
+            path: '/type-mappings';
+            fullPath: '/manage/type-mappings';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthTypeMappingsRouteImport;
+            parentRoute: typeof AuthenticatedManageManageAuthRoute;
+        };
+        '/_authenticated/manage/_manage-auth/settings': {
+            id: '/_authenticated/manage/_manage-auth/settings';
+            path: '/settings';
+            fullPath: '/manage/settings';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthSettingsRouteImport;
+            parentRoute: typeof AuthenticatedManageManageAuthRoute;
+        };
+        '/_authenticated/manage/_manage-auth/entry-types': {
+            id: '/_authenticated/manage/_manage-auth/entry-types';
+            path: '/entry-types';
+            fullPath: '/manage/entry-types';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthEntryTypesRouteImport;
+            parentRoute: typeof AuthenticatedManageManageAuthRoute;
+        };
+        '/_authenticated/manage/_manage-auth/entities': {
+            id: '/_authenticated/manage/_manage-auth/entities';
+            path: '/entities';
+            fullPath: '/manage/entities';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthEntitiesRouteImport;
+            parentRoute: typeof AuthenticatedManageManageAuthRoute;
+        };
+        '/_authenticated/manage/_manage-auth/enrichment': {
+            id: '/_authenticated/manage/_manage-auth/enrichment';
+            path: '/enrichment';
+            fullPath: '/manage/enrichment';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthEnrichmentRouteImport;
+            parentRoute: typeof AuthenticatedManageManageAuthRoute;
+        };
+        '/_authenticated/dashboards/$subtype/$name': {
+            id: '/_authenticated/dashboards/$subtype/$name';
+            path: '/dashboards/$subtype/$name';
+            fullPath: '/dashboards/$subtype/$name';
+            preLoaderRoute: typeof AuthenticatedDashboardsSubtypeNameRouteImport;
+            parentRoute: typeof AuthenticatedRoute;
+        };
+        '/_authenticated/manage/_manage-auth/users/': {
+            id: '/_authenticated/manage/_manage-auth/users/';
+            path: '/';
+            fullPath: '/manage/users/';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthUsersIndexRouteImport;
+            parentRoute: typeof AuthenticatedManageManageAuthUsersRoute;
+        };
+        '/_authenticated/manage/_manage-auth/entry-types/': {
+            id: '/_authenticated/manage/_manage-auth/entry-types/';
+            path: '/';
+            fullPath: '/manage/entry-types/';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthEntryTypesIndexRouteImport;
+            parentRoute: typeof AuthenticatedManageManageAuthEntryTypesRoute;
+        };
+        '/_authenticated/manage/_manage-auth/entities/': {
+            id: '/_authenticated/manage/_manage-auth/entities/';
+            path: '/';
+            fullPath: '/manage/entities/';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthEntitiesIndexRouteImport;
+            parentRoute: typeof AuthenticatedManageManageAuthEntitiesRoute;
+        };
+        '/_authenticated/manage/_manage-auth/users/$id': {
+            id: '/_authenticated/manage/_manage-auth/users/$id';
+            path: '/$id';
+            fullPath: '/manage/users/$id';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthUsersIdRouteImport;
+            parentRoute: typeof AuthenticatedManageManageAuthUsersRoute;
+        };
+        '/_authenticated/manage/_manage-auth/entry-types/$id': {
+            id: '/_authenticated/manage/_manage-auth/entry-types/$id';
+            path: '/$id';
+            fullPath: '/manage/entry-types/$id';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthEntryTypesIdRouteImport;
+            parentRoute: typeof AuthenticatedManageManageAuthEntryTypesRoute;
+        };
+        '/_authenticated/manage/_manage-auth/entities/$id': {
+            id: '/_authenticated/manage/_manage-auth/entities/$id';
+            path: '/$id';
+            fullPath: '/manage/entities/$id';
+            preLoaderRoute: typeof AuthenticatedManageManageAuthEntitiesIdRouteImport;
+            parentRoute: typeof AuthenticatedManageManageAuthEntitiesRoute;
+        };
     }
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/not-found': {
-      id: '/not-found'
-      path: '/not-found'
-      fullPath: '/not-found'
-      preLoaderRoute: typeof NotFoundRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/confirm-email': {
-      id: '/confirm-email'
-      path: '/confirm-email'
-      fullPath: '/confirm-email'
-      preLoaderRoute: typeof ConfirmEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$': {
-      id: '/$'
-      path: '/$'
-      fullPath: '/$'
-      preLoaderRoute: typeof SplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/oauth/callback': {
-      id: '/oauth/callback'
-      path: '/oauth/callback'
-      fullPath: '/oauth/callback'
-      preLoaderRoute: typeof OauthCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/reports': {
-      id: '/_authenticated/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof AuthenticatedReportsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/notes': {
-      id: '/_authenticated/notes'
-      path: '/notes'
-      fullPath: '/notes'
-      preLoaderRoute: typeof AuthenticatedNotesRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/manage': {
-      id: '/_authenticated/manage'
-      path: '/manage'
-      fullPath: '/manage'
-      preLoaderRoute: typeof AuthenticatedManageRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/knowledge-graph': {
-      id: '/_authenticated/knowledge-graph'
-      path: '/knowledge-graph'
-      fullPath: '/knowledge-graph'
-      preLoaderRoute: typeof AuthenticatedKnowledgeGraphRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/files': {
-      id: '/_authenticated/files'
-      path: '/files'
-      fullPath: '/files'
-      preLoaderRoute: typeof AuthenticatedFilesRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/enrichment': {
-      id: '/_authenticated/enrichment'
-      path: '/enrichment'
-      fullPath: '/enrichment'
-      preLoaderRoute: typeof AuthenticatedEnrichmentRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/digest-data': {
-      id: '/_authenticated/digest-data'
-      path: '/digest-data'
-      fullPath: '/digest-data'
-      preLoaderRoute: typeof AuthenticatedDigestDataRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/notes/': {
-      id: '/_authenticated/notes/'
-      path: '/'
-      fullPath: '/notes/'
-      preLoaderRoute: typeof AuthenticatedNotesIndexRouteImport
-      parentRoute: typeof AuthenticatedNotesRoute
-    }
-    '/_authenticated/manage/': {
-      id: '/_authenticated/manage/'
-      path: '/'
-      fullPath: '/manage/'
-      preLoaderRoute: typeof AuthenticatedManageIndexRouteImport
-      parentRoute: typeof AuthenticatedManageRoute
-    }
-    '/_authenticated/notes/$id': {
-      id: '/_authenticated/notes/$id'
-      path: '/$id'
-      fullPath: '/notes/$id'
-      preLoaderRoute: typeof AuthenticatedNotesIdRouteImport
-      parentRoute: typeof AuthenticatedNotesRoute
-    }
-    '/_authenticated/manage/_manage-auth': {
-      id: '/_authenticated/manage/_manage-auth'
-      path: ''
-      fullPath: '/manage'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthRouteImport
-      parentRoute: typeof AuthenticatedManageRoute
-    }
-    '/_authenticated/enrichment/$id': {
-      id: '/_authenticated/enrichment/$id'
-      path: '/$id'
-      fullPath: '/enrichment/$id'
-      preLoaderRoute: typeof AuthenticatedEnrichmentIdRouteImport
-      parentRoute: typeof AuthenticatedEnrichmentRoute
-    }
-    '/_authenticated/manage/_manage-auth/users': {
-      id: '/_authenticated/manage/_manage-auth/users'
-      path: '/users'
-      fullPath: '/manage/users'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthUsersRouteImport
-      parentRoute: typeof AuthenticatedManageManageAuthRoute
-    }
-    '/_authenticated/manage/_manage-auth/type-mappings': {
-      id: '/_authenticated/manage/_manage-auth/type-mappings'
-      path: '/type-mappings'
-      fullPath: '/manage/type-mappings'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthTypeMappingsRouteImport
-      parentRoute: typeof AuthenticatedManageManageAuthRoute
-    }
-    '/_authenticated/manage/_manage-auth/settings': {
-      id: '/_authenticated/manage/_manage-auth/settings'
-      path: '/settings'
-      fullPath: '/manage/settings'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthSettingsRouteImport
-      parentRoute: typeof AuthenticatedManageManageAuthRoute
-    }
-    '/_authenticated/manage/_manage-auth/entry-types': {
-      id: '/_authenticated/manage/_manage-auth/entry-types'
-      path: '/entry-types'
-      fullPath: '/manage/entry-types'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthEntryTypesRouteImport
-      parentRoute: typeof AuthenticatedManageManageAuthRoute
-    }
-    '/_authenticated/manage/_manage-auth/entities': {
-      id: '/_authenticated/manage/_manage-auth/entities'
-      path: '/entities'
-      fullPath: '/manage/entities'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthEntitiesRouteImport
-      parentRoute: typeof AuthenticatedManageManageAuthRoute
-    }
-    '/_authenticated/manage/_manage-auth/enrichment': {
-      id: '/_authenticated/manage/_manage-auth/enrichment'
-      path: '/enrichment'
-      fullPath: '/manage/enrichment'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthEnrichmentRouteImport
-      parentRoute: typeof AuthenticatedManageManageAuthRoute
-    }
-    '/_authenticated/dashboards/$subtype/$name': {
-      id: '/_authenticated/dashboards/$subtype/$name'
-      path: '/dashboards/$subtype/$name'
-      fullPath: '/dashboards/$subtype/$name'
-      preLoaderRoute: typeof AuthenticatedDashboardsSubtypeNameRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/manage/_manage-auth/users/': {
-      id: '/_authenticated/manage/_manage-auth/users/'
-      path: '/'
-      fullPath: '/manage/users/'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthUsersIndexRouteImport
-      parentRoute: typeof AuthenticatedManageManageAuthUsersRoute
-    }
-    '/_authenticated/manage/_manage-auth/entry-types/': {
-      id: '/_authenticated/manage/_manage-auth/entry-types/'
-      path: '/'
-      fullPath: '/manage/entry-types/'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthEntryTypesIndexRouteImport
-      parentRoute: typeof AuthenticatedManageManageAuthEntryTypesRoute
-    }
-    '/_authenticated/manage/_manage-auth/entities/': {
-      id: '/_authenticated/manage/_manage-auth/entities/'
-      path: '/'
-      fullPath: '/manage/entities/'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthEntitiesIndexRouteImport
-      parentRoute: typeof AuthenticatedManageManageAuthEntitiesRoute
-    }
-    '/_authenticated/manage/_manage-auth/users/$id': {
-      id: '/_authenticated/manage/_manage-auth/users/$id'
-      path: '/$id'
-      fullPath: '/manage/users/$id'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthUsersIdRouteImport
-      parentRoute: typeof AuthenticatedManageManageAuthUsersRoute
-    }
-    '/_authenticated/manage/_manage-auth/entry-types/$id': {
-      id: '/_authenticated/manage/_manage-auth/entry-types/$id'
-      path: '/$id'
-      fullPath: '/manage/entry-types/$id'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthEntryTypesIdRouteImport
-      parentRoute: typeof AuthenticatedManageManageAuthEntryTypesRoute
-    }
-    '/_authenticated/manage/_manage-auth/entities/$id': {
-      id: '/_authenticated/manage/_manage-auth/entities/$id'
-      path: '/$id'
-      fullPath: '/manage/entities/$id'
-      preLoaderRoute: typeof AuthenticatedManageManageAuthEntitiesIdRouteImport
-      parentRoute: typeof AuthenticatedManageManageAuthEntitiesRoute
-    }
-  }
 }
 
 interface AuthenticatedEnrichmentRouteChildren {
-  AuthenticatedEnrichmentIdRoute: typeof AuthenticatedEnrichmentIdRoute
+    AuthenticatedEnrichmentIdRoute: typeof AuthenticatedEnrichmentIdRoute;
 }
 
-const AuthenticatedEnrichmentRouteChildren: AuthenticatedEnrichmentRouteChildren =
-  {
+const AuthenticatedEnrichmentRouteChildren: AuthenticatedEnrichmentRouteChildren = {
     AuthenticatedEnrichmentIdRoute: AuthenticatedEnrichmentIdRoute,
-  }
+};
 
 const AuthenticatedEnrichmentRouteWithChildren =
-  AuthenticatedEnrichmentRoute._addFileChildren(
-    AuthenticatedEnrichmentRouteChildren,
-  )
+    AuthenticatedEnrichmentRoute._addFileChildren(AuthenticatedEnrichmentRouteChildren);
 
 interface AuthenticatedManageManageAuthEntitiesRouteChildren {
-  AuthenticatedManageManageAuthEntitiesIdRoute: typeof AuthenticatedManageManageAuthEntitiesIdRoute
-  AuthenticatedManageManageAuthEntitiesIndexRoute: typeof AuthenticatedManageManageAuthEntitiesIndexRoute
+    AuthenticatedManageManageAuthEntitiesIdRoute: typeof AuthenticatedManageManageAuthEntitiesIdRoute;
+    AuthenticatedManageManageAuthEntitiesIndexRoute: typeof AuthenticatedManageManageAuthEntitiesIndexRoute;
 }
 
 const AuthenticatedManageManageAuthEntitiesRouteChildren: AuthenticatedManageManageAuthEntitiesRouteChildren =
-  {
-    AuthenticatedManageManageAuthEntitiesIdRoute:
-      AuthenticatedManageManageAuthEntitiesIdRoute,
-    AuthenticatedManageManageAuthEntitiesIndexRoute:
-      AuthenticatedManageManageAuthEntitiesIndexRoute,
-  }
+    {
+        AuthenticatedManageManageAuthEntitiesIdRoute:
+            AuthenticatedManageManageAuthEntitiesIdRoute,
+        AuthenticatedManageManageAuthEntitiesIndexRoute:
+            AuthenticatedManageManageAuthEntitiesIndexRoute,
+    };
 
 const AuthenticatedManageManageAuthEntitiesRouteWithChildren =
-  AuthenticatedManageManageAuthEntitiesRoute._addFileChildren(
-    AuthenticatedManageManageAuthEntitiesRouteChildren,
-  )
+    AuthenticatedManageManageAuthEntitiesRoute._addFileChildren(
+        AuthenticatedManageManageAuthEntitiesRouteChildren,
+    );
 
 interface AuthenticatedManageManageAuthEntryTypesRouteChildren {
-  AuthenticatedManageManageAuthEntryTypesIdRoute: typeof AuthenticatedManageManageAuthEntryTypesIdRoute
-  AuthenticatedManageManageAuthEntryTypesIndexRoute: typeof AuthenticatedManageManageAuthEntryTypesIndexRoute
+    AuthenticatedManageManageAuthEntryTypesIdRoute: typeof AuthenticatedManageManageAuthEntryTypesIdRoute;
+    AuthenticatedManageManageAuthEntryTypesIndexRoute: typeof AuthenticatedManageManageAuthEntryTypesIndexRoute;
 }
 
 const AuthenticatedManageManageAuthEntryTypesRouteChildren: AuthenticatedManageManageAuthEntryTypesRouteChildren =
-  {
-    AuthenticatedManageManageAuthEntryTypesIdRoute:
-      AuthenticatedManageManageAuthEntryTypesIdRoute,
-    AuthenticatedManageManageAuthEntryTypesIndexRoute:
-      AuthenticatedManageManageAuthEntryTypesIndexRoute,
-  }
+    {
+        AuthenticatedManageManageAuthEntryTypesIdRoute:
+            AuthenticatedManageManageAuthEntryTypesIdRoute,
+        AuthenticatedManageManageAuthEntryTypesIndexRoute:
+            AuthenticatedManageManageAuthEntryTypesIndexRoute,
+    };
 
 const AuthenticatedManageManageAuthEntryTypesRouteWithChildren =
-  AuthenticatedManageManageAuthEntryTypesRoute._addFileChildren(
-    AuthenticatedManageManageAuthEntryTypesRouteChildren,
-  )
+    AuthenticatedManageManageAuthEntryTypesRoute._addFileChildren(
+        AuthenticatedManageManageAuthEntryTypesRouteChildren,
+    );
 
 interface AuthenticatedManageManageAuthUsersRouteChildren {
-  AuthenticatedManageManageAuthUsersIdRoute: typeof AuthenticatedManageManageAuthUsersIdRoute
-  AuthenticatedManageManageAuthUsersIndexRoute: typeof AuthenticatedManageManageAuthUsersIndexRoute
+    AuthenticatedManageManageAuthUsersIdRoute: typeof AuthenticatedManageManageAuthUsersIdRoute;
+    AuthenticatedManageManageAuthUsersIndexRoute: typeof AuthenticatedManageManageAuthUsersIndexRoute;
 }
 
 const AuthenticatedManageManageAuthUsersRouteChildren: AuthenticatedManageManageAuthUsersRouteChildren =
-  {
-    AuthenticatedManageManageAuthUsersIdRoute:
-      AuthenticatedManageManageAuthUsersIdRoute,
-    AuthenticatedManageManageAuthUsersIndexRoute:
-      AuthenticatedManageManageAuthUsersIndexRoute,
-  }
+    {
+        AuthenticatedManageManageAuthUsersIdRoute:
+            AuthenticatedManageManageAuthUsersIdRoute,
+        AuthenticatedManageManageAuthUsersIndexRoute:
+            AuthenticatedManageManageAuthUsersIndexRoute,
+    };
 
 const AuthenticatedManageManageAuthUsersRouteWithChildren =
-  AuthenticatedManageManageAuthUsersRoute._addFileChildren(
-    AuthenticatedManageManageAuthUsersRouteChildren,
-  )
+    AuthenticatedManageManageAuthUsersRoute._addFileChildren(
+        AuthenticatedManageManageAuthUsersRouteChildren,
+    );
 
 interface AuthenticatedManageManageAuthRouteChildren {
-  AuthenticatedManageManageAuthEnrichmentRoute: typeof AuthenticatedManageManageAuthEnrichmentRoute
-  AuthenticatedManageManageAuthEntitiesRoute: typeof AuthenticatedManageManageAuthEntitiesRouteWithChildren
-  AuthenticatedManageManageAuthEntryTypesRoute: typeof AuthenticatedManageManageAuthEntryTypesRouteWithChildren
-  AuthenticatedManageManageAuthSettingsRoute: typeof AuthenticatedManageManageAuthSettingsRoute
-  AuthenticatedManageManageAuthTypeMappingsRoute: typeof AuthenticatedManageManageAuthTypeMappingsRoute
-  AuthenticatedManageManageAuthUsersRoute: typeof AuthenticatedManageManageAuthUsersRouteWithChildren
+    AuthenticatedManageManageAuthEnrichmentRoute: typeof AuthenticatedManageManageAuthEnrichmentRoute;
+    AuthenticatedManageManageAuthEntitiesRoute: typeof AuthenticatedManageManageAuthEntitiesRouteWithChildren;
+    AuthenticatedManageManageAuthEntryTypesRoute: typeof AuthenticatedManageManageAuthEntryTypesRouteWithChildren;
+    AuthenticatedManageManageAuthSettingsRoute: typeof AuthenticatedManageManageAuthSettingsRoute;
+    AuthenticatedManageManageAuthTypeMappingsRoute: typeof AuthenticatedManageManageAuthTypeMappingsRoute;
+    AuthenticatedManageManageAuthUsersRoute: typeof AuthenticatedManageManageAuthUsersRouteWithChildren;
 }
 
 const AuthenticatedManageManageAuthRouteChildren: AuthenticatedManageManageAuthRouteChildren =
-  {
-    AuthenticatedManageManageAuthEnrichmentRoute:
-      AuthenticatedManageManageAuthEnrichmentRoute,
-    AuthenticatedManageManageAuthEntitiesRoute:
-      AuthenticatedManageManageAuthEntitiesRouteWithChildren,
-    AuthenticatedManageManageAuthEntryTypesRoute:
-      AuthenticatedManageManageAuthEntryTypesRouteWithChildren,
-    AuthenticatedManageManageAuthSettingsRoute:
-      AuthenticatedManageManageAuthSettingsRoute,
-    AuthenticatedManageManageAuthTypeMappingsRoute:
-      AuthenticatedManageManageAuthTypeMappingsRoute,
-    AuthenticatedManageManageAuthUsersRoute:
-      AuthenticatedManageManageAuthUsersRouteWithChildren,
-  }
+    {
+        AuthenticatedManageManageAuthEnrichmentRoute:
+            AuthenticatedManageManageAuthEnrichmentRoute,
+        AuthenticatedManageManageAuthEntitiesRoute:
+            AuthenticatedManageManageAuthEntitiesRouteWithChildren,
+        AuthenticatedManageManageAuthEntryTypesRoute:
+            AuthenticatedManageManageAuthEntryTypesRouteWithChildren,
+        AuthenticatedManageManageAuthSettingsRoute:
+            AuthenticatedManageManageAuthSettingsRoute,
+        AuthenticatedManageManageAuthTypeMappingsRoute:
+            AuthenticatedManageManageAuthTypeMappingsRoute,
+        AuthenticatedManageManageAuthUsersRoute:
+            AuthenticatedManageManageAuthUsersRouteWithChildren,
+    };
 
 const AuthenticatedManageManageAuthRouteWithChildren =
-  AuthenticatedManageManageAuthRoute._addFileChildren(
-    AuthenticatedManageManageAuthRouteChildren,
-  )
+    AuthenticatedManageManageAuthRoute._addFileChildren(
+        AuthenticatedManageManageAuthRouteChildren,
+    );
 
 interface AuthenticatedManageRouteChildren {
-  AuthenticatedManageManageAuthRoute: typeof AuthenticatedManageManageAuthRouteWithChildren
-  AuthenticatedManageIndexRoute: typeof AuthenticatedManageIndexRoute
+    AuthenticatedManageManageAuthRoute: typeof AuthenticatedManageManageAuthRouteWithChildren;
+    AuthenticatedManageIndexRoute: typeof AuthenticatedManageIndexRoute;
 }
 
 const AuthenticatedManageRouteChildren: AuthenticatedManageRouteChildren = {
-  AuthenticatedManageManageAuthRoute:
-    AuthenticatedManageManageAuthRouteWithChildren,
-  AuthenticatedManageIndexRoute: AuthenticatedManageIndexRoute,
-}
+    AuthenticatedManageManageAuthRoute: AuthenticatedManageManageAuthRouteWithChildren,
+    AuthenticatedManageIndexRoute: AuthenticatedManageIndexRoute,
+};
 
-const AuthenticatedManageRouteWithChildren =
-  AuthenticatedManageRoute._addFileChildren(AuthenticatedManageRouteChildren)
+const AuthenticatedManageRouteWithChildren = AuthenticatedManageRoute._addFileChildren(
+    AuthenticatedManageRouteChildren,
+);
 
 interface AuthenticatedNotesRouteChildren {
-  AuthenticatedNotesIdRoute: typeof AuthenticatedNotesIdRoute
-  AuthenticatedNotesIndexRoute: typeof AuthenticatedNotesIndexRoute
+    AuthenticatedNotesIdRoute: typeof AuthenticatedNotesIdRoute;
+    AuthenticatedNotesIndexRoute: typeof AuthenticatedNotesIndexRoute;
 }
 
 const AuthenticatedNotesRouteChildren: AuthenticatedNotesRouteChildren = {
-  AuthenticatedNotesIdRoute: AuthenticatedNotesIdRoute,
-  AuthenticatedNotesIndexRoute: AuthenticatedNotesIndexRoute,
-}
+    AuthenticatedNotesIdRoute: AuthenticatedNotesIdRoute,
+    AuthenticatedNotesIndexRoute: AuthenticatedNotesIndexRoute,
+};
 
-const AuthenticatedNotesRouteWithChildren =
-  AuthenticatedNotesRoute._addFileChildren(AuthenticatedNotesRouteChildren)
+const AuthenticatedNotesRouteWithChildren = AuthenticatedNotesRoute._addFileChildren(
+    AuthenticatedNotesRouteChildren,
+);
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedDigestDataRoute: typeof AuthenticatedDigestDataRoute
-  AuthenticatedEnrichmentRoute: typeof AuthenticatedEnrichmentRouteWithChildren
-  AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute
-  AuthenticatedKnowledgeGraphRoute: typeof AuthenticatedKnowledgeGraphRoute
-  AuthenticatedManageRoute: typeof AuthenticatedManageRouteWithChildren
-  AuthenticatedNotesRoute: typeof AuthenticatedNotesRouteWithChildren
-  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedDashboardsSubtypeNameRoute: typeof AuthenticatedDashboardsSubtypeNameRoute
+    AuthenticatedDigestDataRoute: typeof AuthenticatedDigestDataRoute;
+    AuthenticatedEnrichmentRoute: typeof AuthenticatedEnrichmentRouteWithChildren;
+    AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute;
+    AuthenticatedKnowledgeGraphRoute: typeof AuthenticatedKnowledgeGraphRoute;
+    AuthenticatedManageRoute: typeof AuthenticatedManageRouteWithChildren;
+    AuthenticatedNotesRoute: typeof AuthenticatedNotesRouteWithChildren;
+    AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute;
+    AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute;
+    AuthenticatedDashboardsSubtypeNameRoute: typeof AuthenticatedDashboardsSubtypeNameRoute;
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedDigestDataRoute: AuthenticatedDigestDataRoute,
-  AuthenticatedEnrichmentRoute: AuthenticatedEnrichmentRouteWithChildren,
-  AuthenticatedFilesRoute: AuthenticatedFilesRoute,
-  AuthenticatedKnowledgeGraphRoute: AuthenticatedKnowledgeGraphRoute,
-  AuthenticatedManageRoute: AuthenticatedManageRouteWithChildren,
-  AuthenticatedNotesRoute: AuthenticatedNotesRouteWithChildren,
-  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedDashboardsSubtypeNameRoute:
-    AuthenticatedDashboardsSubtypeNameRoute,
-}
+    AuthenticatedDigestDataRoute: AuthenticatedDigestDataRoute,
+    AuthenticatedEnrichmentRoute: AuthenticatedEnrichmentRouteWithChildren,
+    AuthenticatedFilesRoute: AuthenticatedFilesRoute,
+    AuthenticatedKnowledgeGraphRoute: AuthenticatedKnowledgeGraphRoute,
+    AuthenticatedManageRoute: AuthenticatedManageRouteWithChildren,
+    AuthenticatedNotesRoute: AuthenticatedNotesRouteWithChildren,
+    AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+    AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+    AuthenticatedDashboardsSubtypeNameRoute: AuthenticatedDashboardsSubtypeNameRoute,
+};
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
-  AuthenticatedRouteChildren,
-)
+    AuthenticatedRouteChildren,
+);
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  SplatRoute: SplatRoute,
-  AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  ConfirmEmailRoute: ConfirmEmailRoute,
-  ForgotPasswordRoute: ForgotPasswordRoute,
-  LoginRoute: LoginRoute,
-  NotFoundRoute: NotFoundRoute,
-  RegisterRoute: RegisterRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
-  OauthCallbackRoute: OauthCallbackRoute,
-}
+    IndexRoute: IndexRoute,
+    SplatRoute: SplatRoute,
+    AuthenticatedRoute: AuthenticatedRouteWithChildren,
+    ConfirmEmailRoute: ConfirmEmailRoute,
+    ForgotPasswordRoute: ForgotPasswordRoute,
+    LoginRoute: LoginRoute,
+    NotFoundRoute: NotFoundRoute,
+    RegisterRoute: RegisterRoute,
+    ResetPasswordRoute: ResetPasswordRoute,
+    OauthCallbackRoute: OauthCallbackRoute,
+};
 export const routeTree = rootRouteImport
-  ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+    ._addFileChildren(rootRouteChildren)
+    ._addFileTypes<FileRouteTypes>();
 
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { createStart } from '@tanstack/react-start';
+import type { getRouter } from './router.tsx';
 declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
+    interface Register {
+        ssr: true;
+        router: Awaited<ReturnType<typeof getRouter>>;
+    }
 }

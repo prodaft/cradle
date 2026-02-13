@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import {
     Command,
     CommandEmpty,
@@ -8,12 +9,9 @@ import {
     CommandSeparator,
     CommandShortcut,
 } from '@/components/ui/command';
-import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Kbd } from '@/components/ui/kbd';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     Select,
     SelectContent,
@@ -21,15 +19,20 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import { Kbd } from '@/components/ui/kbd';
 import { queryKeys } from '@/hooks/query';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useApi } from '@hooks';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import React, { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import React, {
+    KeyboardEvent,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import SearchFilterSection from './search-filter';
 
 /**
@@ -96,7 +99,9 @@ export default function SearchDialog({
     });
 
     const entrySubtypes = useMemo(
-        () => [...new Set((entryClassesQuery.data?.results ?? []).map((c) => c.subtype))],
+        () => [
+            ...new Set((entryClassesQuery.data?.results ?? []).map((c) => c.subtype)),
+        ],
         [entryClassesQuery.data],
     );
 
@@ -113,7 +118,6 @@ export default function SearchDialog({
         });
         return colorMap;
     }, [entryClassesQuery.data]);
-
 
     const searchResults = useQuery({
         queryKey: ['search', searchState] as const,
@@ -143,7 +147,6 @@ export default function SearchDialog({
     const totalPages = Math.max(1, searchResults.data?.totalPages ?? 1);
     const { page, pageSize } = searchState;
 
-
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -170,8 +173,7 @@ export default function SearchDialog({
         [onClose, router],
     );
 
-    const setPage = (p: number) =>
-        setSearchState((prev) => ({ ...prev, page: p }));
+    const setPage = (p: number) => setSearchState((prev) => ({ ...prev, page: p }));
 
     const setPageSize = (size: number) =>
         setSearchState((prev) => ({ ...prev, pageSize: size, page: 1 }));
@@ -225,17 +227,23 @@ export default function SearchDialog({
                             ) : hasResults ? (
                                 <CommandGroup>
                                     {results!.map((result) => {
-                                        const color = entryClassColors.get(result.subtype);
+                                        const color = entryClassColors.get(
+                                            result.subtype,
+                                        );
                                         return (
                                             <CommandItem
                                                 key={result.id}
                                                 value={`${result.subtype}:${result.id}`}
-                                                onSelect={() => handleSelectResult(result)}
+                                                onSelect={() =>
+                                                    handleSelectResult(result)
+                                                }
                                             >
                                                 {color && (
                                                     <span
                                                         className='size-2 rounded-full shrink-0'
-                                                        style={{ backgroundColor: color }}
+                                                        style={{
+                                                            backgroundColor: color,
+                                                        }}
                                                     />
                                                 )}
                                                 {result.name}
@@ -283,19 +291,47 @@ export default function SearchDialog({
                                 </Select>
                                 {totalPages > 1 && (
                                     <div className='flex items-center'>
-                                        <Button variant='ghost' size='icon-xs' className='size-4' aria-label='First page' disabled={page <= 1} onClick={() => setPage(1)}>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon-xs'
+                                            className='size-4'
+                                            aria-label='First page'
+                                            disabled={page <= 1}
+                                            onClick={() => setPage(1)}
+                                        >
                                             <ChevronsLeft className='size-2.5' />
                                         </Button>
-                                        <Button variant='ghost' size='icon-xs' className='size-4' aria-label='Previous page' disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon-xs'
+                                            className='size-4'
+                                            aria-label='Previous page'
+                                            disabled={page <= 1}
+                                            onClick={() => setPage(page - 1)}
+                                        >
                                             <ChevronLeft className='size-2.5' />
                                         </Button>
                                         <span className='tabular-nums text-[10px] px-0.5'>
                                             {page}/{totalPages}
                                         </span>
-                                        <Button variant='ghost' size='icon-xs' className='size-4' aria-label='Next page' disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon-xs'
+                                            className='size-4'
+                                            aria-label='Next page'
+                                            disabled={page >= totalPages}
+                                            onClick={() => setPage(page + 1)}
+                                        >
                                             <ChevronRight className='size-2.5' />
                                         </Button>
-                                        <Button variant='ghost' size='icon-xs' className='size-4' aria-label='Last page' disabled={page >= totalPages} onClick={() => setPage(totalPages)}>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon-xs'
+                                            className='size-4'
+                                            aria-label='Last page'
+                                            disabled={page >= totalPages}
+                                            onClick={() => setPage(totalPages)}
+                                        >
                                             <ChevronsRight className='size-2.5' />
                                         </Button>
                                     </div>
