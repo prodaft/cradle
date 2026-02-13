@@ -47,6 +47,15 @@ from ..utils import get_or_default_enricher
         operation_id="enrichment_subclasses_list",
         summary="Get enrichment subclasses",
         description="Returns a list of all subclasses of BaseEnricher with their names.",
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search enrichment types by name or class name",
+                required=False,
+            ),
+        ],
         responses={
             200: EnrichmentSubclassSerializer(many=True),
             **get_common_error_responses(),
@@ -76,6 +85,13 @@ class EnrichmentSubclassesAPIView(APIView):
             for subclass in subclasses
             if hasattr(subclass, "display_name")
         ]
+
+        search = request.query_params.get("search")
+        if search:
+            search_lower = search.lower()
+            subclass_data = [
+                s for s in subclass_data if search_lower in s["name"].lower() or search_lower in s["class"].lower()
+            ]
 
         serializer = EnrichmentSubclassSerializer(subclass_data, many=True)
         return Response(serializer.data)

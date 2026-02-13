@@ -71,6 +71,7 @@ export interface NotesFilesRetrieveRequest {
     page?: number;
     pageSize?: number;
     references?: Array<string>;
+    status?: string;
     timestampGte?: string;
     timestampLte?: string;
 }
@@ -275,6 +276,10 @@ export class NotesApi extends runtime.BaseAPI {
 
         if (requestParameters['references'] != null) {
             queryParameters['references'] = requestParameters['references'];
+        }
+
+        if (requestParameters['status'] != null) {
+            queryParameters['status'] = requestParameters['status'];
         }
 
         if (requestParameters['timestampGte'] != null) {

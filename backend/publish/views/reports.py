@@ -64,6 +64,13 @@ from ..tasks import generate_report
                 required=False,
                 default="-created_at",
             ),
+            OpenApiParameter(
+                name="status",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter reports by status (e.g. done, working, error)",
+                required=False,
+            ),
         ],
         responses={
             200: ReportListSerializer,
@@ -91,6 +98,11 @@ class ReportListDeleteAPIView(generics.ListAPIView):
         search = request.query_params.get("search")
         if search:
             queryset = queryset.filter(Q(id__icontains=search) | Q(title__icontains=search))
+
+        # Handle status filter
+        status_filter = request.query_params.get("status")
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
 
         # Handle page_size parameter
         try:

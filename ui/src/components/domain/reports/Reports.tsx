@@ -173,7 +173,10 @@ export default function Reports() {
                 pageSize: queryParams.page_size,
                 orderBy: queryParams.order_by,
                 search: searchQuery || undefined,
-                // Note: Status filtering happens client-side until backend supports it
+                status:
+                    columnFilters.status && columnFilters.status !== 'all'
+                        ? columnFilters.status
+                        : undefined,
             }),
         meta: {
             showErrorToast: true,
@@ -181,16 +184,7 @@ export default function Reports() {
         },
     });
 
-    // Client-side status filtering
-    const reports = useMemo(() => {
-        if (!reportsData?.results) return [];
-        if (columnFilters.status && columnFilters.status !== 'all') {
-            return reportsData.results.filter(
-                (report) => report.status === columnFilters.status,
-            );
-        }
-        return reportsData.results;
-    }, [reportsData?.results, columnFilters.status]);
+    const reports = reportsData?.results ?? [];
 
     const totalPages = reportsData?.totalPages || 1;
     const totalCount = reportsData?.count || 0;

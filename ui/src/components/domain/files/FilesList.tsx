@@ -66,7 +66,6 @@ interface FilesListQuery {
 /**
  * FilesList component - This component is used to display a list of files.
  * @param query - Query parameters for filtering files
- * @param filteredFiles - Files to filter out from the results
  * @param fileActions - Actions that can be performed on files
  * @param references - References for drag and drop functionality
  * @param setAlert - Function to set alerts (optional)
@@ -74,7 +73,6 @@ interface FilesListQuery {
  */
 interface FilesListProps {
     query?: FilesListQuery;
-    filteredFiles?: FileReferenceWithNote[];
     fileActions?: any[];
     references?: any;
     setAlert?: StateSetter<Alert> | null;
@@ -92,12 +90,10 @@ const SORT_FIELD_MAPPING: Record<string, string> = {
 
 // Empty defaults to prevent new object creation on each render
 const EMPTY_QUERY = {};
-const EMPTY_FILTERED_FILES: FileReferenceWithNote[] = [];
 const EMPTY_FILE_ACTIONS: any[] = [];
 
 export default function FilesList({
     query = EMPTY_QUERY,
-    filteredFiles = EMPTY_FILTERED_FILES,
     fileActions = EMPTY_FILE_ACTIONS,
     references = null,
     setAlert: externalSetAlert = null,
@@ -223,6 +219,7 @@ export default function FilesList({
             linkedToExactMatch: query.linked_to_exact_match,
             mimetype: query.mimetype,
             references: query.references,
+            status: statusFilter !== 'all' ? statusFilter : undefined,
             timestampGte: query.timestamp_gte,
             timestampLte: query.timestamp_lte,
         };
@@ -233,7 +230,7 @@ export default function FilesList({
         );
 
         return params;
-    }, [page, pageSize, sortField, sortDirection, query, searchQuery]);
+    }, [page, pageSize, sortField, sortDirection, query, searchQuery, statusFilter]);
 
     // Query for files
     const {
@@ -289,13 +286,6 @@ export default function FilesList({
                 toast.success('Copied to clipboard');
             });
     }, []);
-
-    const getFileStatus = useCallback(
-        (file: FileReferenceWithNote): 'healthy' | 'warning' => {
-            return file.sha256Hash ? 'healthy' : 'warning';
-        },
-        [],
-    );
 
     // Download a single file
     const handleDownloadFile = useCallback(
@@ -453,14 +443,7 @@ export default function FilesList({
         [page, pageSize, handlePageChange, handlePageSizeChange],
     );
 
-    // Filter files based on status and filteredFiles
-    const filteredData = useMemo(() => {
-        return files.filter((file) => {
-            if (statusFilter !== 'all' && getFileStatus(file) !== statusFilter)
-                return false;
-            return !filteredFiles.some((f) => f.id === file.id);
-        });
-    }, [files, statusFilter, filteredFiles]);
+
 
     // Memoize columns to prevent recreation on every render
     const columns = useMemo<ColumnDef<FileReferenceWithNote>[]>(
@@ -738,7 +721,7 @@ export default function FilesList({
     }, []);
 
     const table = useReactTable({
-        data: filteredData,
+        data: files,
         columns,
         state: {
             sorting,

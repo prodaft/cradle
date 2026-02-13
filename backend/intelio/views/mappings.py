@@ -29,6 +29,15 @@ from ..exceptions import (
         operation_id="mappings_subclasses_list",
         summary="Get class mapping subclasses",
         description="Returns a list of all subclasses of ClassMapping with their names.",
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search mapping types by name or class name",
+                required=False,
+            ),
+        ],
         responses={
             200: MappingSubclassSerializer(many=True),
             **get_common_error_responses(),
@@ -52,6 +61,13 @@ class ClassMappingSubclassesAPIView(APIView):
             for subclass in subclasses
             if hasattr(subclass, "display_name")
         ]
+
+        search = request.query_params.get("search")
+        if search:
+            search_lower = search.lower()
+            subclass_data = [
+                s for s in subclass_data if search_lower in s["name"].lower() or search_lower in s["class"].lower()
+            ]
 
         serializer = MappingSubclassSerializer(subclass_data, many=True)
         return Response(serializer.data)

@@ -327,36 +327,6 @@ export default function EnrichmentRequestDialog({
         return parsed;
     };
 
-    // Query for entities list (used by fetchEntities)
-    const { data: entitiesListData } = useQuery({
-        queryKey: queryKeys.entities.list(),
-        queryFn: () => entriesApi.entitiesList(),
-        enabled: open,
-        meta: {
-            showErrorToast: true,
-            errorMessage: 'Failed to fetch entities',
-        },
-    });
-
-    const fetchEntities = async (searchTerm: string) => {
-        if (!entitiesListData) return [];
-
-        const entities = entitiesListData.filter((entity) =>
-            searchTerm
-                ? entity.name.toLowerCase().includes(searchTerm.toLowerCase())
-                : true,
-        );
-
-        const options = entities
-            .filter((entity) => entity.id !== undefined)
-            .map((entity) => ({
-                value: entity.id!,
-                label: entity.name,
-            }));
-
-        return options;
-    };
-
     // Mutation for creating enrichment request
     const createMutation = useMutation({
         mutationFn: async (data: {

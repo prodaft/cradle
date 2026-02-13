@@ -15,7 +15,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { startCase } from 'lodash';
 import { Search } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import AdminPageLayout from '../AdminPageLayout';
 import TypeMappingsEditor from '../TypeMappingsEditor';
 
@@ -28,6 +29,11 @@ export default function TypeMappingsPage() {
         from: '/_authenticated/manage/_manage-auth/type-mappings',
     });
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const debouncedSetSearch = useDebouncedCallback(
+        (value: string) => setDebouncedSearch(value),
+        300,
+    );
     const { intelioApi } = useApi();
     const queryClient = useQueryClient();
 
@@ -35,8 +41,11 @@ export default function TypeMappingsPage() {
 
     // Query for mapping types
     const { data: mappingTypesData = [], isPending } = useQuery({
-        queryKey: ['typeMappings'],
-        queryFn: () => intelioApi.mappingsSubclassesList(),
+        queryKey: ['typeMappings', debouncedSearch],
+        queryFn: () =>
+            intelioApi.mappingsSubclassesList({
+                search: debouncedSearch || undefined,
+            }),
         meta: {
             showErrorToast: false,
             suppressNotification: true,
@@ -74,18 +83,6 @@ export default function TypeMappingsPage() {
 
     const selectedMapping = tab ? mappingTypes.find((m) => m.className === tab) : null;
 
-    const filteredMappingTypes = useMemo(() => {
-        if (!searchQuery.trim()) {
-            return mappingTypes;
-        }
-        const query = searchQuery.toLowerCase();
-        return mappingTypes.filter(
-            (mapping) =>
-                mapping.name?.toLowerCase().includes(query) ||
-                mapping.className?.toLowerCase().includes(query),
-        );
-    }, [mappingTypes, searchQuery]);
-
     return (
         <AdminPageLayout>
             <div className='flex w-full h-full'>
@@ -101,7 +98,10 @@ export default function TypeMappingsPage() {
                                 type='text'
                                 placeholder='Search mappings...'
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    debouncedSetSearch(e.target.value);
+                                }}
                                 className='pl-8'
                             />
                         </div>
@@ -113,14 +113,14 @@ export default function TypeMappingsPage() {
                                     <div className='px-4 py-2 text-sm text-muted-foreground flex items-center gap-2'>
                                         <Spinner className='size-4' /> Loading...
                                     </div>
-                                ) : filteredMappingTypes.length === 0 ? (
+                                ) : mappingTypes.length === 0 ? (
                                     <div className='px-4 py-2 text-sm text-muted-foreground'>
                                         {searchQuery
                                             ? 'No mappings match your search'
                                             : 'No type mappings found'}
                                     </div>
                                 ) : (
-                                    filteredMappingTypes.map((mapping) => (
+                                    mappingTypes.map((mapping) => (
                                         <SidebarMenuItem key={mapping.className}>
                                             <SidebarMenuButton
                                                 isActive={tab === mapping.className}

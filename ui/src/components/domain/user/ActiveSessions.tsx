@@ -69,8 +69,12 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
 
     // Query for sessions
     const { data: sessions = [], isPending } = useQuery<UserSession[]>({
-        queryKey: ['users', 'detail', `${userId}-sessions`],
-        queryFn: () => usersApi.usersSessionsList({ userId }),
+        queryKey: ['users', 'detail', `${userId}-sessions`, searchQuery],
+        queryFn: () =>
+            usersApi.usersSessionsList({
+                userId,
+                search: searchQuery || undefined,
+            }),
         meta: {
             errorMessage: 'Failed to fetch sessions',
         },
@@ -232,30 +236,17 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         [sessions, currentJti],
     );
 
-    // Filter sessions based on search query
-    const filteredSessions = useMemo(() => {
-        if (!searchQuery) return sessionsWithCurrent;
-        const query = searchQuery.toLowerCase();
-        return sessionsWithCurrent.filter(
-            (session) =>
-                session.deviceInfo?.toLowerCase().includes(query) ||
-                session.ipAddress?.toLowerCase().includes(query) ||
-                formatDate(session.createdAt).toLowerCase().includes(query) ||
-                formatDate(session.lastActivity).toLowerCase().includes(query),
-        );
-    }, [sessionsWithCurrent, searchQuery, formatDate]);
-
-    // Calculate total pages from filtered sessions
+    // Calculate total pages
     const totalPages = useMemo(() => {
-        return Math.max(1, Math.ceil(filteredSessions.length / pageSize));
-    }, [filteredSessions.length, pageSize]);
+        return Math.max(1, Math.ceil(sessionsWithCurrent.length / pageSize));
+    }, [sessionsWithCurrent.length, pageSize]);
 
-    // Paginate filtered sessions
+    // Paginate sessions
     const paginatedSessions = useMemo(() => {
         const start = (page - 1) * pageSize;
         const end = start + pageSize;
-        return filteredSessions.slice(start, end);
-    }, [filteredSessions, page, pageSize]);
+        return sessionsWithCurrent.slice(start, end);
+    }, [sessionsWithCurrent, page, pageSize]);
 
     // Handle sorting change
     const handleSortingChange = useCallback((newSorting: SortingState) => {

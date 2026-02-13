@@ -120,6 +120,7 @@ export interface UsersSessionsDestroyRequest {
 
 export interface UsersSessionsListRequest {
     userId: string;
+    search?: string;
 }
 
 export interface UsersUpdateRequest {
@@ -879,6 +880,10 @@ export class UserApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

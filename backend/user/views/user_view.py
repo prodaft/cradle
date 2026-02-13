@@ -5,6 +5,7 @@ from typing import cast
 
 import bcrypt
 from django.db import transaction
+from django.db.models import Q
 from django.conf import settings
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
@@ -719,6 +720,13 @@ class DefaultNoteTemplateView(APIView):
                 location=OpenApiParameter.PATH,
                 description="UUID of the user, or 'me' to list sessions for the current user",
             ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search sessions by device info or IP address",
+                required=False,
+            ),
         ],
         responses={
             200: UserSessionSerializer(many=True),
@@ -752,6 +760,11 @@ class UserSessionsListView(APIView):
 
         # Get all non-expired sessions, ordered by last activity
         sessions = UserSession.objects.filter(user=user, expires_at__gt=timezone.now()).order_by("-last_activity")
+
+        # Handle search parameter
+        search = request.query_params.get("search")
+        if search:
+            sessions = sessions.filter(Q(device_info__icontains=search) | Q(ip_address__icontains=search))
 
         # Mark current session - we can't get refresh token from Authorization header
         # (it contains access token), so we'll rely on frontend to determine current session

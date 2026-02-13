@@ -14,7 +14,8 @@ import { EnrichmentSubclass } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Search } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import AdminPageLayout from '../AdminPageLayout';
 import EnrichmentSettingsForm from '../forms/EnrichmentSettingsForm';
 
@@ -27,14 +28,22 @@ export default function EnrichmentPage() {
         from: '/_authenticated/manage/_manage-auth/enrichment',
     });
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const debouncedSetSearch = useDebouncedCallback(
+        (value: string) => setDebouncedSearch(value),
+        300,
+    );
     const { intelioApi } = useApi();
 
     const tab = (search as any)?.tab as string | undefined;
 
     // Query for enrichment types
     const { data: enrichmentTypesData = [], isPending } = useQuery({
-        queryKey: ['enrichmentTypes'],
-        queryFn: () => intelioApi.enrichmentSubclassesList(),
+        queryKey: ['enrichmentTypes', debouncedSearch],
+        queryFn: () =>
+            intelioApi.enrichmentSubclassesList({
+                search: debouncedSearch || undefined,
+            }),
         meta: {
             showErrorToast: false,
             suppressNotification: true,
@@ -74,18 +83,6 @@ export default function EnrichmentPage() {
         ? enrichmentTypes.find((e) => e.className === tab)
         : null;
 
-    const filteredEnrichmentTypes = useMemo(() => {
-        if (!searchQuery.trim()) {
-            return enrichmentTypes;
-        }
-        const query = searchQuery.toLowerCase();
-        return enrichmentTypes.filter(
-            (enrichment) =>
-                enrichment.name?.toLowerCase().includes(query) ||
-                enrichment.className?.toLowerCase().includes(query),
-        );
-    }, [enrichmentTypes, searchQuery]);
-
     return (
         <AdminPageLayout>
             <div className='flex w-full h-full'>
@@ -101,7 +98,10 @@ export default function EnrichmentPage() {
                                 type='text'
                                 placeholder='Search enrichment types...'
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    debouncedSetSearch(e.target.value);
+                                }}
                                 className='pl-8'
                             />
                         </div>
@@ -113,14 +113,14 @@ export default function EnrichmentPage() {
                                     <div className='px-4 py-2 text-sm text-muted-foreground flex items-center gap-2'>
                                         <Spinner className='size-4' /> Loading...
                                     </div>
-                                ) : filteredEnrichmentTypes.length === 0 ? (
+                                ) : enrichmentTypes.length === 0 ? (
                                     <div className='px-4 py-2 text-sm text-muted-foreground'>
                                         {searchQuery
                                             ? 'No enrichment types match your search'
                                             : 'No enrichment types found'}
                                     </div>
                                 ) : (
-                                    filteredEnrichmentTypes.map((enrichment) => (
+                                    enrichmentTypes.map((enrichment) => (
                                         <SidebarMenuItem key={enrichment.className}>
                                             <SidebarMenuButton
                                                 isActive={tab === enrichment.className}

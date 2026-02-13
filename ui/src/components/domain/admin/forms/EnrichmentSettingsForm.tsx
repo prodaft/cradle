@@ -108,17 +108,14 @@ export default function EnrichmentSettingsForm({
 
     const fetchEntryClassesMutation = useMutation({
         mutationFn: async (q: string) => {
-            const response = await entriesApi.entryClassesList({});
+            const response = await entriesApi.entryClassesList({
+                search: q || undefined,
+            });
             const results = response?.results ?? [];
-            if (results.length > 0) {
-                return results
-                    .filter((x) => x.subtype.toLowerCase().startsWith(q.toLowerCase()))
-                    .map((entry) => ({
-                        value: entry.subtype,
-                        label: entry.subtype,
-                    }));
-            }
-            return [];
+            return results.map((entry) => ({
+                value: entry.subtype,
+                label: entry.subtype,
+            }));
         },
         meta: {
             suppressNotification: true,

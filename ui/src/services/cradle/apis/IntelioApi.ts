@@ -170,6 +170,14 @@ export interface MappingsSchemaListRequest {
     className: string;
 }
 
+export interface EnrichmentSubclassesListRequest {
+    search?: string;
+}
+
+export interface MappingsSubclassesListRequest {
+    search?: string;
+}
+
 /**
  * 
  */
@@ -666,8 +674,12 @@ export class IntelioApi extends runtime.BaseAPI {
      * Returns a list of all subclasses of BaseEnricher with their names.
      * Get enrichment subclasses
      */
-    async enrichmentSubclassesListRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<EnrichmentSubclass>>> {
+    async enrichmentSubclassesListRaw(requestParameters: EnrichmentSubclassesListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<EnrichmentSubclass>>> {
         const queryParameters: any = {};
+
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -696,8 +708,8 @@ export class IntelioApi extends runtime.BaseAPI {
      * Returns a list of all subclasses of BaseEnricher with their names.
      * Get enrichment subclasses
      */
-    async enrichmentSubclassesList(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<EnrichmentSubclass>> {
-        const response = await this.enrichmentSubclassesListRaw(initOverrides);
+    async enrichmentSubclassesList(requestParameters: EnrichmentSubclassesListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<EnrichmentSubclass>> {
+        const response = await this.enrichmentSubclassesListRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -1316,8 +1328,12 @@ export class IntelioApi extends runtime.BaseAPI {
      * Returns a list of all subclasses of ClassMapping with their names.
      * Get class mapping subclasses
      */
-    async mappingsSubclassesListRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<MappingSubclass>>> {
+    async mappingsSubclassesListRaw(requestParameters: MappingsSubclassesListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<MappingSubclass>>> {
         const queryParameters: any = {};
+
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -1346,8 +1362,8 @@ export class IntelioApi extends runtime.BaseAPI {
      * Returns a list of all subclasses of ClassMapping with their names.
      * Get class mapping subclasses
      */
-    async mappingsSubclassesList(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<MappingSubclass>> {
-        const response = await this.mappingsSubclassesListRaw(initOverrides);
+    async mappingsSubclassesList(requestParameters: MappingsSubclassesListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<MappingSubclass>> {
+        const response = await this.mappingsSubclassesListRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

@@ -47,6 +47,7 @@ export interface ReportsListRequest {
     page?: number;
     pageSize?: number;
     search?: string;
+    status?: string;
 }
 
 export interface ReportsPublishCreateRequest {
@@ -139,6 +140,10 @@ export class PublishApi extends runtime.BaseAPI {
 
         if (requestParameters['search'] != null) {
             queryParameters['search'] = requestParameters['search'];
+        }
+
+        if (requestParameters['status'] != null) {
+            queryParameters['status'] = requestParameters['status'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

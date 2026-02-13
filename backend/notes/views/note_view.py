@@ -603,6 +603,13 @@ class NoteFinalize(APIView):
                 description="Filter with an or over all fields (case-insensitive partial match)",
                 required=False,
             ),
+            OpenApiParameter(
+                name="status",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter files by status: 'healthy' (has sha256 hash) or 'warning' (missing sha256 hash)",
+                required=False,
+            ),
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(FileReferenceWithNoteSerializer),
@@ -692,6 +699,13 @@ class NoteFiles(APIView):
             # Convert wildcard pattern to regex pattern
             mimetype_pattern = mimetype.replace("*", ".*")
             files = files.filter(mimetype__regex=mimetype_pattern)
+
+        # Filter by status (healthy = has sha256 hash, warning = missing sha256 hash)
+        status_filter = request.query_params.get("status")
+        if status_filter == "healthy":
+            files = files.filter(sha256_hash__isnull=False).exclude(sha256_hash="")
+        elif status_filter == "warning":
+            files = files.filter(Q(sha256_hash__isnull=True) | Q(sha256_hash=""))
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-timestamp")

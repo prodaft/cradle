@@ -37,6 +37,7 @@ import {
 
 export interface AccessEntityListRequest {
     entityId: number;
+    search?: string;
 }
 
 export interface AccessRequestCreateRequest {
@@ -73,6 +74,10 @@ export class AccessApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

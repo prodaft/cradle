@@ -92,7 +92,14 @@ class UserAccessList(APIView):
                 type=int,
                 location=OpenApiParameter.PATH,
                 description="Id of the entity to get access privileges for",
-            )
+            ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search users by username or user ID",
+                required=False,
+            ),
         ],
         responses={
             200: AccessUserSerializer(many=True),
@@ -126,6 +133,12 @@ class EntityAccessList(APIView):
         none_users = CradleUser.objects.filter(
             ~Q(id__in=accesses.values_list("user_id", flat=True)) & ~Q(role=UserRoles.ADMIN)
         )
+
+        search = request.query_params.get("search")
+        if search:
+            search_filter = Q(user__username__icontains=search) | Q(user__id__icontains=search)
+            accesses = accesses.filter(search_filter)
+            none_users = none_users.filter(Q(username__icontains=search) | Q(id__icontains=search))
 
         combined: list[object] = list(accesses) + [
             {"user": user, "access_type": AccessType.NONE} for user in none_users

@@ -45,8 +45,9 @@ export default function EntityPermissionsForm({
     );
     const [currentAccess, setCurrentAccess] = useState<Record<string, AccessLevel>>({});
 
-    // Query for access data
-    const { data: accessData, isPending } = useQuery({
+    // Query for access data — fetches full list (no server-side search)
+    // because the form needs the complete dataset to track unsaved edits
+    const { data: allAccessData = [], isPending } = useQuery({
         queryKey: ['entities', 'access', String(entityId)],
         queryFn: () => accessApi.accessEntityList({ entityId }),
         enabled: !!entityId,
@@ -56,12 +57,23 @@ export default function EntityPermissionsForm({
         },
     });
 
+    // Client-side search — preserves unsaved permission changes
+    const accessData = useMemo(() => {
+        if (!searchQuery.trim()) return allAccessData;
+        const query = searchQuery.toLowerCase();
+        return allAccessData.filter(
+            (access: AccessUser) =>
+                access.user.username?.toLowerCase().includes(query) ||
+                access.user.id?.toLowerCase().includes(query),
+        );
+    }, [allAccessData, searchQuery]);
+
     // Initialize access states when data loads
     useEffect(() => {
-        if (accessData) {
+        if (allAccessData.length > 0) {
             const original: Record<string, AccessLevel> = {};
             const current: Record<string, AccessLevel> = {};
-            accessData.forEach((access: AccessUser) => {
+            allAccessData.forEach((access: AccessUser) => {
                 if (access.user.id) {
                     const accessType = access.accessType as AccessLevel;
                     original[access.user.id] = accessType;
@@ -71,7 +83,7 @@ export default function EntityPermissionsForm({
             setOriginalAccess(original);
             setCurrentAccess(current);
         }
-    }, [accessData]);
+    }, [allAccessData]);
 
     const handleAccessChange = (userId: string, newAccess: string) => {
         const accessValue = newAccess as AccessLevel;
@@ -82,8 +94,8 @@ export default function EntityPermissionsForm({
     };
 
     const hasChanges = () => {
-        if (!accessData) return false;
-        return accessData.some((access: AccessUser) => {
+        if (allAccessData.length === 0) return false;
+        return allAccessData.some((access: AccessUser) => {
             const userId = access.user.id;
             if (!userId) return false;
             const original = originalAccess[userId];
@@ -94,11 +106,11 @@ export default function EntityPermissionsForm({
 
     const saveChangesMutation = useMutation({
         mutationFn: async () => {
-            if (!accessData) return;
+            if (allAccessData.length === 0) return;
 
             const updates: Array<{ userId: string; accessType: AccessLevel }> = [];
 
-            accessData.forEach((access: AccessUser) => {
+            allAccessData.forEach((access: AccessUser) => {
                 const userId = access.user.id;
                 if (!userId) return;
                 const original = originalAccess[userId];
@@ -137,17 +149,6 @@ export default function EntityPermissionsForm({
         saveChangesMutation.mutate();
     };
 
-    const filteredAccesses = useMemo(() => {
-        if (!accessData) return [];
-        if (!searchQuery.trim()) return accessData;
-
-        const query = searchQuery.toLowerCase();
-        return accessData.filter(
-            (access: AccessUser) =>
-                access.user.username?.toLowerCase().includes(query) ||
-                access.user.id?.toLowerCase().includes(query),
-        );
-    }, [accessData, searchQuery]);
 
     if (isPending) {
         return (
@@ -180,7 +181,7 @@ export default function EntityPermissionsForm({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredAccesses.length === 0 ? (
+                        {accessData.length === 0 ? (
                             <TableRow>
                                 <TableCell
                                     colSpan={4}
@@ -190,7 +191,7 @@ export default function EntityPermissionsForm({
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredAccesses.map((access: AccessUser) => {
+                            accessData.map((access: AccessUser) => {
                                 const user = access.user;
                                 const userId = user.id!;
                                 const accessValue =
