@@ -148,13 +148,13 @@ export default function Activity({ log }: ActivityProps) {
     const formatDiff = (diffTxt: string) => {
         if (!diffTxt) return '';
 
-        let dmp = new diff_match_patch();
-        let patch = dmp.patch_fromText(diffTxt);
+        const dmp = new diff_match_patch();
+        const patch = dmp.patch_fromText(diffTxt);
         if (!patch || patch.length === 0) {
             return '<span class="text-muted-foreground">No changes</span>';
         }
         // Type assertion needed because diff-match-patch types are incomplete
-        let html = diff_prettyDiffLines((patch[0] as any).diffs);
+        const html = diff_prettyDiffLines((patch[0] as any).diffs);
         return html;
     };
 

@@ -65,7 +65,7 @@ const LINK_REGEX =
     /^(?:~)?\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\](?:\((?:(\d{2}:\d{2}\s+)?(\d{2}-\d{2}-\d{4}))\))?/;
 
 export function cradleLinkRule(state: any, silent: boolean): boolean {
-    let str = state.src.slice(state.pos);
+    const str = state.src.slice(state.pos);
     const match = LINK_REGEX.exec(str);
     if (!match) return false;
     if (silent) return false;
@@ -131,7 +131,7 @@ export function renderFootnoteRef(token: Token): string {
 }
 
 let DownloadLinkPromiseCache: Record<string, Promise<FileDownload>> = {};
-let MinioCache: Record<string, FileDownload> = {};
+const MinioCache: Record<string, FileDownload> = {};
 
 export function fetchMinioDownloadLink(
     fileTransferApi: FileTransferApi,
@@ -173,7 +173,7 @@ export async function resolveMinioLinks(
         const fileId = params.get('fileId');
         if (!fileId) return;
 
-        let cached = MinioCache[fileId];
+        const cached = MinioCache[fileId];
         let presigned: string | undefined = cached?.presignedUrl;
         let expiry: number | undefined = cached?.expiresIn;
         if (!presigned || Date.now() > (expiry || 0)) {
@@ -312,7 +312,7 @@ export async function parseWithExtensions(
 
     let metadata = {};
     try {
-        let note = matter(mdContent, {
+        const note = matter(mdContent, {
             engines: {
                 yaml: (data) => {
                     try {

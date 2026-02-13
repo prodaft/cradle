@@ -544,20 +544,20 @@ export default function EnrichmentResults() {
     };
 
     const errorMsg = () => {
-        let msgs: string[] = [];
+        const msgs: string[] = [];
         if (enrichmentDetails?.ignored && enrichmentDetails.ignored.length > 0) {
             msgs.push(
                 `Ignored ${enrichmentDetails.ignored.length} artifact${enrichmentDetails.ignored.length > 1 ? 's' : ''}`,
             );
         }
-        let warn_count =
+        const warn_count =
             enrichmentDetails?.enrichers?.filter(
                 (enricher) => enricher.status === 'warning',
             ).length || 0;
         if (warn_count > 0) {
             msgs.push(`Warnings in ${warn_count} enricher${warn_count > 1 ? 's' : ''}`);
         }
-        let error_count =
+        const error_count =
             enrichmentDetails?.enrichers?.filter(
                 (enricher) => enricher.status === 'error',
             ).length || 0;

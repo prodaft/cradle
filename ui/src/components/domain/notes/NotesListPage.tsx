@@ -143,7 +143,7 @@ export default function NotesListPage() {
         column: string,
         value: string | DateRangeFilter,
     ) => {
-        let updatedFilters = { ...searchFilters };
+        const updatedFilters = { ...searchFilters };
 
         if (column === 'createdAt' && typeof value === 'object') {
             updatedFilters.created_date_from = value.from || '';

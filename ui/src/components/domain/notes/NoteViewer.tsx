@@ -281,7 +281,7 @@ export default function NoteViewer() {
             const doc = view.state;
             let to = doc.selection.main.to;
             let from = doc.selection.main.from;
-            let content = doc.doc.toString();
+            const content = doc.doc.toString();
 
             if (to === from) {
                 from = 0;
@@ -321,7 +321,7 @@ export default function NoteViewer() {
 
         let to = view.state.selection.main.to;
         let from = view.state.selection.main.from;
-        let content = view.state.doc.toString();
+        const content = view.state.doc.toString();
 
         if (to === from) {
             from = 0;

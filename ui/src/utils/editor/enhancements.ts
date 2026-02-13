@@ -210,7 +210,7 @@ export class CradleEditor {
                                 tries[entryClass.subtype] = new DynamicTrie(
                                     async (x) => {
                                         try {
-                                            let result =
+                                            const result =
                                                 await this._lspApi.lspTrieRetrieve({
                                                     type: entryClass.subtype,
                                                     prefix: x,
@@ -564,21 +564,21 @@ export class CradleEditor {
 
         const pos = context.pos;
         const tree = syntaxTree(context.state);
-        let node = tree.resolve(pos, -1);
+        const node = tree.resolve(pos, -1);
 
         let options: Array<{ label: string; type: string; info?: string }> = [];
-        let from = node.from;
-        let to = node.to;
+        const from = node.from;
+        const to = node.to;
 
-        let path = this.getParent(node, 'BlockMapping');
+        const path = this.getParent(node, 'BlockMapping');
         if (path && path.length >= 2 && path.length <= 7) {
-            let section = path[1];
+            const section = path[1];
             if (section && section.firstChild) {
-                let sectxt = context.state.doc.sliceString(
+                const sectxt = context.state.doc.sliceString(
                     section.firstChild.from,
                     section.firstChild.to,
                 );
-                let parent = node.parent;
+                const parent = node.parent;
                 if (sectxt == 'entries' && parent != null) {
                     if (
                         parent.name == 'Key' ||
@@ -657,7 +657,7 @@ export class CradleEditor {
 
         const pos = context.pos;
         const tree = syntaxTree(context.state);
-        let node = tree.resolve(pos, -1);
+        const node = tree.resolve(pos, -1);
 
         let options: Array<{ label: string; type: string }> = [];
         let from = node.from;
@@ -935,12 +935,12 @@ export class CradleEditor {
             enter: (syntaxNode) => {
                 const node = syntaxNode.node;
                 if (node.name === 'CradleLink') {
-                    let typeNode = node.getChildren('CradleLinkType');
-                    let valueNode = node.getChildren('CradleLinkValue');
+                    const typeNode = node.getChildren('CradleLinkType');
+                    const valueNode = node.getChildren('CradleLinkValue');
                     if (!typeNode || !valueNode) return true;
 
-                    let type = text.slice(typeNode[0].from, typeNode[0].to);
-                    let value = text.slice(valueNode[0].from, valueNode[0].to);
+                    const type = text.slice(typeNode[0].from, typeNode[0].to);
+                    const value = text.slice(valueNode[0].from, valueNode[0].to);
 
                     entries.push({
                         type,
@@ -953,8 +953,8 @@ export class CradleEditor {
             },
         });
 
-        let artifacts: Array<{ type: string; value: string }> = [];
-        let entities: Array<{ type: string; value: string }> = [];
+        const artifacts: Array<{ type: string; value: string }> = [];
+        const entities: Array<{ type: string; value: string }> = [];
         for (const entry of entries) {
             if (this.entryClasses?.[entry.type].type === 'entity') {
                 entities.push(entry);
@@ -994,8 +994,8 @@ export class CradleEditor {
                         node.name == 'Frontmatter' ||
                         node.name == 'FrontMatterContent'
                     ) {
-                        let frontmatter = text.slice(node.from, node.to);
-                        let yml = frontmatter
+                        const frontmatter = text.slice(node.from, node.to);
+                        const yml = frontmatter
                             .substring(3, frontmatter.length - 4)
                             .trim();
                         try {
@@ -1063,9 +1063,9 @@ export class CradleEditor {
                                 }
                             }
                         } catch (e: any) {
-                            var loc = e.mark;
-                            var from = loc ? loc.position : 0;
-                            var to = from;
+                            const loc = e.mark;
+                            const from = loc ? loc.position : 0;
+                            const to = from;
                             diagnostics.push({
                                 from: from,
                                 to: to,

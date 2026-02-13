@@ -32,7 +32,7 @@ export class SubtypeHierarchy {
         this.tree = {};
         this.pathsMap = {};
 
-        for (let path of paths) {
+        for (const path of paths) {
             // Store the original full path
             this.pathsMap[path] = true;
 

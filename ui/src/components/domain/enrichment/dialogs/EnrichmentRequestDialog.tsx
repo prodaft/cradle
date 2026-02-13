@@ -171,7 +171,7 @@ export default function EnrichmentRequestDialog({
     };
 
     useEffect(() => {
-        let entities: { [key: number]: OptimizedEntryResponse } = {};
+        const entities: { [key: number]: OptimizedEntryResponse } = {};
         for (const note of notesList || []) {
             for (const entity of note.entities) {
                 if (selectedNoteIds.has(note.id)) {
@@ -214,7 +214,7 @@ export default function EnrichmentRequestDialog({
                 // Resolve entities list if provided
                 let resolvedEntities: number[] | undefined;
                 if (entitiesList && allEntitiesData) {
-                    let entities = await Promise.resolve(entitiesList);
+                    const entities = await Promise.resolve(entitiesList);
                     resolvedEntities = entities.map(
                         (entity) =>
                             allEntitiesData.find(
