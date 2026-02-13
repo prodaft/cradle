@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import MultipleSelector, { type Option } from '@/components/ui/multi-select';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { OptimizedEntryResponse } from '@/services/cradle';
 import { parseAPIError } from '@/utils/api';

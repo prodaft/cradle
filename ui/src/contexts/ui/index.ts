@@ -3,5 +3,5 @@
  * Contexts for managing UI state: theme, and notifications
  */
 
-export { useTheme } from './ThemeContext';
-export { ThemeProvider } from './ThemeProvider';
+export { useTheme } from './theme-context';
+export { ThemeProvider } from './theme-provider';

@@ -1,10 +1,10 @@
-import { AppSidebar } from '@/components/layout/Sidebar/app-sidebar';
+import { AppSidebar } from '@/components/layout/sidebar/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
 import { NotificationsPanel } from '@components/domain/notifications';
 import { Outlet } from '@tanstack/react-router';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import Navbar from '../Navbar/Navbar';
+import Navbar from '../navbar/navbar';
 
 /**
  * MainLayout component - The main layout that includes sidebar and content area

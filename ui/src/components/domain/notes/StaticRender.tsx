@@ -1,7 +1,7 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/useApi';
-import { handleLinkClick, NavigateHandler } from '@/utils/editor/textEditor';
+import useApi from '@/hooks/api/use-api';
+import { handleLinkClick, NavigateHandler } from '@/utils/editor/text-editor';
 import { parseMarkdown } from '@/utils/parser/parse';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useRouter } from '@tanstack/react-router';

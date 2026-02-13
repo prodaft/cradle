@@ -8,7 +8,7 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { handleLinkClick, NavigateHandler } from '@utils/editor/textEditor';
+import { handleLinkClick, NavigateHandler } from '@/utils/editor/text-editor';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface PreviewProps {

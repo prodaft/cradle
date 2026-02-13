@@ -1,5 +1,5 @@
-import { ApiContext } from '@/hooks/api/useApi';
-import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
+import { ApiContext } from '@/hooks/api/use-api';
+import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import {
     AccessApi,
     AuthApi,

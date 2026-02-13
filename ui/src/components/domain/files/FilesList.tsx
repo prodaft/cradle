@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import type { Alert, StateSetter } from '@/types';
 import { parseAPIError } from '@/utils/api';
@@ -50,7 +50,7 @@ import bytes from 'bytes';
 import { format } from 'date-fns';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import OfflineIndicator from '../../feedback/OfflineIndicator';
+import OfflineIndicator from '../../feedback/offline-indicator';
 
 interface FilesListQuery {
     date?: string;

@@ -23,7 +23,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { cn } from '@/lib/utils';
 import { CaretDownIcon, GitForkIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import type { EventLog } from '@services/cradle/models';
@@ -39,7 +39,7 @@ import { format } from 'date-fns';
 import { diff_match_patch } from 'diff-match-patch';
 import { Check, PlusCircle, XCircle } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
-import OfflineIndicator from '../../feedback/OfflineIndicator';
+import OfflineIndicator from '../../feedback/offline-indicator';
 
 interface SearchFilters {
     username: string;

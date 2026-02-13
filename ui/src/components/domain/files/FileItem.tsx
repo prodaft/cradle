@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import type { Alert, StateSetter } from '@/types';
 import { createDashboardLink } from '@/utils/dashboard';
 import { DownloadIcon } from '@phosphor-icons/react';

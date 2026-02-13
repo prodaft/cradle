@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import NotFound from 'src/components/feedback/NotFound';
+import NotFound from '@/components/feedback/not-found';
 
 export const Route = createFileRoute('/not-found')({
     component: () => (

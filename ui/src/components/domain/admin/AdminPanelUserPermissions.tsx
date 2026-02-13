@@ -16,7 +16,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { naturalSort } from '@/utils/dashboard';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { AccessRequestAccessTypeEnum } from '@services/cradle/models';

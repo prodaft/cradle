@@ -4,11 +4,11 @@
  * Components for application layout structure including navigation, sidebar, and main layout.
  */
 
-export { default as MainLayout } from './MainLayout/MainLayout';
+export { default as MainLayout } from './main-layout/MainLayout';
 
-export { AppSidebar } from './Sidebar/app-sidebar';
+export { AppSidebar } from './sidebar/app-sidebar';
 
-export { default as Navbar } from './Navbar/Navbar';
+export { default as Navbar } from './navbar/navbar';
 
-export { default as NavbarButton } from './Navbar/NavbarButton';
-export type { NavbarButtonProps } from './Navbar/NavbarButton';
+export { default as NavbarButton } from './navbar/navbar-button';
+export type { NavbarButtonProps } from './navbar/navbar-button';

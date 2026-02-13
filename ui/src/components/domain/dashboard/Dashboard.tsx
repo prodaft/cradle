@@ -1,6 +1,6 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import useApi from '@/hooks/api/useApi';
-import { useAuthState } from '@/hooks/auth/useAuth';
+import useApi from '@/hooks/api/use-api';
+import { useAuthState } from '@/hooks/auth/use-auth';
 import { SparkleIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import {

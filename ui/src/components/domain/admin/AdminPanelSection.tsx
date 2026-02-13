@@ -7,7 +7,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useFrontendSearch, { SearchableChild } from '@/hooks/search/useFrontendSearch';
+import useFrontendSearch, { SearchableChild } from '@/hooks/search/use-frontend-search';
 import { naturalSort } from '@/utils/dashboard';
 import { MagnifyingGlassIcon, PlusCircleIcon, XIcon } from '@phosphor-icons/react';
 import { ReactNode, useMemo, useState } from 'react';

@@ -1,20 +1,20 @@
 import FileUploadDialog from '@/components/domain/notes/dialogs/FileUploadDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from '@/contexts/ui';
-import useApi from '@/hooks/api/useApi';
-import { useAuthActions } from '@/hooks/auth/useAuth';
+import useApi from '@/hooks/api/use-api';
+import { useAuthActions } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import {
     cradleLinkColorPlugin,
     cradleLinksPlugin,
     headingLineClassPlugin,
-} from '@/utils/editor/linkplugin';
+} from '@/utils/editor/link-plugin';
 import {
     referenceLinksPlugin,
     referenceLinkSyntax,
-} from '@/utils/editor/referenceLinks';
-import { tablePlugin } from '@/utils/editor/tableplugin';
+} from '@/utils/editor/reference-links';
+import { tablePlugin } from '@/utils/editor/table-plugin';
 import { createCradleTheme } from '@/utils/editor/theme';
 import { logger } from '@/utils/logger';
 import {

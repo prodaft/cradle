@@ -6,8 +6,8 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import useApi from '@/hooks/api/useApi';
-import { useAuthState } from '@/hooks/auth/useAuth';
+import useApi from '@/hooks/api/use-api';
+import { useAuthState } from '@/hooks/auth/use-auth';
 import { Relation } from '@/services/cradle';
 import { TrashIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';

@@ -12,7 +12,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { ReportList } from '@/services/cradle';
 import { parseAPIError } from '@/utils/api';

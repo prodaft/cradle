@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { truncateText } from '@/utils/dashboard';
 import { DownloadSimpleIcon } from '@phosphor-icons/react';
 import type { FileReferenceWithNote } from '@services/cradle/models';

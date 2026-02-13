@@ -7,8 +7,8 @@
  * - Else → fallback to localStorage
  */
 
-import useApi from '@/hooks/api/useApi';
-import { useAuthActions } from '@/hooks/auth/useAuth';
+import useApi from '@/hooks/api/use-api';
+import { useAuthActions } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import type { ThemeConfig, ThemeContextValue } from '@/types/index';
 import { darkTheme, lightTheme } from '@/utils/themes';
@@ -21,7 +21,7 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import { ThemeContext } from './ThemeContext';
+import { ThemeContext } from './theme-context';
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value);

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { LinkTreeFlattener } from '@/utils/dashboard';
 import { logger } from '@/utils/logger';

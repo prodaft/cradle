@@ -9,7 +9,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { MappingSubclass } from '@services/cradle/models';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';

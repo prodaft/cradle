@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/input-group';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { Enable2FA } from '@/services/cradle/models';
 import { Alert } from '@/types';
 import { parseAPIError } from '@/utils/api';

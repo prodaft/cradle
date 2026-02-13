@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { logger } from '@/utils/logger';
-import useApi from '@hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { PencilIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { forwardRef, MouseEvent, useImperativeHandle, useState } from 'react';

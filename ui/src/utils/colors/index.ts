@@ -1,1 +1,1 @@
-export * from './colorUtils';
+export * from './color-utils';

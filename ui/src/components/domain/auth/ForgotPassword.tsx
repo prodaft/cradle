@@ -10,8 +10,8 @@ import {
     FieldSeparator,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import useApi from '@/hooks/api/useApi';
-import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
+import useApi from '@/hooks/api/use-api';
+import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { cn } from '@/lib/utils';
 import { parseAPIError } from '@/utils/api';
 import Logo from '@components/base/Logo/Logo';

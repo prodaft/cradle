@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Loading from 'src/components/base/Loading/Loading';
-import useApi from 'src/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { Notification } from 'src/services/cradle';
 import NotificationCard from './NotificationCard';
 

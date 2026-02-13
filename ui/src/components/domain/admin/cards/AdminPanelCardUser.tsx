@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { ClockCounterClockwiseIcon, LockKeyIcon } from '@phosphor-icons/react';
 import { ReactNode } from 'react';
 import ActivityList from '../../activity/ActivityList';

@@ -1,7 +1,7 @@
 import {
     AuthTokenException,
     SessionExpiredException,
-} from '@/exceptions/AuthExceptions';
+} from './auth-exceptions';
 import { AuthApi } from '@/services/cradle';
 import { parseAPIError } from '@/utils/api';
 import {

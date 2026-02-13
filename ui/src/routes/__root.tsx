@@ -11,8 +11,8 @@ import Loading from 'src/components/base/Loading/Loading';
 import { AuthProvider } from 'src/components/domain/auth/AuthProvider';
 import { Toaster } from 'src/components/ui/sonner';
 import { TooltipProvider } from 'src/components/ui/tooltip';
-import { ApiProvider } from 'src/contexts/api/ApiProvider';
-import { QueryProvider } from 'src/contexts/query/QueryProvider';
+import { ApiProvider } from '@/contexts/api/api-provider';
+import { QueryProvider } from '@/contexts/query/query-provider';
 
 export const Route = createRootRoute({
     head: () => ({

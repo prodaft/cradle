@@ -25,7 +25,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import {
     CodeIcon,
     DownloadSimpleIcon,

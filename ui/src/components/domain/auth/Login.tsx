@@ -16,8 +16,8 @@ import {
 } from '@/components/ui/input-group';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useTheme } from '@/contexts/ui';
-import useApi from '@/hooks/api/useApi';
-import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
+import useApi from '@/hooks/api/use-api';
+import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import Logo from '@components/base/Logo/Logo';

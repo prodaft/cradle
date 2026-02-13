@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
-import useApi from '@/hooks/api/useApi';
-import { useAuthState } from '@/hooks/auth/useAuth';
+import useApi from '@/hooks/api/use-api';
+import { useAuthState } from '@/hooks/auth/use-auth';
 import {
     ClockCounterClockwiseIcon,
     PencilSimpleIcon,

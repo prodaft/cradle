@@ -7,8 +7,8 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import useApi from '@/hooks/api/useApi';
-import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
+import useApi from '@/hooks/api/use-api';
+import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter, useSearch } from '@tanstack/react-router';

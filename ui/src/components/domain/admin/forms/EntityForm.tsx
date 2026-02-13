@@ -20,7 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Entity } from '@services/cradle/models';
@@ -29,7 +29,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { z } from 'zod';
-import OfflineIndicator from '../../../feedback/OfflineIndicator';
+import OfflineIndicator from '../../../feedback/offline-indicator';
 import { SelectOption } from '../../../forms';
 
 interface EntityFormProps {

@@ -15,7 +15,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { CaretDownIcon } from '@phosphor-icons/react';
 import type { EventLog } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';

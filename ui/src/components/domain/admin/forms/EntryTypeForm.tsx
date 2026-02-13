@@ -35,9 +35,9 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-import { GoldenRatioColorGenerator } from '@/utils/colors/colorUtils';
+import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
     EntryClass,
@@ -48,7 +48,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import OfflineIndicator from '../../../feedback/OfflineIndicator';
+import OfflineIndicator from '../../../feedback/offline-indicator';
 import { SelectOption } from '../../../forms';
 
 interface EntryTypeFormProps {

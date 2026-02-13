@@ -3,4 +3,4 @@
  * Hooks for interacting with backend API services
  */
 
-export { useApi, type ApiContextValue } from './useApi';
+export { useApi, type ApiContextValue } from './use-api';

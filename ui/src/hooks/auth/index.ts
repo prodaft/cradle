@@ -22,5 +22,5 @@
  * ```
  */
 
-export { useAuth, useAuthActions, useAuthState } from './useAuth';
-export type { AuthContextValue } from './useAuth';
+export { useAuth, useAuthActions, useAuthState } from './use-auth';
+export type { AuthContextValue } from './use-auth';

@@ -3,8 +3,8 @@
  * Thin wrapper that mounts QueryClientProvider and wires session expiration handler
  */
 
-import { useAuthActions } from '@/hooks/auth/useAuth';
-import { queryClient, setSessionExpiredHandler } from '@/query/queryClient';
+import { useAuthActions } from '@/hooks/auth/use-auth';
+import { queryClient, setSessionExpiredHandler } from '@/query/query-client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useRouter } from '@tanstack/react-router';

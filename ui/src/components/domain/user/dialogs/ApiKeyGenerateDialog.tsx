@@ -15,7 +15,7 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { Alert } from '@/types';
 import {
     CopyIcon,

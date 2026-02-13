@@ -1,7 +1,7 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/useApi';
-import { parseContent } from '@/utils/editor/textEditor';
+import useApi from '@/hooks/api/use-api';
+import { parseContent } from '@/utils/editor/text-editor';
 import type { NoteRetrieve } from '@services/cradle/models';
 import { useEffect, useState } from 'react';
 import Preview from '../../base/Preview/Preview';

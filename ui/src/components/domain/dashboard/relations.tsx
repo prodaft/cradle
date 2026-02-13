@@ -30,7 +30,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { createDashboardLink } from '@/utils/dashboard';
 import {
     Command,

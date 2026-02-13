@@ -20,8 +20,8 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import useApi from '@/hooks/api/useApi';
-import { useAuthActions } from '@/hooks/auth/useAuth';
+import useApi from '@/hooks/api/use-api';
+import { useAuthActions } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { UserRetrieve } from '@/services/cradle/models';
 import { zodResolver } from '@hookform/resolvers/zod';

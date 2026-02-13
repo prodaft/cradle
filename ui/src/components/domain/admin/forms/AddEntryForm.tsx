@@ -21,9 +21,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-import { GoldenRatioColorGenerator } from '@/utils/colors/colorUtils';
+import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
     EntryClass,

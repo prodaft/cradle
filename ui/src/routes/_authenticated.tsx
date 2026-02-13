@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import MainLayout from 'src/components/layout/MainLayout/MainLayout';
+import MainLayout from '@/components/layout/main-layout/MainLayout';
 import { isLoggedIn } from 'src/utils/auth';
 
 export const Route = createFileRoute('/_authenticated')({

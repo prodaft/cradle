@@ -1,1 +1,1 @@
-export { ApiProvider } from './ApiProvider';
+export { ApiProvider } from './api-provider';

@@ -1,6 +1,6 @@
 import Pagination from '@/components/base/Pagination/Pagination';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import RelationCard from './RelationCard';

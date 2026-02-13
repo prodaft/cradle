@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
-import useApi from '@/hooks/api/useApi';
-import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
+import useApi from '@/hooks/api/use-api';
+import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';

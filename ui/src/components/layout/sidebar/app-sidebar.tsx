@@ -1,5 +1,5 @@
 import Logo from '@/components/base/Logo/Logo';
-import { useAuthState } from '@/hooks/auth/useAuth';
+import { useAuthState } from '@/hooks/auth/use-auth';
 import { Link, useMatchRoute, useRouter } from '@tanstack/react-router';
 import {
     Archive,

@@ -1,4 +1,4 @@
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { parseAPIError } from '@/utils/api';
 import { useMutation, useQuery } from '@tanstack/react-query';

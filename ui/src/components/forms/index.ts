@@ -10,5 +10,5 @@
 // Shared types (only exporting what's actually used)
 export type { SelectOption } from './shared/types';
 
-export { default as FileInput } from './FileInput';
-export type { FileInputProps } from './FileInput';
+export { default as FileInput } from './file-input';
+export type { FileInputProps } from './file-input';

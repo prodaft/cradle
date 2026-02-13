@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Input } from '@/components/ui/input';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import type { Alert } from '@/types';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import type { DigestSubclass } from '@services/cradle/models';

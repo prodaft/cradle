@@ -26,7 +26,7 @@ import {
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import type { OptimizedEntryResponse } from '@/services/cradle';
 import { parseAPIError } from '@/utils/api';
@@ -58,7 +58,7 @@ import { ActionBarButton, ActionBarSearch } from '../../base/ActionBar/ActionBar
 import { DateRangeFilter, type SortDirection } from '../../base/ListView/types';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import StatusHeaderDropdown from '../../base/StatusHeaderDropdown/StatusHeaderDropdown';
-import OfflineIndicator from '../../feedback/OfflineIndicator';
+import OfflineIndicator from '../../feedback/offline-indicator';
 import { NotePreviewContent } from './NotePreviewContent';
 import { StatusIcon } from './StatusIcon';
 

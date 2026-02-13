@@ -17,7 +17,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { UserRetrieve } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';

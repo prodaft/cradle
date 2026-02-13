@@ -17,7 +17,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { useAuthActions, useAuthState } from '@/hooks/auth';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
@@ -43,7 +43,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import ConfirmDeletionDialog from '../../dialogs/base/ConfirmDeletionDialog';
-import FileInput from '../../forms/FileInput';
+import FileInput from '../../forms/file-input';
 import ActivityList from '../activity/ActivityList';
 import { EnrichmentRequestDialog } from '../enrichment';
 import GraphExplorer from '../graph/GraphExplorer';

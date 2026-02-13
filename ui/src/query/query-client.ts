@@ -10,7 +10,7 @@ import {
     QueryKey,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { SessionExpiredException } from 'src/exceptions/AuthExceptions';
+import { SessionExpiredException } from '@/components/domain/auth/auth-exceptions';
 import { handleAPIError, parseAPIError } from 'src/utils/api';
 
 export type InvalidateTarget = { queryKey: QueryKey };

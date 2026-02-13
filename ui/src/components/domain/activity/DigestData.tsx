@@ -2,7 +2,7 @@ import UploadDigestDialog from '@/components/domain/activity/dialogs/UploadDiges
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import type { Alert } from '@/types';
 import DigestList from '@components/domain/files/DigestList';
 import type { BaseDigest } from '@services/cradle/models';

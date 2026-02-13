@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Spinner } from '@/components/ui/spinner';
-import { useTheme } from '@/contexts/ui/ThemeContext';
+import { useTheme } from '@/contexts/ui/theme-context';
 import { logger } from '@/utils/logger';
 import { FunnelIcon, GearIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import {

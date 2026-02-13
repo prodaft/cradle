@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Button } from 'src/components/ui/button';
 import { Card, CardContent } from 'src/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from 'src/components/ui/tooltip';
-import useApi from 'src/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import {
     AccessRequestAccessTypeEnum,
     AccessRequestNotification,

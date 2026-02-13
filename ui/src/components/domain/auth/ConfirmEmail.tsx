@@ -1,5 +1,5 @@
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';

@@ -5,7 +5,7 @@ import {
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { Entry, NoteRetrieve } from '@/types';
 import { createDashboardLink, SubtypeHierarchy, truncateText } from '@/utils/dashboard';
 import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';

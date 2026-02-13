@@ -1,6 +1,6 @@
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
 import { Button } from '@/components/ui/button';
-import useApi from '@/hooks/api/useApi';
+import useApi from '@/hooks/api/use-api';
 import { TrashIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
