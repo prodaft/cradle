@@ -7,7 +7,7 @@ import globals from 'globals';
 
 export default [
     {
-        ignores: ['*out/*', 'node_modules/*', 'docs/*', 'src/services/**'],
+        ignores: ['*out/*', 'node_modules/*', 'docs/*', 'src/services/**', 'src/components/ui/**'],
     },
     { languageOptions: { globals: globals.browser } },
     pluginJs.configs.recommended,
