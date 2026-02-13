@@ -1,7 +1,3 @@
-import Pagination from '@/components/base/Pagination/Pagination';
-import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
     Command,
     CommandEmpty,
@@ -9,16 +5,31 @@ import {
     CommandInput,
     CommandItem,
     CommandList,
+    CommandSeparator,
+    CommandShortcut,
 } from '@/components/ui/command';
-import { Kbd } from '@/components/ui/kbd';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import type { Alert } from '@/types';
+import { Kbd } from '@/components/ui/kbd';
+import { queryKeys } from '@/hooks/query';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useApi } from '@hooks';
-import { MagnifyingGlassIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react';
-import { useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import React, { KeyboardEvent, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React, { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import SearchFilterSection from './SearchFilterSection';
 
 /**
@@ -42,6 +53,13 @@ export interface SearchDialogProps {
     onClose: () => void;
 }
 
+interface SearchState {
+    query: string;
+    filters: string[];
+    page: number;
+    pageSize: number;
+}
+
 /**
  * Dialog to search for entries
  *
@@ -51,329 +69,242 @@ export interface SearchDialogProps {
  * - Shows paginated search results
  * - Supports Enter to search
  * - Advanced search that bypasses filters
- *
- * @example
- * ```tsx
- * const [isOpen, setIsOpen] = useState(false);
- *
- * <SearchDialog
- *   isOpen={isOpen}
- *   onClose={() => setIsOpen(false)}
- * />
- * ```
  */
 export default function SearchDialog({
     isOpen,
     onClose,
-}: SearchDialogProps): React.JSX.Element | null {
+}: SearchDialogProps): React.JSX.Element {
     const [searchQuery, setSearchQuery] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
-    const [showFilters, setShowFilters] = useState(false);
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState<string[]>([]);
-    const [results, setResults] = useState<SearchResultData[] | null>(null);
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'red',
+    const [ready, setReady] = useState(false);
+    const [searchState, setSearchState] = useState<SearchState>({
+        query: '',
+        filters: [],
+        page: 1,
+        pageSize: 10,
     });
-    const [entrySubtypes, setEntrySubtypes] = useState<string[]>([]);
-    const [entryClassColors, setEntryClassColors] = useState<Map<string, string>>(
-        new Map(),
-    );
-    const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
 
-    const dialogRoot = document.getElementById('portal-root');
     const router = useRouter();
     const { queryApi, entriesApi } = useApi();
-    const [isLoading, setIsLoading] = useState(false);
 
-    const fetchEntrySubtypesMutation = useMutation({
-        mutationFn: async () => {
-            const response = await entriesApi.entryClassesList();
-            return response.results ?? [];
-        },
-        meta: {
-            errorMessage: 'Failed to load entry subtypes',
-        },
-        onSuccess: (entryClasses) => {
-            setEntrySubtypes(entryClasses.map((c) => c.subtype));
-            const colorMap = new Map<string, string>();
-            entryClasses.forEach((ec) => {
-                if (ec.color) {
-                    // Handle full path subtypes (e.g., "username/rocket.chat")
-                    colorMap.set(ec.subtype, ec.color);
-                    // Also handle just the last part for hierarchy matching
-                    const parts = ec.subtype.split('/');
-                    if (parts.length > 1) {
-                        colorMap.set(parts[parts.length - 1], ec.color);
-                    }
+    const entryClassesQuery = useQuery({
+        queryKey: queryKeys.entryTypes.list(),
+        queryFn: () => entriesApi.entryClassesList(),
+        enabled: isOpen,
+        staleTime: 5 * 60_000,
+    });
+
+    const entrySubtypes = useMemo(
+        () => [...new Set((entryClassesQuery.data?.results ?? []).map((c) => c.subtype))],
+        [entryClassesQuery.data],
+    );
+
+    const entryClassColors = useMemo(() => {
+        const colorMap = new Map<string, string>();
+        (entryClassesQuery.data?.results ?? []).forEach((ec) => {
+            if (ec.color) {
+                colorMap.set(ec.subtype, ec.color);
+                const parts = ec.subtype.split('/');
+                if (parts.length > 1) {
+                    colorMap.set(parts[parts.length - 1], ec.color);
                 }
-            });
-            setEntryClassColors(colorMap);
-        },
-    });
-
-    const searchAdvancedMutation = useMutation({
-        mutationFn: async (params: {
-            page: number;
-            pageSize: number;
-            query: string[];
-            wildcard: boolean;
-        }) => {
-            return await queryApi.queryAdvancedRetrieve(params);
-        },
-        meta: {
-            suppressNotification: true,
-        },
-    });
-
-    const searchListMutation = useMutation({
-        mutationFn: async (params: {
-            page: number;
-            pageSize: number;
-            name: string[];
-            subtype: string[];
-        }) => {
-            return await queryApi.queryList(params);
-        },
-        meta: {
-            suppressNotification: true,
-        },
-    });
-
-    const populateEntrySubtypes = async () => {
-        fetchEntrySubtypesMutation.mutate();
-    };
-
-    const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-        // Enter to search
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            setPage(1);
-            performSearch();
-        }
-        // Escape to close
-        if (event.key === 'Escape') {
-            onClose();
-        }
-    };
-
-    const handleResultClick = (result: SearchResultData) => (e: React.MouseEvent) => {
-        setAlert({ ...alert, show: false });
-        onClose();
-        router.navigate({
-            to: '/dashboards/$subtype/$name',
-            params: {
-                subtype: result.subtype,
-                name: result.name,
-            },
+            }
         });
-    };
+        return colorMap;
+    }, [entryClassesQuery.data]);
 
-    const performSearch = async () => {
-        setAlert({ ...alert, show: false });
-        setIsLoading(true);
-        const trimmedQuery = searchQuery.trim();
 
-        try {
-            let response;
-            if (entrySubtypeFilters.length === 0) {
-                response = await searchAdvancedMutation.mutateAsync({
-                    page: page,
-                    pageSize: 10,
-                    query: trimmedQuery ? [trimmedQuery] : [],
+    const searchResults = useQuery({
+        queryKey: ['search', searchState] as const,
+        queryFn: async () => {
+            const trimmed = searchState.query.trim();
+            if (searchState.filters.length === 0) {
+                return queryApi.queryAdvancedRetrieve({
+                    page: searchState.page,
+                    pageSize: searchState.pageSize,
+                    query: trimmed ? [trimmed] : [],
                     wildcard: true,
                 });
-            } else {
-                response = await searchListMutation.mutateAsync({
-                    page: page,
-                    pageSize: 10,
-                    name: trimmedQuery ? [trimmedQuery] : [],
-                    subtype: entrySubtypeFilters,
-                });
             }
-            setTotalPages(response.totalPages);
-            setResults(response.results as SearchResultData[]);
-        } catch (error) {
-            // Error handled by mutation
-        } finally {
-            setIsLoading(false);
+            return queryApi.queryList({
+                page: searchState.page,
+                pageSize: searchState.pageSize,
+                name: trimmed ? [trimmed] : [],
+                subtype: searchState.filters,
+            });
+        },
+        enabled: isOpen && ready,
+        meta: { showErrorToast: true },
+    });
+
+    const results = searchResults.data?.results as SearchResultData[] | undefined;
+    const hasResults = (results?.length ?? 0) > 0;
+    const totalPages = Math.max(1, searchResults.data?.totalPages ?? 1);
+    const { page, pageSize } = searchState;
+
+
+    const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            setSearchState((prev) => ({
+                ...prev,
+                query: searchQuery,
+                filters: entrySubtypeFilters,
+                page: 1,
+            }));
         }
     };
 
-    useEffect(() => {
-        if (isOpen) {
-            if (inputRef.current) {
-                inputRef.current.focus();
-                performSearch();
-            }
-            populateEntrySubtypes();
-        }
-    }, [isOpen, page]);
+    const handleSelectResult = useCallback(
+        (result: SearchResultData) => {
+            onClose();
+            router.navigate({
+                to: '/dashboards/$subtype/$name',
+                params: {
+                    subtype: result.subtype,
+                    name: result.name,
+                },
+            });
+        },
+        [onClose, router],
+    );
+
+    const setPage = (p: number) =>
+        setSearchState((prev) => ({ ...prev, page: p }));
+
+    const setPageSize = (size: number) =>
+        setSearchState((prev) => ({ ...prev, pageSize: size, page: 1 }));
 
     useEffect(() => {
         if (isOpen) {
-            setPage(1);
+            setSearchQuery('');
+            setEntrySubtypeFilters([]);
+            setSearchState((prev) => ({
+                query: '',
+                filters: [],
+                page: 1,
+                pageSize: prev.pageSize,
+            }));
+            setReady(true);
+            requestAnimationFrame(() => inputRef.current?.focus());
+        } else {
+            setReady(false);
         }
     }, [isOpen]);
 
-    if (!isOpen || !dialogRoot) return null;
-
-    return createPortal(
-        <div
-            className='fixed inset-0 bg-black/70 flex items-start justify-center z-50 pt-[10vh]'
-            onClick={() => {
-                setAlert({ ...alert, show: false });
-                onClose();
-            }}
-        >
-            <div
-                className='w-11/12 md:w-3/4 lg:w-[640px] max-h-[75vh] bg-card border flex flex-col relative overflow-hidden rounded-lg shadow-md'
-                onClick={(e) => e.stopPropagation()}
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent
+                className='top-[10vh] translate-y-0 max-w-lg p-0 gap-0 max-h-[75vh] overflow-hidden'
+                showCloseButton={false}
             >
-                <Command className='h-full flex flex-col' shouldFilter={false}>
-                    <div className='relative'>
-                        <CommandInput
-                            ref={inputRef}
-                            placeholder='Search entries...'
-                            value={searchQuery}
-                            onValueChange={setSearchQuery}
-                            onKeyDown={handleKeyDown}
-                        />
-                        {searchQuery && (
-                            <Button
-                                variant='ghost'
-                                size='icon-sm'
-                                onClick={() => {
-                                    setSearchQuery('');
-                                    setPage(1);
-                                    performSearch();
-                                }}
-                                className='absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 p-0'
-                                title='Clear search'
-                            >
-                                <XIcon className='h-3 w-3' weight='bold' />
-                            </Button>
-                        )}
-                    </div>
+                <DialogTitle className='sr-only'>Search entries</DialogTitle>
+                <Command shouldFilter={false}>
+                    <CommandInput
+                        ref={inputRef}
+                        placeholder='Search entries...'
+                        value={searchQuery}
+                        onValueChange={setSearchQuery}
+                        onKeyDown={handleKeyDown}
+                    />
 
-                    {/* Filters Section */}
                     <SearchFilterSection
-                        showFilters={showFilters}
-                        setShowFilters={setShowFilters}
                         entrySubtypes={entrySubtypes}
                         entrySubtypeFilters={entrySubtypeFilters}
                         setEntrySubtypeFilters={setEntrySubtypeFilters}
                         entryClassColors={entryClassColors}
                     />
 
-                    {alert.show && (
-                        <AlertComponent
-                            variant={
-                                alert.color === 'red' || alert.color === 'error'
-                                    ? 'destructive'
-                                    : 'default'
-                            }
-                        >
-                            <WarningCircleIcon weight='fill' />
-                            <AlertDescription>{alert.message}</AlertDescription>
-                        </AlertComponent>
-                    )}
-
-                    {/* Results Section */}
-                    <CommandList className='flex-1 overflow-auto'>
-                        {isLoading ? (
-                            <div className='flex items-center justify-center py-12'>
-                                <Spinner className='size-10' />
-                            </div>
-                        ) : results && results.length > 0 ? (
-                            <CommandGroup>
-                                {results.map((result) => {
-                                    return (
-                                        <CommandItem
-                                            key={result.id}
-                                            onSelect={() => {
-                                                handleResultClick(result)(
-                                                    {} as React.MouseEvent,
-                                                );
-                                            }}
-                                            className='px-4 py-3 cursor-pointer'
-                                            value={result.name}
-                                        >
-                                            {result.subtype && (
-                                                <Badge
-                                                    variant='outline'
-                                                    className='mr-3'
-                                                    style={
-                                                        entryClassColors.get(
-                                                            result.subtype,
-                                                        )
-                                                            ? {
-                                                                  backgroundColor:
-                                                                      entryClassColors.get(
-                                                                          result.subtype,
-                                                                      ),
-                                                                  borderColor:
-                                                                      entryClassColors.get(
-                                                                          result.subtype,
-                                                                      ),
-                                                              }
-                                                            : undefined
-                                                    }
-                                                >
-                                                    {result.subtype}
-                                                </Badge>
-                                            )}
-                                            <span className='flex-1 text-sm truncate'>
-                                                {result.name}
-                                            </span>
-                                        </CommandItem>
-                                    );
-                                })}
-                            </CommandGroup>
-                        ) : (
-                            <CommandEmpty>
-                                <div className='flex flex-col items-center justify-center py-12 text-muted-foreground'>
-                                    <MagnifyingGlassIcon
-                                        className='w-10 h-10 mb-3 opacity-30'
-                                        weight='bold'
-                                    />
-                                    <span className='text-sm'>No results found</span>
-                                    {searchQuery && (
-                                        <span className='text-xs mt-1 opacity-70'>
-                                            Try a different search term
-                                        </span>
-                                    )}
+                    <ScrollArea className='max-h-[50vh]'>
+                        <CommandList className='max-h-none'>
+                            {searchResults.isFetching ? (
+                                <div className='flex items-center justify-center py-6'>
+                                    <Spinner />
                                 </div>
-                            </CommandEmpty>
+                            ) : hasResults ? (
+                                <CommandGroup>
+                                    {results!.map((result) => {
+                                        const color = entryClassColors.get(result.subtype);
+                                        return (
+                                            <CommandItem
+                                                key={result.id}
+                                                value={`${result.subtype}:${result.id}`}
+                                                onSelect={() => handleSelectResult(result)}
+                                            >
+                                                {color && (
+                                                    <span
+                                                        className='size-2 rounded-full shrink-0'
+                                                        style={{ backgroundColor: color }}
+                                                    />
+                                                )}
+                                                {result.name}
+                                                {result.subtype && (
+                                                    <CommandShortcut>
+                                                        {result.subtype}
+                                                    </CommandShortcut>
+                                                )}
+                                            </CommandItem>
+                                        );
+                                    })}
+                                </CommandGroup>
+                            ) : searchResults.isFetched ? (
+                                <CommandEmpty>No results found.</CommandEmpty>
+                            ) : null}
+                        </CommandList>
+                    </ScrollArea>
+
+                    <CommandSeparator />
+                    <div className='flex items-center justify-between px-3 py-1.5 text-xs text-muted-foreground'>
+                        <div className='flex items-center gap-3'>
+                            <span>
+                                <Kbd>↵</Kbd> search
+                            </span>
+                            <span>
+                                <Kbd>esc</Kbd> close
+                            </span>
+                        </div>
+                        {hasResults && (
+                            <div className='flex items-center gap-1'>
+                                <Select
+                                    value={`${pageSize}`}
+                                    onValueChange={(v) => setPageSize(Number(v))}
+                                >
+                                    <SelectTrigger className='h-4 w-auto gap-0.5 border-0 px-1 text-[10px] shadow-none focus:ring-0'>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent side='top' align='end'>
+                                        {[10, 20, 30, 40, 50].map((size) => (
+                                            <SelectItem key={size} value={`${size}`}>
+                                                {size} / page
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {totalPages > 1 && (
+                                    <div className='flex items-center'>
+                                        <Button variant='ghost' size='icon-xs' className='size-4' aria-label='First page' disabled={page <= 1} onClick={() => setPage(1)}>
+                                            <ChevronsLeft className='size-2.5' />
+                                        </Button>
+                                        <Button variant='ghost' size='icon-xs' className='size-4' aria-label='Previous page' disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                                            <ChevronLeft className='size-2.5' />
+                                        </Button>
+                                        <span className='tabular-nums text-[10px] px-0.5'>
+                                            {page}/{totalPages}
+                                        </span>
+                                        <Button variant='ghost' size='icon-xs' className='size-4' aria-label='Next page' disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+                                            <ChevronRight className='size-2.5' />
+                                        </Button>
+                                        <Button variant='ghost' size='icon-xs' className='size-4' aria-label='Last page' disabled={page >= totalPages} onClick={() => setPage(totalPages)}>
+                                            <ChevronsRight className='size-2.5' />
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
                         )}
-                    </CommandList>
+                    </div>
                 </Command>
-
-                {/* Footer with Pagination */}
-                {results && results.length > 0 && (
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={setPage}
-                        className='flex-shrink-0 py-2 px-4 border-t'
-                    />
-                )}
-
-                {/* Keyboard hints */}
-                <div className='px-4 py-3 border-t flex items-center gap-4 text-xs text-muted-foreground'>
-                    <span className='flex items-center gap-1.5'>
-                        <Kbd>Enter</Kbd>
-                        <span>search</span>
-                    </span>
-                    <span className='flex items-center gap-1.5'>
-                        <Kbd>Esc</Kbd>
-                        <span>close</span>
-                    </span>
-                </div>
-            </div>
-        </div>,
-        dialogRoot,
+            </DialogContent>
+        </Dialog>
     );
 }

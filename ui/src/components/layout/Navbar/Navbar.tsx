@@ -37,18 +37,28 @@ export default function Navbar(): React.JSX.Element {
     return (
         <div className='relative flex h-14 items-center gap-3 p-4 sm:gap-4 border-b border-border shrink-0 md:rounded-tl-xl md:rounded-tr-xl'>
             <SidebarTrigger className='-ml-1' />
-            <div className='absolute left-1/2 -translate-x-1/2'>
+            <div className='max-sm:static sm:absolute sm:left-1/2 sm:-translate-x-1/2'>
+                {/* Mobile: ghost icon button */}
+                <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={() => setIsDialogOpen(true)}
+                    className='flex sm:hidden w-8 h-8 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                >
+                    <MagnifyingGlassIcon className='h-4 w-4' weight='bold' />
+                </Button>
+                {/* Desktop: outline pill button */}
                 <Button
                     variant='outline'
                     size='sm'
                     onClick={() => setIsDialogOpen(true)}
-                    className='rounded-full w-64 justify-between text-muted-foreground'
+                    className='hidden sm:inline-flex rounded-full w-64 justify-between text-muted-foreground'
                 >
                     <div className='flex items-center gap-2'>
                         <MagnifyingGlassIcon className='h-4 w-4' weight='bold' />
                         <span className='text-sm'>Search...</span>
                     </div>
-                    <KbdGroup className='hidden sm:flex'>
+                    <KbdGroup>
                         <Kbd>/</Kbd>
                     </KbdGroup>
                 </Button>
