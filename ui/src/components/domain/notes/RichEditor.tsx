@@ -396,7 +396,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             cradleLinksPlugin(entryColors, navigate, source),
             cradleLinkColorPlugin(entryColors, source),
             headingLineClassPlugin(source),
-            referenceLinksPlugin(referenceMappings, navigate, fileDownloadFn, source),
+            referenceLinksPlugin(referenceMappings, fileDownloadFn, source),
             tablePlugin(entryColors, navigate, source),
             yamlFrontmatter({
                 content: markdown({

@@ -1,6 +1,6 @@
 import Logo from '@/components/base/Logo/Logo';
 import { useAuthState } from '@/hooks/auth/use-auth';
-import { Link, useMatchRoute, useRouter } from '@tanstack/react-router';
+import { Link, useMatchRoute } from '@tanstack/react-router';
 import {
     Archive,
     Bell,
@@ -13,7 +13,6 @@ import {
     HelpCircle,
     Layers,
     Link2,
-    Settings,
     Sparkles,
     Users,
     Wrench,
@@ -43,70 +42,63 @@ export function AppSidebar({
     unreadNotificationsCount = 0,
     ...props
 }: AppSidebarProps) {
-    const router = useRouter();
     const matchRoute = useMatchRoute();
     const { isEntryManager, isAdmin } = useAuthState();
     const { state } = useSidebar();
     const isCollapsed = state === 'collapsed';
 
-    const isManageActive =
-        !!matchRoute({ to: '/manage' }) ||
-        !!matchRoute({ to: '/manage/entities' }) ||
-        !!matchRoute({ to: '/manage/entry-types' }) ||
-        !!matchRoute({ to: '/manage/type-mappings' }) ||
-        !!matchRoute({ to: '/manage/users' }) ||
-        !!matchRoute({ to: '/manage/enrichment' }) ||
-        !!matchRoute({ to: '/manage/settings' });
+    const isActive = (to: string) => !!matchRoute({ to });
 
-    // Map current navigation items
+    const manageRoutes = [
+        '/manage',
+        '/manage/entities',
+        '/manage/entry-types',
+        '/manage/type-mappings',
+        '/manage/users',
+        '/manage/enrichment',
+        '/manage/settings',
+    ];
+    const isManageActive = manageRoutes.some(isActive);
+
     const navMain = [
         {
             title: 'Notes',
             url: '/notes',
             icon: FileText,
-            isActive: !!matchRoute({ to: '/notes' }),
+            isActive: isActive('/notes'),
         },
         {
             title: 'Files',
             url: '/files',
             icon: Archive,
-            isActive: !!matchRoute({ to: '/files' }),
+            isActive: isActive('/files'),
         },
         {
             title: 'Digest Data',
             url: '/digest-data',
             icon: Database,
-            isActive: !!matchRoute({ to: '/digest-data' }),
+            isActive: isActive('/digest-data'),
         },
         {
             title: 'Reports',
             url: '/reports',
             icon: FileBarChart,
-            isActive: !!matchRoute({ to: '/reports' }),
+            isActive: isActive('/reports'),
         },
         {
             title: 'Enrichment',
             url: '/enrichment',
             icon: Sparkles,
-            isActive: !!matchRoute({ to: '/enrichment' }),
+            isActive: isActive('/enrichment'),
         },
         /*
         {
             title: 'Graph Explorer',
             url: '/knowledge-graph',
             icon: Network,
-            isActive: !!matchRoute({ to: '/knowledge-graph' }),
+            isActive: isActive('/knowledge-graph'),
         },
         */
-    ];
-
-    const footerItems = [
-        {
-            title: 'Settings',
-            url: '/settings',
-            icon: Settings,
-            isActive: !!matchRoute({ to: '/settings' }),
-        },
     ];
 
     return (
@@ -122,7 +114,7 @@ export function AppSidebar({
                 </Link>
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={navMain} showLabel={true} label='General' />
+                <NavMain items={navMain} showLabel label='General' />
                 <NavMain
                     items={[
                         ...(isEntryManager
@@ -184,7 +176,7 @@ export function AppSidebar({
                             isActive: false,
                         },
                     ]}
-                    showLabel={true}
+                    showLabel
                     label='Other'
                 />
             </SidebarContent>
@@ -208,12 +200,6 @@ export function AppSidebar({
                     </SidebarMenuItem>
                 </SidebarMenu>
                 <NavUser />
-                {!isCollapsed && false && (
-                    <div className='mt-2 flex flex-col text-[10px] text-muted-foreground leading-tight'>
-                        <span>Copyright © 2025 PRODAFT</span>
-                        <span>v2.10.2-beta.a070af1b</span>
-                    </div>
-                )}
             </SidebarFooter>
         </Sidebar>
     );

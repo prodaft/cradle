@@ -16,6 +16,7 @@ export class CradleLinkWidget extends WidgetType {
     name: string;
     alias: string;
     color: string;
+    url: string;
     navigate: (url: string, options?: NavigateOptions) => void;
     fullText: string;
     timestamp: string;
@@ -37,7 +38,8 @@ export class CradleLinkWidget extends WidgetType {
         this.type = type;
         this.name = name;
         this.alias = alias;
-        this.color = color;
+        this.color = color || 'var(--pm-link-color)';
+        this.url = `/dashboards/${encodeURIComponent(this.type)}/${encodeURIComponent(this.name)}/`;
         this.navigate = navigate;
         this.fullText = fullText;
         this.timestamp = timestamp;
@@ -57,9 +59,8 @@ export class CradleLinkWidget extends WidgetType {
         );
     }
 
-    toDOM(view: EditorView): HTMLElement {
+    toDOM(_view: EditorView): HTMLElement {
         const container = document.createElement('span');
-        container.style.display = 'inline';
         container.className = 'cradle-link-widget-container';
 
         const linkSpan = this.createLinkElement();
@@ -78,38 +79,42 @@ export class CradleLinkWidget extends WidgetType {
         return container;
     }
 
+    private attachLinkBehavior(el: HTMLElement, url: string): void {
+        el.setAttribute('data-link-url', url);
+        el.setAttribute('data-link-full-text', this.fullText);
+
+        el.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.navigate(url);
+        });
+
+        el.addEventListener('mouseenter', () => {
+            el.style.opacity = '0.8';
+        });
+
+        el.addEventListener('mouseleave', () => {
+            el.style.opacity = '1';
+        });
+    }
+
     createLinkElement(): HTMLSpanElement {
         const linkSpan = document.createElement('span');
         const displayName = this.alias || this.name;
-        const url = `/dashboards/${encodeURIComponent(this.type)}/${encodeURIComponent(this.name)}/`;
+        const url = this.url;
         const a = document.createElement('a');
         const path = document.location.pathname;
         a.href = `${path}#${url}`;
 
         a.textContent = displayName;
-        a.style.color = this.color || 'var(--pm-link-color)';
-        linkSpan.style.color = this.color || 'var(--pm-link-color)';
+        a.style.color = this.color;
+        linkSpan.style.color = this.color;
         linkSpan.style.cursor = 'pointer';
         linkSpan.style.textDecoration = 'underline';
-        linkSpan.style.display = 'inline';
-        linkSpan.setAttribute('data-link-url', url);
-        linkSpan.setAttribute('data-link-full-text', this.fullText);
         linkSpan.className = 'cradle-link-widget';
         linkSpan.appendChild(a);
 
-        linkSpan.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.navigate(url, {});
-        });
-
-        linkSpan.addEventListener('mouseenter', () => {
-            linkSpan.style.opacity = '0.8';
-        });
-
-        linkSpan.addEventListener('mouseleave', () => {
-            linkSpan.style.opacity = '1';
-        });
+        this.attachLinkBehavior(linkSpan, url);
 
         return linkSpan;
     }
@@ -117,26 +122,12 @@ export class CradleLinkWidget extends WidgetType {
     createTimestampElement(): HTMLSpanElement {
         const timestampSpan = document.createElement('span');
         timestampSpan.textContent = this.timestamp;
-        timestampSpan.style.color = this.color || 'var(--pm-link-color)';
+        timestampSpan.style.color = this.color;
         timestampSpan.style.marginLeft = '4px';
         timestampSpan.style.textDecoration = 'underline';
-        timestampSpan.style.display = 'inline';
         timestampSpan.style.cursor = 'pointer';
         timestampSpan.className = 'cradle-link-timestamp';
-        const url = `/dashboards/${encodeURIComponent(this.type)}/${encodeURIComponent(this.name)}/`;
-        timestampSpan.setAttribute('data-link-url', url);
-        timestampSpan.setAttribute('data-link-full-text', this.fullText);
-        timestampSpan.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.navigate(url, {});
-        });
-        timestampSpan.addEventListener('mouseenter', () => {
-            timestampSpan.style.opacity = '0.8';
-        });
-        timestampSpan.addEventListener('mouseleave', () => {
-            timestampSpan.style.opacity = '1';
-        });
+        this.attachLinkBehavior(timestampSpan, this.url);
         return timestampSpan;
     }
 
@@ -500,13 +491,10 @@ function createColorMarks(
     let linkEnd = to;
     let timestampFrom = to;
     let timestampTo = to;
-    let hasPrefix = false;
     let child = node.node.firstChild;
 
     while (child) {
-        if (child.type.name === 'CradleLinkPrefix') {
-            hasPrefix = true;
-        } else if (child.type.name === 'CradleLinkType') {
+        if (child.type.name === 'CradleLinkType') {
             type = text.slice(child.from, child.to);
         } else if (child.type.name === 'CradleLinkTimestamp') {
             timestampFrom = child.from;
@@ -517,8 +505,9 @@ function createColorMarks(
     }
 
     const isInLink = cursorPos >= from && cursorPos <= to;
+    const hasTimestamp = timestampFrom !== timestampTo;
     const isInTimestamp =
-        linkEnd > to && cursorPos >= timestampFrom && cursorPos <= timestampTo;
+        hasTimestamp && cursorPos >= timestampFrom && cursorPos <= timestampTo;
 
     const hasLintIssues = diagnostics.some(
         (diagnostic) => diagnostic.from < linkEnd && diagnostic.to > from,

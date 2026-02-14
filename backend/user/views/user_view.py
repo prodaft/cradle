@@ -22,6 +22,7 @@ from core.openapi import (
     get_validation_error_response,
 )
 from core.pagination import TotalPagesPagination
+from core.utils import validate_order_by
 from management.settings import cradle_settings
 from notifications.models import NewUserNotification
 from user.permissions import HasAdminRole
@@ -727,6 +728,13 @@ class DefaultNoteTemplateView(APIView):
                 description="Search sessions by device info or IP address",
                 required=False,
             ),
+            OpenApiParameter(
+                name="order_by",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Comma-separated list of fields to order by. Prefix with '-' for descending. Valid fields: device_info, ip_address, created_at, last_activity, expires_at",
+                required=False,
+            ),
         ],
         responses={
             200: UserSessionSerializer(many=True),
@@ -765,6 +773,22 @@ class UserSessionsListView(APIView):
         search = request.query_params.get("search")
         if search:
             sessions = sessions.filter(Q(device_info__icontains=search) | Q(ip_address__icontains=search))
+
+        # Handle ordering
+        order_by = request.query_params.get("order_by")
+        if order_by:
+            valid_order_fields = [
+                "device_info",
+                "ip_address",
+                "created_at",
+                "last_activity",
+                "expires_at",
+            ]
+            order_fields, error_response = validate_order_by(order_by, valid_order_fields)
+            if error_response:
+                return error_response
+            if order_fields:
+                sessions = sessions.order_by(*order_fields)
 
         # Mark current session - we can't get refresh token from Authorization header
         # (it contains access token), so we'll rely on frontend to determine current session

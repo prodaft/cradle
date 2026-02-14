@@ -4,11 +4,11 @@ import useApi from '@/hooks/api/use-api';
 import { handleLinkClick, NavigateHandler } from '@/utils/editor/text-editor';
 import { parseMarkdown } from '@/utils/parser/parse';
 import type { FileReferenceWithNote } from '@services/cradle/models';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import DOMPurify from 'dompurify';
 import Prism from 'prismjs';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface StaticRenderProps {
     markdownContent: string;
@@ -20,8 +20,6 @@ interface StaticRenderProps {
  * with proper styling to match RichEditor appearance
  */
 export default function StaticRender({ markdownContent, fileData }: StaticRenderProps) {
-    const [htmlContent, setHtmlContent] = useState<string>('');
-    const [isLoading, setIsLoading] = useState(true);
     const previewRef = useRef<HTMLDivElement>(null);
     const { entriesApi, fileTransferApi } = useApi();
     const router = useRouter();
@@ -50,50 +48,23 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
         handleLinkClick(navigateHandler)(event.nativeEvent);
     };
 
-    // Parse markdown content
-    useEffect(() => {
-        let isMounted = true;
-
-        const parseContent = async () => {
-            if (markdownContent === '') {
-                if (isMounted) {
-                    setHtmlContent('');
-                    setIsLoading(false);
-                }
-                return;
-            }
-            setIsLoading(true);
-            try {
-                const baseURL = import.meta.env.VITE_CRADLE_API_ENDPOINT || '';
-                const result = await parseMarkdown(
-                    markdownContent,
-                    entriesApi,
-                    fileTransferApi,
-                    baseURL,
-                    fileData,
-                );
-
-                if (isMounted && result) {
-                    setHtmlContent(result.html);
-                }
-            } catch (err) {
-                console.error('Failed to parse markdown:', err);
-                if (isMounted) {
-                    toast.error('Failed to load content');
-                }
-            } finally {
-                if (isMounted) {
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        parseContent();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [markdownContent, fileData, entriesApi, fileTransferApi]);
+    const { data: htmlContent = '', isLoading } = useQuery({
+        queryKey: ['parseMarkdown', markdownContent, fileData],
+        queryFn: async () => {
+            if (markdownContent === '') return '';
+            const baseURL = import.meta.env.VITE_CRADLE_API_ENDPOINT || '';
+            const result = await parseMarkdown(
+                markdownContent,
+                entriesApi,
+                fileTransferApi,
+                baseURL,
+                fileData,
+            );
+            return result?.html ?? '';
+        },
+        meta: { showErrorToast: true },
+        staleTime: Infinity,
+    });
 
     // Single place: update preview DOM when HTML content changes
     useEffect(() => {

@@ -51,7 +51,6 @@ export default function ResetPassword() {
         },
         meta: {
             successMessage: 'Password reset successfully',
-            errorMessage: 'Failed to reset password',
         },
         onSuccess: () => {
             setTimeout(() => {

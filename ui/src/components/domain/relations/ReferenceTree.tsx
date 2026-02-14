@@ -10,7 +10,7 @@ import { Entry, NoteRetrieve } from '@/types';
 import { createDashboardLink, SubtypeHierarchy, truncateText } from '@/utils/dashboard';
 import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 
 interface ReferenceTreeProps {
@@ -35,7 +35,6 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
         Record<string, NextPageStatus>
     >({});
     const { queryApi } = useApi();
-    const router = useRouter();
 
     const fetchReferencesMutation = useMutation({
         mutationFn: async ({
@@ -47,19 +46,15 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
             page: number;
             noteId: string;
         }) => {
-            return await queryApi.queryList({
+            return queryApi.queryList({
                 subtype: [path],
                 referencedIn: noteId,
                 page,
             });
         },
-        meta: {
-            errorMessage: 'Failed to fetch references',
-        },
     });
 
-    // If there's no entry_classes, there is nothing to display
-    if (!note || !note.entries) {
+    if (!note?.entries?.length) {
         return null;
     }
 
@@ -86,15 +81,15 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
             page = nextPageStatus[path] as number;
         }
 
+        if (!note.id) {
+            return;
+        }
+
         // Mark the path as loading
         setNextPageStatus((prev) => ({
             ...prev,
             [path]: 'loading',
         }));
-
-        if (!note.id) {
-            return;
-        }
 
         const noteId = note.id;
 
@@ -107,7 +102,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
 
             setReferences((prev) => ({
                 ...prev,
-                [path]: [...(references[path] || []), ...response.results],
+                [path]: [...(prev[path] || []), ...response.results],
             }));
 
             setNextPageStatus((prev) => ({
@@ -115,7 +110,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                 [path]:
                     response.page === response.totalPages ? 'end' : response.page + 1,
             }));
-        } catch (error) {
+        } catch (_error) {
             // Error handled by mutation
             setNextPageStatus((prev) => ({
                 ...prev,
@@ -125,153 +120,144 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
     };
 
     return (
-        <>
-            {note?.entries && note.entries.length > 0 && (
-                <div
-                    className={`text-muted-foreground text-xs w-full pt-1 pl-3 ${className}`}
-                >
-                    <Collapsible defaultOpen={false}>
-                        <CollapsibleTrigger asChild>
-                            <Button
-                                variant='ghost'
-                                size='sm'
-                                className='group hover:text-border-primary'
-                            >
-                                <CaretRightIcon
-                                    className='w-4 h-4 group-data-[state=open]:hidden'
-                                    weight='bold'
-                                />
-                                <CaretDownIcon
-                                    className='w-4 h-4 hidden group-data-[state=open]:block'
-                                    weight='bold'
-                                />
-                                <span>References</span>
-                            </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                            <div className='mt-4'>
-                                {new SubtypeHierarchy(note.entries).convert(
-                                    // --- Render for internal nodes (categories that have child categories) ---
-                                    (value, children) => (
-                                        <div
-                                            className='text-muted-foreground text-xs w-full pt-1'
-                                            key={value}
-                                        >
-                                            <Collapsible>
-                                                <CollapsibleTrigger asChild>
-                                                    <Button
-                                                        variant='ghost'
-                                                        size='sm'
-                                                        className='group hover:text-border-primary'
-                                                    >
-                                                        <CaretRightIcon
-                                                            className='w-4 h-4 group-data-[state=open]:hidden'
-                                                            weight='bold'
-                                                        />
-                                                        <CaretDownIcon
-                                                            className='w-4 h-4 hidden group-data-[state=open]:block'
-                                                            weight='bold'
-                                                        />
-                                                        <span>{value}</span>
-                                                    </Button>
-                                                </CollapsibleTrigger>
-                                                <CollapsibleContent>
-                                                    <div className='text-muted-foreground text-xs w-full break-all flex flex-wrap justify-start items-center mt-4'>
-                                                        {children}
-                                                    </div>
-                                                </CollapsibleContent>
-                                            </Collapsible>
-                                        </div>
-                                    ),
-                                    // --- Render for leaf nodes (concrete subtypes that reference actual entries) ---
-                                    (value, path) => {
-                                        const fullPath = `${path}${value}`;
-                                        return (
-                                            <div
-                                                className='text-muted-foreground text-xs w-full pt-1'
-                                                key={fullPath}
+        <div
+            className={`text-muted-foreground text-xs w-full pt-1 pl-3 ${className ?? ''}`}
+        >
+            <Collapsible defaultOpen={false}>
+                <CollapsibleTrigger asChild>
+                    <Button
+                        variant='ghost'
+                        size='sm'
+                        className='group hover:text-border-primary'
+                    >
+                        <CaretRightIcon
+                            className='w-4 h-4 group-data-[state=open]:hidden'
+                            weight='bold'
+                        />
+                        <CaretDownIcon
+                            className='w-4 h-4 hidden group-data-[state=open]:block'
+                            weight='bold'
+                        />
+                        <span>References</span>
+                    </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <div className='mt-4'>
+                        {new SubtypeHierarchy(note.entries).convert(
+                            // --- Render for internal nodes (categories that have child categories) ---
+                            (value, children) => (
+                                <div
+                                    className='text-muted-foreground text-xs w-full pt-1'
+                                    key={value}
+                                >
+                                    <Collapsible>
+                                        <CollapsibleTrigger asChild>
+                                            <Button
+                                                variant='ghost'
+                                                size='sm'
+                                                className='group hover:text-border-primary'
                                             >
-                                                <Collapsible
-                                                    onOpenChange={(open) => {
-                                                        if (open) {
-                                                            fetchReferences(
-                                                                fullPath,
-                                                                false,
-                                                            );
-                                                        }
-                                                    }}
-                                                >
-                                                    <CollapsibleTrigger asChild>
-                                                        <Button
-                                                            variant='ghost'
-                                                            size='sm'
-                                                            className='group hover:text-border-primary'
-                                                        >
-                                                            <CaretRightIcon
-                                                                className='w-4 h-4 group-data-[state=open]:hidden'
-                                                                weight='bold'
-                                                            />
-                                                            <CaretDownIcon
-                                                                className='w-4 h-4 hidden group-data-[state=open]:block'
-                                                                weight='bold'
-                                                            />
-                                                            <span>{value}</span>
-                                                        </Button>
-                                                    </CollapsibleTrigger>
-                                                    <CollapsibleContent>
-                                                        <div className='text-muted-foreground text-xs w-full break-all flex flex-wrap justify-start items-center mt-4'>
-                                                            {/* Render the actual references */}
-                                                            {references[fullPath]?.map(
-                                                                (entry) => (
-                                                                    <Link
-                                                                        key={`${entry.name}:${entry.subtype}`}
-                                                                        to={createDashboardLink(
-                                                                            entry,
-                                                                        )}
-                                                                        className='text-foreground hover:underline hover:text-primary bg-muted h-6 px-1 py-1 mx-1 my-1 rounded-md'
-                                                                    >
-                                                                        {truncateText(
-                                                                            entry.name,
-                                                                            30,
-                                                                        )}
-                                                                    </Link>
-                                                                ),
-                                                            )}
-
-                                                            <span className='h-6 px-1 py-1 mx-1 my-1'>
-                                                                {/* Render pagination logic */}
-                                                                {nextPageStatus[
-                                                                    fullPath
-                                                                ] === 'loading' ? (
-                                                                    <Spinner className='size-10' />
-                                                                ) : nextPageStatus[
-                                                                      fullPath
-                                                                  ] !== 'end' ? (
-                                                                    <span
-                                                                        onClick={() =>
-                                                                            fetchReferences(
-                                                                                fullPath,
-                                                                                true,
-                                                                            )
-                                                                        }
-                                                                        className='text-muted-foreground underline hover:text-primary cursor-pointer'
-                                                                    >
-                                                                        Load more...
-                                                                    </span>
-                                                                ) : null}
-                                                            </span>
-                                                        </div>
-                                                    </CollapsibleContent>
-                                                </Collapsible>
+                                                <CaretRightIcon
+                                                    className='w-4 h-4 group-data-[state=open]:hidden'
+                                                    weight='bold'
+                                                />
+                                                <CaretDownIcon
+                                                    className='w-4 h-4 hidden group-data-[state=open]:block'
+                                                    weight='bold'
+                                                />
+                                                <span>{value}</span>
+                                            </Button>
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent>
+                                            <div className='text-muted-foreground text-xs w-full break-all flex flex-wrap justify-start items-center mt-4'>
+                                                {children}
                                             </div>
-                                        );
-                                    },
-                                )}
-                            </div>
-                        </CollapsibleContent>
-                    </Collapsible>
-                </div>
-            )}
-        </>
+                                        </CollapsibleContent>
+                                    </Collapsible>
+                                </div>
+                            ),
+                            // --- Render for leaf nodes (concrete subtypes that reference actual entries) ---
+                            (value, path) => {
+                                const fullPath = `${path}${value}`;
+                                return (
+                                    <div
+                                        className='text-muted-foreground text-xs w-full pt-1'
+                                        key={fullPath}
+                                    >
+                                        <Collapsible
+                                            onOpenChange={(open) => {
+                                                if (open) {
+                                                    fetchReferences(fullPath, false);
+                                                }
+                                            }}
+                                        >
+                                            <CollapsibleTrigger asChild>
+                                                <Button
+                                                    variant='ghost'
+                                                    size='sm'
+                                                    className='group hover:text-border-primary'
+                                                >
+                                                    <CaretRightIcon
+                                                        className='w-4 h-4 group-data-[state=open]:hidden'
+                                                        weight='bold'
+                                                    />
+                                                    <CaretDownIcon
+                                                        className='w-4 h-4 hidden group-data-[state=open]:block'
+                                                        weight='bold'
+                                                    />
+                                                    <span>{value}</span>
+                                                </Button>
+                                            </CollapsibleTrigger>
+                                            <CollapsibleContent>
+                                                <div className='text-muted-foreground text-xs w-full break-all flex flex-wrap justify-start items-center mt-4'>
+                                                    {/* Render the actual references */}
+                                                    {references[fullPath]?.map(
+                                                        (entry) => (
+                                                            <Link
+                                                                key={`${entry.name}:${entry.subtype}`}
+                                                                to={createDashboardLink(
+                                                                    entry,
+                                                                )}
+                                                                className='text-foreground hover:underline hover:text-primary bg-muted h-6 px-1 py-1 mx-1 my-1 rounded-md'
+                                                            >
+                                                                {truncateText(
+                                                                    entry.name,
+                                                                    30,
+                                                                )}
+                                                            </Link>
+                                                        ),
+                                                    )}
+
+                                                    <span className='h-6 px-1 py-1 mx-1 my-1'>
+                                                        {/* Render pagination logic */}
+                                                        {nextPageStatus[fullPath] ===
+                                                        'loading' ? (
+                                                            <Spinner className='size-10' />
+                                                        ) : nextPageStatus[fullPath] !==
+                                                          'end' ? (
+                                                            <span
+                                                                onClick={() =>
+                                                                    fetchReferences(
+                                                                        fullPath,
+                                                                        true,
+                                                                    )
+                                                                }
+                                                                className='text-muted-foreground underline hover:text-primary cursor-pointer'
+                                                            >
+                                                                Load more...
+                                                            </span>
+                                                        ) : null}
+                                                    </span>
+                                                </div>
+                                            </CollapsibleContent>
+                                        </Collapsible>
+                                    </div>
+                                );
+                            },
+                        )}
+                    </div>
+                </CollapsibleContent>
+            </Collapsible>
+        </div>
     );
 }

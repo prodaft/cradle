@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import FilesList from './FilesList';
 
 /**
@@ -6,8 +5,6 @@ import FilesList from './FilesList';
  * Main page for managing and viewing all files
  */
 export default function Files() {
-    const [fileCount, setFileCount] = useState({ current: 0, total: 0 });
-
     return (
         <div className='w-full h-full'>
             {/* Header Section */}
@@ -19,9 +16,9 @@ export default function Files() {
             </div>
 
             {/* Content Area */}
-            <div className='flex flex-col space-y-4 p-4'>
+            <div className='p-4'>
                 {/* Files List */}
-                <FilesList onCountChange={setFileCount} />
+                <FilesList />
             </div>
         </div>
     );

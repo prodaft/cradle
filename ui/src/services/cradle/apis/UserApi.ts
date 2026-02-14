@@ -121,6 +121,7 @@ export interface UsersSessionsDestroyRequest {
 export interface UsersSessionsListRequest {
     userId: string;
     search?: string;
+    orderBy?: string;
 }
 
 export interface UsersUpdateRequest {
@@ -883,6 +884,10 @@ export class UserApi extends runtime.BaseAPI {
 
         if (requestParameters['search'] != null) {
             queryParameters['search'] = requestParameters['search'];
+        }
+
+        if (requestParameters['orderBy'] != null) {
+            queryParameters['order_by'] = requestParameters['orderBy'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

@@ -3,7 +3,7 @@ import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/use-api';
 import { parseContent } from '@/utils/editor/text-editor';
 import type { NoteRetrieve } from '@services/cradle/models';
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Preview from '../../base/Preview/Preview';
 
 interface NotePreviewContentProps {
@@ -17,31 +17,33 @@ interface NotePreviewContentProps {
  * @returns {JSX.Element}
  */
 export const NotePreviewContent = ({ note }: NotePreviewContentProps) => {
-    const [parsedContent, setParsedContent] = useState('');
-    const [loading, setLoading] = useState(true);
     const { entriesApi, fileTransferApi, basePath } = useApi();
 
-    useEffect(() => {
-        parseContent(note.content, entriesApi, fileTransferApi, basePath, note.files)
-            .then((result) => {
-                setParsedContent(result.html);
-                setLoading(false);
-            })
-            .catch(() => {
-                setParsedContent('<p>Error loading preview</p>');
-                setLoading(false);
-            });
-    }, [note.content, note.files, entriesApi, fileTransferApi, basePath]);
+    const { data: parsedContent, isLoading } = useQuery({
+        queryKey: ['parseNotePreview', note.content, note.files],
+        queryFn: async () => {
+            const result = await parseContent(
+                note.content,
+                entriesApi,
+                fileTransferApi,
+                basePath,
+                note.files,
+            );
+            return result.html;
+        },
+        meta: { showErrorToast: true },
+        staleTime: Infinity,
+    });
 
     return (
         <div className='w-[450px] max-h-[450px] overflow-hidden'>
-            {loading ? (
+            {isLoading ? (
                 <div className='flex items-center justify-center h-32'>
                     <Spinner className='size-10' />
                 </div>
             ) : (
                 <ScrollArea className='max-h-[450px]'>
-                    <Preview htmlContent={parsedContent} />
+                    <Preview htmlContent={parsedContent ?? ''} />
                 </ScrollArea>
             )}
         </div>

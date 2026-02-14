@@ -11,9 +11,8 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import useApi from '@/hooks/api/use-api';
-import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
+import { useAuthActions } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
-import { cn } from '@/lib/utils';
 import Logo from '@components/base/Logo/Logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
@@ -68,8 +67,8 @@ export default function Register() {
         select: (state) => state.location,
     });
     const { authApi, usersApi, basePath } = useApi();
-    const { role } = useAuthState();
     const { isLoggedIn } = useAuthActions();
+    const loggedIn = isLoggedIn();
 
     const registerMutation = useMutation({
         mutationFn: async (data: {
@@ -124,7 +123,7 @@ export default function Register() {
     const { data: userConfig } = useQuery<UserConfig>({
         queryKey: queryKeys.users.config(),
         queryFn: () => usersApi.usersConfig(),
-        enabled: !!basePath && !isLoggedIn(),
+        enabled: !!basePath && !loggedIn,
         meta: {
             suppressNotification: true,
         },
@@ -132,16 +131,16 @@ export default function Register() {
 
     const oauthMethods = userConfig?.oauthMethods || [];
     const signup = userConfig?.signup ?? null;
+    const isSignupDisabled = signup === false;
 
     useEffect(() => {
         // If user is already logged in, redirect to dashboard
-        if (isLoggedIn()) {
+        if (loggedIn) {
             router.navigate({ to: '/', replace: true });
         }
-    }, [isLoggedIn, router]);
+    }, [loggedIn, router]);
 
-    const apiBasePath = basePath ? basePath : '';
-    const apiRoot = apiBasePath.replace(/\/api\/?$/, '');
+    const apiRoot = (basePath ?? '').replace(/\/api\/?$/, '');
 
     const getOAuthKey = (method: OAuthMethod) => {
         return (
@@ -208,21 +207,26 @@ export default function Register() {
             redirectUrl.searchParams.set('redirect_uri', redirectUri);
             redirectUrl.searchParams.set('state', `oauth_login:${provider}`);
             return redirectUrl.toString();
-        } catch (error) {
+        } catch {
             // Invalid URL, return empty string
             return '';
         }
     };
 
-    const oauthOptions = oauthMethods.filter((method) => buildOAuthRedirectUrl(method));
+    const oauthOptions = oauthMethods
+        .map((method) => {
+            const redirectUrl = buildOAuthRedirectUrl(method);
+            return redirectUrl ? { method, redirectUrl } : null;
+        })
+        .filter(Boolean) as Array<{ method: OAuthMethod; redirectUrl: string }>;
 
     const onSubmit = async (data: FormData) => {
-        if (signup === false) {
+        if (isSignupDisabled) {
             toast.error('Registration is disabled. Contact an administrator.');
             return;
         }
 
-        registerMutation.mutate({
+        await registerMutation.mutateAsync({
             username: data.username,
             email: data.email,
             password: data.password,
@@ -230,7 +234,7 @@ export default function Register() {
     };
 
     // If user is logged in, don't render the register form
-    if (isLoggedIn()) {
+    if (loggedIn) {
         return null;
     }
 
@@ -240,9 +244,9 @@ export default function Register() {
             <div className='flex flex-col gap-4 p-6 md:p-10 relative'>
                 {/* Branding */}
                 <div className='flex justify-between items-center gap-2'>
-                    <a href='#' className='flex items-center gap-2 font-medium'>
+                    <Link to='/' className='flex items-center gap-2 font-medium'>
                         <Logo text={true} width='120px' />
-                    </a>
+                    </Link>
                     <Button
                         onClick={() => router.navigate({ to: '/login', replace: true })}
                         variant='ghost'
@@ -259,7 +263,7 @@ export default function Register() {
                 <div className='flex flex-1 items-center justify-center'>
                     <div className='w-full max-w-xs'>
                         <form
-                            className={cn('flex flex-col gap-6')}
+                            className='flex flex-col gap-6'
                             onSubmit={form.handleSubmit(onSubmit)}
                         >
                             <FieldGroup className='gap-4'>
@@ -271,7 +275,7 @@ export default function Register() {
                                         Enter your information to create your account
                                     </p>
                                 </div>
-                                {signup === false && (
+                                {isSignupDisabled && (
                                     <Alert>
                                         <WarningCircleIcon size={18} weight='bold' />
                                         <AlertDescription>
@@ -296,7 +300,7 @@ export default function Register() {
                                                     aria-invalid={fieldState.invalid}
                                                     autoComplete='username'
                                                     required
-                                                    disabled={signup === false}
+                                                    disabled={isSignupDisabled}
                                                 />
                                                 {fieldState.invalid && (
                                                     <FieldError
@@ -323,7 +327,7 @@ export default function Register() {
                                                     aria-invalid={fieldState.invalid}
                                                     autoComplete='email'
                                                     required
-                                                    disabled={signup === false}
+                                                    disabled={isSignupDisabled}
                                                 />
                                                 {fieldState.invalid && (
                                                     <FieldError
@@ -350,7 +354,7 @@ export default function Register() {
                                                     aria-invalid={fieldState.invalid}
                                                     autoComplete='new-password'
                                                     required
-                                                    disabled={signup === false}
+                                                    disabled={isSignupDisabled}
                                                 />
                                                 {fieldState.invalid && (
                                                     <FieldError
@@ -377,7 +381,7 @@ export default function Register() {
                                                     aria-invalid={fieldState.invalid}
                                                     autoComplete='new-password'
                                                     required
-                                                    disabled={signup === false}
+                                                    disabled={isSignupDisabled}
                                                 />
                                                 {fieldState.invalid && (
                                                     <FieldError
@@ -396,11 +400,11 @@ export default function Register() {
                                         className='w-full'
                                         disabled={
                                             form.formState.isSubmitting ||
-                                            signup === false
+                                            isSignupDisabled
                                         }
                                         data-testid='login-register-button'
                                     >
-                                        {signup === false
+                                        {isSignupDisabled
                                             ? 'Registration Disabled'
                                             : form.formState.isSubmitting
                                               ? 'Creating...'
@@ -415,9 +419,9 @@ export default function Register() {
                                                 Or continue with
                                             </FieldDescription>
                                         </Field>
-                                        {oauthOptions.map((method) => (
+                                        {oauthOptions.map(({ method, redirectUrl }) => (
                                             <Field
-                                                key={`${getOAuthKey(method)}-${getOAuthUrl(method)}`}
+                                                key={`${getOAuthKey(method)}-${redirectUrl}`}
                                             >
                                                 <Button
                                                     type='button'
@@ -464,9 +468,7 @@ export default function Register() {
                                                             redirectPath,
                                                         );
                                                         window.location.href =
-                                                            buildOAuthRedirectUrl(
-                                                                method,
-                                                            );
+                                                            redirectUrl;
                                                     }}
                                                 >
                                                     {getOAuthLabel(method)}

@@ -1,5 +1,5 @@
 import { useTheme } from '@/contexts/ui';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Globe from 'react-globe.gl';
 import * as satellite from 'satellite.js';
 import { createNoise3D } from 'simplex-noise';
@@ -158,8 +158,8 @@ export default function GlobeVisualization({
     // Satellite state
     const [satData, setSatData] = useState<SatelliteData[]>([]);
     const [time, setTime] = useState(new Date());
-    const polygonTimeRef = useRef(new Date());
-    const [polygonTick, setPolygonTick] = useState(0);
+    const polygonTimeMsRef = useRef<number>(Date.now());
+    const [, forcePolygonRerender] = useState(0);
 
     // Countries data for hex polygons
     const [countries, setCountries] = useState<{ features: any[] }>({ features: [] });
@@ -206,9 +206,7 @@ export default function GlobeVisualization({
     // Fetch and parse TLE data
     useEffect(() => {
         fetch('/datasets/sat_data.txt')
-            .then((r) => {
-                return r.text();
-            })
+            .then((r) => r.text())
             .then((rawData) => {
                 const tleData = rawData
                     .replace(/\r/g, '')
@@ -276,10 +274,8 @@ export default function GlobeVisualization({
         if (!showHexPolygons) return;
 
         const intervalId = window.setInterval(() => {
-            polygonTimeRef.current = new Date(
-                polygonTimeRef.current.getTime() + POLYGON_TIME_STEP,
-            );
-            setPolygonTick((tick) => (tick + 1) % 1000000);
+            polygonTimeMsRef.current += POLYGON_TIME_STEP;
+            forcePolygonRerender((x) => (x + 1) % 1_000_000);
         }, POLYGON_TICK_MS);
 
         return () => {
@@ -337,78 +333,58 @@ export default function GlobeVisualization({
     const bumpImageUrl = '//unpkg.com/three-globe/example/img/earth-topology.png';
     const backgroundCol = 'rgba(0,0,0,0)';
 
-    const particlesColor = useCallback(() => 'palegreen', []);
+    const particlesColor = () => 'palegreen';
 
-    // Hex polygons data - only show when enabled
-    const hexPolygonsData = useMemo(() => {
-        if (!showHexPolygons) return [];
-        return countries.features;
-    }, [showHexPolygons, countries.features]);
+    const hexPolygonsData = showHexPolygons ? countries.features : [];
 
     // Breathing effect color function - dramatic localized breathing patches
-    const hexPolygonColor = useCallback(
-        (feature: any) => {
-            if (!showHexPolygons) return 'rgba(0,0,0,0)';
+    // Plain function (no useCallback) so identity changes each render, driven by forcePolygonRerender
+    const hexPolygonColor = (feature: any) => {
+        if (!showHexPolygons) return 'rgba(0,0,0,0)';
 
-            const centroidLng =
-                feature.properties?.__centroid?.lng ?? feature.properties?.LABEL_X ?? 0;
-            const centroidLat =
-                feature.properties?.__centroid?.lat ?? feature.properties?.LABEL_Y ?? 0;
+        const centroidLng =
+            feature.properties?.__centroid?.lng ?? feature.properties?.LABEL_X ?? 0;
+        const centroidLat =
+            feature.properties?.__centroid?.lat ?? feature.properties?.LABEL_Y ?? 0;
 
-            // Convert lat/lng to 3D sphere coordinates (unit sphere)
-            const latRad = (centroidLat * Math.PI) / 180;
-            const lngRad = (centroidLng * Math.PI) / 180;
-            const px = Math.cos(latRad) * Math.cos(lngRad);
-            const py = Math.sin(latRad);
-            const pz = Math.cos(latRad) * Math.sin(lngRad);
+        const latRad = (centroidLat * Math.PI) / 180;
+        const lngRad = (centroidLng * Math.PI) / 180;
+        const px = Math.cos(latRad) * Math.cos(lngRad);
+        const py = Math.sin(latRad);
+        const pz = Math.cos(latRad) * Math.sin(lngRad);
 
-            // Time evolution - tuned for visible but smooth animation
-            const t = polygonTimeRef.current.getTime() / 8000;
+        const t = polygonTimeMsRef.current / 8000;
+        const scale = 1.8;
 
-            // Base spatial frequency - larger patches
-            const scale = 1.8;
+        const noise1 = fbm(
+            (px + t * 0.12) * scale,
+            (py + t * 0.09) * scale,
+            (pz + t * 0.07) * scale,
+            4,
+            2.0,
+            0.5,
+        );
 
-            // Primary noise layer - regional breathing patches
-            const noise1 = fbm(
-                (px + t * 0.12) * scale,
-                (py + t * 0.09) * scale,
-                (pz + t * 0.07) * scale,
-                4, // octaves
-                2.0, // lacunarity
-                0.5, // gain
-            );
+        const noise2 = fbm(
+            (px - t * 0.08) * scale * 2.3,
+            (py - t * 0.06) * scale * 2.3,
+            (pz - t * 0.05) * scale * 2.3,
+            3,
+            2.0,
+            0.6,
+        );
 
-            // Secondary detail layer - adds texture
-            const noise2 = fbm(
-                (px - t * 0.08) * scale * 2.3,
-                (py - t * 0.06) * scale * 2.3,
-                (pz - t * 0.05) * scale * 2.3,
-                3, // fewer octaves for smoother detail
-                2.0,
-                0.6,
-            );
+        const combined = noise1 * 0.75 + noise2 * 0.25;
+        const normalized = (combined + 1) * 0.5;
+        const shaped = smoothstep(0.2, 0.6, normalized);
+        const brightness = 0.2 + shaped * 0.95;
 
-            // Combine: dominant regional + subtle detail
-            const combined = noise1 * 0.75 + noise2 * 0.25;
+        const r = Math.floor(brightness * 25);
+        const g = Math.floor(brightness * 170);
+        const b = Math.floor(brightness * 255);
 
-            // Map noise from [-1, 1] to [0, 1]
-            const normalized = (combined + 1) * 0.5;
-
-            // Apply strong smoothstep for distinct bright/dark regions
-            const shaped = smoothstep(0.2, 0.6, normalized);
-
-            // Wide brightness range for dramatic effect
-            const brightness = 0.2 + shaped * 0.95;
-
-            // Cyan/blue color with high contrast
-            const r = Math.floor(brightness * 25);
-            const g = Math.floor(brightness * 170);
-            const b = Math.floor(brightness * 255);
-
-            return `rgba(${r}, ${g}, ${b}, 0.85)`;
-        },
-        [showHexPolygons, polygonTick],
-    );
+        return `rgba(${r}, ${g}, ${b}, 0.85)`;
+    };
 
     return (
         <div

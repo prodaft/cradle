@@ -7,7 +7,13 @@ import useApi from '@/hooks/api/use-api';
 import { logger } from '@/utils/logger';
 import { PencilIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { forwardRef, MouseEvent, useImperativeHandle, useState } from 'react';
+import {
+    forwardRef,
+    MouseEvent,
+    useCallback,
+    useImperativeHandle,
+    useState,
+} from 'react';
 import { toast } from 'sonner';
 
 interface Snippet {
@@ -29,6 +35,10 @@ export interface SnippetListRef {
 const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
     ({ userId = null, showTitle = true, description }, ref) => {
         const { notesApi } = useApi();
+
+        const normalizedUserId = userId === null ? 'null' : String(userId);
+        const snippetsQueryKey = ['snippets', 'user', normalizedUserId] as const;
+
         const [addSnippetDialogOpen, setAddSnippetDialogOpen] = useState(false);
         const [editSnippetDialogOpen, setEditSnippetDialogOpen] = useState(false);
         const [editingSnippet, setEditingSnippet] = useState<Snippet | null>(null);
@@ -36,39 +46,35 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
         const [deletingSnippet, setDeletingSnippet] = useState<Snippet | null>(null);
 
         // Query for snippets
-        const { data: snippetsData, isPending: loading } = useQuery({
-            queryKey: ['snippets', 'user', userId === null ? 'null' : String(userId)],
+        const { data: snippetsData, isLoading } = useQuery({
+            queryKey: snippetsQueryKey,
             queryFn: () =>
                 notesApi.notesSnippetsUserList({
-                    userId: userId === null ? 'null' : String(userId),
+                    userId: normalizedUserId,
                 }),
             meta: {
                 showErrorToast: true,
-                errorMessage: 'Failed to load snippets',
             },
         });
 
-        const snippets = (snippetsData as any) || [];
+        const snippets: Snippet[] = Array.isArray(snippetsData)
+            ? (snippetsData as Snippet[])
+            : [];
 
         // Mutation for creating snippets
         const createMutation = useMutation({
             mutationFn: (data: { name: string; content: string }) =>
                 notesApi.notesSnippetsUserCreate({
-                    userId: userId === null ? 'null' : String(userId),
+                    userId: normalizedUserId,
                     snippetRequest: data,
                 }),
             meta: {
                 invalidateQueries: [
                     {
-                        queryKey: [
-                            'snippets',
-                            'user',
-                            userId === null ? 'null' : String(userId),
-                        ],
+                        queryKey: snippetsQueryKey,
                     },
                 ],
                 successMessage: 'Snippet created successfully',
-                errorMessage: 'Failed to create snippet',
             },
         });
 
@@ -88,15 +94,10 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
             meta: {
                 invalidateQueries: [
                     {
-                        queryKey: [
-                            'snippets',
-                            'user',
-                            userId === null ? 'null' : String(userId),
-                        ],
+                        queryKey: snippetsQueryKey,
                     },
                 ],
                 successMessage: 'Snippet updated successfully',
-                errorMessage: 'Failed to update snippet',
             },
         });
 
@@ -107,40 +108,37 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
             meta: {
                 invalidateQueries: [
                     {
-                        queryKey: [
-                            'snippets',
-                            'user',
-                            userId === null ? 'null' : String(userId),
-                        ],
+                        queryKey: snippetsQueryKey,
                     },
                 ],
                 successMessage: 'Snippet deleted successfully',
-                errorMessage: 'Failed to delete snippet',
             },
         });
 
-        const handleAddSnippet = (e?: MouseEvent) => {
-            if (e) {
-                e.stopPropagation();
-                e.preventDefault();
-            }
-            setAddSnippetDialogOpen(true);
-        };
-
-        useImperativeHandle(ref, () => ({
-            handleAddSnippet: () => handleAddSnippet(),
-        }));
-
-        const handleEditSnippet = (snippet: Snippet, e: MouseEvent) => {
+        const stopEvent = useCallback((e?: MouseEvent) => {
+            if (!e) return;
             e.stopPropagation();
             e.preventDefault();
+        }, []);
+
+        const handleAddSnippet = useCallback(
+            (e?: MouseEvent) => {
+                stopEvent(e);
+                setAddSnippetDialogOpen(true);
+            },
+            [stopEvent],
+        );
+
+        useImperativeHandle(ref, () => ({ handleAddSnippet }), [handleAddSnippet]);
+
+        const handleEditSnippet = (snippet: Snippet, e: MouseEvent) => {
+            stopEvent(e);
             setEditingSnippet(snippet);
             setEditSnippetDialogOpen(true);
         };
 
-        const handleDeleteSnippet = async (snippet: Snippet, e: MouseEvent) => {
-            e.stopPropagation();
-            e.preventDefault();
+        const handleDeleteSnippet = (snippet: Snippet, e: MouseEvent) => {
+            stopEvent(e);
             setDeletingSnippet(snippet);
             setDeleteDialogOpen(true);
         };
@@ -165,9 +163,13 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                     </div>
                 )}
 
+                {description && (
+                    <p className='text-sm text-muted-foreground mb-3'>{description}</p>
+                )}
+
                 {/* Snippets list */}
                 <ScrollArea className='max-h-40 border border-border'>
-                    {loading ? (
+                    {isLoading ? (
                         <div className='p-3 text-center'>
                             <Spinner className='size-10' />
                             <p className='text-sm text-muted-foreground mt-2'>

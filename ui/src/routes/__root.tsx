@@ -5,8 +5,7 @@ import * as Sentry from '@sentry/react';
 import '@styles/main.css';
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import type { ReactNode } from 'react';
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, type ReactNode } from 'react';
 import Loading from 'src/components/base/Loading/Loading';
 import { AuthProvider } from 'src/components/domain/auth/AuthProvider';
 import { Toaster } from 'src/components/ui/sonner';
@@ -60,7 +59,7 @@ function RootComponent() {
                             <Toaster />
                             <TooltipProvider>
                                 <div id='root-content'>
-                                    <Suspense fallback={<Loading logo={true} />}>
+                                    <Suspense fallback={<Loading logo />}>
                                         <Outlet />
                                     </Suspense>
                                 </div>
@@ -81,7 +80,7 @@ function RootDocument({ children }: { children: ReactNode }) {
             <head>
                 <HeadContent />
             </head>
-            <body className='h-screen w-screen p-0 m-0 overflow-hidden overflow-y-hidden'>
+            <body className='h-screen w-screen p-0 m-0 overflow-hidden'>
                 {children}
                 <Scripts />
             </body>

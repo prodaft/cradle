@@ -85,29 +85,30 @@ export type NavigateHandler = (path: string, options?: { event?: Event }) => voi
 export const handleLinkClick =
     (navigateHandler: NavigateHandler) =>
     (event: Event): boolean => {
-        const target = event.target as HTMLElement;
-        if (target.tagName === 'A' && (target as HTMLAnchorElement).href) {
-            event.preventDefault();
-            const anchor = target as HTMLAnchorElement;
-            if (!URL.canParse(anchor.href)) return false;
-            const url = new URL(anchor.href);
-            const navigatePath = anchor.dataset.customHref;
-            if (navigatePath) {
-                // Local links to dashboards
-                navigateHandler(navigatePath, { event });
-            } else {
-                // External links
-                window.open(anchor.href, '_blank');
-            }
-            return true;
+        const anchor = (event.target as HTMLElement | null)?.closest('a');
+        if (!anchor?.href) return false;
+
+        event.preventDefault();
+        try {
+            new URL(anchor.href);
+        } catch {
+            return false;
         }
-        return false;
+        const navigatePath = anchor.dataset.customHref;
+        if (navigatePath) {
+            // Local links to dashboards
+            navigateHandler(navigatePath, { event });
+        } else {
+            // External links
+            window.open(anchor.href, '_blank');
+        }
+        return true;
     };
 
 const LINK_REGEX_SINGLE =
     /^\[(?:([^:|]+)(?::(?:((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?)?)?\]$/;
 const LINK_REGEX_DOUBLE =
-    /(?:~)?^\[\[(?:([^:|]+)(?::(?:((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?)?)?\]\]$/;
+    /^(?:~)?\[\[(?:([^:|]+)(?::(?:((?:\\\||[^|])+))?(?:\|((?:\\\||[^|])+))?)?)?\]\]$/;
 
 /**
  * Autocomplete context for the editor
@@ -153,37 +154,41 @@ export const getLinkNode = (context: AutocompleteContext): SyntaxNode | null => 
  * @returns Parsed link or null
  */
 export const parseLink = (from: number, current: number, text: string): Link | null => {
-    // This is terrible, but it works
-    const match =
-        text === '[[]]' ? LINK_REGEX_DOUBLE.exec(text) : LINK_REGEX_SINGLE.exec(text);
+    const isDouble = text.startsWith('[[') && text.endsWith(']]');
+    const match = (isDouble ? LINK_REGEX_DOUBLE : LINK_REGEX_SINGLE).exec(text);
 
     if (!match) return null;
 
     // `alias` cannot have suggestions
-    const [_, type, name] = match;
+    const [, type, name] = match;
 
-    // Extract group positions
-    const typeStart = text === '[[]]' ? match.index + 2 + from : match.index + 1 + from;
+    // Extract group positions — regexes are anchored so match.index is always 0
+    const openLen = isDouble ? 2 : 1;
+    const typeStart = from + openLen;
     const typeEnd = type ? typeStart + type.length : typeStart;
 
     const nameStart = typeEnd + 1;
     const nameEnd = name ? nameStart + name.length : nameStart;
+
+    const typeText = text.slice(openLen, openLen + (type?.length ?? 0));
 
     if (current >= typeStart && current <= typeEnd)
         return {
             from: typeStart,
             to: typeEnd,
             type: null,
-            text: text.slice(typeStart - from, typeEnd - from),
+            text: typeText,
             post: (t: string) => `${t}:`,
         };
-    else if (nameStart && current >= nameStart && current <= nameEnd)
+    else if (current >= nameStart && current <= nameEnd)
         return {
             from: nameStart,
             to: nameEnd,
-            type: text.slice(typeStart - from, typeEnd - from),
-            text: text.slice(nameStart - from, nameEnd - from),
-            post: (t: string) => `${t}`,
+            type: typeText,
+            text: text.slice(
+                openLen + (type?.length ?? 0) + 1,
+                openLen + (type?.length ?? 0) + 1 + (name?.length ?? 0),
+            ),
         };
 
     return null;

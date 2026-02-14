@@ -1,8 +1,6 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import useApi from '@/hooks/api/use-api';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { SparkleIcon } from '@phosphor-icons/react';
-import { useMutation } from '@tanstack/react-query';
 import {
     useLoaderData,
     useRouter,
@@ -10,50 +8,31 @@ import {
     useSearch,
 } from '@tanstack/react-router';
 import { FileText, FolderOpen, History, Share2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { useEffect, useMemo, useRef } from 'react';
+import type { EntryResponse } from 'src/services/cradle/models';
 import ActivityList from '../activity/ActivityList';
 import DashboardEnrichmentRequests from './DashboardEnrichmentRequests';
 import Files from './Files';
 import Notes from './Notes';
 import Relations from './relations';
 
-/**
- * Dashboard component
- * Fetches and displays the dashboard data for an entry
- * If the entry does not exist, displays a 404 page
- * The dashboard displays the entry's name, type, description, related actors, entities, artifacts, metadata, and notes
- * The dashboard only displays the fields provided by the server, different entries may have different fields
- * If the user is an admin, a delete button is displayed in the navbar
- * If the user is not in publish mode, a button to enter publish mode is displayed in the navbar
- * If the entry is linked to entities to which the user does not have access to, a button to request access to view them is displayed
- * If the entry is an artifact, a button to search the artifact name on VirusTotal is displayed
- *
- * @function Dashboard
- * @returns {Dashboard}
- * @constructor
- */
-import type { EntryResponse } from 'src/services/cradle/models';
-
-// ...
-
 export default function Dashboard() {
     const loaderData = useLoaderData({
         from: '/_authenticated/dashboards/$subtype/$name',
     }) as { entry: EntryResponse };
     const contentObject = loaderData?.entry;
-    const { entriesApi } = useApi();
     const { isAdmin } = useAuthState();
     const router = useRouter();
-    const search = useSearch({ from: '/_authenticated/dashboards/$subtype/$name' });
+    const search = useSearch({
+        from: '/_authenticated/dashboards/$subtype/$name',
+    }) as { tab?: string };
     const location = useRouterState({
         select: (state) => state.location,
     });
     const dashboard = useRef<HTMLDivElement>(null);
-    const [activeTab, setActiveTab] = useState((search as any).tab || 'notes');
+    const activeTab = search.tab ?? 'notes';
 
     const handleTabChange = (tab: string) => {
-        setActiveTab(tab);
         router.navigate({
             to: location.pathname as any,
             search: { ...search, tab } as any,
@@ -70,51 +49,12 @@ export default function Dashboard() {
         ],
         [isAdmin],
     );
-    const deleteEntityMutation = useMutation({
-        mutationFn: async (entityId: number) => {
-            await entriesApi.entitiesDestroy({ entityId });
-        },
-        meta: {
-            successMessage: 'Entity deleted successfully.',
-        },
-        onSuccess: () => {
-            router.navigate({ to: '/' });
-        },
-    });
-
     // Scroll to top on mount
     useEffect(() => {
         if (dashboard.current) {
             dashboard.current.scrollTo(0, 0);
         }
     }, [contentObject]);
-
-    useEffect(() => {
-        const tab = (search as any).tab;
-        if (tab && tab !== activeTab) {
-            setActiveTab(tab);
-        }
-    }, [search, activeTab]);
-
-    useEffect(() => {
-        // Only reset if no tab is specified in URL
-        if (!(search as any).tab) {
-            setActiveTab('notes');
-        }
-    }, [contentObject?.id]);
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const handleDelete = () => {
-        if (!contentObject) return;
-        // Only entities can be deleted (not artifacts)
-        if (contentObject.type !== 'entity') {
-            toast.error('Only entities can be deleted.');
-            return;
-        }
-        if (contentObject.id) {
-            deleteEntityMutation.mutate(contentObject.id);
-        }
-    };
 
     // Early return if no content object is available
     if (!contentObject) {
@@ -133,7 +73,7 @@ export default function Dashboard() {
                             <div className='flex flex-col'>
                                 <h1 className='text-3xl font-medium break-all text-foreground tracking-tight'>
                                     {contentObject.type && (
-                                        <span className='text-muted-foreground text-2xl mr-2'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}:`}</span>
+                                        <span className='text-muted-foreground text-2xl mr-2'>{`${contentObject.subtype ?? contentObject.type}:`}</span>
                                     )}
                                     {contentObject.name}
                                 </h1>

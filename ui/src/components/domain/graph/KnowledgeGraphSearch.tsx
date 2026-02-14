@@ -37,7 +37,7 @@ export default function KnowledgeGraphSearch({
     const appliedRef = useRef(false);
     const { knowledgeGraphApi } = useApi();
 
-    const { data, isPending: loading } = useQuery({
+    const { data, isLoading } = useQuery({
         queryKey: [...queryKeys.knowledgeGraph.all, 'full'],
         queryFn: async () => {
             const response = await knowledgeGraphApi.knowledgeGraphRetrieveRaw({});
@@ -87,13 +87,12 @@ export default function KnowledgeGraphSearch({
         },
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch graph data',
         },
     });
 
     useEffect(() => {
-        onLoadingChange?.(loading);
-    }, [loading, onLoadingChange]);
+        onLoadingChange?.(isLoading);
+    }, [isLoading, onLoadingChange]);
 
     useEffect(() => {
         if (!data || appliedRef.current) return;

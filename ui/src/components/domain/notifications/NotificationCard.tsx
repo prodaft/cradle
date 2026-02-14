@@ -33,25 +33,28 @@ export default function NotificationCard({
     const router = useRouter();
 
     const markUnreadMutation = useMutation({
-        mutationFn: async (id: string) => {
+        mutationFn: async ({
+            id,
+            isMarkedUnread: nextIsMarkedUnread,
+        }: {
+            id: string;
+            isMarkedUnread: boolean;
+        }) => {
             await notificationsApi.notificationsUpdate({
                 notificationId: id,
                 updateNotificationRequest: {
-                    isMarkedUnread: !unreadStatus,
+                    isMarkedUnread: nextIsMarkedUnread,
                 },
             });
         },
         meta: {
-            errorMessage: 'Failed to update notification',
             suppressNotification: true, // We handle state updates ourselves
         },
-        onSuccess: () => {
-            if (unreadStatus) {
-                updateFlaggedNotificationsCount((prevCount) => prevCount - 1);
-            } else {
-                updateFlaggedNotificationsCount((prevCount) => prevCount + 1);
-            }
-            setUnreadStatus(!unreadStatus);
+        onSuccess: (_data, variables) => {
+            updateFlaggedNotificationsCount(
+                (prevCount) => prevCount + (variables.isMarkedUnread ? 1 : -1),
+            );
+            setUnreadStatus(variables.isMarkedUnread);
         },
     });
 
@@ -66,8 +69,8 @@ export default function NotificationCard({
             accessType: AccessRequestAccessTypeEnum;
         }) => {
             await accessApi.accessUserUpdate({
-                userId: userId,
-                entityId: Number(entityId),
+                userId,
+                entityId,
                 accessRequest: {
                     accessType,
                 },
@@ -75,7 +78,6 @@ export default function NotificationCard({
         },
         meta: {
             successMessage: 'Access level changed successfully',
-            errorMessage: 'Failed to change access',
         },
     });
 
@@ -90,7 +92,6 @@ export default function NotificationCard({
         },
         meta: {
             successMessage: 'User activated successfully.',
-            errorMessage: 'Failed to activate user',
         },
     });
 
@@ -115,7 +116,9 @@ export default function NotificationCard({
     });
 
     const handleMarkUnread = () => {
-        markUnreadMutation.mutate(id!);
+        if (!id) return;
+        const next = !unreadStatus;
+        markUnreadMutation.mutate({ id, isMarkedUnread: next });
     };
 
     const handleChangeAccess = (newAccess: AccessRequestAccessTypeEnum) => () => {
@@ -123,7 +126,7 @@ export default function NotificationCard({
         if (!notif.requestingUserId || !notif.entityId) return;
         changeAccessMutation.mutate({
             userId: notif.requestingUserId,
-            entityId: notif.entityId!,
+            entityId: notif.entityId,
             accessType: newAccess,
         });
     };
@@ -242,9 +245,7 @@ export default function NotificationCard({
                             variant='outline'
                             size='sm'
                             className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:border-primary hover:text-primary'
-                            onClick={() => {
-                                router.navigate({ to: '/reports' });
-                            }}
+                            onClick={() => router.navigate({ to: '/reports' })}
                         >
                             View Details
                         </Button>
@@ -256,7 +257,7 @@ export default function NotificationCard({
                             variant='outline'
                             size='sm'
                             className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:border-primary hover:text-primary'
-                            onClick={(e) => {
+                            onClick={() => {
                                 const notif =
                                     notification as EnrichmentCompleteNotification;
                                 router.navigate({
@@ -277,7 +278,7 @@ export default function NotificationCard({
                             variant='outline'
                             size='sm'
                             className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:border-primary hover:text-primary'
-                            onClick={(e) => {
+                            onClick={() => {
                                 const notif =
                                     notification as EnrichmentErrorNotification;
                                 router.navigate({

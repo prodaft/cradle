@@ -43,13 +43,12 @@ export default function NoteGraphSearch(
         const hasFetchedRef = useRef(false);
 
         // Query for note graph data
-        const { data: graphData, isPending: loading } = useQuery<SubGraph>({
+        const { data: graphData } = useQuery<SubGraph>({
             queryKey: queryKeys.notes.detail(`${noteId}-graph`),
             queryFn: () => notesApi.notesGraphRetrieve({ noteId }),
             enabled: !hasFetchedRef.current,
             meta: {
                 showErrorToast: true,
-                errorMessage: 'Failed to fetch graph data',
             },
         });
 

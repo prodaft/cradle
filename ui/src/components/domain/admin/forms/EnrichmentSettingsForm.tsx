@@ -34,10 +34,7 @@ interface EnrichmentSettingsFormProps {
     enrichment_class: string;
 }
 
-interface EclassOption extends SelectOption<string> {
-    value: string;
-    label: string;
-}
+type EclassOption = SelectOption<string>;
 
 interface FormField {
     type: 'string' | 'number' | 'choice' | 'boolean' | 'url';
@@ -54,18 +51,19 @@ interface FormFields {
 const createEnrichmentSchema = (form_fields: FormFields) => {
     const settingsShape = Object.entries(form_fields || {}).reduce(
         (acc, [key, field]) => {
-            let validator: z.ZodType = z.string();
+            let validator: z.ZodTypeAny = z.string();
 
             if (field.type === 'number') {
                 validator = z.coerce.number();
-            } else if (field.type === 'choice') {
-                validator = z.string();
             } else if (field.type === 'boolean') {
                 validator = z.boolean();
             } else if (field.type === 'url') {
-                validator = z.string().refine((val) => z.url().safeParse(val).success, {
-                    error: `${key} must be a valid URL`,
-                });
+                const urlValidator = z
+                    .string()
+                    .check(z.url({ error: `${key} must be a valid URL` }));
+                validator = field.required
+                    ? urlValidator
+                    : z.union([z.literal(''), urlValidator]);
             }
 
             if (field.required) {
@@ -76,11 +74,11 @@ const createEnrichmentSchema = (form_fields: FormFields) => {
                     field.type === 'url'
                 ) {
                     validator = (validator as z.ZodString).min(1, {
-                        error: `${key} is required`,
+                        message: `${key} is required`,
                     });
                 } else if (field.type === 'number') {
                     validator = (validator as z.ZodNumber).min(0, {
-                        error: `${key} is required`,
+                        message: `${key} is required`,
                     });
                 }
             }
@@ -88,7 +86,7 @@ const createEnrichmentSchema = (form_fields: FormFields) => {
             acc[key] = validator;
             return acc;
         },
-        {} as Record<string, z.ZodType>,
+        {} as Record<string, z.ZodTypeAny>,
     );
 
     return z.object({
@@ -131,7 +129,6 @@ export default function EnrichmentSettingsForm({
         },
         meta: {
             successMessage: 'Enrichment settings saved successfully',
-            errorMessage: 'Failed to save enrichment settings',
         },
     });
     const [validationSchema, setValidationSchema] = useState(
@@ -150,20 +147,20 @@ export default function EnrichmentSettingsForm({
     const {
         control,
         reset,
-        formState: { errors, isSubmitting },
+        formState: { isSubmitting },
     } = form;
 
     // Fetch all entry classes for the for_eclasses selector
     const fetchEntryClasses = async (q: string): Promise<EclassOption[]> => {
         try {
             return await fetchEntryClassesMutation.mutateAsync(q);
-        } catch (err) {
+        } catch (_err) {
             return [];
         }
     };
 
     // Query for enrichment settings
-    const { data: settingsData, isPending: loading } = useQuery({
+    const { data: settingsData, isLoading } = useQuery({
         queryKey: ['enrichment', 'settings', enrichment_class],
         queryFn: () =>
             intelioApi.enrichmentSettingsRetrieve({
@@ -186,8 +183,6 @@ export default function EnrichmentSettingsForm({
             Object.entries(settingsData.formFields || {}).forEach(([key, field]) => {
                 if (field.type === 'boolean') {
                     initialSettings[key] = settingsData.settings?.[key] ?? false;
-                } else if (field.type === 'number') {
-                    initialSettings[key] = settingsData.settings?.[key] ?? '';
                 } else {
                     initialSettings[key] = settingsData.settings?.[key] ?? '';
                 }
@@ -212,10 +207,10 @@ export default function EnrichmentSettingsForm({
 
     // Handle errors
     useEffect(() => {
-        if (settingsData === undefined && !loading && enrichment_class) {
+        if (settingsData === undefined && !isLoading && enrichment_class) {
             toast.error('Failed to load enrichment settings');
         }
-    }, [settingsData, loading, enrichment_class]);
+    }, [settingsData, isLoading, enrichment_class]);
 
     const displayName = settingsData?.displayName || '';
     const formFields = settingsData?.formFields || {};
@@ -223,11 +218,12 @@ export default function EnrichmentSettingsForm({
     const onSubmit = async (
         data: z.infer<ReturnType<typeof createEnrichmentSchema>>,
     ) => {
+        const { for_eclasses, ...rest } = data;
         const formatted_data = {
-            ...data,
-            forEclasses: data.for_eclasses?.map((item) => item.value),
+            ...rest,
+            forEclasses: for_eclasses?.map((item) => item.value),
         };
-        updateEnrichmentSettingsMutation.mutate(formatted_data);
+        await updateEnrichmentSettingsMutation.mutateAsync(formatted_data);
     };
 
     // Render form fields (docs: Field orientation="responsive" with FieldContent)
@@ -446,7 +442,7 @@ export default function EnrichmentSettingsForm({
         });
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen animate-pulse text-foreground'>
                 Loading enrichment settings...

@@ -1,12 +1,4 @@
-export { default as AdminPanelSection } from './AdminPanelSection';
 export { default as AdminPanelUserPermissions } from './AdminPanelUserPermissions';
-export { default as AdminPanelCardEnrichment } from './cards/AdminPanelCardEnrichment';
-export { default as AdminPanelCardEntity } from './cards/AdminPanelCardEntity';
-export { default as AdminPanelCardEntryType } from './cards/AdminPanelCardEntryType';
-export { default as AdminPanelCardManagement } from './cards/AdminPanelCardManagement';
-export { default as AdminPanelCardTypeMapping } from './cards/AdminPanelCardTypeMapping';
-export { default as AdminPanelCardUser } from './cards/AdminPanelCardUser';
-export { default as AdminPanelPermissionCard } from './cards/AdminPanelPermissionCard';
 export { default as EnrichmentSettingsForm } from './forms/EnrichmentSettingsForm';
 export { default as EntityForm } from './forms/EntityForm';
 export { default as EntriesSettingsForm } from './forms/EntriesSettingsForm';

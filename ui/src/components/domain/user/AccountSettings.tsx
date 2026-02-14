@@ -31,7 +31,6 @@ import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { UserConfig, UserRetrieve } from '@/services/cradle/models';
-import { parseAPIError } from '@/utils/api';
 import { PRESET_THEMES } from '@/utils/themes';
 import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -49,12 +48,6 @@ import ActiveSessions from './ActiveSessions';
 
 interface AccountSettingsProps {
     target?: string;
-}
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
 }
 
 interface OAuthMethod {
@@ -106,7 +99,6 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         },
         meta: {
             successMessage: 'Settings saved successfully',
-            errorMessage: 'Failed to save settings',
         },
     });
 
@@ -146,7 +138,6 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         },
         meta: {
             successMessage: 'Note template saved successfully',
-            errorMessage: 'Failed to save note template',
         },
     });
     const router = useRouter();
@@ -164,23 +155,22 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     const [noteTemplateContent, setNoteTemplateContent] = useState('');
 
     // Get active tab from URL search params, default to 'security'
-    const validTabs = ['security', 'sessions', 'oauth', 'appearance', 'editor'];
-    if (isAdmin) {
-        validTabs.push('activity');
-    }
+    const validTabs = useMemo(() => {
+        const tabs = ['security', 'sessions', 'oauth', 'appearance', 'editor'];
+        if (isAdmin) tabs.push('activity');
+        return tabs;
+    }, [isAdmin]);
 
-    const getActiveTab = () => {
-        const tab = (search as any)?.tab;
-        return validTabs.includes(tab || '') ? tab : 'security';
-    };
-    const [activeTab, setActiveTab] = useState(getActiveTab());
+    const tabParam = (search as any)?.tab as string | undefined;
+    const getActiveTab = (tab?: string) =>
+        tab && validTabs.includes(tab) ? tab : 'security';
+    const [activeTab, setActiveTab] = useState(() => getActiveTab(tabParam));
 
     // Update active tab when search params change and set initial tab
     useEffect(() => {
-        const tab = (search as any)?.tab;
-        if (!tab || !validTabs.includes(tab)) {
+        if (!tabParam || !validTabs.includes(tabParam)) {
             // Set default tab if no valid tab is present
-            if (!tab) {
+            if (!tabParam) {
                 const newSearch: any = { ...search, tab: 'security' };
                 router.navigate({
                     to: location.pathname as any,
@@ -190,10 +180,9 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
             }
             setActiveTab('security');
         } else {
-            setActiveTab(tab);
+            setActiveTab(tabParam);
         }
-    }, [(search as any)?.tab, router, location.pathname, search, validTabs]);
-    const [user, setUser] = useState<UserRetrieve | null>(null);
+    }, [tabParam, router, location.pathname, search, validTabs]);
     const [oauthConnections, setOauthConnections] = useState<Record<string, boolean>>(
         {},
     );
@@ -225,10 +214,10 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     };
 
     const {
-        register,
         handleSubmit,
         reset,
         getValues,
+        setValue,
         control,
         formState: { isDirty },
     } = useForm<AccountFormData>({
@@ -250,22 +239,15 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         }
     };
 
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'red',
-    });
-
     const previousValuesRef = useRef<Partial<AccountFormData> | null>(null);
 
     // Query for user data
-    const { data: userData, isPending: isPendingUser } = useQuery<UserRetrieve>({
+    const { data: userData } = useQuery<UserRetrieve>({
         queryKey: queryKeys.users.detail(target),
         queryFn: () => usersApi.usersRetrieve({ userId: target }),
         enabled: !!target,
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch user data',
             suppressNotification: true,
         },
     });
@@ -273,11 +255,9 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     // Populate form when user data is loaded
     useEffect(() => {
         if (!userData || !target) {
-            setUser(null);
             return;
         }
 
-        setUser(userData);
         const connections =
             (userData as any).oauthConnections ||
             (userData as any).oauth_connections ||
@@ -325,13 +305,13 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                 } else {
                     // Unknown theme name, treat as custom
                     setSelectedThemeType('custom');
-                    const { name, ...themeWithoutName } = userData.theme as any;
+                    const { name: _name, ...themeWithoutName } = userData.theme as any;
                     setCustomThemeJSON(JSON.stringify(themeWithoutName, null, 2));
                 }
             } else {
                 // Custom theme or no name field
                 setSelectedThemeType('custom');
-                const { name, ...themeWithoutName } = userData.theme as any;
+                const { name: _name, ...themeWithoutName } = userData.theme as any;
                 setCustomThemeJSON(
                     JSON.stringify(
                         Object.keys(themeWithoutName).length > 0
@@ -466,16 +446,9 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         mutationFn: async (provider: string) => {
             return await usersApi.usersOauthDisconnect({ provider });
         },
-        meta: {
-            suppressNotification: true,
-        },
         onSuccess: (_, provider) => {
             setOauthConnections((prev) => ({ ...prev, [provider]: false }));
             toast.success(`${provider} disconnected.`);
-        },
-        onError: async (error) => {
-            const parsed = await parseAPIError(error);
-            toast.error(parsed.detail);
         },
     });
 
@@ -535,7 +508,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                     return;
                 }
                 payload.theme = parsed;
-            } catch (error) {
+            } catch {
                 toast.error('Theme must be valid JSON.');
                 return;
             }
@@ -547,9 +520,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         }
 
         const userId = data.id;
-        if (!userId) {
-            return;
-        }
+        if (!userId) return;
 
         saveMutation.mutate(
             { userId, payload },
@@ -620,13 +591,26 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         if (themeType === 'custom') {
             // When switching to custom, populate with current theme without name
             const currentTheme = userData?.theme || PRESET_THEMES[0].theme;
-            const { name, ...themeWithoutName } = currentTheme as any;
+            const { name: _name, ...themeWithoutName } = currentTheme as any;
             setCustomThemeJSON(JSON.stringify(themeWithoutName, null, 2));
         } else {
             // Apply preset theme immediately
             const preset = PRESET_THEMES.find((p) => p.id === themeType);
             if (preset) {
-                setTheme(preset.theme);
+                const presetTheme: any = preset.theme;
+                const themeWithName =
+                    presetTheme &&
+                    typeof presetTheme === 'object' &&
+                    !Array.isArray(presetTheme)
+                        ? 'name' in presetTheme
+                            ? presetTheme
+                            : { name: preset.id, ...presetTheme }
+                        : { name: preset.id };
+
+                setTheme(themeWithName);
+                setValue('theme', JSON.stringify(themeWithName, null, 2), {
+                    shouldDirty: true,
+                });
                 toast.success(`Applied ${preset.label} theme`);
             }
         }
@@ -649,14 +633,17 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                 ...parsed,
             };
             setTheme(themeWithName);
+            setValue('theme', JSON.stringify(themeWithName, null, 2), {
+                shouldDirty: true,
+            });
             toast.success('Custom theme applied');
-        } catch (error) {
+        } catch {
             toast.error('Invalid JSON format');
         }
     };
 
     // Require user to be loaded
-    if (!user) return <div></div>;
+    if (!userData) return <div></div>;
 
     const handleTabChange = (tab: string) => {
         setActiveTab(tab);
@@ -665,19 +652,6 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
             search: { ...search, tab } as any,
             replace: true,
         });
-    };
-
-    const getRoleBadgeVariant = (role?: string) => {
-        switch (role) {
-            case 'admin':
-                return 'destructive';
-            case 'author':
-                return 'default';
-            case 'viewer':
-                return 'secondary';
-            default:
-                return 'outline';
-        }
     };
 
     const settingsTabs = [
@@ -755,7 +729,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                 />
                                 <form
                                     className='flex flex-col gap-6'
-                                    onSubmit={(e) => e.preventDefault()}
+                                    onSubmit={handleSubmit(() => void handleSave())}
                                 >
                                     {/* Security Section */}
                                     {activeTab === 'security' && (
@@ -893,7 +867,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {activeTab === 'activity' && isAdmin && (
                                         <section id='activity'>
                                             <UserActivityList
-                                                username={user.username}
+                                                username={userData.username}
                                             />
                                         </section>
                                     )}
@@ -1265,8 +1239,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                 />
                                                 <div className='flex justify-end pt-2'>
                                                     <Button
-                                                        type='button'
-                                                        onClick={handleSave}
+                                                        type='submit'
                                                         disabled={
                                                             saveMutation.isPending ||
                                                             !isDirty

@@ -18,7 +18,6 @@ import { ReportList } from '@/services/cradle';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch } from '@components/base/ActionBar/ActionBar';
-import { DateRangeFilter } from '@components/base/ListView/types';
 import PageHeader from '@components/base/PageHeader';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import { ArrowsClockwiseIcon, DownloadIcon, TrashIcon } from '@phosphor-icons/react';
@@ -37,18 +36,51 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { StatusIcon, type StatusType } from '../notes/StatusIcon';
 
-interface ColumnFilters {
-    [key: string]: string | DateRangeFilter | undefined;
-    status: string;
-    user: string;
-    createdAt: DateRangeFilter;
-}
+const SORT_FIELD_MAPPING: Record<string, string> = {
+    title: 'title',
+    strategy: 'strategy',
+    anonymized: 'anonymized',
+    createdAt: 'created_at',
+    user: 'user__username',
+};
 
-interface SelectProps {
-    enableMultiSelect?: boolean;
-    isSelected?: boolean;
-    onSelect?: (report: ReportList) => void;
-}
+const renderStatusIcon = (status?: string, errorMessage?: string) => {
+    if (!status) return null;
+
+    const tooltipContent = errorMessage || startCase(status);
+    const tooltipColorClass =
+        status === 'error'
+            ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
+            : status === 'warning'
+              ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
+              : '';
+
+    if ((status === 'error' || status === 'warning') && errorMessage) {
+        return (
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span className='inline-flex items-center flex-shrink-0'>
+                        <StatusIcon status={status as StatusType} />
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent side='right' className={tooltipColorClass}>
+                    {tooltipContent}
+                </TooltipContent>
+            </Tooltip>
+        );
+    }
+
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <span className='inline-flex items-center flex-shrink-0'>
+                    <StatusIcon status={status as StatusType} />
+                </span>
+            </TooltipTrigger>
+            <TooltipContent side='right'>{tooltipContent}</TooltipContent>
+        </Tooltip>
+    );
+};
 
 /**
  * Reports component - Displays reports for management
@@ -64,8 +96,6 @@ export default function Reports() {
     const { reportsApi } = useApi();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
-    const [singleDeleteDialogOpen, setSingleDeleteDialogOpen] = useState(false);
-    const [deletingReportId, setDeletingReportId] = useState<string | null>(null);
     const queryClient = useQueryClient();
 
     const fetchReportMutation = useMutation({
@@ -92,24 +122,12 @@ export default function Reports() {
     const [pageSize, setPageSize] = useState((search as any)?.reports_pagesize || 20);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string>('all');
 
     const selectedReportIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
         [rowSelection],
     );
-    const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
-        status: 'all',
-        user: '',
-        createdAt: { from: '', to: '' },
-    });
-
-    const sortFieldMapping: Record<string, string> = {
-        title: 'title',
-        strategy: 'strategy',
-        anonymized: 'anonymized',
-        createdAt: 'created_at',
-        user: 'user__username',
-    };
 
     // Sync URL params to state (for browser back/forward)
     useEffect(() => {
@@ -124,70 +142,39 @@ export default function Reports() {
         if (sortDirectionFromParams !== sortDirection)
             setSortDirection(sortDirectionFromParams);
         if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
-    }, [search]);
+    }, [search, page, pageSize, sortDirection, sortField]);
 
-    // Prepare query parameters
-    const queryParams = useMemo(() => {
-        const params: Record<string, any> = {
-            page,
-            page_size: pageSize,
-        };
-        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-        params.order_by = orderBy;
-
-        // Add filter parameters
-        if (columnFilters.user) {
-            params.user__username = columnFilters.user;
-        }
-        if (columnFilters.createdAt.from) {
-            params.created_at__gte = columnFilters.createdAt.from;
-        }
-        if (columnFilters.createdAt.to) {
-            params.created_at__lte = columnFilters.createdAt.to;
-        }
-
-        return params;
-    }, [
-        page,
-        pageSize,
-        sortField,
-        sortDirection,
-        columnFilters.user,
-        columnFilters.createdAt.from,
-        columnFilters.createdAt.to,
-    ]);
+    const orderBy = useMemo(
+        () => (sortDirection === 'desc' ? `-${sortField}` : sortField),
+        [sortDirection, sortField],
+    );
 
     // Query for reports
-    const { data: reportsData, isPending: loading } = useQuery({
+    const { data: reportsData, isLoading } = useQuery({
         queryKey: queryKeys.reports.list({
             page,
             pageSize,
             sortField,
             sortDirection,
-            statusFilter: columnFilters.status,
+            statusFilter,
             search: searchQuery || undefined,
         }),
         queryFn: () =>
             reportsApi.reportsList({
-                page: queryParams.page,
-                pageSize: queryParams.page_size,
-                orderBy: queryParams.order_by,
+                page,
+                pageSize,
+                orderBy,
                 search: searchQuery || undefined,
-                status:
-                    columnFilters.status && columnFilters.status !== 'all'
-                        ? columnFilters.status
-                        : undefined,
+                status: statusFilter !== 'all' ? statusFilter : undefined,
             }),
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch reports',
         },
     });
 
     const reports = reportsData?.results ?? [];
 
     const totalPages = reportsData?.totalPages || 1;
-    const totalCount = reportsData?.count || 0;
 
     const resetToFirstPage = useCallback(() => {
         router.navigate({
@@ -197,13 +184,16 @@ export default function Reports() {
         });
     }, [search, router, location.pathname]);
 
-    const handlePageChange = (newPage: number) => {
-        router.navigate({
-            to: location.pathname as any,
-            search: { ...(search as any), reports_page: newPage } as any,
-            replace: true,
-        });
-    };
+    const handlePageChange = useCallback(
+        (newPage: number) => {
+            router.navigate({
+                to: location.pathname as any,
+                search: { ...(search as any), reports_page: newPage } as any,
+                replace: true,
+            });
+        },
+        [router, location.pathname, search],
+    );
 
     // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
@@ -241,7 +231,7 @@ export default function Reports() {
                 setSortDirection('desc');
             } else {
                 const sort = sorting[0];
-                const apiField = sortFieldMapping[sort.id] || sort.id;
+                const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
                 setSortField(apiField);
                 setSortDirection(sort.desc ? 'desc' : 'asc');
             }
@@ -250,9 +240,13 @@ export default function Reports() {
                 ...(search as any),
                 reports_page: 1,
             };
-            if (sorting.length > 0) {
+            if (sorting.length === 0) {
+                // Ensure URL reflects default sort so back/forward sync doesn't re-apply old sort.
+                newSearch.reports_sort_field = 'created_at';
+                newSearch.reports_sort_direction = 'desc';
+            } else {
                 const sort = sorting[0];
-                const apiField = sortFieldMapping[sort.id] || sort.id;
+                const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
                 newSearch.reports_sort_field = apiField;
                 newSearch.reports_sort_direction = sort.desc ? 'desc' : 'asc';
             }
@@ -268,9 +262,7 @@ export default function Reports() {
     // Delete mutation
     const deleteMutation = useMutation({
         mutationFn: (id: string) => reportsApi.reportsDestroy({ id }),
-        meta: {
-            invalidateQueries: [{ queryKey: queryKeys.reports.lists() }],
-        },
+        meta: { suppressNotification: true },
     });
 
     const handleDelete = async (reportIds: string | string[]) => {
@@ -303,10 +295,17 @@ export default function Reports() {
                 );
             }
 
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.reports.lists(),
+            });
+
             setRowSelection({});
         } catch (error) {
             const parsed = await parseAPIError(error);
             toast.error(parsed.detail);
+        } finally {
+            setDeleteDialogOpen(false);
+            setDeletingReportIds([]);
         }
     };
 
@@ -353,40 +352,19 @@ export default function Reports() {
         }
     };
 
-    const handleColumnFilterChange = (
-        column: string,
-        value: string | DateRangeFilter,
-    ) => {
-        setColumnFilters((prev) => ({
-            ...prev,
-            [column]: value,
-        }));
-        // Reset to first page when filters change
-        router.navigate({
-            to: location.pathname as any,
-            search: { ...(search as any), reports_page: 1 } as any,
-            replace: true,
-        });
-    };
-
-    const handleStatusChange = (status: string) => {
-        setColumnFilters((prev) => ({
-            ...prev,
-            status,
-        }));
-        // Reset to first page when status filter changes
-        router.navigate({
-            to: location.pathname as any,
-            search: { ...(search as any), reports_page: 1 } as any,
-            replace: true,
-        });
-    };
+    const handleStatusChange = useCallback(
+        (status: string) => {
+            setStatusFilter(status);
+            resetToFirstPage();
+        },
+        [resetToFirstPage],
+    );
 
     // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
         const columnId =
-            Object.keys(sortFieldMapping).find(
-                (key) => sortFieldMapping[key] === sortField,
+            Object.keys(SORT_FIELD_MAPPING).find(
+                (key) => SORT_FIELD_MAPPING[key] === sortField,
             ) || sortField;
 
         return columnId
@@ -398,13 +376,6 @@ export default function Reports() {
               ]
             : [];
     }, [sortField, sortDirection]);
-
-    // Define filterable columns with their handlers
-    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-        {
-            user: (value) => handleColumnFilterChange('user', value),
-            createdAt: (value) => handleColumnFilterChange('createdAt', value),
-        };
 
     const handleDownload = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
@@ -430,44 +401,6 @@ export default function Reports() {
             const parsed = await parseAPIError(error);
             toast.error(parsed.detail);
         }
-    };
-
-    const getStatusIcon = (status?: string, errorMessage?: string) => {
-        if (!status) return null;
-
-        const tooltipContent = errorMessage || startCase(status);
-        const tooltipColorClass =
-            status === 'error'
-                ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
-                : status === 'warning'
-                  ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
-                  : '';
-
-        if ((status === 'error' || status === 'warning') && errorMessage) {
-            return (
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <span className='inline-flex items-center flex-shrink-0'>
-                            <StatusIcon status={status as StatusType} />
-                        </span>
-                    </TooltipTrigger>
-                    <TooltipContent side='right' className={tooltipColorClass}>
-                        {tooltipContent}
-                    </TooltipContent>
-                </Tooltip>
-            );
-        }
-
-        return (
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <span className='inline-flex items-center flex-shrink-0'>
-                        <StatusIcon status={status as StatusType} />
-                    </span>
-                </TooltipTrigger>
-                <TooltipContent side='right'>{tooltipContent}</TooltipContent>
-            </Tooltip>
-        );
     };
 
     // Memoize columns to prevent recreation on every render
@@ -508,7 +441,7 @@ export default function Reports() {
                 cell: ({ row }) => (
                     <div className='flex items-center gap-2 min-w-0'>
                         <span className='inline-flex items-center flex-shrink-0'>
-                            {getStatusIcon(
+                            {renderStatusIcon(
                                 row.original.status,
                                 row.original.errorMessage || undefined,
                             )}
@@ -561,7 +494,7 @@ export default function Reports() {
                 ),
             },
         ],
-        [columnFilters, getStatusIcon],
+        [],
     );
 
     const onTableSortingChange = useCallback(
@@ -609,7 +542,7 @@ export default function Reports() {
 
             {/* Content Area */}
             <div className='flex flex-col space-y-4 px-4 pb-4'>
-                {loading ? (
+                {isLoading ? (
                     <div className='flex min-h-[200px] items-center justify-center'>
                         <Spinner className='size-10' />
                     </div>
@@ -631,7 +564,7 @@ export default function Reports() {
                                             details.title,
                                     );
                                 }
-                            } catch (error) {
+                            } catch (_error) {
                                 // Error handled by mutation
                             }
                         }}
@@ -649,7 +582,7 @@ export default function Reports() {
                             />
                             <StatusHeaderDropdown
                                 onStatusChange={handleStatusChange}
-                                status={columnFilters.status}
+                                status={statusFilter}
                                 statusOptions={['all', 'done', 'working', 'error']}
                             />
                         </div>
@@ -671,7 +604,7 @@ export default function Reports() {
                     <ActionBarItem
                         onClick={() => handleDownload(selectedReportIds)}
                         disabled={
-                            loading ||
+                            isLoading ||
                             reports.length === 0 ||
                             selectedReportIds.length === 0
                         }
@@ -682,7 +615,7 @@ export default function Reports() {
                     <ActionBarItem
                         onClick={() => handleRetry(selectedReportIds)}
                         disabled={
-                            loading ||
+                            isLoading ||
                             reports.length === 0 ||
                             selectedReportIds.length === 0
                         }
@@ -693,7 +626,7 @@ export default function Reports() {
                     <ActionBarItem
                         onClick={() => handleDelete(selectedReportIds)}
                         disabled={
-                            loading ||
+                            isLoading ||
                             reports.length === 0 ||
                             selectedReportIds.length === 0
                         }
@@ -712,25 +645,6 @@ export default function Reports() {
                 text={`Are you sure you want to delete ${deletingReportIds.length} ${deletingReportIds.length > 1 ? 'reports' : 'report'}? This action is irreversible.`}
                 onConfirm={() => executeDelete(deletingReportIds)}
             />
-            {deletingReportId && (
-                <ConfirmDeletionDialog
-                    open={singleDeleteDialogOpen}
-                    onOpenChange={(open) => {
-                        setSingleDeleteDialogOpen(open);
-                        if (!open) setDeletingReportId(null);
-                    }}
-                    text='Are you sure you want to delete this report?'
-                    onConfirm={async () => {
-                        if (deletingReportId) {
-                            deleteMutation.mutate(deletingReportId, {
-                                onSuccess: () => {
-                                    toast.success('Report deleted successfully');
-                                },
-                            });
-                        }
-                    }}
-                />
-            )}
         </div>
     );
 }

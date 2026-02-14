@@ -11,7 +11,7 @@ export const Route = createFileRoute('/register')({
         let userConfig;
         try {
             userConfig = await usersApi.usersConfig();
-        } catch (error) {
+        } catch {
             return;
         }
 

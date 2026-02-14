@@ -23,13 +23,13 @@ import {
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
+import { SelectOption } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Entity } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { SelectOption } from '../../../forms';
 
 interface AddEntityFormProps {
     onAdd?: (result: Entity) => void;
@@ -39,11 +39,6 @@ interface SubtypeOption extends SelectOption<string> {
     value: string;
     label: string;
     prefix?: string;
-}
-
-interface AliasOption extends SelectOption<number> {
-    value: number;
-    label: string;
 }
 
 const entitySchema = z.object({
@@ -77,10 +72,8 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
     const [subtypeOptions, setSubtypeOptions] = useState<SubtypeOption[]>([]);
 
     const {
-        register,
         handleSubmit: handleFormSubmit,
-        reset,
-        watch,
+        setValue,
         control,
         formState: { errors, isSubmitting },
     } = useForm<AddEntityFormData>({
@@ -110,15 +103,6 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
         },
     });
 
-    // Fetch aliases for async select
-    const fetchAliases = async (q: string): Promise<AliasOption[]> => {
-        try {
-            return await fetchAliasesMutation.mutateAsync(q);
-        } catch (error) {
-            return [];
-        }
-    };
-
     const { data: entryClassesData } = useQuery({
         queryKey: queryKeys.entryTypes.lists(),
         queryFn: () => entriesApi.entryClassesList({ showCount: true }),
@@ -130,6 +114,35 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
     });
 
     const hasSetDefaultSubtype = useRef(false);
+    const nextNameRequestId = useRef(0);
+
+    const handleSubtypeChange = useCallback(
+        async (subtype: SubtypeOption | null) => {
+            if (!subtype) return;
+
+            const requestId = ++nextNameRequestId.current;
+            const namePrefix = subtype.prefix || `${subtype.value}-`;
+
+            setValue('subtype', subtype, { shouldValidate: true });
+            setValue('name', `${namePrefix}...`, { shouldDirty: true });
+
+            try {
+                const result = await entriesApi.entriesNextNameRetrieve({
+                    classSubtype: subtype.value,
+                });
+
+                if (nextNameRequestId.current !== requestId) return;
+
+                setValue('name', result.name || `${namePrefix}1`, {
+                    shouldDirty: true,
+                });
+            } catch (_error) {
+                if (nextNameRequestId.current !== requestId) return;
+                setValue('name', namePrefix, { shouldDirty: true });
+            }
+        },
+        [entriesApi, setValue],
+    );
 
     useEffect(() => {
         if (entryClassesData == null || hasSetDefaultSubtype.current) return;
@@ -145,37 +158,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
             hasSetDefaultSubtype.current = true;
             handleSubtypeChange(options[0]);
         }
-    }, [entryClassesData, reset]);
-
-    // Auto-fill name when subtype changes
-    const handleSubtypeChange = async (subtype: SubtypeOption | null) => {
-        if (!subtype) return;
-        const namePrefix = subtype.prefix || `${subtype.value}-`;
-
-        reset((prev: any) => ({
-            ...prev,
-            subtype,
-            name: `${namePrefix}...`,
-        }));
-
-        try {
-            const result = await entriesApi.entriesNextNameRetrieve({
-                classSubtype: subtype.value,
-            });
-
-            reset((prev: any) => ({
-                ...prev,
-                subtype,
-                name: result.name || `${namePrefix}1`,
-            }));
-        } catch (error) {
-            reset((prev: any) => ({
-                ...prev,
-                subtype,
-                name: namePrefix,
-            }));
-        }
-    };
+    }, [entryClassesData, handleSubtypeChange]);
 
     const createEntityMutation = useMutation({
         mutationFn: async (payload: any) => {
@@ -187,7 +170,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
             successMessage: 'Entity created successfully!',
         },
         onSuccess: (result) => {
-            if (onAdd) onAdd(result);
+            onAdd?.(result);
         },
     });
 
@@ -201,7 +184,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
             is_public: data.isPublic,
             aliases: data.aliases.map((alias) => alias.value),
         };
-        createEntityMutation.mutate(payload);
+        await createEntityMutation.mutateAsync(payload);
     };
 
     return (
@@ -356,7 +339,9 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                                     defaultOptions={[]}
                                     placeholder='Select aliases...'
                                     onSearch={async (query) => {
-                                        const results = await fetchAliases(query);
+                                        const results = await fetchAliasesMutation
+                                            .mutateAsync(query)
+                                            .catch((_error) => []);
                                         return results.map((a) => ({
                                             value: String(a.value),
                                             label: a.label,

@@ -37,6 +37,15 @@ interface ActiveSessionsProps {
     userId: string;
 }
 
+/** Maps react-table camelCase accessorKeys to the API's snake_case order_by fields. */
+const COLUMN_TO_FIELD: Record<string, string> = {
+    deviceInfo: 'device_info',
+    ipAddress: 'ip_address',
+    createdAt: 'created_at',
+    lastActivity: 'last_activity',
+    expiresAt: 'expires_at',
+};
+
 /**
  * ActiveSessions component - Displays and manages active user sessions
  */
@@ -50,7 +59,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const [revokeSessionId, setRevokeSessionId] = useState<string | null>(null);
     const [bulkRevokeDialogOpen, setBulkRevokeDialogOpen] = useState(false);
     const { usersApi } = useApi();
-    const { getAccessToken, logOut } = useAuthActions();
+    const { logOut } = useAuthActions();
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
@@ -58,27 +67,42 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const search = useSearch({ strict: false });
     const queryClient = useQueryClient();
 
-    const selectedSessionIds = useMemo(
-        () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
-        [rowSelection],
-    );
-
     const clearSelection = useCallback(() => {
         setRowSelection({});
     }, []);
 
+    const orderByParam = useMemo(() => {
+        if (!sorting.length) return undefined;
+        return (
+            sorting
+                .map(({ id, desc }) => {
+                    const field = COLUMN_TO_FIELD[id];
+                    if (!field) return null;
+                    return desc ? `-${field}` : field;
+                })
+                .filter(Boolean)
+                .join(',') || undefined
+        );
+    }, [sorting]);
+
     // Query for sessions
     const { data: sessions = [], isPending } = useQuery<UserSession[]>({
-        queryKey: ['users', 'detail', `${userId}-sessions`, searchQuery],
+        queryKey: ['users', 'detail', `${userId}-sessions`, searchQuery, orderByParam],
         queryFn: () =>
             usersApi.usersSessionsList({
                 userId,
                 search: searchQuery || undefined,
+                orderBy: orderByParam,
             }),
-        meta: {
-            errorMessage: 'Failed to fetch sessions',
-        },
     });
+
+    const selectedSessionIds = useMemo(
+        () =>
+            Object.keys(rowSelection)
+                .filter((key) => rowSelection[key])
+                .filter((id) => sessions.some((s) => s.id === id)),
+        [rowSelection, sessions],
+    );
 
     const getCurrentSessionJti = useCallback((): string | null => {
         // Get the refresh token from localStorage and decode it to get the JTI
@@ -94,7 +118,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')),
             );
             return payload.jti || null;
-        } catch (error) {
+        } catch {
             // Invalid token, return null
             return null;
         }
@@ -110,7 +134,6 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 { queryKey: ['users', 'detail', `${userId}-sessions`] },
             ],
             successMessage: 'Session revoked successfully',
-            errorMessage: 'Failed to revoke session',
         },
     });
 
@@ -136,11 +159,11 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                         return next;
                     });
                 }
-            } catch (error) {
-                // Error already handled by mutation
+            } catch {
+                // Error already handled by mutation meta/toasts
             }
         },
-        [userId, sessions, revokeSessionMutation, getCurrentSessionJti, logOut],
+        [sessions, revokeSessionMutation, getCurrentSessionJti, logOut],
     );
 
     const revokeSessions = useCallback(
@@ -161,11 +184,13 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                         `Successfully revoked ${successes} session${successes > 1 ? 's' : ''}`,
                     );
                 } else if (successes === 0) {
-                    toast.error(
-                        `Failed to revoke ${failures} session${failures > 1 ? 's' : ''}`,
-                    );
+                    const firstRejected = results.find(
+                        (r) => r.status === 'rejected',
+                    ) as PromiseRejectedResult;
+                    const parsed = await parseAPIError(firstRejected.reason);
+                    toast.error(parsed.detail);
                 } else {
-                    toast.success(
+                    toast.warning(
                         `Revoked ${successes} session${successes > 1 ? 's' : ''}, ${failures} failed`,
                     );
                 }
@@ -248,12 +273,6 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         return sessionsWithCurrent.slice(start, end);
     }, [sessionsWithCurrent, page, pageSize]);
 
-    // Handle sorting change
-    const handleSortingChange = useCallback((newSorting: SortingState) => {
-        setSorting(newSorting);
-        setPage(1);
-    }, []);
-
     // Handle page change
     const handlePageChange = useCallback(
         (newPage: number) => {
@@ -268,6 +287,15 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             });
         },
         [router, location.pathname, search],
+    );
+
+    // Handle sorting change
+    const handleSortingChange = useCallback(
+        (newSorting: SortingState) => {
+            setSorting(newSorting);
+            handlePageChange(1);
+        },
+        [handlePageChange],
     );
 
     // Handle page size change
@@ -289,12 +317,17 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     );
 
     // Sync URL params to state
+    const sessionsPageParam = (search as any)?.sessions_page;
+    const sessionsPageSizeParam = (search as any)?.sessions_pagesize;
+
     useEffect(() => {
-        const pageFromParams = (search as any)?.sessions_page || 1;
-        const pageSizeFromParams = (search as any)?.sessions_pagesize || 10;
-        if (pageFromParams !== page) setPage(pageFromParams);
-        if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
-    }, [(search as any)?.sessions_page, (search as any)?.sessions_pagesize]);
+        const nextPage = Number(sessionsPageParam ?? 1);
+        const nextPageSize = Number(sessionsPageSizeParam ?? 10);
+
+        if (Number.isFinite(nextPage) && nextPage !== page) setPage(nextPage);
+        if (Number.isFinite(nextPageSize) && nextPageSize !== pageSize)
+            setPageSize(nextPageSize);
+    }, [sessionsPageParam, sessionsPageSizeParam, page, pageSize]);
 
     // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
@@ -444,7 +477,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 enableSorting: false,
             },
         ],
-        [openRevokeConfirmationDialog],
+        [openRevokeConfirmationDialog, formatDate, formatDeviceInfo],
     );
 
     const table = useReactTable({
@@ -495,15 +528,14 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     <ActionBarSearch
                         placeholder='Search sessions...'
                         value={searchQuery}
-                        defaultExpanded={Boolean(searchQuery)}
                         debounceMs={300}
                         onDebouncedChange={(v) => {
                             setSearchQuery(v);
-                            setPage(1);
+                            handlePageChange(1);
                         }}
                         onSubmit={(v) => {
                             setSearchQuery(v);
-                            setPage(1);
+                            handlePageChange(1);
                         }}
                     />
                 </DataTable>
@@ -537,7 +569,6 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             {revokeSessionId !== null &&
                 (() => {
                     const session = sessions.find((s) => s.id === revokeSessionId);
-                    const currentJti = getCurrentSessionJti();
                     const isCurrentSession =
                         session && currentJti && session.refreshTokenJti === currentJti;
                     return (

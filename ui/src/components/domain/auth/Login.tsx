@@ -1,4 +1,3 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -19,7 +18,7 @@ import { useTheme } from '@/contexts/ui';
 import useApi from '@/hooks/api/use-api';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
-import { cn } from '@/lib/utils';
+import { parseAPIError } from '@/utils/api';
 import Logo from '@components/base/Logo/Logo';
 import {
     ArrowUUpLeftIcon,
@@ -27,20 +26,14 @@ import {
     EyeSlashIcon,
     MoonIcon,
     SunIcon,
-    WarningCircleIcon,
 } from '@phosphor-icons/react';
 import { UserConfig } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { lazy, Suspense, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 const GlobeVisualization = lazy(() => import('./GlobeVisualization'));
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
-}
 
 interface OAuthMethod {
     id?: string;
@@ -54,6 +47,15 @@ interface OAuthMethod {
     url?: string;
 }
 
+const getRedirectPath = (from: string | { pathname: string } | undefined) =>
+    typeof from === 'string'
+        ? from.includes('#')
+            ? from.slice(from.indexOf('#') + 1) || '/'
+            : from
+        : from?.pathname || '/';
+
+const OTP_INDICES = [0, 1, 2, 3, 4, 5] as const;
+
 /**
  * Login component - renders the login form.
  * Sets the username and password states for the AuthProvider when successfully logged in with the server
@@ -66,11 +68,6 @@ export default function Login() {
     const [twoFactorToken, setTwoFactorToken] = useState('');
     const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'red',
-    });
     const location = useRouterState({
         select: (state) => state.location,
     });
@@ -82,8 +79,9 @@ export default function Login() {
     };
 
     const { usersApi } = useApi();
-    const { basePath, role } = useAuthState();
+    const { basePath } = useAuthState();
     const { logIn, isLoggedIn } = useAuthActions();
+    const loggedIn = isLoggedIn();
 
     const router = useRouter();
 
@@ -91,24 +89,23 @@ export default function Login() {
     const { data: userConfig } = useQuery<UserConfig>({
         queryKey: queryKeys.users.config(),
         queryFn: () => usersApi.usersConfig(),
-        enabled: !!basePath && !isLoggedIn(),
+        enabled: !!basePath && !loggedIn,
         meta: {
             suppressNotification: true,
         },
     });
 
     const oauthMethods = userConfig?.oauthMethods || [];
-    const signup = userConfig?.signup ?? null;
+    const signup = userConfig?.signup;
 
     useEffect(() => {
         // If user is already logged in, redirect to dashboard
-        if (isLoggedIn()) {
+        if (loggedIn) {
             router.navigate({ to: '/', replace: true });
-            return;
         }
-    }, [role, router, isLoggedIn]);
+    }, [loggedIn, router]);
 
-    const apiBasePath = basePath ? basePath : '';
+    const apiBasePath = basePath ?? '';
     const apiRoot = apiBasePath.replace(/\/api\/?$/, '');
 
     const getOAuthKey = (method: OAuthMethod) => {
@@ -176,13 +173,19 @@ export default function Login() {
             redirectUrl.searchParams.set('redirect_uri', redirectUri);
             redirectUrl.searchParams.set('state', `oauth_login:${provider}`);
             return redirectUrl.toString();
-        } catch (error) {
+        } catch (_error) {
             // Invalid URL, return empty string
             return '';
         }
     };
 
-    const oauthOptions = oauthMethods.filter((method) => buildOAuthRedirectUrl(method));
+    const oauthOptions = oauthMethods
+        .map((method) => ({
+            redirectUrl: buildOAuthRedirectUrl(method),
+            key: `${getOAuthKey(method)}-${getOAuthUrl(method)}`,
+            label: getOAuthLabel(method),
+        }))
+        .filter((x) => !!x.redirectUrl);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -192,7 +195,6 @@ export default function Login() {
         }
 
         setIsSubmitting(true);
-        setAlert({ show: false, message: '', color: 'red' });
 
         try {
             const result = await logIn(
@@ -203,38 +205,24 @@ export default function Login() {
 
             if (result.result === 'success') {
                 setRequiresTwoFactor(false);
-                setAlert({ show: false, message: '', color: 'red' });
 
-                const redirectPath =
-                    typeof from === 'string'
-                        ? from.includes('#')
-                            ? from.slice(from.indexOf('#') + 1) || '/'
-                            : from
-                        : from?.pathname || '/';
-
-                router.navigate({ to: redirectPath as any, replace: true });
+                router.navigate({
+                    to: getRedirectPath(from) as any,
+                    replace: true,
+                });
                 return;
             } else if (result.result === 'requires_2fa') {
                 setRequiresTwoFactor(true);
-                setAlert({ show: false, message: '', color: 'yellow' });
-            } else if (result.result === 'unconfirmed_email') {
-                setAlert({ show: true, message: result.message || '', color: 'red' });
-            } else if (result.result === 'inactive_account') {
-                setAlert({ show: true, message: result.message || '', color: 'red' });
-            } else if (result.result === 'network_error') {
-                setAlert({ show: true, message: result.message || '', color: 'red' });
             } else {
-                setAlert({ show: true, message: result.message || '', color: 'red' });
+                toast.error(result.message || 'Login failed');
             }
         } catch (error) {
-            setAlert({
-                show: true,
-                message:
-                    error instanceof Error
-                        ? error.message
-                        : 'An unexpected error occurred',
-                color: 'red',
-            });
+            try {
+                const parsed = await parseAPIError(error);
+                toast.error(parsed.detail);
+            } catch {
+                toast.error('Login failed');
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -242,7 +230,7 @@ export default function Login() {
 
     // If user is logged in, don't render the login form
     // This prevents flash of login page after successful login
-    if (isLoggedIn()) {
+    if (loggedIn) {
         return null;
     }
 
@@ -261,11 +249,6 @@ export default function Login() {
                             onClick={() => {
                                 setRequiresTwoFactor(false);
                                 setTwoFactorToken('');
-                                setAlert({
-                                    show: false,
-                                    message: '',
-                                    color: 'red',
-                                });
                             }}
                             variant='ghost'
                             size='icon-sm'
@@ -295,10 +278,7 @@ export default function Login() {
                 {/* Form Container */}
                 <div className='flex flex-1 items-center justify-center'>
                     <div className='w-full max-w-xs'>
-                        <form
-                            className={cn('flex flex-col gap-6')}
-                            onSubmit={handleSubmit}
-                        >
+                        <form className='flex flex-col gap-6' onSubmit={handleSubmit}>
                             <FieldGroup className='gap-4'>
                                 {!requiresTwoFactor && (
                                     <div className='flex flex-col items-center gap-1 text-center'>
@@ -333,30 +313,13 @@ export default function Login() {
                                                 containerClassName='w-full'
                                             >
                                                 <InputOTPGroup className='w-full'>
-                                                    <InputOTPSlot
-                                                        index={0}
-                                                        className='flex-1 h-12'
-                                                    />
-                                                    <InputOTPSlot
-                                                        index={1}
-                                                        className='flex-1 h-12'
-                                                    />
-                                                    <InputOTPSlot
-                                                        index={2}
-                                                        className='flex-1 h-12'
-                                                    />
-                                                    <InputOTPSlot
-                                                        index={3}
-                                                        className='flex-1 h-12'
-                                                    />
-                                                    <InputOTPSlot
-                                                        index={4}
-                                                        className='flex-1 h-12'
-                                                    />
-                                                    <InputOTPSlot
-                                                        index={5}
-                                                        className='flex-1 h-12'
-                                                    />
+                                                    {OTP_INDICES.map((i) => (
+                                                        <InputOTPSlot
+                                                            key={i}
+                                                            index={i}
+                                                            className='flex-1 h-12'
+                                                        />
+                                                    ))}
                                                 </InputOTPGroup>
                                             </InputOTP>
                                             <FieldDescription>
@@ -364,24 +327,6 @@ export default function Login() {
                                                 authenticator app
                                             </FieldDescription>
                                         </Field>
-                                        {alert.show && (
-                                            <Alert
-                                                variant={
-                                                    alert.color === 'red' ||
-                                                    alert.color === 'error'
-                                                        ? 'destructive'
-                                                        : 'default'
-                                                }
-                                            >
-                                                <WarningCircleIcon
-                                                    size={18}
-                                                    weight='bold'
-                                                />
-                                                <AlertDescription>
-                                                    {alert.message}
-                                                </AlertDescription>
-                                            </Alert>
-                                        )}
                                         <Field>
                                             <Button
                                                 type='submit'
@@ -482,24 +427,6 @@ export default function Login() {
                                                 </InputGroupAddon>
                                             </InputGroup>
                                         </Field>
-                                        {alert.show && (
-                                            <Alert
-                                                variant={
-                                                    alert.color === 'red' ||
-                                                    alert.color === 'error'
-                                                        ? 'destructive'
-                                                        : 'default'
-                                                }
-                                            >
-                                                <WarningCircleIcon
-                                                    size={18}
-                                                    weight='bold'
-                                                />
-                                                <AlertDescription>
-                                                    {alert.message}
-                                                </AlertDescription>
-                                            </Alert>
-                                        )}
                                         <Field>
                                             <Button
                                                 type='submit'
@@ -522,44 +449,30 @@ export default function Login() {
                                                         Or continue with
                                                     </FieldDescription>
                                                 </Field>
-                                                {oauthOptions.map((method) => (
-                                                    <Field
-                                                        key={`${getOAuthKey(method)}-${getOAuthUrl(method)}`}
-                                                    >
-                                                        <Button
-                                                            type='button'
-                                                            variant='outline'
-                                                            size='default'
-                                                            className='w-full'
-                                                            onClick={() => {
-                                                                const redirectPath =
-                                                                    typeof from ===
-                                                                    'string'
-                                                                        ? from.includes(
-                                                                              '#',
-                                                                          )
-                                                                            ? from.slice(
-                                                                                  from.indexOf(
-                                                                                      '#',
-                                                                                  ) + 1,
-                                                                              ) || '/'
-                                                                            : from
-                                                                        : from?.pathname ||
-                                                                          '/';
-                                                                sessionStorage.setItem(
-                                                                    'oauth_login_redirect',
-                                                                    redirectPath,
-                                                                );
-                                                                window.location.href =
-                                                                    buildOAuthRedirectUrl(
-                                                                        method,
+                                                {oauthOptions.map(
+                                                    ({ key, label, redirectUrl }) => (
+                                                        <Field key={key}>
+                                                            <Button
+                                                                type='button'
+                                                                variant='outline'
+                                                                size='default'
+                                                                className='w-full'
+                                                                onClick={() => {
+                                                                    sessionStorage.setItem(
+                                                                        'oauth_login_redirect',
+                                                                        getRedirectPath(
+                                                                            from,
+                                                                        ),
                                                                     );
-                                                            }}
-                                                        >
-                                                            {getOAuthLabel(method)}
-                                                        </Button>
-                                                    </Field>
-                                                ))}
+                                                                    window.location.href =
+                                                                        redirectUrl;
+                                                                }}
+                                                            >
+                                                                {label}
+                                                            </Button>
+                                                        </Field>
+                                                    ),
+                                                )}
                                             </>
                                         )}
                                         {basePath && signup !== false && (

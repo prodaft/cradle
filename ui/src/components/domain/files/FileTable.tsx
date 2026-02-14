@@ -13,29 +13,17 @@ import {
     TrashIcon,
 } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import {
-    ColumnDef,
-    getCoreRowModel,
-    getSortedRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
-import { useMemo, useState } from 'react';
+import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { useCallback, useMemo, useState } from 'react';
 
-/**
- * This component is used to display a table of fileData.
- * The table has three columns:
- * - The Tag column contains the tag that can be used to reference the file in the markdown content.
- * - The Filename column contains the name of the file.
- * - The Actions column contains two buttons: one to copy the tag to the clipboard and one to delete the file.
- * The tag will be copied with the syntax [<filename>][<tag>]. Deleting a file will remove it from the table.
- *
- * @function FileTable
- * @param {FileReference[]} fileData - a list of fileData to be displayed in the table. Each file has a tag, a name, and its bucket.
- * @param {StateSetter<FileReference[]>} setFileData - callback used when the fileData change
- * @param {(text: string) => void} insertTextCallback - callback to insert text into editor
- * @returns {FileTable}
- * @constructor
- */
+const buildReferenceTag = (file: FileReference) =>
+    file.id && file.fileName ? `${file.id}-${file.fileName}` : (file.id ?? '');
+
+const buildMarkdownReference = (file: FileReference) => {
+    const name = file.fileName ?? 'file';
+    const tag = buildReferenceTag(file);
+    return `[${name}][${tag}]`;
+};
 interface FileTableProps {
     fileData: FileReference[];
     setFileData: (data: FileReference[]) => void;
@@ -48,7 +36,6 @@ export default function FileTable({
     insertTextCallback,
 }: FileTableProps) {
     const { fileTransferApi, basePath } = useApi();
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingFile, setDeletingFile] = useState<FileReference | null>(null);
 
     const downloadMutation = useMutation({
@@ -63,31 +50,42 @@ export default function FileTable({
         },
     });
 
-    // Pre-configured clipboard copy with automatic error/success handling
-    const copyToClipboard = async (text: string) => {
+    const copyToClipboard = useCallback(async (text: string) => {
         await navigator.clipboard.writeText(text);
-    };
+    }, []);
 
     // Removes a file from the table only. The file is not deleted from the server.
-    const handleDelete = (data: FileReference) => {
-        setFileData(fileData.filter((d) => d.id !== data.id));
-        const minioCache = JSON.parse(localStorage.getItem('minio-cache') || '{}');
-        if (minioCache) {
-            delete minioCache[createDownloadPath(data, basePath)];
-            localStorage.setItem('minio-cache', JSON.stringify(minioCache));
-        }
-    };
+    const handleDelete = useCallback(
+        (data: FileReference) => {
+            setFileData(fileData.filter((d) => d.id !== data.id));
+            try {
+                const raw = localStorage.getItem('minio-cache');
+                if (!raw) return;
+                const minioCache = JSON.parse(raw) as Record<string, unknown>;
+                delete minioCache[createDownloadPath(data, basePath)];
+                localStorage.setItem('minio-cache', JSON.stringify(minioCache));
+            } catch {
+                // Ignore cache corruption / JSON parse errors
+            }
+        },
+        [basePath, fileData, setFileData],
+    );
 
     // Downloads a file
-    const handleDownload = async (data: FileReference) => {
-        const presignedUrl = await downloadMutation.mutateAsync(data.id!);
-        const link = document.createElement('a');
-        link.href = presignedUrl;
-        link.download = data.fileName || 'data';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
+    const { mutateAsync: downloadFile } = downloadMutation;
+    const handleDownload = useCallback(
+        async (data: FileReference) => {
+            if (!data.id) return;
+            const presignedUrl = await downloadFile(data.id);
+            const link = document.createElement('a');
+            link.href = presignedUrl;
+            link.download = data.fileName || 'data';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        },
+        [downloadFile],
+    );
 
     // Memoize columns to prevent recreation on every render
     const columns = useMemo<ColumnDef<FileReference>[]>(
@@ -114,17 +112,14 @@ export default function FileTable({
                 enableSorting: false,
             },
             {
-                accessorKey: 'tag',
                 id: 'tag',
+                accessorFn: (row) => buildReferenceTag(row),
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Reference Tag' />
                 ),
                 cell: ({ row }) => {
                     const data = row.original;
-                    const tag =
-                        data.id && data.fileName
-                            ? `${data.id}-${data.fileName}`
-                            : data.id || '';
+                    const tag = buildReferenceTag(data);
                     return (
                         <code
                             className='text-xs text-muted-foreground font-mono truncate max-w-[480px] block'
@@ -141,10 +136,7 @@ export default function FileTable({
                 header: '',
                 cell: ({ row }) => {
                     const data = row.original;
-                    const tag =
-                        data.id && data.fileName
-                            ? `${data.id}-${data.fileName}`
-                            : data.id || '';
+                    const reference = buildMarkdownReference(data);
                     return (
                         <div className='flex items-center justify-end gap-1'>
                             <Tooltip>
@@ -157,9 +149,7 @@ export default function FileTable({
                                         className='size-7 text-muted-foreground hover:text-foreground'
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            insertTextCallback(
-                                                `[${data.fileName}][${tag}]`,
-                                            );
+                                            insertTextCallback(reference);
                                         }}
                                     >
                                         <TextboxIcon className='size-4' weight='bold' />
@@ -177,9 +167,7 @@ export default function FileTable({
                                         className='size-7 text-muted-foreground hover:text-foreground'
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            copyToClipboard(
-                                                `[${data.fileName}][${tag}]`,
-                                            );
+                                            copyToClipboard(reference);
                                         }}
                                     >
                                         <ClipboardTextIcon
@@ -222,7 +210,6 @@ export default function FileTable({
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setDeletingFile(data);
-                                            setDeleteDialogOpen(true);
                                         }}
                                     >
                                         <TrashIcon className='size-4' weight='bold' />
@@ -243,34 +230,30 @@ export default function FileTable({
         data: fileData,
         columns,
         getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
         getRowId: (row, index) => row.id ?? String(index),
     });
 
     return (
         <div className='w-full h-full text-sm [&_.rounded-md.border]:rounded-none [&_.rounded-md.border]:border-0'>
-            {!fileData || fileData.length === 0 ? (
+            {fileData.length === 0 ? (
                 <p className='px-4 py-3 text-muted-foreground text-center'>
                     No files uploaded yet.
                 </p>
             ) : (
                 <DataTable table={table} showViewOptions />
             )}
-            {deletingFile && (
-                <ConfirmDeletionDialog
-                    open={deleteDialogOpen}
-                    onOpenChange={(open) => {
-                        setDeleteDialogOpen(open);
-                        if (!open) setDeletingFile(null);
-                    }}
-                    text='Are you sure you want to delete this file?'
-                    onConfirm={() => {
-                        if (deletingFile) {
-                            handleDelete(deletingFile);
-                        }
-                    }}
-                />
-            )}
+            <ConfirmDeletionDialog
+                open={Boolean(deletingFile)}
+                onOpenChange={(open) => {
+                    if (!open) setDeletingFile(null);
+                }}
+                text='Remove this file from the list?'
+                onConfirm={() => {
+                    if (!deletingFile) return;
+                    handleDelete(deletingFile);
+                    setDeletingFile(null);
+                }}
+            />
         </div>
     );
 }

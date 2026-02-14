@@ -6,30 +6,25 @@ import React, { useState } from 'react';
 
 interface TreeNodeProps {
     nodeData: HeaderNode;
-    level?: number;
     showSeparators?: boolean;
     currentLine?: number;
 }
 
 const TreeNode: React.FC<TreeNodeProps> = ({
     nodeData,
-    level = 0,
     showSeparators = false,
     currentLine,
 }) => {
     const [expanded, setExpanded] = useState(true);
-    const hasChildren = nodeData.children && nodeData.children.length > 0;
+    const children = nodeData.children ?? [];
+    const hasChildren = children.length > 0;
 
     const toggleExpand = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setExpanded(!expanded);
+        setExpanded((v) => !v);
     };
 
-    const handleNodeClick = () => {
-        if (nodeData.onNodeClick) {
-            nodeData.onNodeClick(nodeData.nodeName, nodeData.children, level);
-        }
-    };
+    const handleNodeClick = () => nodeData.onNodeClick?.();
 
     // Check if this node is the current line
     const isCurrent =
@@ -40,7 +35,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
     return (
         <div className='ml-4'>
             <div
-                className={`flex items-center py-1 rounded cursor-pointer hover:text-border-primary`}
+                className='flex items-center py-1 rounded cursor-pointer hover:text-border-primary'
                 onClick={handleNodeClick}
             >
                 {hasChildren ? (
@@ -79,14 +74,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
             {expanded && hasChildren && (
                 <div className='border-l border-border pl-1 ml-2'>
-                    {nodeData.children!.map((child, index) => (
+                    {children.map((child, index) => (
                         <React.Fragment key={`${index}_${child.nodeName}`}>
                             {showSeparators && child.separatorBefore && (
                                 <Separator className='my-2 mx-2 opacity-70' />
                             )}
                             <TreeNode
                                 nodeData={child}
-                                level={level + 1}
                                 showSeparators={showSeparators}
                                 currentLine={currentLine}
                             />
@@ -113,6 +107,11 @@ const NoteOutline: React.FC<NoteOutlineProps> = ({
 }) => {
     return (
         <div className='pt-3'>
+            {title && (
+                <div className='px-1 pb-2 text-xs font-medium text-muted-foreground'>
+                    {title}
+                </div>
+            )}
             <div className='text-muted-foreground text-sm'>
                 {data.map((node, index) => (
                     <React.Fragment key={`${index}_${node.nodeName}`}>

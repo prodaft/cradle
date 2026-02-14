@@ -47,7 +47,7 @@ import {
 } from '@/components/ui/table';
 import useApi from '@/hooks/api/use-api';
 import { cn } from '@/lib/utils';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { startCase } from 'lodash';
 import {
     CheckIcon,
@@ -57,7 +57,7 @@ import {
     Trash2,
     Undo2,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface Option {
@@ -171,40 +171,72 @@ const InternalClassCombobox = ({
 };
 
 const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
-    const [columnDefinitions, setColumnDefinitions] =
-        useState<ColumnDefinitions | null>(null);
     const [rows, setRows] = useState<RowData[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
     const { intelioApi, entriesApi } = useApi();
+    const rowsInitializedForId = useRef<string | null>(null);
 
-    // Mutations for fetching data
-    const fetchMappingKeysMutation = useMutation({
-        mutationFn: async () => {
-            return await intelioApi.mappingsKeysSchema({ className: id });
-        },
-        meta: {
-            suppressNotification: true,
-        },
+    const mappingKeysQuery = useQuery({
+        queryKey: ['mappings', 'keys', id],
+        queryFn: () => intelioApi.mappingsKeysSchema({ className: id }),
+        meta: { showErrorToast: true },
     });
 
-    const fetchEntryClassesMutation = useMutation({
-        mutationFn: async () => {
-            return await entriesApi.entryClassesList({});
-        },
-        meta: {
-            suppressNotification: true,
-        },
+    const entryClassesQuery = useQuery({
+        queryKey: ['entries', 'classes'],
+        queryFn: () => entriesApi.entryClassesList({}),
+        meta: { showErrorToast: true },
     });
 
-    const fetchMappingsMutation = useMutation({
-        mutationFn: async () => {
-            return await intelioApi.mappingsSchemaList({ className: id });
-        },
-        meta: {
-            suppressNotification: true,
-        },
+    const mappingsQuery = useQuery({
+        queryKey: ['mappings', 'schema', id],
+        queryFn: () => intelioApi.mappingsSchemaList({ className: id }),
+        meta: { showErrorToast: true },
     });
+
+    const isLoading =
+        mappingKeysQuery.isLoading ||
+        entryClassesQuery.isLoading ||
+        mappingsQuery.isLoading;
+
+    const columnDefinitions = useMemo<ColumnDefinitions | null>(() => {
+        if (!mappingKeysQuery.data || !entryClassesQuery.data) return null;
+
+        const mappingKeys = mappingKeysQuery.data as unknown as ColumnDefinitions;
+        const entryClasses = entryClassesQuery.data?.results ?? [];
+
+        const transformedMappingKeys: ColumnDefinitions = {};
+        for (const [key, colDef] of Object.entries(mappingKeys)) {
+            if (colDef.type === 'options' && colDef.options) {
+                const firstOption = colDef.options[0];
+                if (typeof firstOption === 'string') {
+                    transformedMappingKeys[key] = {
+                        ...colDef,
+                        options: (colDef.options as unknown as string[]).map((opt) => ({
+                            value: opt,
+                            label: opt,
+                        })),
+                    };
+                } else {
+                    transformedMappingKeys[key] = colDef;
+                }
+            } else {
+                transformedMappingKeys[key] = colDef;
+            }
+        }
+
+        return {
+            ...transformedMappingKeys,
+            internal_class: {
+                type: 'options',
+                options: entryClasses.map((x) => ({
+                    value: x.subtype,
+                    label: x.subtype,
+                })),
+                required: true,
+            },
+        };
+    }, [mappingKeysQuery.data, entryClassesQuery.data]);
 
     // Mutations for saving/deleting
     const deleteMappingMutation = useMutation({
@@ -213,7 +245,6 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         },
         meta: {
             successMessage: 'Mapping deleted successfully',
-            errorMessage: 'Failed to delete mapping',
         },
     });
 
@@ -226,7 +257,6 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         },
         meta: {
             successMessage: 'Mapping saved successfully',
-            errorMessage: 'Failed to save mapping',
         },
     });
 
@@ -243,7 +273,6 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         },
         meta: {
             successMessage: 'All mappings saved successfully',
-            errorMessage: 'Failed to save mappings',
         },
     });
 
@@ -256,12 +285,15 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
           ]
         : [];
 
-    // Create a new empty row using defaults if provided; note id is null by default.
-    function createEmptyRow(): RowData {
+    const buildEmptyRow = (definitions: ColumnDefinitions): RowData => {
         const emptyRow: RowData = { id: null, edited: false };
-        allColumns.forEach((col) => {
-            if (!columnDefinitions) return;
-            const colDef = columnDefinitions[col];
+        const columns = [
+            'internal_class',
+            ...Object.keys(definitions).filter((col) => col !== 'internal_class'),
+        ];
+
+        columns.forEach((col) => {
+            const colDef = definitions[col];
             const colType = colDef?.type;
             if (colDef?.default !== undefined) {
                 emptyRow[col] = colDef.default;
@@ -270,137 +302,69 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             }
         });
         return emptyRow;
-    }
+    };
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Returns a record of column definitions
-                const mappingKeys =
-                    (await fetchMappingKeysMutation.mutateAsync()) as unknown as ColumnDefinitions;
-
-                const entryClassesResponse =
-                    await fetchEntryClassesMutation.mutateAsync();
-                const entryClasses = entryClassesResponse?.results ?? [];
-                const mappings = (await fetchMappingsMutation.mutateAsync()) as any[]; // The response here is a list of objects with dynamic keys
-
-                // Transform string arrays in options to {value, label} format
-                const transformedMappingKeys: ColumnDefinitions = {};
-                for (const [key, colDef] of Object.entries(mappingKeys)) {
-                    if (colDef.type === 'options' && colDef.options) {
-                        // Check if options are strings and need transformation
-                        const firstOption = colDef.options[0];
-                        if (typeof firstOption === 'string') {
-                            transformedMappingKeys[key] = {
-                                ...colDef,
-                                options: (colDef.options as unknown as string[]).map(
-                                    (opt) => ({
-                                        value: opt,
-                                        label: opt,
-                                    }),
-                                ),
-                            };
-                        } else {
-                            transformedMappingKeys[key] = colDef;
-                        }
-                    } else {
-                        transformedMappingKeys[key] = colDef;
-                    }
-                }
-
-                const cols: ColumnDefinitions = {
-                    ...transformedMappingKeys,
-                    internal_class: {
-                        type: 'options',
-                        options: entryClasses.map((x) => ({
-                            value: x.subtype,
-                            label: x.subtype,
-                        })),
-                        required: true,
-                    },
-                };
-                setColumnDefinitions(cols);
-
-                // Transform option values in existing data to {value, label} format
-                const mappedRows = mappings.map((mapping) => {
-                    const transformedMapping: any = {
-                        id: mapping.id,
-                        edited: false,
-                    };
-
-                    for (const [key, value] of Object.entries(mapping)) {
-                        if (key === 'id') continue;
-
-                        const colDef = cols[key];
-                        if (
-                            colDef?.type === 'options' &&
-                            value !== null &&
-                            value !== undefined
-                        ) {
-                            // Transform string values to {value, label} format
-                            if (typeof value === 'string') {
-                                transformedMapping[key] = {
-                                    value: value,
-                                    label: value,
-                                };
-                            } else {
-                                transformedMapping[key] = value;
-                            }
-                        } else {
-                            transformedMapping[key] = value;
-                        }
-                    }
-
-                    return transformedMapping;
-                });
-
-                let initialRows = mappedRows.length > 0 ? mappedRows : [];
-                // We can't append createEmptyRow directly here because we need columnDefinitions state set first?
-                // Actually, we have 'cols' available here, so we can use it.
-
-                // Helper to create empty row with local cols
-                const createLocalEmptyRow = (definitions: ColumnDefinitions) => {
-                    const emptyRow: RowData = { id: null, edited: false };
-                    const columns = [
-                        'internal_class',
-                        ...Object.keys(definitions).filter(
-                            (col) => col !== 'internal_class',
-                        ),
-                    ];
-
-                    columns.forEach((col) => {
-                        const colDef = definitions[col];
-                        const colType = colDef?.type;
-                        if (colDef?.default !== undefined) {
-                            emptyRow[col] = colDef.default;
-                        } else {
-                            emptyRow[col] = colType === 'options' ? null : '';
-                        }
-                    });
-                    return emptyRow;
-                };
-
-                initialRows = [...initialRows, createLocalEmptyRow(cols)];
-                setRows(initialRows);
-            } catch (error) {
-                // Error already handled by mutation
-            } finally {
-                setIsLoading(false);
+    const buildRequestBody = (
+        row: RowData,
+        opts: { omitId?: boolean } = {},
+    ): Record<string, any> => {
+        if (!columnDefinitions) return {};
+        const body: Record<string, any> = {};
+        for (const [key, value] of Object.entries(row)) {
+            if (key === 'edited') continue;
+            if (opts.omitId && key === 'id') continue;
+            if (columnDefinitions[key]?.type === 'options') {
+                body[key] = value?.value;
+            } else {
+                body[key] = value;
             }
-        };
-        fetchData();
-    }, [id]);
-
-    // Auto-add a new empty row when the last row has been edited.
-    useEffect(() => {
-        if (!columnDefinitions) return;
-        const lastRow = rows[rows.length - 1];
-        if (!lastRow) return;
-        if (lastRow.edited) {
-            setRows([...rows, createEmptyRow()]);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [rows, columnDefinitions]);
+        return body;
+    };
+
+    useEffect(() => {
+        if (!columnDefinitions || !mappingsQuery.data) return;
+        if (rowsInitializedForId.current === id) return;
+
+        rowsInitializedForId.current = id;
+        const mappings = mappingsQuery.data as any[];
+
+        // Transform option values in existing data to {value, label} format
+        const mappedRows = mappings.map((mapping) => {
+            const transformedMapping: any = {
+                id: mapping.id,
+                edited: false,
+            };
+
+            for (const [key, value] of Object.entries(mapping)) {
+                if (key === 'id') continue;
+
+                const colDef = columnDefinitions[key];
+                if (
+                    colDef?.type === 'options' &&
+                    value !== null &&
+                    value !== undefined
+                ) {
+                    if (typeof value === 'string') {
+                        transformedMapping[key] = {
+                            value: value,
+                            label: value,
+                        };
+                    } else {
+                        transformedMapping[key] = value;
+                    }
+                } else {
+                    transformedMapping[key] = value;
+                }
+            }
+
+            return transformedMapping;
+        });
+
+        let initialRows = mappedRows.length > 0 ? mappedRows : [];
+        initialRows = [...initialRows, buildEmptyRow(columnDefinitions)];
+        setRows(initialRows);
+    }, [id, columnDefinitions, mappingsQuery.data]);
 
     // Validate a single cell
     const validateCell = (column: string, value: any, rowIndex: number) => {
@@ -482,11 +446,21 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
     // Use the row index to update the row.
     const handleCellChange = (rowIndex: number, column: string, value: any) => {
-        setRows((prevRows) =>
-            prevRows.map((row, idx) =>
+        setRows((prevRows) => {
+            const nextRows = prevRows.map((row, idx) =>
                 idx === rowIndex ? { ...row, [column]: value, edited: true } : row,
-            ),
-        );
+            );
+
+            if (
+                columnDefinitions &&
+                rowIndex === prevRows.length - 1 &&
+                nextRows[rowIndex]?.edited
+            ) {
+                nextRows.push(buildEmptyRow(columnDefinitions));
+            }
+
+            return nextRows;
+        });
 
         // Validate the changed cell
         const error = validateCell(column, value, rowIndex);
@@ -505,7 +479,10 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         const row = rows[rowIndex];
         setRows((prevRows) => {
             const filtered = prevRows.filter((_, idx) => idx !== rowIndex);
-            return filtered.length ? filtered : [createEmptyRow()];
+            if (filtered.length) return filtered;
+            return columnDefinitions
+                ? [buildEmptyRow(columnDefinitions)]
+                : [{ id: null, edited: false }];
         });
 
         // Clear validation errors for deleted row
@@ -544,14 +521,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         if (!row.edited) return;
         if (!columnDefinitions) return;
 
-        // Validate the specific row and update the validation errors state
-        const rowErrors: ValidationErrors = {};
-        allColumns.forEach((column) => {
-            const error = validateCell(column, row[column], rowIndex);
-            if (error) {
-                rowErrors[`${rowIndex}-${column}`] = error;
-            }
-        });
+        const { errors: rowErrors, hasError } = validateRow(row, rowIndex);
 
         // Update validation errors state with new errors
         const newValidationErrors = { ...validationErrors };
@@ -570,31 +540,21 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
         setValidationErrors(newValidationErrors);
 
-        // Check if there are any errors
-        if (Object.keys(rowErrors).length > 0) {
+        if (hasError) {
             toast.error('Please fix validation errors before saving');
             return;
         }
 
-        const rowData: Record<string, any> = {};
-        for (const [key, value] of Object.entries(row)) {
-            if (key !== 'edited') {
-                if (columnDefinitions[key]?.type === 'options') {
-                    rowData[key] = value?.value;
-                } else {
-                    rowData[key] = value;
-                }
-            }
-        }
+        const rowData = buildRequestBody(row);
 
         saveMappingMutation.mutate(rowData, {
             onSuccess: () => {
-                // Update the row to mark it as not edited
                 setRows((prevRows) =>
                     prevRows.map((r, idx) =>
                         idx === rowIndex ? { ...r, edited: false } : r,
                     ),
                 );
+                onSave?.();
             },
         });
     };
@@ -602,7 +562,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     const handleSaveAll = () => {
         if (!columnDefinitions) return;
 
-        // First, validate all edited rows and update the validation errors state
+        // Validate all edited rows
         const allErrors: ValidationErrors = {};
         let hasErrors = false;
 
@@ -610,19 +570,13 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             // Skip validation for the last empty row or non-edited rows
             if ((rowIndex === rows.length - 1 && !row.edited) || !row.edited) return;
 
-            allColumns.forEach((column) => {
-                const error = validateCell(column, row[column], rowIndex);
-                if (error) {
-                    allErrors[`${rowIndex}-${column}`] = error;
-                    hasErrors = true;
-                }
-            });
+            const { errors, hasError } = validateRow(row, rowIndex);
+            Object.assign(allErrors, errors);
+            if (hasError) hasErrors = true;
         });
 
-        // Update validation errors state with new errors
         setValidationErrors(allErrors);
 
-        // If there are errors, show alert and return
         if (hasErrors) {
             toast.error('Please fix validation errors before saving');
             return;
@@ -630,17 +584,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
         const dataToSave = rows
             .filter((row) => row.edited)
-            .map(({ id: rowId, edited, ...rowData }) => {
-                const data: Record<string, any> = {};
-                for (const [key, value] of Object.entries(rowData)) {
-                    if (columnDefinitions[key]?.type === 'options') {
-                        data[key] = value?.value;
-                    } else {
-                        data[key] = value;
-                    }
-                }
-                return data;
-            });
+            .map((row) => buildRequestBody(row, { omitId: true }));
 
         if (dataToSave.length === 0) {
             toast.info('No changes to save');
@@ -649,18 +593,12 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
         saveAllMappingsMutation.mutate(dataToSave, {
             onSuccess: () => {
-                // Update all rows to mark them as not edited
                 setRows((prevRows) =>
                     prevRows.map((r) => (r.edited ? { ...r, edited: false } : r)),
                 );
+                onSave?.();
             },
         });
-    };
-
-    // Get used internal_class values to filter options
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const getAvailableInternalClassOptions = (rowIndex: number) => {
-        return columnDefinitions?.internal_class?.options || [];
     };
 
     if (isLoading || !columnDefinitions) {
@@ -678,7 +616,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                 <div className='flex flex-col gap-0.5'>
                     <div className='flex items-center gap-3'>
                         <h2 className='text-2xl font-bold tracking-tight'>
-                            Edit Type Mappings
+                            Edit Type Mappings{name ? `: ${name}` : ''}
                         </h2>
                         <div className='flex items-center gap-2'>
                             <Badge variant='secondary'>

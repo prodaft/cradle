@@ -3,7 +3,6 @@ import {
     Field,
     FieldContent,
     FieldDescription,
-    FieldError,
     FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
@@ -15,7 +14,7 @@ import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 interface UserSettingsFormProps {
@@ -23,9 +22,9 @@ interface UserSettingsFormProps {
 }
 
 const accountSettingsSchema = z.object({
-    allowRegistration: z.boolean().default(false),
-    requireEmailActivation: z.boolean().default(false),
-    requireAdminConfirmation: z.boolean().default(false),
+    allowRegistration: z.boolean(),
+    requireEmailActivation: z.boolean(),
+    requireAdminConfirmation: z.boolean(),
 });
 
 type UserSettingsFormData = z.infer<typeof accountSettingsSchema>;
@@ -34,14 +33,12 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
     const { managementApi } = useApi();
 
     const {
-        register,
         handleSubmit,
         reset,
-        watch,
         control,
-        formState: { errors, isDirty, isSubmitting },
+        formState: { isDirty, isSubmitting },
     } = useForm<UserSettingsFormData>({
-        resolver: zodResolver(accountSettingsSchema) as any,
+        resolver: zodResolver(accountSettingsSchema),
         defaultValues: {
             allowRegistration: false,
             requireEmailActivation: false,
@@ -50,11 +47,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
     });
 
     // Query for management settings
-    const {
-        data: settingsData,
-        isPending,
-        isPaused,
-    } = useQuery({
+    const { data: settingsData, isPending } = useQuery({
         queryKey: queryKeys.management.settings(),
         queryFn: () => managementApi.managementSettingsRetrieve(),
         meta: {
@@ -78,7 +71,6 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.management.settings() }],
             successMessage: 'Account settings updated successfully!',
-            errorMessage: 'Failed to save settings',
         },
         onSuccess: (_, variables) => {
             reset(variables);
@@ -98,11 +90,11 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         }
     }, [settingsData, reset]);
 
-    const onSubmit = async (data: UserSettingsFormData) => {
+    const onSubmit: SubmitHandler<UserSettingsFormData> = async (data) => {
         try {
             await saveMutation.mutateAsync(data);
-            if (onAdd) onAdd();
-        } catch (error) {
+            onAdd?.();
+        } catch (_error) {
             // Error already handled by mutation
         }
     };
@@ -116,7 +108,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit as any)}>
+        <form onSubmit={handleSubmit(onSubmit)}>
             <div className='flex flex-col gap-6'>
                 {/* Registration Section */}
                 <div className='flex flex-col gap-4'>
@@ -125,11 +117,8 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                         <Controller
                             name='allowRegistration'
                             control={control}
-                            render={({ field, fieldState }) => (
-                                <Field
-                                    orientation='responsive'
-                                    data-invalid={fieldState.invalid}
-                                >
+                            render={({ field }) => (
+                                <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
                                         <FieldLabel
                                             htmlFor='allowRegistration'
@@ -140,11 +129,6 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                         <FieldDescription>
                                             Allow new users to register for accounts
                                         </FieldDescription>
-                                        {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
-                                                {fieldState.error?.message}
-                                            </FieldError>
-                                        )}
                                     </FieldContent>
                                     <Switch
                                         id='allowRegistration'
@@ -162,11 +146,8 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                         <Controller
                             name='requireEmailActivation'
                             control={control}
-                            render={({ field, fieldState }) => (
-                                <Field
-                                    orientation='responsive'
-                                    data-invalid={fieldState.invalid}
-                                >
+                            render={({ field }) => (
+                                <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
                                         <FieldLabel
                                             htmlFor='requireEmailActivation'
@@ -178,11 +159,6 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                             Users must verify their email before
                                             accessing the system
                                         </FieldDescription>
-                                        {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
-                                                {fieldState.error?.message}
-                                            </FieldError>
-                                        )}
                                     </FieldContent>
                                     <Switch
                                         id='requireEmailActivation'
@@ -200,11 +176,8 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                         <Controller
                             name='requireAdminConfirmation'
                             control={control}
-                            render={({ field, fieldState }) => (
-                                <Field
-                                    orientation='responsive'
-                                    data-invalid={fieldState.invalid}
-                                >
+                            render={({ field }) => (
+                                <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
                                         <FieldLabel
                                             htmlFor='requireAdminConfirmation'
@@ -216,11 +189,6 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                             New accounts must be approved by an
                                             administrator
                                         </FieldDescription>
-                                        {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
-                                                {fieldState.error?.message}
-                                            </FieldError>
-                                        )}
                                     </FieldContent>
                                     <Switch
                                         id='requireAdminConfirmation'

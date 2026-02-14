@@ -23,9 +23,9 @@ import { z } from 'zod';
 import SnippetList, { SnippetListRef } from '../../../base/SnippetList/SnippetList';
 
 const noteSettingsSchema = z.object({
-    minEntries: z.coerce.number().min(1, { error: 'Must be at least 1' }),
-    minEntities: z.coerce.number().min(1, { error: 'Must be at least 1' }),
-    maxCliqueSize: z.coerce.number().min(1, { error: 'Must be at least 1' }),
+    minEntries: z.coerce.number().min(1, { message: 'Must be at least 1' }),
+    minEntities: z.coerce.number().min(1, { message: 'Must be at least 1' }),
+    maxCliqueSize: z.coerce.number().min(1, { message: 'Must be at least 1' }),
     allowDynamicEntryClassCreation: z.boolean().default(false),
 });
 
@@ -36,12 +36,10 @@ export default function NoteSettingsForm() {
     const snippetListRef = useRef<SnippetListRef>(null);
 
     const {
-        register,
         handleSubmit: handleFormSubmit,
         reset,
-        watch,
         control,
-        formState: { errors, isDirty, isSubmitting },
+        formState: { isDirty },
     } = useForm<NoteSettingsFormData>({
         resolver: zodResolver(noteSettingsSchema) as any,
         defaultValues: {
@@ -52,7 +50,7 @@ export default function NoteSettingsForm() {
         },
     });
 
-    const { data: settingsData, isPending: isSettingsPending } = useQuery({
+    const { data: settingsData, isLoading } = useQuery({
         queryKey: queryKeys.management.settings(),
         queryFn: () => managementApi.managementSettingsRetrieve(),
         refetchOnWindowFocus: false,
@@ -98,23 +96,22 @@ export default function NoteSettingsForm() {
     useEffect(() => {
         if (!settingsData?.notes) return;
         reset({
-            minEntries: settingsData.notes.min_entries || 1,
-            minEntities: settingsData.notes.min_entities || 1,
-            maxCliqueSize: settingsData.notes.max_clique_size || 1,
+            minEntries: Math.max(1, settingsData.notes.min_entries ?? 1),
+            minEntities: Math.max(1, settingsData.notes.min_entities ?? 1),
+            maxCliqueSize: Math.max(1, settingsData.notes.max_clique_size ?? 1),
             allowDynamicEntryClassCreation:
                 settingsData.notes.allow_dynamic_entry_class_creation ?? false,
         });
     }, [settingsData, reset]);
 
-    const onSubmit = async (data: NoteSettingsFormData) => {
-        updateSettingsMutation.mutate(data);
-    };
+    const onSubmit = (data: NoteSettingsFormData) =>
+        updateSettingsMutation.mutateAsync(data);
 
     const handleReLinkNotes = () => {
         relinkNotesMutation.mutate();
     };
 
-    if (isSettingsPending) {
+    if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen text-foreground'>
                 <Spinner className='size-10' />
@@ -148,7 +145,10 @@ export default function NoteSettingsForm() {
                                             Minimum number of entries required in a note
                                         </FieldDescription>
                                         {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
+                                            <FieldError
+                                                id='minEntries-error'
+                                                className='text-sm mt-1'
+                                            >
                                                 {fieldState.error?.message}
                                             </FieldError>
                                         )}
@@ -192,7 +192,10 @@ export default function NoteSettingsForm() {
                                             note
                                         </FieldDescription>
                                         {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
+                                            <FieldError
+                                                id='minEntities-error'
+                                                className='text-sm mt-1'
+                                            >
                                                 {fieldState.error?.message}
                                             </FieldError>
                                         )}
@@ -235,7 +238,10 @@ export default function NoteSettingsForm() {
                                             Maximum size for clique detection
                                         </FieldDescription>
                                         {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
+                                            <FieldError
+                                                id='maxCliqueSize-error'
+                                                className='text-sm mt-1'
+                                            >
                                                 {fieldState.error?.message}
                                             </FieldError>
                                         )}
@@ -279,7 +285,10 @@ export default function NoteSettingsForm() {
                                             classes
                                         </FieldDescription>
                                         {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
+                                            <FieldError
+                                                id='allowDynamicEntryClassCreation-error'
+                                                className='text-sm mt-1'
+                                            >
                                                 {fieldState.error?.message}
                                             </FieldError>
                                         )}
@@ -361,6 +370,7 @@ export default function NoteSettingsForm() {
                                 variant='outline'
                                 size='sm'
                                 className='self-start md:self-center'
+                                disabled={relinkNotesMutation.isPending}
                                 onClick={handleReLinkNotes}
                             >
                                 <ArrowClockwiseIcon
@@ -378,9 +388,9 @@ export default function NoteSettingsForm() {
                 <Button
                     type='submit'
                     variant='default'
-                    disabled={isSubmitting || !isDirty}
+                    disabled={updateSettingsMutation.isPending || !isDirty}
                 >
-                    {isSubmitting ? 'Saving...' : 'Save Settings'}
+                    {updateSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
                 </Button>
             </div>
         </form>

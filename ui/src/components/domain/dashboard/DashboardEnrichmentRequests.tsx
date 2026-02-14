@@ -1,6 +1,6 @@
 import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-import { parseAPIError } from '@/utils/api';
+
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -48,23 +48,21 @@ export default function DashboardEnrichmentRequests({
 
     // Prepare query parameters
     const queryParams = useMemo(() => {
+        const userUsername =
+            (columnFilters.user ? columnFilters.user : searchFilters.user) || undefined;
+
         const searchQueryParams: any = {
             page,
             pageSize,
             entryId: entryId.toString(),
             title: searchFilters.title || undefined,
-            userUsername: searchFilters.user || undefined,
+            userUsername,
         };
-
-        // Add column filter parameters
-        if (columnFilters.user) {
-            searchQueryParams.userUsername = columnFilters.user;
-        }
 
         const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
         searchQueryParams.orderBy = orderBy;
         searchQueryParams.status =
-            columnFilters.status == 'all' ? undefined : columnFilters.status;
+            columnFilters.status === 'all' ? undefined : columnFilters.status;
 
         return searchQueryParams;
     }, [
@@ -79,16 +77,10 @@ export default function DashboardEnrichmentRequests({
 
     // Query for enrichment requests
     const { data: requestsData, isPending } = useQuery({
-        queryKey: queryKeys.enrichment.requests.list({
-            page,
-            pageSize,
-            entryId: entryId.toString(),
-            ...queryParams,
-        }),
+        queryKey: queryKeys.enrichment.requests.list(queryParams),
         queryFn: () => intelioApi.enrichmentRequestList(queryParams),
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch enrichment requests',
         },
     });
 
@@ -108,10 +100,6 @@ export default function DashboardEnrichmentRequests({
         setPage(1);
     };
 
-    const handlePageChange = (newPage: number) => {
-        setPage(newPage);
-    };
-
     const handleSort = (newSortField: string, newSortDirection: 'asc' | 'desc') => {
         setSortField(newSortField);
         setSortDirection(newSortDirection);
@@ -127,7 +115,8 @@ export default function DashboardEnrichmentRequests({
         column: keyof ColumnFilters,
         value: string | DateRangeFilter,
     ) => {
-        if (typeof value !== 'string') return;
+        if ((column === 'status' || column === 'user') && typeof value !== 'string')
+            return;
         setColumnFilters((prev) => ({
             ...prev,
             [column]: value,
@@ -158,9 +147,8 @@ export default function DashboardEnrichmentRequests({
             await Promise.all(ids.map((id) => deleteMutation.mutateAsync(id)));
             toast.success(`Deleted ${ids.length} enrichment request(s)`);
             setSelectedRequests([]);
-        } catch (error) {
-            const parsed = await parseAPIError(error);
-            toast.error(parsed.detail);
+        } catch {
+            // Error toast shown by global mutation handler
         }
     };
 
@@ -175,9 +163,8 @@ export default function DashboardEnrichmentRequests({
                 `Retrying ${selectedRequests.length} enrichment request${selectedRequests.length > 1 ? 's' : ''}`,
             );
             setSelectedRequests([]);
-        } catch (error) {
-            const parsed = await parseAPIError(error);
-            toast.error(parsed.detail);
+        } catch {
+            // Error toast shown by global mutation handler
         }
     };
 
@@ -187,10 +174,8 @@ export default function DashboardEnrichmentRequests({
             loading={isPending}
             page={page}
             totalPages={totalPages}
-            handlePageChange={handlePageChange}
-            onRequestDelete={() => {
-                // Query will automatically refetch due to invalidation
-            }}
+            handlePageChange={setPage}
+            onRequestDelete={() => {}}
             sortField={sortField}
             sortDirection={sortDirection}
             onSort={handleSort}

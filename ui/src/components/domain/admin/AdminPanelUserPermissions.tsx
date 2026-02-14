@@ -20,18 +20,19 @@ import useApi from '@/hooks/api/use-api';
 import { naturalSort } from '@/utils/dashboard';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { AccessRequestAccessTypeEnum } from '@services/cradle/models';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 
 interface AdminPanelUserPermissionsProps {
     id: string;
 }
 
+type AccessType = 'none' | 'read' | 'read-write';
+
 interface PermissionEntity {
     id: number;
     name: string;
     description?: string;
-    accessType: 'none' | 'read' | 'read-write';
 }
 
 const ACCESS_OPTIONS = [
@@ -47,15 +48,12 @@ function PermissionRow({
     isSaving,
 }: {
     entity: PermissionEntity;
-    currentAccess: 'none' | 'read' | 'read-write';
-    onAccessChange: (
-        entityId: number,
-        accessType: 'none' | 'read' | 'read-write',
-    ) => void;
+    currentAccess: AccessType;
+    onAccessChange: (entityId: number, accessType: AccessType) => void;
     isSaving: boolean;
 }) {
     const handleChange = (newAccess: string) => {
-        onAccessChange(entity.id, newAccess as 'none' | 'read' | 'read-write');
+        onAccessChange(entity.id, newAccess as AccessType);
     };
 
     return (
@@ -90,96 +88,94 @@ function PermissionRow({
 export default function AdminPanelUserPermissions({
     id,
 }: AdminPanelUserPermissionsProps) {
-    const [entities, setEntities] = useState<PermissionEntity[]>([]);
-    const [originalAccess, setOriginalAccess] = useState<
-        Record<number, 'none' | 'read' | 'read-write'>
-    >({});
-    const [currentAccess, setCurrentAccess] = useState<
-        Record<number, 'none' | 'read' | 'read-write'>
-    >({});
+    const [originalAccess, setOriginalAccess] = useState<Record<number, AccessType>>(
+        {},
+    );
+    const [currentAccess, setCurrentAccess] = useState<Record<number, AccessType>>({});
     const [searchVal, setSearchVal] = useState('');
-    const [isLoading, setIsLoading] = useState(true);
     const { accessApi } = useApi();
+    const { accessUserList, accessUserUpdate } = accessApi;
     const queryClient = useQueryClient();
 
+    const permissionsQuery = useQuery({
+        queryKey: ['accessUserList', id],
+        queryFn: () => accessUserList({ userId: id }),
+        enabled: !!id,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+    });
+
+    const entities: PermissionEntity[] = useMemo(() => {
+        const permissions = permissionsQuery.data ?? [];
+        return permissions.map((c) => ({
+            id: c.id,
+            name: c.name,
+            description: (c as { description?: string }).description,
+        }));
+    }, [permissionsQuery.data]);
+
     useEffect(() => {
-        const fetchPermissions = async () => {
-            setIsLoading(true);
-            try {
-                const permissions = await accessApi.accessUserList({
-                    userId: String(id),
-                });
-                const fetchedEntities = permissions.map((c) => ({
-                    id: c.id,
-                    name: c.name,
-                    description: (c as { description?: string }).description,
-                    accessType: (c.accessType ??
-                        'none') as PermissionEntity['accessType'],
-                }));
-                setEntities(fetchedEntities);
-
-                // Initialize original and current access
-                const original: Record<number, 'none' | 'read' | 'read-write'> = {};
-                const current: Record<number, 'none' | 'read' | 'read-write'> = {};
-                fetchedEntities.forEach((entity) => {
-                    original[entity.id] = entity.accessType;
-                    current[entity.id] = entity.accessType;
-                });
-                setOriginalAccess(original);
-                setCurrentAccess(current);
-            } catch (error) {
-                setEntities([]);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        if (id) {
-            fetchPermissions();
-        }
+        setOriginalAccess({});
+        setCurrentAccess({});
     }, [id]);
 
-    const handleAccessChange = (
-        entityId: number,
-        accessType: 'none' | 'read' | 'read-write',
-    ) => {
+    useEffect(() => {
+        const permissions = permissionsQuery.data;
+        if (!permissions) return;
+
+        const original: Record<number, AccessType> = {};
+        const current: Record<number, AccessType> = {};
+
+        permissions.forEach((c) => {
+            const accessType = (c.accessType ?? 'none') as AccessType;
+            original[c.id] = accessType;
+            current[c.id] = accessType;
+        });
+
+        setOriginalAccess(original);
+        setCurrentAccess(current);
+    }, [permissionsQuery.data]);
+
+    const handleAccessChange = (entityId: number, accessType: AccessType) => {
         setCurrentAccess((prev) => ({
             ...prev,
             [entityId]: accessType,
         }));
     };
 
-    const hasChanges = () => {
-        return entities.some((entity) => {
-            const original = originalAccess[entity.id];
-            const current = currentAccess[entity.id];
-            return original !== current;
-        });
-    };
+    const hasUnsavedChanges = useMemo(
+        () =>
+            entities.some((entity) => {
+                const original = originalAccess[entity.id];
+                const current = currentAccess[entity.id];
+                return original !== current;
+            }),
+        [entities, originalAccess, currentAccess],
+    );
 
     const saveChangesMutation = useMutation({
         mutationFn: async () => {
-            const updates: Array<{
-                entityId: number;
-                accessType: AccessRequestAccessTypeEnum;
-            }> = [];
-
-            entities.forEach((entity) => {
+            const updates = entities.reduce<
+                Array<{ entityId: number; accessType: AccessRequestAccessTypeEnum }>
+            >((acc, entity) => {
                 const original = originalAccess[entity.id];
                 const current = currentAccess[entity.id];
                 if (original !== current) {
-                    updates.push({
+                    acc.push({
                         entityId: entity.id,
                         accessType: current as AccessRequestAccessTypeEnum,
                     });
                 }
-            });
+                return acc;
+            }, []);
+
+            if (updates.length === 0) return;
 
             // Save all changes
             await Promise.all(
                 updates.map((update) =>
-                    accessApi.accessUserUpdate({
-                        userId: String(id),
+                    accessUserUpdate({
+                        userId: id,
                         entityId: update.entityId,
                         accessRequest: { accessType: update.accessType },
                     }),
@@ -192,8 +188,7 @@ export default function AdminPanelUserPermissions({
         onSuccess: () => {
             // Update original access to match current
             setOriginalAccess({ ...currentAccess });
-            // Invalidate queries to refresh data
-            queryClient.invalidateQueries();
+            queryClient.invalidateQueries({ queryKey: ['accessUserList', id] });
         },
     });
 
@@ -202,18 +197,35 @@ export default function AdminPanelUserPermissions({
     };
 
     // Filter entities based on search
-    const filteredEntities = entities
-        .filter((entity) => {
-            const searchKey =
-                `${entity.name || ''} ${entity.description || ''}`.toLowerCase();
-            return searchKey.includes(searchVal.toLowerCase());
-        })
-        .sort((a, b) => naturalSort(a.name || '', b.name || ''));
+    const filteredEntities = useMemo(() => {
+        const needle = searchVal.trim().toLowerCase();
+        return entities
+            .filter((entity) => {
+                if (!needle) return true;
+                const haystack =
+                    `${entity.name || ''} ${entity.description || ''}`.toLowerCase();
+                return haystack.includes(needle);
+            })
+            .sort((a, b) => naturalSort(a.name || '', b.name || ''));
+    }, [entities, searchVal]);
 
-    if (isLoading) {
+    if (permissionsQuery.isLoading) {
         return (
             <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                 <Spinner className='size-10' />
+            </div>
+        );
+    }
+
+    if (permissionsQuery.isError) {
+        return (
+            <div className='flex flex-col items-center justify-center min-h-[200px] gap-3 text-foreground'>
+                <p className='text-sm text-muted-foreground'>
+                    Failed to load permissions.
+                </p>
+                <Button type='button' onClick={() => permissionsQuery.refetch()}>
+                    Retry
+                </Button>
             </div>
         );
     }
@@ -252,9 +264,7 @@ export default function AdminPanelUserPermissions({
                                 <PermissionRow
                                     key={entity.id}
                                     entity={entity}
-                                    currentAccess={
-                                        currentAccess[entity.id] || entity.accessType
-                                    }
+                                    currentAccess={currentAccess[entity.id] || 'none'}
                                     onAccessChange={handleAccessChange}
                                     isSaving={saveChangesMutation.isPending}
                                 />
@@ -277,7 +287,7 @@ export default function AdminPanelUserPermissions({
                 <Button
                     type='button'
                     onClick={handleSave}
-                    disabled={saveChangesMutation.isPending || !hasChanges()}
+                    disabled={saveChangesMutation.isPending || !hasUnsavedChanges}
                 >
                     {saveChangesMutation.isPending ? 'Saving...' : 'Save Changes'}
                 </Button>

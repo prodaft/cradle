@@ -50,18 +50,21 @@ import {
     EnrichmentRequestDetailStatusEnum,
     EntrySerializerMinimal,
 } from '@services/cradle/models';
+
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import JsonView from '@uiw/react-json-view';
 import { format } from 'date-fns';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
+interface EntryLabel {
+    subtype: string;
+    name: string;
+    color?: string;
+}
+
 interface RelationDisplay {
-    target: {
-        subtype: string;
-        name: string;
-        color?: string;
-    } | null;
+    target: EntryLabel | null;
     details: any;
 }
 
@@ -79,7 +82,7 @@ const normalizeId = (value?: number | string | null) => {
     return Number.isNaN(parsed) ? null : parsed;
 };
 
-const getEntryLabel = (entry?: EntrySerializerMinimal | null) => {
+const getEntryLabel = (entry?: EntrySerializerMinimal | null): EntryLabel | null => {
     if (!entry) return null;
     const subtype = entry.subtype || entry.entryClass?.subtype || entry.type || 'entry';
     const color = entry.color || entry.entryClass?.color;
@@ -97,13 +100,12 @@ const mapRelationsForEntry = (
     if (!selectedEntryId) return [];
 
     return results.map((result) => {
-        const entries = [result.e1, result.e2].filter((entry) => entry);
+        const entries = [result.e1, result.e2].filter(Boolean);
         const targetEntry =
-            entries.find(
-                (entry) =>
-                    normalizeId(entry?.id) != null &&
-                    normalizeId(entry?.id) !== selectedEntryId,
-            ) || null;
+            entries.find((entry: any) => {
+                const entryId = normalizeId(entry?.id);
+                return entryId != null && entryId !== selectedEntryId;
+            }) || null;
 
         return {
             target: getEntryLabel(targetEntry),
@@ -113,31 +115,25 @@ const mapRelationsForEntry = (
 };
 
 // Render entry badge if subtype is not "enrichment"
-const renderEntryBadge = (entry: EnricherArtifact) => {
+const renderEntryBadge = (entry: { subtype?: string; color?: string }) => {
+    const subtype = entry.subtype ?? 'unknown';
     return (
         <Badge
-            className={`rounded-full flex-shrink-0 ${!entry.color || entry.subtype === 'enrichment' ? 'bg-muted' : ''}`}
+            className={`rounded-full flex-shrink-0 ${!entry.color || subtype === 'enrichment' ? 'bg-muted' : ''}`}
             style={
-                entry.color && entry.subtype !== 'enrichment'
+                entry.color && subtype !== 'enrichment'
                     ? { backgroundColor: entry.color }
                     : undefined
             }
         >
-            {entry.subtype}
+            {subtype}
         </Badge>
     );
 };
 
 // Individual relation item component (collapsible)
 interface RelationItemProps {
-    relation: {
-        target: {
-            subtype: string;
-            name: string;
-            color?: string;
-        } | null;
-        details: any;
-    };
+    relation: RelationDisplay;
     isLast: boolean;
 }
 
@@ -149,7 +145,7 @@ function RelationItem({ relation, isLast }: RelationItemProps) {
         <div className={`${!isLast ? 'border-b border-border/50' : ''}`}>
             <div
                 className={`px-4 py-2 flex items-center gap-2 ${hasDetails ? 'cursor-pointer hover:bg-muted/50' : ''}`}
-                onClick={() => hasDetails && setOpen(!open)}
+                onClick={() => hasDetails && setOpen((prev) => !prev)}
             >
                 {relation.target ? (
                     <>
@@ -190,11 +186,10 @@ function RelationItem({ relation, isLast }: RelationItemProps) {
 // Grouped row component
 interface ArtifactRowProps {
     artifact: EnricherArtifact;
-    artifactId: number | null;
     artifactBadge?: ReactNode;
     enricherName: string;
     isOpen: boolean;
-    onToggle: (artifactId: number | null, open: boolean) => void;
+    onToggle: (open: boolean) => void;
     relations: RelationDisplay[];
     isLoading: boolean;
     isChecked: boolean;
@@ -203,7 +198,6 @@ interface ArtifactRowProps {
 
 function ArtifactRow({
     artifact,
-    artifactId,
     artifactBadge,
     enricherName,
     isOpen,
@@ -213,7 +207,7 @@ function ArtifactRow({
     isChecked,
     onCheckChange,
 }: ArtifactRowProps) {
-    const relationCount = artifact.count ?? relations.length;
+    const relationCount = artifact.count ?? (isOpen ? relations.length : undefined);
     const artifactName = artifact.name || 'Untitled';
 
     const rowContent = (
@@ -244,11 +238,7 @@ function ArtifactRow({
     );
 
     return (
-        <Collapsible
-            open={isOpen}
-            onOpenChange={(open) => onToggle(artifactId, open)}
-            asChild
-        >
+        <Collapsible open={isOpen} onOpenChange={onToggle} asChild>
             <>
                 <CollapsibleTrigger asChild>{rowContent}</CollapsibleTrigger>
                 <CollapsibleContent asChild>
@@ -307,12 +297,11 @@ export default function EnrichmentResults() {
     const [selectedArtifacts, setSelectedArtifacts] = useState<Set<number>>(new Set());
 
     // Query for enrichment details
-    const { data: enrichmentDetails, isPending: isPendingDetails } = useQuery({
+    const { data: enrichmentDetails, isLoading: isLoadingDetails } = useQuery({
         queryKey: queryKeys.enrichment.results.detail(String(id)),
         queryFn: () => intelioApi.enrichmentDetailRetrieve({ id }),
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch enrichment details',
         },
     });
 
@@ -328,7 +317,7 @@ export default function EnrichmentResults() {
     }, [enrichmentDetails, selectedEnricher]);
 
     // Query for enricher details
-    const { data: enricherDetails, isPending: isPendingEnricher } = useQuery({
+    const { data: enricherDetails, isLoading: isLoadingEnricher } = useQuery({
         queryKey: queryKeys.enrichment.results.detail(`${id}-${selectedEnricher}`),
         queryFn: () =>
             intelioApi.enrichmentRequestEnricherRetrieve({
@@ -338,12 +327,11 @@ export default function EnrichmentResults() {
         enabled: !!selectedEnricher && !showIgnored,
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch enricher details',
         },
     });
 
     // Query for results (relations)
-    const { data: resultsData, isPending: isPendingResults } = useQuery({
+    const { data: resultsData, isLoading: isLoadingResults } = useQuery({
         queryKey: queryKeys.enrichment.results.relations({
             id: String(id),
             enricherType: selectedEnricher!,
@@ -366,11 +354,10 @@ export default function EnrichmentResults() {
         enabled: !!selectedEnricher && !showIgnored && !!selectedArtifactId,
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch enrichment results',
         },
     });
 
-    const results = resultsData?.results || [];
+    const results = useMemo(() => resultsData?.results ?? [], [resultsData?.results]);
     const totalPages = resultsData?.totalPages || 1;
     const artifacts = useMemo(
         () => (enricherDetails?.artifacts || []) as EnricherArtifact[],
@@ -574,7 +561,7 @@ export default function EnrichmentResults() {
     const hasErrors = enricherDetails?.errors && enricherDetails.errors.length > 0;
 
     // Get ignored artifacts from enrichmentDetails (assuming it comes from 'ignored' field)
-    const ignoredArtifacts = (enrichmentDetails as any)?.ignored || [];
+    const ignoredArtifacts = (enrichmentDetails as any)?.ignored ?? [];
     const selectedEnricherName =
         enrichmentDetails?.enrichers?.find(
             (enricher) => enricher.enricherType === selectedEnricher,
@@ -637,7 +624,7 @@ export default function EnrichmentResults() {
 
             {/* Main Content */}
             <div className='flex-1 overflow-hidden flex flex-col p-4'>
-                {isPendingDetails ? (
+                {isLoadingDetails ? (
                     <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                         <Spinner className='size-10' />
                     </div>
@@ -795,7 +782,7 @@ export default function EnrichmentResults() {
                             </div>
                         ) : selectedEnricher ? (
                             /* Relations View */
-                            isPendingEnricher ? (
+                            isLoadingEnricher ? (
                                 <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                                     <Spinner className='size-10' />
                                 </div>
@@ -836,7 +823,9 @@ export default function EnrichmentResults() {
                                                                 onCheckedChange={(
                                                                     checked,
                                                                 ) => {
-                                                                    if (checked) {
+                                                                    if (
+                                                                        checked === true
+                                                                    ) {
                                                                         const allIds =
                                                                             artifacts
                                                                                 .map(
@@ -896,9 +885,6 @@ export default function EnrichmentResults() {
                                                                         index
                                                                     }
                                                                     artifact={artifact}
-                                                                    artifactId={
-                                                                        artifactId
-                                                                    }
                                                                     artifactBadge={
                                                                         artifactBadge
                                                                     }
@@ -907,10 +893,7 @@ export default function EnrichmentResults() {
                                                                         ''
                                                                     }
                                                                     isOpen={isSelected}
-                                                                    onToggle={(
-                                                                        _,
-                                                                        open,
-                                                                    ) =>
+                                                                    onToggle={(open) =>
                                                                         handleArtifactToggle(
                                                                             artifactId,
                                                                             open,
@@ -923,7 +906,7 @@ export default function EnrichmentResults() {
                                                                     }
                                                                     isLoading={
                                                                         isSelected &&
-                                                                        isPendingResults
+                                                                        isLoadingResults
                                                                     }
                                                                     isChecked={
                                                                         artifactId !==

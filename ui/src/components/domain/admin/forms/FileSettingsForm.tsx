@@ -26,16 +26,13 @@ import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { EntryClassTypeEnum } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import bytes from 'bytes';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { SelectOption } from '../../../forms';
 
-interface SubtypeOption extends SelectOption<string> {
-    value: string;
-    label: string;
-}
+type SubtypeOption = SelectOption<string>;
 
 interface FileSettingsResponse {
     files?: {
@@ -47,6 +44,15 @@ interface FileSettingsResponse {
         upload_limit?: number;
     };
 }
+
+const isValidBytesString = (value: string) => {
+    try {
+        const parsed = bytes.parse(value);
+        return typeof parsed === 'number' && !Number.isNaN(parsed);
+    } catch {
+        return false;
+    }
+};
 
 const fileSettingsSchema = z.object({
     autoprocessFiles: z.boolean().default(true),
@@ -71,27 +77,11 @@ const fileSettingsSchema = z.object({
     maxFileSizeForHashing: z
         .string()
         .min(1, { error: 'Maximum file size for hashing is required' })
-        .refine(
-            (value) => {
-                if (!value) return false;
-                return typeof bytes(value) === 'number';
-            },
-            {
-                error: 'Enter a valid size (e.g. 10MB, 1GB)',
-            },
-        ),
+        .refine(isValidBytesString, { error: 'Enter a valid size (e.g. 10MB, 1GB)' }),
     uploadLimit: z
         .string()
         .min(1, { error: 'Upload limit is required' })
-        .refine(
-            (value) => {
-                if (!value) return false;
-                return typeof bytes(value) === 'number';
-            },
-            {
-                error: 'Enter a valid size (e.g. 100MB, 1GB)',
-            },
-        ),
+        .refine(isValidBytesString, { error: 'Enter a valid size (e.g. 100MB, 1GB)' }),
 });
 
 type FileSettingsFormValues = z.infer<typeof fileSettingsSchema>;
@@ -123,9 +113,10 @@ export default function FileSettingsForm() {
 
     const {
         data: settingsData,
-        isPending: isSettingsPending,
+        isLoading,
         isError: isSettingsError,
         error: settingsError,
+        refetch: refetchSettings,
     } = useQuery({
         queryKey: queryKeys.management.settings(),
         queryFn: () => managementApi.managementSettingsRetrieve(),
@@ -160,15 +151,18 @@ export default function FileSettingsForm() {
         },
     });
 
-    const [subtypes, setSubtypes] = useState<SubtypeOption[]>([]);
+    const subtypes = useMemo<SubtypeOption[]>(() => {
+        const results = entryClassesData?.results ?? [];
+        return results
+            .filter((entry) => entry.type === EntryClassTypeEnum.Artifact)
+            .map((entry) => ({ value: entry.subtype, label: entry.subtype }));
+    }, [entryClassesData]);
 
     const {
-        register,
         handleSubmit: handleFormSubmit,
         reset,
-        watch,
         control,
-        formState: { errors, isDirty, isSubmitting },
+        formState: { isDirty },
     } = useForm<FileSettingsFormValues>({
         resolver: zodResolver(fileSettingsSchema) as any,
         defaultValues: {
@@ -180,19 +174,6 @@ export default function FileSettingsForm() {
             uploadLimit: '2 GB',
         },
     });
-
-    const handleReProcessAllFiles = () => {
-        reprocessFilesMutation.mutate();
-    };
-
-    useEffect(() => {
-        if (entryClassesData == null) return;
-        const results = entryClassesData.results ?? [];
-        const artifactSubtypes = results
-            .filter((entry) => entry.type === EntryClassTypeEnum.Artifact)
-            .map((entry) => ({ value: entry.subtype, label: entry.subtype }));
-        setSubtypes(artifactSubtypes);
-    }, [entryClassesData]);
 
     useEffect(() => {
         const settings = settingsData as FileSettingsResponse | undefined;
@@ -228,11 +209,10 @@ export default function FileSettingsForm() {
         } as FileSettingsFormValues);
     }, [settingsData, reset]);
 
-    const onSubmit = async (data: FileSettingsFormValues) => {
-        updateSettingsMutation.mutate(data);
-    };
+    const onSubmit = (data: FileSettingsFormValues) =>
+        updateSettingsMutation.mutateAsync(data);
 
-    if (isSettingsPending) {
+    if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen text-foreground'>
                 <Spinner className='size-10' />
@@ -240,8 +220,30 @@ export default function FileSettingsForm() {
         );
     }
 
+    if (isSettingsError) {
+        const message =
+            settingsError instanceof Error ? settingsError.message : 'Unknown error';
+        return (
+            <div className='flex items-center justify-center min-h-screen text-foreground'>
+                <div className='flex flex-col items-center gap-3'>
+                    <p className='text-sm text-muted-foreground'>
+                        Failed to load file settings. {message}
+                    </p>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        onClick={() => refetchSettings()}
+                    >
+                        Retry
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <form onSubmit={handleFormSubmit(onSubmit as any)}>
+        <form onSubmit={handleFormSubmit(onSubmit)}>
             <div className='flex flex-col gap-6'>
                 {/* Processing Section */}
                 <div className='flex flex-col gap-4'>
@@ -300,7 +302,10 @@ export default function FileSettingsForm() {
                                             Entry class for MD5 hash artifacts
                                         </FieldDescription>
                                         {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
+                                            <FieldError
+                                                id='md5Subtype-error'
+                                                className='text-sm mt-1'
+                                            >
                                                 {fieldState.error?.message}
                                             </FieldError>
                                         )}
@@ -365,7 +370,10 @@ export default function FileSettingsForm() {
                                             Entry class for SHA1 hash artifacts
                                         </FieldDescription>
                                         {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
+                                            <FieldError
+                                                id='sha1Subtype-error'
+                                                className='text-sm mt-1'
+                                            >
                                                 {fieldState.error?.message}
                                             </FieldError>
                                         )}
@@ -430,7 +438,10 @@ export default function FileSettingsForm() {
                                             Entry class for SHA256 hash artifacts
                                         </FieldDescription>
                                         {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
+                                            <FieldError
+                                                id='sha256Subtype-error'
+                                                className='text-sm mt-1'
+                                            >
                                                 {fieldState.error?.message}
                                             </FieldError>
                                         )}
@@ -498,7 +509,10 @@ export default function FileSettingsForm() {
                                             Maximum file size for hashing
                                         </FieldDescription>
                                         {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
+                                            <FieldError
+                                                id='maxFileSizeForHashing-error'
+                                                className='text-sm mt-1'
+                                            >
                                                 {fieldState.error?.message}
                                             </FieldError>
                                         )}
@@ -541,7 +555,10 @@ export default function FileSettingsForm() {
                                             user limit can override this)
                                         </FieldDescription>
                                         {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
+                                            <FieldError
+                                                id='uploadLimit-error'
+                                                className='text-sm mt-1'
+                                            >
                                                 {fieldState.error?.message}
                                             </FieldError>
                                         )}
@@ -587,13 +604,16 @@ export default function FileSettingsForm() {
                                 variant='outline'
                                 size='sm'
                                 className='self-start md:self-center'
-                                onClick={handleReProcessAllFiles}
+                                onClick={() => reprocessFilesMutation.mutate()}
+                                disabled={reprocessFilesMutation.isPending}
                             >
                                 <ArrowClockwiseIcon
                                     className='w-3.5 h-3.5'
                                     weight='bold'
                                 />
-                                Process
+                                {reprocessFilesMutation.isPending
+                                    ? 'Processing\u2026'
+                                    : 'Process'}
                             </Button>
                         </Field>
                     </FieldGroup>
@@ -604,9 +624,11 @@ export default function FileSettingsForm() {
                 <Button
                     type='submit'
                     variant='default'
-                    disabled={isSubmitting || !isDirty}
+                    disabled={updateSettingsMutation.isPending || !isDirty}
                 >
-                    {isSubmitting ? 'Saving...' : 'Save Settings'}
+                    {updateSettingsMutation.isPending
+                        ? 'Saving\u2026'
+                        : 'Save Settings'}
                 </Button>
             </div>
         </form>

@@ -1,12 +1,11 @@
 import DOMPurify from 'dompurify';
-
 import Prism from 'prismjs';
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { handleLinkClick, NavigateHandler } from '@/utils/editor/text-editor';
-import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearch } from '@tanstack/react-router';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 interface PreviewProps {
     htmlContent: string;
@@ -19,16 +18,18 @@ export default function Preview({
     currentLine = 0,
     setCurrentLine = null,
 }: PreviewProps) {
-    const sanitizedContent = DOMPurify.sanitize(htmlContent);
+    const sanitizedContent = useMemo(
+        () => DOMPurify.sanitize(htmlContent),
+        [htmlContent],
+    );
     const router = useRouter();
-    const location = useRouterState({
-        select: (state) => state.location,
-    });
     // Preview can be used in multiple routes, so we'll use a flexible approach
     const search = useSearch({ strict: false });
+    const headingId = (search as any).heading as string | undefined;
     const preventScrollRef = useRef(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [previewElement, setPreviewElement] = useState<HTMLDivElement | null>(null);
+    const previewRef = useRef<HTMLDivElement | null>(null);
+
+    const isLoading = sanitizedContent.length === 0;
 
     // Create a NavigateHandler adapter for handleLinkClick
     const navigateHandler: NavigateHandler = useCallback(
@@ -38,27 +39,12 @@ export default function Preview({
         [router],
     );
 
-    const previewRef = useCallback(
-        (node: HTMLDivElement | null) => {
-            if (node) {
-                setPreviewElement(node);
-                // Set content immediately when ref is attached
-                if (sanitizedContent) {
-                    node.innerHTML = sanitizedContent;
-                    Prism.highlightAllUnder(node);
-                }
-            }
-        },
-        [sanitizedContent],
-    );
-
     useEffect(() => {
-        if (htmlContent !== null) {
-            setIsLoading(false);
-        } else {
-            setIsLoading(true);
-        }
-    }, [htmlContent]);
+        const el = previewRef.current;
+        if (!el) return;
+        el.innerHTML = sanitizedContent;
+        Prism.highlightAllUnder(el);
+    }, [sanitizedContent]);
 
     const handleLineClick = (event: React.MouseEvent<HTMLDivElement>) => {
         if (handleLinkClick(navigateHandler)(event.nativeEvent)) return;
@@ -78,17 +64,11 @@ export default function Preview({
     };
 
     useEffect(() => {
-        if (previewElement && sanitizedContent) {
-            previewElement.innerHTML = sanitizedContent;
-            Prism.highlightAllUnder(previewElement);
-        }
-    }, [sanitizedContent, previewElement]);
-
-    useEffect(() => {
         if (preventScrollRef.current) {
             preventScrollRef.current = false;
             return;
         }
+        const previewElement = previewRef.current;
         if (!previewElement || currentLine === 0) return;
 
         // Get all elements with data-source-line.
@@ -111,30 +91,34 @@ export default function Preview({
         if (targetElement) {
             targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-    }, [currentLine, previewElement]);
+    }, [currentLine]);
 
     // Scroll to heading if heading parameter exists
     useEffect(() => {
-        const headingId = (search as any).heading;
-        if (headingId && previewElement) {
-            try {
-                // Escape the ID to handle special characters
-                const escapedId = CSS.escape(headingId);
-                const headingElement = previewElement.querySelector(`#${escapedId}`);
-                if (headingElement) {
-                    // Small delay to ensure content is fully rendered
-                    setTimeout(() => {
-                        headingElement.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'center',
-                        });
-                    }, 100);
-                }
-            } catch (error) {
-                // Silently fail - scroll error is non-critical
+        const previewElement = previewRef.current;
+        if (!headingId || !previewElement) return;
+
+        let timeoutId: number | undefined;
+        try {
+            const escapedId = CSS.escape(headingId);
+            const headingElement = previewElement.querySelector(`#${escapedId}`);
+            if (headingElement) {
+                // Small delay to ensure content is fully rendered
+                timeoutId = window.setTimeout(() => {
+                    headingElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                    });
+                }, 100);
             }
+        } catch (_error) {
+            // Silently fail - scroll error is non-critical
         }
-    }, [previewElement]);
+
+        return () => {
+            if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+        };
+    }, [headingId]);
 
     return (
         <>

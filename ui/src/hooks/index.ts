@@ -5,7 +5,7 @@
  * - api/ - API interaction hooks (useApi)
  * - auth/ - Authentication hooks (useAuthState, useAuthActions)
  * - navigation/ - Navigation hooks
- * - search/ - Search hooks (useFrontendSearch)
+ * - query/ - Query keys for TanStack Query
  *
  * Note:
  * - Theme hooks (useTheme) are available from @contexts/ui
@@ -41,8 +41,3 @@ export * from './auth';
 
 // Query hooks (TanStack Query)
 export * from './query';
-
-// Navigation hooks (currently empty - use TanStack Router directly)
-
-// Search hooks
-export * from './search';

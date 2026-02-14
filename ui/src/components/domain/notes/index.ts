@@ -1,7 +1,6 @@
 export { default as ActionsDropdown } from './ActionsDropdown';
 export { default as DeleteNote } from './DeleteNote';
 export { default as FilesView } from './FilesView';
-export { default as NoteMetadata } from './NoteMetadata';
 export { default as NoteOutline } from './NoteOutline';
 export { default as NotePreviewContent } from './NotePreviewContent';
 export { default as NotesLayout } from './NotesLayout';

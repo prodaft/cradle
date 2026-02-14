@@ -45,7 +45,7 @@ import {
     EntryClassRequestTypeEnum,
 } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import OfflineIndicator from '../../../feedback/offline-indicator';
@@ -83,19 +83,19 @@ const formatOptions: FormatOption[] = [
 ];
 
 const entryTypeSchema = z.object({
-    type: z
-        .object({
+    type: z.object(
+        {
             value: z.enum([
                 EntryClassRequestTypeEnum.Artifact,
                 EntryClassRequestTypeEnum.Entity,
             ]),
             label: z.string().min(1),
-        })
-        .nullable()
-        .refine((val) => val !== null, {
-            error: 'Class Type is required',
-        }),
-    subtype: z.string().min(1, { error: 'Subtype is required' }),
+        },
+        {
+            message: 'Class Type is required',
+        },
+    ),
+    subtype: z.string().min(1, { message: 'Subtype is required' }),
     description: z.string().default(''),
     prefix: z.string().default(''),
     typeFormat: z
@@ -105,7 +105,7 @@ const entryTypeSchema = z.object({
     regex: z.string().default(''),
     options: z.string().default(''),
     generativeRegex: z.string().default(''),
-    color: z.string().min(1, { error: 'Color is required' }),
+    color: z.string().min(1, { message: 'Color is required' }),
     children: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
 });
 
@@ -114,16 +114,14 @@ type EntryTypeFormValues = z.infer<typeof entryTypeSchema>;
 export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) {
     const { entriesApi } = useApi();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
-    const [entryTypes, setEntryTypes] = useState<ChildOption[]>([]);
 
     const {
-        register,
         handleSubmit: handleFormSubmit,
         reset,
         watch,
         setValue,
         control,
-        formState: { errors, isSubmitting },
+        formState: { isSubmitting },
     } = useForm<EntryTypeFormValues>({
         resolver: zodResolver(entryTypeSchema) as any,
         defaultValues: {
@@ -143,36 +141,34 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     // Fetch entry type details in edit mode
     const {
         data: entryTypeData,
-        isPending,
-        isPaused,
+        isLoading: isEntryTypeLoading,
+        isPaused: isEntryTypePaused,
     } = useQuery({
         queryKey: queryKeys.entryTypes.detail(id!),
         queryFn: () => entriesApi.entryClassesRetrieve({ classSubtype: id! }),
         enabled: !!id,
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch entry type',
         },
     });
 
-    const { data: entryClassesListData, isPending: isEntryTypesListPending } = useQuery(
-        {
-            queryKey: queryKeys.entryTypes.lists(),
-            queryFn: () => entriesApi.entryClassesList(),
-            refetchOnWindowFocus: false,
-            meta: { showErrorToast: false, suppressNotification: true },
-        },
-    );
+    const {
+        data: entryClassesListData,
+        isLoading: isEntryTypesListLoading,
+        isPaused: isEntryTypesListPaused,
+    } = useQuery({
+        queryKey: queryKeys.entryTypes.lists(),
+        queryFn: () => entriesApi.entryClassesList(),
+        refetchOnWindowFocus: false,
+        meta: { showErrorToast: false, suppressNotification: true },
+    });
 
-    useEffect(() => {
-        if (entryClassesListData == null) return;
-        const results = entryClassesListData.results ?? [];
-        setEntryTypes(
-            results.map((entry) => ({
-                value: entry.subtype,
-                label: entry.subtype,
-            })),
-        );
+    const entryTypes = useMemo<ChildOption[]>(() => {
+        const results = entryClassesListData?.results ?? [];
+        return results.map((entry) => ({
+            value: entry.subtype,
+            label: entry.subtype,
+        }));
     }, [entryClassesListData]);
 
     useEffect(() => {
@@ -199,7 +195,8 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         });
     }, [id, entryTypeData, colorGenerator, reset]);
 
-    const isLoading = isEntryTypesListPending || (!!id && isPending);
+    const isLoading = isEntryTypesListLoading || isEntryTypeLoading;
+    const isOffline = (Boolean(id) && isEntryTypePaused) || isEntryTypesListPaused;
 
     const updateEntryTypeMutation = useMutation({
         mutationFn: async (payload: EntryClassRequest) => {
@@ -220,30 +217,22 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         const payload: EntryClassRequest = {
             generativeRegex: data.generativeRegex,
             format:
-                data.typeFormat?.value === 'any'
+                !data.typeFormat || data.typeFormat.value === 'any'
                     ? null
-                    : (data.typeFormat?.value ?? null),
-            type: data.type?.value || EntryClassRequestTypeEnum.Artifact,
+                    : data.typeFormat.value,
+            type: data.type.value,
             subtype: data.subtype,
             description: data.description,
             prefix: data.prefix,
             color: data.color,
             regex: data.regex,
             options: data.options,
-            children: data.children?.map((child) => child.value) ?? [],
+            children: data.children.map((child) => child.value),
         };
         updateEntryTypeMutation.mutate(payload);
     };
 
-    if (isPending && !isPaused) {
-        return (
-            <div className='flex items-center justify-center min-h-screen text-foreground'>
-                <Spinner className='size-10' />
-            </div>
-        );
-    }
-
-    if (isPaused) {
+    if (isOffline) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
                 <div className='w-full max-w-md p-4'>
@@ -255,8 +244,8 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
 
     const watchType = watch('type');
     const watchTypeFormat = watch('typeFormat');
-    const isArtifact = watchType?.value === EntryClassRequestTypeEnum.Artifact;
-    const isEntity = watchType?.value === EntryClassRequestTypeEnum.Entity;
+    const isArtifact = watchType.value === EntryClassRequestTypeEnum.Artifact;
+    const isEntity = watchType.value === EntryClassRequestTypeEnum.Entity;
     const isOptions = watchTypeFormat?.value === 'options';
     const isRegex = watchTypeFormat?.value === 'regex';
 
@@ -315,7 +304,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                           value: option.value,
                                                           label: option.label,
                                                       }
-                                                    : null,
+                                                    : typeOptions[0],
                                             );
                                         }}
                                     >

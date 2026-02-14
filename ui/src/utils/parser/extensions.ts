@@ -6,49 +6,6 @@ import type MarkdownIt from 'markdown-it';
 import type { Token } from 'markdown-it/index.js';
 import { prependLinks } from '../links';
 
-// Override block-level renderer rules to render nothing
-const BLOCK_RULES = [
-    'paragraph_open',
-    'paragraph_close',
-    'heading_open',
-    'heading_close',
-    'blockquote_open',
-    'blockquote_close',
-    'bullet_list_open',
-    'bullet_list_close',
-    'ordered_list_open',
-    'ordered_list_close',
-    'list_item_open',
-    'list_item_close',
-    'hr',
-    'table_open',
-    'table_close',
-    'thead_open',
-    'thead_close',
-    'tbody_open',
-    'tbody_close',
-    'tr_open',
-    'tr_close',
-    'th_open',
-    'th_close',
-    'td_open',
-    'td_close',
-    'code_block',
-    'fence',
-    'html_block',
-];
-
-const INLINE_FORMATTING_RULES = [
-    'strong_open',
-    'strong_close',
-    'em_open',
-    'em_close',
-    's_open',
-    's_close',
-    'link_open',
-    'link_close',
-];
-
 function createDashboardLink({
     name,
     subtype,
@@ -64,7 +21,15 @@ function createDashboardLink({
 const LINK_REGEX =
     /^(?:~)?\[\[([^:|]+?):((?:\\[[\]|]|[^[\]|])+?)(?:\|((?:\\[[\]|]|[^[\]|])+?))?\]\](?:\((?:(\d{2}:\d{2}\s+)?(\d{2}-\d{2}-\d{4}))\))?/;
 
-export function cradleLinkRule(state: any, silent: boolean): boolean {
+function ensureCradleLinkRule(md: MarkdownIt): void {
+    try {
+        md.inline.ruler.at('cradle_link', cradleLinkRule);
+    } catch {
+        md.inline.ruler.before('link', 'cradle_link', cradleLinkRule);
+    }
+}
+
+function cradleLinkRule(state: any, silent: boolean): boolean {
     const str = state.src.slice(state.pos);
     const match = LINK_REGEX.exec(str);
     if (!match) return false;
@@ -83,57 +48,56 @@ export function cradleLinkRule(state: any, silent: boolean): boolean {
     return true;
 }
 
-export function renderCradleLink(
+const SAFE_CSS_COLOR =
+    /^(?:var\(--[\w-]+\)|#[\da-fA-F]{3,8}|(?:rgb|hsl)a?\([\d\s,%.]+\)|[a-zA-Z]{1,20})$/;
+
+function safeCssColor(value: string, fallback: string): string {
+    return SAFE_CSS_COLOR.test(value) ? value : fallback;
+}
+
+function escapeHtml(str: string): string {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function renderCradleLink(
     entryColors: Map<string, string>,
     token: Token,
     plaintext: boolean = false,
 ): string {
-    const type = (token as any).cradle_type;
     const name = (token as any).cradle_name;
     const alias = (token as any).cradle_alias;
-    const time = (token as any).cradle_time;
-    const date = (token as any).cradle_date;
-    const hidden = (token as any).hidden;
     const displayedName = alias || name;
-    const url = createDashboardLink({ name, subtype: type });
-    const colorClass = entryColors.get(type) || 'var(--foreground)';
-
-    let displayText = displayedName;
 
     if (plaintext) {
-        return displayText;
+        return displayedName;
     }
 
+    const type = (token as any).cradle_type;
+    const time = (token as any).cradle_time;
+    const date = (token as any).cradle_date;
+    const url = createDashboardLink({ name, subtype: type });
+    const colorClass = safeCssColor(entryColors.get(type) || '', 'var(--foreground)');
+
+    let displayText = escapeHtml(displayedName);
+
     if (date) {
-        displayText += ` (${time ? time + ' ' : ''}${date})`;
+        displayText += ` (${time ? escapeHtml(time) + ' ' : ''}${escapeHtml(date)})`;
     }
 
     return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${
-        date ? `data-timestamp="${date}"` : ''
-    } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
-}
-
-/**
- * Render a footnote reference as HTML
- * Formats markdown footnote syntax [text][ref] into a link
- */
-export function renderFootnoteRef(token: Token): string {
-    const content = token.content || '';
-    const footnoteRef = (token as any).footnote_ref || '';
-
-    // If there's a reference, create an anchor link to the footnote
-    if (footnoteRef) {
-        return `<a href="#fn-${footnoteRef}" class="footnote-ref" id="fnref-${footnoteRef}">${content}</a>`;
-    }
-
-    // Otherwise, just return the content
-    return content;
+        date ? `data-timestamp="${escapeHtml(date)}"` : ''
+    } ${time ? `data-time="${escapeHtml(time)}"` : ''}>${displayText}</a>`;
 }
 
 let DownloadLinkPromiseCache: Record<string, Promise<FileDownload>> = {};
 const MinioCache: Record<string, FileDownload> = {};
 
-export function fetchMinioDownloadLink(
+function fetchMinioDownloadLink(
     fileTransferApi: FileTransferApi,
     fileId: string,
 ): Promise<FileDownload> {
@@ -150,10 +114,9 @@ export function fetchMinioDownloadLink(
     return DownloadLinkPromiseCache[fileId];
 }
 
-export async function resolveMinioLinks(
+async function resolveMinioLinks(
     token: Token,
     fileTransferApi: FileTransferApi,
-    baseURL: string,
 ): Promise<void> {
     if (token.type === 'link_open' || token.type === 'image') {
         let hrefIndex = token.attrIndex('href');
@@ -186,17 +149,18 @@ export async function resolveMinioLinks(
     }
 }
 
-export async function processTokens(
+async function processTokens(
     tokens: Token[],
     fileTransferApi: FileTransferApi,
-    baseURL: string,
 ): Promise<void> {
+    const promises: Promise<void>[] = [];
     for (const token of tokens) {
-        await resolveMinioLinks(token, fileTransferApi, baseURL);
+        promises.push(resolveMinioLinks(token, fileTransferApi));
         if (token.children) {
-            await processTokens(token.children, fileTransferApi, baseURL);
+            promises.push(processTokens(token.children, fileTransferApi));
         }
     }
+    await Promise.all(promises);
 }
 
 export async function parseWithExtensions(
@@ -208,106 +172,26 @@ export async function parseWithExtensions(
     baseURL: string,
 ): Promise<{ html: string; metadata: Record<string, any> }> {
     DownloadLinkPromiseCache = {};
-    md.inline.ruler.before('link', 'cradle_link', cradleLinkRule);
+    ensureCradleLinkRule(md);
     md.renderer.rules.cradle_link = (tokens: Token[], idx: number) =>
         renderCradleLink(entryColors, tokens[idx]);
 
     // Override image renderer to add max-width constraint (matching RichEditor behavior)
-    const originalImageRule = md.renderer.rules.image;
-    md.renderer.rules.image = (
-        tokens: Token[],
-        idx: number,
-        options: any,
-        env: any,
-        self: any,
-    ) => {
+    md.renderer.rules.image = (tokens: Token[], idx: number) => {
         const token = tokens[idx];
         const src = token.attrGet('src') || '';
         const alt = token.attrGet('alt') || '';
         const title = token.attrGet('title') || '';
 
-        // Escape HTML attributes for text content (alt, title)
-        // src is typically a URL and should already be properly encoded
-        const escapeAttr = (str: string) => {
-            return str
-                .replace(/&/g, '&amp;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        };
-
-        // Build attributes string
-        let attrs = `src="${src}" alt="${escapeAttr(alt)}"`;
+        let attrs = `src="${escapeHtml(src)}" alt="${escapeHtml(alt)}"`;
         if (title) {
-            attrs += ` title="${escapeAttr(title)}"`;
+            attrs += ` title="${escapeHtml(title)}"`;
         }
 
         // Add max-width styling to match RichEditor (40% max-width)
         attrs += ' style="max-width: 40%; cursor: default;"';
 
         return `<img ${attrs}>`;
-    };
-
-    // Override paragraph_close to preserve empty lines
-    const originalParagraphClose = md.renderer.rules.paragraph_close;
-    md.renderer.rules.paragraph_close = (
-        tokens: Token[],
-        idx: number,
-        options: any,
-        env: any,
-        self: any,
-    ) => {
-        // Find the corresponding paragraph_open token
-        let openIdx = idx;
-        while (openIdx >= 0 && tokens[openIdx].type !== 'paragraph_open') {
-            openIdx--;
-        }
-
-        if (openIdx >= 0) {
-            // Check if paragraph has any real content between open and close
-            let hasContent = false;
-            for (let i = openIdx + 1; i < idx; i++) {
-                const token = tokens[i];
-                if (
-                    token.type === 'inline' &&
-                    token.children &&
-                    token.children.length > 0
-                ) {
-                    // Check if inline content has any non-whitespace (excluding zero-width space)
-                    for (const child of token.children) {
-                        if (child.type === 'text') {
-                            // Remove zero-width spaces and whitespace, then check if anything remains
-                            const trimmed = child.content.replace(/\u200B/g, '').trim();
-                            if (trimmed) {
-                                hasContent = true;
-                                break;
-                            }
-                        } else if (
-                            child.type !== 'text' &&
-                            child.type !== 'softbreak' &&
-                            child.type !== 'hardbreak'
-                        ) {
-                            hasContent = true;
-                            break;
-                        }
-                    }
-                    if (hasContent) break;
-                } else if (token.type !== 'softbreak' && token.type !== 'hardbreak') {
-                    hasContent = true;
-                    break;
-                }
-            }
-
-            // If paragraph is empty (or only contains zero-width space), add a <br> to preserve the empty line
-            if (!hasContent) {
-                return '<br></p>';
-            }
-        }
-
-        // Use original renderer if it exists, otherwise default
-        if (originalParagraphClose) {
-            return originalParagraphClose(tokens, idx, options, env, self);
-        }
-        return '</p>';
     };
 
     let metadata = {};
@@ -323,9 +207,7 @@ export async function parseWithExtensions(
                 },
             },
         });
-        if (note.content || mdContent.trim().endsWith('---'))
-            // If the content ends with '---' or note is not empty, there exists frontmatter
-            mdContent = note.content;
+        mdContent = note.content;
         metadata = note.data;
     } catch {
         metadata = {};
@@ -348,93 +230,29 @@ export async function parseWithExtensions(
     const content = fileData
         ? prependLinks(preprocessedContent, fileData, baseURL)
         : preprocessedContent;
-    const tokens = md.parse(content, {});
-    await processTokens(tokens, fileTransferApi, baseURL);
-    let html = md.renderer.render(tokens, md.options, metadata);
+    const env = { metadata };
+    const tokens = md.parse(content, env);
+    await processTokens(tokens, fileTransferApi);
+    let html = md.renderer.render(tokens, md.options, env);
 
     // Post-process HTML to convert zero-width space paragraphs to <br> tags
     // This handles paragraphs that only contain zero-width spaces (our empty line markers)
-    html = html.replace(/<p>\u200B<\/p>/g, '<p><br></p>');
-    // Also handle cases where zero-width space might be in a paragraph with other whitespace
     html = html.replace(/<p>\s*\u200B\s*<\/p>/g, '<p><br></p>');
 
     return { html, metadata };
 }
 
 export function parseWithExtensionsInline(md: MarkdownIt, mdContent: string): string {
-    DownloadLinkPromiseCache = {};
+    ensureCradleLinkRule(md);
 
-    // Add the cradle link rule
-    md.inline.ruler.before('link', 'cradle_link', cradleLinkRule);
-
-    const originalRules: { [key: string]: any } = {};
-
-    BLOCK_RULES.forEach((rule) => {
-        if (md.renderer.rules[rule]) {
-            originalRules[rule] = md.renderer.rules[rule];
-        }
-        md.renderer.rules[rule] = () => '';
-    });
-
-    INLINE_FORMATTING_RULES.forEach((rule) => {
-        if (md.renderer.rules[rule]) {
-            originalRules[rule] = md.renderer.rules[rule];
-        }
-        md.renderer.rules[rule] = () => '';
-    });
-
-    // Text content - return as is
-    if (md.renderer.rules.text) {
-        originalRules.text = md.renderer.rules.text;
+    try {
+        mdContent = matter(mdContent).content;
+    } catch {
+        // ignore invalid frontmatter
     }
-    md.renderer.rules.text = (tokens, idx) => {
-        return tokens[idx].content;
-    };
 
-    // Code inline - return just the content without backticks
-    if (md.renderer.rules.code_inline) {
-        originalRules.code_inline = md.renderer.rules.code_inline;
-    }
-    md.renderer.rules.code_inline = (tokens, idx) => {
-        return tokens[idx].content;
-    };
-
-    // Images - return alt text or empty string
-    if (md.renderer.rules.image) {
-        originalRules.image = md.renderer.rules.image;
-    }
-    md.renderer.rules.image = (tokens, idx) => {
-        const alt = tokens[idx].attrGet('alt');
-        return alt || '';
-    };
-
-    // Line breaks - convert to spaces
-    if (md.renderer.rules.hardbreak) {
-        originalRules.hardbreak = md.renderer.rules.hardbreak;
-    }
-    md.renderer.rules.hardbreak = () => ' ';
-
-    if (md.renderer.rules.softbreak) {
-        originalRules.softbreak = md.renderer.rules.softbreak;
-    }
-    md.renderer.rules.softbreak = () => ' ';
-
-    // HTML inline - ignore
-    if (md.renderer.rules.html_inline) {
-        originalRules.html_inline = md.renderer.rules.html_inline;
-    }
-    md.renderer.rules.html_inline = () => '';
-
-    // Parse the markdown
     const tokens = md.parse(mdContent, {});
-
-    // Extract only inline content from block elements
     const plainText = extractPlainText(tokens);
-
-    // Restore original rules
-    Object.keys(originalRules).forEach((rule) => {
-        md.renderer.rules[rule] = originalRules[rule];
-    });
 
     // Clean up whitespace and return
     return plainText.trim().replace(/\s+/g, ' ');
@@ -477,17 +295,18 @@ function extractInlineText(tokens: Token[]): string {
     for (const token of tokens) {
         switch (token.type) {
             case 'text':
-                text += token.content;
-                break;
             case 'code_inline':
+            case 'reference_link':
+            case 'footnote_ref':
                 text += token.content;
                 break;
-            case 'image':
+            case 'image': {
                 const alt = token.attrGet('alt');
                 if (alt) {
                     text += alt;
                 }
                 break;
+            }
             case 'softbreak':
             case 'hardbreak':
                 text += ' ';
@@ -500,21 +319,12 @@ function extractInlineText(tokens: Token[]): string {
             case 'em_close':
             case 's_open':
             case 's_close':
+            case 'html_inline':
                 break;
             case 'cradle_link':
-                text += renderCradleLink(new Map(), token, true);
-                break;
-            case 'reference_link':
-                text += token.content;
-                break;
-            case 'footnote_ref':
-                text += token.content;
-                break;
-            case 'html_inline':
-                // Skip formatting tags
+                text += (token as any).cradle_alias || (token as any).cradle_name || '';
                 break;
             default:
-                // For any custom tokens like cradle_link, try to get their content
                 if (token.content) {
                     text += token.content;
                 }

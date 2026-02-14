@@ -5,7 +5,8 @@ import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-import { parseAPIError } from '@/utils/api';
+
+import type { EnrichmentRequestListStatusEnum } from '@services/cradle/apis/IntelioApi';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Sparkles } from 'lucide-react';
@@ -18,31 +19,31 @@ import {
     useState,
 } from 'react';
 import { toast } from 'sonner';
-import { DateRangeFilter } from '../../base/ListView/types';
 import OfflineIndicator from '../../feedback/offline-indicator';
 import EnrichmentRequestsList from './EnrichmentRequestsList';
 
 interface SearchFilters {
     title: string;
-    user: string;
 }
 
 interface ColumnFilters {
-    [key: string]: string | DateRangeFilter | undefined;
     status: string;
     user: string;
 }
 
-export default function EnrichmentRequests() {
-    if (import.meta.env.VITE_ENV === 'production') {
-        return <InProgress />;
-    }
+const IS_PROD = import.meta.env.VITE_ENV === 'production';
 
+export default function EnrichmentRequests() {
+    if (IS_PROD) return <InProgress />;
+    return <EnrichmentRequestsInner />;
+}
+
+function EnrichmentRequestsInner() {
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ from: '/_authenticated/enrichment' });
+    const search = useSearch({ from: '/_authenticated/enrichment/' });
     const { intelioApi } = useApi();
     const [enrichmentDialogOpen, setEnrichmentDialogOpen] = useState(false);
 
@@ -54,92 +55,65 @@ export default function EnrichmentRequests() {
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
         (search as any)?.sort_direction || 'desc',
     );
-    const [pageSize, setPageSize] = useState((search as any)?.pagesize || 20);
+    const [pageSize, setPageSize] = useState(Number((search as any)?.pagesize) || 20);
     const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
 
-    // Search state
+    // Search state (title only — user filter lives in columnFilters)
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
         title: (search as any)?.title || '',
-        user: (search as any)?.user__username || '',
     });
 
-    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(
-        null,
-    );
+    // Initialize from URL so the first fetch fires immediately (no null gating)
+    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters>({
+        title: (search as any)?.title || '',
+    });
 
-    // Column filters for table header
+    // Column filters for table header (user filter is authoritative here)
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: (search as any)?.status || 'all',
         user: (search as any)?.user__username || '',
     });
 
-    // Prepare query parameters
+    // Single queryParams object — used for both queryKey and queryFn
     const queryParams = useMemo(() => {
-        if (!submittedFilters) return null;
+        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
-        const searchQueryParams: any = {
+        return {
             page,
             pageSize,
             title: submittedFilters.title || undefined,
-            userUsername: submittedFilters.user || undefined,
+            userUsername: columnFilters.user || undefined,
+            status:
+                columnFilters.status === 'all'
+                    ? undefined
+                    : (columnFilters.status as EnrichmentRequestListStatusEnum),
+            orderBy,
         };
-
-        // Add column filter parameters
-        if (columnFilters.user) {
-            searchQueryParams.userUsername = columnFilters.user;
-        }
-
-        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-        searchQueryParams.orderBy = orderBy;
-        searchQueryParams.status =
-            columnFilters.status == 'all' ? undefined : columnFilters.status;
-
-        return searchQueryParams;
     }, [page, pageSize, submittedFilters, columnFilters, sortField, sortDirection]);
 
     // Query for enrichment requests
     const {
         data: requestsData,
-        isPending,
+        isLoading,
         isPaused,
     } = useQuery({
-        queryKey: queryKeys.enrichment.requests.list({
-            page,
-            pageSize,
-            ...queryParams,
-        }),
-        queryFn: () => intelioApi.enrichmentRequestList(queryParams!),
-        enabled: queryParams != null,
+        queryKey: queryKeys.enrichment.requests.list(queryParams),
+        queryFn: () => intelioApi.enrichmentRequestList(queryParams),
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch enrichment requests',
         },
     });
 
     const enrichmentRequests = requestsData?.results || [];
     const totalPages = requestsData?.totalPages || 1;
-    const totalCount = requestsData?.count || 0;
-
-    // Initialize submittedFilters from URL parameters on mount
-    useEffect(() => {
-        const searchAny = search as any;
-        if (searchAny?.title || searchAny?.user__username) {
-            setSubmittedFilters({
-                title: searchAny?.title || '',
-                user: searchAny?.user__username || '',
-            });
-        }
-    }, [search]);
 
     const updateSearchParams = useCallback(
         (filters: SearchFilters) => {
             const newSearch: any = {
                 ...search,
                 title: filters.title || undefined,
-                user__username: filters.user || undefined,
             };
 
-            // Remove undefined values
             Object.keys(newSearch).forEach((key) => {
                 if (newSearch[key] === undefined || newSearch[key] === '') {
                     delete newSearch[key];
@@ -164,6 +138,22 @@ export default function EnrichmentRequests() {
         return () => clearTimeout(timeoutId);
     }, [searchFilters, updateSearchParams]);
 
+    // Delete mutation
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => intelioApi.enrichmentDetailDelete({ id }),
+        meta: {
+            invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
+        },
+    });
+
+    // Rerun mutation
+    const rerunMutation = useMutation({
+        mutationFn: (id: string) => intelioApi.enrichmentRestart({ id }),
+        meta: {
+            invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
+        },
+    });
+
     const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setSearchFilters((prev) => ({
@@ -175,10 +165,6 @@ export default function EnrichmentRequests() {
     const handleSearchSubmit = (e: FormEvent) => {
         e.preventDefault();
         updateSearchParams(searchFilters);
-    };
-
-    const handlePageChange = (newPage: number) => {
-        setPage(newPage);
     };
 
     const handleSort = (newSortField: string, newSortDirection: 'asc' | 'desc') => {
@@ -213,33 +199,13 @@ export default function EnrichmentRequests() {
         });
     };
 
-    const handleColumnFilterChange = (
-        column: keyof ColumnFilters,
-        value: string | DateRangeFilter,
-    ) => {
-        if (typeof value !== 'string') return;
+    const handleColumnFilterChange = (column: keyof ColumnFilters, value: string) => {
         setColumnFilters((prev) => ({
             ...prev,
             [column]: value,
         }));
-        setPage(1); // Reset to first page when filters change
+        setPage(1);
     };
-
-    // Delete mutation
-    const deleteMutation = useMutation({
-        mutationFn: (id: string) => intelioApi.enrichmentDetailDelete({ id }),
-        meta: {
-            invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
-        },
-    });
-
-    // Rerun mutation
-    const rerunMutation = useMutation({
-        mutationFn: (id: string) => intelioApi.enrichmentRestart({ id }),
-        meta: {
-            invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
-        },
-    });
 
     const handleCreateRequest = () => {
         setEnrichmentDialogOpen(true);
@@ -252,9 +218,8 @@ export default function EnrichmentRequests() {
             await Promise.all(ids.map((id) => deleteMutation.mutateAsync(id)));
             toast.success(`Deleted ${ids.length} enrichment request(s)`);
             setSelectedRequests([]);
-        } catch (error) {
-            const parsed = await parseAPIError(error);
-            toast.error(parsed.detail);
+        } catch {
+            // Error toast shown by global mutation handler
         }
     };
 
@@ -262,7 +227,6 @@ export default function EnrichmentRequests() {
         if (selectedRequests.length === 0) return;
 
         try {
-            // Retry all selected requests
             await Promise.all(
                 selectedRequests.map((id) => rerunMutation.mutateAsync(id)),
             );
@@ -270,9 +234,8 @@ export default function EnrichmentRequests() {
                 `Retrying ${selectedRequests.length} enrichment request${selectedRequests.length > 1 ? 's' : ''}`,
             );
             setSelectedRequests([]);
-        } catch (error) {
-            const parsed = await parseAPIError(error);
-            toast.error(parsed.detail);
+        } catch {
+            // Error toast shown by global mutation handler
         }
     };
 
@@ -313,10 +276,10 @@ export default function EnrichmentRequests() {
                 {/* Enrichment Requests List */}
                 <EnrichmentRequestsList
                     enrichmentRequests={enrichmentRequests}
-                    loading={isPending && !isPaused}
+                    loading={isLoading}
                     page={page}
                     totalPages={totalPages}
-                    handlePageChange={handlePageChange}
+                    handlePageChange={setPage}
                     onRequestDelete={() => {
                         // Query will automatically refetch due to invalidation
                     }}
@@ -342,10 +305,6 @@ export default function EnrichmentRequests() {
                 onOpenChange={setEnrichmentDialogOpen}
                 onSuccess={() => {
                     toast.success('Enrichment request created successfully');
-                }}
-                onError={async (error: Error) => {
-                    const parsed = await parseAPIError(error);
-                    toast.error(parsed.detail);
                 }}
             />
         </div>

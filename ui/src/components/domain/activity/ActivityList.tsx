@@ -416,7 +416,7 @@ export default function ActivityList({
 
     const {
         data: logsData,
-        isPending,
+        isLoading,
         isPaused,
     } = useQuery({
         queryKey: [
@@ -434,7 +434,6 @@ export default function ActivityList({
         queryFn: () => logsApi.logsList(queryParams),
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch event logs. Please try again.',
         },
     });
 
@@ -489,7 +488,6 @@ export default function ActivityList({
     }, [logsData?.results]);
 
     const totalPages = logsData?.totalPages || 1;
-    const loading = isPending && !isPaused;
 
     // Column definitions (TanStack Table)
     const columns = useMemo<ColumnDef<ActivityEvent>[]>(
@@ -702,7 +700,7 @@ export default function ActivityList({
             {/* Results */}
             {isPaused && <OfflineIndicator />}
 
-            {loading ? (
+            {isLoading ? (
                 <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                     <Spinner className='size-10' />
                 </div>

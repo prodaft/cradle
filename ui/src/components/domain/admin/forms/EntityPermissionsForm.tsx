@@ -47,7 +47,7 @@ export default function EntityPermissionsForm({
 
     // Query for access data — fetches full list (no server-side search)
     // because the form needs the complete dataset to track unsaved edits
-    const { data: allAccessData = [], isPending } = useQuery({
+    const { data: allAccessData = [], isLoading } = useQuery({
         queryKey: ['entities', 'access', String(entityId)],
         queryFn: () => accessApi.accessEntityList({ entityId }),
         enabled: !!entityId,
@@ -149,7 +149,7 @@ export default function EntityPermissionsForm({
         saveChangesMutation.mutate();
     };
 
-    if (isPending) {
+    if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                 <Spinner className='size-10' />

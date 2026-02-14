@@ -252,7 +252,7 @@ export default function UserActivityList({ username }: UserActivityListProps) {
     const { logsApi } = useApi();
     const [page, setPage] = useState(1);
 
-    const { data: logsData, isPending } = useQuery({
+    const { data: logsData, isLoading } = useQuery({
         queryKey: ['activity', 'user', username, page],
         queryFn: () =>
             logsApi.logsList({
@@ -262,7 +262,6 @@ export default function UserActivityList({ username }: UserActivityListProps) {
         enabled: !!username,
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch activity logs.',
         },
     });
 
@@ -324,7 +323,7 @@ export default function UserActivityList({ username }: UserActivityListProps) {
             );
     }, [logsData?.results]);
 
-    if (isPending) {
+    if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                 <Spinner className='size-10' />

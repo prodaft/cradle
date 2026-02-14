@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
-import type { Alert } from '@/types';
 import DigestList from '@components/domain/files/DigestList';
 import type { BaseDigest } from '@services/cradle/models';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +10,18 @@ import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { debounce } from 'lodash';
 import { FilePlus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+const toYmd = (iso?: string) => (iso ? new Date(iso).toISOString().split('T')[0] : '');
+
+const toStartIso = (ymd?: string | null) =>
+    ymd ? new Date(ymd).toISOString() : undefined;
+
+const toEndIso = (ymd?: string | null) => {
+    if (!ymd) return undefined;
+    const endDate = new Date(ymd);
+    endDate.setHours(23, 59, 59, 999);
+    return endDate.toISOString();
+};
 
 interface SearchFilters {
     title: string;
@@ -36,9 +47,6 @@ interface ColumnFilters {
     };
 }
 
-// Use BaseDigest from generated models
-type Digest = BaseDigest;
-
 export default function DigestData() {
     const router = useRouter();
     const location = useRouterState({
@@ -57,7 +65,11 @@ export default function DigestData() {
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | undefined>(
         (search as any)?.digests_sort_direction || 'desc',
     );
-    const [pageSize, setPageSize] = useState((search as any)?.digests_pagesize || 20);
+    const [pageSize, setPageSize] = useState(() => {
+        const raw = (search as any)?.digests_pagesize;
+        const parsed = Number(raw);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 20;
+    });
 
     // Search state
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
@@ -73,8 +85,12 @@ export default function DigestData() {
 
     // Date range state
     const [dateRange, setDateRange] = useState<DateRange>({
-        startDate: (search as any)?.created_at_gte || null,
-        endDate: (search as any)?.created_at_lte || null,
+        startDate: (search as any)?.created_at_gte
+            ? toYmd((search as any)?.created_at_gte)
+            : null,
+        endDate: (search as any)?.created_at_lte
+            ? toYmd((search as any)?.created_at_lte)
+            : null,
     });
 
     // Column filters for table header
@@ -82,20 +98,9 @@ export default function DigestData() {
         status: (search as any)?.status || 'all',
         user: (search as any)?.author || '',
         createdAt: {
-            from: (search as any)?.created_at_gte
-                ? new Date((search as any).created_at_gte).toISOString().split('T')[0]
-                : '',
-            to: (search as any)?.created_at_lte
-                ? new Date((search as any).created_at_lte).toISOString().split('T')[0]
-                : '',
+            from: toYmd((search as any)?.created_at_gte),
+            to: toYmd((search as any)?.created_at_lte),
         },
-    });
-
-    // Alert state for DigestList
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'info',
     });
 
     const searchRef = useRef(search);
@@ -119,19 +124,15 @@ export default function DigestData() {
             searchQueryParams.author = columnFilters.user;
         }
 
-        if (columnFilters.status != 'all') {
+        if (columnFilters.status !== 'all') {
             searchQueryParams.status = columnFilters.status;
         }
 
         if (columnFilters.createdAt.from) {
-            searchQueryParams.createdAtGte = new Date(
-                columnFilters.createdAt.from,
-            ).toISOString();
+            searchQueryParams.createdAtGte = toStartIso(columnFilters.createdAt.from);
         }
         if (columnFilters.createdAt.to) {
-            const endDate = new Date(columnFilters.createdAt.to);
-            endDate.setHours(23, 59, 59, 999);
-            searchQueryParams.createdAtLte = endDate.toISOString();
+            searchQueryParams.createdAtLte = toEndIso(columnFilters.createdAt.to);
         }
 
         const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
@@ -141,18 +142,16 @@ export default function DigestData() {
     }, [page, pageSize, sortField, sortDirection, columnFilters, submittedFilters]);
 
     // Query for digests
-    const { data: digestsData, isPending: loading } = useQuery({
+    const { data: digestsData, isLoading } = useQuery({
         queryKey: ['digests', queryParams],
         queryFn: () => intelioApi.intelioDigestRetrieve(queryParams),
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch digests',
         },
     });
 
-    const digests = digestsData?.results || [];
-    const totalPages = digestsData?.totalPages || 1;
-    const totalCount = digestsData?.count || 0;
+    const digests = (digestsData?.results ?? []) as BaseDigest[];
+    const totalPages = digestsData?.totalPages ?? 1;
 
     // Initialize filters from URL parameters
     useEffect(() => {
@@ -164,11 +163,9 @@ export default function DigestData() {
 
         const initialDateRange: DateRange = {
             startDate: searchAny?.created_at_gte
-                ? new Date(searchAny.created_at_gte).toISOString().split('T')[0]
+                ? toYmd(searchAny.created_at_gte)
                 : null,
-            endDate: searchAny?.created_at_lte
-                ? new Date(searchAny.created_at_lte).toISOString().split('T')[0]
-                : null,
+            endDate: searchAny?.created_at_lte ? toYmd(searchAny.created_at_lte) : null,
         };
 
         setSearchFilters(initialFilters);
@@ -190,20 +187,13 @@ export default function DigestData() {
 
     const updateSearchParams = useCallback(
         (filters: SearchFilters, dateRangeValue: DateRange) => {
+            const currentSearch = searchRef.current as any;
             const newSearch: any = {
-                ...search,
+                ...currentSearch,
                 title: filters.title || undefined,
                 author: filters.author || undefined,
-                created_at_gte: dateRangeValue.startDate
-                    ? new Date(dateRangeValue.startDate).toISOString()
-                    : undefined,
-                created_at_lte: dateRangeValue.endDate
-                    ? (() => {
-                          const endDate = new Date(dateRangeValue.endDate);
-                          endDate.setHours(23, 59, 59, 999);
-                          return endDate.toISOString();
-                      })()
-                    : undefined,
+                created_at_gte: toStartIso(dateRangeValue.startDate),
+                created_at_lte: toEndIso(dateRangeValue.endDate),
             };
 
             // Remove undefined values
@@ -221,16 +211,8 @@ export default function DigestData() {
 
             setSubmittedFilters({
                 ...filters,
-                created_at_gte: dateRangeValue.startDate
-                    ? new Date(dateRangeValue.startDate).toISOString()
-                    : '',
-                created_at_lte: dateRangeValue.endDate
-                    ? (() => {
-                          const endDate = new Date(dateRangeValue.endDate);
-                          endDate.setHours(23, 59, 59, 999);
-                          return endDate.toISOString();
-                      })()
-                    : '',
+                created_at_gte: toStartIso(dateRangeValue.startDate) ?? '',
+                created_at_lte: toEndIso(dateRangeValue.endDate) ?? '',
             });
         },
         [router, location.pathname],
@@ -245,16 +227,8 @@ export default function DigestData() {
         // If the current UI filters already match what we've "submitted" (i.e. what drives fetching),
         // don't schedule another URL/submittedFilters update. This avoids duplicate fetches when a submit
         // and a debounced update happen back-to-back with the same values.
-        const expectedCreatedAtGte = dateRange.startDate
-            ? new Date(dateRange.startDate).toISOString()
-            : '';
-        const expectedCreatedAtLte = dateRange.endDate
-            ? (() => {
-                  const endDate = new Date(dateRange.endDate);
-                  endDate.setHours(23, 59, 59, 999);
-                  return endDate.toISOString();
-              })()
-            : '';
+        const expectedCreatedAtGte = toStartIso(dateRange.startDate) ?? '';
+        const expectedCreatedAtLte = toEndIso(dateRange.endDate) ?? '';
 
         const matchesSubmitted =
             submittedFilters.title === (searchFilters.title || '') &&
@@ -388,11 +362,10 @@ export default function DigestData() {
                 {/* Digest List */}
                 <DigestList
                     digests={digests}
-                    loading={loading}
+                    loading={isLoading}
                     page={page}
                     totalPages={totalPages}
                     handlePageChange={handlePageChange}
-                    setAlert={setAlert}
                     onDigestDelete={invalidateDigests}
                     sortField={sortField}
                     sortDirection={sortDirection}

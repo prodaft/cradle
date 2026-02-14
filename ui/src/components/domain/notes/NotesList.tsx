@@ -62,12 +62,6 @@ import OfflineIndicator from '../../feedback/offline-indicator';
 import { NotePreviewContent } from './NotePreviewContent';
 import { StatusIcon } from './StatusIcon';
 
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
-}
-
 interface Query {
     any_field?: string;
     content?: string;
@@ -118,9 +112,9 @@ export default function NotesList({
     query,
     filteredNotes = [],
     hideFleetingNotes = false,
-    noteActions = [],
+    noteActions: _noteActions = [],
     hideActionBar = false,
-    references = null,
+    references: _references = null,
     onFilterChange = null,
     contentSearch = null,
     onCreateNote = null,
@@ -131,17 +125,18 @@ export default function NotesList({
         select: (state) => state.location,
     });
     const search = useSearch({ strict: false });
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'red',
-    });
-    const [page, setPage] = useState((search as any)?.notes_page || 1);
+
+    // Extract page param (also used in sync effect below)
+    const notesPageParam = ((search as any)?.notes_page ?? 1) as number;
+
+    const [page, setPage] = useState(notesPageParam);
     const [sortField, setSortField] = useState(
-        (search as any)?.notes_sort_field || 'timestamp',
+        () => ((search as any)?.notes_sort_field ?? 'timestamp') as string,
     );
     const [sortDirection, setSortDirection] = useState<SortDirection>(
-        (search as any)?.notes_sort_direction || 'desc',
+        () =>
+            (((search as any)?.notes_sort_direction ?? 'desc') as SortDirection) ||
+            'desc',
     );
     const { notesApi, managementApi } = useApi();
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
@@ -174,7 +169,9 @@ export default function NotesList({
         },
     });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [pageSize, setPageSize] = useState((search as any)?.notes_pagesize || 20);
+    const [pageSize, setPageSize] = useState(
+        () => ((search as any)?.notes_pagesize ?? 20) as number,
+    );
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: 'all',
         any_field: query?.any_field || '',
@@ -263,18 +260,6 @@ export default function NotesList({
         [onFilterChange],
     );
 
-    const filterableColumns = useMemo<
-        Record<string, (value: string | DateRangeFilter) => void>
-    >(
-        () => ({
-            author: (value) => handleColumnFilter('author', value),
-            editor: (value) => handleColumnFilter('editor', value),
-            createdAt: (value) => handleColumnFilter('createdAt', value),
-            lastChanged: (value) => handleColumnFilter('lastChanged', value),
-        }),
-        [handleColumnFilter],
-    );
-
     const handleStatusChange = useCallback((status: string) => {
         setColumnFilters((prev) => ({
             ...prev,
@@ -321,11 +306,10 @@ export default function NotesList({
 
     // Sync URL params to page state
     useEffect(() => {
-        const pageFromParams = (search as any)?.notes_page || 1;
-        if (pageFromParams !== page) {
-            setPage(pageFromParams);
+        if (notesPageParam !== page) {
+            setPage(notesPageParam);
         }
-    }, [(search as any)?.notes_page, page]);
+    }, [notesPageParam, page]);
 
     // Prepare query parameters
     const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
@@ -372,8 +356,6 @@ export default function NotesList({
     }, [
         page,
         pageSize,
-        sortField,
-        sortDirection,
         query,
         columnFilters.status,
         hideFleetingNotes,
@@ -385,9 +367,8 @@ export default function NotesList({
     // Query for notes
     const {
         data: notesData,
-        isPending,
+        isLoading,
         isPaused,
-        error,
     } = useQuery({
         queryKey: queryKeys.notes.list({
             page,
@@ -400,26 +381,16 @@ export default function NotesList({
         queryFn: () => notesApi.notesList(queryParams as any),
         enabled: query != null && queryParams != null,
         meta: {
-            showErrorToast: false, // We handle alerts ourselves
-            suppressNotification: true,
+            showErrorToast: true,
         },
     });
 
-    // Handle query errors (v5: onError removed from useQuery, use useEffect instead)
-    useEffect(() => {
-        if (error) {
-            setAlert({
-                show: true,
-                message: 'Failed to fetch notes. Please try again.',
-                color: 'red',
-            });
-        }
-    }, [error]);
-
-    const notes = (notesData?.results as NoteRetrieve[]) || [];
+    const notes = useMemo(
+        () => (notesData?.results as NoteRetrieve[]) ?? [],
+        [notesData],
+    );
     const totalPages = notesData?.totalPages || 1;
     const totalCount = notesData?.count || 0;
-    const loading = isPending && !isPaused;
 
     // Update total count callback
     useEffect(() => {
@@ -453,14 +424,17 @@ export default function NotesList({
         [retryNotesMutation, queryClient],
     );
 
-    const handlePageChange = (newPage: number) => {
-        const searchAny = search as any;
-        const newSearch: any = { ...searchAny, notes_page: newPage };
-        router.navigate({
-            to: location.pathname as any,
-            search: newSearch as any,
-        });
-    };
+    const handlePageChange = useCallback(
+        (newPage: number) => {
+            const searchAny = search as any;
+            const newSearch: any = { ...searchAny, notes_page: newPage };
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch as any,
+            });
+        },
+        [search, router, location.pathname],
+    );
 
     // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
@@ -511,33 +485,25 @@ export default function NotesList({
             const failures = results.filter((r) => r.status === 'rejected').length;
 
             if (failures === 0) {
-                setAlert({
-                    show: true,
-                    color: 'green',
-                    message: `Successfully deleted ${successes} note${successes > 1 ? 's' : ''}`,
-                });
+                toast.success(
+                    `Successfully deleted ${successes} note${successes > 1 ? 's' : ''}`,
+                );
             } else if (successes === 0) {
-                setAlert({
-                    show: true,
-                    color: 'red',
-                    message: `Failed to delete ${failures} note${failures > 1 ? 's' : ''}`,
-                });
+                const firstRejected = results.find(
+                    (r) => r.status === 'rejected',
+                ) as PromiseRejectedResult;
+                const parsed = await parseAPIError(firstRejected.reason);
+                toast.error(parsed.detail);
             } else {
-                setAlert({
-                    show: true,
-                    color: 'amber',
-                    message: `Deleted ${successes} note${successes > 1 ? 's' : ''}, ${failures} failed`,
-                });
+                toast.warning(
+                    `Deleted ${successes} note${successes > 1 ? 's' : ''}, ${failures} failed`,
+                );
             }
 
             setRowSelection({});
         } catch (error) {
             const parsed = await parseAPIError(error);
-            setAlert({
-                show: true,
-                color: 'red',
-                message: parsed.detail,
-            });
+            toast.error(parsed.detail);
         }
     };
 
@@ -556,7 +522,7 @@ export default function NotesList({
                   },
               ]
             : [];
-    }, [sortField, sortDirection]);
+    }, [sortField, sortDirection, sortFieldMapping]);
 
     const onTableSortingChange = useCallback(
         (updater: SortingState | ((prev: SortingState) => SortingState)) => {
@@ -868,7 +834,6 @@ export default function NotesList({
         [
             columnFilters,
             router,
-            handleStatusChange,
             handleRetrySelected,
             setReportSelectedNotes,
             setReportDialogOpen,
@@ -876,6 +841,7 @@ export default function NotesList({
             setEnrichmentDialogOpen,
             setDeletingNoteId,
             setSingleDeleteDialogOpen,
+            renderNotePreview,
         ],
     );
 
@@ -960,7 +926,7 @@ export default function NotesList({
                 )}
 
                 <div className='grid grid-cols-1 gap-2'>
-                    {loading ? (
+                    {isLoading ? (
                         <div className='flex min-h-[200px] items-center justify-center'>
                             <Spinner className='size-10' />
                         </div>
@@ -989,14 +955,13 @@ export default function NotesList({
                                         icon={<PlusCircleIcon width={18} height={18} />}
                                         iconActive={true}
                                         onClick={onCreateNote}
-                                        disabled={loading}
+                                        disabled={isLoading}
                                     />
                                 )}
                                 {contentSearch && (
                                     <ActionBarSearch
                                         placeholder='Search content...'
                                         value={contentSearch.value || ''}
-                                        defaultExpanded={Boolean(contentSearch.value)}
                                         debounceMs={300}
                                         onDebouncedChange={(v) => {
                                             contentSearch.onChange?.(v);
@@ -1049,7 +1014,7 @@ export default function NotesList({
                     <ActionBarItem
                         onClick={() => handleRetrySelected(selectedNoteIds)}
                         disabled={
-                            loading ||
+                            isLoading ||
                             notes.length === 0 ||
                             selectedNoteIds.length === 0
                         }
@@ -1060,7 +1025,7 @@ export default function NotesList({
                     <ActionBarItem
                         onClick={handleReportSelected}
                         disabled={
-                            loading ||
+                            isLoading ||
                             notes.length === 0 ||
                             selectedNoteIds.length === 0
                         }
@@ -1071,7 +1036,7 @@ export default function NotesList({
                     <ActionBarItem
                         onClick={handleEnrichSelected}
                         disabled={
-                            loading ||
+                            isLoading ||
                             notes.length === 0 ||
                             selectedNoteIds.length === 0
                         }
@@ -1087,7 +1052,7 @@ export default function NotesList({
                             }
                         }}
                         disabled={
-                            loading ||
+                            isLoading ||
                             notes.length === 0 ||
                             selectedNoteIds.length === 0
                         }
@@ -1128,17 +1093,10 @@ export default function NotesList({
                         if (deletingNoteId) {
                             try {
                                 await deleteMutation.mutateAsync(deletingNoteId);
-                                setAlert({
-                                    show: true,
-                                    color: 'green',
-                                    message: 'Note deleted successfully',
-                                });
-                            } catch (error) {
-                                setAlert({
-                                    show: true,
-                                    color: 'red',
-                                    message: 'Failed to delete note',
-                                });
+                                toast.success('Note deleted successfully');
+                            } catch (_error) {
+                                const parsed = await parseAPIError(_error);
+                                toast.error(parsed.detail);
                             }
                         }
                     }}

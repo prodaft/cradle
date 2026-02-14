@@ -9,7 +9,6 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
-import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,10 +20,10 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-import type { Alert, StateSetter } from '@/types';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch } from '@components/base/ActionBar/ActionBar';
@@ -34,7 +33,6 @@ import {
     DotsThreeIcon,
     DownloadSimpleIcon,
     TrashIcon,
-    WarningCircleIcon,
 } from '@phosphor-icons/react';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -66,18 +64,9 @@ interface FilesListQuery {
 /**
  * FilesList component - This component is used to display a list of files.
  * @param query - Query parameters for filtering files
- * @param fileActions - Actions that can be performed on files
- * @param references - References for drag and drop functionality
- * @param setAlert - Function to set alerts (optional)
- * @param onError - Error handler function (optional)
  */
 interface FilesListProps {
     query?: FilesListQuery;
-    fileActions?: any[];
-    references?: any;
-    setAlert?: StateSetter<Alert> | null;
-    onError?: ((error: any) => void) | null;
-    onCountChange?: (count: { current: number; total: number }) => void;
 }
 
 // Mapping of table columns to API field names - moved outside component to prevent recreation
@@ -90,27 +79,14 @@ const SORT_FIELD_MAPPING: Record<string, string> = {
 
 // Empty defaults to prevent new object creation on each render
 const EMPTY_QUERY = {};
-const EMPTY_FILE_ACTIONS: any[] = [];
+const EMPTY_FILES: FileReferenceWithNote[] = [];
 
-export default function FilesList({
-    query = EMPTY_QUERY,
-    fileActions = EMPTY_FILE_ACTIONS,
-    references = null,
-    setAlert: externalSetAlert = null,
-    onError = null,
-    onCountChange,
-}: FilesListProps) {
+export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
     });
     const search = useSearch({ strict: false });
-
-    const [alert, setInternalAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'red',
-    });
 
     const [page, setPage] = useState((search as any)?.files_page || 1);
     const [sortField, setSortField] = useState(
@@ -132,9 +108,6 @@ export default function FilesList({
             });
             return download.presignedUrl;
         },
-        meta: {
-            errorMessage: 'Failed to download file. Please try again.',
-        },
         onSuccess: (presignedUrl) => {
             if (presignedUrl) {
                 window.open(presignedUrl, '_blank', 'noopener');
@@ -152,49 +125,38 @@ export default function FilesList({
         },
         meta: {
             successMessage: 'File queued for reprocessing',
-            errorMessage: 'Failed to reprocess file',
         },
     });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
     const { notesApi, fileTransferApi } = useApi();
     const [statusFilter, setStatusFilter] = useState<'all' | 'healthy' | 'warning'>(
-        'all',
+        ((search as any)?.files_status as 'all' | 'healthy' | 'warning') || 'all',
     );
 
     const { setNodeRef } = useDroppable({
         id: 'files-droppable',
     });
 
-    const selectedFileIds = useMemo(
-        () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
-        [rowSelection],
-    );
-
     const handleSortingChange = useCallback(
         (sorting: SortingState) => {
+            const newSearch: any = { ...(search as any), files_page: 1 };
+
             if (sorting.length === 0) {
                 setSortField('timestamp');
                 setSortDirection('desc');
+                delete newSearch.files_sort_field;
+                delete newSearch.files_sort_direction;
             } else {
                 const sort = sorting[0];
                 const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
                 setSortField(apiField);
                 setSortDirection(sort.desc ? 'desc' : 'asc');
-            }
-
-            // Reset to first page when sorting changes
-            setPage(1);
-            const newSearch: any = {
-                ...(search as any),
-                files_page: 1,
-            };
-            if (sorting.length > 0) {
-                const sort = sorting[0];
-                const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
                 newSearch.files_sort_field = apiField;
                 newSearch.files_sort_direction = sort.desc ? 'desc' : 'asc';
             }
+
+            setPage(1);
             router.navigate({
                 to: location.pathname as any,
                 search: newSearch as any,
@@ -211,8 +173,8 @@ export default function FilesList({
         // Map snake_case to camelCase for the autogenerated API
         const params: any = {
             page,
-            pageSize: pageSize,
-            orderBy: orderBy,
+            pageSize,
+            orderBy,
             date: query.date,
             keyword: searchQuery || query.keyword,
             linkedTo: query.linked_to,
@@ -235,9 +197,8 @@ export default function FilesList({
     // Query for files
     const {
         data: filesData,
-        isPending,
+        isLoading,
         isPaused,
-        error: filesError,
     } = useQuery({
         queryKey: queryKeys.files.list({
             page,
@@ -246,45 +207,29 @@ export default function FilesList({
         }),
         queryFn: () => notesApi.notesFilesRetrieve(queryParams),
         meta: {
-            showErrorToast: false,
-            suppressNotification: true, // We handle errors ourselves
+            showErrorToast: true,
         },
     });
 
-    // Handle query errors (v5: onError removed from useQuery, use useEffect instead)
-    useEffect(() => {
-        if (filesError) {
-            if (onError) {
-                onError(filesError);
-            } else {
-                toast.error('Failed to fetch files. Please try again.');
-            }
-        }
-    }, [filesError, onError]);
-
-    const files = filesData?.results || [];
+    const files = filesData?.results ?? EMPTY_FILES;
     const totalPages = filesData?.totalPages || 1;
-    const loading = isPending && !isPaused;
 
-    // Update count callback
-    useEffect(() => {
-        if (onCountChange && filesData) {
-            onCountChange({
-                current: files.length,
-                total: filesData.count || 0,
-            });
+    const selectedFileIds = useMemo(() => {
+        const ids: string[] = [];
+        files.forEach((f, idx) => {
+            const rowId = String(f.id ?? idx);
+            if (rowSelection[rowId] && f.id) ids.push(String(f.id));
+        });
+        return ids;
+    }, [files, rowSelection]);
+
+    const copyToClipboard = useCallback(async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            toast.success('Copied to clipboard');
+        } catch {
+            // Silently fail - user can try again
         }
-    }, [files.length, filesData?.count, onCountChange]);
-
-    const copyToClipboard = useCallback((text: string) => {
-        navigator.clipboard
-            .writeText(text)
-            .catch(() => {
-                // Silently fail - user can try again
-            })
-            .then(() => {
-                toast.success('Copied to clipboard');
-            });
     }, []);
 
     // Download a single file
@@ -304,23 +249,16 @@ export default function FilesList({
         if (selectedFileIds.length === 0) return;
 
         try {
-            const downloads = await Promise.all(
+            await Promise.all(
                 selectedFileIds
                     .filter((fileId) => fileId)
                     .map((fileId) => downloadFileMutation.mutateAsync(fileId)),
             );
-            downloads.forEach((presignedUrl) => {
-                if (presignedUrl) {
-                    window.open(presignedUrl, '_blank', 'noopener');
-                }
-            });
-
             toast.info(
-                `Attempted to download ${downloads.length} file(s). Your browser may block some.`,
+                `Attempted to download ${selectedFileIds.length} file(s). Your browser may block some.`,
             );
-        } catch (error) {
-            const parsed = await parseAPIError(error);
-            toast.error(parsed.detail);
+        } catch {
+            // Error toast shown by global mutation handler
         }
     }, [selectedFileIds, downloadFileMutation]);
 
@@ -337,7 +275,7 @@ export default function FilesList({
                 `Queued ${selectedFileIds.length} file${selectedFileIds.length > 1 ? 's' : ''} for reprocessing`,
             );
             setRowSelection({});
-        } catch (error) {
+        } catch (_error) {
             // Error handled by mutation
         }
     }, [selectedFileIds, reprocessFileMutation]);
@@ -384,13 +322,42 @@ export default function FilesList({
         });
     }, [router, location.pathname, search]);
 
-    // Sync URL params to page state
+    const handleStatusFilterChange = useCallback(
+        (value: string) => {
+            const next = (value || 'all') as 'all' | 'healthy' | 'warning';
+            setStatusFilter(next);
+            setPage(1);
+            const nextSearch: any = { ...(search as any), files_page: 1 };
+            if (next === 'all') {
+                delete nextSearch.files_status;
+            } else {
+                nextSearch.files_status = next;
+            }
+            router.navigate({
+                to: location.pathname as any,
+                search: nextSearch as any,
+                replace: true,
+            });
+        },
+        [router, location.pathname, search],
+    );
+
+    // Sync URL params to local state on back/forward navigation
+    const filesPageFromSearch = (search as any)?.files_page || 1;
+    const filesStatusFromSearch =
+        ((search as any)?.files_status as 'healthy' | 'warning' | undefined) ?? 'all';
+
     useEffect(() => {
-        const pageFromParams = (search as any)?.files_page || 1;
-        if (pageFromParams !== page) {
-            setPage(pageFromParams);
+        if (filesPageFromSearch !== page) {
+            setPage(filesPageFromSearch);
         }
-    }, [(search as any)?.files_page, page]);
+    }, [filesPageFromSearch, page]);
+
+    useEffect(() => {
+        if (filesStatusFromSearch !== statusFilter) {
+            setStatusFilter(filesStatusFromSearch);
+        }
+    }, [filesStatusFromSearch, statusFilter]);
 
     // Query automatically refetches when dependencies change
     // No manual useEffect needed
@@ -754,19 +721,6 @@ export default function FilesList({
     return (
         <>
             <div className='flex flex-col space-y-4'>
-                {alert.show && (
-                    <AlertComponent
-                        variant={
-                            alert.color === 'red' || alert.color === 'error'
-                                ? 'destructive'
-                                : 'default'
-                        }
-                    >
-                        <WarningCircleIcon />
-                        <AlertDescription>{alert.message}</AlertDescription>
-                    </AlertComponent>
-                )}
-
                 {isPaused && (
                     <div className='mb-4'>
                         <OfflineIndicator />
@@ -774,7 +728,7 @@ export default function FilesList({
                 )}
 
                 <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
-                    {loading ? (
+                    {isLoading ? (
                         <div className='flex min-h-[200px] items-center justify-center'>
                             <Spinner className='size-10' />
                         </div>
@@ -790,6 +744,20 @@ export default function FilesList({
                                 onSubmit={() => resetToFirstPage()}
                                 onClear={() => resetToFirstPage()}
                             />
+                            <ToggleGroup
+                                type='single'
+                                value={statusFilter}
+                                onValueChange={handleStatusFilterChange}
+                                size='sm'
+                            >
+                                <ToggleGroupItem value='all'>All</ToggleGroupItem>
+                                <ToggleGroupItem value='healthy'>
+                                    Healthy
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value='warning'>
+                                    Warning
+                                </ToggleGroupItem>
+                            </ToggleGroup>
                         </DataTable>
                     )}
                 </div>
@@ -809,7 +777,7 @@ export default function FilesList({
                     <ActionBarItem
                         onClick={handleDownloadSelected}
                         disabled={
-                            loading ||
+                            isLoading ||
                             files.length === 0 ||
                             selectedFileIds.length === 0
                         }
@@ -820,7 +788,7 @@ export default function FilesList({
                     <ActionBarItem
                         onClick={handleReprocessSelected}
                         disabled={
-                            loading ||
+                            isLoading ||
                             files.length === 0 ||
                             selectedFileIds.length === 0
                         }
@@ -831,7 +799,7 @@ export default function FilesList({
                     <ActionBarItem
                         onClick={handleDeleteSelected}
                         disabled={
-                            loading ||
+                            isLoading ||
                             files.length === 0 ||
                             selectedFileIds.length === 0
                         }

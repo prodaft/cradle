@@ -10,6 +10,17 @@ interface ExplorerPanelProps {
     onNodeClick?: (node: Node) => void;
 }
 
+const EXCLUDED_NODE_KEYS = new Set([
+    'id',
+    'label',
+    'name',
+    'color',
+    'degree',
+    'type',
+    'subtype',
+    'location',
+]);
+
 export default function ExplorerPanel({
     selectedNodes,
     allNodes,
@@ -28,6 +39,33 @@ export default function ExplorerPanel({
         return map;
     }, [allNodes]);
 
+    const getDisplayLabel = (node: Node) => node.label ?? node.name ?? node.id;
+
+    const connectionsMap = useMemo(() => {
+        const tmp = new Map<string, Map<string, Node>>();
+
+        const add = (fromId: string, to: Node) => {
+            let inner = tmp.get(fromId);
+            if (!inner) {
+                inner = new Map<string, Node>();
+                tmp.set(fromId, inner);
+            }
+            inner.set(to.id, to);
+        };
+
+        for (const edge of edges) {
+            const source = nodeMap.get(edge.source);
+            const target = nodeMap.get(edge.target);
+            if (!source || !target) continue;
+            add(source.id, target);
+            add(target.id, source);
+        }
+
+        const out = new Map<string, Node[]>();
+        for (const [id, inner] of tmp) out.set(id, Array.from(inner.values()));
+        return out;
+    }, [edges, nodeMap]);
+
     const toggleConnections = (nodeId: string) => {
         setExpandedConnections((prev) => {
             const newSet = new Set(prev);
@@ -38,21 +76,6 @@ export default function ExplorerPanel({
             }
             return newSet;
         });
-    };
-
-    // Get connected nodes for a given node
-    const getConnectedNodes = (nodeId: string): Node[] => {
-        const connected: Node[] = [];
-        edges.forEach((edge) => {
-            if (edge.source === nodeId) {
-                const targetNode = nodeMap.get(edge.target);
-                if (targetNode) connected.push(targetNode);
-            } else if (edge.target === nodeId) {
-                const sourceNode = nodeMap.get(edge.source);
-                if (sourceNode) connected.push(sourceNode);
-            }
-        });
-        return connected;
     };
 
     if (nodesArray.length === 0) {
@@ -71,7 +94,7 @@ export default function ExplorerPanel({
                 Selected Nodes ({nodesArray.length})
             </h3>
             <ScrollArea className='space-y-3 max-h-[60vh]'>
-                {nodesArray.map((node, index) => (
+                {nodesArray.map((node) => (
                     <div
                         key={node.id}
                         className='bg-card border border-border rounded-lg p-3 space-y-2'
@@ -80,14 +103,18 @@ export default function ExplorerPanel({
                         <div className='flex items-start justify-between gap-2'>
                             <div className='flex-1 min-w-0'>
                                 <div className='text-sm font-semibold text-foreground break-words'>
-                                    {node.label || node.name || node.id}
+                                    {getDisplayLabel(node)}
                                 </div>
-                                {(node.label || node.name) &&
-                                    node.id !== (node.label || node.name) && (
+                                {(() => {
+                                    const labelOrName = node.label ?? node.name;
+                                    if (!labelOrName || node.id === labelOrName)
+                                        return null;
+                                    return (
                                         <div className='text-xs text-muted-foreground mt-1 font-mono break-all'>
                                             ID: {node.id}
                                         </div>
-                                    )}
+                                    );
+                                })()}
                             </div>
                             {/* Color indicator */}
                             {node.color && (
@@ -125,7 +152,7 @@ export default function ExplorerPanel({
 
                         {/* Connected Nodes */}
                         {(() => {
-                            const connectedNodes = getConnectedNodes(node.id);
+                            const connectedNodes = connectionsMap.get(node.id) ?? [];
                             if (connectedNodes.length === 0) return null;
                             const isExpanded = expandedConnections.has(node.id);
                             const showCollapse = connectedNodes.length > 5;
@@ -167,7 +194,7 @@ export default function ExplorerPanel({
                                                     onNodeClick?.(connectedNode)
                                                 }
                                                 className='inline-flex items-center gap-1.5 px-2 py-1 text-xs h-auto'
-                                                title={`Click to select ${connectedNode.label || connectedNode.name || connectedNode.id}`}
+                                                title={`Click to select ${getDisplayLabel(connectedNode)}`}
                                             >
                                                 {connectedNode.color && (
                                                     <span
@@ -179,9 +206,7 @@ export default function ExplorerPanel({
                                                     />
                                                 )}
                                                 <span className='truncate max-w-[120px]'>
-                                                    {connectedNode.label ||
-                                                        connectedNode.name ||
-                                                        connectedNode.id}
+                                                    {getDisplayLabel(connectedNode)}
                                                 </span>
                                             </Button>
                                         ))}
@@ -194,16 +219,8 @@ export default function ExplorerPanel({
                         {Object.entries(node)
                             .filter(
                                 ([key]) =>
-                                    ![
-                                        'id',
-                                        'label',
-                                        'name',
-                                        'color',
-                                        'degree',
-                                        'type',
-                                        'subtype',
-                                        'location',
-                                    ].includes(key) && !key.startsWith('_'),
+                                    !EXCLUDED_NODE_KEYS.has(key) &&
+                                    !key.startsWith('_'),
                             )
                             .map(([key, value]) => (
                                 <div key={key} className='flex items-start gap-2'>

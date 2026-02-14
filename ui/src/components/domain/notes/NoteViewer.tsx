@@ -18,7 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
-import { useAuthActions, useAuthState } from '@/hooks/auth';
+import { useAuthState } from '@/hooks/auth';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { parseAPIError } from '@/utils/api';
@@ -28,11 +28,7 @@ import { logger } from '@/utils/logger';
 import { Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
 import { BookOpenIcon, InfoIcon, PencilSimpleIcon } from '@phosphor-icons/react';
-import type {
-    FileReferenceWithNote,
-    FileUploadFinalizeResponse,
-    NoteRetrieve,
-} from '@services/cradle/models';
+import type { FileReferenceWithNote, NoteRetrieve } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useParams, useRouter, useSearch } from '@tanstack/react-router';
 import { format } from 'date-fns';
@@ -41,7 +37,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import ConfirmDeletionDialog from '../../dialogs/base/ConfirmDeletionDialog';
-import FileInput from '../../forms/file-input';
 import ActivityList from '../activity/ActivityList';
 import { EnrichmentRequestDialog } from '../enrichment';
 import GraphExplorer from '../graph/GraphExplorer';
@@ -86,15 +81,8 @@ export default function NoteViewer() {
     }, [params, location.pathname]);
     const locationState = (location.state as LocationState) || {};
     const { isAdmin } = useAuthState();
-    const { from, state } = locationState;
-    const { isLoggedIn } = useAuthActions();
-    const { usersApi } = useApi();
-    const { data: profile } = useQuery({
-        queryKey: queryKeys.users.detail('me'),
-        queryFn: () => usersApi.usersRetrieve({ userId: 'me' }),
-        enabled: isLoggedIn(),
-        meta: { showErrorToast: false },
-    });
+    const { from } = locationState;
+
     const [note, setNote] = useState<NoteRetrieve | null>(null);
     const search = useSearch({ from: '/_authenticated/notes/$id' });
     const [richEditor, setRichEditor] = useState(() => {
@@ -120,21 +108,13 @@ export default function NoteViewer() {
     const [fileUploadDialogOpen, setFileUploadDialogOpen] = useState(false);
     const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
     const [fileData, setFileData] = useState<FileReferenceWithNote[]>([]);
-    // Separate state for FileInput component (expects FileUploadFinalizeResponse[])
-    const [uploadedFileData, setUploadedFileData] = useState<
-        FileUploadFinalizeResponse[]
-    >([]);
     const [initialMarkdown, setInitialMarkdown] = useState('');
-    const [isLoading, setIsLoading] = useState(true);
     const [activeView, setActiveView] = useState<ViewMode>(
         ((search as any).view as ViewMode) || ViewMode.CONTENT,
     );
     const [isFleeting, setIsFleeting] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-    const [showFileUpload, setShowFileUpload] = useState(false);
-    const [showReportDialog, setShowReportDialog] = useState(false);
     const [showFind, setShowFind] = useState(false);
     const [findReplaceMode, setFindReplaceMode] = useState(false);
     const [showOutline, setShowOutline] = useState(() => {
@@ -144,9 +124,7 @@ export default function NoteViewer() {
     const [lineNumber, setLineNumber] = useState(0);
     const [noteOutline, setNoteOutline] = useState<HeaderNode[]>([]);
     const [lspLoaded, setLspLoaded] = useState(false);
-    const rawContentRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<any>(null);
-    const lastLoadedNoteIdRef = useRef<string | null>(null);
     const [navbarActionsEl, setNavbarActionsEl] = useState<HTMLElement | null>(null);
     const { managementApi, notesApi, lspApi } = useApi();
 
@@ -185,7 +163,7 @@ export default function NoteViewer() {
     // Initialize editor utils for autolink functionality
     const editorUtils = React.useMemo(() => {
         CradleEditor.clearCache();
-        return new CradleEditor(lspApi, notesApi, {}, setLspLoaded, async (error) => {
+        return new CradleEditor(lspApi, notesApi, setLspLoaded, async (error) => {
             const parsed = await parseAPIError(error);
             if (
                 parsed.code !== 'UNAUTHENTICATED' &&
@@ -202,7 +180,7 @@ export default function NoteViewer() {
             .then(() => {
                 toast.success('Copied to clipboard');
             })
-            .catch((error) => {
+            .catch((_error) => {
                 toast.error('Failed to copy to clipboard');
             });
     };
@@ -301,7 +279,7 @@ export default function NoteViewer() {
             setMarkdownContent(linked);
             if (changes > 0) {
                 toast.success(
-                    `${changes} link${changes == 1 ? '' : 's'} ${onlyTimestamps ? 'timestamped.' : 'found in text.'}`,
+                    `${changes} link${changes === 1 ? '' : 's'} ${onlyTimestamps ? 'timestamped.' : 'found in text.'}`,
                 );
             } else {
                 toast.info(
@@ -309,7 +287,7 @@ export default function NoteViewer() {
                 );
             }
         },
-        [editorUtils, setMarkdownContent],
+        [editorUtils, note?.editTimestamp, note?.timestamp],
     );
 
     const handleEnrichData = useCallback(async () => {
@@ -338,33 +316,14 @@ export default function NoteViewer() {
         setEnrichmentDialogOpen(true);
     }, [editorUtils]);
 
-    useEffect(() => {
-        if (!noteId) {
-            logger.warn('NoteViewer - No note ID provided');
-            setIsLoading(false);
-            lastLoadedNoteIdRef.current = null;
-            return;
-        }
-
-        // Skip loading if we've already loaded this exact note ID
-        // This prevents re-fetching when only search params change
-        if (lastLoadedNoteIdRef.current === noteId) {
-            return;
-        }
-
-        setIsLoading(true);
-        lastLoadedNoteIdRef.current = noteId || null;
-    }, [noteId]);
-
     // Query for note metadata
-    const { data: noteData, isPending: isPendingNote } = useQuery({
+    const { data: noteData, isLoading } = useQuery({
         queryKey: queryKeys.notes.detail(noteId),
         queryFn: () =>
             notesApi.notesRetrieve({ noteId: noteId || '', footnotes: false }),
         enabled: !!noteId,
         meta: {
             showErrorToast: true,
-            errorMessage: 'Note not found!',
         },
     });
 
@@ -390,7 +349,6 @@ export default function NoteViewer() {
         setInitialMarkdown(noteData.content);
         setFileData(noteData.files || EMPTY_FILES);
         setHasUnsavedChanges(false);
-        setIsLoading(false);
     }, [noteData]);
 
     // Mutation for deleting note
@@ -402,16 +360,15 @@ export default function NoteViewer() {
                 { queryKey: queryKeys.notes.lists() },
             ],
             successMessage: 'Note deleted successfully',
-            errorMessage: 'Failed to delete note',
         },
     });
 
     // Use a ref to store the latest values for the save function
-    const saveDataRef = useRef({ markdownContent, fileData, isFleeting });
+    const saveDataRef = useRef({ markdownContent });
 
     useEffect(() => {
-        saveDataRef.current = { markdownContent, fileData, isFleeting };
-    }, [markdownContent, fileData, isFleeting]);
+        saveDataRef.current = { markdownContent };
+    }, [markdownContent]);
 
     const saveNoteMutation = useMutation({
         mutationFn: async ({ content }: { content: string }) => {
@@ -422,20 +379,13 @@ export default function NoteViewer() {
                 },
             });
         },
-        meta: {
-            suppressNotification: true,
-        },
     });
 
     const handleSaveNote = useCallback(
         async (showAlert = false) => {
             if (!noteId) return;
 
-            const {
-                markdownContent: content,
-                fileData: files,
-                isFleeting: fleeting,
-            } = saveDataRef.current;
+            const { markdownContent: content } = saveDataRef.current;
 
             if (!content || content.trim().length === 0) {
                 toast.error('Cannot save empty note.');
@@ -452,9 +402,8 @@ export default function NoteViewer() {
                 if (successMessage) {
                     toast.success(successMessage);
                 }
-            } catch (error) {
-                const parsed = await parseAPIError(error);
-                toast.error(`Failed to save note: ${parsed.detail}`);
+            } catch {
+                // Error toast handled by global mutation handler
             } finally {
                 setSaving(false);
             }
@@ -473,10 +422,10 @@ export default function NoteViewer() {
 
             // Navigate back - TanStack Router doesn't support setting state via navigate
             router.navigate({ to: (from?.pathname || '/') as any, replace: true });
-        } catch (error) {
+        } catch (_error) {
             // Error already handled by mutation
         }
-    }, [noteId, deleteMutation, queryClient, router, state, from]);
+    }, [noteId, deleteMutation, queryClient, router, from]);
 
     const handleSaveAsFinal = useCallback(() => {
         if (!noteId || !markdownContent || markdownContent.trim().length === 0) {
@@ -514,7 +463,7 @@ export default function NoteViewer() {
         [setFileData],
     );
 
-    const handleUploadFiles = useCallback((filesList?: any[]) => {
+    const handleUploadFiles = useCallback((_filesList?: any[]) => {
         setFileUploadDialogOpen(true);
     }, []);
 
@@ -597,7 +546,7 @@ export default function NoteViewer() {
                     const view = editorRef.current.view;
                     if (view) {
                         const state = view.state;
-                        if (lineNumber == 1) {
+                        if (lineNumber === 1) {
                             view.dispatch({
                                 selection: { anchor: 0, head: 0 },
                                 scrollIntoView: true,
@@ -714,19 +663,6 @@ export default function NoteViewer() {
                 )}
 
             <div className='w-[100%] h-full flex flex-col'>
-                {/* File Upload Section */}
-                {showFileUpload && (
-                    <div className='w-full px-4 py-2 border-b bg-muted'>
-                        <FileInput
-                            fileData={uploadedFileData}
-                            setFileData={setUploadedFileData}
-                            pendingFiles={pendingFiles}
-                            setPendingFiles={setPendingFiles}
-                            noteId={noteId}
-                        />
-                    </div>
-                )}
-
                 {/* View content */}
                 <div className='flex-1'>
                     {/* Content View */}

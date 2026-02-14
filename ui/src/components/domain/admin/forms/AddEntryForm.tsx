@@ -31,30 +31,27 @@ import {
     EntryClassRequestTypeEnum,
 } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { SelectOption } from '../../../forms';
 
 interface AddEntryFormProps {
     onAdd?: (result: EntryClass) => void;
 }
 
-interface ChildOption extends SelectOption<string> {
-    value: string;
-    label: string;
-}
+type ChildOption = Option;
 
-interface TypeOption extends SelectOption<string> {
+type TypeOption = {
     value: EntryClassRequestTypeEnum;
     label: string;
-}
+};
 
-interface FormatOption extends SelectOption<string> {
-    value: string;
+type FormatOptionValue = 'any' | 'options' | 'regex';
+type FormatOption = {
+    value: FormatOptionValue;
     label: string;
-}
+};
 
 const typeOptions: TypeOption[] = [
     { value: EntryClassRequestTypeEnum.Artifact, label: 'Artifact' },
@@ -78,9 +75,9 @@ const entryTypeSchema = z.object({
         })
         .nullable()
         .refine((val) => val !== null, {
-            error: 'Class Type is required',
+            message: 'Class Type is required',
         }),
-    subtype: z.string().min(1, { error: 'Subtype is required' }),
+    subtype: z.string().min(1, { message: 'Subtype is required' }),
     description: z.string().default(''),
     prefix: z.string().default(''),
     typeFormat: z
@@ -90,7 +87,7 @@ const entryTypeSchema = z.object({
     regex: z.string().default(''),
     options: z.string().default(''),
     generativeRegex: z.string().default(''),
-    color: z.string().min(1, { error: 'Color is required' }),
+    color: z.string().min(1, { message: 'Color is required' }),
     children: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
 });
 
@@ -99,7 +96,6 @@ type FormData = z.infer<typeof entryTypeSchema>;
 export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
     const { entriesApi } = useApi();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
-    const [entryTypes, setEntryTypes] = useState<ChildOption[]>([]);
     const [showColorPicker, setShowColorPicker] = useState(false);
     const colorButtonRef = useRef<HTMLDivElement>(null);
 
@@ -133,22 +129,19 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
         meta: { showErrorToast: false, suppressNotification: true },
     });
 
-    useEffect(() => {
-        if (entryClassesListData == null) return;
-        const results = entryClassesListData.results ?? [];
-        setEntryTypes(
-            results.map((entry) => ({
-                value: entry.subtype,
-                label: entry.subtype,
-            })),
-        );
+    const entryTypes = useMemo<ChildOption[]>(() => {
+        const results = entryClassesListData?.results ?? [];
+        return results.map((entry) => ({
+            value: entry.subtype,
+            label: entry.subtype,
+        }));
     }, [entryClassesListData]);
 
     const watchType = watch('type');
     const watchTypeFormat = watch('typeFormat');
     const watchColor = watch('color');
-    const isEntity = watchType?.value === 'entity';
-    const isArtifact = watchType?.value === 'artifact';
+    const isEntity = watchType?.value === EntryClassRequestTypeEnum.Entity;
+    const isArtifact = watchType?.value === EntryClassRequestTypeEnum.Artifact;
     const isOptions = watchTypeFormat?.value === 'options';
     const isRegex = watchTypeFormat?.value === 'regex';
 
@@ -157,28 +150,22 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
     };
 
     const createEntryMutation = useMutation({
-        mutationFn: async (payload: EntryClassRequest) => {
-            return await entriesApi.entryClassesCreate({
-                entryClassRequest: payload,
-            });
-        },
+        mutationFn: (payload: EntryClassRequest) =>
+            entriesApi.entryClassesCreate({ entryClassRequest: payload }),
         meta: {
             successMessage: 'Entry created successfully!',
-            errorMessage: 'Failed to create entry',
         },
         onSuccess: (result) => {
-            if (onAdd) onAdd(result);
+            onAdd?.(result);
         },
     });
 
     const onSubmit = async (data: FormData) => {
+        const formatValue = data.typeFormat?.value;
         const payload: EntryClassRequest = {
             generativeRegex: data.generativeRegex,
-            format:
-                data.typeFormat?.value === 'any'
-                    ? null
-                    : (data.typeFormat?.value ?? null),
-            type: data.type?.value || EntryClassRequestTypeEnum.Artifact,
+            format: formatValue === 'any' ? null : (formatValue ?? null),
+            type: data.type?.value ?? EntryClassRequestTypeEnum.Artifact,
             subtype: data.subtype,
             description: data.description,
             prefix: data.prefix,
@@ -187,7 +174,11 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
             options: data.options,
             children: data.children?.map((child) => child.value) ?? [],
         };
-        createEntryMutation.mutate(payload);
+        try {
+            await createEntryMutation.mutateAsync(payload);
+        } catch {
+            // toast/notification handled by mutation meta; prevent unhandled rejection
+        }
     };
 
     return (
@@ -308,7 +299,7 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
                                 ref={colorButtonRef}
                                 className='h-6 w-8 rounded cursor-pointer border border-border flex-shrink-0'
                                 style={{ backgroundColor: watchColor }}
-                                onClick={() => setShowColorPicker(!showColorPicker)}
+                                onClick={() => setShowColorPicker((v) => !v)}
                             />
                             <InputGroupButton
                                 type='button'
@@ -339,7 +330,6 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
                             const buttonRect =
                                 colorButtonRef.current!.getBoundingClientRect();
                             const pickerWidth = 200;
-                            const pickerHeight = 200;
 
                             let leftPos = buttonRect.left;
                             if (leftPos + pickerWidth > window.innerWidth) {

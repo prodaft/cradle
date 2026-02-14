@@ -84,7 +84,6 @@ export default function ChangePasswordDialog({
         },
         meta: {
             successMessage: 'Password changed successfully',
-            errorMessage: 'Failed to change password',
         },
         onSuccess: () => {
             onOpenChange(false);

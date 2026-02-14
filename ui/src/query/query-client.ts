@@ -11,7 +11,7 @@ import {
     QueryKey,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { handleAPIError, parseAPIError } from 'src/utils/api';
+import { parseAPIError } from 'src/utils/api';
 
 export type InvalidateTarget = { queryKey: QueryKey };
 
@@ -92,12 +92,10 @@ export const queryClient = new QueryClient({
                 if (res.ignore) return;
 
                 // Queries: opt-in toast (prevents refetch spam)
-                if (meta.showErrorToast && !meta.suppressNotification) {
+                if (meta.showErrorToast) {
                     toast.error(meta.errorMessage ?? res.parsed.detail, {
                         duration: meta.duration ?? 5000,
                     });
-                } else {
-                    // optional: still log/track silently, or do nothing
                 }
             })();
         },
@@ -130,12 +128,6 @@ export const queryClient = new QueryClient({
                     // Mutations: toast by default
                     toast.error(meta.errorMessage ?? res.parsed.detail, {
                         duration: meta.duration ?? 5000,
-                    });
-                } else {
-                    // if suppressed, still allow centralized reporting
-                    handleAPIError(res.parsed, {
-                        message: res.parsed.detail,
-                        duration: 5000,
                     });
                 }
             })();

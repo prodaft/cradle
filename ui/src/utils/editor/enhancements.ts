@@ -1,15 +1,19 @@
 import { snippetCompletion } from '@codemirror/autocomplete';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { yamlFrontmatter, yamlLanguage } from '@codemirror/lang-yaml';
-import { LanguageSupport, LRLanguage, syntaxTree } from '@codemirror/language';
-import { Diagnostic, linter } from '@codemirror/lint';
-import { EditorState } from '@codemirror/state';
-import { MarkdownExtension } from '@lezer/markdown';
+import {
+    syntaxTree,
+    type LanguageSupport,
+    type LRLanguage,
+} from '@codemirror/language';
+import { linter, type Diagnostic } from '@codemirror/lint';
+import type { EditorState } from '@codemirror/state';
+import type { MarkdownExtension } from '@lezer/markdown';
 import dayjs from 'dayjs';
 import jsyaml from 'js-yaml';
 import type { LspApi } from '../../services/cradle/apis/LspApi';
 import type { NotesApi } from '../../services/cradle/apis/NotesApi';
-import { Snippet } from '../../services/cradle/models/Snippet';
+import type { Snippet } from '../../services/cradle/models/Snippet';
 import { DynamicTrie } from './trie';
 
 /*==============================================================================
@@ -35,13 +39,6 @@ function replaceDoubleUnderscoreWithSlash(str: string): string {
 /*==============================================================================
   INTERFACES
 ==============================================================================*/
-interface EnhancerOptions {
-    lintDelay?: number;
-    minSuggestionLength?: number;
-    maxSuggestions?: number;
-    [key: string]: any;
-}
-
 type LspEntryClass = {
     type: string;
     subtype: string;
@@ -124,7 +121,6 @@ export class CradleEditor {
     constructor(
         lspApi: LspApi,
         notesApi: NotesApi,
-        options: EnhancerOptions = {},
         onLspLoaded: (bool: boolean) => void,
         onError: ((error: Error) => void) | null = null,
     ) {
@@ -150,19 +146,23 @@ export class CradleEditor {
      */
     private buildCombinedRegex(): void {
         if (!this.entryClasses) return;
-        const patterns: string[] = [];
+
+        const scanPatterns: string[] = [];
+        const wordPatterns: string[] = [];
+
         for (const [type, criteria] of Object.entries(this.entryClasses)) {
-            if (criteria.format == 'regex') {
-                // Wrap each pattern in a named capturing group using the entry type.
-                patterns.push(
-                    `(?<${replaceSlashWithDoubleUnderscore(type)}>(?<=^|\\s)${criteria.regex}(?=$|\\s))`,
-                );
+            if (criteria.format === 'regex' && criteria.regex) {
+                const group = replaceSlashWithDoubleUnderscore(type);
+                // Scanning: find occurrences in larger text (with word boundaries)
+                scanPatterns.push(`(?<${group}>(?<=^|\\s)${criteria.regex}(?=$|\\s))`);
+                // Whole word: match only the word itself (anchored, no global flag)
+                wordPatterns.push(`(?<${group}>${criteria.regex})`);
             }
         }
-        if (patterns.length > 0) {
-            const pattern = patterns.join('|');
-            this.combinedRegex = new RegExp(pattern, 'gi'); // For scanning text
-            this.combinedWordRegex = this.combinedRegex;
+
+        if (scanPatterns.length > 0) {
+            this.combinedRegex = new RegExp(scanPatterns.join('|'), 'gi');
+            this.combinedWordRegex = new RegExp(`^(?:${wordPatterns.join('|')})$`, 'i');
         }
     }
 
@@ -189,9 +189,6 @@ export class CradleEditor {
                 this.tries = CradleEditor.cachedTries;
             } else {
                 if (!CradleEditor.triesPromise) {
-                    if (!this._lspApi) {
-                        throw new Error('LspApi is required for editor initialization');
-                    }
                     CradleEditor.triesPromise = this._lspApi
                         .lspTrieRetrieve()
                         .then((triesData: { [key: string]: any }) => {
@@ -205,7 +202,7 @@ export class CradleEditor {
                                 this.entryClasses ?? {},
                             )) {
                                 if (entryClass.format) continue;
-                                if (entryClass.type == 'entity') continue;
+                                if (entryClass.type === 'entity') continue;
 
                                 tries[entryClass.subtype] = new DynamicTrie(
                                     async (x) => {
@@ -256,7 +253,7 @@ export class CradleEditor {
                 const bigTrie = new DynamicTrie(null, '', -1);
 
                 for (const entryClass of Object.values(this.entryClasses ?? {})) {
-                    if (!entryClass.format || entryClass.type != 'entity') continue;
+                    if (!entryClass.format || entryClass.type !== 'entity') continue;
                     if (!this.tries) continue;
                     if (!this.tries[entryClass.subtype]) continue;
                     bigTrie.merge(this.tries[entryClass.subtype]);
@@ -269,7 +266,7 @@ export class CradleEditor {
             if (CradleEditor.cachedSnippets) {
                 this.snippets = CradleEditor.cachedSnippets;
             } else {
-                if (!CradleEditor.snippetsPromise && this._notesApi) {
+                if (!CradleEditor.snippetsPromise) {
                     CradleEditor.snippetsPromise = this._notesApi
                         .notesSnippetsList()
                         .then((snippets) => snippets || []);
@@ -326,9 +323,6 @@ export class CradleEditor {
      */
     async refreshSnippets(): Promise<Snippet[]> {
         try {
-            if (!this._notesApi) {
-                throw new Error('NotesApi is required to refresh snippets');
-            }
             CradleEditor.invalidateSnippetsCache();
             const snippets = (await this._notesApi.notesSnippetsList()) || [];
             this.snippets = snippets;
@@ -401,35 +395,37 @@ export class CradleEditor {
      * that have a regex. Then it runs a simplified Aho–Corasick algorithm using the bigTrie.
      */
     private getSuggestionsForText(text: string): LintingSuggestion[] {
-        if (!this.combinedRegex) return [];
         const suggestions: LintingSuggestion[] = [];
         const madeSuggestions = new Set<string>();
 
-        // 1. Process class-based suggestions using a combined regex with named groups.
-        let match: RegExpExecArray | null;
-        while ((match = this.combinedRegex.exec(text)) !== null) {
-            if (match.groups) {
-                // Iterate over all named groups to see which one matched.
+        if (this.combinedRegex) {
+            this.combinedRegex.lastIndex = 0;
+
+            let match: RegExpExecArray | null;
+            while ((match = this.combinedRegex.exec(text)) !== null) {
+                if (!match.groups) continue;
+
                 for (const [groupName, groupMatch] of Object.entries(match.groups)) {
-                    if (groupMatch) {
-                        const type = replaceDoubleUnderscoreWithSlash(groupName);
-                        const matchText = groupMatch;
-                        const key = `${type}:${matchText}`;
+                    if (!groupMatch) continue;
+                    const type = replaceDoubleUnderscoreWithSlash(groupName);
+                    const matchText = groupMatch.trimEnd();
+                    const key = `${type}:${matchText}@${match.index}`;
+
+                    if (!madeSuggestions.has(key)) {
                         suggestions.push({
                             type,
-                            match: matchText.trimEnd(),
-                            from: match.index, // use regex match index
+                            match: matchText,
+                            from: match.index,
                         });
                         madeSuggestions.add(key);
-                        break;
                     }
+                    break;
                 }
             }
         }
 
-        if (!this.bigTrie) return [];
+        if (!this.bigTrie) return suggestions;
 
-        // 2. Process instance-based suggestions using a simplified Aho–Corasick search on the bigTrie.
         for (let i = 0; i < text.length; i++) {
             // Only start a match if this position is a word (or line) boundary.
             if (i > 0 && /\w/.test(text[i - 1])) {
@@ -447,7 +443,7 @@ export class CradleEditor {
                     if (j + 1 === text.length || !/\w/.test(text[j + 1])) {
                         const word = text.substring(i, j + 1);
                         for (const type of currentNode.data) {
-                            const key = `${type}:${word}`;
+                            const key = `${type}:${word}@${i}`;
                             if (!madeSuggestions.has(key)) {
                                 suggestions.push({
                                     type,
@@ -479,9 +475,10 @@ export class CradleEditor {
             if (match && match.groups) {
                 for (const [groupName, groupMatch] of Object.entries(match.groups)) {
                     if (groupMatch) {
-                        const key = `${groupName}:${word}`;
+                        const type = replaceDoubleUnderscoreWithSlash(groupName);
+                        const key = `${type}:${word}`;
                         if (!madeSuggestions.has(key)) {
-                            suggestions.push({ type: groupName, match: word });
+                            suggestions.push({ type, match: word });
                             madeSuggestions.add(key);
                         }
                         break; // Only one group can match a full word.
@@ -540,20 +537,16 @@ export class CradleEditor {
      * @returns Array of nodes from parent to child, or null if no parent found
      */
     private getParent(node: any, type: string): any[] | null {
-        const path: any[] = [node];
-        let current = node;
-        let last_seen = 0;
+        const path: any[] = [];
+        let current: any = node;
 
-        while (current.parent) {
-            current = current.parent;
+        while (current) {
             path.unshift(current);
-            if (current.name === type) {
-                last_seen = -1;
-            }
-            last_seen++;
+            if (current.name === type) return path;
+            current = current.parent;
         }
 
-        return last_seen == path.length ? null : path.slice(last_seen);
+        return null;
     }
 
     private async provideAutocompleteSuggestionsForYaml(
@@ -579,35 +572,33 @@ export class CradleEditor {
                     section.firstChild.to,
                 );
                 const parent = node.parent;
-                if (sectxt == 'entries' && parent != null) {
+                if (sectxt === 'entries' && parent !== null) {
                     if (
-                        parent.name == 'Key' ||
-                        (node.name == 'Literal' && path.length == 3)
+                        parent.name === 'Key' ||
+                        (node.name === 'Literal' && path.length === 3)
                     ) {
                         // Filling out type
                         options = Object.keys(this.entryClasses).map((item) => ({
                             label: item,
-                            info: this.entryClasses?.[item]?.description
-                                ? this.entryClasses?.[item]?.description
-                                : '',
+                            info: this.entryClasses?.[item]?.description ?? '',
                             type: 'keyword',
                         }));
-                        return { from, to, options: options };
-                    } else if (node.name == 'Literal') {
+                        return { from, to, options };
+                    } else if (node.name === 'Literal') {
                         // Filling out value
                         if (!this.tries) return { from: context.pos, options: [] };
                         let sibling = parent?.firstChild;
-                        if (parent?.name == 'Item') {
+                        if (parent?.name === 'Item') {
                             sibling = parent.parent?.parent?.firstChild ?? null;
                         }
 
-                        if (!sibling) return { from: from, to: to, options: [] };
+                        if (!sibling) return { from, to, options: [] };
                         const t = context.state.doc.sliceString(
                             sibling.from,
                             sibling.to,
                         );
 
-                        if (!this.tries[t]) return { from: from, to: to, options: [] };
+                        if (!this.tries[t]) return { from, to, options: [] };
 
                         const v = context.state.doc.sliceString(from, to);
                         options = (await this.tries[t].allWordsWithPrefixFetch(v)).map(
@@ -616,12 +607,12 @@ export class CradleEditor {
                                 type: 'keyword',
                             }),
                         );
-                        return { from, to, options: options };
+                        return { from, to, options };
                     }
                 }
             }
         }
-        if (node.name == 'Literal') {
+        if (node.name === 'Literal') {
             options = [
                 {
                     label: 'title',
@@ -666,8 +657,8 @@ export class CradleEditor {
         let ratchetValue = false;
 
         switch (node.name) {
-            // @ts-expect-error - intentional fallthrough in this case
-            case 'CradleLink':
+            // @ts-expect-error intentional fallthrough into CradleLinkType
+            case 'CradleLink': {
                 if (!node.lastChild || node.lastChild.name === 'CradleLinkType') {
                     to -= 2;
                 } else if (node.lastChild.name === 'CradleLinkValue') {
@@ -679,22 +670,22 @@ export class CradleEditor {
                     ratchetValue = true;
                 }
                 from = to;
-            // @ts-expect-error - intentional fallthrough
-            // falls through
-            case 'CradleLinkType':
+                // falls through
+            }
+            // @ts-expect-error intentional fallthrough into CradleLinkValue
+            case 'CradleLinkType': {
                 if (!ratchet) {
                     options = Object.keys(this.entryClasses).map((item) => ({
                         label: item + (node.nextSibling ? '' : ':'),
-                        info: this.entryClasses?.[item]?.description
-                            ? this.entryClasses?.[item]?.description
-                            : '',
+                        info: this.entryClasses?.[item]?.description ?? '',
                         type: 'keyword',
                     }));
                     break;
                 }
                 ratchet = false;
-            // @ts-expect-error - intentional fallthrough
-            // falls through
+                // falls through
+            }
+            // @ts-expect-error intentional fallthrough into CradleLinkAlias
             case 'CradleLinkValue': {
                 if (!ratchetValue) {
                     if (!this.tries) return { from: context.pos, options: [] };
@@ -704,7 +695,7 @@ export class CradleEditor {
                     const t = context.state.doc.sliceString(sibling.from, sibling.to);
 
                     if (!this.tries[t]) break;
-                    if (t == 'alias') break;
+                    if (t === 'alias') break;
 
                     const v = context.state.doc.sliceString(from, to);
                     options = (await this.tries[t].allWordsWithPrefixFetch(v)).map(
@@ -716,8 +707,9 @@ export class CradleEditor {
                     break;
                 }
                 ratchetValue = false;
+                // falls through
             }
-            case 'CradleLinkAlias':
+            case 'CradleLinkAlias': {
                 if (!this.tries) return { from: context.pos, options: [] };
                 if (!this.tries['alias']) return { from: context.pos, options: [] };
 
@@ -729,6 +721,7 @@ export class CradleEditor {
                     }),
                 );
                 break;
+            }
             case 'Paragraph':
             case 'TableCell':
                 return await this.autocompleteForPlainText(context);
@@ -762,7 +755,6 @@ export class CradleEditor {
         const ignoreTypes = new Set([
             'Link',
             'Frontmatter',
-            'Link',
             'CradleLink',
             'CodeBlock',
             'FencedCode',
@@ -797,12 +789,10 @@ export class CradleEditor {
                     const suggestions = this.getSuggestionsForText(nodeText);
 
                     const childRanges: Array<{ from: number; to: number }> = [];
-                    if (node.firstChild) {
-                        let child = node.firstChild;
-                        while (child) {
-                            childRanges.push({ from: child.from, to: child.to });
-                            child = child.nextSibling;
-                        }
+                    let child = node.firstChild;
+                    while (child) {
+                        childRanges.push({ from: child.from, to: child.to });
+                        child = child.nextSibling;
                     }
                     for (const suggestion of suggestions) {
                         const absoluteStart = node.from + suggestion.from;
@@ -854,7 +844,7 @@ export class CradleEditor {
                         node.lastChild &&
                         node.lastChild.name !== 'CradleLinkTimestamp'
                     ) {
-                        const timestamp = dayjs().format('DD-MM-YYYY');
+                        const timestamp = dayjs(timestampDate).format('DD-MM-YYYY');
                         changes.push({
                             from: node.to,
                             to: node.to,
@@ -928,7 +918,7 @@ export class CradleEditor {
         }> = [];
         const tree = syntaxTree(editor.state);
 
-        // First, add timestamps to existing cradle links that don't have them
+        // Collect all cradle links and classify them as artifacts or entities
         tree.iterate({
             from: 0,
             to: editor.state.doc.length,
@@ -991,8 +981,8 @@ export class CradleEditor {
                 enter: (syntaxNode) => {
                     const node = syntaxNode.node;
                     if (
-                        node.name == 'Frontmatter' ||
-                        node.name == 'FrontMatterContent'
+                        node.name === 'Frontmatter' ||
+                        node.name === 'FrontMatterContent'
                     ) {
                         const frontmatter = text.slice(node.from, node.to);
                         const yml = frontmatter
@@ -1019,46 +1009,45 @@ export class CradleEditor {
                                             severity: 'error' as const,
                                             message: `Invalid entry type: ${type}`,
                                         });
-                                        if (Array.isArray(value)) {
-                                            // Validate each item in the array
-                                            value.forEach((item, index) => {
-                                                const valueDiagnostics =
-                                                    this.validateLinkValue(
-                                                        type,
-                                                        String(item),
-                                                        node.from,
-                                                    );
-                                                if (valueDiagnostics.length > 0) {
-                                                    // Adjust the position for each array item
-                                                    const adjustedDiagnostics =
-                                                        valueDiagnostics.map((d) => ({
-                                                            ...d,
-                                                            from: d.from + index * 2, // Approximate position adjustment
-                                                            to: d.to + index * 2,
-                                                        }));
-                                                    diagnostics.push(
-                                                        ...adjustedDiagnostics,
-                                                    );
-                                                }
-                                            });
-                                        } else if (typeof value !== 'object') {
+                                        continue;
+                                    }
+
+                                    // Validate values for known type
+                                    if (Array.isArray(value)) {
+                                        value.forEach((item, index) => {
                                             const valueDiagnostics =
                                                 this.validateLinkValue(
                                                     type,
-                                                    String(value),
+                                                    String(item),
                                                     node.from,
                                                 );
                                             if (valueDiagnostics.length > 0) {
-                                                diagnostics.push(...valueDiagnostics);
+                                                const adjustedDiagnostics =
+                                                    valueDiagnostics.map((d) => ({
+                                                        ...d,
+                                                        from: d.from + index * 2,
+                                                        to: d.to + index * 2,
+                                                    }));
+                                                diagnostics.push(
+                                                    ...adjustedDiagnostics,
+                                                );
                                             }
-                                        } else {
-                                            diagnostics.push({
-                                                from: node.from + 3,
-                                                to: node.to - 3,
-                                                severity: 'error' as const,
-                                                message: `Invalid value for ${type}`,
-                                            });
-                                        }
+                                        });
+                                    } else if (typeof value !== 'object') {
+                                        diagnostics.push(
+                                            ...this.validateLinkValue(
+                                                type,
+                                                String(value),
+                                                node.from,
+                                            ),
+                                        );
+                                    } else {
+                                        diagnostics.push({
+                                            from: node.from + 3,
+                                            to: node.to - 3,
+                                            severity: 'error' as const,
+                                            message: `Invalid value for ${type}`,
+                                        });
                                     }
                                 }
                             }
@@ -1067,8 +1056,8 @@ export class CradleEditor {
                             const from = loc ? loc.position : 0;
                             const to = from;
                             diagnostics.push({
-                                from: from,
-                                to: to,
+                                from,
+                                to,
                                 message: e.reason,
                                 severity: 'error' as const,
                             });
@@ -1079,10 +1068,7 @@ export class CradleEditor {
                         if (!this.entryClasses) return false;
 
                         const nodeText = text.slice(node.from, node.to);
-                        const matches = Object.keys(this.entryClasses).filter(
-                            (x) => x === nodeText,
-                        );
-                        if (matches.length === 0) {
+                        if (!this.entryClasses[nodeText]) {
                             diagnostics.push({
                                 from: node.from,
                                 to: node.to,
@@ -1157,8 +1143,8 @@ export class CradleEditor {
         if (!criteria) return [];
 
         if (criteria.regex) {
-            const regex = new RegExp(`^${criteria.regex}$`);
-            if (!(regex.test(value) || regex.test(value.toLowerCase()))) {
+            const regex = new RegExp(`^(?:${criteria.regex})$`, 'i');
+            if (!regex.test(value)) {
                 diagnostics.push({
                     from,
                     to: from + value.length,
@@ -1168,7 +1154,7 @@ export class CradleEditor {
             }
         }
 
-        if (criteria.format == 'options' || criteria.type == 'entity') {
+        if (criteria.format === 'options' || criteria.type === 'entity') {
             if (!this.tries?.[linkType]?.search(value).found) {
                 diagnostics.push({
                     from,
@@ -1294,7 +1280,7 @@ export class CradleEditor {
                                     valueStart + linkValue.length,
                                 ),
                             );
-                            if (linkAlias != null) {
+                            if (linkAlias !== null) {
                                 const aliasStart = valueStart + linkValue.length + 1;
                                 node.children.push(
                                     cx.elt(
@@ -1364,7 +1350,7 @@ export class CradleEditor {
     markdown(config: MarkdownLanguageConfig): LanguageSupport {
         return yamlFrontmatter({
             content: markdown({
-                base: markdownLanguage,
+                base: config.base,
                 codeLanguages: config.codeLanguages || [],
                 extensions: [this.extension(), ...(config.extensions || [])],
             }),

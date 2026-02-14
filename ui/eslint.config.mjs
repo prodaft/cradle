@@ -13,6 +13,8 @@ export default [
             'docs/*',
             'src/services/**',
             'src/components/ui/**',
+            'src/components/data-grid/**',
+            'src/components/data-table/**',
         ],
     },
     { languageOptions: { globals: globals.browser } },

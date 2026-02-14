@@ -2,14 +2,21 @@ import { Button } from '@/components/ui/button';
 import useApi from '@/hooks/api/use-api';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import Logo from '@components/base/Logo/Logo';
-import { useRouter, useRouterState } from '@tanstack/react-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
+import { useEffect, useMemo, useRef } from 'react';
 
 type OAuthAction = 'oauth_login' | 'oauth_connect';
 
 interface OAuthState {
     action: OAuthAction;
     provider: string;
+}
+
+interface OAuthParams {
+    code: string;
+    provider: string;
+    action: OAuthAction;
 }
 
 const parseOAuthState = (stateValue: string | null): OAuthState | null => {
@@ -30,134 +37,104 @@ export default function OAuthCallback() {
     const { basePath } = useAuthState();
     const { isLoggedIn, getAccessToken, setTokensDirectly } = useAuthActions();
     const router = useRouter();
-    const location = useRouterState({
-        select: (state) => state.location,
-    });
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [statusMessage, setStatusMessage] = useState('Completing sign-in...');
     const hasExchangedRef = useRef(false);
 
-    const redirectUri = useMemo(() => `${window.location.origin}/oauth/callback`, []);
-
-    useEffect(() => {
-        if (hasExchangedRef.current) {
-            return;
-        }
-        hasExchangedRef.current = true;
-
+    const urlParams = useMemo(() => {
         const url = new URL(window.location.href);
         let queryString = url.search;
         if (!queryString && url.hash.includes('?')) {
             queryString = url.hash.slice(url.hash.indexOf('?'));
         }
         const params = new URLSearchParams(queryString);
+
         const error = params.get('error');
-        if (error) {
-            setErrorMessage('OAuth request was denied.');
-            setStatusMessage('Unable to continue.');
-            return;
-        }
+        if (error) return { error: 'OAuth request was denied.' } as const;
 
         const code = params.get('code');
-        if (!code) {
-            setErrorMessage('Missing OAuth authorization code.');
-            setStatusMessage('Unable to continue.');
-            return;
-        }
+        if (!code) return { error: 'Missing OAuth authorization code.' } as const;
 
         const state = parseOAuthState(params.get('state'));
         const provider =
             state?.provider ||
             params.get('provider') ||
             sessionStorage.getItem('oauth_connect_provider');
+        if (!provider) return { error: 'Missing OAuth provider.' } as const;
 
-        if (!provider) {
-            setErrorMessage('Missing OAuth provider.');
-            setStatusMessage('Unable to continue.');
-            return;
-        }
+        const action: OAuthAction = state?.action || 'oauth_login';
+        return { code, provider, action } as const;
+    }, []);
 
-        const action = state?.action || 'oauth_login';
+    const oauthMutation = useMutation({
+        mutationFn: async ({ code, provider, action }: OAuthParams) => {
+            if (!basePath) throw new Error('Backend URL is not configured.');
 
-        const run = async () => {
-            if (!basePath) {
-                setErrorMessage('Backend URL is not configured.');
-                setStatusMessage('Unable to continue.');
+            const redirectUri = `${window.location.origin}/oauth/callback`;
+            const normalizeTo = (path: string) =>
+                (path.startsWith('/') ? path : `/${path}`) as any;
+
+            if (action === 'oauth_connect') {
+                if (!isLoggedIn()) {
+                    throw new Error('You must be logged in to connect accounts.');
+                }
+
+                await getAccessToken();
+                await authApi.authOauthLogin({
+                    oAuthConnectRequest: { provider, code, redirectUri },
+                });
+
+                const returnPath =
+                    sessionStorage.getItem('oauth_connect_return_path') || '/settings';
+                sessionStorage.removeItem('oauth_connect_return_path');
+                sessionStorage.removeItem('oauth_connect_provider');
+                router.navigate({ to: normalizeTo(returnPath), replace: true });
                 return;
             }
 
-            try {
-                if (action === 'oauth_connect') {
-                    if (!isLoggedIn()) {
-                        setErrorMessage('You must be logged in to connect accounts.');
-                        setStatusMessage('Unable to continue.');
-                        return;
-                    }
+            const data = await authApi.authOauthLogin({
+                oAuthConnectRequest: { provider, code, redirectUri },
+            });
 
-                    await authApi.authOauthLogin({
-                        oAuthConnectRequest: {
-                            provider,
-                            code,
-                            redirectUri,
-                        },
-                    });
+            setTokensDirectly({
+                access: data.access,
+                refresh: data.refresh,
+                accessExpiresAt: data.accessExpiresAt,
+                refreshExpiresAt: data.refreshExpiresAt,
+                role: data.role,
+                user_id: (data as any).user_id,
+            });
 
-                    const returnPath =
-                        sessionStorage.getItem('oauth_connect_return_path') ||
-                        '/settings';
-                    sessionStorage.removeItem('oauth_connect_return_path');
-                    sessionStorage.removeItem('oauth_connect_provider');
-                    router.navigate({
-                        to: returnPath.startsWith('/')
-                            ? (returnPath as any)
-                            : (`/${returnPath}` as any),
-                        replace: true,
-                    });
-                    return;
-                }
+            const redirectPath = sessionStorage.getItem('oauth_login_redirect') || '/';
+            const normalizedRedirect =
+                redirectPath === '/oauth/callback' ||
+                redirectPath === '#/oauth/callback'
+                    ? '/'
+                    : redirectPath;
+            sessionStorage.removeItem('oauth_login_redirect');
+            router.navigate({
+                to: normalizeTo(normalizedRedirect),
+                replace: true,
+            });
+        },
+        meta: { suppressNotification: true },
+    });
 
-                const data = await authApi.authOauthLogin({
-                    oAuthConnectRequest: {
-                        provider,
-                        code,
-                        redirectUri,
-                    },
-                });
+    useEffect(() => {
+        if (hasExchangedRef.current) return;
+        if ('error' in urlParams) return;
+        hasExchangedRef.current = true;
+        oauthMutation.mutate(urlParams);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-                const tokenData = {
-                    access: data.access,
-                    refresh: data.refresh,
-                    accessExpiresAt: data.accessExpiresAt,
-                    refreshExpiresAt: data.refreshExpiresAt,
-                    role: data.role,
-                    // user_id may be present in response but not in TokenPairRetrieve type
-                    user_id: (data as any).user_id,
-                };
-
-                setTokensDirectly(tokenData);
-
-                const redirectPath =
-                    sessionStorage.getItem('oauth_login_redirect') || '/';
-                const normalizedRedirect =
-                    redirectPath === '/oauth/callback' ||
-                    redirectPath === '#/oauth/callback'
-                        ? '/'
-                        : redirectPath;
-                sessionStorage.removeItem('oauth_login_redirect');
-                router.navigate({
-                    to: normalizedRedirect.startsWith('/')
-                        ? (normalizedRedirect as any)
-                        : (`/${normalizedRedirect}` as any),
-                    replace: true,
-                });
-            } catch (error) {
-                setErrorMessage('OAuth flow failed. Please try again.');
-                setStatusMessage('Unable to continue.');
-            }
-        };
-
-        run();
-    }, [location.search, router, redirectUri, location]);
+    const errorMessage =
+        'error' in urlParams
+            ? urlParams.error
+            : oauthMutation.isError
+              ? oauthMutation.error?.message || 'OAuth flow failed. Please try again.'
+              : null;
+    const statusMessage = errorMessage
+        ? 'Unable to continue.'
+        : 'Completing sign-in...';
 
     return (
         <div className='grid min-h-svh lg:grid-cols-2'>

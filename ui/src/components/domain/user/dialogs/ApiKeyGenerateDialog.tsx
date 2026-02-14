@@ -72,8 +72,7 @@ export default function ApiKeyGenerateDialog({
             return response.apiKey;
         },
         meta: {
-            errorMessage: 'Failed to generate API key',
-            suppressNotification: true, // We handle alerts ourselves
+            suppressNotification: true,
         },
         onSuccess: (apiKey) => {
             setApiKey(apiKey);

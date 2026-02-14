@@ -2,16 +2,24 @@
  * Hook for accessing authentication context
  */
 
-import type {
-    AuthActionsValue,
-    AuthContextValue,
-    AuthStateValue,
-} from '@/components/domain/auth/AuthProvider';
 import {
     AuthActionsContext,
     AuthStateContext,
+    type AuthActionsValue,
+    type AuthContextValue,
+    type AuthStateValue,
 } from '@/components/domain/auth/AuthProvider';
-import { useContext } from 'react';
+import { useContext, type Context } from 'react';
+
+const useRequiredContext = <T>(ctx: Context<T | undefined>, hookName: string): T => {
+    const value = useContext(ctx);
+
+    if (value == null) {
+        throw new Error(`${hookName} must be used within an AuthProvider`);
+    }
+
+    return value;
+};
 
 /**
  * Hook to access authentication state only (role, userId, isLoading, basePath, isAdmin, isEntryManager)
@@ -20,13 +28,7 @@ import { useContext } from 'react';
  * @returns Authentication state value
  */
 export const useAuthState = (): AuthStateValue => {
-    const context = useContext(AuthStateContext);
-
-    if (!context) {
-        throw new Error('useAuthState must be used within an AuthProvider');
-    }
-
-    return context;
+    return useRequiredContext(AuthStateContext, 'useAuthState');
 };
 
 /**
@@ -36,13 +38,7 @@ export const useAuthState = (): AuthStateValue => {
  * @returns Authentication actions value
  */
 export const useAuthActions = (): AuthActionsValue => {
-    const context = useContext(AuthActionsContext);
-
-    if (!context) {
-        throw new Error('useAuthActions must be used within an AuthProvider');
-    }
-
-    return context;
+    return useRequiredContext(AuthActionsContext, 'useAuthActions');
 };
 
 /**

@@ -14,7 +14,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
-import type { Alert, StateSetter } from '@/types';
+import type { StateSetter } from '@/types';
+import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import { DateRangeFilter } from '@components/base/ListView/types';
@@ -30,7 +31,16 @@ import {
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { StatusIcon, type StatusType } from '../notes/StatusIcon';
+
+// Mapping of table columns to API field names (stable, avoids hook dep warnings)
+const SORT_FIELD_MAPPING: Record<string, string> = {
+    title: 'title',
+    type: 'digest_type',
+    createdAt: 'created_at',
+    user: 'user__username',
+};
 
 interface DataTypeOption {
     value: string;
@@ -44,7 +54,6 @@ interface DigestListProps {
     page: number;
     totalPages: number;
     handlePageChange: (page: number) => void;
-    setAlert: StateSetter<Alert>;
     onDigestDelete?: () => void;
     sortField?: string;
     sortDirection?: 'asc' | 'desc';
@@ -59,7 +68,7 @@ interface DigestListProps {
     columnFilters?: Record<string, any>;
     searchFilters?: Record<string, string>;
     onSearchChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onSearchSubmit?: (e: React.FormEvent | React.MouseEvent) => void;
+    onSearchSubmit?: (e: React.SyntheticEvent) => void;
     dataTypeOptions?: DataTypeOption[];
     onUpload?: () => void;
 }
@@ -70,7 +79,6 @@ function DigestList({
     page,
     totalPages,
     handlePageChange,
-    setAlert,
     onDigestDelete,
     sortField = 'created_at',
     sortDirection = 'desc',
@@ -84,8 +92,8 @@ function DigestList({
     searchFilters = {},
     onSearchChange = () => {},
     onSearchSubmit = () => {},
-    dataTypeOptions = [],
-    onUpload,
+    dataTypeOptions: _dataTypeOptions = [],
+    onUpload: _onUpload,
 }: DigestListProps) {
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteDigestIds, setBulkDeleteDigestIds] = useState<string[]>([]);
@@ -106,19 +114,14 @@ function DigestList({
         setRowSelection(selection);
     }, [externalSelectedDigests]);
 
-    // Mapping of table columns to API field names
-    const sortFieldMapping: Record<string, string> = {
-        title: 'title',
-        type: 'digest_type',
-        createdAt: 'created_at',
-        user: 'user__username',
-    };
-
-    const handleStatusChange = (status: string) => {
-        if (onColumnFilterChange) {
-            onColumnFilterChange('status', status);
-        }
-    };
+    const handleStatusChange = useCallback(
+        (status: string) => {
+            if (onColumnFilterChange) {
+                onColumnFilterChange('status', status);
+            }
+        },
+        [onColumnFilterChange],
+    );
 
     // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
@@ -135,14 +138,14 @@ function DigestList({
                 handlePageChange(newPage);
             }
         },
-        [page, pageSize],
+        [page, pageSize, handlePageChange, setPageSize],
     );
 
     // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
         const columnId =
-            Object.keys(sortFieldMapping).find(
-                (key) => sortFieldMapping[key] === sortField,
+            Object.keys(SORT_FIELD_MAPPING).find(
+                (key) => SORT_FIELD_MAPPING[key] === sortField,
             ) || sortField;
 
         return columnId
@@ -161,7 +164,7 @@ function DigestList({
                 onSort('created_at', 'desc');
             } else {
                 const sort = newSorting[0];
-                const apiField = sortFieldMapping[sort.id] || sort.id;
+                const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
                 onSort(apiField, sort.desc ? 'desc' : 'asc');
             }
         },
@@ -177,30 +180,7 @@ function DigestList({
         [handleSortingChange, sorting],
     );
 
-    // Define filterable columns with their handlers
-    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-        onColumnFilterChange
-            ? {
-                  user: (value) => {
-                      if (typeof value === 'string') {
-                          onColumnFilterChange('user', value);
-                      }
-                  },
-                  createdAt: (value) => {
-                      if (typeof value !== 'string') {
-                          onColumnFilterChange('createdAt', value);
-                      }
-                  },
-              }
-            : {};
-
-    interface SelectProps {
-        enableMultiSelect?: boolean;
-        isSelected?: boolean;
-        onSelect?: () => void;
-    }
-
-    const getStatusIcon = (status?: string, errorMessage?: string) => {
+    const getStatusIcon = useCallback((status?: string, errorMessage?: string) => {
         if (!status) return null;
 
         const statusCapitalized = status.charAt(0).toUpperCase() + status.slice(1);
@@ -247,7 +227,7 @@ function DigestList({
                 <TooltipContent>{tooltipContent}</TooltipContent>
             </Tooltip>
         );
-    };
+    }, []);
 
     // Memoize columns to prevent recreation on every render
     const columns = useMemo<ColumnDef<BaseDigest>[]>(
@@ -406,7 +386,7 @@ function DigestList({
                 ),
             },
         ],
-        [columnFilters, handleStatusChange, getStatusIcon],
+        [columnFilters, getStatusIcon],
     );
     const table = useReactTable({
         data: digests,
@@ -450,6 +430,16 @@ function DigestList({
         externalSetSelectedDigests?.([]);
     }, [externalSetSelectedDigests]);
 
+    // Small helper to avoid duplicating the synthetic "title" search event shape
+    const makeTitleSearchEvent = useCallback(
+        (value: string) =>
+            ({
+                preventDefault: () => {},
+                target: { name: 'title', value },
+            }) as React.ChangeEvent<HTMLInputElement>,
+        [],
+    );
+
     const handleDeleteSelected = async () => {
         if (selectedDigestIds.length > 0) {
             setBulkDeleteDigestIds(selectedDigestIds);
@@ -470,34 +460,27 @@ function DigestList({
             const failures = results.filter((r) => r.status === 'rejected').length;
 
             if (failures === 0) {
-                setAlert({
-                    show: true,
-                    color: 'green',
-                    message: `Successfully deleted ${successes} digest${successes > 1 ? 's' : ''}`,
-                });
+                toast.success(
+                    `Successfully deleted ${successes} digest${successes > 1 ? 's' : ''}`,
+                );
             } else if (successes === 0) {
-                setAlert({
-                    show: true,
-                    color: 'red',
-                    message: `Failed to delete ${failures} digest${failures > 1 ? 's' : ''}`,
-                });
+                const firstRejected = results.find(
+                    (r) => r.status === 'rejected',
+                ) as PromiseRejectedResult;
+                const parsed = await parseAPIError(firstRejected.reason);
+                toast.error(parsed.detail);
             } else {
-                setAlert({
-                    show: true,
-                    color: 'amber',
-                    message: `Deleted ${successes} digest${successes > 1 ? 's' : ''}, ${failures} failed`,
-                });
+                toast.warning(
+                    `Deleted ${successes} digest${successes > 1 ? 's' : ''}, ${failures} failed`,
+                );
             }
 
             // Refresh the digests list
             clearSelection();
             if (onDigestDelete) onDigestDelete();
         } catch (error) {
-            setAlert({
-                show: true,
-                color: 'red',
-                message: 'An unexpected error occurred while deleting digests',
-            });
+            const parsed = await parseAPIError(error);
+            toast.error(parsed.detail);
         }
     };
 
@@ -513,21 +496,12 @@ function DigestList({
                         <ActionBarSearch
                             placeholder='Search by title...'
                             initialValue={searchFilters.title || ''}
-                            defaultExpanded={Boolean(searchFilters.title)}
                             debounceMs={300}
                             onDebouncedChange={(value) => {
-                                const event = {
-                                    preventDefault: () => {},
-                                    target: { name: 'title', value },
-                                } as React.ChangeEvent<HTMLInputElement>;
-                                onSearchChange(event);
+                                onSearchChange(makeTitleSearchEvent(value));
                             }}
                             onSubmit={(value) => {
-                                const event = {
-                                    preventDefault: () => {},
-                                    target: { name: 'title', value },
-                                } as any;
-                                onSearchSubmit(event);
+                                onSearchSubmit(makeTitleSearchEvent(value));
                             }}
                         />
                         <StatusHeaderDropdown

@@ -30,33 +30,26 @@ export default function NotificationsPanel({
     const parentRef = useRef<HTMLDivElement>(null);
 
     // Infinite query for paginated notifications
-    const {
-        data,
-        fetchNextPage,
-        hasNextPage,
-        isFetchingNextPage,
-        isPending: loading,
-        refetch,
-    } = useInfiniteQuery({
-        queryKey: ['notifications'],
-        queryFn: async ({ pageParam = 1 }) => {
-            return notificationsApi.notificationsRetrieve({
-                page: pageParam,
-                pageSize: PAGE_SIZE,
-            });
-        },
-        getNextPageParam: (lastPage) => {
-            if (lastPage.page < lastPage.totalPages) {
-                return lastPage.page + 1;
-            }
-            return undefined;
-        },
-        initialPageParam: 1,
-        meta: {
-            showErrorToast: true,
-            errorMessage: 'Failed to load notifications',
-        },
-    });
+    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch } =
+        useInfiniteQuery({
+            queryKey: ['notifications'],
+            queryFn: async ({ pageParam }) => {
+                return notificationsApi.notificationsRetrieve({
+                    page: pageParam,
+                    pageSize: PAGE_SIZE,
+                });
+            },
+            getNextPageParam: (lastPage) => {
+                if (lastPage.page < lastPage.totalPages) {
+                    return lastPage.page + 1;
+                }
+                return undefined;
+            },
+            initialPageParam: 1,
+            meta: {
+                showErrorToast: true,
+            },
+        });
 
     // Flatten all pages into a single array
     const notifications = useMemo(() => {
@@ -132,7 +125,7 @@ export default function NotificationsPanel({
         handleLoadMore,
     ]);
 
-    const isEmpty = !loading && notifications.length === 0;
+    const isEmpty = !isLoading && notifications.length === 0;
 
     return (
         <div
@@ -143,7 +136,7 @@ export default function NotificationsPanel({
                 <div className='flex flex-col items-center justify-center h-full p-3 text-muted-foreground'>
                     <span className='text-sm'>No notifications</span>
                 </div>
-            ) : loading && notifications.length === 0 ? (
+            ) : isLoading && notifications.length === 0 ? (
                 <div className='flex flex-col items-center justify-center h-full p-3'>
                     <Loading />
                 </div>

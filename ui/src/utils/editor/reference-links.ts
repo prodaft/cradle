@@ -10,20 +10,18 @@ import {
     WidgetType,
 } from '@codemirror/view';
 import { SyntaxNode } from '@lezer/common';
-import { MarkdownConfig } from '@lezer/markdown';
-import type { NavigateOptions } from '@tanstack/react-router';
+import type { InlineContext, MarkdownConfig } from '@lezer/markdown';
 
 // Type alias for compatibility - export it
 export type FileReference = FileReferenceWithNote;
 
 /**
  * Widget to display the reference link.
- * It renders as a standard anchor tag, hiding the underlying markdown syntax.
+ * It renders as a styled span element, hiding the underlying markdown syntax.
  */
 export class ReferenceLinkWidget extends WidgetType {
     text: string;
     file: FileReference;
-    navigate: (url: string, options?: NavigateOptions) => void;
     resolveMinioLink: (
         file: FileTransferDownloadRetrieveRequest,
     ) => Promise<FileDownload>;
@@ -31,7 +29,6 @@ export class ReferenceLinkWidget extends WidgetType {
     constructor(
         text: string,
         file: FileReference,
-        navigate: (url: string, options?: NavigateOptions) => void,
         resolveMinioLink: (
             file: FileTransferDownloadRetrieveRequest,
         ) => Promise<FileDownload>,
@@ -39,7 +36,6 @@ export class ReferenceLinkWidget extends WidgetType {
         super();
         this.text = text;
         this.file = file;
-        this.navigate = navigate;
         this.resolveMinioLink = resolveMinioLink;
     }
 
@@ -47,12 +43,9 @@ export class ReferenceLinkWidget extends WidgetType {
         return other.text === this.text && other.file.id === this.file.id;
     }
 
-    toDOM(view: EditorView) {
+    toDOM(_view: EditorView) {
         const span = document.createElement('span');
-        const a = document.createElement('a');
-        a.innerText = this.text;
-        a.href = `/#download`;
-        span.appendChild(a);
+        span.innerText = this.text;
 
         // Styling to make it look like a regular link within the editor
         span.style.cursor = 'pointer';
@@ -120,7 +113,7 @@ export class ReferenceImageWidget extends WidgetType {
         return other.text === this.text && other.file.id === this.file.id;
     }
 
-    toDOM(view: EditorView) {
+    toDOM(_view: EditorView) {
         const img = document.createElement('img');
         img.alt = this.text;
         img.style.maxWidth = '40%';
@@ -153,10 +146,6 @@ export class ReferenceImageWidget extends WidgetType {
         return img;
     }
 
-    ignoreEvent(e: Event) {
-        return false;
-    }
-
     /**
      * Clear the URL cache. Useful when files are updated or when
      * presigned URLs need to be refreshed.
@@ -171,6 +160,127 @@ export class ReferenceImageWidget extends WidgetType {
     static invalidateFile(fileId: string) {
         ReferenceImageWidget.urlCache.delete(fileId);
     }
+}
+
+/**
+ * Shared parse logic for ExternalReferenceLink and ExternalReferenceImage.
+ *
+ * @param cx       Lezer inline parse context
+ * @param textStart  Position of the first character inside the opening `[`
+ * @param pos        Position of the very first character of the construct (`[` or `!`)
+ * @param kind       `'ExternalReferenceLink'` or `'ExternalReferenceImage'`
+ * @param mappings   Label → FileReference lookup table
+ */
+function parseExternalReference(
+    cx: InlineContext,
+    textStart: number,
+    pos: number,
+    kind: 'ExternalReferenceLink' | 'ExternalReferenceImage',
+    mappings: Record<string, FileReference>,
+): number {
+    let p = textStart;
+    let balance = 1;
+    let opening = 1;
+
+    // Scan for matching closing bracket, respecting escapes
+    while (p < cx.end && balance > 0) {
+        const code = cx.char(p);
+        if (code === 92) {
+            // '\' escape
+            p += 2;
+            continue;
+        }
+        if (code === 91) {
+            // '['
+            opening++;
+            balance++;
+        } else if (code === 93) {
+            // ']'
+            balance--;
+        }
+        p++;
+    }
+
+    // If 2 opening brackets, it's a cradle link
+    if (opening === 2) {
+        return -1;
+    }
+
+    // If unbalanced or EOF
+    if (balance !== 0) return -1;
+
+    const textEnd = p - 1;
+    const textContent = cx.slice(textStart, textEnd).toString();
+
+    let labelStart = -1;
+    let labelEnd = -1;
+    let labelContent = '';
+    let isShortcut = false;
+
+    let lookahead = p;
+    if (lookahead < cx.end && cx.char(lookahead) === 32) {
+        lookahead++;
+    }
+    if (lookahead < cx.end && cx.char(lookahead) === 40) {
+        return -1;
+    }
+
+    if (lookahead < cx.end && cx.char(lookahead) === 91) {
+        // Found second '['
+        const secondBracketStart = lookahead + 1;
+        let q = secondBracketStart;
+
+        // Scan for closing ']' for the label
+        while (q < cx.end) {
+            const code = cx.char(q);
+            if (code === 92) {
+                // Escape
+                q += 2;
+                continue;
+            }
+            if (code === 93) {
+                // ']'
+                break;
+            }
+            q++;
+        }
+
+        if (q < cx.end && cx.char(q) === 93) {
+            labelStart = secondBracketStart;
+            labelEnd = q;
+            labelContent = cx.slice(labelStart, labelEnd).toString();
+            p = q + 1;
+        } else {
+            isShortcut = true;
+        }
+    } else {
+        isShortcut = true;
+    }
+
+    let key = '';
+    if (!isShortcut) {
+        if (labelContent.trim() === '') {
+            key = textContent;
+        } else {
+            key = labelContent;
+        }
+    } else {
+        key = textContent;
+    }
+
+    if (mappings[key] || mappings[key.toLowerCase()]) {
+        const endPos = p;
+        return cx.addElement(
+            cx.elt(kind, pos, endPos, [
+                cx.elt('ExternalReferenceText', textStart, textEnd),
+                ...(labelStart !== -1
+                    ? [cx.elt('ExternalReferenceLabel', labelStart, labelEnd)]
+                    : []),
+            ]),
+        );
+    }
+
+    return -1; // No match, fallback to standard parsing
 }
 
 /**
@@ -197,241 +307,29 @@ export function referenceLinkSyntax(
                 name: 'ExternalReferenceLink',
                 before: 'Link',
                 parse(cx, next, pos) {
-                    if (next != 91) return -1; // '['
-
-                    // --- Parse Text Part: [ ... ] ---
-                    const textStart = pos + 1;
-                    let p = textStart;
-                    let balance = 1;
-                    let opening = 1;
-
-                    // Scan for matching closing bracket, respecting escapes
-                    while (p < cx.end && balance > 0) {
-                        const code = cx.char(p);
-                        if (code == 92) {
-                            // '\' escape
-                            p += 2;
-                            continue;
-                        }
-                        if (code == 91) {
-                            // '['
-                            opening++;
-                            balance++;
-                        } else if (code == 93) {
-                            // ']'
-                            balance--;
-                        }
-                        p++;
-                    }
-
-                    // If 2 opening brackets, it's a cradle link
-                    if (opening === 2) {
-                        return -1;
-                    }
-
-                    // If unbalanced or EOF
-                    if (balance !== 0) return -1;
-
-                    const textEnd = p - 1;
-                    const textContent = cx.slice(textStart, textEnd).toString();
-
-                    let labelStart = -1;
-                    let labelEnd = -1;
-                    let labelContent = '';
-                    let isShortcut = false;
-
-                    let lookahead = p;
-                    if (lookahead < cx.end && cx.char(lookahead) === 32) {
-                        lookahead++;
-                    }
-                    if (lookahead < cx.end && cx.char(lookahead) === 40) {
-                        return -1;
-                    }
-
-                    if (lookahead < cx.end && cx.char(lookahead) === 91) {
-                        // Found second '['
-                        const secondBracketStart = lookahead + 1;
-                        let q = secondBracketStart;
-
-                        // Scan for closing ']' for the label
-                        // Labels usually cannot contain brackets
-                        while (q < cx.end) {
-                            const code = cx.char(q);
-                            if (code == 92) {
-                                // Escape
-                                q += 2;
-                                continue;
-                            }
-                            if (code == 93) {
-                                // ']'
-                                break;
-                            }
-                            q++;
-                        }
-
-                        if (q < cx.end && cx.char(q) === 93) {
-                            labelStart = secondBracketStart;
-                            labelEnd = q;
-                            labelContent = cx.slice(labelStart, labelEnd).toString();
-                            p = q + 1;
-                        } else {
-                            isShortcut = true;
-                        }
-                    } else {
-                        isShortcut = true;
-                    }
-
-                    let key = '';
-                    if (!isShortcut) {
-                        if (labelContent.trim() === '') {
-                            key = textContent;
-                        } else {
-                            key = labelContent;
-                        }
-                    } else {
-                        key = textContent;
-                    }
-
-                    if (mappings[key] || mappings[key.toLowerCase()]) {
-                        const endPos = p;
-                        return cx.addElement(
-                            cx.elt('ExternalReferenceLink', pos, endPos, [
-                                cx.elt('ExternalReferenceText', textStart, textEnd),
-                                ...(labelStart !== -1
-                                    ? [
-                                          cx.elt(
-                                              'ExternalReferenceLabel',
-                                              labelStart,
-                                              labelEnd,
-                                          ),
-                                      ]
-                                    : []),
-                            ]),
-                        );
-                    }
-
-                    return -1; // No match, fallback to standard parsing
+                    if (next !== 91) return -1; // '['
+                    return parseExternalReference(
+                        cx,
+                        pos + 1,
+                        pos,
+                        'ExternalReferenceLink',
+                        mappings,
+                    );
                 },
             },
             {
                 name: 'ExternalReferenceImage',
                 before: 'Image',
                 parse(cx, next, pos) {
-                    if (next != 33) return -1; // '!'
-                    if (cx.char(pos + 1) != 91) return -1; // '['
-
-                    // --- Parse Text Part: ![ ... ] ---
-                    const textStart = pos + 2;
-                    let p = textStart;
-                    let balance = 1;
-                    let opening = 1;
-
-                    // Scan for matching closing bracket, respecting escapes
-                    while (p < cx.end && balance > 0) {
-                        const code = cx.char(p);
-                        if (code == 92) {
-                            // '\' escape
-                            p += 2;
-                            continue;
-                        }
-                        if (code == 91) {
-                            // '['
-                            opening++;
-                            balance++;
-                        } else if (code == 93) {
-                            // ']'
-                            balance--;
-                        }
-                        p++;
-                    }
-
-                    // If 2 opening brackets, it's a cradle link
-                    if (opening === 2) {
-                        return -1;
-                    }
-
-                    // If unbalanced or EOF
-                    if (balance !== 0) return -1;
-
-                    const textEnd = p - 1;
-                    const textContent = cx.slice(textStart, textEnd).toString();
-
-                    let labelStart = -1;
-                    let labelEnd = -1;
-                    let labelContent = '';
-                    let isShortcut = false;
-
-                    let lookahead = p;
-                    if (lookahead < cx.end && cx.char(lookahead) === 32) {
-                        lookahead++;
-                    }
-                    if (lookahead < cx.end && cx.char(lookahead) === 40) {
-                        return -1;
-                    }
-
-                    if (lookahead < cx.end && cx.char(lookahead) === 91) {
-                        // Found second '['
-                        const secondBracketStart = lookahead + 1;
-                        let q = secondBracketStart;
-
-                        // Scan for closing ']' for the label
-                        // Labels usually cannot contain brackets
-                        while (q < cx.end) {
-                            const code = cx.char(q);
-                            if (code == 92) {
-                                // Escape
-                                q += 2;
-                                continue;
-                            }
-                            if (code == 93) {
-                                // ']'
-                                break;
-                            }
-                            q++;
-                        }
-
-                        if (q < cx.end && cx.char(q) === 93) {
-                            labelStart = secondBracketStart;
-                            labelEnd = q;
-                            labelContent = cx.slice(labelStart, labelEnd).toString();
-                            p = q + 1;
-                        } else {
-                            isShortcut = true;
-                        }
-                    } else {
-                        isShortcut = true;
-                    }
-
-                    let key = '';
-                    if (!isShortcut) {
-                        if (labelContent.trim() === '') {
-                            key = textContent;
-                        } else {
-                            key = labelContent;
-                        }
-                    } else {
-                        key = textContent;
-                    }
-
-                    if (mappings[key] || mappings[key.toLowerCase()]) {
-                        const endPos = p;
-                        return cx.addElement(
-                            cx.elt('ExternalReferenceImage', pos, endPos, [
-                                cx.elt('ExternalReferenceText', textStart, textEnd),
-                                ...(labelStart !== -1
-                                    ? [
-                                          cx.elt(
-                                              'ExternalReferenceLabel',
-                                              labelStart,
-                                              labelEnd,
-                                          ),
-                                      ]
-                                    : []),
-                            ]),
-                        );
-                    }
-
-                    return -1; // No match, fallback to standard parsing
+                    if (next !== 33) return -1; // '!'
+                    if (cx.char(pos + 1) !== 91) return -1; // '['
+                    return parseExternalReference(
+                        cx,
+                        pos + 2,
+                        pos,
+                        'ExternalReferenceImage',
+                        mappings,
+                    );
                 },
             },
         ],
@@ -443,7 +341,6 @@ export function referenceLinkSyntax(
  */
 export function referenceLinksPlugin(
     mappings: Record<string, FileReference>,
-    navigate: (url: string, options?: NavigateOptions) => void,
     resolveMinioLink: (
         file: FileTransferDownloadRetrieveRequest,
     ) => Promise<FileDownload>,
@@ -452,7 +349,6 @@ export function referenceLinksPlugin(
     return ViewPlugin.fromClass(
         class {
             mappings: Record<string, FileReference>;
-            navigate: (url: string, options?: NavigateOptions) => void;
             resolveMinioLink: (
                 file: FileTransferDownloadRetrieveRequest,
             ) => Promise<FileDownload>;
@@ -460,7 +356,6 @@ export function referenceLinksPlugin(
 
             constructor(view: EditorView) {
                 this.mappings = mappings;
-                this.navigate = navigate;
                 this.resolveMinioLink = resolveMinioLink;
                 this.decorations = this.buildDecorations(view);
             }
@@ -500,7 +395,6 @@ export function referenceLinksPlugin(
                                 doc.toString(),
                                 cursorPos,
                                 this.mappings,
-                                this.navigate,
                                 this.resolveMinioLink,
                                 sourceMode,
                             );
@@ -525,7 +419,6 @@ function createReferenceDecoration(
     text: string,
     cursorPos: number,
     mappings: Record<string, FileReference>,
-    navigate: (url: string, options?: NavigateOptions) => void,
     resolveMinioLink: (
         file: FileTransferDownloadRetrieveRequest,
     ) => Promise<FileDownload>,
@@ -566,12 +459,7 @@ function createReferenceDecoration(
         if (node.node.name === 'ExternalReferenceImage') {
             widget = new ReferenceImageWidget(linkText, reference, resolveMinioLink);
         } else {
-            widget = new ReferenceLinkWidget(
-                linkText,
-                reference,
-                navigate,
-                resolveMinioLink,
-            );
+            widget = new ReferenceLinkWidget(linkText, reference, resolveMinioLink);
         }
 
         return Decoration.replace({

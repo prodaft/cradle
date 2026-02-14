@@ -141,9 +141,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     );
 
     // Timer for automatic token refresh
-    const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // Track last network error log time to throttle noisy error messages
     const lastNetworkErrorLogRef = useRef<number>(0);
+
+    // Keep latest refreshAccessToken for scheduleTokenRefresh without deps cycles
+    const refreshAccessTokenRef = useRef<() => Promise<boolean>>(async () => false);
 
     /**
      * Check if user is currently logged in (has valid refresh token)
@@ -161,23 +164,55 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, []);
 
     /**
+     * Schedule automatic token refresh before expiration
+     */
+    const scheduleTokenRefresh = useCallback(() => {
+        if (refreshTimerRef.current) {
+            clearTimeout(refreshTimerRef.current);
+        }
+
+        if (!accessExpiresAtRef.current) {
+            return;
+        }
+
+        const expiresAt = new Date(accessExpiresAtRef.current);
+        const now = new Date();
+        const timeUntilExpiry = expiresAt.getTime() - now.getTime();
+
+        const refreshIn = Math.max(0, timeUntilExpiry - 120000);
+
+        refreshTimerRef.current = setTimeout(() => {
+            void refreshAccessTokenRef.current();
+        }, refreshIn);
+    }, []);
+
+    /**
      * Store tokens and metadata securely
      */
-    const storeTokens = useCallback((data: TokenData) => {
-        accessTokenRef.current = data.access;
-        refreshTokenRef.current = data.refresh;
-        accessExpiresAtRef.current = data.accessExpiresAt.toISOString();
-        refreshExpiresAtRef.current = data.refreshExpiresAt.toISOString();
+    const storeTokens = useCallback(
+        (data: TokenData) => {
+            accessTokenRef.current = data.access;
+            refreshTokenRef.current = data.refresh;
+            accessExpiresAtRef.current = data.accessExpiresAt.toISOString();
+            refreshExpiresAtRef.current = data.refreshExpiresAt.toISOString();
 
-        localStorage.setItem('access_token', data.access);
-        localStorage.setItem('refresh_token', data.refresh);
-        localStorage.setItem('access_expires_at', data.accessExpiresAt.toISOString());
-        localStorage.setItem('refresh_expires_at', data.refreshExpiresAt.toISOString());
-        localStorage.setItem('role', data.role);
+            localStorage.setItem('access_token', data.access);
+            localStorage.setItem('refresh_token', data.refresh);
+            localStorage.setItem(
+                'access_expires_at',
+                data.accessExpiresAt.toISOString(),
+            );
+            localStorage.setItem(
+                'refresh_expires_at',
+                data.refreshExpiresAt.toISOString(),
+            );
+            localStorage.setItem('role', data.role);
 
-        setRole(data.role);
-        scheduleTokenRefresh();
-    }, []);
+            setRole(data.role);
+            scheduleTokenRefresh();
+        },
+        [scheduleTokenRefresh],
+    );
 
     /**
      * Clear all stored tokens and user data
@@ -234,7 +269,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             };
 
             storeTokens(tokenData);
-            scheduleTokenRefresh();
             return true;
         } catch (error: any) {
             // Re-throw SessionExpiredException (from above or elsewhere)
@@ -253,28 +287,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
     }, [authApi, storeTokens, clearTokens]);
 
-    /**
-     * Schedule automatic token refresh before expiration
-     */
-    const scheduleTokenRefresh = useCallback(() => {
-        if (refreshTimerRef.current) {
-            clearTimeout(refreshTimerRef.current);
-        }
-
-        if (!accessExpiresAtRef.current) {
-            return;
-        }
-
-        const expiresAt = new Date(accessExpiresAtRef.current);
-        const now = new Date();
-        const timeUntilExpiry = expiresAt.getTime() - now.getTime();
-
-        // Refresh 2 minutes before expiration (or immediately if already expired)
-        const refreshIn = Math.max(0, timeUntilExpiry - 120000);
-
-        refreshTimerRef.current = setTimeout(async () => {
-            await refreshAccessToken();
-        }, refreshIn);
+    useEffect(() => {
+        refreshAccessTokenRef.current = refreshAccessToken;
     }, [refreshAccessToken]);
 
     /**
@@ -308,7 +322,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         return accessTokenRef.current;
-    }, [refreshAccessToken]);
+    }, [refreshAccessToken, clearTokens]);
 
     /**
      * Log in with username and password
@@ -354,14 +368,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
                             setUserId(extractedUserId);
                         }
                     }
-                } catch (e) {}
+                } catch {
+                    // ignore malformed JWT payload
+                }
 
                 return { result: AuthResult.SUCCESS };
             } catch (error: any) {
                 try {
                     const parsed = await parseAPIError(error);
-                    const errorData = parsed.raw;
-
                     if (
                         parsed.code === 'TWO_FACTOR_REQUIRED' ||
                         parsed.code === 'two-factor-required' ||
@@ -404,7 +418,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         result: AuthResult.INVALID_CREDENTIALS,
                         message: errorMessage || 'Invalid credentials',
                     };
-                } catch (parseError) {
+                } catch {
                     // If we can't parse the error, check for network error
                     if (error && typeof error === 'object' && !error.response) {
                         return {
@@ -444,9 +458,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 localStorage.setItem('user_id', data.user_id || '');
                 setUserId(data.user_id || null);
             }
-            scheduleTokenRefresh();
         },
-        [storeTokens, scheduleTokenRefresh],
+        [storeTokens],
     );
 
     // Role check helpers - computed from state

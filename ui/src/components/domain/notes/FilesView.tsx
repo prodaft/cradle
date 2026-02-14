@@ -16,18 +16,14 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { useMemo } from 'react';
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
-}
+import { useCallback, useMemo } from 'react';
 
 interface FilesViewProps {
     files: FileReferenceWithNote[];
     copyToClipboard: (text: string) => void;
 }
+
+type DownloadVars = { fileId: string; fileName?: string };
 
 /**
  * Displays files attached to a note in a table/card view
@@ -36,7 +32,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
     const { fileTransferApi } = useApi();
 
     const downloadMutation = useMutation({
-        mutationFn: async (fileId: string) => {
+        mutationFn: async ({ fileId }: DownloadVars) => {
             const response = await fileTransferApi.fileTransferDownloadRetrieve({
                 fileId,
             });
@@ -45,56 +41,49 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
         meta: {
             suppressNotification: true,
         },
-        onSuccess: (presignedUrl, fileId) => {
-            const file = files.find((f) => f.id === fileId);
-            if (file) {
-                const link = document.createElement('a');
-                link.href = presignedUrl;
-                const fileName = file?.fileName;
-                link.download = fileName || 'data';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
+        onSuccess: (presignedUrl, vars) => {
+            const link = document.createElement('a');
+            link.href = presignedUrl;
+            link.download = vars.fileName ?? 'data';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         },
     });
 
-    if (!files || files.length === 0) {
-        return null;
-    }
+    const { mutate: downloadFile } = downloadMutation;
 
-    const handleDownload = async (file: FileReferenceWithNote) => {
-        if (file.id) {
-            downloadMutation.mutate(file.id);
-        }
-    };
+    const handleDownload = useCallback(
+        (file: FileReferenceWithNote) => {
+            if (!file.id) return;
+            downloadFile({ fileId: file.id, fileName: file.fileName ?? undefined });
+        },
+        [downloadFile],
+    );
 
-    // Memoize columns to prevent recreation on every render
     const columns = useMemo<ColumnDef<FileReferenceWithNote>[]>(
         () => [
             {
-                accessorKey: 'name',
-                id: 'name',
+                accessorKey: 'fileName',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Name' />
                 ),
                 cell: ({ row }) => (
                     <div className='truncate w-32'>
-                        {truncateText(row.original.fileName, 32)}
+                        {truncateText((row.getValue('fileName') as string) ?? '-', 32)}
                     </div>
                 ),
             },
             {
                 accessorKey: 'entities',
-                id: 'entities',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Entities' />
                 ),
                 cell: ({ row }) => (
                     <div className='flex flex-wrap gap-1'>
-                        {row.original.entities?.slice(0, 3).map((entity) => (
+                        {row.original.entities?.slice(0, 3).map((entity, idx) => (
                             <Badge
-                                key={entity.name}
+                                key={`${entity.name}-${idx}`}
                                 variant={!entity.color ? 'secondary' : 'default'}
                                 style={
                                     entity.color
@@ -113,7 +102,6 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
             },
             {
                 accessorKey: 'mimetype',
-                id: 'mimetype',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='MimeType' />
                 ),
@@ -127,35 +115,35 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                 enableSorting: false,
             },
             {
-                accessorKey: 'sha256',
-                id: 'sha256',
+                accessorKey: 'sha256Hash',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='SHA256' />
                 ),
-                cell: ({ row }) =>
-                    row.original.sha256Hash ? (
+                cell: ({ row }) => {
+                    const hash = row.original.sha256Hash;
+                    if (!hash) return '-';
+
+                    return (
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <span
                                     className='cursor-pointer hover:bg-muted px-1 rounded'
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        copyToClipboard(row.original.sha256Hash!);
+                                        copyToClipboard(hash);
                                     }}
                                 >
-                                    {row.original.sha256Hash.substring(0, 21)}...
+                                    {hash.substring(0, 21)}...
                                 </span>
                             </TooltipTrigger>
                             <TooltipContent>Click to copy</TooltipContent>
                         </Tooltip>
-                    ) : (
-                        '-'
-                    ),
+                    );
+                },
                 enableSorting: false,
             },
             {
-                accessorKey: 'uploadedAt',
-                id: 'uploadedAt',
+                accessorKey: 'timestamp',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Uploaded At' />
                 ),
@@ -179,7 +167,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                 <Button
                                     variant='ghost'
                                     size='icon-sm'
-                                    onClick={async () => await handleDownload(file)}
+                                    onClick={() => handleDownload(file)}
                                     className='text-primary hover:text-primary/80'
                                     title='Download'
                                 >
@@ -200,12 +188,14 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
     );
 
     const table = useReactTable({
-        data: files,
+        data: files ?? [],
         columns,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getRowId: (row, index) => row.id ?? String(index),
     });
+
+    if (!files || files.length === 0) return null;
 
     return (
         <ScrollArea className='w-full h-full'>

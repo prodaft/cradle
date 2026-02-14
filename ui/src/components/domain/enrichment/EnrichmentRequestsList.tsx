@@ -1,4 +1,3 @@
-import { DateRangeFilter } from '@/components/base/ListView/types';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
@@ -29,8 +28,8 @@ import {
 import { format } from 'date-fns';
 import { capitalize } from 'lodash';
 import {
-    ChangeEvent,
-    FormEvent,
+    type ChangeEvent,
+    type SyntheticEvent,
     useCallback,
     useEffect,
     useMemo,
@@ -38,25 +37,21 @@ import {
 } from 'react';
 import { StatusIcon, type StatusType } from '../notes/StatusIcon';
 
-// ...
+const SORT_FIELD_MAPPING: Record<string, string> = {
+    title: 'title',
+    createdAt: 'created_at',
+    user: 'user__username',
+};
 
 type EnrichmentRequest = EnrichmentRequestList;
 
 interface ColumnFilter {
-    [key: string]: string | DateRangeFilter | undefined;
     status: string;
     user: string;
 }
 
 interface SearchFilters {
     title?: string;
-    user?: string;
-}
-
-interface SelectProps {
-    enableMultiSelect?: boolean;
-    isSelected?: boolean;
-    onSelect?: () => void;
 }
 
 interface EnrichmentRequestsListProps {
@@ -76,7 +71,7 @@ interface EnrichmentRequestsListProps {
     columnFilters?: ColumnFilter;
     searchFilters?: SearchFilters;
     onSearchChange?: (e: ChangeEvent<HTMLInputElement>) => void;
-    onSearchSubmit?: (e: FormEvent) => void;
+    onSearchSubmit?: (e: SyntheticEvent) => void;
     selectedRequests?: string[];
     setSelectedRequests?: (ids: string[]) => void;
     onDeleteSelected?: (ids: string[]) => void;
@@ -104,7 +99,7 @@ function EnrichmentRequestsList({
     setSelectedRequests = () => {},
     onDeleteSelected,
     onRerunSelected = () => {},
-    onCreateRequest = () => {},
+    onCreateRequest: _onCreateRequest = () => {},
 }: EnrichmentRequestsListProps) {
     const router = useRouter();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -133,18 +128,10 @@ function EnrichmentRequestsList({
         setRowSelection(selection);
     }, [selectedRequests]);
 
-    // Mapping of table columns to API field names
-    const sortFieldMapping: Record<string, string> = {
-        title: 'title',
-        createdAt: 'created_at',
-        user: 'user__username',
-    };
-
-    const handleStatusChange = (status: string) => {
-        if (onColumnFilterChange) {
-            onColumnFilterChange('status', status);
-        }
-    };
+    const handleStatusChange = useCallback(
+        (status: string) => onColumnFilterChange?.('status', status),
+        [onColumnFilterChange],
+    );
 
     // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
@@ -163,14 +150,14 @@ function EnrichmentRequestsList({
                 handlePageChange(newPage);
             }
         },
-        [page, pageSize, setPageSize],
+        [handlePageChange, page, pageSize, setPageSize],
     );
 
     // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
         const columnId =
-            Object.keys(sortFieldMapping).find(
-                (key) => sortFieldMapping[key] === sortField,
+            Object.keys(SORT_FIELD_MAPPING).find(
+                (key) => SORT_FIELD_MAPPING[key] === sortField,
             ) || sortField;
 
         return columnId
@@ -190,7 +177,7 @@ function EnrichmentRequestsList({
                     onSort('created_at', 'desc');
                 } else {
                     const sort = newSorting[0];
-                    const apiField = sortFieldMapping[sort.id] || sort.id;
+                    const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
                     onSort(apiField, sort.desc ? 'desc' : 'asc');
                 }
             }
@@ -207,7 +194,7 @@ function EnrichmentRequestsList({
         [handleSortingChange, sorting],
     );
 
-    const errorMsg = (request: EnrichmentRequest) => {
+    const errorMsg = useCallback((request: EnrichmentRequest) => {
         const msgs: string[] = [];
         if (request.ignoredCount && request.ignoredCount > 0) {
             msgs.push(
@@ -228,33 +215,18 @@ function EnrichmentRequestsList({
         }
 
         return msgs.join(', ');
-    };
+    }, []);
 
-    const getStatusIcon = (status?: string, errorMessage?: string) => {
+    const getStatusIcon = useCallback((status?: string, errorMessage?: string) => {
         if (!status) return null;
 
         const tooltipContent = errorMessage || capitalize(status);
-        const tooltipColorClass =
-            status === 'error'
-                ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
-                : status === 'waiting'
-                  ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
-                  : '';
-
-        if ((status === 'error' || status === 'waiting') && errorMessage) {
-            return (
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <span className='inline-flex items-center align-middle flex-shrink-0'>
-                            <StatusIcon status={status as StatusType} />
-                        </span>
-                    </TooltipTrigger>
-                    <TooltipContent className={tooltipColorClass}>
-                        {tooltipContent}
-                    </TooltipContent>
-                </Tooltip>
-            );
-        }
+        const tooltipClassName =
+            (status === 'error' || status === 'waiting') && errorMessage
+                ? status === 'error'
+                    ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
+                    : '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
+                : undefined;
 
         return (
             <Tooltip>
@@ -263,10 +235,12 @@ function EnrichmentRequestsList({
                         <StatusIcon status={status as StatusType} />
                     </span>
                 </TooltipTrigger>
-                <TooltipContent>{tooltipContent}</TooltipContent>
+                <TooltipContent className={tooltipClassName}>
+                    {tooltipContent}
+                </TooltipContent>
             </Tooltip>
         );
-    };
+    }, []);
 
     // Memoize columns to prevent recreation on every render
     const columns = useMemo<ColumnDef<EnrichmentRequest>[]>(
@@ -335,7 +309,7 @@ function EnrichmentRequestsList({
                 accessorKey: 'user',
                 id: 'user',
                 header: ({ column }) => {
-                    const filterValue = columnFilters.user as string;
+                    const filterValue = columnFilters.user;
                     return (
                         <div className='flex items-center gap-2'>
                             <DataTableColumnHeader column={column} label='User' />
@@ -369,7 +343,7 @@ function EnrichmentRequestsList({
                 ),
             },
         ],
-        [columnFilters, handleStatusChange, getStatusIcon, errorMsg, router],
+        [columnFilters.user, getStatusIcon, errorMsg, router],
     );
     const table = useReactTable({
         data: enrichmentRequests,
@@ -421,7 +395,6 @@ function EnrichmentRequestsList({
                         <ActionBarSearch
                             placeholder='Search requests...'
                             initialValue={searchFilters?.title || ''}
-                            defaultExpanded={Boolean(searchFilters?.title)}
                             debounceMs={300}
                             onDebouncedChange={(value) => {
                                 const event = {

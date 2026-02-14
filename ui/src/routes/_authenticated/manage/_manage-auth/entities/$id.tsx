@@ -2,7 +2,9 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import { z } from 'zod';
 
-const EntitiesPage = lazy(() => import('@/components/domain/admin/pages/EntitiesPage'));
+const EntitySettingsPage = lazy(
+    () => import('@/components/domain/admin/pages/EntitySettingsPage'),
+);
 
 export const Route = createFileRoute(
     '/_authenticated/manage/_manage-auth/entities/$id' as any,
@@ -13,5 +15,5 @@ export const Route = createFileRoute(
     validateSearch: z.object({
         tab: z.string().optional(),
     }),
-    component: EntitiesPage,
+    component: EntitySettingsPage,
 });

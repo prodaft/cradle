@@ -1,6 +1,5 @@
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
 import AdminSetPasswordDialog from '@/components/domain/admin/dialogs/AdminSetPasswordDialog';
-import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -25,7 +24,6 @@ import { useAuthActions } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { UserRetrieve } from '@/services/cradle/models';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import bytes from 'bytes';
@@ -40,12 +38,6 @@ import UserActivityList from '../UserActivityList';
 interface AdminUserSettingsProps {
     userId: string;
     activeTab?: string;
-}
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
 }
 
 const adminUserSettingsSchema = z.object({
@@ -83,8 +75,13 @@ export default function AdminUserSettings({
     const router = useRouter();
     const { usersApi } = useApi();
     const { setTokensDirectly } = useAuthActions();
+
+    const queryClient = useQueryClient();
     const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
     const [setPasswordDialogOpen, setSetPasswordDialogOpen] = useState(false);
+    const [user, setUser] = useState<UserRetrieve | null>(null);
+
+    const previousValuesRef = useRef<Partial<AdminUserFormData> | null>(null);
 
     const saveMutation = useMutation({
         mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
@@ -95,7 +92,6 @@ export default function AdminUserSettings({
         },
         meta: {
             successMessage: 'User settings saved successfully',
-            errorMessage: 'Failed to save user settings',
         },
         onSuccess: () => {
             queryClient.invalidateQueries({
@@ -156,16 +152,6 @@ export default function AdminUserSettings({
             router.navigate({ to: '/manage/users' } as any);
         },
     });
-    const queryClient = useQueryClient();
-    const [user, setUser] = useState<UserRetrieve | null>(null);
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'red',
-    });
-
-    const previousValuesRef = useRef<Partial<AdminUserFormData> | null>(null);
-
     const defaultValues: AdminUserFormData = {
         id: '',
         username: '',
@@ -177,13 +163,10 @@ export default function AdminUserSettings({
     };
 
     const {
-        register,
-        handleSubmit,
         reset,
         getValues,
-        watch,
         control,
-        formState: { errors, isDirty },
+        formState: { isDirty },
     } = useForm<AdminUserFormData>({
         resolver: zodResolver(adminUserSettingsSchema) as any,
         defaultValues,
@@ -263,7 +246,7 @@ export default function AdminUserSettings({
                     data.fileUploadLimitOverride,
                 );
             } else {
-                payload.file_upload_limit = null;
+                payload.fileUploadLimitOverride = null;
             }
         }
 
@@ -272,12 +255,9 @@ export default function AdminUserSettings({
             return;
         }
 
-        if (!data.id) {
-            return;
-        }
-        const userId = data.id;
+        const targetUserId = data.id;
         saveMutation.mutate(
-            { userId, payload },
+            { userId: targetUserId, payload },
             {
                 onSuccess: () => {
                     previousValuesRef.current = {
@@ -330,25 +310,6 @@ export default function AdminUserSettings({
                 {showSection('account') && (
                     <section id='account'>
                         <div className='flex flex-col gap-4'>
-                            {/* Alert */}
-                            {alert.show && (
-                                <div className='pt-4'>
-                                    <AlertComponent
-                                        variant={
-                                            alert.color === 'red' ||
-                                            alert.color === 'error'
-                                                ? 'destructive'
-                                                : 'default'
-                                        }
-                                    >
-                                        <WarningCircleIcon size={18} weight='bold' />
-                                        <AlertDescription>
-                                            {alert.message}
-                                        </AlertDescription>
-                                    </AlertComponent>
-                                </div>
-                            )}
-
                             <FieldGroup className='gap-4'>
                                 <Controller
                                     name='username'

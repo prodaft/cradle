@@ -100,7 +100,6 @@ export default function UploadDigestDialog({
         queryFn: () => intelioApi.intelioDigestOptionsList(),
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to load data types',
         },
         enabled: open && (!propDataTypeOptions || propDataTypeOptions.length === 0),
     });
@@ -117,7 +116,7 @@ export default function UploadDigestDialog({
         }));
     }, [propDataTypeOptions, dataTypesResponse]);
 
-    const form = useForm<z.infer<typeof UploadSchema>>({
+    const form = useForm<FormValues>({
         resolver: zodResolver(UploadSchema) as any,
         defaultValues: {
             title: '',
@@ -129,7 +128,7 @@ export default function UploadDigestDialog({
 
     // Upload mutation - handles multi-step upload process
     const uploadMutation = useMutation({
-        mutationFn: async (values: z.infer<typeof UploadSchema>) => {
+        mutationFn: async (values: FormValues) => {
             const file = values.files[0];
 
             // Step 1: Request presigned URL from backend
@@ -160,23 +159,20 @@ export default function UploadDigestDialog({
         },
     });
 
-    const onSubmit = async (values: z.infer<typeof UploadSchema>) => {
-        uploadMutation.mutate(values, {
-            onSuccess: () => {
-                if (onUpload) {
-                    onUpload();
-                }
-                // Close modal after successful upload
-                setTimeout(() => {
-                    onOpenChange(false);
-                }, 1000);
-            },
-        });
+    const onSubmit = async (values: FormValues) => {
+        try {
+            await uploadMutation.mutateAsync(values);
+            onUpload?.();
+            setTimeout(() => {
+                onOpenChange(false);
+            }, 1000);
+        } catch {
+            // error handling is expected to be handled by react-query meta/toast layer
+        }
     };
 
     const dataType = form.watch('dataType') as DataTypeOption | null;
-    const selectedFiles = form.watch('files') || [];
-    const hasFile = selectedFiles.length > 0;
+    const isUploading = uploadMutation.isPending;
 
     return (
         <form onSubmit={form.handleSubmit(onSubmit as any)}>
@@ -204,7 +200,7 @@ export default function UploadDigestDialog({
                                         id={field.name}
                                         placeholder='Enter digest title'
                                         aria-invalid={fieldState.invalid}
-                                        disabled={uploadMutation.isPending}
+                                        disabled={isUploading}
                                         required
                                     />
                                     {fieldState.invalid && (
@@ -241,7 +237,7 @@ export default function UploadDigestDialog({
                                                         (opt) =>
                                                             opt.value === selectedValue,
                                                     );
-                                                    onChange(option ? option : null);
+                                                    onChange(option ?? null);
                                                 }}
                                             >
                                                 <SelectTrigger
@@ -310,7 +306,7 @@ export default function UploadDigestDialog({
                                                 value={files}
                                                 onValueChange={onChange}
                                                 maxFiles={1}
-                                                disabled={uploadMutation.isPending}
+                                                disabled={isUploading}
                                             >
                                                 {/* Only show dropzone if no file selected */}
                                                 {!hasSelectedFile && (
@@ -361,7 +357,7 @@ export default function UploadDigestDialog({
                                                                     size='icon'
                                                                     className='h-6 w-6'
                                                                     disabled={
-                                                                        uploadMutation.isPending
+                                                                        isUploading
                                                                     }
                                                                 >
                                                                     <XIcon
@@ -430,9 +426,9 @@ export default function UploadDigestDialog({
                                                         ? 'Select entries (auto-inferred)'
                                                         : 'Select entries'
                                                 }
-                                                disabled={
-                                                    dataType?.inferEntities || false
-                                                }
+                                                disabled={Boolean(
+                                                    dataType?.inferEntities,
+                                                )}
                                                 onSearch={async (query) => {
                                                     const response =
                                                         await queryApi.queryList({
@@ -492,23 +488,19 @@ export default function UploadDigestDialog({
                                 type='button'
                                 variant='outline'
                                 size='sm'
-                                disabled={form.formState.isSubmitting}
+                                disabled={isUploading}
                             >
                                 Cancel
                             </Button>
                         </DialogClose>
                         <Button
                             type='submit'
-                            disabled={form.formState.isSubmitting}
+                            disabled={isUploading}
                             variant='default'
                             size='sm'
-                            aria-label={
-                                form.formState.isSubmitting
-                                    ? 'Uploading file'
-                                    : 'Upload file'
-                            }
+                            aria-label={isUploading ? 'Uploading file' : 'Upload file'}
                         >
-                            {form.formState.isSubmitting ? (
+                            {isUploading ? (
                                 <>
                                     <Spinner />
                                     <span>Uploading...</span>

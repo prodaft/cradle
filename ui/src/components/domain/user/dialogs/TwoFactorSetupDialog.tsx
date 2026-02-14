@@ -1,4 +1,3 @@
-import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -20,9 +19,8 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/use-api';
 import { Enable2FA } from '@/services/cradle/models';
-import { Alert } from '@/types';
 import { parseAPIError } from '@/utils/api';
-import { CopyIcon, QrCodeIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { CopyIcon, QrCodeIcon } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -68,24 +66,14 @@ export default function TwoFactorSetupDialog({
     const { usersApi } = useApi();
     const [verificationCode, setVerificationCode] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'green',
-    });
 
     // Query for 2FA setup data (only when enabling)
-    const {
-        data: twoFactorData,
-        isPending,
-        isError,
-    } = useQuery<Enable2FA>({
+    const { data: twoFactorData, isLoading } = useQuery<Enable2FA>({
         queryKey: ['2fa', 'setup'],
         queryFn: () => usersApi.users2faEnableCreate(),
         enabled: open && !isDisabling,
         meta: {
-            showErrorToast: false, // We handle errors ourselves
-            errorMessage: 'Failed to initialize 2FA setup',
+            showErrorToast: true,
         },
     });
 
@@ -93,19 +81,8 @@ export default function TwoFactorSetupDialog({
     useEffect(() => {
         if (open) {
             setVerificationCode('');
-            setAlert({ show: false, message: '', color: 'green' });
         }
     }, [open]);
-
-    useEffect(() => {
-        if (isError) {
-            setAlert({
-                show: true,
-                message: 'Failed to initialize 2FA setup',
-                color: 'red',
-            });
-        }
-    }, [isError]);
 
     const otpAuthUrl = twoFactorData?.configUrl || '';
     const secret = useMemo(() => {
@@ -122,14 +99,14 @@ export default function TwoFactorSetupDialog({
             try {
                 await navigator.clipboard.writeText(secret);
                 toast.success('Secret key copied to clipboard');
-            } catch (err) {
+            } catch (_err) {
                 toast.error('Failed to copy to clipboard');
             }
         }
     }, [secret]);
 
     const handleSubmit = useCallback(
-        async (e: React.FormEvent<HTMLFormElement>) => {
+        async (e: React.SubmitEvent) => {
             e.preventDefault();
             setIsSubmitting(true);
             try {
@@ -146,11 +123,7 @@ export default function TwoFactorSetupDialog({
                 onOpenChange(false);
             } catch (err) {
                 const parsed = await parseAPIError(err);
-                setAlert({
-                    show: true,
-                    message: parsed.detail,
-                    color: 'red',
-                });
+                toast.error(parsed.detail);
             } finally {
                 setIsSubmitting(false);
             }
@@ -158,7 +131,7 @@ export default function TwoFactorSetupDialog({
         [verificationCode, isDisabling, usersApi, onSuccess, onOpenChange],
     );
 
-    if (!isDisabling && isPending) {
+    if (!isDisabling && isLoading) {
         return (
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent className='sm:max-w-md'>
@@ -191,7 +164,14 @@ export default function TwoFactorSetupDialog({
                         </DialogDescription>
                     </DialogHeader>
 
-                    {!isDisabling && (
+                    {!isDisabling && !otpAuthUrl && !isLoading && (
+                        <p className='text-sm text-muted-foreground'>
+                            QR code setup data isn't available right now. Close this
+                            dialog and try again.
+                        </p>
+                    )}
+
+                    {!isDisabling && !!otpAuthUrl && (
                         <>
                             {/* QR Code Section */}
                             <div className='flex justify-center'>
@@ -254,19 +234,6 @@ export default function TwoFactorSetupDialog({
                         </InputOTP>
                     </Field>
 
-                    {alert.show && (
-                        <AlertComponent
-                            variant={
-                                alert.color === 'red' || alert.color === 'error'
-                                    ? 'destructive'
-                                    : 'default'
-                            }
-                        >
-                            <WarningCircleIcon />
-                            <AlertDescription>{alert.message}</AlertDescription>
-                        </AlertComponent>
-                    )}
-
                     <DialogFooter>
                         <DialogClose asChild>
                             <Button
@@ -282,7 +249,11 @@ export default function TwoFactorSetupDialog({
                             type='submit'
                             variant={isDisabling ? 'destructive' : 'default'}
                             size='sm'
-                            disabled={verificationCode.length !== 6 || isSubmitting}
+                            disabled={
+                                verificationCode.length !== 6 ||
+                                isSubmitting ||
+                                (!isDisabling && !otpAuthUrl)
+                            }
                             aria-busy={isSubmitting}
                         >
                             {isSubmitting

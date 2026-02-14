@@ -83,7 +83,7 @@ function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }
 
     const canExpand = result.id !== undefined && result.id !== srcId;
 
-    const { data: pathData, isPending: isPathPending } = useQuery({
+    const { data: pathData, isLoading } = useQuery({
         queryKey: ['graph', 'paths', { src: String(srcId), dst: result.id }],
         queryFn: () =>
             knowledgeGraphApi.knowledgeGraphPathsRetrieve({
@@ -182,7 +182,7 @@ function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }
     return (
         <div className='bg-muted/30 border-t'>
             <div className='p-4 flex flex-col gap-6'>
-                {isPathPending ? (
+                {isLoading ? (
                     <div className='flex justify-center p-4'>
                         <Spinner className='size-10' />
                     </div>
@@ -469,7 +469,7 @@ export default function Relations({ obj }: RelationsProps) {
         return colors;
     }, [entrySubtypesData?.results]);
 
-    const { data: relationsData, isPending } = useQuery({
+    const { data: relationsData, isLoading } = useQuery({
         queryKey: [
             'graph',
             'neighbors',
@@ -762,7 +762,7 @@ export default function Relations({ obj }: RelationsProps) {
                 </div>
             </div>
 
-            {isPending ? (
+            {isLoading ? (
                 <div className='flex min-h-[200px] items-center justify-center'>
                     <Spinner className='size-10' />
                 </div>
@@ -896,7 +896,7 @@ export default function Relations({ obj }: RelationsProps) {
                 <ActionBarGroup>
                     <ActionBarItem
                         onClick={copyToCSV}
-                        disabled={isPending || selectedCount === 0}
+                        disabled={isLoading || selectedCount === 0}
                     >
                         <CopyIcon size={18} weight='bold' />
                         Copy to CSV

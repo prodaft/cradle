@@ -23,18 +23,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { OptimizedEntryResponse } from '@/services/cradle';
-import { parseAPIError } from '@/utils/api';
+
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-
-/**
- * Enricher type option for selector
- */
-interface EnricherOption {
-    value: string;
-    label: string;
-}
 
 /**
  * Form data structure for enrichment request
@@ -44,7 +36,6 @@ interface EnrichmentFormData {
     enricherNames: string[];
     entities: number[];
     request: string;
-    notes?: string[];
 }
 
 /**
@@ -136,17 +127,16 @@ export default function EnrichmentRequestDialog({
     });
 
     // Load available enricher types
-    const { data: enricherTypesData, isPending: loadingEnrichers } = useQuery({
+    const { data: enricherTypesData, isLoading } = useQuery({
         queryKey: ['enrichment', 'subclasses'],
         queryFn: () => intelioApi.enrichmentSubclassesList(),
         enabled: open,
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch enricher types',
         },
     });
 
-    const enricherTypes: EnricherOption[] = (enricherTypesData || [])
+    const enricherTypes: Option[] = (enricherTypesData || [])
         .filter((enricher) => enricher.enabled)
         .map((enricher) => ({
             value: enricher.className,
@@ -161,35 +151,37 @@ export default function EnrichmentRequestDialog({
     }, [notesList]);
 
     const toggleNoteSelection = (id: string) => {
-        const newSelected = new Set(selectedNoteIds);
-        if (newSelected.has(id)) {
-            newSelected.delete(id);
-        } else {
-            newSelected.add(id);
-        }
-        setSelectedNoteIds(newSelected);
+        setSelectedNoteIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
     };
 
     useEffect(() => {
-        const entities: { [key: number]: OptimizedEntryResponse } = {};
+        const byId = new Map<number, OptimizedEntryResponse>();
         for (const note of notesList || []) {
+            if (!selectedNoteIds.has(note.id)) continue;
             for (const entity of note.entities) {
-                if (selectedNoteIds.has(note.id)) {
-                    entities[entity.id!] = entity;
+                if (typeof entity.id === 'number') {
+                    byId.set(entity.id, entity);
                 }
             }
         }
+
+        const entityArr = Array.from(byId.values());
         setSelectedEntities(
-            Object.values(entities).map((entity) => ({
-                value: entity.id!,
+            entityArr.map((entity) => ({
+                value: entity.id as number,
                 label: entity.name,
             })),
         );
         setFormData((prev) => ({
             ...prev,
-            entities: Object.values(entities).map((entity) => entity.id!),
+            entities: entityArr.map((entity) => entity.id as number),
         }));
-    }, [selectedNoteIds]);
+    }, [selectedNoteIds, notesList]);
 
     // Load entities list
     const { data: allEntitiesData } = useQuery({
@@ -198,7 +190,6 @@ export default function EnrichmentRequestDialog({
         enabled: open && !!entitiesList,
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch entities',
         },
     });
 
@@ -211,18 +202,36 @@ export default function EnrichmentRequestDialog({
 
             setInitialDataLoading(true);
             try {
+                const isNumberArray = (x: unknown): x is number[] =>
+                    Array.isArray(x) && x.every((v) => typeof v === 'number');
+                const isTypedEntityArray = (
+                    x: unknown,
+                ): x is Array<{ type: string; value: string }> =>
+                    Array.isArray(x) &&
+                    x.every(
+                        (v) =>
+                            typeof (v as Record<string, unknown>)?.type === 'string' &&
+                            typeof (v as Record<string, unknown>)?.value === 'string',
+                    );
+
                 // Resolve entities list if provided
                 let resolvedEntities: number[] | undefined;
                 if (entitiesList && allEntitiesData) {
                     const entities = await Promise.resolve(entitiesList);
-                    resolvedEntities = entities.map(
-                        (entity) =>
-                            allEntitiesData.find(
-                                (e) =>
-                                    e.name === entity.value &&
-                                    e.subtype === entity.type,
-                            )?.id!,
-                    );
+                    if (isNumberArray(entities)) {
+                        resolvedEntities = entities;
+                    } else if (isTypedEntityArray(entities)) {
+                        resolvedEntities = entities
+                            .map((entity) => {
+                                const match = allEntitiesData.find(
+                                    (e) =>
+                                        e.name === entity.value &&
+                                        e.subtype === entity.type,
+                                );
+                                return match?.id;
+                            })
+                            .filter((id): id is number => typeof id === 'number');
+                    }
                 }
 
                 // Resolve artifacts list if provided
@@ -241,11 +250,11 @@ export default function EnrichmentRequestDialog({
                     entityOptions = allEntitiesData
                         .filter(
                             (entity) =>
-                                entity.id !== undefined &&
+                                typeof entity.id === 'number' &&
                                 resolvedEntities!.includes(entity.id),
                         )
                         .map((entity) => ({
-                            value: entity.id!,
+                            value: entity.id as number,
                             label: entity.name,
                         }));
                 }
@@ -286,19 +295,21 @@ export default function EnrichmentRequestDialog({
         }));
     };
 
-    const handleEnricherChange = (selectedOptions: EnricherOption[]) => {
-        const enricherNames = selectedOptions.map((opt) => opt.value);
+    const handleEnricherChange = (options?: Option[]) => {
+        const enricherNames = (options ?? []).map((opt) => String(opt.value));
         setFormData((prev) => ({
             ...prev,
             enricherNames,
         }));
     };
 
-    const handleEntityChange = (
-        selectedOptions: Array<{ value: number; label: string }>,
-    ) => {
-        const entities = selectedOptions ? selectedOptions.map((opt) => opt.value) : [];
-        setSelectedEntities(selectedOptions || []);
+    const handleEntityChange = (options?: Option[]) => {
+        const selected = (options ?? []).map((o) => ({
+            value: Number(o.value),
+            label: o.label,
+        }));
+        const entities = selected.map((opt) => opt.value);
+        setSelectedEntities(selected);
         setFormData((prev) => ({
             ...prev,
             entities,
@@ -348,7 +359,6 @@ export default function EnrichmentRequestDialog({
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
             successMessage: 'Enrichment request created successfully',
-            errorMessage: 'Failed to create enrichment request',
         },
     });
 
@@ -392,32 +402,20 @@ export default function EnrichmentRequestDialog({
             },
             {
                 onSuccess: () => {
-                    if (onSuccess) {
-                        onSuccess();
-                    }
+                    onSuccess?.();
                     onOpenChange(false);
                 },
-                onError: async (error: Error) => {
-                    if (onError) {
-                        // Parse the error to get ParsedAPIError (v5: error is Error type by default)
-                        const parsed = await parseAPIError(error);
-                        // Convert ParsedAPIError to Error for compatibility with onError callback
-                        const errorObj = new Error(
-                            parsed.detail || 'An error occurred',
-                        );
-                        (errorObj as any).code = parsed.code;
-                        (errorObj as any).status = parsed.status;
-                        onError(errorObj);
-                    }
+                onError: (error: Error) => {
+                    onError?.(error);
                 },
             },
         );
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Enrichment Request</DialogTitle>
                         <DialogDescription>
@@ -492,38 +490,23 @@ export default function EnrichmentRequestDialog({
                             </FieldLabel>
                             <div id='enricherNames'>
                                 <MultipleSelector
-                                    value={
-                                        enricherTypes
-                                            .filter((e) =>
-                                                formData.enricherNames.includes(
-                                                    e.value,
-                                                ),
-                                            )
-                                            .map((e) => ({
-                                                value: e.value,
-                                                label: e.label,
-                                            })) as Option[]
-                                    }
-                                    defaultOptions={
-                                        enricherTypes.map((e) => ({
-                                            value: e.value,
-                                            label: e.label,
-                                        })) as Option[]
-                                    }
+                                    value={enricherTypes.filter((e) =>
+                                        formData.enricherNames.includes(e.value),
+                                    )}
+                                    defaultOptions={enricherTypes}
                                     placeholder='Select enrichment techniques...'
-                                    onChange={(options) => {
-                                        const enricherNames = options.map(
-                                            (o) => o.value,
-                                        );
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            enricherNames,
-                                        }));
-                                    }}
+                                    disabled={isLoading}
+                                    onChange={handleEnricherChange}
                                     emptyIndicator={
-                                        <p className='text-center text-sm'>
-                                            No enrichment techniques found
-                                        </p>
+                                        isLoading ? (
+                                            <p className='text-center text-sm'>
+                                                Loading enrichment techniques...
+                                            </p>
+                                        ) : (
+                                            <p className='text-center text-sm'>
+                                                No enrichment techniques found
+                                            </p>
+                                        )
                                     }
                                 />
                             </div>
@@ -548,28 +531,18 @@ export default function EnrichmentRequestDialog({
                                                 })) as Option[]
                                             }
                                             defaultOptions={
-                                                (allEntitiesData?.map((e) => ({
-                                                    value: String(e.id!),
-                                                    label: e.name,
-                                                })) as Option[]) || []
+                                                ((allEntitiesData ?? [])
+                                                    .filter(
+                                                        (e) => typeof e.id === 'number',
+                                                    )
+                                                    .map((e) => ({
+                                                        value: String(e.id),
+                                                        label: e.name,
+                                                    })) as Option[]) || []
                                             }
                                             placeholder='Select entities to enrich...'
                                             disabled={selectedNoteIds.size > 0}
-                                            onChange={(options) => {
-                                                const newEntities = options.map(
-                                                    (o) => ({
-                                                        value: Number(o.value),
-                                                        label: o.label,
-                                                    }),
-                                                );
-                                                setSelectedEntities(newEntities);
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    entities: newEntities.map(
-                                                        (e) => e.value,
-                                                    ),
-                                                }));
-                                            }}
+                                            onChange={handleEntityChange}
                                             emptyIndicator={
                                                 <p className='text-center text-sm'>
                                                     No entities found
@@ -634,8 +607,8 @@ export default function EnrichmentRequestDialog({
                             )}
                         </Button>
                     </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </form>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

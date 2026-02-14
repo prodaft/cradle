@@ -25,7 +25,7 @@ import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Entity } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { z } from 'zod';
@@ -102,17 +102,11 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         },
     });
 
-    const [subtypeOptions, setSubtypeOptions] = useState<SubtypeOption[]>([]);
-
     const {
-        register,
         handleSubmit: handleFormSubmit,
         reset,
-        setValue,
-        watch,
         control,
-        getValues,
-        formState: { errors, isSubmitting },
+        formState: { isSubmitting },
     } = useForm<EntityFormData>({
         resolver: zodResolver(entitySchema) as any,
         defaultValues: {
@@ -128,7 +122,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     const fetchAliases = async (q: string): Promise<AliasOption[]> => {
         try {
             return await fetchAliasesMutation.mutateAsync(q);
-        } catch (error) {
+        } catch (_error) {
             return [];
         }
     };
@@ -144,22 +138,20 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         },
     });
 
-    // Update subtype options when entry classes load
-    useEffect(() => {
-        if (entryClassesData == null) return;
-        const results = entryClassesData.results ?? [];
-        const entityClasses = results.filter((entity: any) => entity.type === 'entity');
-        const options = entityClasses.map((c: any) => ({
-            value: c.subtype,
-            label: c.subtype,
-        }));
-        setSubtypeOptions(options);
+    const subtypeOptions = useMemo<SubtypeOption[]>(() => {
+        const results = entryClassesData?.results ?? [];
+        return results
+            .filter((entry: any) => entry.type === 'entity')
+            .map((c: any) => ({
+                value: c.subtype,
+                label: c.subtype,
+            }));
     }, [entryClassesData]);
 
     // Query for entity data when editing
     const {
         data: entityData,
-        isPending,
+        isLoading,
         isPaused,
     } = useQuery<Entity>({
         queryKey: queryKeys.entities.detail(String(id)),
@@ -170,7 +162,6 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         enabled: !!id,
         meta: {
             showErrorToast: true,
-            errorMessage: 'Failed to fetch entity',
         },
     });
 
@@ -207,14 +198,6 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         }
     }, [entityData, reset]);
 
-    useEffect(() => {
-        if (!entityData?.subtype) return;
-        setValue('subtype', entityData.subtype, {
-            shouldValidate: false,
-            shouldDirty: false,
-        });
-    }, [entityData?.subtype, setValue]);
-
     // Handle form submission
     const onSubmit = async (data: EntityFormData) => {
         const payload = {
@@ -225,10 +208,14 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
             is_public: data.isPublic,
             aliases: data.aliases.map((alias) => alias.value),
         };
-        updateEntityMutation.mutate(payload);
+        try {
+            await updateEntityMutation.mutateAsync(payload);
+        } catch (_error) {
+            // errors/toasts handled by mutation/meta; keep form responsive
+        }
     };
 
-    if (isPending && !isPaused) {
+    if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen text-foreground'>
                 <Spinner className='size-10' />
@@ -326,9 +313,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                             )}
                                         </FieldContent>
                                         <Select
-                                            value={
-                                                field.value || entityData?.subtype || ''
-                                            }
+                                            value={field.value ?? ''}
                                             onValueChange={field.onChange}
                                         >
                                             <SelectTrigger
