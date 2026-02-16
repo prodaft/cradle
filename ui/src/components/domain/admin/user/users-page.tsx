@@ -2,7 +2,13 @@ import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import AddUserDialog from './add-user-dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -31,7 +37,7 @@ import {
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
-import AdminPageLayout from '../admin-page-layout';
+import AddUserForm from './add-user-form';
 
 const getRoleBadgeVariant = (role?: string) => {
     switch (role) {
@@ -318,7 +324,7 @@ export default function UsersPage() {
             : `Are you sure you want to delete ${deleteCount} user${deleteCount !== 1 ? 's' : ''}? This action is irreversible.`;
 
     return (
-        <AdminPageLayout>
+        <div className='w-full h-full'>
             <div className='w-full h-full flex flex-col space-y-4'>
                 <PageHeader
                     title='Users'
@@ -392,11 +398,20 @@ export default function UsersPage() {
                     Clear
                 </ActionBarClose>
             </ActionBar>
-            <AddUserDialog
-                open={addUserDialogOpen}
-                onOpenChange={setAddUserDialogOpen}
-                onAdd={handleUserAdded}
-            />
+            <Dialog open={addUserDialogOpen} onOpenChange={setAddUserDialogOpen}>
+                <DialogContent className='sm:max-w-md'>
+                    <DialogHeader>
+                        <DialogTitle>Add User</DialogTitle>
+                        <DialogDescription>Create a new user account</DialogDescription>
+                    </DialogHeader>
+                    <div className='no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4'>
+                        <AddUserForm onAdd={(newUser: UserRetrieve) => {
+                            handleUserAdded(newUser);
+                            setAddUserDialogOpen(false);
+                        }} />
+                    </div>
+                </DialogContent>
+            </Dialog>
             <ConfirmDeletionDialog
                 open={deleteDialogOpen}
                 onOpenChange={(open) => {
@@ -413,6 +428,6 @@ export default function UsersPage() {
                 confirmText={deleteConfirmText}
                 text={deleteDialogText}
             />
-        </AdminPageLayout>
+        </div>
     );
 }

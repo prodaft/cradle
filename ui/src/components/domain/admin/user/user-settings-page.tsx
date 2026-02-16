@@ -18,7 +18,6 @@ import {
     useRouterState,
     useSearch,
 } from '@tanstack/react-router';
-import AdminPageLayout from '../admin-page-layout';
 import AdminUserSettings from './user-settings-tabs';
 
 const USER_SETTINGS_ITEMS = [
@@ -65,16 +64,16 @@ export default function UserSettingsPage() {
 
     if (isLoading) {
         return (
-            <AdminPageLayout>
+            <div className='w-full h-full'>
                 <div className='flex h-full items-center justify-center'>
                     <Spinner className='size-8' />
                 </div>
-            </AdminPageLayout>
+            </div>
         );
     }
 
     return (
-        <AdminPageLayout>
+        <div className='w-full h-full'>
             <main
                 data-layout='fixed'
                 className='px-4 pt-4 pb-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
@@ -130,6 +129,6 @@ export default function UserSettingsPage() {
                     </div>
                 </div>
             </main>
-        </AdminPageLayout>
+        </div>
     );
 }

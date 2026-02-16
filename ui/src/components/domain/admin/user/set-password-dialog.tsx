@@ -47,9 +47,9 @@ const adminSetPasswordSchema = z
 type FormData = z.infer<typeof adminSetPasswordSchema>;
 
 /**
- * AdminSetPasswordDialog component props
+ * SetUserPasswordDialog component props
  */
-export interface AdminSetPasswordDialogProps {
+export interface SetUserPasswordDialogProps {
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */
@@ -61,21 +61,21 @@ export interface AdminSetPasswordDialogProps {
 }
 
 /**
- * AdminSetPasswordDialog component - allows admins to set a password for another user
+ * SetUserPasswordDialog component - allows admins to set a password for another user
  * without requiring the old password.
  *
  * @example
  * ```tsx
  * const [open, setOpen] = useState(false);
- * <AdminSetPasswordDialog open={open} onOpenChange={setOpen} userId="user-id" />
+ * <SetUserPasswordDialog open={open} onOpenChange={setOpen} userId="user-id" />
  * ```
  */
-export default function AdminSetPasswordDialog({
+export default function SetUserPasswordDialog({
     open,
     onOpenChange,
     userId,
     onSuccess,
-}: AdminSetPasswordDialogProps): React.JSX.Element {
+}: SetUserPasswordDialogProps): React.JSX.Element {
     const { usersApi } = useApi();
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);

@@ -11,12 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
-import { Route as NotFoundRouteImport } from './routes/not-found'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ConfirmEmailRouteImport } from './routes/confirm-email'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OauthCallbackRouteImport } from './routes/oauth/callback'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -27,6 +25,7 @@ import { Route as AuthenticatedKnowledgeGraphRouteImport } from './routes/_authe
 import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/files'
 import { Route as AuthenticatedEnrichmentRouteImport } from './routes/_authenticated/enrichment'
 import { Route as AuthenticatedDigestDataRouteImport } from './routes/_authenticated/digest-data'
+import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
 import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes/index'
 import { Route as AuthenticatedManageIndexRouteImport } from './routes/_authenticated/manage/index'
 import { Route as AuthenticatedEnrichmentIndexRouteImport } from './routes/_authenticated/enrichment/index'
@@ -57,11 +56,6 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NotFoundRoute = NotFoundRouteImport.update({
-  id: '/not-found',
-  path: '/not-found',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -79,11 +73,6 @@ const ConfirmEmailRoute = ConfirmEmailRouteImport.update({
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SplatRoute = SplatRouteImport.update({
-  id: '/$',
-  path: '/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -135,6 +124,11 @@ const AuthenticatedEnrichmentRoute = AuthenticatedEnrichmentRouteImport.update({
 const AuthenticatedDigestDataRoute = AuthenticatedDigestDataRouteImport.update({
   id: '/digest-data',
   path: '/digest-data',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSplatRoute = AuthenticatedSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedNotesIndexRoute = AuthenticatedNotesIndexRouteImport.update({
@@ -251,13 +245,12 @@ const AuthenticatedManageManageAuthEntitiesIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/$': typeof SplatRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/not-found': typeof NotFoundRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/$': typeof AuthenticatedSplatRoute
   '/digest-data': typeof AuthenticatedDigestDataRoute
   '/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren
   '/files': typeof AuthenticatedFilesRoute
@@ -288,13 +281,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/$': typeof SplatRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/not-found': typeof NotFoundRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/$': typeof AuthenticatedSplatRoute
   '/digest-data': typeof AuthenticatedDigestDataRoute
   '/files': typeof AuthenticatedFilesRoute
   '/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute
@@ -320,14 +312,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/$': typeof SplatRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/confirm-email': typeof ConfirmEmailRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/not-found': typeof NotFoundRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/$': typeof AuthenticatedSplatRoute
   '/_authenticated/digest-data': typeof AuthenticatedDigestDataRoute
   '/_authenticated/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren
   '/_authenticated/files': typeof AuthenticatedFilesRoute
@@ -361,13 +352,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/$'
     | '/confirm-email'
     | '/forgot-password'
     | '/login'
-    | '/not-found'
     | '/register'
     | '/reset-password'
+    | '/$'
     | '/digest-data'
     | '/enrichment'
     | '/files'
@@ -398,13 +388,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/$'
     | '/confirm-email'
     | '/forgot-password'
     | '/login'
-    | '/not-found'
     | '/register'
     | '/reset-password'
+    | '/$'
     | '/digest-data'
     | '/files'
     | '/knowledge-graph'
@@ -429,14 +418,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/$'
     | '/_authenticated'
     | '/confirm-email'
     | '/forgot-password'
     | '/login'
-    | '/not-found'
     | '/register'
     | '/reset-password'
+    | '/_authenticated/$'
     | '/_authenticated/digest-data'
     | '/_authenticated/enrichment'
     | '/_authenticated/files'
@@ -469,12 +457,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  SplatRoute: typeof SplatRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   ConfirmEmailRoute: typeof ConfirmEmailRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
-  NotFoundRoute: typeof NotFoundRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   OauthCallbackRoute: typeof OauthCallbackRoute
@@ -494,13 +480,6 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/not-found': {
-      id: '/not-found'
-      path: '/not-found'
-      fullPath: '/not-found'
-      preLoaderRoute: typeof NotFoundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -529,13 +508,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$': {
-      id: '/$'
-      path: '/$'
-      fullPath: '/$'
-      preLoaderRoute: typeof SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -606,6 +578,13 @@ declare module '@tanstack/react-router' {
       path: '/digest-data'
       fullPath: '/digest-data'
       preLoaderRoute: typeof AuthenticatedDigestDataRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/$': {
+      id: '/_authenticated/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof AuthenticatedSplatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/notes/': {
@@ -872,6 +851,7 @@ const AuthenticatedNotesRouteWithChildren =
   AuthenticatedNotesRoute._addFileChildren(AuthenticatedNotesRouteChildren)
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
   AuthenticatedDigestDataRoute: typeof AuthenticatedDigestDataRoute
   AuthenticatedEnrichmentRoute: typeof AuthenticatedEnrichmentRouteWithChildren
   AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute
@@ -884,6 +864,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedSplatRoute: AuthenticatedSplatRoute,
   AuthenticatedDigestDataRoute: AuthenticatedDigestDataRoute,
   AuthenticatedEnrichmentRoute: AuthenticatedEnrichmentRouteWithChildren,
   AuthenticatedFilesRoute: AuthenticatedFilesRoute,
@@ -902,12 +883,10 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  SplatRoute: SplatRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   ConfirmEmailRoute: ConfirmEmailRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
-  NotFoundRoute: NotFoundRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   OauthCallbackRoute: OauthCallbackRoute,

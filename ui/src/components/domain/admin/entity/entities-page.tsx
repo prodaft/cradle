@@ -2,7 +2,13 @@ import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import AddEntityDialog from './add-entity-dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -36,7 +42,7 @@ import {
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
-import AdminPageLayout from '../admin-page-layout';
+import AddEntityForm from './add-entity-form';
 
 interface EntityData extends Entity {
     id: number;
@@ -303,7 +309,7 @@ export default function EntitiesPage() {
     };
 
     return (
-        <AdminPageLayout>
+        <div className='w-full h-full'>
             <div className='w-full h-full flex flex-col space-y-4'>
                 <PageHeader
                     title='Entities'
@@ -390,11 +396,18 @@ export default function EntitiesPage() {
                     Clear
                 </ActionBarClose>
             </ActionBar>
-            <AddEntityDialog
-                open={addEntityDialogOpen}
-                onOpenChange={setAddEntityDialogOpen}
-                onAdd={handleEntityAdded}
-            />
+            <Dialog open={addEntityDialogOpen} onOpenChange={setAddEntityDialogOpen}>
+                <DialogContent className='sm:max-w-md'>
+                    <DialogHeader>
+                        <DialogTitle>New Entity</DialogTitle>
+                        <DialogDescription>Create new entity</DialogDescription>
+                    </DialogHeader>
+                    <AddEntityForm onAdd={(newEntity: Entity) => {
+                        handleEntityAdded(newEntity);
+                        setAddEntityDialogOpen(false);
+                    }} />
+                </DialogContent>
+            </Dialog>
             <ConfirmDeletionDialog
                 open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
@@ -421,6 +434,6 @@ export default function EntitiesPage() {
                 }
                 text={`Are you sure you want to delete ${bulkDeleteEntityIds.length} entit${bulkDeleteEntityIds.length > 1 ? 'ies' : 'y'}? This will keep their related notes but remove the links to them.`}
             />
-        </AdminPageLayout>
+        </div>
     );
 }

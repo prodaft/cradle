@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import { z } from 'zod';
 
-const ResetPassword = lazy(() => import('@/components/domain/auth/ResetPassword'));
+const ResetPassword = lazy(() => import('@/components/domain/auth/reset-password'));
 
 export const Route = createFileRoute('/reset-password')({
     validateSearch: z.object({

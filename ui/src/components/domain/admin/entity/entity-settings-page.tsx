@@ -14,7 +14,6 @@ import {
 } from '@tanstack/react-router';
 import { Shield } from 'lucide-react';
 import ActivityList from '../../activity/ActivityList';
-import AdminPageLayout from '../admin-page-layout';
 import EntityForm from './entity-form';
 import EntityPermissionsForm from './entity-permissions-form';
 
@@ -62,16 +61,16 @@ export default function EntitySettingsPage() {
 
     if (isLoading) {
         return (
-            <AdminPageLayout>
+            <div className='w-full h-full'>
                 <div className='flex h-full items-center justify-center'>
                     <Spinner className='size-8' />
                 </div>
-            </AdminPageLayout>
+            </div>
         );
     }
 
     return (
-        <AdminPageLayout>
+        <div className='w-full h-full'>
             <main
                 data-layout='fixed'
                 className='px-4 pt-4 pb-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
@@ -154,6 +153,6 @@ export default function EntitySettingsPage() {
                     </div>
                 </div>
             </main>
-        </AdminPageLayout>
+        </div>
     );
 }

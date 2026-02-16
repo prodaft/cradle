@@ -2,7 +2,13 @@ import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import AddEntryTypeDialog from './add-entry-type-dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -36,7 +42,7 @@ import {
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
-import AdminPageLayout from '../admin-page-layout';
+import AddEntryForm from './add-entry-type-form';
 
 interface EntryTypeData {
     id: string;
@@ -299,7 +305,7 @@ export default function EntryTypesPage() {
     };
 
     return (
-        <AdminPageLayout>
+        <div className='w-full h-full'>
             <div className='w-full h-full flex flex-col space-y-4'>
                 <PageHeader
                     title='Entry Types'
@@ -388,11 +394,20 @@ export default function EntryTypesPage() {
                     Clear
                 </ActionBarClose>
             </ActionBar>
-            <AddEntryTypeDialog
-                open={addEntryTypeDialogOpen}
-                onOpenChange={setAddEntryTypeDialogOpen}
-                onAdd={handleEntryTypeAdded}
-            />
+            <Dialog open={addEntryTypeDialogOpen} onOpenChange={setAddEntryTypeDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>New Entry</DialogTitle>
+                        <DialogDescription>Create new entry class</DialogDescription>
+                    </DialogHeader>
+                    <div className='no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4'>
+                        <AddEntryForm onAdd={(newEntryType: EntryClass) => {
+                            handleEntryTypeAdded(newEntryType);
+                            setAddEntryTypeDialogOpen(false);
+                        }} />
+                    </div>
+                </DialogContent>
+            </Dialog>
             <ConfirmDeletionDialog
                 open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
@@ -412,6 +427,6 @@ export default function EntryTypesPage() {
                 }
                 text={`Are you sure you want to delete ${bulkDeleteEntryTypeSubtypes.length} entry type${bulkDeleteEntryTypeSubtypes.length > 1 ? 's' : ''}? This action is irreversible.`}
             />
-        </AdminPageLayout>
+        </div>
     );
 }

@@ -33,7 +33,7 @@ import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-const GlobeVisualization = lazy(() => import('./GlobeVisualization'));
+const GlobeVisualization = lazy(() => import('./globe-visualization'));
 
 interface OAuthMethod {
     id?: string;

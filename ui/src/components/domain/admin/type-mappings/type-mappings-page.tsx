@@ -17,7 +17,6 @@ import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { startCase } from 'lodash';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
-import AdminPageLayout from '../admin-page-layout';
 import TypeMappingsEditor from './type-mappings-editor';
 
 export default function TypeMappingsPage() {
@@ -67,7 +66,7 @@ export default function TypeMappingsPage() {
     const selectedMapping = tab ? mappingTypes.find((m) => m.className === tab) : null;
 
     return (
-        <AdminPageLayout>
+        <div className='w-full h-full'>
             <div className='flex w-full h-full'>
                 {/* Type Mappings Sidebar */}
                 <Sidebar
@@ -145,6 +144,6 @@ export default function TypeMappingsPage() {
                     )}
                 </div>
             </div>
-        </AdminPageLayout>
+        </div>
     );
 }

@@ -4,7 +4,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Archive, FileText, Layers, Network, UserPlus } from 'lucide-react';
 import React from 'react';
-import AdminPageLayout from '../admin-page-layout';
 import EntriesSettingsForm from './entries-settings-form';
 import FileSettingsForm from './file-settings-form';
 import GraphSettingsForm from './graph-settings-form';
@@ -50,7 +49,7 @@ export default function ManagementPage() {
     const currentDescription = currentTab?.description ?? '';
 
     return (
-        <AdminPageLayout>
+        <div className='w-full h-full'>
             <main
                 data-layout='fixed'
                 className='px-4 pt-4 pb-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
@@ -111,6 +110,6 @@ export default function ManagementPage() {
                     </div>
                 </div>
             </main>
-        </AdminPageLayout>
+        </div>
     );
 }

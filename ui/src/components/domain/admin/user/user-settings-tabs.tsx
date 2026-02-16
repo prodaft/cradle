@@ -1,5 +1,5 @@
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
-import AdminSetPasswordDialog from './set-password-dialog';
+import SetUserPasswordDialog from './set-password-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -290,7 +290,7 @@ export default function AdminUserSettings({
         setDeleteUserDialogOpen(true);
     };
 
-    const openAdminSetPasswordDialog = () => {
+    const openSetUserPasswordDialog = () => {
         const id = getValues('id');
         if (!id) return;
         setSetPasswordDialogOpen(true);
@@ -609,7 +609,7 @@ export default function AdminUserSettings({
                                         variant='outline'
                                         size='sm'
                                         className='self-start md:self-center'
-                                        onClick={openAdminSetPasswordDialog}
+                                        onClick={openSetUserPasswordDialog}
                                     >
                                         Set Password
                                     </Button>
@@ -763,7 +763,7 @@ export default function AdminUserSettings({
                 text='Deleting this user will permanently remove all their data, including notes, entries, and settings. This action cannot be undone.'
             />
             {getValues('id') && (
-                <AdminSetPasswordDialog
+                <SetUserPasswordDialog
                     open={setPasswordDialogOpen}
                     onOpenChange={setSetPasswordDialogOpen}
                     userId={getValues('id')!}

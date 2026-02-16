@@ -19,7 +19,7 @@ export default function NotFound({ message }: NotFoundProps) {
                 <EmptyTitle>404 - Not Found</EmptyTitle>
                 <EmptyDescription>
                     {message ||
-                        "The page you're looking for doesn't exist. Try searching for what you need below."}
+                        "The page you're looking for doesn't exist."}
                 </EmptyDescription>
             </EmptyHeader>
         </Empty>

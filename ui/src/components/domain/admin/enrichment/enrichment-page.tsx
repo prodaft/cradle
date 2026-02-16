@@ -16,7 +16,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
-import AdminPageLayout from '../admin-page-layout';
 import EnrichmentSettingsForm from './enrichment-settings-form';
 
 export default function EnrichmentPage() {
@@ -65,7 +64,7 @@ export default function EnrichmentPage() {
         : null;
 
     return (
-        <AdminPageLayout>
+        <div className='w-full h-full'>
             <div className='flex w-full h-full'>
                 {/* Enrichment Sidebar */}
                 <Sidebar
@@ -135,6 +134,6 @@ export default function EnrichmentPage() {
                     )}
                 </div>
             </div>
-        </AdminPageLayout>
+        </div>
     );
 }

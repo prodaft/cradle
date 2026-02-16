@@ -8,7 +8,7 @@ import {
     type AuthActionsValue,
     type AuthContextValue,
     type AuthStateValue,
-} from '@/components/domain/auth/AuthProvider';
+} from '@/components/domain/auth/auth-provider';
 import { useContext, type Context } from 'react';
 
 const useRequiredContext = <T>(ctx: Context<T | undefined>, hookName: string): T => {
@@ -55,4 +55,4 @@ export const useAuth = (): AuthContextValue => {
     };
 };
 
-export type { AuthContextValue } from '@/components/domain/auth/AuthProvider';
+export type { AuthContextValue } from '@/components/domain/auth/auth-provider';
