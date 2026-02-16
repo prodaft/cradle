@@ -126,18 +126,11 @@ export default function NotesList({
     });
     const search = useSearch({ strict: false });
 
-    // Extract page param (also used in sync effect below)
-    const notesPageParam = ((search as any)?.notes_page ?? 1) as number;
-
-    const [page, setPage] = useState(notesPageParam);
-    const [sortField, setSortField] = useState(
-        () => ((search as any)?.notes_sort_field ?? 'timestamp') as string,
-    );
-    const [sortDirection, setSortDirection] = useState<SortDirection>(
-        () =>
-            (((search as any)?.notes_sort_direction ?? 'desc') as SortDirection) ||
-            'desc',
-    );
+    const searchAny = search as any;
+    const page = Number(searchAny?.notes_page ?? 1) || 1;
+    const sortField = (searchAny?.notes_sort_field ?? 'timestamp') as string;
+    const sortDirection: SortDirection = (searchAny?.notes_sort_direction ??
+        'desc') as SortDirection;
     const { notesApi, managementApi } = useApi();
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteNoteIds, setBulkDeleteNoteIds] = useState<string[]>([]);
@@ -169,9 +162,7 @@ export default function NotesList({
         },
     });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [pageSize, setPageSize] = useState(
-        () => ((search as any)?.notes_pagesize ?? 20) as number,
-    );
+    const pageSize = Number(searchAny?.notes_pagesize ?? 20) || 20;
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: 'all',
         any_field: query?.any_field || '',
@@ -216,22 +207,14 @@ export default function NotesList({
 
     const handleSortingChange = useCallback(
         (sorting: SortingState) => {
-            if (sorting.length === 0) {
-                setSortField('timestamp');
-                setSortDirection('desc');
-            } else {
-                const sort = sorting[0];
-                const apiField = sortFieldMapping[sort.id] || sort.id;
-                setSortField(apiField);
-                setSortDirection(sort.desc ? 'desc' : 'asc');
-            }
-
-            setPage(1);
             const newSearch: any = {
-                ...(search as any),
+                ...searchAny,
                 notes_page: 1,
             };
-            if (sorting.length > 0) {
+            if (sorting.length === 0) {
+                delete newSearch.notes_sort_field;
+                delete newSearch.notes_sort_direction;
+            } else {
                 const sort = sorting[0];
                 const apiField = sortFieldMapping[sort.id] || sort.id;
                 newSearch.notes_sort_field = apiField;
@@ -243,7 +226,7 @@ export default function NotesList({
                 replace: true,
             });
         },
-        [search, router, location.pathname, sortFieldMapping],
+        [searchAny, router, location.pathname, sortFieldMapping],
     );
 
     const handleColumnFilter = useCallback(
@@ -303,13 +286,6 @@ export default function NotesList({
         query?.updated_date_from,
         query?.updated_date_to,
     ]);
-
-    // Sync URL params to page state
-    useEffect(() => {
-        if (notesPageParam !== page) {
-            setPage(notesPageParam);
-        }
-    }, [notesPageParam, page]);
 
     // Prepare query parameters
     const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
@@ -426,14 +402,13 @@ export default function NotesList({
 
     const handlePageChange = useCallback(
         (newPage: number) => {
-            const searchAny = search as any;
-            const newSearch: any = { ...searchAny, notes_page: newPage };
             router.navigate({
                 to: location.pathname as any,
-                search: newSearch as any,
+                search: { ...searchAny, notes_page: newPage } as any,
+                replace: true,
             });
         },
-        [search, router, location.pathname],
+        [searchAny, router, location.pathname],
     );
 
     // Handle pagination changes from DataTable
@@ -443,9 +418,6 @@ export default function NotesList({
 
             // Handle page size change
             if (newPageSize !== pageSize) {
-                setPageSize(newPageSize);
-                setPage(1);
-                const searchAny = search as any;
                 const newSearch: any = {
                     ...searchAny,
                     notes_page: 1,
@@ -462,7 +434,7 @@ export default function NotesList({
                 handlePageChange(newPage);
             }
         },
-        [page, pageSize, search, router, location.pathname, handlePageChange],
+        [page, pageSize, searchAny, router, location.pathname, handlePageChange],
     );
 
     // Delete mutation

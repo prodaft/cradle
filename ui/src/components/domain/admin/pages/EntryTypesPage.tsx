@@ -34,7 +34,7 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
 import AdminPageLayout from '../AdminPageLayout';
 
@@ -50,14 +50,12 @@ export default function EntryTypesPage() {
         select: (state) => state.location,
     });
     const search = useSearch({ strict: false });
+    const searchAny = search as any;
+    const page = Number(searchAny?.entry_types_page ?? 1) || 1;
+    const pageSize = Number(searchAny?.entry_types_pagesize ?? 20) || 20;
+    const searchQuery = (searchAny?.entry_types_search ?? '') as string;
+
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchQuery, setSearchQuery] = useState(
-        () => (search as any)?.entry_types_search ?? '',
-    );
-    const [page, setPage] = useState((search as any)?.entry_types_page || 1);
-    const [pageSize, setPageSize] = useState(
-        (search as any)?.entry_types_pagesize || 20,
-    );
     const { isAdmin } = useAuthState();
     const { entriesApi } = useApi();
     const queryClient = useQueryClient();
@@ -160,77 +158,43 @@ export default function EntryTypesPage() {
         [entryTypesData?.totalPages],
     );
 
-    const pageFromSearch = Number((search as any)?.entry_types_page) || 1;
-    const pageSizeFromSearch = Number((search as any)?.entry_types_pagesize) || 20;
-    const searchFromSearch = ((search as any)?.entry_types_search ?? '') as string;
-
-    // Sync URL params to page state
-    useEffect(() => {
-        if (pageFromSearch !== page) setPage(pageFromSearch);
-        if (pageSizeFromSearch !== pageSize) setPageSize(pageSizeFromSearch);
-        if (searchFromSearch !== searchQuery) setSearchQuery(searchFromSearch);
-    }, [
-        pageFromSearch,
-        pageSizeFromSearch,
-        searchFromSearch,
-        page,
-        pageSize,
-        searchQuery,
-    ]);
-
     const handleSearchChange = useCallback(
         (value: string) => {
-            setSearchQuery(value);
-            setPage(1);
-            const searchAny = search as any;
-            const newSearch: any = {
-                ...searchAny,
-                entry_types_page: 1,
-                entry_types_search: value.trim() || undefined,
-            };
             router.navigate({
                 to: location.pathname as any,
-                search: newSearch as any,
+                search: {
+                    ...searchAny,
+                    entry_types_page: 1,
+                    entry_types_search: value.trim() || undefined,
+                } as any,
                 replace: true,
             });
         },
-        [search, router, location.pathname],
+        [searchAny, router, location.pathname],
     );
 
-    // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1; // Convert 0-based to 1-based
-
-            // Handle page size change
+            const newPage = pageIndex + 1;
             if (newPageSize !== pageSize) {
-                setPageSize(newPageSize);
-                setPage(1);
-                const searchAny = search as any;
-                const newSearch: any = {
-                    ...searchAny,
-                    entry_types_page: 1,
-                    entry_types_pagesize: newPageSize,
-                };
                 router.navigate({
                     to: location.pathname as any,
-                    search: newSearch as any,
+                    search: {
+                        ...searchAny,
+                        entry_types_page: 1,
+                        entry_types_pagesize: newPageSize,
+                    } as any,
                     replace: true,
                 });
-            }
-            // Handle page change
-            else if (newPage !== page) {
-                setPage(newPage);
-                const searchAny = search as any;
-                const newSearch: any = { ...searchAny, entry_types_page: newPage };
+            } else if (newPage !== page) {
                 router.navigate({
                     to: location.pathname as any,
-                    search: newSearch as any,
+                    search: { ...searchAny, entry_types_page: newPage } as any,
                     replace: true,
                 });
             }
         },
-        [page, pageSize, search, router, location.pathname],
+        [page, pageSize, searchAny, router, location.pathname],
     );
 
     const formatCount = useCallback((count?: number) => {

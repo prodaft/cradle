@@ -16,7 +16,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { startCase } from 'lodash';
 import { Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import AdminPageLayout from '../AdminPageLayout';
 import TypeMappingsEditor from '../TypeMappingsEditor';
 
@@ -37,8 +37,6 @@ export default function TypeMappingsPage() {
     const { intelioApi } = useApi();
     const queryClient = useQueryClient();
 
-    const tab = 'tab' in search ? search.tab : undefined;
-
     // Query for mapping types
     const { data: mappingTypesData = [], isPending } = useQuery({
         queryKey: ['typeMappings', debouncedSearch],
@@ -54,32 +52,17 @@ export default function TypeMappingsPage() {
 
     const mappingTypes = mappingTypesData as MappingSubclass[];
 
+    const tab: string | undefined =
+        (search as any)?.tab ??
+        (mappingTypes.length > 0 ? mappingTypes[0].className : undefined);
+
     const handleMappingClick = (mapping: MappingSubclass) => {
-        const newSearch: any = {
-            ...search,
-            tab: mapping.className,
-        };
         router.navigate({
             to: location.pathname as any,
-            search: newSearch,
+            search: { ...(search as any), tab: mapping.className },
             replace: true,
         });
     };
-
-    // Auto-select first mapping if no tab and mappings are loaded
-    useEffect(() => {
-        if (!tab && mappingTypes.length > 0 && !isPending) {
-            const newSearch: any = {
-                ...search,
-                tab: mappingTypes[0].className,
-            };
-            router.navigate({
-                to: location.pathname as any,
-                search: newSearch,
-                replace: true,
-            });
-        }
-    }, [tab, mappingTypes, isPending, router, location.pathname, search]);
 
     const selectedMapping = tab ? mappingTypes.find((m) => m.className === tab) : null;
 

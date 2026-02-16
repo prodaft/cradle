@@ -27,7 +27,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useTheme } from '@/contexts/ui/theme-context';
 import useApi from '@/hooks/api/use-api';
-import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
+import { useAuthActions } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { UserConfig, UserRetrieve } from '@/services/cradle/models';
@@ -43,8 +43,15 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import UserActivityList from '../admin/UserActivityList';
 import ActiveSessions from './ActiveSessions';
+
+const ACCOUNT_SETTINGS_ITEMS = [
+    { id: 'security', label: 'Security', icon: Lock, description: 'Authentication, API keys, and account security' },
+    { id: 'sessions', label: 'Sessions', icon: ClockCounterClockwiseIcon, description: 'Manage your active sessions across devices' },
+    { id: 'oauth', label: 'OAuth', icon: Link, description: 'Link or unlink external identity providers' },
+    { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Customize your visual appearance and theme' },
+    { id: 'editor', label: 'Editor', icon: PencilSimpleIcon, description: 'Configure editor behavior, templates, and snippets' },
+];
 
 interface AccountSettingsProps {
     target?: string;
@@ -84,11 +91,18 @@ const accountSettingsSchema = z.object({
 type AccountFormData = z.infer<typeof accountSettingsSchema>;
 
 export default function AccountSettings({ target = 'me' }: AccountSettingsProps) {
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
+    const search = useSearch({ from: '/_authenticated/settings' });
+
     const { usersApi, basePath } = useApi();
     const { logOut } = useAuthActions();
-    const { isAdmin } = useAuthState();
     const queryClient = useQueryClient();
     const { setTheme } = useTheme();
+
+    const tab = (search as any)?.tab ?? ACCOUNT_SETTINGS_ITEMS[0].id;
 
     const saveMutation = useMutation({
         mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
@@ -140,11 +154,6 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
             successMessage: 'Note template saved successfully',
         },
     });
-    const router = useRouter();
-    const location = useRouterState({
-        select: (state) => state.location,
-    });
-    const search = useSearch({ from: '/_authenticated/settings' });
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
     const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
@@ -153,36 +162,6 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
     const [noteTemplateDialogOpen, setNoteTemplateDialogOpen] = useState(false);
     const [noteTemplateContent, setNoteTemplateContent] = useState('');
-
-    // Get active tab from URL search params, default to 'security'
-    const validTabs = useMemo(() => {
-        const tabs = ['security', 'sessions', 'oauth', 'appearance', 'editor'];
-        if (isAdmin) tabs.push('activity');
-        return tabs;
-    }, [isAdmin]);
-
-    const tabParam = (search as any)?.tab as string | undefined;
-    const getActiveTab = (tab?: string) =>
-        tab && validTabs.includes(tab) ? tab : 'security';
-    const [activeTab, setActiveTab] = useState(() => getActiveTab(tabParam));
-
-    // Update active tab when search params change and set initial tab
-    useEffect(() => {
-        if (!tabParam || !validTabs.includes(tabParam)) {
-            // Set default tab if no valid tab is present
-            if (!tabParam) {
-                const newSearch: any = { ...search, tab: 'security' };
-                router.navigate({
-                    to: location.pathname as any,
-                    search: newSearch,
-                    replace: true,
-                });
-            }
-            setActiveTab('security');
-        } else {
-            setActiveTab(tabParam);
-        }
-    }, [tabParam, router, location.pathname, search, validTabs]);
     const [oauthConnections, setOauthConnections] = useState<Record<string, boolean>>(
         {},
     );
@@ -645,43 +624,17 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     // Require user to be loaded
     if (!userData) return <div></div>;
 
-    const handleTabChange = (tab: string) => {
-        setActiveTab(tab);
+    const handleTabChange = (tabId: string) => {
         router.navigate({
             to: location.pathname as any,
-            search: { ...search, tab } as any,
+            search: { ...(search as any), tab: tabId },
             replace: true,
         });
     };
 
-    const settingsTabs = [
-        { id: 'security', label: 'Security', icon: Lock },
-        { id: 'sessions', label: 'Sessions', icon: ClockCounterClockwiseIcon },
-        { id: 'oauth', label: 'OAuth', icon: Link },
-        { id: 'appearance', label: 'Appearance', icon: Palette },
-        { id: 'editor', label: 'Editor', icon: PencilSimpleIcon },
-    ];
-
-    if (isAdmin) {
-        settingsTabs.push({
-            id: 'activity',
-            label: 'Activity',
-            icon: ClockCounterClockwiseIcon,
-        });
-    }
-
-    const tabDescriptions: Record<string, string> = {
-        security: 'Authentication, API keys, and account security',
-        sessions: 'Manage your active sessions across devices',
-        oauth: 'Link or unlink external identity providers',
-        appearance: 'Customize your visual appearance and theme',
-        editor: 'Configure editor behavior, templates, and snippets',
-        activity: 'View account activity and audit logs',
-    };
-
-    const currentTab = settingsTabs.find((tab) => tab.id === activeTab);
-    const currentDescription =
-        activeTab && activeTab in tabDescriptions ? tabDescriptions[activeTab] : '';
+    const currentTab =
+        ACCOUNT_SETTINGS_ITEMS.find((item) => item.id === tab) || ACCOUNT_SETTINGS_ITEMS[0];
+    const currentDescription = currentTab?.description ?? '';
 
     return (
         <main
@@ -697,14 +650,14 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                 </div>
             </div>
             <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
-                <Tabs value={activeTab} onValueChange={handleTabChange}>
+                <Tabs value={tab} onValueChange={handleTabChange}>
                     <TabsList className='flex-wrap h-auto'>
-                        {settingsTabs.map((tab) => {
-                            const Icon = tab.icon;
+                        {ACCOUNT_SETTINGS_ITEMS.map((item) => {
+                            const Icon = item.icon;
                             return (
-                                <TabsTrigger key={tab.id} value={tab.id}>
+                                <TabsTrigger key={item.id} value={item.id}>
                                     <Icon className='w-4 h-4' />
-                                    {tab.label}
+                                    {item.label}
                                 </TabsTrigger>
                             );
                         })}
@@ -732,7 +685,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     onSubmit={handleSubmit(() => void handleSave())}
                                 >
                                     {/* Security Section */}
-                                    {activeTab === 'security' && (
+                                    {tab === 'security' && (
                                         <section id='security'>
                                             <div className='flex flex-col gap-4'>
                                                 <FieldGroup className='gap-4'>
@@ -857,23 +810,14 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     )}
 
                                     {/* Sessions Section */}
-                                    {activeTab === 'sessions' && (
+                                    {tab === 'sessions' && (
                                         <section id='sessions'>
                                             <ActiveSessions userId={target} />
                                         </section>
                                     )}
 
-                                    {/* Activity Section */}
-                                    {activeTab === 'activity' && isAdmin && (
-                                        <section id='activity'>
-                                            <UserActivityList
-                                                username={userData.username}
-                                            />
-                                        </section>
-                                    )}
-
                                     {/* OAuth Section */}
-                                    {activeTab === 'oauth' &&
+                                    {tab === 'oauth' &&
                                         Object.keys(mergedOAuthConnections).length >
                                             0 && (
                                             <section id='oauth'>
@@ -959,7 +903,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                         )}
 
                                     {/* OAuth empty state */}
-                                    {activeTab === 'oauth' &&
+                                    {tab === 'oauth' &&
                                         Object.keys(mergedOAuthConnections).length ===
                                             0 && (
                                             <section id='oauth'>
@@ -970,7 +914,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                         )}
 
                                     {/* Appearance Section */}
-                                    {activeTab === 'appearance' && (
+                                    {tab === 'appearance' && (
                                         <section id='appearance'>
                                             <div className='flex flex-col gap-4'>
                                                 <FieldGroup className='gap-4'>
@@ -1136,7 +1080,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     )}
 
                                     {/* Editor Settings Section */}
-                                    {activeTab === 'editor' && (
+                                    {tab === 'editor' && (
                                         <section id='editor'>
                                             <div className='flex flex-col gap-4'>
                                                 <div className='flex items-center justify-between gap-4'>

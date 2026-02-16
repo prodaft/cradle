@@ -44,18 +44,14 @@ function EnrichmentRequestsInner() {
         select: (state) => state.location,
     });
     const search = useSearch({ from: '/_authenticated/enrichment/' });
+    const searchAny = search as any;
+    const sortField = searchAny?.sort_field || 'created_at';
+    const sortDirection: 'asc' | 'desc' = searchAny?.sort_direction || 'desc';
+    const pageSize = Number(searchAny?.pagesize) || 20;
+
     const { intelioApi } = useApi();
     const [enrichmentDialogOpen, setEnrichmentDialogOpen] = useState(false);
-
-    // Enrichment requests list state
     const [page, setPage] = useState(1);
-    const [sortField, setSortField] = useState(
-        (search as any)?.sort_field || 'created_at',
-    );
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
-        (search as any)?.sort_direction || 'desc',
-    );
-    const [pageSize, setPageSize] = useState(Number((search as any)?.pagesize) || 20);
     const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
 
     // Search state (title only — user filter lives in columnFilters)
@@ -168,33 +164,26 @@ function EnrichmentRequestsInner() {
     };
 
     const handleSort = (newSortField: string, newSortDirection: 'asc' | 'desc') => {
-        setSortField(newSortField);
-        setSortDirection(newSortDirection);
         setPage(1);
-
-        const newSearch: any = {
-            ...search,
-            sort_field: newSortField,
-            sort_direction: newSortDirection,
-        };
         router.navigate({
             to: location.pathname as any,
-            search: newSearch,
+            search: {
+                ...searchAny,
+                sort_field: newSortField,
+                sort_direction: newSortDirection,
+            },
             replace: true,
         });
     };
 
     const handlePageSizeChange = (newSize: number) => {
-        setPageSize(newSize);
         setPage(1);
-
-        const newSearch: any = {
-            ...search,
-            pagesize: String(newSize),
-        };
         router.navigate({
             to: location.pathname as any,
-            search: newSearch,
+            search: {
+                ...searchAny,
+                pagesize: String(newSize),
+            },
             replace: true,
         });
     };

@@ -17,27 +17,17 @@ import {
     useRouterState,
     useSearch,
 } from '@tanstack/react-router';
-import { useEffect } from 'react';
 import AdminPageLayout from '../AdminPageLayout';
 import AdminUserSettings from './AdminUserSettings';
 
 const USER_SETTINGS_ITEMS = [
-    { id: 'account', label: 'Account', icon: UserIcon },
-    { id: 'administrative', label: 'Administrative', icon: GearSixIcon },
-    { id: 'permissions', label: 'Permissions', icon: LockKeyIcon },
-    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon },
-    { id: 'sessions', label: 'Sessions', icon: PasswordIcon },
-    { id: 'management', label: 'Management', icon: GearSixIcon },
+    { id: 'account', label: 'Account', icon: UserIcon, description: 'Manage user account information and basic settings' },
+    { id: 'administrative', label: 'Administrative', icon: GearSixIcon, description: 'Configure user permissions and administrative settings' },
+    { id: 'permissions', label: 'Permissions', icon: LockKeyIcon, description: 'Manage entity access permissions for this user' },
+    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon, description: 'View user activity and audit logs' },
+    { id: 'sessions', label: 'Sessions', icon: PasswordIcon, description: 'View and manage active user sessions' },
+    { id: 'management', label: 'Management', icon: GearSixIcon, description: 'Administrative actions for user management' },
 ];
-
-const USER_TAB_DESCRIPTIONS: Record<string, string> = {
-    account: 'Manage user account information and basic settings',
-    administrative: 'Configure user permissions and administrative settings',
-    permissions: 'Manage entity access permissions for this user',
-    activity: 'View user activity and audit logs',
-    sessions: 'View and manage active user sessions',
-    management: 'Administrative actions for user management',
-};
 
 export default function UserSettingsPage() {
     const params = useParams({ strict: false });
@@ -47,8 +37,7 @@ export default function UserSettingsPage() {
         select: (state) => state.location,
     });
     const search = useSearch({ strict: false });
-    const searchAny = search as any;
-    const tab = searchAny?.tab;
+    const tab = (search as any)?.tab ?? USER_SETTINGS_ITEMS[0].id;
     const { usersApi } = useApi();
 
     // Query for user data to get username
@@ -62,29 +51,17 @@ export default function UserSettingsPage() {
         },
     });
 
-    const handleTabClick = (tabId: string) => {
+    const handleTabChange = (tabId: string) => {
         router.navigate({
             to: location.pathname as any,
-            search: { ...searchAny, tab: tabId },
+            search: { ...(search as any), tab: tabId },
             replace: true,
         });
     };
 
-    // Auto-select first tab if no tab
-    useEffect(() => {
-        if (!tab && USER_SETTINGS_ITEMS.length > 0) {
-            router.navigate({
-                to: location.pathname as any,
-                search: { ...searchAny, tab: USER_SETTINGS_ITEMS[0].id },
-                replace: true,
-            });
-        }
-    }, [tab, location.pathname, router, searchAny]);
-
-    const selectedItem = USER_SETTINGS_ITEMS.find((item) => item.id === tab);
-    const currentTab = selectedItem || USER_SETTINGS_ITEMS[0];
-
-    const currentDescription = tab ? (USER_TAB_DESCRIPTIONS[tab] ?? '') : '';
+    const currentTab =
+        USER_SETTINGS_ITEMS.find((item) => item.id === tab) || USER_SETTINGS_ITEMS[0];
+    const currentDescription = currentTab?.description ?? '';
 
     return (
         <AdminPageLayout>
@@ -103,10 +80,7 @@ export default function UserSettingsPage() {
                     </div>
                 </div>
                 <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
-                    <Tabs
-                        value={tab || USER_SETTINGS_ITEMS[0].id}
-                        onValueChange={handleTabClick}
-                    >
+                    <Tabs value={tab} onValueChange={handleTabChange}>
                         <TabsList className='flex-wrap h-auto'>
                             {USER_SETTINGS_ITEMS.map((item) => {
                                 const Icon = item.icon;

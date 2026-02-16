@@ -12,14 +12,13 @@ import {
     useRouterState,
     useSearch,
 } from '@tanstack/react-router';
-import { useEffect } from 'react';
 import ActivityList from '../../activity/ActivityList';
 import AdminPageLayout from '../AdminPageLayout';
 import EntryTypeForm from '../forms/EntryTypeForm';
 
 const ENTRY_TYPE_SETTINGS_ITEMS = [
-    { id: 'settings', label: 'Settings', icon: GearIcon },
-    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon },
+    { id: 'settings', label: 'Settings', icon: GearIcon, description: 'Manage entry type configuration' },
+    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon, description: 'View entry type activity and logs' },
 ];
 
 export default function EntryTypeSettingsPage() {
@@ -30,7 +29,7 @@ export default function EntryTypeSettingsPage() {
         select: (state) => state.location,
     });
     const search = useSearch({ strict: false });
-    const tab = (search as any)?.tab;
+    const tab = (search as any)?.tab ?? ENTRY_TYPE_SETTINGS_ITEMS[0].id;
     const { entriesApi } = useApi();
     const queryClient = useQueryClient();
 
@@ -45,36 +44,18 @@ export default function EntryTypeSettingsPage() {
         },
     });
 
-    const handleTabClick = (tabId: string) => {
-        const newSearch: any = { ...search, tab: tabId };
+    const handleTabChange = (tabId: string) => {
         router.navigate({
             to: location.pathname as any,
-            search: newSearch,
+            search: { ...(search as any), tab: tabId },
             replace: true,
         });
     };
 
-    // Auto-select first tab if no tab
-    useEffect(() => {
-        if (!tab && ENTRY_TYPE_SETTINGS_ITEMS.length > 0) {
-            const newSearch: any = { ...search, tab: ENTRY_TYPE_SETTINGS_ITEMS[0].id };
-            router.navigate({
-                to: location.pathname as any,
-                search: newSearch,
-                replace: true,
-            });
-        }
-    }, [tab, router, location.pathname, search]);
-
-    const selectedItem = ENTRY_TYPE_SETTINGS_ITEMS.find((item) => item.id === tab);
-    const currentTab = selectedItem || ENTRY_TYPE_SETTINGS_ITEMS[0];
-
-    const tabDescriptions: Record<string, string> = {
-        settings: 'Manage entry type configuration',
-        activity: 'View entry type activity and logs',
-    };
-    const currentDescription =
-        tab && tab in tabDescriptions ? tabDescriptions[tab] : '';
+    const currentTab =
+        ENTRY_TYPE_SETTINGS_ITEMS.find((item) => item.id === tab) ||
+        ENTRY_TYPE_SETTINGS_ITEMS[0];
+    const currentDescription = currentTab?.description ?? '';
 
     return (
         <AdminPageLayout>
@@ -93,10 +74,7 @@ export default function EntryTypeSettingsPage() {
                     </div>
                 </div>
                 <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
-                    <Tabs
-                        value={tab || ENTRY_TYPE_SETTINGS_ITEMS[0].id}
-                        onValueChange={handleTabClick}
-                    >
+                    <Tabs value={tab} onValueChange={handleTabChange}>
                         <TabsList className='flex-wrap h-auto'>
                             {ENTRY_TYPE_SETTINGS_ITEMS.map((item) => {
                                 const Icon = item.icon;

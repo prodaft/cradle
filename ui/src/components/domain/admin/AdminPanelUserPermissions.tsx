@@ -17,7 +17,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import useApi from '@/hooks/api/use-api';
-import { naturalSort } from '@/utils/dashboard';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { AccessRequestAccessTypeEnum } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -199,14 +198,12 @@ export default function AdminPanelUserPermissions({
     // Filter entities based on search
     const filteredEntities = useMemo(() => {
         const needle = searchVal.trim().toLowerCase();
-        return entities
-            .filter((entity) => {
-                if (!needle) return true;
-                const haystack =
-                    `${entity.name || ''} ${entity.description || ''}`.toLowerCase();
-                return haystack.includes(needle);
-            })
-            .sort((a, b) => naturalSort(a.name || '', b.name || ''));
+        return entities.filter((entity) => {
+            if (!needle) return true;
+            const haystack =
+                `${entity.name || ''} ${entity.description || ''}`.toLowerCase();
+            return haystack.includes(needle);
+        });
     }, [entities, searchVal]);
 
     if (permissionsQuery.isLoading) {

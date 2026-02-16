@@ -131,6 +131,7 @@ class AccessManager(models.Manager):
             )  # left outer join
             .values("id", "name", "access_type__access_type", "description")  # separate table
             .annotate(access_type=F("access_type__access_type"))  # rename obscure field
+            .order_by("name")
         )
 
     def get_users_with_access(self, entity_id: UUID) -> models.QuerySet:

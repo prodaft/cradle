@@ -15,7 +15,7 @@ import { EnrichmentSubclass } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import AdminPageLayout from '../AdminPageLayout';
 import EnrichmentSettingsForm from '../forms/EnrichmentSettingsForm';
 
@@ -35,8 +35,6 @@ export default function EnrichmentPage() {
     );
     const { intelioApi } = useApi();
 
-    const tab = (search as any)?.tab as string | undefined;
-
     // Query for enrichment types
     const { data: enrichmentTypesData = [], isPending } = useQuery({
         queryKey: ['enrichmentTypes', debouncedSearch],
@@ -51,33 +49,17 @@ export default function EnrichmentPage() {
     });
 
     const enrichmentTypes = enrichmentTypesData as EnrichmentSubclass[];
+    const tab: string | undefined =
+        (search as any)?.tab ??
+        (enrichmentTypes.length > 0 ? enrichmentTypes[0].className : undefined);
 
     const handleEnrichmentClick = (enrichment: EnrichmentSubclass) => {
-        const newSearch: any = {
-            ...search,
-            tab: enrichment.className,
-        };
         router.navigate({
             to: location.pathname as any,
-            search: newSearch,
+            search: { ...(search as any), tab: enrichment.className },
             replace: true,
         });
     };
-
-    // Auto-select first enrichment if no tab and enrichments are loaded
-    useEffect(() => {
-        if (!tab && enrichmentTypes.length > 0 && !isPending) {
-            const newSearch: any = {
-                ...search,
-                tab: enrichmentTypes[0].className,
-            };
-            router.navigate({
-                to: location.pathname as any,
-                search: newSearch,
-                replace: true,
-            });
-        }
-    }, [tab, enrichmentTypes, isPending, router, location.pathname, search]);
 
     const selectedEnrichment = tab
         ? enrichmentTypes.find((e) => e.className === tab)

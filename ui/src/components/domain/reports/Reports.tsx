@@ -32,7 +32,7 @@ import {
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { startCase } from 'lodash';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { StatusIcon, type StatusType } from '../notes/StatusIcon';
 
@@ -93,9 +93,19 @@ export default function Reports() {
         select: (state) => state.location,
     });
     const search = useSearch({ from: '/_authenticated/reports' });
+    const searchAny = search as any;
+    const page = Number(searchAny?.reports_page ?? 1) || 1;
+    const sortField = (searchAny?.reports_sort_field ?? 'created_at') as string;
+    const sortDirection: 'asc' | 'desc' = (searchAny?.reports_sort_direction ??
+        'desc') as 'asc' | 'desc';
+    const pageSize = Number(searchAny?.reports_pagesize ?? 20) || 20;
+
     const { reportsApi } = useApi();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string>('all');
     const queryClient = useQueryClient();
 
     const fetchReportMutation = useMutation({
@@ -112,37 +122,11 @@ export default function Reports() {
             suppressNotification: true,
         },
     });
-    const [page, setPage] = useState((search as any)?.reports_page || 1);
-    const [sortField, setSortField] = useState(
-        (search as any)?.reports_sort_field || 'created_at',
-    );
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
-        (search as any)?.reports_sort_direction || 'desc',
-    );
-    const [pageSize, setPageSize] = useState((search as any)?.reports_pagesize || 20);
-    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('all');
 
     const selectedReportIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
         [rowSelection],
     );
-
-    // Sync URL params to state (for browser back/forward)
-    useEffect(() => {
-        const searchAny = search as any;
-        const pageFromParams = searchAny?.reports_page || 1;
-        const sortFieldFromParams = searchAny?.reports_sort_field || 'created_at';
-        const sortDirectionFromParams = searchAny?.reports_sort_direction || 'desc';
-        const pageSizeFromParams = searchAny?.reports_pagesize || 20;
-
-        if (pageFromParams !== page) setPage(pageFromParams);
-        if (sortFieldFromParams !== sortField) setSortField(sortFieldFromParams);
-        if (sortDirectionFromParams !== sortDirection)
-            setSortDirection(sortDirectionFromParams);
-        if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
-    }, [search, page, pageSize, sortDirection, sortField]);
 
     const orderBy = useMemo(
         () => (sortDirection === 'desc' ? `-${sortField}` : sortField),
@@ -179,65 +163,46 @@ export default function Reports() {
     const resetToFirstPage = useCallback(() => {
         router.navigate({
             to: location.pathname as any,
-            search: { ...(search as any), reports_page: 1 } as any,
+            search: { ...searchAny, reports_page: 1 } as any,
             replace: true,
         });
-    }, [search, router, location.pathname]);
+    }, [searchAny, router, location.pathname]);
 
     const handlePageChange = useCallback(
         (newPage: number) => {
             router.navigate({
                 to: location.pathname as any,
-                search: { ...(search as any), reports_page: newPage } as any,
+                search: { ...searchAny, reports_page: newPage } as any,
                 replace: true,
             });
         },
-        [router, location.pathname, search],
+        [searchAny, router, location.pathname],
     );
 
-    // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1; // Convert 0-based to 1-based
-
-            // Handle page size change
+            const newPage = pageIndex + 1;
             if (newPageSize !== pageSize) {
-                setPageSize(newPageSize);
-                setPage(1);
-                const searchAny = search as any;
-                const newSearch: any = {
-                    ...searchAny,
-                    reports_page: 1,
-                    reports_pagesize: newPageSize,
-                };
                 router.navigate({
                     to: location.pathname as any,
-                    search: newSearch as any,
+                    search: {
+                        ...searchAny,
+                        reports_page: 1,
+                        reports_pagesize: newPageSize,
+                    } as any,
                     replace: true,
                 });
-            }
-            // Handle page change
-            else if (newPage !== page) {
+            } else if (newPage !== page) {
                 handlePageChange(newPage);
             }
         },
-        [page, pageSize, search, router, location.pathname, handlePageChange],
+        [page, pageSize, searchAny, router, location.pathname, handlePageChange],
     );
 
     const handleSortingChange = useCallback(
         (sorting: SortingState) => {
-            if (sorting.length === 0) {
-                setSortField('created_at');
-                setSortDirection('desc');
-            } else {
-                const sort = sorting[0];
-                const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
-                setSortField(apiField);
-                setSortDirection(sort.desc ? 'desc' : 'asc');
-            }
-
             const newSearch: any = {
-                ...(search as any),
+                ...searchAny,
                 reports_page: 1,
             };
             if (sorting.length === 0) {
@@ -256,7 +221,7 @@ export default function Reports() {
                 replace: true,
             });
         },
-        [search, router, location.pathname],
+        [searchAny, router, location.pathname],
     );
 
     // Delete mutation

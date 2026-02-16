@@ -69,9 +69,7 @@ export default function NotesListPage() {
     const [searchFilters, setSearchFilters] = useState<SearchFilters>(() =>
         filtersFromSearch(search),
     );
-    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters>(() =>
-        filtersFromSearch(search),
-    );
+    const submittedFilters = filtersFromSearch(search);
 
     const updateSearchParams = useCallback(
         (filters: SearchFilters) => {
@@ -90,7 +88,6 @@ export default function NotesListPage() {
                 search: nextSearch as any,
                 replace: true,
             });
-            setSubmittedFilters(filters);
         },
         [router, pathname, search],
     );
@@ -141,9 +138,7 @@ export default function NotesListPage() {
     };
 
     useEffect(() => {
-        const initialFilters = filtersFromSearch(search);
-        setSearchFilters(initialFilters);
-        setSubmittedFilters(initialFilters);
+        setSearchFilters(filtersFromSearch(search));
     }, [search]);
 
     const isCreatingNote = createNoteMutation.isPending;

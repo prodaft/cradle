@@ -30,7 +30,7 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 interface ActiveSessionsProps {
@@ -50,21 +50,23 @@ const COLUMN_TO_FIELD: Record<string, string> = {
  * ActiveSessions component - Displays and manages active user sessions
  */
 export default function ActiveSessions({ userId }: ActiveSessionsProps) {
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
+    const search = useSearch({ strict: false });
+    const searchAny = search as any;
+    const page = Number(searchAny?.sessions_page ?? 1) || 1;
+    const pageSize = Number(searchAny?.sessions_pagesize ?? 10) || 10;
+
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
     const [sorting, setSorting] = useState<SortingState>([]);
     const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
     const [revokeSessionId, setRevokeSessionId] = useState<string | null>(null);
     const [bulkRevokeDialogOpen, setBulkRevokeDialogOpen] = useState(false);
     const { usersApi } = useApi();
     const { logOut } = useAuthActions();
-    const router = useRouter();
-    const location = useRouterState({
-        select: (state) => state.location,
-    });
-    const search = useSearch({ strict: false });
     const queryClient = useQueryClient();
 
     const clearSelection = useCallback(() => {
@@ -273,20 +275,15 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         return sessionsWithCurrent.slice(start, end);
     }, [sessionsWithCurrent, page, pageSize]);
 
-    // Handle page change
     const handlePageChange = useCallback(
         (newPage: number) => {
-            setPage(newPage);
-            const newSearch: any = {
-                ...search,
-                sessions_page: String(newPage),
-            };
             router.navigate({
                 to: location.pathname as any,
-                search: newSearch,
+                search: { ...searchAny, sessions_page: String(newPage) },
+                replace: true,
             });
         },
-        [router, location.pathname, search],
+        [searchAny, router, location.pathname],
     );
 
     // Handle sorting change
@@ -298,36 +295,20 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         [handlePageChange],
     );
 
-    // Handle page size change
     const handlePageSizeChange = useCallback(
         (newSize: number) => {
-            setPageSize(newSize);
-            setPage(1);
-            const newSearch: any = {
-                ...search,
-                sessions_pagesize: String(newSize),
-                sessions_page: '1',
-            };
             router.navigate({
                 to: location.pathname as any,
-                search: newSearch,
+                search: {
+                    ...searchAny,
+                    sessions_pagesize: String(newSize),
+                    sessions_page: '1',
+                },
+                replace: true,
             });
         },
-        [router, location.pathname, search],
+        [searchAny, router, location.pathname],
     );
-
-    // Sync URL params to state
-    const sessionsPageParam = (search as any)?.sessions_page;
-    const sessionsPageSizeParam = (search as any)?.sessions_pagesize;
-
-    useEffect(() => {
-        const nextPage = Number(sessionsPageParam ?? 1);
-        const nextPageSize = Number(sessionsPageSizeParam ?? 10);
-
-        if (Number.isFinite(nextPage) && nextPage !== page) setPage(nextPage);
-        if (Number.isFinite(nextPageSize) && nextPageSize !== pageSize)
-            setPageSize(nextPageSize);
-    }, [sessionsPageParam, sessionsPageSizeParam, page, pageSize]);
 
     // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(

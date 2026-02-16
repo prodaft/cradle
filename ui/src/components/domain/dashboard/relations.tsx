@@ -500,8 +500,7 @@ export default function Relations({ obj }: RelationsProps) {
 
     const results = useMemo(() => {
         if (!relationsData) return [];
-        const items = relationsData.results as unknown as Result[];
-        return [...items].sort((a, b) => a.depth - b.depth);
+        return relationsData.results as unknown as Result[];
     }, [relationsData]);
 
     // Query for inaccessible entities

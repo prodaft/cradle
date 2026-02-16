@@ -46,7 +46,7 @@ import {
 } from '@tanstack/react-table';
 import bytes from 'bytes';
 import { format } from 'date-fns';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import OfflineIndicator from '../../feedback/offline-indicator';
 
@@ -88,14 +88,12 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
     });
     const search = useSearch({ strict: false });
 
-    const [page, setPage] = useState((search as any)?.files_page || 1);
-    const [sortField, setSortField] = useState(
-        (search as any)?.files_sort_field || 'timestamp',
-    );
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
-        (search as any)?.files_sort_direction || 'desc',
-    );
-    const [pageSize, setPageSize] = useState((search as any)?.files_pagesize || 20);
+    const searchAny = search as any;
+    const page = Number(searchAny?.files_page ?? 1) || 1;
+    const sortField = (searchAny?.files_sort_field ?? 'timestamp') as string;
+    const sortDirection: 'asc' | 'desc' = (searchAny?.files_sort_direction ??
+        'desc') as 'asc' | 'desc';
+    const pageSize = Number(searchAny?.files_pagesize ?? 20) || 20;
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteFileIds, setBulkDeleteFileIds] = useState<string[]>([]);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -130,9 +128,8 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
     const { notesApi, fileTransferApi } = useApi();
-    const [statusFilter, setStatusFilter] = useState<'all' | 'healthy' | 'warning'>(
-        ((search as any)?.files_status as 'all' | 'healthy' | 'warning') || 'all',
-    );
+    const statusFilter: 'all' | 'healthy' | 'warning' =
+        (searchAny?.files_status as 'all' | 'healthy' | 'warning') || 'all';
 
     const { setNodeRef } = useDroppable({
         id: 'files-droppable',
@@ -140,30 +137,25 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
 
     const handleSortingChange = useCallback(
         (sorting: SortingState) => {
-            const newSearch: any = { ...(search as any), files_page: 1 };
+            const newSearch: any = { ...searchAny, files_page: 1 };
 
             if (sorting.length === 0) {
-                setSortField('timestamp');
-                setSortDirection('desc');
                 delete newSearch.files_sort_field;
                 delete newSearch.files_sort_direction;
             } else {
                 const sort = sorting[0];
                 const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
-                setSortField(apiField);
-                setSortDirection(sort.desc ? 'desc' : 'asc');
                 newSearch.files_sort_field = apiField;
                 newSearch.files_sort_direction = sort.desc ? 'desc' : 'asc';
             }
 
-            setPage(1);
             router.navigate({
                 to: location.pathname as any,
                 search: newSearch as any,
                 replace: true,
             });
         },
-        [search, router, location.pathname],
+        [searchAny, router, location.pathname],
     );
 
     // Prepare query parameters
@@ -314,20 +306,17 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
     }, [selectedFileIds]);
 
     const resetToFirstPage = useCallback(() => {
-        setPage(1);
         router.navigate({
             to: location.pathname as any,
-            search: { ...(search as any), files_page: 1 } as any,
+            search: { ...searchAny, files_page: 1 } as any,
             replace: true,
         });
-    }, [router, location.pathname, search]);
+    }, [router, location.pathname, searchAny]);
 
     const handleStatusFilterChange = useCallback(
         (value: string) => {
             const next = (value || 'all') as 'all' | 'healthy' | 'warning';
-            setStatusFilter(next);
-            setPage(1);
-            const nextSearch: any = { ...(search as any), files_page: 1 };
+            const nextSearch: any = { ...searchAny, files_page: 1 };
             if (next === 'all') {
                 delete nextSearch.files_status;
             } else {
@@ -339,58 +328,33 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                 replace: true,
             });
         },
-        [router, location.pathname, search],
+        [searchAny, router, location.pathname],
     );
-
-    // Sync URL params to local state on back/forward navigation
-    const filesPageFromSearch = (search as any)?.files_page || 1;
-    const filesStatusFromSearch =
-        ((search as any)?.files_status as 'healthy' | 'warning' | undefined) ?? 'all';
-
-    useEffect(() => {
-        if (filesPageFromSearch !== page) {
-            setPage(filesPageFromSearch);
-        }
-    }, [filesPageFromSearch, page]);
-
-    useEffect(() => {
-        if (filesStatusFromSearch !== statusFilter) {
-            setStatusFilter(filesStatusFromSearch);
-        }
-    }, [filesStatusFromSearch, statusFilter]);
-
-    // Query automatically refetches when dependencies change
-    // No manual useEffect needed
 
     const handlePageChange = useCallback(
         (newPage: number) => {
-            const searchAny = search as any;
-            const newSearch: any = { ...searchAny, files_page: newPage };
             router.navigate({
                 to: location.pathname as any,
-                search: newSearch as any,
+                search: { ...searchAny, files_page: newPage } as any,
+                replace: true,
             });
         },
-        [router, location.pathname, search],
+        [searchAny, router, location.pathname],
     );
 
     const handlePageSizeChange = useCallback(
         (newSize: number) => {
-            setPageSize(newSize);
-            setPage(1);
-            const searchAny = search as any;
-            const newSearch: any = {
-                ...searchAny,
-                files_page: 1,
-                files_pagesize: newSize,
-            };
             router.navigate({
                 to: location.pathname as any,
-                search: newSearch as any,
+                search: {
+                    ...searchAny,
+                    files_page: 1,
+                    files_pagesize: newSize,
+                } as any,
                 replace: true,
             });
         },
-        [router, location.pathname, search],
+        [searchAny, router, location.pathname],
     );
 
     // Handle pagination changes from DataTable

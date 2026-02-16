@@ -28,7 +28,7 @@ import {
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
 import AdminPageLayout from '../AdminPageLayout';
@@ -54,14 +54,11 @@ export default function UsersPage() {
     const search = useSearch({ strict: false });
 
     const searchAny = search as any;
-    const usersPageParam = Number(searchAny?.users_page ?? 1);
-    const usersPageSizeParam = Number(searchAny?.users_pagesize ?? 20);
-    const usersSearchParam = (searchAny?.users_search ?? '') as string;
+    const page = Number(searchAny?.users_page ?? 1) || 1;
+    const pageSize = Number(searchAny?.users_pagesize ?? 20) || 20;
+    const searchQuery = (searchAny?.users_search ?? '') as string;
 
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchQuery, setSearchQuery] = useState(() => usersSearchParam);
-    const [page, setPage] = useState(usersPageParam);
-    const [pageSize, setPageSize] = useState(usersPageSizeParam);
     const { usersApi } = useApi();
     const queryClient = useQueryClient();
     const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
@@ -156,24 +153,8 @@ export default function UsersPage() {
         [usersData?.totalPages],
     );
 
-    // Sync URL params to page state
-    useEffect(() => {
-        if (usersPageParam !== page) setPage(usersPageParam);
-        if (usersPageSizeParam !== pageSize) setPageSize(usersPageSizeParam);
-        if (usersSearchParam !== searchQuery) setSearchQuery(usersSearchParam);
-    }, [
-        usersPageParam,
-        usersPageSizeParam,
-        usersSearchParam,
-        page,
-        pageSize,
-        searchQuery,
-    ]);
-
     const handleSearchChange = useCallback(
         (value: string) => {
-            setSearchQuery(value);
-            setPage(1);
             router.navigate({
                 to: location.pathname as any,
                 search: {
@@ -184,18 +165,13 @@ export default function UsersPage() {
                 replace: true,
             });
         },
-        [router, location.pathname, searchAny],
+        [searchAny, router, location.pathname],
     );
 
-    // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1; // Convert 0-based to 1-based
-
-            // Handle page size change
+            const newPage = pageIndex + 1;
             if (newPageSize !== pageSize) {
-                setPageSize(newPageSize);
-                setPage(1);
                 router.navigate({
                     to: location.pathname as any,
                     search: {
@@ -205,10 +181,7 @@ export default function UsersPage() {
                     } as any,
                     replace: true,
                 });
-            }
-            // Handle page change
-            else if (newPage !== page) {
-                setPage(newPage);
+            } else if (newPage !== page) {
                 router.navigate({
                     to: location.pathname as any,
                     search: { ...searchAny, users_page: newPage } as any,
@@ -216,7 +189,7 @@ export default function UsersPage() {
                 });
             }
         },
-        [page, pageSize, router, location.pathname, searchAny],
+        [page, pageSize, searchAny, router, location.pathname],
     );
 
     const columns = useMemo<ColumnDef<UserRetrieve>[]>(

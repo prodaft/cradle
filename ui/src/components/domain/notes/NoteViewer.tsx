@@ -69,8 +69,17 @@ export default function NoteViewer() {
         strict: false,
     });
     const router = useRouter();
-    const queryClient = useQueryClient();
     const location = useLocation();
+    const search = useSearch({ from: '/_authenticated/notes/$id' });
+    const searchAny = search as any;
+    const richEditor: boolean =
+        searchAny.source !== undefined
+            ? !searchAny.source
+            : localStorage.getItem('richEditor') !== 'false';
+    const enableEditing: boolean = searchAny.edit === true;
+    const activeView: ViewMode = (searchAny.view as ViewMode) || ViewMode.CONTENT;
+
+    const queryClient = useQueryClient();
     const noteId = useMemo(() => {
         const routeId = (params as { id?: string }).id;
         if (routeId) {
@@ -84,17 +93,6 @@ export default function NoteViewer() {
     const { from } = locationState;
 
     const [note, setNote] = useState<NoteRetrieve | null>(null);
-    const search = useSearch({ from: '/_authenticated/notes/$id' });
-    const [richEditor, setRichEditor] = useState(() => {
-        // URL param takes precedence, then localStorage, then default to true
-        const s = search as any;
-        if (s.source !== undefined) {
-            return !s.source; // source=true means NOT rich editor
-        }
-        const stored = localStorage.getItem('richEditor');
-        return stored ? stored === 'true' : true;
-    });
-    const [enableEditing, setEnableEditing] = useState((search as any).edit === true);
     const [markdownContent, setMarkdownContent] = useState('');
     const [enrichmentDialogOpen, setEnrichmentDialogOpen] = useState(false);
     const [enrichmentEntities, setEnrichmentEntities] = useState<
@@ -109,9 +107,6 @@ export default function NoteViewer() {
     const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
     const [fileData, setFileData] = useState<FileReferenceWithNote[]>([]);
     const [initialMarkdown, setInitialMarkdown] = useState('');
-    const [activeView, setActiveView] = useState<ViewMode>(
-        ((search as any).view as ViewMode) || ViewMode.CONTENT,
-    );
     const [isFleeting, setIsFleeting] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -185,26 +180,8 @@ export default function NoteViewer() {
             });
     };
 
-    // Sync view, edit mode, and source mode with URL
-    useEffect(() => {
-        const s = search as any;
-        if (s.view && s.view !== activeView) {
-            setActiveView(s.view as ViewMode);
-        }
-        if (s.edit !== undefined && s.edit !== enableEditing) {
-            setEnableEditing(s.edit);
-        }
-        if (s.source !== undefined) {
-            const urlRichEditor = !s.source;
-            if (urlRichEditor !== richEditor) {
-                setRichEditor(urlRichEditor);
-            }
-        }
-    }, [search, activeView, enableEditing, isFleeting, richEditor]);
-
     const handleViewChange = useCallback(
         (newView: ViewMode) => {
-            setActiveView(newView);
             router.navigate({
                 to: location.pathname as any,
                 search: { ...(search as any), view: newView },
@@ -216,7 +193,6 @@ export default function NoteViewer() {
 
     const handleRichEditorChange = useCallback(
         (rich: boolean) => {
-            setRichEditor(rich);
             localStorage.setItem('richEditor', rich.toString());
             router.navigate({
                 to: location.pathname as any,
@@ -234,11 +210,9 @@ export default function NoteViewer() {
     }, [showOutline]);
 
     const toggleEditing = useCallback(() => {
-        const newValue = !enableEditing;
-        setEnableEditing(newValue);
         router.navigate({
             to: location.pathname as any,
-            search: { ...(search as any), edit: newValue },
+            search: { ...(search as any), edit: !enableEditing },
             replace: true,
         });
     }, [enableEditing, router, location.pathname, search]);
@@ -327,6 +301,11 @@ export default function NoteViewer() {
         },
     });
 
+    const enableEditingRef = useRef({ enableEditing, router, location, search });
+    useEffect(() => {
+        enableEditingRef.current = { enableEditing, router, location, search };
+    }, [enableEditing, router, location, search]);
+
     // Update state when note data is loaded
     useEffect(() => {
         if (!noteData) {
@@ -342,8 +321,13 @@ export default function NoteViewer() {
         setNote(noteData);
         const nextIsFleeting = Boolean(noteData.fleeting);
         setIsFleeting(nextIsFleeting);
-        if (nextIsFleeting) {
-            setEnableEditing(true);
+        if (nextIsFleeting && !enableEditingRef.current.enableEditing) {
+            const { router: r, location: loc, search: s } = enableEditingRef.current;
+            r.navigate({
+                to: loc.pathname as any,
+                search: { ...(s as any), edit: true },
+                replace: true,
+            });
         }
         setMarkdownContent(noteData.content);
         setInitialMarkdown(noteData.content);

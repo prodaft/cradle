@@ -141,7 +141,9 @@ def get_neighbors_paginated(
         else:
             final_result = final_result.union(v)
 
-    # Return a queryset for the final level
+    if final_result is not None:
+        final_result = final_result.order_by("depth")
+
     return final_result
 
 

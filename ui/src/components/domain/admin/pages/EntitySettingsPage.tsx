@@ -5,7 +5,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { ClockCounterClockwiseIcon, GearIcon } from '@phosphor-icons/react';
-import { Entity } from '@services/cradle/models';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     useParams,
@@ -14,16 +13,15 @@ import {
     useSearch,
 } from '@tanstack/react-router';
 import { Shield } from 'lucide-react';
-import { useEffect } from 'react';
 import ActivityList from '../../activity/ActivityList';
 import AdminPageLayout from '../AdminPageLayout';
 import EntityForm from '../forms/EntityForm';
 import EntityPermissionsForm from '../forms/EntityPermissionsForm';
 
 const ENTITY_SETTINGS_ITEMS = [
-    { id: 'settings', label: 'Settings', icon: GearIcon },
-    { id: 'permissions', label: 'Permissions', icon: Shield },
-    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon },
+    { id: 'settings', label: 'Settings', icon: GearIcon, description: 'Manage entity properties and settings' },
+    { id: 'permissions', label: 'Permissions', icon: Shield, description: 'Manage user access permissions' },
+    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon, description: 'View entity activity and audit logs' },
 ];
 
 export default function EntitySettingsPage() {
@@ -34,7 +32,7 @@ export default function EntitySettingsPage() {
         select: (state) => state.location,
     });
     const search = useSearch({ strict: false });
-    const tab = (search as any)?.tab;
+    const tab = (search as any)?.tab ?? ENTITY_SETTINGS_ITEMS[0].id;
     const { entriesApi } = useApi();
     const queryClient = useQueryClient();
 
@@ -49,37 +47,18 @@ export default function EntitySettingsPage() {
         },
     });
 
-    const handleTabClick = (tabId: string) => {
-        const newSearch: any = { ...search, tab: tabId };
+    const handleTabChange = (tabId: string) => {
         router.navigate({
             to: location.pathname as any,
-            search: newSearch,
+            search: { ...(search as any), tab: tabId },
             replace: true,
         });
     };
 
-    // Auto-select first tab if no tab
-    useEffect(() => {
-        if (!tab && ENTITY_SETTINGS_ITEMS.length > 0) {
-            const newSearch: any = { ...search, tab: ENTITY_SETTINGS_ITEMS[0].id };
-            router.navigate({
-                to: location.pathname as any,
-                search: newSearch,
-                replace: true,
-            });
-        }
-    }, [tab, router, location.pathname, search]);
-
-    const selectedItem = ENTITY_SETTINGS_ITEMS.find((item) => item.id === tab);
-    const currentTab = selectedItem || ENTITY_SETTINGS_ITEMS[0];
-
-    const tabDescriptions: Record<string, string> = {
-        settings: 'Manage entity properties and settings',
-        permissions: 'Manage user access permissions',
-        activity: 'View entity activity and audit logs',
-    };
-    const currentDescription =
-        tab && tab in tabDescriptions ? tabDescriptions[tab] : '';
+    const currentTab =
+        ENTITY_SETTINGS_ITEMS.find((item) => item.id === tab) ||
+        ENTITY_SETTINGS_ITEMS[0];
+    const currentDescription = currentTab?.description ?? '';
 
     return (
         <AdminPageLayout>
@@ -102,10 +81,7 @@ export default function EntitySettingsPage() {
                     </div>
                 </div>
                 <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
-                    <Tabs
-                        value={tab || ENTITY_SETTINGS_ITEMS[0].id}
-                        onValueChange={handleTabClick}
-                    >
+                    <Tabs value={tab} onValueChange={handleTabChange}>
                         <TabsList className='flex-wrap h-auto'>
                             {ENTITY_SETTINGS_ITEMS.map((item) => {
                                 const Icon = item.icon;
@@ -151,7 +127,7 @@ export default function EntitySettingsPage() {
                                         ) : (
                                             <EntityForm
                                                 id={Number(entityId)}
-                                                onAdd={(newEntity: Entity) => {
+                                                onAdd={() => {
                                                     queryClient.invalidateQueries({
                                                         queryKey:
                                                             queryKeys.entities.lists(),
@@ -162,9 +138,6 @@ export default function EntitySettingsPage() {
                                                                 String(entityId),
                                                             ),
                                                     });
-                                                    if (newEntity.id) {
-                                                        // Normally stay on the page
-                                                    }
                                                 }}
                                             />
                                         )}

@@ -34,7 +34,7 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
 import AdminPageLayout from '../AdminPageLayout';
 
@@ -48,24 +48,18 @@ export default function EntitiesPage() {
         select: (state) => state.location,
     });
     const search = useSearch({ strict: false });
+    const searchAny = search as any;
+    const page = Number(searchAny?.entities_page ?? 1) || 1;
+    const pageSize = Number(searchAny?.entities_pagesize ?? 20) || 20;
+    const searchQuery = (searchAny?.entities_search ?? '') as string;
 
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchQuery, setSearchQuery] = useState(
-        () => (search as any)?.entities_search ?? '',
-    );
-    const [page, setPage] = useState((search as any)?.entities_page || 1);
-    const [pageSize, setPageSize] = useState((search as any)?.entities_pagesize || 20);
     const { isAdmin } = useAuthState();
     const { queryApi, entriesApi } = useApi();
     const queryClient = useQueryClient();
     const [addEntityDialogOpen, setAddEntityDialogOpen] = useState(false);
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteEntityIds, setBulkDeleteEntityIds] = useState<string[]>([]);
-
-    const searchAny = search as any;
-    const entitiesPageParam = Number(searchAny?.entities_page ?? 1) || 1;
-    const entitiesPageSizeParam = Number(searchAny?.entities_pagesize ?? 20) || 20;
-    const entitiesSearchParam = (searchAny?.entities_search ?? '') as string;
 
     const selectedEntityIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
@@ -152,74 +146,43 @@ export default function EntitiesPage() {
         () => Math.max(1, entitiesData?.totalPages ?? 1),
         [entitiesData?.totalPages],
     );
-    // Sync URL params to page state
-    useEffect(() => {
-        if (entitiesPageParam !== page) setPage(entitiesPageParam);
-        if (entitiesPageSizeParam !== pageSize) setPageSize(entitiesPageSizeParam);
-        if (entitiesSearchParam !== searchQuery) setSearchQuery(entitiesSearchParam);
-    }, [
-        entitiesPageParam,
-        entitiesPageSizeParam,
-        entitiesSearchParam,
-        page,
-        pageSize,
-        searchQuery,
-    ]);
-
-    // Update URL when search changes (server-side search), reset to page 1
     const handleSearchChange = useCallback(
         (value: string) => {
-            setSearchQuery(value);
-            setPage(1);
-            const searchAny = search as any;
-            const newSearch: any = {
-                ...searchAny,
-                entities_page: 1,
-                entities_search: value.trim() || undefined,
-            };
             router.navigate({
                 to: location.pathname as any,
-                search: newSearch as any,
+                search: {
+                    ...searchAny,
+                    entities_page: 1,
+                    entities_search: value.trim() || undefined,
+                } as any,
                 replace: true,
             });
         },
-        [search, router, location.pathname],
+        [searchAny, router, location.pathname],
     );
 
-    // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1; // Convert 0-based to 1-based
-
-            // Handle page size change
+            const newPage = pageIndex + 1;
             if (newPageSize !== pageSize) {
-                setPageSize(newPageSize);
-                setPage(1);
-                const searchAny = search as any;
-                const newSearch: any = {
-                    ...searchAny,
-                    entities_page: 1,
-                    entities_pagesize: newPageSize,
-                };
                 router.navigate({
                     to: location.pathname as any,
-                    search: newSearch as any,
+                    search: {
+                        ...searchAny,
+                        entities_page: 1,
+                        entities_pagesize: newPageSize,
+                    } as any,
                     replace: true,
                 });
-            }
-            // Handle page change
-            else if (newPage !== page) {
-                setPage(newPage);
-                const searchAny = search as any;
-                const newSearch: any = { ...searchAny, entities_page: newPage };
+            } else if (newPage !== page) {
                 router.navigate({
                     to: location.pathname as any,
-                    search: newSearch as any,
+                    search: { ...searchAny, entities_page: newPage } as any,
                     replace: true,
                 });
             }
         },
-        [page, pageSize, search, router, location.pathname],
+        [page, pageSize, searchAny, router, location.pathname],
     );
 
     const columns = useMemo<ColumnDef<EntityData>[]>(

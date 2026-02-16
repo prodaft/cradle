@@ -16,6 +16,13 @@ import Files from './Files';
 import Notes from './Notes';
 import Relations from './relations';
 
+const DASHBOARD_ITEMS = [
+    { id: 'notes', label: 'Notes', icon: FileText },
+    { id: 'relations', label: 'Relations', icon: Share2 },
+    { id: 'files', label: 'Files', icon: FolderOpen },
+    { id: 'enrichment', label: 'Enrichment', icon: SparkleIcon },
+];
+
 export default function Dashboard() {
     const loaderData = useLoaderData({
         from: '/_authenticated/dashboards/$subtype/$name',
@@ -30,21 +37,18 @@ export default function Dashboard() {
         select: (state) => state.location,
     });
     const dashboard = useRef<HTMLDivElement>(null);
-    const activeTab = search.tab ?? 'notes';
+    const tab = search.tab ?? DASHBOARD_ITEMS[0].id;
 
-    const handleTabChange = (tab: string) => {
+    const handleTabChange = (tabId: string) => {
         router.navigate({
             to: location.pathname as any,
-            search: { ...search, tab } as any,
+            search: { ...(search as any), tab: tabId },
             replace: true,
         });
     };
     const tabs = useMemo(
         () => [
-            { id: 'notes', label: 'Notes', icon: FileText },
-            { id: 'relations', label: 'Relations', icon: Share2 },
-            { id: 'files', label: 'Files', icon: FolderOpen },
-            { id: 'enrichment', label: 'Enrichment', icon: SparkleIcon },
+            ...DASHBOARD_ITEMS,
             ...(isAdmin ? [{ id: 'eventlog', label: 'Event Log', icon: History }] : []),
         ],
         [isAdmin],
@@ -87,31 +91,31 @@ export default function Dashboard() {
                     )}
                     {contentObject.id && (
                         <div className='flex flex-1 flex-col space-y-4 overflow-hidden'>
-                            <Tabs value={activeTab} onValueChange={handleTabChange}>
+                            <Tabs value={tab} onValueChange={handleTabChange}>
                                 <TabsList className='flex-wrap h-auto'>
-                                    {tabs.map((tab) => {
-                                        const Icon = tab.icon;
+                                    {tabs.map((item) => {
+                                        const Icon = item.icon;
                                         return (
-                                            <TabsTrigger key={tab.id} value={tab.id}>
+                                            <TabsTrigger key={item.id} value={item.id}>
                                                 <Icon />
-                                                {tab.label}
+                                                {item.label}
                                             </TabsTrigger>
                                         );
                                     })}
                                 </TabsList>
                             </Tabs>
                             <div className='faded-bottom h-full w-full overflow-x-auto overflow-y-auto scroll-smooth pb-12'>
-                                {activeTab === 'notes' && <Notes obj={contentObject} />}
-                                {activeTab === 'relations' && (
+                                {tab === 'notes' && <Notes obj={contentObject} />}
+                                {tab === 'relations' && (
                                     <Relations obj={contentObject} />
                                 )}
-                                {activeTab === 'files' && <Files obj={contentObject} />}
-                                {activeTab === 'enrichment' && (
+                                {tab === 'files' && <Files obj={contentObject} />}
+                                {tab === 'enrichment' && (
                                     <DashboardEnrichmentRequests
                                         entryId={contentObject.id}
                                     />
                                 )}
-                                {activeTab === 'eventlog' && isAdmin && (
+                                {tab === 'eventlog' && isAdmin && (
                                     <ActivityList
                                         name={contentObject.name}
                                         objectId={contentObject.id?.toString()}

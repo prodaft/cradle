@@ -53,23 +53,18 @@ export default function DigestData() {
         select: (state) => state.location,
     });
     const search = useSearch({ from: '/_authenticated/digest-data' });
+    const searchAny = search as any;
+    const sortField = searchAny?.digests_sort_field || 'created_at';
+    const sortDirection: 'asc' | 'desc' = searchAny?.digests_sort_direction || 'desc';
+    const pageSize = (() => {
+        const parsed = Number(searchAny?.digests_pagesize);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 20;
+    })();
+
     const { intelioApi } = useApi();
     const [uploadDigestDialogOpen, setUploadDigestDialogOpen] = useState(false);
     const queryClient = useQueryClient();
-
-    // Digest list state
     const [page, setPage] = useState(1);
-    const [sortField, setSortField] = useState(
-        (search as any)?.digests_sort_field || 'created_at',
-    );
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | undefined>(
-        (search as any)?.digests_sort_direction || 'desc',
-    );
-    const [pageSize, setPageSize] = useState(() => {
-        const raw = (search as any)?.digests_pagesize;
-        const parsed = Number(raw);
-        return Number.isFinite(parsed) && parsed > 0 ? parsed : 20;
-    });
 
     // Search state
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
@@ -284,33 +279,26 @@ export default function DigestData() {
     };
 
     const handleSort = (newSortField: string, newSortDirection: 'asc' | 'desc') => {
-        setSortField(newSortField);
-        setSortDirection(newSortDirection);
         setPage(1);
-
-        const newSearch: any = {
-            ...search,
-            digests_sort_field: newSortField,
-            digests_sort_direction: newSortDirection,
-        };
         router.navigate({
             to: location.pathname as any,
-            search: newSearch,
+            search: {
+                ...searchAny,
+                digests_sort_field: newSortField,
+                digests_sort_direction: newSortDirection,
+            },
             replace: true,
         });
     };
 
     const handlePageSizeChange = (newSize: number) => {
-        setPageSize(newSize);
         setPage(1);
-
-        const newSearch: any = {
-            ...search,
-            digests_pagesize: String(newSize),
-        };
         router.navigate({
             to: location.pathname as any,
-            search: newSearch,
+            search: {
+                ...searchAny,
+                digests_pagesize: String(newSize),
+            },
             replace: true,
         });
     };
