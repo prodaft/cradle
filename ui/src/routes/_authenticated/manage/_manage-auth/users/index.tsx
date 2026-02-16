@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import { z } from 'zod';
 
-const UsersPage = lazy(() => import('@/components/domain/admin/pages/UsersPage'));
+const UsersPage = lazy(() => import('@/components/domain/admin/user/users-page'));
 
 export const Route = createFileRoute('/_authenticated/manage/_manage-auth/users/')({
     validateSearch: z.object({

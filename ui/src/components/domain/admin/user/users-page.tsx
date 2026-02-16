@@ -2,7 +2,7 @@ import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import AddUserDialog from '@/components/domain/admin/dialogs/AddUserDialog';
+import AddUserDialog from './add-user-dialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -31,7 +31,7 @@ import {
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
-import AdminPageLayout from '../AdminPageLayout';
+import AdminPageLayout from '../admin-page-layout';
 
 const getRoleBadgeVariant = (role?: string) => {
     switch (role) {

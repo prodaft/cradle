@@ -3,7 +3,7 @@ import { lazy } from 'react';
 import { z } from 'zod';
 
 const TypeMappingsPage = lazy(
-    () => import('@/components/domain/admin/pages/TypeMappingsPage'),
+    () => import('@/components/domain/admin/type-mappings/type-mappings-page'),
 );
 
 export const Route = createFileRoute(

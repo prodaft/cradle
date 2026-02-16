@@ -30,7 +30,7 @@ import { Controller, useForm } from 'react-hook-form';
 
 import { z } from 'zod';
 import OfflineIndicator from '../../../feedback/offline-indicator';
-import { SelectOption } from '../../../forms';
+import { SelectOption } from '@/types';
 
 interface EntityFormProps {
     id?: number | string | null;

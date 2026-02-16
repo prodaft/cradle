@@ -3,7 +3,7 @@ import { lazy } from 'react';
 import { z } from 'zod';
 
 const UserSettingsPage = lazy(
-    () => import('@/components/domain/admin/pages/UserSettingsPage'),
+    () => import('@/components/domain/admin/user/user-settings-page'),
 );
 
 export const Route = createFileRoute(

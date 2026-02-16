@@ -6,7 +6,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { UserRetrieve } from '@services/cradle/models';
-import AddUserForm from './AddUserForm';
+import AddUserForm from './add-user-form';
 
 interface AddUserDialogProps {
     open: boolean;

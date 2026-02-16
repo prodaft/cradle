@@ -19,6 +19,14 @@ export type FileReference = FileReferenceWithNote;
 export type StateSetter<T> = React.Dispatch<React.SetStateAction<T>>;
 
 /**
+ * A generic select option used in form dropdowns.
+ */
+export interface SelectOption<T = string> {
+    value: T;
+    label: string;
+}
+
+/**
  * An object representing an alert. Used with Alert components.
  */
 export interface Alert {

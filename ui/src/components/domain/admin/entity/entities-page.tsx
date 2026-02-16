@@ -2,7 +2,7 @@ import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import AddEntityDialog from '@/components/domain/admin/dialogs/AddEntityDialog';
+import AddEntityDialog from './add-entity-dialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -36,7 +36,7 @@ import {
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
-import AdminPageLayout from '../AdminPageLayout';
+import AdminPageLayout from '../admin-page-layout';
 
 interface EntityData extends Entity {
     id: number;

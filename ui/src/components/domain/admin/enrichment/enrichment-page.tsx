@@ -11,22 +11,21 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/use-api';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
-import { MappingSubclass } from '@services/cradle/models';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { EnrichmentSubclass } from '@services/cradle/models';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { startCase } from 'lodash';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
-import AdminPageLayout from '../AdminPageLayout';
-import TypeMappingsEditor from '../TypeMappingsEditor';
+import AdminPageLayout from '../admin-page-layout';
+import EnrichmentSettingsForm from './enrichment-settings-form';
 
-export default function TypeMappingsPage() {
+export default function EnrichmentPage() {
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
     });
     const search = useSearch({
-        from: '/_authenticated/manage/_manage-auth/type-mappings',
+        from: '/_authenticated/manage/_manage-auth/enrichment',
     });
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -35,13 +34,11 @@ export default function TypeMappingsPage() {
         300,
     );
     const { intelioApi } = useApi();
-    const queryClient = useQueryClient();
 
-    // Query for mapping types
-    const { data: mappingTypesData = [], isPending } = useQuery({
-        queryKey: ['typeMappings', debouncedSearch],
+    const { data: enrichmentTypesData = [], isPending } = useQuery({
+        queryKey: ['enrichmentTypes', debouncedSearch],
         queryFn: () =>
-            intelioApi.mappingsSubclassesList({
+            intelioApi.enrichmentSubclassesList({
                 search: debouncedSearch || undefined,
             }),
         meta: {
@@ -50,26 +47,27 @@ export default function TypeMappingsPage() {
         },
     });
 
-    const mappingTypes = mappingTypesData as MappingSubclass[];
-
+    const enrichmentTypes = enrichmentTypesData as EnrichmentSubclass[];
     const tab: string | undefined =
         (search as any)?.tab ??
-        (mappingTypes.length > 0 ? mappingTypes[0].className : undefined);
+        (enrichmentTypes.length > 0 ? enrichmentTypes[0].className : undefined);
 
-    const handleMappingClick = (mapping: MappingSubclass) => {
+    const handleEnrichmentClick = (enrichment: EnrichmentSubclass) => {
         router.navigate({
             to: location.pathname as any,
-            search: { ...(search as any), tab: mapping.className },
+            search: { ...(search as any), tab: enrichment.className },
             replace: true,
         });
     };
 
-    const selectedMapping = tab ? mappingTypes.find((m) => m.className === tab) : null;
+    const selectedEnrichment = tab
+        ? enrichmentTypes.find((e) => e.className === tab)
+        : null;
 
     return (
         <AdminPageLayout>
             <div className='flex w-full h-full'>
-                {/* Type Mappings Sidebar */}
+                {/* Enrichment Sidebar */}
                 <Sidebar
                     collapsible='none'
                     className='border-r bg-background text-foreground [&_[data-slot=sidebar-inner]]:bg-background [&_[data-slot=sidebar-inner]]:text-foreground'
@@ -79,7 +77,7 @@ export default function TypeMappingsPage() {
                             <Search className='absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                             <Input
                                 type='text'
-                                placeholder='Search mappings...'
+                                placeholder='Search enrichment types...'
                                 value={searchQuery}
                                 onChange={(e) => {
                                     setSearchQuery(e.target.value);
@@ -96,23 +94,23 @@ export default function TypeMappingsPage() {
                                     <div className='px-4 py-2 text-sm text-muted-foreground flex items-center gap-2'>
                                         <Spinner className='size-4' /> Loading...
                                     </div>
-                                ) : mappingTypes.length === 0 ? (
+                                ) : enrichmentTypes.length === 0 ? (
                                     <div className='px-4 py-2 text-sm text-muted-foreground'>
                                         {searchQuery
-                                            ? 'No mappings match your search'
-                                            : 'No type mappings found'}
+                                            ? 'No enrichment types match your search'
+                                            : 'No enrichment types found'}
                                     </div>
                                 ) : (
-                                    mappingTypes.map((mapping) => (
-                                        <SidebarMenuItem key={mapping.className}>
+                                    enrichmentTypes.map((enrichment) => (
+                                        <SidebarMenuItem key={enrichment.className}>
                                             <SidebarMenuButton
-                                                isActive={tab === mapping.className}
+                                                isActive={tab === enrichment.className}
                                                 onClick={() =>
-                                                    handleMappingClick(mapping)
+                                                    handleEnrichmentClick(enrichment)
                                                 }
-                                                tooltip={startCase(mapping.name)}
+                                                tooltip={enrichment.name}
                                             >
-                                                <span>{startCase(mapping.name)}</span>
+                                                <span>{enrichment.name}</span>
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
                                     ))
@@ -124,21 +122,13 @@ export default function TypeMappingsPage() {
 
                 {/* Main Content Area */}
                 <div className='flex-1 flex flex-col'>
-                    {selectedMapping ? (
-                        <TypeMappingsEditor
-                            id={tab!}
-                            name={selectedMapping.name || tab!}
-                            onSave={() => {
-                                queryClient.invalidateQueries({
-                                    queryKey: ['typeMappings'],
-                                });
-                            }}
-                        />
+                    {selectedEnrichment ? (
+                        <EnrichmentSettingsForm enrichment_class={tab!} />
                     ) : (
                         <div className='flex-1 flex items-center justify-center'>
                             <div className='text-center'>
                                 <p className='text-muted-foreground'>
-                                    Select a type mapping to edit
+                                    Select an enrichment type to configure
                                 </p>
                             </div>
                         </div>

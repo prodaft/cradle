@@ -1,5 +1,6 @@
 import { CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
@@ -13,8 +14,8 @@ import {
     useSearch,
 } from '@tanstack/react-router';
 import ActivityList from '../../activity/ActivityList';
-import AdminPageLayout from '../AdminPageLayout';
-import EntryTypeForm from '../forms/EntryTypeForm';
+import AdminPageLayout from '../admin-page-layout';
+import EntryTypeForm from './entry-type-form';
 
 const ENTRY_TYPE_SETTINGS_ITEMS = [
     { id: 'settings', label: 'Settings', icon: GearIcon, description: 'Manage entry type configuration' },
@@ -34,7 +35,7 @@ export default function EntryTypeSettingsPage() {
     const queryClient = useQueryClient();
 
     // Query for entry type details
-    const { data: entryTypeData } = useQuery({
+    const { data: entryTypeData, isLoading } = useQuery({
         queryKey: queryKeys.entryTypes.detail(subtype),
         queryFn: () => entriesApi.entryClassesRetrieve({ classSubtype: subtype }),
         enabled: !!subtype,
@@ -57,6 +58,16 @@ export default function EntryTypeSettingsPage() {
         ENTRY_TYPE_SETTINGS_ITEMS[0];
     const currentDescription = currentTab?.description ?? '';
 
+    if (isLoading) {
+        return (
+            <AdminPageLayout>
+                <div className='flex h-full items-center justify-center'>
+                    <Spinner className='size-8' />
+                </div>
+            </AdminPageLayout>
+        );
+    }
+
     return (
         <AdminPageLayout>
             <main
@@ -66,7 +77,7 @@ export default function EntryTypeSettingsPage() {
                 <div className='flex flex-wrap items-end justify-between gap-2'>
                     <div className='space-y-1'>
                         <h2 className='text-2xl font-bold tracking-tight'>
-                            {entryTypeData?.subtype || subtype || 'Entry Type'}
+                            {entryTypeData?.subtype || subtype}
                         </h2>
                         <p className='text-muted-foreground'>
                             {currentDescription || 'Manage entry type'}

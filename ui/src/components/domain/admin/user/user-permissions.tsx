@@ -93,12 +93,11 @@ export default function AdminPanelUserPermissions({
     const [currentAccess, setCurrentAccess] = useState<Record<number, AccessType>>({});
     const [searchVal, setSearchVal] = useState('');
     const { accessApi } = useApi();
-    const { accessUserList, accessUserUpdate } = accessApi;
     const queryClient = useQueryClient();
 
     const permissionsQuery = useQuery({
         queryKey: ['accessUserList', id],
-        queryFn: () => accessUserList({ userId: id }),
+        queryFn: () => accessApi.accessUserList({ userId: id }),
         enabled: !!id,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
@@ -173,7 +172,7 @@ export default function AdminPanelUserPermissions({
             // Save all changes
             await Promise.all(
                 updates.map((update) =>
-                    accessUserUpdate({
+                    accessApi.accessUserUpdate({
                         userId: id,
                         entityId: update.entityId,
                         accessRequest: { accessType: update.accessType },

@@ -1,55 +1,40 @@
 import { CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import useApi from '@/hooks/api/use-api';
-import { queryKeys } from '@/hooks/query';
-import {
-    ClockCounterClockwiseIcon,
-    GearSixIcon,
-    LockKeyIcon,
-    PasswordIcon,
-    UserIcon,
-} from '@phosphor-icons/react';
-import { useQuery } from '@tanstack/react-query';
-import {
-    useParams,
-    useRouter,
-    useRouterState,
-    useSearch,
-} from '@tanstack/react-router';
-import AdminPageLayout from '../AdminPageLayout';
-import AdminUserSettings from './AdminUserSettings';
+import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
+import { Archive, FileText, Layers, Network, UserPlus } from 'lucide-react';
+import React from 'react';
+import AdminPageLayout from '../admin-page-layout';
+import EntriesSettingsForm from './entries-settings-form';
+import FileSettingsForm from './file-settings-form';
+import GraphSettingsForm from './graph-settings-form';
+import NoteSettingsForm from './note-settings-form';
+import UserSettingsForm from './user-settings-form';
 
-const USER_SETTINGS_ITEMS = [
-    { id: 'account', label: 'Account', icon: UserIcon, description: 'Manage user account information and basic settings' },
-    { id: 'administrative', label: 'Administrative', icon: GearSixIcon, description: 'Configure user permissions and administrative settings' },
-    { id: 'permissions', label: 'Permissions', icon: LockKeyIcon, description: 'Manage entity access permissions for this user' },
-    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon, description: 'View user activity and audit logs' },
-    { id: 'sessions', label: 'Sessions', icon: PasswordIcon, description: 'View and manage active user sessions' },
-    { id: 'management', label: 'Management', icon: GearSixIcon, description: 'Administrative actions for user management' },
+const SETTING_COMPONENTS: Record<string, React.ComponentType> = {
+    note: NoteSettingsForm,
+    files: FileSettingsForm,
+    graph: GraphSettingsForm,
+    entries: EntriesSettingsForm,
+    users: UserSettingsForm,
+};
+
+const MANAGEMENT_ITEMS = [
+    { id: 'note', label: 'Note', icon: FileText, description: 'Configure note-related settings and preferences' },
+    { id: 'files', label: 'File', icon: Archive, description: 'Manage file upload and storage settings' },
+    { id: 'graph', label: 'Graph', icon: Network, description: 'Customize graph visualization and behavior' },
+    { id: 'entries', label: 'Entry', icon: Layers, description: 'Configure entry types and properties' },
+    { id: 'users', label: 'New User', icon: UserPlus, description: 'Manage user creation and permissions' },
 ];
 
-export default function UserSettingsPage() {
-    const params = useParams({ strict: false });
-    const userId = (params as any).id as string;
+export default function ManagementPage() {
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ strict: false });
-    const tab = (search as any)?.tab ?? USER_SETTINGS_ITEMS[0].id;
-    const { usersApi } = useApi();
+    const search = useSearch({ from: '/_authenticated/manage/_manage-auth/settings' });
 
-    // Query for user data to get username
-    const { data: userData } = useQuery({
-        queryKey: queryKeys.users.detail(userId),
-        queryFn: () => usersApi.usersRetrieve({ userId }),
-        enabled: !!userId,
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
-        },
-    });
+    const tab = (search as any)?.tab ?? MANAGEMENT_ITEMS[0].id;
 
     const handleTabChange = (tabId: string) => {
         router.navigate({
@@ -59,8 +44,9 @@ export default function UserSettingsPage() {
         });
     };
 
+    const SettingComponent = tab ? SETTING_COMPONENTS[tab] : null;
     const currentTab =
-        USER_SETTINGS_ITEMS.find((item) => item.id === tab) || USER_SETTINGS_ITEMS[0];
+        MANAGEMENT_ITEMS.find((item) => item.id === tab) || MANAGEMENT_ITEMS[0];
     const currentDescription = currentTab?.description ?? '';
 
     return (
@@ -71,18 +57,16 @@ export default function UserSettingsPage() {
             >
                 <div className='flex flex-wrap items-end justify-between gap-2'>
                     <div className='space-y-1'>
-                        <h2 className='text-2xl font-bold tracking-tight'>
-                            {userData?.username || 'User Settings'}
-                        </h2>
+                        <h2 className='text-2xl font-bold tracking-tight'>Settings</h2>
                         <p className='text-muted-foreground'>
-                            Manage user account and administrative settings.
+                            Manage system settings and configurations.
                         </p>
                     </div>
                 </div>
                 <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
                     <Tabs value={tab} onValueChange={handleTabChange}>
                         <TabsList className='flex-wrap h-auto'>
-                            {USER_SETTINGS_ITEMS.map((item) => {
+                            {MANAGEMENT_ITEMS.map((item) => {
                                 const Icon = item.icon;
                                 return (
                                     <TabsTrigger key={item.id} value={item.id}>
@@ -110,10 +94,17 @@ export default function UserSettingsPage() {
                                         role='none'
                                         className='bg-border mb-4 flex-none'
                                     />
-                                    <AdminUserSettings
-                                        userId={userId}
-                                        activeTab={tab}
-                                    />
+                                    {SettingComponent ? (
+                                        <SettingComponent />
+                                    ) : (
+                                        <div className='flex items-center justify-center py-12'>
+                                            <div className='text-center'>
+                                                <p className='text-muted-foreground'>
+                                                    Select a setting to configure
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </div>
                         </div>

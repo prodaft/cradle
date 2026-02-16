@@ -1,5 +1,5 @@
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
-import AdminSetPasswordDialog from './AdminSetPasswordDialog';
+import AdminSetPasswordDialog from './set-password-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -32,8 +32,8 @@ import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import ActiveSessions from '../../user/ActiveSessions';
-import AdminPanelUserPermissions from './AdminPanelUserPermissions';
-import UserActivityList from './UserActivityList';
+import AdminPanelUserPermissions from './user-permissions';
+import UserActivityList from './user-activity-list';
 
 interface AdminUserSettingsProps {
     userId: string;

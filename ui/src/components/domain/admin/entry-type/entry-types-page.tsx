@@ -2,7 +2,7 @@ import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import AddEntityDialog from './AddEntityDialog';
+import AddEntryTypeDialog from './add-entry-type-dialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -24,7 +24,7 @@ import {
     PencilIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
-import { Entity } from '@services/cradle/models';
+import { EntryClass } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
@@ -36,32 +36,36 @@ import {
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
-import AdminPageLayout from '../AdminPageLayout';
+import AdminPageLayout from '../admin-page-layout';
 
-interface EntityData extends Entity {
-    id: number;
+interface EntryTypeData {
+    id: string;
+    subtype: string;
+    count?: number;
 }
 
-export default function EntitiesPage() {
+export default function EntryTypesPage() {
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
     });
     const search = useSearch({ strict: false });
     const searchAny = search as any;
-    const page = Number(searchAny?.entities_page ?? 1) || 1;
-    const pageSize = Number(searchAny?.entities_pagesize ?? 20) || 20;
-    const searchQuery = (searchAny?.entities_search ?? '') as string;
+    const page = Number(searchAny?.entry_types_page ?? 1) || 1;
+    const pageSize = Number(searchAny?.entry_types_pagesize ?? 20) || 20;
+    const searchQuery = (searchAny?.entry_types_search ?? '') as string;
 
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const { isAdmin } = useAuthState();
-    const { queryApi, entriesApi } = useApi();
+    const { entriesApi } = useApi();
     const queryClient = useQueryClient();
-    const [addEntityDialogOpen, setAddEntityDialogOpen] = useState(false);
+    const [addEntryTypeDialogOpen, setAddEntryTypeDialogOpen] = useState(false);
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-    const [bulkDeleteEntityIds, setBulkDeleteEntityIds] = useState<string[]>([]);
+    const [bulkDeleteEntryTypeSubtypes, setBulkDeleteEntryTypeSubtypes] = useState<
+        string[]
+    >([]);
 
-    const selectedEntityIds = useMemo(
+    const selectedEntryTypeIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
         [rowSelection],
     );
@@ -70,90 +74,97 @@ export default function EntitiesPage() {
         setRowSelection({});
     }, []);
 
-    // Query for entities with server-side pagination and search
     const searchTerm = searchQuery.trim() || undefined;
-    const listFilters = {
+    const entryTypesListFilters = {
         page,
         pageSize,
         ...(searchTerm ? { search: searchTerm } : {}),
     };
-    const { data: entitiesData, isPending } = useQuery({
-        queryKey: queryKeys.entities.list(listFilters),
+    const { data: entryTypesData, isPending } = useQuery({
+        queryKey: queryKeys.entryTypes.list(entryTypesListFilters),
         queryFn: () =>
-            queryApi.queryList({
-                type: 'entity',
-                page,
-                pageSize,
-                ...(searchTerm && { search: searchTerm }),
+            entriesApi.entryClassesList({
+                showCount: true,
+                ...entryTypesListFilters,
             }),
+        refetchOnWindowFocus: false,
         meta: {
             showErrorToast: false,
             suppressNotification: true,
         },
     });
 
-    const entities = (entitiesData?.results as EntityData[]) ?? [];
+    const entryTypes = useMemo<EntryTypeData[]>(() => {
+        const results = entryTypesData?.results ?? [];
+        return results.map((c) => ({
+            id: c.subtype,
+            subtype: c.subtype,
+            count: c.count,
+        }));
+    }, [entryTypesData?.results]);
 
-    const handleEditClick = (entity: EntityData) => {
-        router.navigate({ to: `/manage/entities/${entity.id}` as any });
+    const handleEditClick = (entryType: EntryTypeData) => {
+        router.navigate({
+            to: `/manage/entry-types/${encodeURIComponent(entryType.subtype)}` as any,
+        });
     };
 
-    // Delete mutation
     const deleteMutation = useMutation({
-        mutationFn: (entityId: number) => entriesApi.entitiesDestroy({ entityId }),
+        mutationFn: (subtype: string) =>
+            entriesApi.entryClassesDestroy({ classSubtype: subtype }),
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.entities.lists() }],
-            successMessage: 'Entity deleted successfully',
+            invalidateQueries: [{ queryKey: queryKeys.entryTypes.lists() }],
+            successMessage: 'Entry type deleted successfully',
         },
     });
 
-    const handleDeleteEntities = async (entityIds: string[]) => {
+    const handleDeleteEntryTypes = async (entryTypeSubtypes: string[]) => {
         try {
             await Promise.all(
-                entityIds.map((entityId) =>
-                    deleteMutation.mutateAsync(Number(entityId)),
-                ),
+                entryTypeSubtypes.map((subtype) => deleteMutation.mutateAsync(subtype)),
             );
             clearSelection();
-        } catch {
-            // Error already handled by mutation meta/toasts
+        } catch (_error) {
+            // Error already handled by mutation
         }
     };
 
     const handleDeleteSelected = useCallback(() => {
-        if (selectedEntityIds.length === 0) return;
-        setBulkDeleteEntityIds(selectedEntityIds);
+        if (selectedEntryTypeIds.length === 0) return;
+        setBulkDeleteEntryTypeSubtypes(selectedEntryTypeIds);
         setBulkDeleteDialogOpen(true);
-    }, [selectedEntityIds]);
+    }, [selectedEntryTypeIds]);
 
     const handleEditSelected = useCallback(() => {
-        if (selectedEntityIds.length !== 1) return;
-        const entityId = selectedEntityIds[0];
-        router.navigate({ to: `/manage/entities/${entityId}` as any });
-    }, [selectedEntityIds, router]);
+        if (selectedEntryTypeIds.length !== 1) return;
+        const subtype = selectedEntryTypeIds[0];
+        router.navigate({
+            to: `/manage/entry-types/${encodeURIComponent(subtype)}` as any,
+        });
+    }, [selectedEntryTypeIds, router]);
 
     const handleViewActivitySelected = useCallback(() => {
-        if (selectedEntityIds.length !== 1) return;
-        const entityId = selectedEntityIds[0];
+        if (selectedEntryTypeIds.length !== 1) return;
+        const subtype = selectedEntryTypeIds[0];
         router.navigate({
-            to: `/manage/entities/${entityId}` as any,
+            to: `/manage/entry-types/${encodeURIComponent(subtype)}` as any,
             search: { tab: 'activity' } as any,
         });
-    }, [selectedEntityIds, router]);
+    }, [selectedEntryTypeIds, router]);
 
-    // Server-side search: entities are already filtered by API
     const totalPages = useMemo(
-        () => Math.max(1, entitiesData?.totalPages ?? 1),
-        [entitiesData?.totalPages],
+        () => Math.max(1, entryTypesData?.totalPages ?? 1),
+        [entryTypesData?.totalPages],
     );
+
     const handleSearchChange = useCallback(
         (value: string) => {
             router.navigate({
                 to: location.pathname as any,
                 search: {
                     ...searchAny,
-                    entities_page: 1,
-                    entities_search: value.trim() || undefined,
+                    entry_types_page: 1,
+                    entry_types_search: value.trim() || undefined,
                 } as any,
                 replace: true,
             });
@@ -169,15 +180,15 @@ export default function EntitiesPage() {
                     to: location.pathname as any,
                     search: {
                         ...searchAny,
-                        entities_page: 1,
-                        entities_pagesize: newPageSize,
+                        entry_types_page: 1,
+                        entry_types_pagesize: newPageSize,
                     } as any,
                     replace: true,
                 });
             } else if (newPage !== page) {
                 router.navigate({
                     to: location.pathname as any,
-                    search: { ...searchAny, entities_page: newPage } as any,
+                    search: { ...searchAny, entry_types_page: newPage } as any,
                     replace: true,
                 });
             }
@@ -185,7 +196,13 @@ export default function EntitiesPage() {
         [page, pageSize, searchAny, router, location.pathname],
     );
 
-    const columns = useMemo<ColumnDef<EntityData>[]>(
+    const formatCount = useCallback((count?: number) => {
+        if (count === undefined || count < 0) return '0';
+        if (count >= 100) return '99+';
+        return String(count);
+    }, []);
+
+    const columns = useMemo<ColumnDef<EntryTypeData>[]>(
         () => [
             {
                 id: 'select',
@@ -219,53 +236,30 @@ export default function EntitiesPage() {
                 accessorKey: 'subtype',
                 id: 'subtype',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} label='Type' />
+                    <DataTableColumnHeader column={column} label='Entry Type' />
                 ),
                 cell: ({ row }) => (
-                    <Badge variant='outline'>{row.original.subtype || 'unknown'}</Badge>
+                    <div className='font-medium'>{row.original.subtype}</div>
                 ),
             },
             {
-                accessorKey: 'name',
-                id: 'name',
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} label='Name' />
-                ),
-                cell: ({ row }) => (
-                    <div className='font-medium'>{row.original.name}</div>
-                ),
-            },
-            {
-                accessorKey: 'description',
-                id: 'description',
-                header: 'Description',
-                cell: ({ row }) => (
-                    <div className='text-muted-foreground max-w-md truncate'>
-                        {row.original.description || '-'}
-                    </div>
-                ),
-                enableSorting: false,
-            },
-            {
-                accessorKey: 'isPublic',
-                id: 'isPublic',
+                accessorKey: 'count',
+                id: 'count',
                 size: 28,
                 minSize: 28,
                 maxSize: 28,
-                header: 'Visibility',
+                header: 'Count',
                 cell: ({ row }) => (
-                    <Badge variant={row.original.isPublic ? 'default' : 'secondary'}>
-                        {row.original.isPublic ? 'Public' : 'Private'}
-                    </Badge>
+                    <Badge variant='secondary'>{formatCount(row.original.count)}</Badge>
                 ),
                 enableSorting: false,
             },
         ],
-        [],
+        [formatCount],
     );
 
     const table = useReactTable({
-        data: entities,
+        data: entryTypes,
         columns,
         state: {
             rowSelection,
@@ -291,14 +285,16 @@ export default function EntitiesPage() {
         pageCount: totalPages,
     });
 
-    const handleAddEntity = () => {
-        setAddEntityDialogOpen(true);
+    const handleAddEntryType = () => {
+        setAddEntryTypeDialogOpen(true);
     };
 
-    const handleEntityAdded = (newEntity: Entity) => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.entities.lists() });
-        if (newEntity.id) {
-            router.navigate({ to: `/manage/entities/${newEntity.id}` as any });
+    const handleEntryTypeAdded = (newEntryType: EntryClass) => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.entryTypes.lists() });
+        if (newEntryType.subtype) {
+            router.navigate({
+                to: `/manage/entry-types/${encodeURIComponent(newEntryType.subtype)}` as any,
+            });
         }
     };
 
@@ -306,18 +302,18 @@ export default function EntitiesPage() {
         <AdminPageLayout>
             <div className='w-full h-full flex flex-col space-y-4'>
                 <PageHeader
-                    title='Entities'
-                    description='Manage entities and their properties'
+                    title='Entry Types'
+                    description='Manage entry type classifications'
                     actions={
                         isAdmin ? (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button onClick={handleAddEntity}>
+                                    <Button onClick={handleAddEntryType}>
                                         <Plus />
-                                        Add Entity
+                                        Add Entry
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Create a new entity</TooltipContent>
+                                <TooltipContent>Create a new entry type</TooltipContent>
                             </Tooltip>
                         ) : undefined
                     }
@@ -333,10 +329,12 @@ export default function EntitiesPage() {
                                 table={table}
                                 showViewOptions
                                 onRowClick={handleEditClick}
-                                getRowHref={(entity) => `/manage/entities/${entity.id}`}
+                                getRowHref={(entryType) =>
+                                    `/manage/entry-types/${encodeURIComponent(entryType.subtype)}`
+                                }
                             >
                                 <ActionBarSearch
-                                    placeholder='Search entities...'
+                                    placeholder='Search entry types...'
                                     value={searchQuery}
                                     onDebouncedChange={handleSearchChange}
                                     onSubmit={handleSearchChange}
@@ -347,20 +345,20 @@ export default function EntitiesPage() {
                 </div>
             </div>
             <ActionBar
-                open={selectedEntityIds.length > 0}
+                open={selectedEntryTypeIds.length > 0}
                 onOpenChange={(open) => {
                     if (!open) clearSelection();
                 }}
             >
                 <ActionBarSelection>
-                    {selectedEntityIds.length} entit
-                    {selectedEntityIds.length !== 1 ? 'ies' : 'y'} selected
+                    {selectedEntryTypeIds.length} entry type
+                    {selectedEntryTypeIds.length !== 1 ? 's' : ''} selected
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
                     <ActionBarItem
                         onClick={handleEditSelected}
-                        disabled={isPending || selectedEntityIds.length !== 1}
+                        disabled={isPending || selectedEntryTypeIds.length !== 1}
                     >
                         <PencilIcon size={18} weight='bold' />
                         Edit
@@ -368,7 +366,7 @@ export default function EntitiesPage() {
                     {isAdmin && (
                         <ActionBarItem
                             onClick={handleViewActivitySelected}
-                            disabled={isPending || selectedEntityIds.length !== 1}
+                            disabled={isPending || selectedEntryTypeIds.length !== 1}
                         >
                             <ClockCounterClockwiseIcon size={18} weight='bold' />
                             View Activity
@@ -377,7 +375,7 @@ export default function EntitiesPage() {
                     {isAdmin && (
                         <ActionBarItem
                             onClick={handleDeleteSelected}
-                            disabled={isPending || selectedEntityIds.length === 0}
+                            disabled={isPending || selectedEntryTypeIds.length === 0}
                             className='text-destructive'
                         >
                             <TrashIcon size={18} weight='bold' />
@@ -390,36 +388,29 @@ export default function EntitiesPage() {
                     Clear
                 </ActionBarClose>
             </ActionBar>
-            <AddEntityDialog
-                open={addEntityDialogOpen}
-                onOpenChange={setAddEntityDialogOpen}
-                onAdd={handleEntityAdded}
+            <AddEntryTypeDialog
+                open={addEntryTypeDialogOpen}
+                onOpenChange={setAddEntryTypeDialogOpen}
+                onAdd={handleEntryTypeAdded}
             />
             <ConfirmDeletionDialog
                 open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
                     setBulkDeleteDialogOpen(open);
                     if (!open) {
-                        setBulkDeleteEntityIds([]);
+                        setBulkDeleteEntryTypeSubtypes([]);
                     }
                 }}
                 onConfirm={() => {
-                    handleDeleteEntities(bulkDeleteEntityIds);
-                    setBulkDeleteEntityIds([]);
+                    handleDeleteEntryTypes(bulkDeleteEntryTypeSubtypes);
+                    setBulkDeleteEntryTypeSubtypes([]);
                 }}
                 confirmText={
-                    bulkDeleteEntityIds.length === 1
-                        ? (() => {
-                              const entity = entities.find(
-                                  (e) => String(e.id) === bulkDeleteEntityIds[0],
-                              );
-                              return entity
-                                  ? `${entity.subtype}:${entity.name}`
-                                  : 'DELETE';
-                          })()
-                        : `DELETE ${bulkDeleteEntityIds.length}`
+                    bulkDeleteEntryTypeSubtypes.length === 1
+                        ? bulkDeleteEntryTypeSubtypes[0]
+                        : `DELETE ${bulkDeleteEntryTypeSubtypes.length}`
                 }
-                text={`Are you sure you want to delete ${bulkDeleteEntityIds.length} entit${bulkDeleteEntityIds.length > 1 ? 'ies' : 'y'}? This will keep their related notes but remove the links to them.`}
+                text={`Are you sure you want to delete ${bulkDeleteEntryTypeSubtypes.length} entry type${bulkDeleteEntryTypeSubtypes.length > 1 ? 's' : ''}? This action is irreversible.`}
             />
         </AdminPageLayout>
     );

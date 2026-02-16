@@ -3,7 +3,7 @@ import { lazy } from 'react';
 import { z } from 'zod';
 
 const EntryTypeSettingsPage = lazy(
-    () => import('@/components/domain/admin/pages/EntryTypeSettingsPage'),
+    () => import('@/components/domain/admin/entry-type/entry-type-settings-page'),
 );
 
 export const Route = createFileRoute(
