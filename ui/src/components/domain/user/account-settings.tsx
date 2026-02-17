@@ -32,7 +32,9 @@ import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { UserConfig, UserRetrieve } from '@/services/cradle/models';
 import { PRESET_THEMES } from '@/utils/themes';
-import SnippetList, { SnippetListRef } from '@components/base/snippet-list/snippet-list';
+import SnippetList, {
+    SnippetListRef,
+} from '@components/base/snippet-list/snippet-list';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ClockCounterClockwiseIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -43,14 +45,39 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import ActiveSessions from './ActiveSessions';
+import ActiveSessions from './active-sessions';
 
 const ACCOUNT_SETTINGS_ITEMS = [
-    { id: 'security', label: 'Security', icon: Lock, description: 'Authentication, API keys, and account security' },
-    { id: 'sessions', label: 'Sessions', icon: ClockCounterClockwiseIcon, description: 'Manage your active sessions across devices' },
-    { id: 'oauth', label: 'OAuth', icon: Link, description: 'Link or unlink external identity providers' },
-    { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Customize your visual appearance and theme' },
-    { id: 'editor', label: 'Editor', icon: PencilSimpleIcon, description: 'Configure editor behavior, templates, and snippets' },
+    {
+        id: 'security',
+        label: 'Security',
+        icon: Lock,
+        description: 'Authentication, API keys, and account security',
+    },
+    {
+        id: 'sessions',
+        label: 'Sessions',
+        icon: ClockCounterClockwiseIcon,
+        description: 'Manage your active sessions across devices',
+    },
+    {
+        id: 'oauth',
+        label: 'OAuth',
+        icon: Link,
+        description: 'Link or unlink external identity providers',
+    },
+    {
+        id: 'appearance',
+        label: 'Appearance',
+        icon: Palette,
+        description: 'Customize your visual appearance and theme',
+    },
+    {
+        id: 'editor',
+        label: 'Editor',
+        icon: PencilSimpleIcon,
+        description: 'Configure editor behavior, templates, and snippets',
+    },
 ];
 
 interface AccountSettingsProps {
@@ -633,7 +660,8 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     };
 
     const currentTab =
-        ACCOUNT_SETTINGS_ITEMS.find((item) => item.id === tab) || ACCOUNT_SETTINGS_ITEMS[0];
+        ACCOUNT_SETTINGS_ITEMS.find((item) => item.id === tab) ||
+        ACCOUNT_SETTINGS_ITEMS[0];
     const currentDescription = currentTab?.description ?? '';
 
     return (

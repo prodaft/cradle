@@ -3,13 +3,6 @@ import PageHeader from '@/components/base/page-header';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import {
     ActionBar,
     ActionBarClose,
     ActionBarGroup,
@@ -20,6 +13,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
@@ -405,10 +405,12 @@ export default function UsersPage() {
                         <DialogDescription>Create a new user account</DialogDescription>
                     </DialogHeader>
                     <div className='no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4'>
-                        <AddUserForm onAdd={(newUser: UserRetrieve) => {
-                            handleUserAdded(newUser);
-                            setAddUserDialogOpen(false);
-                        }} />
+                        <AddUserForm
+                            onAdd={(newUser: UserRetrieve) => {
+                                handleUserAdded(newUser);
+                                setAddUserDialogOpen(false);
+                            }}
+                        />
                     </div>
                 </DialogContent>
             </Dialog>

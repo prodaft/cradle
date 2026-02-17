@@ -3,13 +3,6 @@ import PageHeader from '@/components/base/page-header';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import {
     ActionBar,
     ActionBarClose,
     ActionBarGroup,
@@ -20,6 +13,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
@@ -42,7 +42,7 @@ import {
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import ConfirmDeletionDialog from '../../../dialogs/base/confirm-deletion-dialog';
-import AddEntityForm from './add-entity-form';
+import AddEntityForm from './entity-form';
 
 interface EntityData extends Entity {
     id: number;
@@ -402,10 +402,12 @@ export default function EntitiesPage() {
                         <DialogTitle>New Entity</DialogTitle>
                         <DialogDescription>Create new entity</DialogDescription>
                     </DialogHeader>
-                    <AddEntityForm onAdd={(newEntity: Entity) => {
-                        handleEntityAdded(newEntity);
-                        setAddEntityDialogOpen(false);
-                    }} />
+                    <AddEntityForm
+                        onAdd={(newEntity: Entity) => {
+                            handleEntityAdded(newEntity);
+                            setAddEntityDialogOpen(false);
+                        }}
+                    />
                 </DialogContent>
             </Dialog>
             <ConfirmDeletionDialog

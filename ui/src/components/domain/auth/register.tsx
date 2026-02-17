@@ -21,7 +21,12 @@ import { useAuthActions } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowUUpLeftIcon, EyeIcon, EyeSlashIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import {
+    ArrowUUpLeftIcon,
+    EyeIcon,
+    EyeSlashIcon,
+    WarningCircleIcon,
+} from '@phosphor-icons/react';
 import { UserConfig } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
@@ -366,7 +371,9 @@ export default function Register() {
                                                                 ? 'text'
                                                                 : 'password'
                                                         }
-                                                        aria-invalid={fieldState.invalid}
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
                                                         autoComplete='new-password'
                                                         required
                                                         disabled={isSignupDisabled}
@@ -431,7 +438,9 @@ export default function Register() {
                                                                 ? 'text'
                                                                 : 'password'
                                                         }
-                                                        aria-invalid={fieldState.invalid}
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
                                                         autoComplete='new-password'
                                                         required
                                                         disabled={isSignupDisabled}

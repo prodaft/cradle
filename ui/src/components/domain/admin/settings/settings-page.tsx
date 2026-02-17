@@ -19,11 +19,36 @@ const SETTING_COMPONENTS: Record<string, React.ComponentType> = {
 };
 
 const MANAGEMENT_ITEMS = [
-    { id: 'note', label: 'Note', icon: FileText, description: 'Configure note-related settings and preferences' },
-    { id: 'files', label: 'File', icon: Archive, description: 'Manage file upload and storage settings' },
-    { id: 'graph', label: 'Graph', icon: Network, description: 'Customize graph visualization and behavior' },
-    { id: 'entries', label: 'Entry', icon: Layers, description: 'Configure entry types and properties' },
-    { id: 'users', label: 'New User', icon: UserPlus, description: 'Manage user creation and permissions' },
+    {
+        id: 'note',
+        label: 'Note',
+        icon: FileText,
+        description: 'Configure note-related settings and preferences',
+    },
+    {
+        id: 'files',
+        label: 'File',
+        icon: Archive,
+        description: 'Manage file upload and storage settings',
+    },
+    {
+        id: 'graph',
+        label: 'Graph',
+        icon: Network,
+        description: 'Customize graph visualization and behavior',
+    },
+    {
+        id: 'entries',
+        label: 'Entry',
+        icon: Layers,
+        description: 'Configure entry types and properties',
+    },
+    {
+        id: 'users',
+        label: 'New User',
+        icon: UserPlus,
+        description: 'Manage user creation and permissions',
+    },
 ];
 
 export default function ManagementPage() {

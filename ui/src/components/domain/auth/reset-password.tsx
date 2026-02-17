@@ -160,8 +160,7 @@ export default function ResetPassword() {
                                                             fieldState.invalid
                                                         }
                                                         disabled={
-                                                            form.formState
-                                                                .isSubmitting
+                                                            form.formState.isSubmitting
                                                         }
                                                     />
                                                     <InputGroupAddon align='inline-end'>
@@ -229,8 +228,7 @@ export default function ResetPassword() {
                                                             fieldState.invalid
                                                         }
                                                         disabled={
-                                                            form.formState
-                                                                .isSubmitting
+                                                            form.formState.isSubmitting
                                                         }
                                                     />
                                                     <InputGroupAddon align='inline-end'>

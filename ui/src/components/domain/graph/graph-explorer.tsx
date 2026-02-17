@@ -8,8 +8,8 @@ import { logger } from '@/utils/logger';
 import { ComponentType, useCallback, useMemo, useRef, useState } from 'react';
 import type Sigma from 'sigma';
 import Graph from './graph';
-import { filterGraph, Node } from './graphFilterUtils';
 import GraphQuery from './graph-query';
+import { filterGraph, Node } from './graphFilterUtils';
 
 interface GraphConfig {
     nodeRadiusCoefficient: number;

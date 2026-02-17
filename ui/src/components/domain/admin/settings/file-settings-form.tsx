@@ -20,6 +20,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
+import { SelectOption } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
@@ -30,7 +31,6 @@ import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { SelectOption } from '@/types';
 
 type SubtypeOption = SelectOption<string>;
 

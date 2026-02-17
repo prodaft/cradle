@@ -17,8 +17,18 @@ import ActivityList from '../../activity/activity-list';
 import EntryTypeForm from './entry-type-form';
 
 const ENTRY_TYPE_SETTINGS_ITEMS = [
-    { id: 'settings', label: 'Settings', icon: GearIcon, description: 'Manage entry type configuration' },
-    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon, description: 'View entry type activity and logs' },
+    {
+        id: 'settings',
+        label: 'Settings',
+        icon: GearIcon,
+        description: 'Manage entry type configuration',
+    },
+    {
+        id: 'activity',
+        label: 'Activity',
+        icon: ClockCounterClockwiseIcon,
+        description: 'View entry type activity and logs',
+    },
 ];
 
 export default function EntryTypeSettingsPage() {

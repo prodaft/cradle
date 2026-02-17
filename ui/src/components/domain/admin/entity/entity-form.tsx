@@ -28,9 +28,9 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
+import { SelectOption } from '@/types';
 import { z } from 'zod';
 import OfflineIndicator from '../../../feedback/offline-indicator';
-import { SelectOption } from '@/types';
 
 interface EntityFormProps {
     id?: number | string | null;

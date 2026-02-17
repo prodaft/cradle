@@ -3,13 +3,6 @@ import PageHeader from '@/components/base/page-header';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import {
     ActionBar,
     ActionBarClose,
     ActionBarGroup,
@@ -20,6 +13,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
@@ -394,17 +394,22 @@ export default function EntryTypesPage() {
                     Clear
                 </ActionBarClose>
             </ActionBar>
-            <Dialog open={addEntryTypeDialogOpen} onOpenChange={setAddEntryTypeDialogOpen}>
+            <Dialog
+                open={addEntryTypeDialogOpen}
+                onOpenChange={setAddEntryTypeDialogOpen}
+            >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>New Entry</DialogTitle>
                         <DialogDescription>Create new entry class</DialogDescription>
                     </DialogHeader>
                     <div className='no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4'>
-                        <AddEntryForm onAdd={(newEntryType: EntryClass) => {
-                            handleEntryTypeAdded(newEntryType);
-                            setAddEntryTypeDialogOpen(false);
-                        }} />
+                        <AddEntryForm
+                            onAdd={(newEntryType: EntryClass) => {
+                                handleEntryTypeAdded(newEntryType);
+                                setAddEntryTypeDialogOpen(false);
+                            }}
+                        />
                     </div>
                 </DialogContent>
             </Dialog>

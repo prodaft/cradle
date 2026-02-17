@@ -189,26 +189,14 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                                 type='button'
                                 onClick={() => setShowPassword(!showPassword)}
                                 aria-label={
-                                    showPassword
-                                        ? 'Hide password'
-                                        : 'Show password'
+                                    showPassword ? 'Hide password' : 'Show password'
                                 }
-                                title={
-                                    showPassword
-                                        ? 'Hide password'
-                                        : 'Show password'
-                                }
+                                title={showPassword ? 'Hide password' : 'Show password'}
                             >
                                 {showPassword ? (
-                                    <EyeSlashIcon
-                                        className='size-4'
-                                        weight='bold'
-                                    />
+                                    <EyeSlashIcon className='size-4' weight='bold' />
                                 ) : (
-                                    <EyeIcon
-                                        className='size-4'
-                                        weight='bold'
-                                    />
+                                    <EyeIcon className='size-4' weight='bold' />
                                 )}
                             </InputGroupButton>
                         </InputGroupAddon>

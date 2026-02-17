@@ -37,6 +37,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
+import { SelectOption } from '@/types';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -49,7 +50,6 @@ import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import OfflineIndicator from '../../../feedback/offline-indicator';
-import { SelectOption } from '@/types';
 
 interface EntryTypeFormProps {
     id?: string | null;

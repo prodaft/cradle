@@ -5,8 +5,8 @@ import { ComponentType, useMemo, useState } from 'react';
 import type Sigma from 'sigma';
 import ExplorerPanel from './explorer-panel';
 import GraphFilters from './graph-filters';
-import { Edge, Node } from './graphFilterUtils';
 import GraphSettings from './graph-settings';
+import { Edge, Node } from './graphFilterUtils';
 
 interface Entry {
     id: string;

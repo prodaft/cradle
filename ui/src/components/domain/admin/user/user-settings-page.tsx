@@ -21,12 +21,42 @@ import {
 import AdminUserSettings from './user-settings-tabs';
 
 const USER_SETTINGS_ITEMS = [
-    { id: 'account', label: 'Account', icon: UserIcon, description: 'Manage user account information and basic settings' },
-    { id: 'administrative', label: 'Administrative', icon: GearSixIcon, description: 'Configure user permissions and administrative settings' },
-    { id: 'permissions', label: 'Permissions', icon: LockKeyIcon, description: 'Manage entity access permissions for this user' },
-    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon, description: 'View user activity and audit logs' },
-    { id: 'sessions', label: 'Sessions', icon: PasswordIcon, description: 'View and manage active user sessions' },
-    { id: 'management', label: 'Management', icon: GearSixIcon, description: 'Administrative actions for user management' },
+    {
+        id: 'account',
+        label: 'Account',
+        icon: UserIcon,
+        description: 'Manage user account information and basic settings',
+    },
+    {
+        id: 'administrative',
+        label: 'Administrative',
+        icon: GearSixIcon,
+        description: 'Configure user permissions and administrative settings',
+    },
+    {
+        id: 'permissions',
+        label: 'Permissions',
+        icon: LockKeyIcon,
+        description: 'Manage entity access permissions for this user',
+    },
+    {
+        id: 'activity',
+        label: 'Activity',
+        icon: ClockCounterClockwiseIcon,
+        description: 'View user activity and audit logs',
+    },
+    {
+        id: 'sessions',
+        label: 'Sessions',
+        icon: PasswordIcon,
+        description: 'View and manage active user sessions',
+    },
+    {
+        id: 'management',
+        label: 'Management',
+        icon: GearSixIcon,
+        description: 'Administrative actions for user management',
+    },
 ];
 
 export default function UserSettingsPage() {

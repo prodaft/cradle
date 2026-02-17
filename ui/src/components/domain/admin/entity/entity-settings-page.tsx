@@ -18,9 +18,24 @@ import EntityForm from './entity-form';
 import EntityPermissionsForm from './entity-permissions-form';
 
 const ENTITY_SETTINGS_ITEMS = [
-    { id: 'settings', label: 'Settings', icon: GearIcon, description: 'Manage entity properties and settings' },
-    { id: 'permissions', label: 'Permissions', icon: Shield, description: 'Manage user access permissions' },
-    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon, description: 'View entity activity and audit logs' },
+    {
+        id: 'settings',
+        label: 'Settings',
+        icon: GearIcon,
+        description: 'Manage entity properties and settings',
+    },
+    {
+        id: 'permissions',
+        label: 'Permissions',
+        icon: Shield,
+        description: 'Manage user access permissions',
+    },
+    {
+        id: 'activity',
+        label: 'Activity',
+        icon: ClockCounterClockwiseIcon,
+        description: 'View entity activity and audit logs',
+    },
 ];
 
 export default function EntitySettingsPage() {

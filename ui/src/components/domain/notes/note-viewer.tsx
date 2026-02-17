@@ -41,12 +41,12 @@ import ActivityList from '../activity/activity-list';
 import { EnrichmentRequestDialog } from '../enrichment';
 import GraphExplorer from '../graph/graph-explorer';
 import NoteGraphSearch from '../graph/note-graph-search';
-import ReferenceTree from './reference-tree';
 import ActionsDropdown from './actions-dropdown';
 import { ViewMode } from './constants';
 import FilesView from './files-view';
 import FindReplace from './find-replace';
 import NoteOutline from './note-outline';
+import ReferenceTree from './reference-tree';
 import RichEditor from './rich-editor';
 import StaticRender from './static-render';
 

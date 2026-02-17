@@ -21,6 +21,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/use-api';
+import { SelectOption } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { startCase } from 'lodash';
@@ -28,7 +29,6 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { SelectOption } from '@/types';
 
 interface EnrichmentSettingsFormProps {
     enrichment_class: string;
