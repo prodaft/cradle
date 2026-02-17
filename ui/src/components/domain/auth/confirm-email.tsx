@@ -1,7 +1,7 @@
 import useApi from '@/hooks/api/use-api';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 /**
@@ -21,11 +21,15 @@ export default function ConfirmEmail() {
         onSuccess: () => toast.success('Email confirmed successfully.'),
     });
 
+    const calledRef = useRef(false);
+
     useEffect(() => {
+        if (calledRef.current) return;
         if (!token) {
             toast.error('No confirmation token provided.');
             return;
         }
+        calledRef.current = true;
         confirmEmail(token);
     }, [token, confirmEmail]);
 

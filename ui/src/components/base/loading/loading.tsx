@@ -1,6 +1,6 @@
 import { Spinner } from '@/components/ui/spinner';
 import React from 'react';
-import Logo from '../Logo/Logo';
+import Logo from '../logo/logo';
 
 interface LoadingProps {
     logo?: boolean;

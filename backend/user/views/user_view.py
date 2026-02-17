@@ -545,7 +545,8 @@ class EmailConfirm(APIView):
             raise ValidationException(detail="Email confirmation token has expired a new one was sent.")
 
         user.email_confirmed = True
-        user.email_confirmation_token = ""
+        user.email_confirmation_token = None
+        user.email_confirmation_token_expiry = None
         user.save()
 
         return Response({"message": "Email confirmed."}, status=status.HTTP_200_OK)

@@ -281,18 +281,18 @@ class EmailConfirmSerializer(serializers.Serializer):
     def validate(self, data):
         token = data["token"]
 
+        if not token:
+            raise ValidationError("We had trouble confirming with this token.")
+
         try:
             self.user = CradleUser.objects.get(email_confirmation_token=token)
-        except CradleUser.DoesNotExist:
+        except (CradleUser.DoesNotExist, CradleUser.MultipleObjectsReturned):
             raise ValidationError("We had trouble confirming with this token.")
 
         if self.user.email_confirmed:
             raise ValidationError("We had trouble confirming with this token.")
 
-        if not token or self.user.email_confirmation_token != token:
-            raise ValidationError("We had trouble confirming with this token.")
-
-        return True
+        return data
 
 
 class Enable2FASerializer(serializers.Serializer):

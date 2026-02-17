@@ -10,19 +10,27 @@ import {
     FieldSeparator,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from '@/components/ui/input-group';
 import useApi from '@/hooks/api/use-api';
 import { useAuthActions } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { ArrowUUpLeftIcon, EyeIcon, EyeSlashIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { UserConfig } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+
+const GlobeVisualization = lazy(() => import('./globe-visualization'));
 
 type FormData = z.infer<typeof registerSchema>;
 
@@ -62,6 +70,8 @@ const registerSchema = z
  * On error, displays an error message.
  */
 export default function Register() {
+    const [showPassword, setShowPassword] = useState(false);
+    const [showPasswordCheck, setShowPasswordCheck] = useState(false);
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
@@ -239,9 +249,9 @@ export default function Register() {
     }
 
     return (
-        <div className='grid min-h-svh lg:grid-cols-2'>
+        <div className='relative min-h-svh w-full overflow-hidden'>
             {/* Left Column - Form */}
-            <div className='flex flex-col gap-4 p-6 md:p-10 relative'>
+            <div className='relative z-10 flex h-full min-h-svh flex-col gap-4 bg-background p-6 md:p-10 lg:w-1/2'>
                 {/* Branding */}
                 <div className='flex justify-between items-center gap-2'>
                     <Link to='/' className='flex items-center gap-2 font-medium'>
@@ -347,15 +357,53 @@ export default function Register() {
                                                 <FieldLabel htmlFor={field.name}>
                                                     Password
                                                 </FieldLabel>
-                                                <Input
-                                                    {...field}
-                                                    id={field.name}
-                                                    type='password'
-                                                    aria-invalid={fieldState.invalid}
-                                                    autoComplete='new-password'
-                                                    required
-                                                    disabled={isSignupDisabled}
-                                                />
+                                                <InputGroup>
+                                                    <InputGroupInput
+                                                        {...field}
+                                                        id={field.name}
+                                                        type={
+                                                            showPassword
+                                                                ? 'text'
+                                                                : 'password'
+                                                        }
+                                                        aria-invalid={fieldState.invalid}
+                                                        autoComplete='new-password'
+                                                        required
+                                                        disabled={isSignupDisabled}
+                                                    />
+                                                    <InputGroupAddon align='inline-end'>
+                                                        <InputGroupButton
+                                                            type='button'
+                                                            onClick={() =>
+                                                                setShowPassword(
+                                                                    !showPassword,
+                                                                )
+                                                            }
+                                                            aria-label={
+                                                                showPassword
+                                                                    ? 'Hide password'
+                                                                    : 'Show password'
+                                                            }
+                                                            title={
+                                                                showPassword
+                                                                    ? 'Hide password'
+                                                                    : 'Show password'
+                                                            }
+                                                        >
+                                                            {showPassword ? (
+                                                                <EyeSlashIcon
+                                                                    className='size-4'
+                                                                    weight='bold'
+                                                                />
+                                                            ) : (
+                                                                <EyeIcon
+                                                                    className='size-4'
+                                                                    weight='bold'
+                                                                />
+                                                            )}
+                                                        </InputGroupButton>
+                                                    </InputGroupAddon>
+                                                </InputGroup>
                                                 {fieldState.invalid && (
                                                     <FieldError
                                                         errors={[fieldState.error]}
@@ -374,15 +422,53 @@ export default function Register() {
                                                 <FieldLabel htmlFor={field.name}>
                                                     Confirm Password
                                                 </FieldLabel>
-                                                <Input
-                                                    {...field}
-                                                    id={field.name}
-                                                    type='password'
-                                                    aria-invalid={fieldState.invalid}
-                                                    autoComplete='new-password'
-                                                    required
-                                                    disabled={isSignupDisabled}
-                                                />
+                                                <InputGroup>
+                                                    <InputGroupInput
+                                                        {...field}
+                                                        id={field.name}
+                                                        type={
+                                                            showPasswordCheck
+                                                                ? 'text'
+                                                                : 'password'
+                                                        }
+                                                        aria-invalid={fieldState.invalid}
+                                                        autoComplete='new-password'
+                                                        required
+                                                        disabled={isSignupDisabled}
+                                                    />
+                                                    <InputGroupAddon align='inline-end'>
+                                                        <InputGroupButton
+                                                            type='button'
+                                                            onClick={() =>
+                                                                setShowPasswordCheck(
+                                                                    !showPasswordCheck,
+                                                                )
+                                                            }
+                                                            aria-label={
+                                                                showPasswordCheck
+                                                                    ? 'Hide password'
+                                                                    : 'Show password'
+                                                            }
+                                                            title={
+                                                                showPasswordCheck
+                                                                    ? 'Hide password'
+                                                                    : 'Show password'
+                                                            }
+                                                        >
+                                                            {showPasswordCheck ? (
+                                                                <EyeSlashIcon
+                                                                    className='size-4'
+                                                                    weight='bold'
+                                                                />
+                                                            ) : (
+                                                                <EyeIcon
+                                                                    className='size-4'
+                                                                    weight='bold'
+                                                                />
+                                                            )}
+                                                        </InputGroupButton>
+                                                    </InputGroupAddon>
+                                                </InputGroup>
                                                 {fieldState.invalid && (
                                                     <FieldError
                                                         errors={[fieldState.error]}
@@ -504,13 +590,20 @@ export default function Register() {
                 </div>
             </div>
 
-            {/* Right Column - Image */}
-            <div className='bg-muted relative hidden lg:block'>
-                <img
-                    src='/auth-image.jpeg'
-                    alt='Image'
-                    className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale'
-                />
+            {/* Right Column - Globe */}
+            <div className='absolute bottom-0 right-0 top-0 hidden w-[65%] bg-muted dark:bg-black lg:block'>
+                <Suspense fallback={null}>
+                    <GlobeVisualization
+                        showSatellites={false}
+                        showArcs={true}
+                        showHexPolygons={true}
+                        showAtmosphere={true}
+                        autoRotate={true}
+                        autoRotateSpeed={0.5}
+                        initialView={{ lat: 20, lng: 0, altitude: 3 }}
+                        viewOffsetX={120}
+                    />
+                </Suspense>
             </div>
         </div>
     );

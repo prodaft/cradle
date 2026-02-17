@@ -6,13 +6,19 @@ import {
     FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from '@/components/ui/input-group';
 import useApi from '@/hooks/api/use-api';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter, useSearch } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -32,6 +38,8 @@ type FormData = z.infer<typeof resetPasswordSchema>;
  * ResetPassword component - renders the change password form
  */
 export default function ResetPassword() {
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const search = useSearch({ from: '/reset-password' });
     const searchAny = search as any;
     const token = searchAny?.token as string | undefined;
@@ -138,16 +146,57 @@ export default function ResetPassword() {
                                                 <FieldLabel htmlFor={field.name}>
                                                     Password
                                                 </FieldLabel>
-                                                <Input
-                                                    {...field}
-                                                    id={field.name}
-                                                    type='password'
-                                                    autoComplete='new-password'
-                                                    aria-invalid={fieldState.invalid}
-                                                    disabled={
-                                                        form.formState.isSubmitting
-                                                    }
-                                                />
+                                                <InputGroup>
+                                                    <InputGroupInput
+                                                        {...field}
+                                                        id={field.name}
+                                                        type={
+                                                            showPassword
+                                                                ? 'text'
+                                                                : 'password'
+                                                        }
+                                                        autoComplete='new-password'
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        disabled={
+                                                            form.formState
+                                                                .isSubmitting
+                                                        }
+                                                    />
+                                                    <InputGroupAddon align='inline-end'>
+                                                        <InputGroupButton
+                                                            type='button'
+                                                            onClick={() =>
+                                                                setShowPassword(
+                                                                    !showPassword,
+                                                                )
+                                                            }
+                                                            aria-label={
+                                                                showPassword
+                                                                    ? 'Hide password'
+                                                                    : 'Show password'
+                                                            }
+                                                            title={
+                                                                showPassword
+                                                                    ? 'Hide password'
+                                                                    : 'Show password'
+                                                            }
+                                                        >
+                                                            {showPassword ? (
+                                                                <EyeSlashIcon
+                                                                    className='size-4'
+                                                                    weight='bold'
+                                                                />
+                                                            ) : (
+                                                                <EyeIcon
+                                                                    className='size-4'
+                                                                    weight='bold'
+                                                                />
+                                                            )}
+                                                        </InputGroupButton>
+                                                    </InputGroupAddon>
+                                                </InputGroup>
                                                 {fieldState.invalid && (
                                                     <FieldError
                                                         errors={[fieldState.error]}
@@ -166,16 +215,57 @@ export default function ResetPassword() {
                                                 <FieldLabel htmlFor={field.name}>
                                                     Confirm Password
                                                 </FieldLabel>
-                                                <Input
-                                                    {...field}
-                                                    id={field.name}
-                                                    type='password'
-                                                    autoComplete='new-password'
-                                                    aria-invalid={fieldState.invalid}
-                                                    disabled={
-                                                        form.formState.isSubmitting
-                                                    }
-                                                />
+                                                <InputGroup>
+                                                    <InputGroupInput
+                                                        {...field}
+                                                        id={field.name}
+                                                        type={
+                                                            showConfirmPassword
+                                                                ? 'text'
+                                                                : 'password'
+                                                        }
+                                                        autoComplete='new-password'
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        disabled={
+                                                            form.formState
+                                                                .isSubmitting
+                                                        }
+                                                    />
+                                                    <InputGroupAddon align='inline-end'>
+                                                        <InputGroupButton
+                                                            type='button'
+                                                            onClick={() =>
+                                                                setShowConfirmPassword(
+                                                                    !showConfirmPassword,
+                                                                )
+                                                            }
+                                                            aria-label={
+                                                                showConfirmPassword
+                                                                    ? 'Hide password'
+                                                                    : 'Show password'
+                                                            }
+                                                            title={
+                                                                showConfirmPassword
+                                                                    ? 'Hide password'
+                                                                    : 'Show password'
+                                                            }
+                                                        >
+                                                            {showConfirmPassword ? (
+                                                                <EyeSlashIcon
+                                                                    className='size-4'
+                                                                    weight='bold'
+                                                                />
+                                                            ) : (
+                                                                <EyeIcon
+                                                                    className='size-4'
+                                                                    weight='bold'
+                                                                />
+                                                            )}
+                                                        </InputGroupButton>
+                                                    </InputGroupAddon>
+                                                </InputGroup>
                                                 {fieldState.invalid && (
                                                     <FieldError
                                                         errors={[fieldState.error]}

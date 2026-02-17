@@ -7,8 +7,12 @@ import {
     FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { InputGroup, InputGroupInput } from '@/components/ui/input-group';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from '@/components/ui/input-group';
 import {
     Select,
     SelectContent,
@@ -19,9 +23,11 @@ import {
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/use-api';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { UserRetrieve } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import bytes from 'bytes';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -61,6 +67,7 @@ const addUserSchema = z.object({
 type FormData = z.infer<typeof addUserSchema>;
 
 export default function AddUserForm({ onAdd }: AddUserFormProps) {
+    const [showPassword, setShowPassword] = useState(false);
     const { usersApi } = useApi();
 
     const {
@@ -168,14 +175,44 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                         Password
                         <span className='text-destructive ml-1'>*</span>
                     </FieldLabel>
-                    <Input
-                        id='password'
-                        type='password'
-                        placeholder='Password'
-                        {...register('password')}
-                        aria-invalid={Boolean(errors.password)}
-                        required
-                    />
+                    <InputGroup>
+                        <InputGroupInput
+                            id='password'
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder='Password'
+                            {...register('password')}
+                            aria-invalid={Boolean(errors.password)}
+                            required
+                        />
+                        <InputGroupAddon align='inline-end'>
+                            <InputGroupButton
+                                type='button'
+                                onClick={() => setShowPassword(!showPassword)}
+                                aria-label={
+                                    showPassword
+                                        ? 'Hide password'
+                                        : 'Show password'
+                                }
+                                title={
+                                    showPassword
+                                        ? 'Hide password'
+                                        : 'Show password'
+                                }
+                            >
+                                {showPassword ? (
+                                    <EyeSlashIcon
+                                        className='size-4'
+                                        weight='bold'
+                                    />
+                                ) : (
+                                    <EyeIcon
+                                        className='size-4'
+                                        weight='bold'
+                                    />
+                                )}
+                            </InputGroupButton>
+                        </InputGroupAddon>
+                    </InputGroup>
                     <FieldDescription>
                         Minimum 8 characters recommended
                     </FieldDescription>

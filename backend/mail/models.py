@@ -60,7 +60,7 @@ class TemplatedMail(Mail):
 class ResetPasswordMail(TemplatedMail):
     def __init__(self, user) -> None:
         self.user = user
-        reset_url = f"{settings.FRONTEND_URL}/#reset-password?token={user.password_reset_token}"
+        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={user.password_reset_token}"
         params = {
             "user": user,
             "reset_url": reset_url,
@@ -78,7 +78,7 @@ class ResetPasswordMail(TemplatedMail):
 class ConfirmationMail(TemplatedMail):
     def __init__(self, user) -> None:
         self.user = user
-        confirm_url = f"{settings.FRONTEND_URL}/#confirm-email?token={user.email_confirmation_token}"
+        confirm_url = f"{settings.FRONTEND_URL}/confirm-email?token={user.email_confirmation_token}"
         params = {
             "user": user,
             "confirmation_url": confirm_url,
@@ -136,7 +136,7 @@ class AccessGrantedMail(TemplatedMail):
 class NewUserNotificationMail(TemplatedMail):
     def __init__(self, user, new_user) -> None:
         self.user = user
-        activate_url = f"{settings.FRONTEND_URL}/#account/{new_user.id}"
+        activate_url = f"{settings.FRONTEND_URL}/account/{new_user.id}"
         params = {
             "admin": user,
             "new_user": new_user,
@@ -159,7 +159,7 @@ class ReportReadyMail(TemplatedMail):
         params = {
             "user": user,
             "report": published_report,
-            "report_location": f"{settings.FRONTEND_URL}/#reports/{published_report.id}",
+            "report_location": f"{settings.FRONTEND_URL}/reports/{published_report.id}",
         }
         super().__init__(
             subject="CRADLE - Your Report is Ready",
@@ -198,7 +198,7 @@ class EnrichmentReadyMail(TemplatedMail):
         params = {
             "user": user,
             "enrichment": enrichment_request,
-            "enrichment_location": f"{settings.FRONTEND_URL}/#enrichments/{enrichment_request.id}",
+            "enrichment_location": f"{settings.FRONTEND_URL}/enrichments/{enrichment_request.id}",
         }
         super().__init__(
             subject="CRADLE - Your Enrichment is Complete",

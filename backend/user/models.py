@@ -120,7 +120,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
         # Generate a token and set its expiration
         self.email_confirmation_token = uuid.uuid4().hex
-        self.email_confirmation_token_expiry = datetime.now() + timedelta(hours=24)
+        self.email_confirmation_token_expiry = timezone.now() + timedelta(hours=24)
         self.save(
             update_fields=[
                 "email_confirmation_token",
@@ -135,7 +135,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         """Send a password reset email to the user."""
         # Generate a token and set its expiration
         self.password_reset_token = uuid.uuid4().hex
-        self.password_reset_token_expiry = datetime.now() + timedelta(hours=1)
+        self.password_reset_token_expiry = timezone.now() + timedelta(hours=1)
         self.save(update_fields=["password_reset_token", "password_reset_token_expiry"])
 
         mail = ResetPasswordMail(self)
@@ -341,7 +341,7 @@ class UserSession(models.Model):
 
     def is_expired(self):
         """Check if the session has expired."""
-        return datetime.now() > self.expires_at
+        return timezone.now() > self.expires_at
 
 
 class BlacklistedToken(models.Model):
