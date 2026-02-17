@@ -80,7 +80,7 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
     const isInitialLoad = isLoading && !htmlContent;
 
     return (
-        <div className='h-full w-full flex flex-col relative'>
+        <div className='h-full w-full flex flex-col relative overflow-hidden'>
             {isInitialLoad && (
                 <div className='absolute inset-0 flex items-center justify-center z-10'>
                     <Spinner className='size-10' />

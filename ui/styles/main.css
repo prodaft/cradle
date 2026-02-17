@@ -316,6 +316,10 @@
 /* Static render (read-only note preview) */
 .static-render {
     padding: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .static-render h1:first-child,
@@ -339,6 +343,23 @@
 .static-render h6 {
     border-bottom: none !important;
     padding-bottom: 0 !important;
+}
+
+.static-render pre {
+    overflow-x: auto !important;
+    max-width: 100% !important;
+    white-space: pre !important;
+}
+
+.static-render table {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    display: block !important;
+}
+
+.static-render img {
+    max-width: 100% !important;
+    height: auto !important;
 }
 
 .static-render ul,
