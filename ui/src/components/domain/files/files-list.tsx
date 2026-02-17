@@ -20,7 +20,17 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import {
+    Command,
+    CommandGroup,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { Check, PlusCircle, XCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
@@ -683,14 +693,14 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
     });
 
     return (
-        <>
+        <div className='w-full h-full flex flex-col space-y-4'>
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div className='space-y-1'>
                     <h2 className='text-2xl font-bold tracking-tight'>Files</h2>
                     <p className='text-muted-foreground'>Browse & Manage Files</p>
                 </div>
             </div>
-            <div className='flex flex-col space-y-4'>
+            <div className='flex flex-col space-y-4 px-4'>
                 {isPaused && (
                     <div className='mb-4'>
                         <OfflineIndicator />
@@ -714,20 +724,119 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                                 onSubmit={() => resetToFirstPage()}
                                 onClear={() => resetToFirstPage()}
                             />
-                            <ToggleGroup
-                                type='single'
-                                value={statusFilter}
-                                onValueChange={handleStatusFilterChange}
-                                size='sm'
-                            >
-                                <ToggleGroupItem value='all'>All</ToggleGroupItem>
-                                <ToggleGroupItem value='healthy'>
-                                    Healthy
-                                </ToggleGroupItem>
-                                <ToggleGroupItem value='warning'>
-                                    Warning
-                                </ToggleGroupItem>
-                            </ToggleGroup>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        className='border-dashed font-normal'
+                                    >
+                                        {statusFilter !== 'all' ? (
+                                            <div
+                                                role='button'
+                                                aria-label='Clear status filter'
+                                                tabIndex={0}
+                                                className='rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleStatusFilterChange('all');
+                                                }}
+                                            >
+                                                <XCircle />
+                                            </div>
+                                        ) : (
+                                            <PlusCircle />
+                                        )}
+                                        Status
+                                        {statusFilter !== 'all' && (
+                                            <>
+                                                <Separator
+                                                    orientation='vertical'
+                                                    className='mx-0.5 data-[orientation=vertical]:h-4'
+                                                />
+                                                <Badge
+                                                    variant='secondary'
+                                                    className='rounded-sm px-1 font-normal'
+                                                >
+                                                    {statusFilter === 'healthy'
+                                                        ? 'Healthy'
+                                                        : 'Warning'}
+                                                </Badge>
+                                            </>
+                                        )}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    className='w-50 p-0'
+                                    align='start'
+                                >
+                                    <Command>
+                                        <CommandList className='max-h-full'>
+                                            <CommandGroup className='max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden'>
+                                                {(
+                                                    [
+                                                        {
+                                                            value: 'healthy',
+                                                            label: 'Healthy',
+                                                        },
+                                                        {
+                                                            value: 'warning',
+                                                            label: 'Warning',
+                                                        },
+                                                    ] as const
+                                                ).map((option) => {
+                                                    const isSelected =
+                                                        statusFilter ===
+                                                        option.value;
+                                                    return (
+                                                        <CommandItem
+                                                            key={option.value}
+                                                            onSelect={() =>
+                                                                handleStatusFilterChange(
+                                                                    isSelected
+                                                                        ? 'all'
+                                                                        : option.value,
+                                                                )
+                                                            }
+                                                        >
+                                                            <div
+                                                                className={cn(
+                                                                    'flex size-4 items-center justify-center rounded-sm border border-primary',
+                                                                    isSelected
+                                                                        ? 'bg-primary'
+                                                                        : 'opacity-50 [&_svg]:invisible',
+                                                                )}
+                                                            >
+                                                                <Check />
+                                                            </div>
+                                                            <span className='truncate'>
+                                                                {option.label}
+                                                            </span>
+                                                        </CommandItem>
+                                                    );
+                                                })}
+                                            </CommandGroup>
+                                            {statusFilter !== 'all' && (
+                                                <>
+                                                    <CommandSeparator />
+                                                    <CommandGroup>
+                                                        <CommandItem
+                                                            onSelect={() =>
+                                                                handleStatusFilterChange(
+                                                                    'all',
+                                                                )
+                                                            }
+                                                            className='justify-center text-center'
+                                                        >
+                                                            Clear filters
+                                                        </CommandItem>
+                                                    </CommandGroup>
+                                                </>
+                                            )}
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         </DataTable>
                     )}
                 </div>
@@ -813,6 +922,6 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                     }}
                 />
             )}
-        </>
+        </div>
     );
 }

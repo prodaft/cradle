@@ -825,6 +825,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                             type='button'
                                                             variant='destructive'
                                                             size='sm'
+                                                            className='self-center'
                                                             onClick={
                                                                 openDeleteAccountDialog
                                                             }
