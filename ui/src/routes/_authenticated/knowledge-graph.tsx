@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 
-const GraphExplorer = lazy(() => import('@/components/domain/graph/GraphExplorer'));
+const GraphExplorer = lazy(() => import('@/components/domain/graph/graph-explorer'));
 const KnowledgeGraphSearch = lazy(
-    () => import('@/components/domain/graph/KnowledgeGraphSearch'),
+    () => import('@/components/domain/graph/knowledge-graph-search'),
 );
 
 export const Route = createFileRoute('/_authenticated/knowledge-graph')({

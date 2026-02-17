@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import useApi from '@/hooks/api/use-api';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
-import Logo from '@components/base/Logo/Logo';
+import Logo from '@components/base/logo/logo';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef } from 'react';

@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import useApi from '@/hooks/api/use-api';
 import { useAuthActions } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
-import Logo from '@components/base/Logo/Logo';
+import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { UserConfig } from '@services/cradle/models';

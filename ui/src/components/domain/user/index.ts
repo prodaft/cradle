@@ -1,1 +1,1 @@
-export { default as AccountSettings } from './AccountSettings';
+export { default as AccountSettings } from './account-settings';

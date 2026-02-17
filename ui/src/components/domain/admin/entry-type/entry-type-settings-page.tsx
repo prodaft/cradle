@@ -13,7 +13,7 @@ import {
     useRouterState,
     useSearch,
 } from '@tanstack/react-router';
-import ActivityList from '../../activity/ActivityList';
+import ActivityList from '../../activity/activity-list';
 import EntryTypeForm from './entry-type-form';
 
 const ENTRY_TYPE_SETTINGS_ITEMS = [

@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import { z } from 'zod';
 
-const NoteViewer = lazy(() => import('@/components/domain/notes/NoteViewer'));
+const NoteViewer = lazy(() => import('@/components/domain/notes/note-viewer'));
 
 export const Route = createFileRoute('/_authenticated/notes/$id')({
     staticData: {

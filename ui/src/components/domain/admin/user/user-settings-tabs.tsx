@@ -1,4 +1,4 @@
-import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
+import ConfirmDeletionDialog from '@/components/dialogs/base/confirm-deletion-dialog';
 import SetUserPasswordDialog from './set-password-dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,7 +31,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import ActiveSessions from '../../user/ActiveSessions';
+import ActiveSessions from '../../user/active-sessions';
 import AdminPanelUserPermissions from './user-permissions';
 import UserActivityList from './user-activity-list';
 

@@ -1,4 +1,4 @@
-import type { DateRangeFilter } from '@/components/base/ListView/types';
+import type { DateRangeFilter } from '@/components/base/list-view/types';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';

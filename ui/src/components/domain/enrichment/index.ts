@@ -1,3 +1,3 @@
-export { default as EnrichmentRequestDialog } from './dialogs/EnrichmentRequestDialog';
-export { default as EnrichmentRequests } from './EnrichmentRequests';
-export { default as EnrichmentRequestsList } from './EnrichmentRequestsList';
+export { default as EnrichmentRequestDialog } from './dialogs/enrichment-request-dialog';
+export { default as EnrichmentRequests } from './enrichment-requests';
+export { default as EnrichmentRequestsList } from './enrichment-request-table';

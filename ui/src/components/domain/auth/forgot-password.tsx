@@ -14,7 +14,7 @@ import useApi from '@/hooks/api/use-api';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { cn } from '@/lib/utils';
 import { parseAPIError } from '@/utils/api';
-import Logo from '@components/base/Logo/Logo';
+import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';

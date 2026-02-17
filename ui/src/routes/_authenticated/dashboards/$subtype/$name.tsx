@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import Dashboard from 'src/components/domain/dashboard/Dashboard';
+import Dashboard from 'src/components/domain/dashboard/dashboard';
 import type { EntryResponse } from 'src/services/cradle/models';
 import { createLoaderApis } from 'src/utils/apiLoader';
 import { z } from 'zod';

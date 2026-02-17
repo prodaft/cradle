@@ -26,7 +26,7 @@ import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBarSearch } from '@components/base/ActionBar/ActionBar';
+import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import { useDroppable } from '@dnd-kit/core';
 import {
     ArrowClockwiseIcon,
@@ -684,6 +684,12 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
 
     return (
         <>
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
+                <div className='space-y-1'>
+                    <h2 className='text-2xl font-bold tracking-tight'>Files</h2>
+                    <p className='text-muted-foreground'>Browse & Manage Files</p>
+                </div>
+            </div>
             <div className='flex flex-col space-y-4'>
                 {isPaused && (
                     <div className='mb-4'>

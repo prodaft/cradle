@@ -19,7 +19,7 @@ import useApi from '@/hooks/api/use-api';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { parseAPIError } from '@/utils/api';
-import Logo from '@components/base/Logo/Logo';
+import Logo from '@components/base/logo/logo';
 import {
     ArrowUUpLeftIcon,
     EyeIcon,

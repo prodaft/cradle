@@ -1,4 +1,4 @@
-import Logo from '@/components/base/Logo/Logo';
+import Logo from '@/components/base/logo/logo';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import {

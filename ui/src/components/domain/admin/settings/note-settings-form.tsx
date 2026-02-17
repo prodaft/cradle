@@ -20,7 +20,7 @@ import { useEffect, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import SnippetList, { SnippetListRef } from '../../../base/SnippetList/SnippetList';
+import SnippetList, { SnippetListRef } from '../../../base/snippet-list/snippet-list';
 
 const noteSettingsSchema = z.object({
     minEntries: z.coerce.number().min(1, { message: 'Must be at least 1' }),

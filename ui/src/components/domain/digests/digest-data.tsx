@@ -1,9 +1,9 @@
-import UploadDigestDialog from '@/components/domain/activity/dialogs/UploadDigestDialog';
+import UploadDigestDialog from './dialogs/upload-digest-dialog';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
-import DigestList from '@components/domain/files/DigestList';
+import DigestList from './digest-list';
 import type { BaseDigest } from '@services/cradle/models';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';

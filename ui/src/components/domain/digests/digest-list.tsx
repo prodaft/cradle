@@ -1,7 +1,7 @@
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { DateRangeFilterButton } from '@/components/data-table/data-table-date-range-filter';
-import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
+import ConfirmDeletionDialog from '@/components/dialogs/base/confirm-deletion-dialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -17,9 +17,9 @@ import useApi from '@/hooks/api/use-api';
 import type { StateSetter } from '@/types';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBarSearch } from '@components/base/ActionBar/ActionBar';
-import { DateRangeFilter } from '@components/base/ListView/types';
-import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
+import { ActionBarSearch } from '@components/base/action-bar/action-bar';
+import { DateRangeFilter } from '@components/base/list-view/types';
+import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
 import { TrashIcon } from '@phosphor-icons/react';
 import type { BaseDigest } from '@services/cradle/models';
 import {
@@ -32,7 +32,7 @@ import {
 import { format } from 'date-fns';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { StatusIcon, type StatusType } from '../notes/StatusIcon';
+import { StatusIcon, type StatusType } from '../notes/status-icon';
 
 // Mapping of table columns to API field names (stable, avoids hook dep warnings)
 const SORT_FIELD_MAPPING: Record<string, string> = {

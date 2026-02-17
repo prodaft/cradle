@@ -1,4 +1,4 @@
-import Pagination from '@/components/base/Pagination/Pagination';
+import Pagination from '@/components/base/pagination/pagination';
 import { Badge } from '@/components/ui/badge';
 import {
     Collapsible,

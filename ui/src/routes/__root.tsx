@@ -6,7 +6,7 @@ import '@styles/main.css';
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { Suspense, useEffect, type ReactNode } from 'react';
-import Loading from 'src/components/base/Loading/Loading';
+import Loading from 'src/components/base/loading/loading';
 import { AuthProvider } from 'src/components/domain/auth/auth-provider';
 import { Toaster } from 'src/components/ui/sonner';
 import { TooltipProvider } from 'src/components/ui/tooltip';

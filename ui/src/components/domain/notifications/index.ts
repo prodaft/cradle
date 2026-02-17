@@ -1,2 +1,2 @@
-export { default as NotificationCard } from './NotificationCard';
-export { default as NotificationsPanel } from './NotificationsPanel';
+export { default as NotificationCard } from './notification-card';
+export { default as NotificationsPanel } from './notifications-panel';

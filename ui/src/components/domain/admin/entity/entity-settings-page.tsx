@@ -13,7 +13,7 @@ import {
     useSearch,
 } from '@tanstack/react-router';
 import { Shield } from 'lucide-react';
-import ActivityList from '../../activity/ActivityList';
+import ActivityList from '../../activity/activity-list';
 import EntityForm from './entity-form';
 import EntityPermissionsForm from './entity-permissions-form';
 

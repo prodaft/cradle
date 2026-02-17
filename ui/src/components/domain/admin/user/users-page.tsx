@@ -1,5 +1,5 @@
-import { ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
-import PageHeader from '@/components/base/PageHeader';
+import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
+import PageHeader from '@/components/base/page-header';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -36,7 +36,7 @@ import {
 } from '@tanstack/react-table';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
+import ConfirmDeletionDialog from '../../../dialogs/base/confirm-deletion-dialog';
 import AddUserForm from './add-user-form';
 
 const getRoleBadgeVariant = (role?: string) => {
