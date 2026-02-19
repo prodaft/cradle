@@ -42,7 +42,7 @@ import {
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import ConfirmDeletionDialog from '../../../dialogs/base/confirm-deletion-dialog';
-import AddEntityForm from './entity-form';
+import AddEntityForm from './add-entity-form';
 
 interface EntityData extends Entity {
     id: number;

@@ -51,6 +51,7 @@ import {
     EntrySerializerMinimal,
 } from '@services/cradle/models';
 
+import NotFound from '@/components/feedback/not-found';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import JsonView from '@uiw/react-json-view';
@@ -296,12 +297,16 @@ export default function EnrichmentResults() {
     const [searchInput, setSearchInput] = useState({ query: '', details: '' });
     const [selectedArtifacts, setSelectedArtifacts] = useState<Set<number>>(new Set());
 
-    // Query for enrichment details
-    const { data: enrichmentDetails, isLoading: isLoadingDetails } = useQuery({
+    const {
+        data: enrichmentDetails,
+        isLoading: isLoadingDetails,
+        isError: isErrorDetails,
+    } = useQuery({
         queryKey: queryKeys.enrichment.results.detail(String(id)),
         queryFn: () => intelioApi.enrichmentDetailRetrieve({ id }),
+        retry: false,
         meta: {
-            showErrorToast: true,
+            showErrorToast: false,
         },
     });
 
@@ -566,6 +571,12 @@ export default function EnrichmentResults() {
         enrichmentDetails?.enrichers?.find(
             (enricher) => enricher.enricherType === selectedEnricher,
         )?.displayName || selectedEnricher;
+
+    if (isErrorDetails) {
+        return (
+            <NotFound message='The enrichment request you are looking for does not exist.' />
+        );
+    }
 
     return (
         <div className='w-full h-full flex flex-col overflow-hidden'>

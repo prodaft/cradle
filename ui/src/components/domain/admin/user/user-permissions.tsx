@@ -24,6 +24,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 interface AdminPanelUserPermissionsProps {
     id: string;
+    readOnly?: boolean;
 }
 
 type AccessType = 'none' | 'read' | 'read-write';
@@ -86,6 +87,7 @@ function PermissionRow({
 
 export default function AdminPanelUserPermissions({
     id,
+    readOnly,
 }: AdminPanelUserPermissionsProps) {
     const [originalAccess, setOriginalAccess] = useState<Record<number, AccessType>>(
         {},
@@ -262,7 +264,9 @@ export default function AdminPanelUserPermissions({
                                     entity={entity}
                                     currentAccess={currentAccess[entity.id] || 'none'}
                                     onAccessChange={handleAccessChange}
-                                    isSaving={saveChangesMutation.isPending}
+                                    isSaving={
+                                        saveChangesMutation.isPending || !!readOnly
+                                    }
                                 />
                             ))}
                         </TableBody>
@@ -279,15 +283,17 @@ export default function AdminPanelUserPermissions({
             </div>
 
             {/* Save Changes Button */}
-            <div className='flex justify-end pt-4'>
-                <Button
-                    type='button'
-                    onClick={handleSave}
-                    disabled={saveChangesMutation.isPending || !hasUnsavedChanges}
-                >
-                    {saveChangesMutation.isPending ? 'Saving...' : 'Save Changes'}
-                </Button>
-            </div>
+            {!readOnly && (
+                <div className='flex justify-end pt-4'>
+                    <Button
+                        type='button'
+                        onClick={handleSave}
+                        disabled={saveChangesMutation.isPending || !hasUnsavedChanges}
+                    >
+                        {saveChangesMutation.isPending ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }

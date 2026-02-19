@@ -3,6 +3,7 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import useApi from '@/hooks/api/use-api';
+import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import {
     ClockCounterClockwiseIcon,
@@ -18,6 +19,8 @@ import {
     useRouterState,
     useSearch,
 } from '@tanstack/react-router';
+import { useMemo } from 'react';
+import NotFound from '../../../feedback/not-found';
 import AdminUserSettings from './user-settings-tabs';
 
 const USER_SETTINGS_ITEMS = [
@@ -69,16 +72,32 @@ export default function UserSettingsPage() {
     const search = useSearch({ strict: false });
     const tab = (search as any)?.tab ?? USER_SETTINGS_ITEMS[0].id;
     const { usersApi } = useApi();
+    const { userId: currentUserId } = useAuthState();
 
-    const { data: userData, isLoading } = useQuery({
+    const {
+        data: userData,
+        isLoading,
+        isError,
+    } = useQuery({
         queryKey: queryKeys.users.detail(userId),
         queryFn: () => usersApi.usersRetrieve({ userId }),
         enabled: !!userId,
+        retry: false,
         meta: {
             showErrorToast: false,
             suppressNotification: true,
         },
     });
+
+    const isOtherAdmin = userData?.role === 'admin' && userData?.id !== currentUserId;
+
+    const visibleTabs = useMemo(
+        () =>
+            isOtherAdmin
+                ? USER_SETTINGS_ITEMS.filter((item) => item.id !== 'management')
+                : USER_SETTINGS_ITEMS,
+        [isOtherAdmin],
+    );
 
     const handleTabChange = (tabId: string) => {
         router.navigate({
@@ -88,8 +107,7 @@ export default function UserSettingsPage() {
         });
     };
 
-    const currentTab =
-        USER_SETTINGS_ITEMS.find((item) => item.id === tab) || USER_SETTINGS_ITEMS[0];
+    const currentTab = visibleTabs.find((item) => item.id === tab) || visibleTabs[0];
     const currentDescription = currentTab?.description ?? '';
 
     if (isLoading) {
@@ -100,6 +118,10 @@ export default function UserSettingsPage() {
                 </div>
             </div>
         );
+    }
+
+    if (isError) {
+        return <NotFound message='The user you are looking for does not exist.' />;
     }
 
     return (
@@ -121,7 +143,7 @@ export default function UserSettingsPage() {
                 <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
                     <Tabs value={tab} onValueChange={handleTabChange}>
                         <TabsList className='flex-wrap h-auto'>
-                            {USER_SETTINGS_ITEMS.map((item) => {
+                            {visibleTabs.map((item) => {
                                 const Icon = item.icon;
                                 return (
                                     <TabsTrigger key={item.id} value={item.id}>

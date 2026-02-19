@@ -19,7 +19,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/use-api';
-import { useAuthActions } from '@/hooks/auth/use-auth';
+import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { UserRetrieve } from '@/services/cradle/models';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -75,6 +75,7 @@ export default function AdminUserSettings({
     const router = useRouter();
     const { usersApi } = useApi();
     const { setTokensDirectly } = useAuthActions();
+    const { userId: currentUserId } = useAuthState();
 
     const queryClient = useQueryClient();
     const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
@@ -298,6 +299,8 @@ export default function AdminUserSettings({
 
     if (!user) return <div></div>;
 
+    const isOtherAdmin = user.role === 'admin' && user.id !== currentUserId;
+
     const showSection = (sectionId: string) => {
         if (!activeTab) return true;
         return activeTab === sectionId;
@@ -341,6 +344,7 @@ export default function AdminUserSettings({
                                                     {...field}
                                                     id='username'
                                                     placeholder='Username'
+                                                    disabled={isOtherAdmin}
                                                     aria-invalid={fieldState.invalid}
                                                     aria-describedby={
                                                         fieldState.invalid
@@ -385,6 +389,7 @@ export default function AdminUserSettings({
                                                     id='email'
                                                     type='text'
                                                     placeholder='Email'
+                                                    disabled={isOtherAdmin}
                                                     aria-invalid={fieldState.invalid}
                                                     aria-describedby={
                                                         fieldState.invalid
@@ -450,6 +455,7 @@ export default function AdminUserSettings({
                                                 <Select
                                                     value={field.value}
                                                     onValueChange={field.onChange}
+                                                    disabled={isOtherAdmin}
                                                 >
                                                     <SelectTrigger
                                                         className='w-full sm:w-64'
@@ -512,6 +518,7 @@ export default function AdminUserSettings({
                                                 data-testid='emailConfirmed-toggle'
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
+                                                disabled={isOtherAdmin}
                                                 className='self-start md:self-center'
                                             />
                                         </Field>
@@ -542,6 +549,7 @@ export default function AdminUserSettings({
                                                 data-testid='isActive-toggle'
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
+                                                disabled={isOtherAdmin}
                                                 className='self-start md:self-center'
                                             />
                                         </Field>
@@ -581,6 +589,7 @@ export default function AdminUserSettings({
                                                     {...field}
                                                     id='fileUploadLimitOverride'
                                                     placeholder='e.g., 100MB, 1GB'
+                                                    disabled={isOtherAdmin}
                                                     aria-invalid={fieldState.invalid}
                                                     aria-describedby={
                                                         fieldState.invalid
@@ -610,6 +619,7 @@ export default function AdminUserSettings({
                                         size='sm'
                                         className='self-start md:self-center'
                                         onClick={openSetUserPasswordDialog}
+                                        disabled={isOtherAdmin}
                                     >
                                         Set Password
                                     </Button>
@@ -623,7 +633,10 @@ export default function AdminUserSettings({
                 {showSection('permissions') && (
                     <section id='permissions'>
                         <div className='flex flex-col gap-4'>
-                            <AdminPanelUserPermissions id={userId} />
+                            <AdminPanelUserPermissions
+                                id={userId}
+                                readOnly={isOtherAdmin}
+                            />
                         </div>
                     </section>
                 )}
@@ -647,7 +660,7 @@ export default function AdminUserSettings({
                 )}
 
                 {/* User Management Actions Section */}
-                {showSection('management') && (
+                {!isOtherAdmin && showSection('management') && (
                     <section id='admin-actions'>
                         <div className='flex flex-col gap-4'>
                             <FieldGroup className='gap-4'>
@@ -743,17 +756,18 @@ export default function AdminUserSettings({
                 )}
 
                 {/* Save Button */}
-                {(showSection('account') || showSection('administrative')) && (
-                    <div className='flex justify-end pt-4'>
-                        <Button
-                            type='button'
-                            onClick={handleSave}
-                            disabled={saveMutation.isPending || !isDirty}
-                        >
-                            {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
-                        </Button>
-                    </div>
-                )}
+                {!isOtherAdmin &&
+                    (showSection('account') || showSection('administrative')) && (
+                        <div className='flex justify-end pt-4'>
+                            <Button
+                                type='button'
+                                onClick={handleSave}
+                                disabled={saveMutation.isPending || !isDirty}
+                            >
+                                {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                        </div>
+                    )}
             </form>
             <ConfirmDeletionDialog
                 open={deleteUserDialogOpen}

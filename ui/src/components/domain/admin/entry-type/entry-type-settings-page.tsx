@@ -13,6 +13,7 @@ import {
     useRouterState,
     useSearch,
 } from '@tanstack/react-router';
+import NotFound from '../../../feedback/not-found';
 import ActivityList from '../../activity/activity-list';
 import EntryTypeForm from './entry-type-form';
 
@@ -44,10 +45,15 @@ export default function EntryTypeSettingsPage() {
     const queryClient = useQueryClient();
 
     // Query for entry type details
-    const { data: entryTypeData, isLoading } = useQuery({
+    const {
+        data: entryTypeData,
+        isLoading,
+        isError,
+    } = useQuery({
         queryKey: queryKeys.entryTypes.detail(subtype),
         queryFn: () => entriesApi.entryClassesRetrieve({ classSubtype: subtype }),
         enabled: !!subtype,
+        retry: false,
         meta: {
             showErrorToast: false,
             suppressNotification: true,
@@ -74,6 +80,12 @@ export default function EntryTypeSettingsPage() {
                     <Spinner className='size-8' />
                 </div>
             </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <NotFound message='The entry type you are looking for does not exist.' />
         );
     }
 

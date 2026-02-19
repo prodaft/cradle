@@ -23,6 +23,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
+import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { PencilIcon, TrashIcon, UserPlusIcon } from '@phosphor-icons/react';
 import { UserRetrieve } from '@services/cradle/models';
@@ -66,6 +67,7 @@ export default function UsersPage() {
 
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const { usersApi } = useApi();
+    const { userId: currentUserId } = useAuthState();
     const queryClient = useQueryClient();
     const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -96,6 +98,15 @@ export default function UsersPage() {
     });
 
     const users = usersData?.results ?? [];
+
+    const selectedHasOtherAdmin = useMemo(
+        () =>
+            selectedUserIds.some((id) => {
+                const u = users.find((u) => String(u.id) === id);
+                return u?.role === 'admin' && u.id !== currentUserId;
+            }),
+        [selectedUserIds, users, currentUserId],
+    );
 
     const deleteUsersMutation = useMutation({
         mutationFn: async (userIds: string[]) => {
@@ -386,7 +397,11 @@ export default function UsersPage() {
                     </ActionBarItem>
                     <ActionBarItem
                         onClick={handleDeleteSelected}
-                        disabled={isPending || selectedUserIds.length === 0}
+                        disabled={
+                            isPending ||
+                            selectedUserIds.length === 0 ||
+                            selectedHasOtherAdmin
+                        }
                         className='text-destructive'
                     >
                         <TrashIcon size={18} weight='bold' />

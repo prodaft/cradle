@@ -13,6 +13,7 @@ import {
     useSearch,
 } from '@tanstack/react-router';
 import { Shield } from 'lucide-react';
+import NotFound from '../../../feedback/not-found';
 import ActivityList from '../../activity/activity-list';
 import EntityForm from './entity-form';
 import EntityPermissionsForm from './entity-permissions-form';
@@ -51,10 +52,15 @@ export default function EntitySettingsPage() {
     const queryClient = useQueryClient();
 
     // Query for entity data
-    const { data: entityData, isLoading } = useQuery({
+    const {
+        data: entityData,
+        isLoading,
+        isError,
+    } = useQuery({
         queryKey: queryKeys.entities.detail(entityId),
         queryFn: () => entriesApi.entitiesRetrieve({ entityId: Number(entityId) }),
         enabled: !!entityId,
+        retry: false,
         meta: {
             showErrorToast: false,
             suppressNotification: true,
@@ -82,6 +88,10 @@ export default function EntitySettingsPage() {
                 </div>
             </div>
         );
+    }
+
+    if (isError) {
+        return <NotFound message='The entity you are looking for does not exist.' />;
     }
 
     return (

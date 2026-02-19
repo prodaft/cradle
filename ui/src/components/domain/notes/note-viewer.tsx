@@ -37,6 +37,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import ConfirmDeletionDialog from '../../dialogs/base/confirm-deletion-dialog';
+import NotFound from '../../feedback/not-found';
 import ActivityList from '../activity/activity-list';
 import { EnrichmentRequestDialog } from '../enrichment';
 import GraphExplorer from '../graph/graph-explorer';
@@ -291,13 +292,18 @@ export default function NoteViewer() {
     }, [editorUtils]);
 
     // Query for note metadata
-    const { data: noteData, isLoading } = useQuery({
+    const {
+        data: noteData,
+        isLoading,
+        isError,
+    } = useQuery({
         queryKey: queryKeys.notes.detail(noteId),
         queryFn: () =>
             notesApi.notesRetrieve({ noteId: noteId || '', footnotes: false }),
         enabled: !!noteId,
+        retry: false,
         meta: {
-            showErrorToast: true,
+            showErrorToast: false,
         },
     });
 
@@ -566,13 +572,16 @@ export default function NoteViewer() {
         );
     }, [markdownContent, editorRef]);
 
-    // Conditionally render spinner or component
     if (isLoading) {
         return (
             <div className='flex items-center justify-center h-full w-full py-8'>
                 <Spinner className='size-10' />
             </div>
         );
+    }
+
+    if (isError) {
+        return <NotFound message='The note you are looking for does not exist.' />;
     }
 
     return (

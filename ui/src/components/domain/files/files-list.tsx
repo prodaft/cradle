@@ -13,27 +13,26 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Spinner } from '@/components/ui/spinner';
-import {
     Command,
     CommandGroup,
     CommandItem,
     CommandList,
     CommandSeparator,
 } from '@/components/ui/command';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
-import { Check, PlusCircle, XCircle } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
+import { cn } from '@/lib/utils';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
@@ -56,6 +55,7 @@ import {
 } from '@tanstack/react-table';
 import bytes from 'bytes';
 import { format } from 'date-fns';
+import { Check, PlusCircle, XCircle } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import OfflineIndicator from '../../feedback/offline-indicator';
@@ -766,10 +766,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                                         )}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent
-                                    className='w-50 p-0'
-                                    align='start'
-                                >
+                                <PopoverContent className='w-50 p-0' align='start'>
                                     <Command>
                                         <CommandList className='max-h-full'>
                                             <CommandGroup className='max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden'>
@@ -786,8 +783,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                                                     ] as const
                                                 ).map((option) => {
                                                     const isSelected =
-                                                        statusFilter ===
-                                                        option.value;
+                                                        statusFilter === option.value;
                                                     return (
                                                         <CommandItem
                                                             key={option.value}

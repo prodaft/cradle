@@ -222,7 +222,7 @@ class UserConfigView(APIView):
     get=extend_schema(
         operation_id="users_retrieve",
         summary="Get user details",
-        description="Returns details of a specific user. Regular users can only access their own details. Admin users can access details of non-admin users.",  # noqa: E501
+        description="Returns details of a specific user. Regular users can only access their own details. Admin users can access any user's details.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="user_id",
@@ -274,7 +274,7 @@ class UserDetail(APIView):
             except CradleUser.DoesNotExist:
                 raise UserNotFoundException(detail="There is no user with the specified ID.")
 
-        if not (initiator.pk == user.pk or (initiator.is_cradle_admin and not user.is_cradle_admin)):
+        if not (initiator.pk == user.pk or initiator.is_cradle_admin):
             raise DisallowedActionException(detail="You are not allowed to view this user.")
 
         json_user = UserRetrieveSerializer(user, many=False).data
@@ -714,7 +714,7 @@ class DefaultNoteTemplateView(APIView):
     get=extend_schema(
         operation_id="users_sessions_list",
         summary="List user sessions",
-        description="Returns a list of active sessions for the specified user. Users can view their own sessions; admins can view non-admin users' sessions.",
+        description="Returns a list of active sessions for the specified user. Users can view their own sessions; admins can view any user's sessions.",
         parameters=[
             OpenApiParameter(
                 name="user_id",
@@ -763,8 +763,7 @@ class UserSessionsListView(APIView):
             except CradleUser.DoesNotExist:
                 raise UserNotFoundException(detail="There is no user with the specified ID.")
 
-        # Users can view their own sessions; admins can view non-admin users' sessions
-        if not (initiator.pk == user.pk or (initiator.is_cradle_admin and not user.is_cradle_admin)):
+        if not (initiator.pk == user.pk or initiator.is_cradle_admin):
             raise DisallowedActionException(detail="You are not allowed to view sessions for this user.")
 
         # Get all non-expired sessions, ordered by last activity
