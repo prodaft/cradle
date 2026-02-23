@@ -1,6 +1,6 @@
 services:
   minio:
-    image: quay.io/minio/minio:RELEASE.2024-07-16T23-46-41Z
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: minio
     command: server /data --console-address "0.0.0.0:9001"
     restart: unless-stopped
@@ -21,7 +21,7 @@ services:
         ipv4_address: 192.168.42.5
 
   postgres:
-    image: pgrouting/pgrouting:16-3.5-3.7
+    image: pgrouting/pgrouting:16-3.5-4.0
     container_name: postgres
     restart: unless-stopped
     environment:
@@ -40,7 +40,7 @@ services:
         ipv4_address: 192.168.42.6
 
   redis:
-    image: "redis:alpine"
+    image: "redis:8-alpine"
     container_name: redis
     networks:
       cradle_demo_network:
@@ -161,7 +161,7 @@ services:
         ipv4_address: 192.168.42.10
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4-management-alpine
     container_name: cradle_rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: cradle
