@@ -12,7 +12,7 @@ import { HardDrivesIcon, TrashIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-export default function EntriesManagement() {
+export default function EntriesSettingsForm() {
     const { managementApi } = useApi();
 
     const propagateAccessMutation = useMutation({

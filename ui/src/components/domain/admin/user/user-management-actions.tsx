@@ -1,0 +1,190 @@
+import ConfirmDeletionDialog from '@/components/dialogs/base/confirm-deletion-dialog';
+import { Button } from '@/components/ui/button';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Separator } from '@/components/ui/separator';
+import useApi from '@/hooks/api/use-api';
+import { useAuthActions } from '@/hooks/auth/use-auth';
+import { queryKeys } from '@/hooks/query';
+import { UserRetrieve } from '@/services/cradle/models';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+interface UserManagementActionsProps {
+    userId: string;
+}
+
+export default function UserManagementActions({
+    userId,
+}: UserManagementActionsProps) {
+    const router = useRouter();
+    const { usersApi } = useApi();
+    const { setTokensDirectly } = useAuthActions();
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+    const { data: userData } = useQuery<UserRetrieve>({
+        queryKey: queryKeys.users.detail(userId),
+        queryFn: () => usersApi.usersRetrieve({ userId }),
+        enabled: !!userId,
+        meta: { suppressNotification: true },
+    });
+
+    const simulateSessionMutation = useMutation({
+        mutationFn: async () => {
+            return await usersApi.usersManageRetrieve({
+                userId,
+                actionName: 'simulate',
+            });
+        },
+        meta: { suppressNotification: true },
+        onSuccess: (res) => {
+            setTokensDirectly(res as any);
+            router.navigate({ to: '/', replace: true });
+        },
+    });
+
+    const sendEmailConfirmationMutation = useMutation({
+        mutationFn: async () => {
+            await usersApi.usersManageRetrieve({
+                userId,
+                actionName: 'send_email_confirmation',
+            });
+        },
+        meta: { successMessage: 'Email confirmation sent successfully' },
+    });
+
+    const sendPasswordResetEmailMutation = useMutation({
+        mutationFn: async () => {
+            await usersApi.usersManageRetrieve({
+                userId,
+                actionName: 'password_reset_email',
+            });
+        },
+        meta: { successMessage: 'Password reset email sent successfully' },
+    });
+
+    const deleteUserMutation = useMutation({
+        mutationFn: async () => {
+            await usersApi.usersDestroy({ userId });
+        },
+        meta: { suppressNotification: true },
+        onSuccess: () => {
+            toast.success('User deleted successfully');
+            router.navigate({ to: '/manage/users' } as any);
+        },
+    });
+
+    return (
+        <>
+            <section id='admin-actions'>
+                <div className='flex flex-col gap-4'>
+                    <FieldGroup className='gap-4'>
+                        <Field orientation='responsive'>
+                            <FieldContent className='flex-1'>
+                                <FieldLabel className='text-sm block'>
+                                    Simulate Session
+                                </FieldLabel>
+                                <FieldDescription>
+                                    Jump into a session for this user
+                                </FieldDescription>
+                            </FieldContent>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                className='self-start md:self-center'
+                                onClick={() => simulateSessionMutation.mutate()}
+                            >
+                                Simulate
+                            </Button>
+                        </Field>
+
+                        <Separator />
+
+                        <Field orientation='responsive'>
+                            <FieldContent className='flex-1'>
+                                <FieldLabel className='text-sm block'>
+                                    Email Confirmation
+                                </FieldLabel>
+                                <FieldDescription>
+                                    Send email verification to user
+                                </FieldDescription>
+                            </FieldContent>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                className='self-start md:self-center'
+                                onClick={() =>
+                                    sendEmailConfirmationMutation.mutate()
+                                }
+                            >
+                                Send Email
+                            </Button>
+                        </Field>
+
+                        <Separator />
+
+                        <Field orientation='responsive'>
+                            <FieldContent className='flex-1'>
+                                <FieldLabel className='text-sm block'>
+                                    Password Reset
+                                </FieldLabel>
+                                <FieldDescription>
+                                    Send password reset email
+                                </FieldDescription>
+                            </FieldContent>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                className='self-start md:self-center'
+                                onClick={() =>
+                                    sendPasswordResetEmailMutation.mutate()
+                                }
+                            >
+                                Send Reset
+                            </Button>
+                        </Field>
+
+                        <Separator />
+
+                        <Field orientation='responsive'>
+                            <FieldContent className='flex-1'>
+                                <FieldLabel className='text-sm block'>
+                                    Delete
+                                </FieldLabel>
+                                <FieldDescription>
+                                    Permanently remove this user and all their data
+                                </FieldDescription>
+                            </FieldContent>
+                            <Button
+                                type='button'
+                                variant='destructive'
+                                size='sm'
+                                className='self-start md:self-center'
+                                onClick={() => setDeleteDialogOpen(true)}
+                            >
+                                Delete
+                            </Button>
+                        </Field>
+                    </FieldGroup>
+                </div>
+            </section>
+            <ConfirmDeletionDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                onConfirm={() => deleteUserMutation.mutate()}
+                confirmText={userData?.username || 'DELETE'}
+                text='Deleting this user will permanently remove all their data, including notes, entries, and settings. This action cannot be undone.'
+            />
+        </>
+    );
+}

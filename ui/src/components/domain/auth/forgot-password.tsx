@@ -24,9 +24,7 @@ import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 const forgotPasswordSchema = z.object({
-    email: z
-        .email({ error: 'Invalid email' })
-        .min(1, { error: 'Email is required' }),
+    email: z.email({ error: 'Invalid email' }).min(1, { error: 'Email is required' }),
 });
 
 type FormData = z.infer<typeof forgotPasswordSchema>;

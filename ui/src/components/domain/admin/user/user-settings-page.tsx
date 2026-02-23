@@ -20,8 +20,13 @@ import {
     useSearch,
 } from '@tanstack/react-router';
 import { useMemo } from 'react';
+import ActiveSessions from '../../user/active-sessions';
 import NotFound from '../../../feedback/not-found';
-import AdminUserSettings from './user-settings-tabs';
+import UserAccountForm from './user-account-form';
+import UserActivityList from './user-activity-list';
+import UserAdministrativeForm from './user-administrative-form';
+import UserManagementActions from './user-management-actions';
+import UserPermissionsForm from './user-permissions-form';
 
 const USER_SETTINGS_ITEMS = [
     {
@@ -171,10 +176,35 @@ export default function UserSettingsPage() {
                                         role='none'
                                         className='bg-border mb-4 flex-none'
                                     />
-                                    <AdminUserSettings
-                                        userId={userId}
-                                        activeTab={tab}
-                                    />
+                                    {tab === 'account' && (
+                                        <UserAccountForm
+                                            userId={userId}
+                                            isOtherAdmin={isOtherAdmin}
+                                        />
+                                    )}
+                                    {tab === 'administrative' && (
+                                        <UserAdministrativeForm
+                                            userId={userId}
+                                            isOtherAdmin={isOtherAdmin}
+                                        />
+                                    )}
+                                    {tab === 'permissions' && (
+                                        <UserPermissionsForm
+                                            id={userId}
+                                            readOnly={isOtherAdmin}
+                                        />
+                                    )}
+                                    {tab === 'activity' && (
+                                        <UserActivityList
+                                            username={userData?.username || ''}
+                                        />
+                                    )}
+                                    {tab === 'sessions' && (
+                                        <ActiveSessions userId={userId} />
+                                    )}
+                                    {!isOtherAdmin && tab === 'management' && (
+                                        <UserManagementActions userId={userId} />
+                                    )}
                                 </CardContent>
                             </div>
                         </div>

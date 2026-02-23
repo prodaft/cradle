@@ -16,27 +16,143 @@ import {
 } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
+import { useTheme } from '@/contexts/ui/theme-context';
+import useApi from '@/hooks/api/use-api';
+import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
+import { UserRetrieve } from '@/services/cradle/models';
 import { PRESET_THEMES } from '@/utils/themes';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
-interface AppearanceTabProps {
-    selectedThemeType: string;
-    customThemeJSON: string;
-    onCustomThemeJSONChange: (json: string) => void;
-    onThemeTypeChange: (themeType: string) => void;
-    onApplyCustomTheme: () => void;
+interface AccountAppearanceFormProps {
+    target?: string;
 }
 
-export default function AppearanceTab({
-    selectedThemeType,
-    customThemeJSON,
-    onCustomThemeJSONChange,
-    onThemeTypeChange,
-    onApplyCustomTheme,
-}: AppearanceTabProps) {
+export default function AccountAppearanceForm({
+    target = 'me',
+}: AccountAppearanceFormProps) {
+    const { usersApi } = useApi();
+    const queryClient = useQueryClient();
+    const { setTheme } = useTheme();
+
+    const [selectedThemeType, setSelectedThemeType] = useState<string>('dark');
+    const [customThemeJSON, setCustomThemeJSON] = useState<string>('');
     const [themePopoverOpen, setThemePopoverOpen] = useState(false);
+    const [pendingTheme, setPendingTheme] = useState<Record<string, any> | null>(
+        null,
+    );
+
+    const { data: userData } = useQuery<UserRetrieve>({
+        queryKey: queryKeys.users.detail(target),
+        queryFn: () => usersApi.usersRetrieve({ userId: target }),
+        enabled: !!target,
+        meta: { suppressNotification: true },
+    });
+
+    const saveMutation = useMutation({
+        mutationFn: async (theme: Record<string, any>) => {
+            if (!userData?.id) return;
+            await usersApi.usersUpdate({
+                userId: userData.id,
+                userUpdateRequest: { theme } as any,
+            });
+        },
+        meta: { successMessage: 'Settings saved successfully' },
+        onSuccess: () => {
+            setPendingTheme(null);
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.users.detail(target),
+            });
+        },
+    });
+
+    useEffect(() => {
+        if (!userData?.theme) return;
+
+        const themeName = (userData.theme as any)?.name;
+        if (themeName && themeName !== 'custom') {
+            const matchedPreset = PRESET_THEMES.find(
+                (preset) => preset.id === themeName,
+            );
+            if (matchedPreset) {
+                setSelectedThemeType(themeName);
+                setCustomThemeJSON('');
+            } else {
+                setSelectedThemeType('custom');
+                const { name: _name, ...rest } = userData.theme as any;
+                setCustomThemeJSON(JSON.stringify(rest, null, 2));
+            }
+        } else {
+            setSelectedThemeType('custom');
+            const { name: _name, ...rest } = userData.theme as any;
+            setCustomThemeJSON(
+                JSON.stringify(
+                    Object.keys(rest).length > 0 ? rest : userData.theme,
+                    null,
+                    2,
+                ),
+            );
+        }
+    }, [userData]);
+
+    const handleThemeTypeChange = (themeType: string) => {
+        setSelectedThemeType(themeType);
+
+        if (themeType === 'custom') {
+            const currentTheme = userData?.theme || PRESET_THEMES[0].theme;
+            const { name: _name, ...rest } = currentTheme as any;
+            setCustomThemeJSON(JSON.stringify(rest, null, 2));
+            setPendingTheme(null);
+        } else {
+            const preset = PRESET_THEMES.find((p) => p.id === themeType);
+            if (preset) {
+                const presetTheme: any = preset.theme;
+                const themeWithName =
+                    presetTheme &&
+                    typeof presetTheme === 'object' &&
+                    !Array.isArray(presetTheme)
+                        ? 'name' in presetTheme
+                            ? presetTheme
+                            : { name: preset.id, ...presetTheme }
+                        : { name: preset.id };
+
+                setTheme(themeWithName);
+                setPendingTheme(themeWithName);
+                toast.success(`Applied ${preset.label} theme`);
+            }
+        }
+    };
+
+    const handleApplyCustomTheme = () => {
+        try {
+            const parsed = JSON.parse(customThemeJSON);
+            if (
+                typeof parsed !== 'object' ||
+                parsed === null ||
+                Array.isArray(parsed)
+            ) {
+                toast.error('Theme must be a JSON object.');
+                return;
+            }
+            const themeWithName = { name: 'custom', ...parsed };
+            setTheme(themeWithName);
+            setPendingTheme(themeWithName);
+            toast.success('Custom theme applied');
+        } catch {
+            toast.error('Invalid JSON format');
+        }
+    };
+
+    const handleSave = () => {
+        if (!pendingTheme) {
+            toast.info('No changes to save');
+            return;
+        }
+        saveMutation.mutate(pendingTheme);
+    };
 
     return (
         <section id='appearance'>
@@ -66,7 +182,8 @@ export default function AppearanceTab({
                                         {selectedThemeType === 'custom'
                                             ? 'Custom'
                                             : PRESET_THEMES.find(
-                                                  (p) => p.id === selectedThemeType,
+                                                  (p) =>
+                                                      p.id === selectedThemeType,
                                               )?.label || 'Select theme...'}
                                     </span>
                                     <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
@@ -79,15 +196,21 @@ export default function AppearanceTab({
                                 <Command>
                                     <CommandInput placeholder='Search themes...' />
                                     <CommandList>
-                                        <CommandEmpty>No themes found.</CommandEmpty>
+                                        <CommandEmpty>
+                                            No themes found.
+                                        </CommandEmpty>
                                         <CommandGroup>
                                             {PRESET_THEMES.map((preset) => (
                                                 <CommandItem
                                                     key={preset.id}
                                                     value={preset.label}
                                                     onSelect={() => {
-                                                        onThemeTypeChange(preset.id);
-                                                        setThemePopoverOpen(false);
+                                                        handleThemeTypeChange(
+                                                            preset.id,
+                                                        );
+                                                        setThemePopoverOpen(
+                                                            false,
+                                                        );
                                                     }}
                                                 >
                                                     <Check
@@ -105,14 +228,17 @@ export default function AppearanceTab({
                                             <CommandItem
                                                 value='Custom'
                                                 onSelect={() => {
-                                                    onThemeTypeChange('custom');
+                                                    handleThemeTypeChange(
+                                                        'custom',
+                                                    );
                                                     setThemePopoverOpen(false);
                                                 }}
                                             >
                                                 <Check
                                                     className={cn(
                                                         'mr-2 size-4',
-                                                        selectedThemeType === 'custom'
+                                                        selectedThemeType ===
+                                                            'custom'
                                                             ? 'opacity-100'
                                                             : 'opacity-0',
                                                     )}
@@ -143,16 +269,30 @@ export default function AppearanceTab({
                                 className='font-mono text-xs'
                                 placeholder='{"--background":"oklch(0.145 0 0)","--foreground":"oklch(0.985 0 0)"}'
                                 value={customThemeJSON}
-                                onChange={(e) => onCustomThemeJSONChange(e.target.value)}
+                                onChange={(e) =>
+                                    setCustomThemeJSON(e.target.value)
+                                }
                             />
                             <div className='flex justify-end'>
-                                <Button type='button' onClick={onApplyCustomTheme}>
+                                <Button
+                                    type='button'
+                                    onClick={handleApplyCustomTheme}
+                                >
                                     Apply Custom Theme
                                 </Button>
                             </div>
                         </Field>
                     )}
                 </FieldGroup>
+                <div className='flex justify-end pt-2'>
+                    <Button
+                        type='button'
+                        onClick={handleSave}
+                        disabled={saveMutation.isPending || !pendingTheme}
+                    >
+                        {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                </div>
             </div>
         </section>
     );

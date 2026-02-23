@@ -22,7 +22,7 @@ import { AccessRequestAccessTypeEnum } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
-interface AdminPanelUserPermissionsProps {
+interface UserPermissionsFormProps {
     id: string;
     readOnly?: boolean;
 }
@@ -85,10 +85,10 @@ function PermissionRow({
     );
 }
 
-export default function AdminPanelUserPermissions({
+export default function UserPermissionsForm({
     id,
     readOnly,
-}: AdminPanelUserPermissionsProps) {
+}: UserPermissionsFormProps) {
     const [originalAccess, setOriginalAccess] = useState<Record<number, AccessType>>(
         {},
     );

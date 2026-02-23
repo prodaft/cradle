@@ -10,7 +10,7 @@ import GraphSettingsForm from './graph-settings-form';
 import NoteSettingsForm from './note-settings-form';
 import UserSettingsForm from './user-settings-form';
 
-const SETTING_COMPONENTS: Record<string, React.ComponentType> = {
+const ADMIN_SETTINGS_COMPONENTS: Record<string, React.ComponentType> = {
     note: NoteSettingsForm,
     files: FileSettingsForm,
     graph: GraphSettingsForm,
@@ -18,7 +18,7 @@ const SETTING_COMPONENTS: Record<string, React.ComponentType> = {
     users: UserSettingsForm,
 };
 
-const MANAGEMENT_ITEMS = [
+const ADMIN_SETTINGS_ITEMS = [
     {
         id: 'note',
         label: 'Note',
@@ -51,14 +51,14 @@ const MANAGEMENT_ITEMS = [
     },
 ];
 
-export default function ManagementPage() {
+export default function SettingsPage() {
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
     });
     const search = useSearch({ from: '/_authenticated/manage/_manage-auth/settings' });
 
-    const tab = (search as any)?.tab ?? MANAGEMENT_ITEMS[0].id;
+    const tab = (search as any)?.tab ?? ADMIN_SETTINGS_ITEMS[0].id;
 
     const handleTabChange = (tabId: string) => {
         router.navigate({
@@ -68,9 +68,9 @@ export default function ManagementPage() {
         });
     };
 
-    const SettingComponent = tab ? SETTING_COMPONENTS[tab] : null;
+    const ActiveSettingsComponent = tab ? ADMIN_SETTINGS_COMPONENTS[tab] : null;
     const currentTab =
-        MANAGEMENT_ITEMS.find((item) => item.id === tab) || MANAGEMENT_ITEMS[0];
+        ADMIN_SETTINGS_ITEMS.find((item) => item.id === tab) || ADMIN_SETTINGS_ITEMS[0];
     const currentDescription = currentTab?.description ?? '';
 
     return (
@@ -90,7 +90,7 @@ export default function ManagementPage() {
                 <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
                     <Tabs value={tab} onValueChange={handleTabChange}>
                         <TabsList className='flex-wrap h-auto'>
-                            {MANAGEMENT_ITEMS.map((item) => {
+                            {ADMIN_SETTINGS_ITEMS.map((item) => {
                                 const Icon = item.icon;
                                 return (
                                     <TabsTrigger key={item.id} value={item.id}>
@@ -118,8 +118,8 @@ export default function ManagementPage() {
                                         role='none'
                                         className='bg-border mb-4 flex-none'
                                     />
-                                    {SettingComponent ? (
-                                        <SettingComponent />
+                                    {ActiveSettingsComponent ? (
+                                        <ActiveSettingsComponent />
                                     ) : (
                                         <div className='flex items-center justify-center py-12'>
                                             <div className='text-center'>

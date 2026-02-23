@@ -42,7 +42,7 @@ import {
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import ConfirmDeletionDialog from '../../../dialogs/base/confirm-deletion-dialog';
-import AddEntryForm from './add-entry-type-form';
+import AddEntryTypeForm from './add-entry-type-form';
 
 interface EntryTypeData {
     id: string;
@@ -404,7 +404,7 @@ export default function EntryTypesPage() {
                         <DialogDescription>Create new entry class</DialogDescription>
                     </DialogHeader>
                     <div className='no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4'>
-                        <AddEntryForm
+                        <AddEntryTypeForm
                             onAdd={(newEntryType: EntryClass) => {
                                 handleEntryTypeAdded(newEntryType);
                                 setAddEntryTypeDialogOpen(false);

@@ -36,7 +36,7 @@ import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-interface AddEntryFormProps {
+interface AddEntryTypeFormProps {
     onAdd?: (result: EntryClass) => void;
 }
 
@@ -93,7 +93,7 @@ const entryTypeSchema = z.object({
 
 type FormData = z.infer<typeof entryTypeSchema>;
 
-export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
+export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
     const { entriesApi } = useApi();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [showColorPicker, setShowColorPicker] = useState(false);
