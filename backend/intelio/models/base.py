@@ -80,7 +80,7 @@ class BaseDigest(LifecycleModel):
         # digest_type cannot be BaseDigest
         constraints = [
             models.CheckConstraint(
-                check=~models.Q(digest_type="BaseDigest"),
+                condition=~models.Q(digest_type="BaseDigest"),
                 name="digest_type_not_base_digest",
             ),
         ]
