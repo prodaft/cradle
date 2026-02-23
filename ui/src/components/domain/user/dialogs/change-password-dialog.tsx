@@ -27,7 +27,7 @@ import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 
 const changePasswordSchema = z
     .object({

@@ -29,7 +29,7 @@ import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { SelectOption } from '@/types';
-import { z } from 'zod';
+import * as z from 'zod';
 import OfflineIndicator from '../../../feedback/offline-indicator';
 
 interface EntityFormProps {

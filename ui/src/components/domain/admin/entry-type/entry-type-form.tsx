@@ -48,7 +48,7 @@ import {
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 import OfflineIndicator from '../../../feedback/offline-indicator';
 
 interface EntryTypeFormProps {

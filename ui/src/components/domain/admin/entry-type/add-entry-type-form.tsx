@@ -34,7 +34,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useMemo, useRef, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 
 interface AddEntryFormProps {
     onAdd?: (result: EntryClass) => void;

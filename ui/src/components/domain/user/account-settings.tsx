@@ -44,7 +44,7 @@ import { Check, ChevronsUpDown, Link, Lock, Palette } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { z } from 'zod';
+import * as z from 'zod';
 import ActiveSessions from './active-sessions';
 
 const ACCOUNT_SETTINGS_ITEMS = [
@@ -100,11 +100,8 @@ const accountSettingsSchema = z.object({
     id: z.string().optional(),
     username: z.string().min(1, { error: 'Username is required' }),
     email: z
-        .string()
-        .min(1, { error: 'Email is required' })
-        .refine((val) => z.email().safeParse(val).success, {
-            error: 'Invalid email',
-        }),
+        .email({ error: 'Invalid email' })
+        .min(1, { error: 'Email is required' }),
     password: z.string().optional(),
     catalystApiKey: z.string().optional(),
     role: z.string().optional(),

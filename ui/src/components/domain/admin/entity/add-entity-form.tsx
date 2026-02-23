@@ -29,7 +29,7 @@ import { Entity } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 
 interface AddEntityFormProps {
     onAdd?: (result: Entity) => void;

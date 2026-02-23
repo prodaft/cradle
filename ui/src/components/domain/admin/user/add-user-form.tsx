@@ -29,7 +29,7 @@ import { useMutation } from '@tanstack/react-query';
 import bytes from 'bytes';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 
 interface AddUserFormProps {
     onAdd?: (result: UserRetrieve) => void;
@@ -38,11 +38,8 @@ interface AddUserFormProps {
 const addUserSchema = z.object({
     username: z.string().min(1, { error: 'Username is required' }),
     email: z
-        .string()
-        .min(1, { error: 'Email is required' })
-        .refine((val) => z.email().safeParse(val).success, {
-            error: 'Invalid email',
-        }),
+        .email({ error: 'Invalid email' })
+        .min(1, { error: 'Email is required' }),
     password: z
         .string()
         .min(8, { error: 'Password must be at least 8 characters' })

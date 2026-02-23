@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
-import { z } from 'zod';
+import * as z from 'zod';
 
 const ConfirmEmail = lazy(() => import('@/components/domain/auth/confirm-email'));
 

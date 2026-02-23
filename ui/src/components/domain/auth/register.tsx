@@ -33,7 +33,7 @@ import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { z } from 'zod';
+import * as z from 'zod';
 
 const GlobeVisualization = lazy(() => import('./globe-visualization'));
 
@@ -55,12 +55,18 @@ const registerSchema = z
     .object({
         username: z.string().min(1, { error: 'Username is required' }),
         email: z
+            .email({ error: 'Invalid email' })
+            .min(1, { error: 'Email is required' }),
+        password: z
             .string()
-            .min(1, { error: 'Email is required' })
-            .refine((val) => z.email().safeParse(val).success, {
-                error: 'Invalid email',
+            .min(12, { error: 'Password must be at least 12 characters' })
+            .regex(/[0-9]/, { error: 'Password must contain at least 1 digit' })
+            .regex(/[A-Z]/, {
+                error: 'Password must contain at least 1 uppercase letter',
+            })
+            .regex(/[^a-zA-Z0-9]/, {
+                error: 'Password must contain at least 1 special character',
             }),
-        password: z.string().min(1, { error: 'Password is required' }),
         passwordCheck: z.string().min(1, { error: 'Please confirm your password' }),
     })
     .refine((data) => data.password === data.passwordCheck, {

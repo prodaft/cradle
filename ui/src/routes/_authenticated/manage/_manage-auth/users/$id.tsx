@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
-import { z } from 'zod';
+import * as z from 'zod';
 
 const UserSettingsPage = lazy(
     () => import('@/components/domain/admin/user/user-settings-page'),

@@ -21,15 +21,12 @@ import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 
 const forgotPasswordSchema = z.object({
     email: z
-        .string()
-        .min(1, { error: 'Email is required' })
-        .refine((val) => z.email().safeParse(val).success, {
-            error: 'Invalid email',
-        }),
+        .email({ error: 'Invalid email' })
+        .min(1, { error: 'Email is required' }),
 });
 
 type FormData = z.infer<typeof forgotPasswordSchema>;

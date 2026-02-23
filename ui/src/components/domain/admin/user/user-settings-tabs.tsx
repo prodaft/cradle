@@ -29,7 +29,7 @@ import bytes from 'bytes';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { z } from 'zod';
+import * as z from 'zod';
 import ActiveSessions from '../../user/active-sessions';
 import SetUserPasswordDialog from './set-password-dialog';
 import UserActivityList from './user-activity-list';
@@ -44,11 +44,8 @@ const adminUserSettingsSchema = z.object({
     id: z.string().optional(),
     username: z.string().min(1, { error: 'Username is required' }),
     email: z
-        .string()
-        .min(1, { error: 'Email is required' })
-        .refine((val) => z.email().safeParse(val).success, {
-            error: 'Invalid email',
-        }),
+        .email({ error: 'Invalid email' })
+        .min(1, { error: 'Email is required' }),
     role: z.string().min(1, { error: 'Role is required' }),
     emailConfirmed: z.boolean().optional(),
     isActive: z.boolean().optional(),

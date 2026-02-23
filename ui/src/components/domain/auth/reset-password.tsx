@@ -20,7 +20,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 
 const resetPasswordSchema = z
     .object({

@@ -2,7 +2,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import Dashboard from 'src/components/domain/dashboard/dashboard';
 import type { EntryResponse } from 'src/services/cradle/models';
 import { createLoaderApis } from 'src/utils/apiLoader';
-import { z } from 'zod';
+import * as z from 'zod';
 
 export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name')({
     staticData: {

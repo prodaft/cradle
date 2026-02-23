@@ -39,7 +39,7 @@ import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react
 import { useMutation, useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as z from 'zod';
 
 interface SelectOption<T = string | number> {
     value: T;

@@ -19,7 +19,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { z } from 'zod';
+import * as z from 'zod';
 import SnippetList, { SnippetListRef } from '../../../base/snippet-list/snippet-list';
 
 const noteSettingsSchema = z.object({
