@@ -20,6 +20,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
@@ -419,14 +420,14 @@ export default function UsersPage() {
                         <DialogTitle>Add User</DialogTitle>
                         <DialogDescription>Create a new user account</DialogDescription>
                     </DialogHeader>
-                    <div className='no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4'>
+                    <ScrollArea className='no-scrollbar -mx-4 max-h-[50vh] px-4'>
                         <AddUserForm
                             onAdd={(newUser: UserRetrieve) => {
                                 handleUserAdded(newUser);
                                 setAddUserDialogOpen(false);
                             }}
                         />
-                    </div>
+                    </ScrollArea>
                 </DialogContent>
             </Dialog>
             <ConfirmDeletionDialog

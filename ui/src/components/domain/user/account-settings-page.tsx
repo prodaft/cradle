@@ -1,4 +1,5 @@
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClockCounterClockwiseIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
@@ -96,7 +97,7 @@ export default function AccountSettingsPage({ target = 'me' }: AccountSettingsPr
                 </Tabs>
                 <div className='flex w-full overflow-y-hidden p-1'>
                     <div className='flex flex-1 flex-col'>
-                        <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
+                        <ScrollArea className='faded-bottom h-full w-full pb-12'>
                             <div data-slot='card-content' className='px-0'>
                                 <div className='flex-none mb-4'>
                                     <h3 className='text-lg font-medium'>
@@ -127,7 +128,7 @@ export default function AccountSettingsPage({ target = 'me' }: AccountSettingsPr
                                     <AccountEditorForm target={target} />
                                 )}
                             </div>
-                        </div>
+                        </ScrollArea>
                     </div>
                 </div>
             </div>

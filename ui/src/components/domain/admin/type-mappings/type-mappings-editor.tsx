@@ -36,6 +36,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import {
     Table,
@@ -610,7 +611,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     }
 
     return (
-        <div className='w-full h-full overflow-auto flex flex-col'>
+        <div className='w-full h-full flex flex-col'>
             {/* Header Section */}
             <div className='flex items-center justify-between gap-4 px-4 pt-4'>
                 <div className='flex flex-col gap-0.5'>
@@ -638,7 +639,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                 </div>
             </div>
 
-            <div className='rounded-lg bg-muted/5 p-4 flex-1 overflow-auto h-[70vh]'>
+            <ScrollArea className='rounded-lg bg-muted/5 p-4 flex-1 h-[70vh]'>
                 <div className='overflow-hidden rounded-md border'>
                     <Table>
                         <TableHeader className='sticky top-0 bg-background z-10'>
@@ -903,7 +904,8 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                         Save Changes
                     </Button>
                 </div>
-            </div>
+                <ScrollBar orientation='horizontal' />
+            </ScrollArea>
         </div>
     );
 };

@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import {
     Select,
     SelectContent,
@@ -364,37 +365,39 @@ function SubtypeFilter({
                     <CommandInput placeholder='Search types...' />
                     <CommandList className='max-h-full'>
                         <CommandEmpty>No types found.</CommandEmpty>
-                        <CommandGroup className='max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden'>
-                            {sorted.map((subtype) => {
-                                const isSelected = selectedSet.has(subtype);
-                                const color = colorMap.get(subtype);
-                                return (
-                                    <CommandItem
-                                        key={subtype}
-                                        value={subtype}
-                                        onSelect={() => toggle(subtype)}
-                                    >
-                                        <div
-                                            className={cn(
-                                                'flex size-4 items-center justify-center rounded-sm border border-primary',
-                                                isSelected
-                                                    ? 'bg-primary'
-                                                    : 'opacity-50 [&_svg]:invisible',
-                                            )}
+                        <ScrollArea className='max-h-[300px]'>
+                            <CommandGroup className='scroll-py-1'>
+                                {sorted.map((subtype) => {
+                                    const isSelected = selectedSet.has(subtype);
+                                    const color = colorMap.get(subtype);
+                                    return (
+                                        <CommandItem
+                                            key={subtype}
+                                            value={subtype}
+                                            onSelect={() => toggle(subtype)}
                                         >
-                                            <Check />
-                                        </div>
-                                        {color && (
-                                            <span
-                                                className='size-2 rounded-full shrink-0'
-                                                style={{ backgroundColor: color }}
-                                            />
-                                        )}
-                                        <span className='truncate'>{subtype}</span>
-                                    </CommandItem>
-                                );
-                            })}
-                        </CommandGroup>
+                                            <div
+                                                className={cn(
+                                                    'flex size-4 items-center justify-center rounded-sm border border-primary',
+                                                    isSelected
+                                                        ? 'bg-primary'
+                                                        : 'opacity-50 [&_svg]:invisible',
+                                                )}
+                                            >
+                                                <Check />
+                                            </div>
+                                            {color && (
+                                                <span
+                                                    className='size-2 rounded-full shrink-0'
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                            )}
+                                            <span className='truncate'>{subtype}</span>
+                                        </CommandItem>
+                                    );
+                                })}
+                            </CommandGroup>
+                        </ScrollArea>
                         {selected.length > 0 && (
                             <>
                                 <CommandSeparator />
@@ -693,7 +696,7 @@ export default function Relations({ obj }: RelationsProps) {
     }, [table]);
 
     return (
-        <div className='flex w-full flex-col gap-2.5 overflow-auto'>
+        <ScrollArea className='flex w-full flex-col gap-2.5'>
             {hasInaccessible && (
                 <AlertComponent variant='default'>
                     <WarningCircleIcon size={18} weight='bold' />
@@ -906,6 +909,7 @@ export default function Relations({ obj }: RelationsProps) {
                     Clear
                 </ActionBarClose>
             </ActionBar>
-        </div>
+            <ScrollBar orientation='horizontal' />
+        </ScrollArea>
     );
 }

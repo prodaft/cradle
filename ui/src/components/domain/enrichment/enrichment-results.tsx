@@ -20,6 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import {
     Table,
@@ -753,7 +754,7 @@ export default function EnrichmentResults() {
                         {/* Content */}
                         {showIgnored ? (
                             /* Ignored Artifacts View */
-                            <div className='overflow-hidden rounded-md border flex-1 overflow-auto'>
+                            <ScrollArea className='overflow-hidden rounded-md border flex-1'>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -790,7 +791,8 @@ export default function EnrichmentResults() {
                                         )}
                                     </TableBody>
                                 </Table>
-                            </div>
+                                <ScrollBar orientation='horizontal' />
+                            </ScrollArea>
                         ) : selectedEnricher ? (
                             /* Relations View */
                             isLoadingEnricher ? (
@@ -806,7 +808,7 @@ export default function EnrichmentResults() {
                             ) : (
                                 <>
                                     <div className='overflow-hidden rounded-md border flex-1 flex flex-col'>
-                                        <div className='flex-1 overflow-auto'>
+                                        <ScrollArea className='flex-1'>
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow>
@@ -961,7 +963,8 @@ export default function EnrichmentResults() {
                                                     )}
                                                 </TableBody>
                                             </Table>
-                                        </div>
+                                            <ScrollBar orientation='horizontal' />
+                                        </ScrollArea>
                                     </div>
                                     {/* Pagination */}
                                     {selectedArtifactId && (

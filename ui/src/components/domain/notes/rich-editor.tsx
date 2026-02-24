@@ -1,4 +1,5 @@
 import FileUploadDialog from '@/components/domain/notes/dialogs/file-upload-dialog';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from '@/contexts/ui';
 import useApi from '@/hooks/api/use-api';
@@ -693,13 +694,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                         </span>
                     </button>
                     {showFileList && (
-                        <div className='overflow-auto flex-1 min-h-24 border-t border-border'>
+                        <ScrollArea className='flex-1 min-h-24 border-t border-border'>
                             <FileTable
                                 fileData={fileData}
                                 setFileData={setFileData}
                                 insertTextCallback={insertTextToCodeMirror}
                             />
-                        </div>
+                            <ScrollBar orientation='horizontal' />
+                        </ScrollArea>
                     )}
                 </div>
             )}

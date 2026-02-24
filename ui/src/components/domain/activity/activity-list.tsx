@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -179,29 +180,31 @@ function EventTypeFilter({
             <PopoverContent className='w-44 p-0' align='start'>
                 <Command>
                     <CommandList className='max-h-full'>
-                        <CommandGroup className='max-h-[300px] overflow-y-auto'>
-                            {EVENT_TYPE_OPTIONS.map((option) => {
-                                const isSelected = value === option.value;
-                                return (
-                                    <CommandItem
-                                        key={option.value}
-                                        onSelect={() => handleSelect(option.value)}
-                                    >
-                                        <div
-                                            className={cn(
-                                                'flex size-4 items-center justify-center rounded-sm border border-primary',
-                                                isSelected
-                                                    ? 'bg-primary'
-                                                    : 'opacity-50 [&_svg]:invisible',
-                                            )}
+                        <ScrollArea className='max-h-[300px]'>
+                            <CommandGroup>
+                                {EVENT_TYPE_OPTIONS.map((option) => {
+                                    const isSelected = value === option.value;
+                                    return (
+                                        <CommandItem
+                                            key={option.value}
+                                            onSelect={() => handleSelect(option.value)}
                                         >
-                                            <Check className='size-3 text-primary-foreground' />
-                                        </div>
-                                        <span className='truncate'>{option.label}</span>
-                                    </CommandItem>
-                                );
-                            })}
-                        </CommandGroup>
+                                            <div
+                                                className={cn(
+                                                    'flex size-4 items-center justify-center rounded-sm border border-primary',
+                                                    isSelected
+                                                        ? 'bg-primary'
+                                                        : 'opacity-50 [&_svg]:invisible',
+                                                )}
+                                            >
+                                                <Check className='size-3 text-primary-foreground' />
+                                            </div>
+                                            <span className='truncate'>{option.label}</span>
+                                        </CommandItem>
+                                    );
+                                })}
+                            </CommandGroup>
+                        </ScrollArea>
                     </CommandList>
                 </Command>
             </PopoverContent>
@@ -658,7 +661,7 @@ export default function ActivityList({
     };
 
     return (
-        <div className='flex w-full flex-col gap-2.5 overflow-auto'>
+        <ScrollArea className='flex w-full flex-col gap-2.5'>
             {/* Toolbar */}
             <div
                 role='toolbar'
@@ -788,6 +791,7 @@ export default function ActivityList({
                     <DataTablePagination table={table} />
                 </>
             )}
-        </div>
+            <ScrollBar orientation='horizontal' />
+        </ScrollArea>
     );
 }

@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import MultipleSelector, { type Option } from '@/components/ui/multi-select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
@@ -429,39 +430,41 @@ export default function EnrichmentRequestDialog({
                             <FieldLegend>
                                 Selected Notes ({selectedNoteIds.size})
                             </FieldLegend>
-                            <ul className='border border-border rounded-lg max-h-48 overflow-y-auto'>
-                                {notesList.map((note) => {
-                                    const isSelected = selectedNoteIds.has(note.id);
-                                    return (
-                                        <li
-                                            key={note.id}
-                                            className={`flex items-center gap-3 px-4 py-2 border-b border-border last:border-b-0 transition-colors ${
-                                                isSelected
-                                                    ? 'hover:bg-secondary/50'
-                                                    : 'bg-secondary/10'
-                                            }`}
-                                        >
-                                            <input
-                                                type='checkbox'
-                                                className='cradle-checkbox'
-                                                checked={isSelected}
-                                                onChange={() =>
-                                                    toggleNoteSelection(note.id)
-                                                }
-                                            />
-                                            <span
-                                                className={`text-sm truncate flex-1 ${
+                            <ScrollArea className='border border-border rounded-lg max-h-48'>
+                                <ul>
+                                    {notesList.map((note) => {
+                                        const isSelected = selectedNoteIds.has(note.id);
+                                        return (
+                                            <li
+                                                key={note.id}
+                                                className={`flex items-center gap-3 px-4 py-2 border-b border-border last:border-b-0 transition-colors ${
                                                     isSelected
-                                                        ? 'text-foreground'
-                                                        : 'text-muted-foreground line-through decoration-muted-foreground'
+                                                        ? 'hover:bg-secondary/50'
+                                                        : 'bg-secondary/10'
                                                 }`}
                                             >
-                                                {note.title || 'Untitled'}
-                                            </span>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
+                                                <input
+                                                    type='checkbox'
+                                                    className='cradle-checkbox'
+                                                    checked={isSelected}
+                                                    onChange={() =>
+                                                        toggleNoteSelection(note.id)
+                                                    }
+                                                />
+                                                <span
+                                                    className={`text-sm truncate flex-1 ${
+                                                        isSelected
+                                                            ? 'text-foreground'
+                                                            : 'text-muted-foreground line-through decoration-muted-foreground'
+                                                    }`}
+                                                >
+                                                    {note.title || 'Untitled'}
+                                                </span>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </ScrollArea>
                         </FieldSet>
                     )}
 

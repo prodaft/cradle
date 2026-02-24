@@ -27,6 +27,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -769,49 +770,51 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                                 <PopoverContent className='w-50 p-0' align='start'>
                                     <Command>
                                         <CommandList className='max-h-full'>
-                                            <CommandGroup className='max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden'>
-                                                {(
-                                                    [
-                                                        {
-                                                            value: 'healthy',
-                                                            label: 'Healthy',
-                                                        },
-                                                        {
-                                                            value: 'warning',
-                                                            label: 'Warning',
-                                                        },
-                                                    ] as const
-                                                ).map((option) => {
-                                                    const isSelected =
-                                                        statusFilter === option.value;
-                                                    return (
-                                                        <CommandItem
-                                                            key={option.value}
-                                                            onSelect={() =>
-                                                                handleStatusFilterChange(
-                                                                    isSelected
-                                                                        ? 'all'
-                                                                        : option.value,
-                                                                )
-                                                            }
-                                                        >
-                                                            <div
-                                                                className={cn(
-                                                                    'flex size-4 items-center justify-center rounded-sm border border-primary',
-                                                                    isSelected
-                                                                        ? 'bg-primary'
-                                                                        : 'opacity-50 [&_svg]:invisible',
-                                                                )}
+                                            <ScrollArea className='max-h-[300px]'>
+                                                <CommandGroup className='scroll-py-1'>
+                                                    {(
+                                                        [
+                                                            {
+                                                                value: 'healthy',
+                                                                label: 'Healthy',
+                                                            },
+                                                            {
+                                                                value: 'warning',
+                                                                label: 'Warning',
+                                                            },
+                                                        ] as const
+                                                    ).map((option) => {
+                                                        const isSelected =
+                                                            statusFilter === option.value;
+                                                        return (
+                                                            <CommandItem
+                                                                key={option.value}
+                                                                onSelect={() =>
+                                                                    handleStatusFilterChange(
+                                                                        isSelected
+                                                                            ? 'all'
+                                                                            : option.value,
+                                                                    )
+                                                                }
                                                             >
-                                                                <Check />
-                                                            </div>
-                                                            <span className='truncate'>
-                                                                {option.label}
-                                                            </span>
-                                                        </CommandItem>
-                                                    );
-                                                })}
-                                            </CommandGroup>
+                                                                <div
+                                                                    className={cn(
+                                                                        'flex size-4 items-center justify-center rounded-sm border border-primary',
+                                                                        isSelected
+                                                                            ? 'bg-primary'
+                                                                            : 'opacity-50 [&_svg]:invisible',
+                                                                    )}
+                                                                >
+                                                                    <Check />
+                                                                </div>
+                                                                <span className='truncate'>
+                                                                    {option.label}
+                                                                </span>
+                                                            </CommandItem>
+                                                        );
+                                                    })}
+                                                </CommandGroup>
+                                            </ScrollArea>
                                             {statusFilter !== 'all' && (
                                                 <>
                                                     <CommandSeparator />

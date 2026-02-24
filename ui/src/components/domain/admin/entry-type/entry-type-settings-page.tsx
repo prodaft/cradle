@@ -1,4 +1,5 @@
 import { CardContent } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -122,7 +123,7 @@ export default function EntryTypeSettingsPage() {
                     <div className='flex w-full overflow-y-hidden p-1'>
                         <div className='flex flex-1 flex-col'>
                             {tab === 'activity' ? (
-                                <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth'>
+                                <ScrollArea className='faded-bottom h-full w-full'>
                                     <CardContent className='px-0'>
                                         <div className='flex-none mb-4'>
                                             <h3 className='text-lg font-medium'>
@@ -143,9 +144,9 @@ export default function EntryTypeSettingsPage() {
                                             name={entryTypeData?.subtype}
                                         />
                                     </CardContent>
-                                </div>
+                                </ScrollArea>
                             ) : (
-                                <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
+                                <ScrollArea className='faded-bottom h-full w-full pb-12'>
                                     <CardContent className='px-0'>
                                         <div className='flex-none mb-4'>
                                             <h3 className='text-lg font-medium'>
@@ -178,7 +179,7 @@ export default function EntryTypeSettingsPage() {
                                             }}
                                         />
                                     </CardContent>
-                                </div>
+                                </ScrollArea>
                             )}
                         </div>
                     </div>

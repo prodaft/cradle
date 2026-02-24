@@ -20,6 +20,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/use-api';
@@ -403,14 +404,14 @@ export default function EntryTypesPage() {
                         <DialogTitle>New Entry</DialogTitle>
                         <DialogDescription>Create new entry class</DialogDescription>
                     </DialogHeader>
-                    <div className='no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4'>
+                    <ScrollArea className='no-scrollbar -mx-4 max-h-[50vh] px-4'>
                         <AddEntryTypeForm
                             onAdd={(newEntryType: EntryClass) => {
                                 handleEntryTypeAdded(newEntryType);
                                 setAddEntryTypeDialogOpen(false);
                             }}
                         />
-                    </div>
+                    </ScrollArea>
                 </DialogContent>
             </Dialog>
             <ConfirmDeletionDialog

@@ -1,4 +1,5 @@
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { EdgeRelation } from '@/services/cradle';
 import type React from 'react';
 import { ComponentType, useMemo, useState } from 'react';
@@ -140,19 +141,21 @@ export default function GraphControl({
                             className='w-full'
                         />
                         {searchQuery && searchResults.length > 0 && (
-                            <ul className='absolute z-50 mt-1 w-full rounded-md border border-border bg-popover py-1 shadow-md max-h-48 overflow-auto'>
-                                {searchResults.map((node) => (
-                                    <li key={node.id}>
-                                        <button
-                                            type='button'
-                                            className='w-full px-3 py-2 text-left text-sm hover:bg-accent'
-                                            onClick={() => handleSelectNode(node)}
-                                        >
-                                            {node.label ?? node.id}
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
+                            <ScrollArea className='absolute z-50 mt-1 w-full rounded-md border border-border bg-popover py-1 shadow-md max-h-48'>
+                                <ul>
+                                    {searchResults.map((node) => (
+                                        <li key={node.id}>
+                                            <button
+                                                type='button'
+                                                className='w-full px-3 py-2 text-left text-sm hover:bg-accent'
+                                                onClick={() => handleSelectNode(node)}
+                                            >
+                                                {node.label ?? node.id}
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </ScrollArea>
                         )}
                     </div>
                 )}

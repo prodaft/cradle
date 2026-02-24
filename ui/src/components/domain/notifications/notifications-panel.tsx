@@ -1,4 +1,5 @@
 import useApi from '@/hooks/api/use-api';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -90,7 +91,7 @@ export default function NotificationsPanel({
     // Setup virtualizer for the notifications list
     const virtualizer = useVirtualizer({
         count: hasNextPage ? notifications.length + 1 : notifications.length,
-        getScrollElement: () => parentRef.current,
+        getScrollElement: () => parentRef.current?.parentElement as HTMLDivElement | null,
         estimateSize: () => ESTIMATED_NOTIFICATION_HEIGHT,
         overscan: OVERSCAN,
     });
@@ -141,16 +142,14 @@ export default function NotificationsPanel({
                     <Loading />
                 </div>
             ) : (
-                <div
-                    ref={parentRef}
-                    className='flex-1 overflow-auto'
-                    style={{ contain: 'strict' }}
-                >
+                <ScrollArea className='flex-1'>
                     <div
+                        ref={parentRef}
                         style={{
                             height: `${virtualizer.getTotalSize()}px`,
                             width: '100%',
                             position: 'relative',
+                            contain: 'strict',
                         }}
                     >
                         {virtualItems.map((virtualItem) => {
@@ -195,7 +194,7 @@ export default function NotificationsPanel({
                             );
                         })}
                     </div>
-                </div>
+                </ScrollArea>
             )}
         </div>
     );

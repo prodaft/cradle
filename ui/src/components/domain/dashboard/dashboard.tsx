@@ -1,4 +1,5 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { SparkleIcon } from '@phosphor-icons/react';
 import {
@@ -104,7 +105,7 @@ export default function Dashboard() {
                                     })}
                                 </TabsList>
                             </Tabs>
-                            <div className='faded-bottom h-full w-full overflow-x-auto overflow-y-auto scroll-smooth pb-12'>
+                            <ScrollArea className='faded-bottom h-full w-full pb-12'>
                                 {tab === 'notes' && <Notes obj={contentObject} />}
                                 {tab === 'relations' && (
                                     <Relations obj={contentObject} />
@@ -121,7 +122,8 @@ export default function Dashboard() {
                                         objectId={contentObject.id?.toString()}
                                     />
                                 )}
-                            </div>
+                                <ScrollBar orientation='horizontal' />
+                            </ScrollArea>
                         </div>
                     )}
                 </div>

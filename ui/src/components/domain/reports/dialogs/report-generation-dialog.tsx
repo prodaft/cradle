@@ -24,6 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/use-api';
 import {
@@ -197,37 +198,39 @@ export default function ReportGenerationDialog({
                 {!isSingleNote && targets.length > 0 && (
                     <FieldSet>
                         <FieldLegend>Selected Notes ({selectedIds.size})</FieldLegend>
-                        <ul className='border border-border rounded-lg max-h-48 overflow-y-auto'>
-                            {targets.map((note) => {
-                                const isSelected = selectedIds.has(note.id);
-                                return (
-                                    <li
-                                        key={note.id}
-                                        className={`flex items-center gap-3 px-4 py-2 border-b border-border last:border-b-0 transition-colors ${
-                                            isSelected
-                                                ? 'hover:bg-secondary/50'
-                                                : 'bg-secondary/10'
-                                        }`}
-                                    >
-                                        <Checkbox
-                                            checked={isSelected}
-                                            onCheckedChange={() =>
-                                                toggleSelection(note.id)
-                                            }
-                                        />
-                                        <span
-                                            className={`text-sm truncate flex-1 ${
+                        <ScrollArea className='border border-border rounded-lg max-h-48'>
+                            <ul>
+                                {targets.map((note) => {
+                                    const isSelected = selectedIds.has(note.id);
+                                    return (
+                                        <li
+                                            key={note.id}
+                                            className={`flex items-center gap-3 px-4 py-2 border-b border-border last:border-b-0 transition-colors ${
                                                 isSelected
-                                                    ? 'text-foreground'
-                                                    : 'text-muted-foreground line-through decoration-muted-foreground'
+                                                    ? 'hover:bg-secondary/50'
+                                                    : 'bg-secondary/10'
                                             }`}
                                         >
-                                            {note.title || 'Untitled'}
-                                        </span>
-                                    </li>
-                                );
-                            })}
-                        </ul>
+                                            <Checkbox
+                                                checked={isSelected}
+                                                onCheckedChange={() =>
+                                                    toggleSelection(note.id)
+                                                }
+                                            />
+                                            <span
+                                                className={`text-sm truncate flex-1 ${
+                                                    isSelected
+                                                        ? 'text-foreground'
+                                                        : 'text-muted-foreground line-through decoration-muted-foreground'
+                                                }`}
+                                            >
+                                                {note.title || 'Untitled'}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </ScrollArea>
                     </FieldSet>
                 )}
 
