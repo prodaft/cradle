@@ -8,7 +8,7 @@ weight = 1
 ## File structure
 
 The UI package contains configuration files, runtime assets, and source code.
-After building the app, an `out` folder is generated with bundled files.
+After building the app, a `dist` folder is generated with bundled files.
 
 ### Root overview
 
@@ -16,16 +16,15 @@ After building the app, an `out` folder is generated with bundled files.
 - `scripts`: build helpers such as OpenAPI import fixes.
 - `src`: application source code.
 - `.env`: environment variables (see Vite docs).
-- Config files: `electron.vite.config.ts`, `vite.config.ts`, and `jest.config.ts`.
+- Config files: `vite.config.ts`, `tsconfig.json`, and `eslint.config.mjs`.
 - Tooling configs: `tailwind.config.ts`, `postcss.config.ts`, `eslint.config.mjs`.
 
 ### Inside src
 
-- `main` and `preload`: Electron startup files.
-- `renderer`: main application code.
-  - `assets`: images and SVGs.
-  - `components`: React components (each in its own folder with tests).
-  - `hooks`: custom React hooks.
-  - `services`: business logic and API calls.
-  - `styles`: Tailwind CSS base classes and custom styles.
-  - `utils`: shared utility functions.
+- `assets`: images and static resources.
+- `components`: React components.
+- `contexts`: React context providers.
+- `hooks`: custom React hooks.
+- `routes`: route definitions and page-level modules.
+- `services`: business logic and API clients.
+- `utils`: shared utility functions.

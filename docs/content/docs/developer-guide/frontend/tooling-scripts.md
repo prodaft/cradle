@@ -10,7 +10,7 @@ weight = 11
 Common Bun scripts:
 
 - `bun run dev`: start the web dev server.
-- `bun run build`: build the Electron bundle.
+- `bun run build`: build the production web bundle.
 - `bun run lint`: run ESLint on `src/**/*.ts`.
 - `bun run typecheck`: run TypeScript checks.
 - `bun run verify`: run the verify script as defined in `package.json`.

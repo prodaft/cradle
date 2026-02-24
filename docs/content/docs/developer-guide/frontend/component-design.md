@@ -16,9 +16,9 @@ UI components are organized by responsibility and scope.
 - `feedback`: error, loading, and not-found states.
 
 ## Where to add new UI
-- Base UI: add to `src/renderer/src/components/base`.
-- Feature UI: add to `src/renderer/src/components/domain`.
-- Global layout: add to `src/renderer/src/components/layout`.
+- Base UI: add to `src/components/base`.
+- Feature UI: add to `src/components/domain`.
+- Global layout: add to `src/components/layout`.
 
 ## Styling
 - Tailwind CSS is used throughout the UI.
