@@ -37,7 +37,6 @@ def smart_linker_task(note_id, user_id=None):
     """
 
     note = Note.objects.get(id=note_id)
-    user = CradleUser.objects.get(id=user_id) if user_id else None
 
     try:
         Relation.objects.filter(note=note, reason=RelationReason.NOTE).delete()

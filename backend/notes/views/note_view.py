@@ -1,7 +1,6 @@
 from typing import cast
 from uuid import UUID
 
-from django.db import transaction
 from django.db.models import Count, Prefetch, Q
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
@@ -44,7 +43,6 @@ from ..serializers import (
     FileReferenceListSerializer,
     FileReferenceWithNoteSerializer,
     FleetingNoteSerializer,
-    NoteCreateSerializer,
     NoteEditSerializer,
     NoteListSerializer,
     NoteRetrieveSerializer,

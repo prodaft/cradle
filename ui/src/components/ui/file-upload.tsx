@@ -23,6 +23,7 @@ const LIST_NAME = 'FileUploadList';
 const ITEM_NAME = 'FileUploadItem';
 const ITEM_PREVIEW_NAME = 'FileUploadItemPreview';
 const ITEM_METADATA_NAME = 'FileUploadItemMetadata';
+const ITEM_PROGRESS_NAME = 'FileUploadItemProgress';
 const ITEM_DELETE_NAME = 'FileUploadItemDelete';
 const CLEAR_NAME = 'FileUploadClear';
 

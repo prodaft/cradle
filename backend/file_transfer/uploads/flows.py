@@ -37,8 +37,8 @@ class UploadConfig:
     bucket_name: str
     expiry_seconds: int = 5 * 60  # 5 minutes
     allow_concurrent_per_user: bool = False
-    object_key_generator: Callable[[uuid.UUID, str, "CradleUser"], str] = (
-        lambda upload_id, file_name, user: f"{upload_id}-{file_name}"
+    object_key_generator: Callable[[uuid.UUID, str, "CradleUser"], str] = lambda upload_id, file_name, user: (
+        f"{upload_id}-{file_name}"
     )
 
 

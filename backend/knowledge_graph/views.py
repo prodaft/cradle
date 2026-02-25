@@ -263,9 +263,7 @@ class GraphNeighborsView(APIView):
                     order_by="-last_seen",
                 )
             else:
-                raise InvalidQuerySyntaxException(
-                    detail=f"Invalid query syntax: {filterset.errors}"
-                )
+                raise InvalidQuerySyntaxException(detail=f"Invalid query syntax: {filterset.errors}")
 
         serializer = EntryWithDepthSerializer(neighbors_qs, many=True)
         return Response(
