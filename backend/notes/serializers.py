@@ -24,7 +24,6 @@ from .exceptions import (
 from .markdown.to_metadata import infer_metadata
 from .models import Note, Snippet
 from .processor.task_scheduler import TaskScheduler
-from django.conf import settings
 
 
 class SnippetSerializer(serializers.ModelSerializer):
