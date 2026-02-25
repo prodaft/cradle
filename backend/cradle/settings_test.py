@@ -20,9 +20,9 @@ DATABASES = {
 }
 
 MINIO_CONFIG = {
-    "endpoint": "",
-    "access_key": "",
-    "secret_key": "",
+    "endpoint": "minio:9000",
+    "access_key": "admin",
+    "secret_key": "minio_admin",
     "secure": False,
 }
 
