@@ -65,10 +65,15 @@ jobs:
           --health-retries 3
 
       minio:
-        image: bitnami/minio:latest
+        image: bitnamilegacy/minio:2025.7.23-debian-12-r5
         env:
           MINIO_ROOT_USER: "admin"
           MINIO_ROOT_PASSWORD: "minio_admin"
+        options: >-
+          --health-cmd "curl -fsS http://127.0.0.1:9000/minio/health/live || exit 1"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
 
     steps:
       - uses: actions/checkout@v3
@@ -95,24 +100,6 @@ jobs:
         run: uv sync --extra dev
       - name: Settings Copy
         run: cp cradle/settings_test.py cradle/settings.py
-      - name: Wait for MinIO
-        run: |
-          python3 - <<'PY'
-          import time
-          import urllib.request
-          import urllib.error
-
-          deadline = time.time() + 60
-          while time.time() < deadline:
-              try:
-                  with urllib.request.urlopen("http://minio:9000/minio/health/live", timeout=2) as resp:
-                      if resp.status == 200:
-                          print("MinIO is healthy")
-                          raise SystemExit(0)
-              except (urllib.error.URLError, TimeoutError):
-                  time.sleep(1)
-          raise SystemExit("MinIO did not become reachable in time")
-          PY
       - name: Apply Migrations
         run: |
           uv run python3 manage.py migrate
