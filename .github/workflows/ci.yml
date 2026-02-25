@@ -65,13 +65,12 @@ jobs:
           --health-retries 3
 
       minio:
-        image: minio/minio:latest
+        image: minio/minio:RELEASE.2025-09-07T16-13-09Z
         env:
           MINIO_ROOT_USER: "admin"
           MINIO_ROOT_PASSWORD: "minio_admin"
         ports:
           - 9000:9000
-        command: server /data
 
     steps:
       - uses: actions/checkout@v3
@@ -101,19 +100,19 @@ jobs:
       - name: Wait for MinIO
         run: |
           python3 - <<'PY'
-          import socket
           import time
+          import urllib.request
+          import urllib.error
 
           deadline = time.time() + 60
           while time.time() < deadline:
-              with socket.socket() as s:
-                  s.settimeout(1)
-                  try:
-                      s.connect(("minio", 9000))
-                      print("MinIO is reachable")
-                      raise SystemExit(0)
-                  except OSError:
-                      time.sleep(1)
+              try:
+                  with urllib.request.urlopen("http://minio:9000/minio/health/live", timeout=2) as resp:
+                      if resp.status == 200:
+                          print("MinIO is healthy")
+                          raise SystemExit(0)
+              except (urllib.error.URLError, TimeoutError):
+                  time.sleep(1)
           raise SystemExit("MinIO did not become reachable in time")
           PY
       - name: Apply Migrations
