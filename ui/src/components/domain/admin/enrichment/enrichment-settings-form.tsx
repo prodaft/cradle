@@ -229,7 +229,7 @@ export default function EnrichmentSettingsForm({
     // Render form fields (docs: Field orientation="responsive" with FieldContent)
     const renderSettingsFields = () => {
         const entries = Object.entries(formFields);
-        return entries.map(([key, field]) => {
+        return entries.map(([key, field], index) => {
             const label = (
                 <>
                     {startCase(key)}
@@ -238,7 +238,7 @@ export default function EnrichmentSettingsForm({
             );
 
             const content = (
-                <div key={key}>
+                <div>
                     {field.type === 'boolean' ? (
                         <Controller
                             control={control}
@@ -438,7 +438,18 @@ export default function EnrichmentSettingsForm({
                     )}
                 </div>
             );
-            return content;
+            return (
+                <div key={key} className='space-y-4'>
+                    {content}
+                    {index < entries.length - 1 && (
+                        <Separator
+                            data-orientation='horizontal'
+                            role='none'
+                            className='shrink-0'
+                        />
+                    )}
+                </div>
+            );
         });
     };
 

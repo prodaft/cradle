@@ -15,7 +15,6 @@ dependencies = [
     "django-model-utils",
     "django-extensions",
     "pytest",
-    "pyyaml",
     "mistune",
     "drf-spectacular",
     "django-filter",
@@ -29,7 +28,6 @@ dependencies = [
     "diff-match-patch",
     "xeger",
     "bleach",
-    "numpy",
     "psycopg2-binary",
     "dnspython",
     "bcrypt",
@@ -37,10 +35,7 @@ dependencies = [
     "requests",
     "python-frontmatter",
     "django-otp",
-    "qrcode",
     "python-magic",
-    "networkx",
-    "scipy",
     "django-silk[formatting]==5.4.3",
     "gunicorn",
     "pydantic>=2.12.5",
@@ -58,6 +53,9 @@ dev = [
     "ruff>=0.15.2",
     "ipython>=9.10.0",
 ]
+
+[tool.uv.sources]
+django-celery-beat = { git = "https://github.com/celery/django-celery-beat", branch = "main" }
 
 [tool.mypy]
 namespace_packages = true
