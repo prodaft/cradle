@@ -412,18 +412,22 @@ class NoteDetail(APIView):
     def get(self, request: Request, note_id: UUID) -> Response:
         user = cast(CradleUser, request.user)
         try:
-            note = Note.objects.get(id=note_id)
+            note = Note.objects.get_accessible_notes(user).get(id=note_id)
         except Note.DoesNotExist:
-            raise NoteDoesNotExistException(detail="Note was not found.")
-
-        if note.fleeting:
-            if note.author_id != user.id:
-                raise NoteDoesNotExistException(detail="Note was not found.")
-        else:
             try:
-                note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
+                note = Note.objects.get(id=note_id)
             except Note.DoesNotExist:
                 raise NoteDoesNotExistException(detail="Note was not found.")
+            if note.fleeting:
+                if note.author_id != user.id:
+                    raise NoteDoesNotExistException(detail="Note was not found.")
+            else:
+                if not Access.objects.has_access_to_entities(
+                    user,
+                    set(note.entries.filter(entry_class__type=EntryType.ENTITY)),
+                    {AccessType.READ, AccessType.READ_WRITE},
+                ):
+                    raise NoteDoesNotExistException(detail="Note was not found.")
 
         if request.query_params.get("footnotes", "true") == "true":
             return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)

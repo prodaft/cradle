@@ -116,9 +116,7 @@ class UserList(APIView):
         return super().get_permissions()
 
     def get(self, request):
-        from django.db.models import Q
-
-        users_qs = CradleUser.objects.all()
+        users_qs = CradleUser.objects.all().order_by("username")
         search = (request.query_params.get("search") or "").strip()
         if search:
             users_qs = users_qs.filter(
@@ -129,11 +127,14 @@ class UserList(APIView):
             page_size = 10
         else:
             page_size = int(page_size)
-        paginator = TotalPagesPagination(page_size=page_size)
-        paginated = paginator.paginate_queryset(users_qs, request)
-        if paginated is not None:
-            serializer = UserRetrieveSerializer(paginated, many=True)
-            return paginator.get_paginated_response(serializer.data)
+        has_pagination = "page" in request.query_params or "page_size" in request.query_params
+        if has_pagination:
+            paginator = TotalPagesPagination(page_size=page_size)
+            paginated = paginator.paginate_queryset(users_qs, request)
+            if paginated is not None:
+                serializer = UserRetrieveSerializer(paginated, many=True)
+                return paginator.get_paginated_response(serializer.data)
+
         serializer = UserRetrieveSerializer(users_qs, many=True)
         return Response(serializer.data)
 

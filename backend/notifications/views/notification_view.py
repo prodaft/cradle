@@ -111,12 +111,13 @@ class NotificationList(APIView):
         # Mark notifications as read (update only unread ones)
         MessageNotification.objects.filter(user=cast(CradleUser, request.user), is_unread=True).update(is_unread=False)
 
-        paginator = TotalPagesPagination(page_size=page_size)
-        paginated_notifications = paginator.paginate_queryset(notifications, request)
-
-        if paginated_notifications is not None:
-            serializer = NotificationSerializer(paginated_notifications, many=True)
-            return paginator.get_paginated_response(serializer.data)
+        has_pagination = "page" in request.query_params or "page_size" in request.query_params
+        if has_pagination:
+            paginator = TotalPagesPagination(page_size=page_size)
+            paginated_notifications = paginator.paginate_queryset(notifications, request)
+            if paginated_notifications is not None:
+                serializer = NotificationSerializer(paginated_notifications, many=True)
+                return paginator.get_paginated_response(serializer.data)
 
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data)
