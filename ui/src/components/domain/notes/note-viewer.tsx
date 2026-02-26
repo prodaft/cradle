@@ -17,7 +17,6 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import { useAuthState } from '@/hooks/auth';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
@@ -28,8 +27,9 @@ import { logger } from '@/utils/logger';
 import { Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
 import { BookOpenIcon, InfoIcon, PencilSimpleIcon } from '@phosphor-icons/react';
-import type { FileReferenceWithNote, NoteRetrieve } from '@services/cradle/models';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useParams, useRouter, useSearch } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import { debounce } from 'lodash';
@@ -50,6 +50,9 @@ import NoteOutline from './note-outline';
 import ReferenceTree from './reference-tree';
 import RichEditor from './rich-editor';
 import StaticRender from './static-render';
+
+type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
+type NoteRetrieve = components['schemas']['NoteRetrieve'];
 
 interface LocationState {
     from?: { pathname: string };
@@ -122,8 +125,6 @@ export default function NoteViewer() {
     const [lspLoaded, setLspLoaded] = useState(false);
     const editorRef = useRef<any>(null);
     const [navbarActionsEl, setNavbarActionsEl] = useState<HTMLElement | null>(null);
-    const { managementApi, notesApi, lspApi } = useApi();
-
     useEffect(() => {
         const el = document.getElementById('navbar-actions');
         setNavbarActionsEl(el);
@@ -132,7 +133,12 @@ export default function NoteViewer() {
 
     const finalizeNoteMutation = useMutation({
         mutationFn: async (noteId: string) => {
-            return await notesApi.notesFinalUpdate({ noteId });
+            const { data, error, response } = await fetchClient.PUT(
+                '/notes/{note_id}/final/',
+                { params: { path: { note_id: noteId } } },
+            );
+            if (error) throw { response };
+            return data;
         },
         meta: {
             successMessage: 'Note finalized successfully.',
@@ -144,22 +150,23 @@ export default function NoteViewer() {
 
     const relinkNoteMutation = useMutation({
         mutationFn: async (noteId: string) => {
-            await managementApi.managementActionsCreate({
-                actionName: 'relinkNotes',
-                requestBody: {
-                    note_id: noteId,
+            const { error, response } = await fetchClient.POST(
+                '/management/actions/{action_name}',
+                {
+                    params: { path: { action_name: 'relinkNotes' } },
+                    body: { note_id: noteId } as any,
                 },
-            });
+            );
+            if (error) throw { response };
         },
         meta: {
             successMessage: 'Note relinked successfully.',
         },
     });
 
-    // Initialize editor utils for autolink functionality
     const editorUtils = React.useMemo(() => {
         CradleEditor.clearCache();
-        return new CradleEditor(lspApi, notesApi, setLspLoaded, async (error) => {
+        return new CradleEditor(setLspLoaded, async (error) => {
             const parsed = await parseAPIError(error);
             if (
                 parsed.code !== 'UNAUTHENTICATED' &&
@@ -168,7 +175,7 @@ export default function NoteViewer() {
                 toast.error(parsed.detail, { duration: 5000 });
             }
         });
-    }, [notesApi, lspApi]);
+    }, []);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard
@@ -244,7 +251,7 @@ export default function NoteViewer() {
                 from,
                 to,
                 onlyTimestamps,
-                note?.editTimestamp || note?.timestamp || new Date(),
+                new Date(note?.edit_timestamp || note?.timestamp || new Date()),
             );
 
             view.dispatch({
@@ -262,7 +269,7 @@ export default function NoteViewer() {
                 );
             }
         },
-        [editorUtils, note?.editTimestamp, note?.timestamp],
+        [editorUtils, note?.edit_timestamp, note?.timestamp],
     );
 
     const handleEnrichData = useCallback(async () => {
@@ -296,16 +303,23 @@ export default function NoteViewer() {
         data: noteData,
         isLoading,
         isError,
-    } = useQuery({
-        queryKey: queryKeys.notes.detail(noteId),
-        queryFn: () =>
-            notesApi.notesRetrieve({ noteId: noteId || '', footnotes: false }),
-        enabled: !!noteId,
-        retry: false,
-        meta: {
-            showErrorToast: false,
+    } = $api.useQuery(
+        'get',
+        '/notes/{note_id}/',
+        {
+            params: {
+                path: { note_id: noteId || '' },
+                query: { footnotes: false },
+            },
         },
-    });
+        {
+            enabled: !!noteId,
+            retry: false,
+            meta: {
+                showErrorToast: false,
+            },
+        },
+    );
 
     const enableEditingRef = useRef({ enableEditing, router, location, search });
     useEffect(() => {
@@ -343,7 +357,12 @@ export default function NoteViewer() {
 
     // Mutation for deleting note
     const deleteMutation = useMutation({
-        mutationFn: () => notesApi.notesDelete({ noteId: noteId }),
+        mutationFn: async () => {
+            const { error, response } = await fetchClient.DELETE('/notes/{note_id}/', {
+                params: { path: { note_id: noteId } },
+            });
+            if (error) throw { response };
+        },
         meta: {
             invalidateQueries: [
                 { queryKey: queryKeys.notes.detail(noteId) },
@@ -362,12 +381,15 @@ export default function NoteViewer() {
 
     const saveNoteMutation = useMutation({
         mutationFn: async ({ content }: { content: string }) => {
-            return await notesApi.notesUpdate({
-                noteId: noteId || '',
-                noteEditRequest: {
-                    content: content,
+            const { data, error, response } = await fetchClient.POST(
+                '/notes/{note_id}/',
+                {
+                    params: { path: { note_id: noteId || '' } },
+                    body: { content },
                 },
-            });
+            );
+            if (error) throw { response };
+            return data;
         },
     });
 
@@ -951,10 +973,10 @@ export default function NoteViewer() {
                                                 readOnly
                                                 className='text-muted-foreground bg-muted/50'
                                                 value={
-                                                    note.editTimestamp
+                                                    note.edit_timestamp
                                                         ? format(
                                                               new Date(
-                                                                  note.editTimestamp,
+                                                                  note.edit_timestamp,
                                                               ),
                                                               'dd/MM/yyyy, HH:mm',
                                                           )
@@ -979,7 +1001,7 @@ export default function NoteViewer() {
                                         </Field>
                                     </>
                                 )}
-                                {note.lastLinked && (
+                                {note.last_linked && (
                                     <Field>
                                         <FieldLabel htmlFor='about-last-linked'>
                                             Last linked
@@ -989,7 +1011,7 @@ export default function NoteViewer() {
                                             readOnly
                                             className='text-muted-foreground bg-muted/50'
                                             value={format(
-                                                new Date(note.lastLinked),
+                                                new Date(note.last_linked),
                                                 'dd/MM/yyyy, HH:mm',
                                             )}
                                         />

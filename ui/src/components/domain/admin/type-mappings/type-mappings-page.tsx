@@ -9,9 +9,8 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/use-api';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
-import { MappingSubclass } from '@services/cradle/models';
+import { fetchClient } from '@services/openapi/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { startCase } from 'lodash';
@@ -33,37 +32,46 @@ export default function TypeMappingsPage() {
         (value: string) => setDebouncedSearch(value),
         300,
     );
-    const { intelioApi } = useApi();
     const queryClient = useQueryClient();
 
-    // Query for mapping types
-    const { data: mappingTypesData = [], isPending } = useQuery({
+    const { data: mappingTypesData, isPending } = useQuery({
         queryKey: ['typeMappings', debouncedSearch],
-        queryFn: () =>
-            intelioApi.mappingsSubclassesList({
-                search: debouncedSearch || undefined,
-            }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/intelio/mappings/',
+                {
+                    params: {
+                        query: { search: debouncedSearch || undefined },
+                    },
+                },
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: {
             showErrorToast: false,
             suppressNotification: true,
         },
     });
 
-    const mappingTypes = mappingTypesData as MappingSubclass[];
+    const mappingTypes = (mappingTypesData ?? []) as Array<{
+        class_name: string;
+        name: string;
+    }>;
 
     const tab: string | undefined =
         (search as any)?.tab ??
-        (mappingTypes.length > 0 ? mappingTypes[0].className : undefined);
+        (mappingTypes.length > 0 ? mappingTypes[0].class_name : undefined);
 
-    const handleMappingClick = (mapping: MappingSubclass) => {
+    const handleMappingClick = (mapping: { class_name: string; name: string }) => {
         router.navigate({
             to: location.pathname as any,
-            search: { ...(search as any), tab: mapping.className },
+            search: { ...(search as any), tab: mapping.class_name },
             replace: true,
         });
     };
 
-    const selectedMapping = tab ? mappingTypes.find((m) => m.className === tab) : null;
+    const selectedMapping = tab ? mappingTypes.find((m) => m.class_name === tab) : null;
 
     return (
         <div className='w-full h-full'>
@@ -103,9 +111,9 @@ export default function TypeMappingsPage() {
                                     </div>
                                 ) : (
                                     mappingTypes.map((mapping) => (
-                                        <SidebarMenuItem key={mapping.className}>
+                                        <SidebarMenuItem key={mapping.class_name}>
                                             <SidebarMenuButton
-                                                isActive={tab === mapping.className}
+                                                isActive={tab === mapping.class_name}
                                                 onClick={() =>
                                                     handleMappingClick(mapping)
                                                 }

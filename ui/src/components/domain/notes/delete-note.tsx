@@ -1,7 +1,7 @@
 import ConfirmDeletionDialog from '@/components/dialogs/base/confirm-deletion-dialog';
 import { Button } from '@/components/ui/button';
-import useApi from '@/hooks/api/use-api';
 import { TrashIcon } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -32,11 +32,13 @@ interface DeleteNoteProps {
  */
 export default function DeleteNote({ note, setHidden, classNames }: DeleteNoteProps) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const { notesApi } = useApi();
 
     const deleteMutation = useMutation({
         mutationFn: async () => {
-            await notesApi.notesDelete({ noteId: note.id });
+            const { error, response } = await fetchClient.DELETE('/notes/{note_id}/', {
+                params: { path: { note_id: note.id } },
+            });
+            if (error) throw { response };
             setHidden(true);
         },
         meta: {

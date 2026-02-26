@@ -34,10 +34,10 @@ export const prependLinks = (
     const mdLinks = fileData
         .map((file) => {
             const apiDownloadPath = createDownloadPath(file, apiBaseUrl);
-            let defs = `[${file.id}]: ${apiDownloadPath} "${file.fileName}"\n\n`;
-            const compositeKey = `${file.id}-${file.fileName}`;
+            let defs = `[${file.id}]: ${apiDownloadPath} "${file.file_name}"\n\n`;
+            const compositeKey = `${file.id}-${file.file_name}`;
             if (compositeKey !== file.id) {
-                defs += `[${compositeKey}]: ${apiDownloadPath} "${file.fileName}"\n\n`;
+                defs += `[${compositeKey}]: ${apiDownloadPath} "${file.file_name}"\n\n`;
             }
             return defs;
         })

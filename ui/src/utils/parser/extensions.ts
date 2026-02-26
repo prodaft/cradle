@@ -1,10 +1,13 @@
-import { FileDownload, FileReferenceWithNote } from '@services/cradle';
-import { FileTransferApi } from '@services/cradle/apis';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import matter from 'gray-matter';
 import jsYaml from 'js-yaml';
 import type MarkdownIt from 'markdown-it';
 import type { Token } from 'markdown-it/index.js';
 import { prependLinks } from '../links';
+
+type FileDownload = components['schemas']['FileDownload'];
+type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 
 function createDashboardLink({
     name,
@@ -97,27 +100,24 @@ function renderCradleLink(
 let DownloadLinkPromiseCache: Record<string, Promise<FileDownload>> = {};
 const MinioCache: Record<string, FileDownload> = {};
 
-function fetchMinioDownloadLink(
-    fileTransferApi: FileTransferApi,
-    fileId: string,
-): Promise<FileDownload> {
+function fetchMinioDownloadLink(fileId: string): Promise<FileDownload> {
     if (!DownloadLinkPromiseCache[fileId]) {
-        DownloadLinkPromiseCache[fileId] = fileTransferApi
-            .fileTransferDownloadRetrieve({ fileId })
-            .then(({ presignedUrl, expiresIn }) => {
+        DownloadLinkPromiseCache[fileId] = fetchClient
+            .GET('/file-transfer/download/', {
+                params: { query: { fileId } },
+            })
+            .then(({ data, error, response }) => {
+                if (error) throw { response };
                 return {
-                    presignedUrl,
-                    expiresIn: Date.now() + expiresIn,
-                };
+                    presigned_url: data!.presigned_url,
+                    expires_in: Date.now() + data!.expires_in,
+                } satisfies FileDownload;
             });
     }
     return DownloadLinkPromiseCache[fileId];
 }
 
-async function resolveMinioLinks(
-    token: Token,
-    fileTransferApi: FileTransferApi,
-): Promise<void> {
+async function resolveMinioLinks(token: Token): Promise<void> {
     if (token.type === 'link_open' || token.type === 'image') {
         let hrefIndex = token.attrIndex('href');
         hrefIndex = hrefIndex < 0 ? token.attrIndex('src') : hrefIndex;
@@ -137,27 +137,24 @@ async function resolveMinioLinks(
         if (!fileId) return;
 
         const cached = MinioCache[fileId];
-        let presigned: string | undefined = cached?.presignedUrl;
-        let expiry: number | undefined = cached?.expiresIn;
+        let presigned: string | undefined = cached?.presigned_url;
+        let expiry: number | undefined = cached?.expires_in;
         if (!presigned || Date.now() > (expiry || 0)) {
-            const result = await fetchMinioDownloadLink(fileTransferApi, fileId);
-            presigned = result.presignedUrl;
-            expiry = result.expiresIn;
+            const result = await fetchMinioDownloadLink(fileId);
+            presigned = result.presigned_url;
+            expiry = result.expires_in;
             MinioCache[fileId] = result;
         }
-        token.attrs![hrefIndex][1] = presigned;
+        token.attrs![hrefIndex][1] = presigned!;
     }
 }
 
-async function processTokens(
-    tokens: Token[],
-    fileTransferApi: FileTransferApi,
-): Promise<void> {
+async function processTokens(tokens: Token[]): Promise<void> {
     const promises: Promise<void>[] = [];
     for (const token of tokens) {
-        promises.push(resolveMinioLinks(token, fileTransferApi));
+        promises.push(resolveMinioLinks(token));
         if (token.children) {
-            promises.push(processTokens(token.children, fileTransferApi));
+            promises.push(processTokens(token.children));
         }
     }
     await Promise.all(promises);
@@ -168,7 +165,6 @@ export async function parseWithExtensions(
     mdContent: string,
     fileData: FileReferenceWithNote[] | undefined,
     entryColors: Map<string, string>,
-    fileTransferApi: FileTransferApi,
     baseURL: string,
 ): Promise<{ html: string; metadata: Record<string, any> }> {
     DownloadLinkPromiseCache = {};
@@ -232,7 +228,7 @@ export async function parseWithExtensions(
         : preprocessedContent;
     const env = { metadata };
     const tokens = md.parse(content, env);
-    await processTokens(tokens, fileTransferApi);
+    await processTokens(tokens);
     let html = md.renderer.render(tokens, md.options, env);
 
     // Post-process HTML to convert zero-width space paragraphs to <br> tags

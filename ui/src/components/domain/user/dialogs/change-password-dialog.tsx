@@ -21,9 +21,9 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
-import useApi from '@/hooks/api/use-api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -68,19 +68,22 @@ export default function ChangePasswordDialog({
     open,
     onOpenChange,
 }: ChangePasswordDialogProps) {
-    const { authApi } = useApi();
     const [showOldPassword, setShowOldPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const changePasswordMutation = useMutation({
         mutationFn: async (data: { oldPassword: string; newPassword: string }) => {
-            await authApi.authChangePasswordCreate({
-                changePasswordRequestRequest: {
-                    oldPassword: data.oldPassword,
-                    newPassword: data.newPassword,
+            const { error, response } = await fetchClient.POST(
+                '/auth/change_password/',
+                {
+                    body: {
+                        old_password: data.oldPassword,
+                        new_password: data.newPassword,
+                    },
                 },
-            });
+            );
+            if (error) throw { response };
         },
         meta: {
             successMessage: 'Password changed successfully',

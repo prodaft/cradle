@@ -15,9 +15,7 @@ import {
 } from '@/components/ui/input-group';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useTheme } from '@/contexts/ui';
-import useApi from '@/hooks/api/use-api';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
 import { parseAPIError } from '@/utils/api';
 import Logo from '@components/base/logo/logo';
 import {
@@ -27,8 +25,7 @@ import {
     MoonIcon,
     SunIcon,
 } from '@phosphor-icons/react';
-import { UserConfig } from '@services/cradle/models';
-import { useQuery } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -78,7 +75,6 @@ export default function Login() {
         from: { pathname: '/' },
     };
 
-    const { usersApi } = useApi();
     const { basePath } = useAuthState();
     const { logIn, isLoggedIn } = useAuthActions();
     const loggedIn = isLoggedIn();
@@ -86,12 +82,27 @@ export default function Login() {
     const router = useRouter();
 
     // Query for OAuth configuration
-    const { data: userConfig } = useQuery<UserConfig>({
-        queryKey: queryKeys.users.config(),
-        queryFn: () => usersApi.usersConfig(),
+    const { data: userConfig } = $api.useQuery('get', '/users/config/', undefined, {
         enabled: !!basePath && !loggedIn,
         meta: {
             suppressNotification: true,
+        },
+        select: (raw) => {
+            const config = raw as Record<string, unknown>;
+            const oauthMethods =
+                (config.oauthMethods as unknown[]) ??
+                (config.oauth_methods as unknown[]) ??
+                [];
+            const signup =
+                (config.signup as boolean | undefined) ??
+                (config.registration_enabled as boolean | undefined);
+
+            return {
+                oauthMethods: (Array.isArray(oauthMethods)
+                    ? oauthMethods
+                    : []) as OAuthMethod[],
+                signup: signup ?? true,
+            };
         },
     });
 

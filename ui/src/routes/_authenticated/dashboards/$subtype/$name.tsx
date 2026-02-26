@@ -1,8 +1,10 @@
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import Dashboard from 'src/components/domain/dashboard/dashboard';
-import type { EntryResponse } from 'src/services/cradle/models';
-import { createLoaderApis } from 'src/utils/apiLoader';
 import * as z from 'zod';
+
+type EntryResponse = components['schemas']['EntryResponse'];
 
 export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name')({
     staticData: {
@@ -14,10 +16,8 @@ export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name'
             .enum(['notes', 'relations', 'files', 'enrichment', 'eventlog'])
             .optional(),
     }),
-    // Add cache configuration to prevent unnecessary refetches
-    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
-    staleTime: 1000 * 60, // Consider fresh for 1 minute
-    // Add pending component to show during navigation
+    gcTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60,
     pendingComponent: () => <div>Loading dashboard...</div>,
     loader: async ({ params }) => {
         const { subtype, name } = params;
@@ -26,23 +26,24 @@ export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name'
             throw notFound();
         }
 
-        const { queryApi } = createLoaderApis();
-
         try {
-            const response = await queryApi.queryList({
-                subtype: [subtype],
-                nameExact: [name],
+            const { data, error } = await fetchClient.GET('/query/', {
+                params: {
+                    query: {
+                        subtype: [subtype],
+                        name_exact: [name],
+                    },
+                },
             });
 
-            if (response.count !== 1) {
+            if (error || !data || data.count !== 1) {
                 throw notFound();
             }
 
             return {
-                entry: response.results[0] as EntryResponse,
+                entry: data.results[0] as EntryResponse,
             };
         } catch (error) {
-            // Re-throw notFound errors, convert other errors to notFound
             if (
                 error &&
                 typeof error === 'object' &&
@@ -51,7 +52,6 @@ export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name'
             ) {
                 throw notFound();
             }
-            // For API errors or other issues, show 404 page
             throw notFound();
         }
     },

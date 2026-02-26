@@ -16,11 +16,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-import { UserRetrieve } from '@/services/cradle/models';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -44,20 +43,23 @@ export default function UserAccountForm({
     userId,
     isOtherAdmin,
 }: UserAccountFormProps) {
-    const { usersApi } = useApi();
     const queryClient = useQueryClient();
     const previousValuesRef = useRef<Partial<FormData> | null>(null);
 
-    const { data: userData } = useQuery<UserRetrieve>({
-        queryKey: queryKeys.users.detail(userId),
-        queryFn: () => usersApi.usersRetrieve({ userId }),
-        enabled: !!userId,
-        meta: { suppressNotification: true },
-    });
+    const { data: userData } = $api.useQuery(
+        'get',
+        '/users/{user_id}/',
+        { params: { path: { user_id: userId } } },
+        { enabled: !!userId, meta: { suppressNotification: true } },
+    );
 
     const saveMutation = useMutation({
         mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
-            await usersApi.usersUpdate({ userId, userUpdateRequest: payload });
+            const { error, response } = await fetchClient.POST('/users/{user_id}/', {
+                params: { path: { user_id: userId } },
+                body: payload,
+            });
+            if (error) throw { response };
         },
         meta: { successMessage: 'User settings saved successfully' },
         onSuccess: () => {

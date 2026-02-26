@@ -32,7 +32,8 @@ export interface ThemeContextValue {
 // ============================================================================
 
 // Re-export the generated UserRetrieve type for domain data
-export type { UserRetrieve } from 'src/services/cradle/models';
+import type { components } from '@services/openapi/schema';
+export type UserRetrieve = components['schemas']['UserRetrieve'];
 
 /**
  * Extended profile with UI-specific properties.

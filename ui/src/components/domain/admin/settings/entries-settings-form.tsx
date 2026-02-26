@@ -7,19 +7,19 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
-import useApi from '@/hooks/api/use-api';
 import { HardDrivesIcon, TrashIcon } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 export default function EntriesSettingsForm() {
-    const { managementApi } = useApi();
-
     const propagateAccessMutation = useMutation({
         mutationFn: async () => {
-            await managementApi.managementActionsCreate({
-                actionName: 'propagateAccessVectors',
-            });
+            const { error, response } = await fetchClient.POST(
+                '/management/actions/{action_name}',
+                { params: { path: { action_name: 'propagateAccessVectors' } } },
+            );
+            if (error) throw { response };
         },
         meta: {
             suppressNotification: true,
@@ -31,10 +31,12 @@ export default function EntriesSettingsForm() {
 
     const deleteHangingArtifactsMutation = useMutation({
         mutationFn: async () => {
-            const response = await managementApi.managementActionsCreate({
-                actionName: 'deleteHangingArtifacts',
-            });
-            return response;
+            const { data, error, response } = await fetchClient.POST(
+                '/management/actions/{action_name}',
+                { params: { path: { action_name: 'deleteHangingArtifacts' } } },
+            );
+            if (error) throw { response };
+            return data;
         },
         meta: {
             suppressNotification: true,

@@ -8,11 +8,9 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
-import useApi from '@/hooks/api/use-api';
 import { useAuthActions } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
-import { UserRetrieve } from '@/services/cradle/models';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -21,27 +19,30 @@ interface UserManagementActionsProps {
     userId: string;
 }
 
-export default function UserManagementActions({
-    userId,
-}: UserManagementActionsProps) {
+export default function UserManagementActions({ userId }: UserManagementActionsProps) {
     const router = useRouter();
-    const { usersApi } = useApi();
     const { setTokensDirectly } = useAuthActions();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-    const { data: userData } = useQuery<UserRetrieve>({
-        queryKey: queryKeys.users.detail(userId),
-        queryFn: () => usersApi.usersRetrieve({ userId }),
-        enabled: !!userId,
-        meta: { suppressNotification: true },
-    });
+    const { data: userData } = $api.useQuery(
+        'get',
+        '/users/{user_id}/',
+        { params: { path: { user_id: userId } } },
+        { enabled: !!userId, meta: { suppressNotification: true } },
+    );
 
     const simulateSessionMutation = useMutation({
         mutationFn: async () => {
-            return await usersApi.usersManageRetrieve({
-                userId,
-                actionName: 'simulate',
-            });
+            const { data, error, response } = await fetchClient.GET(
+                '/users/{user_id}/manage/{action_name}',
+                {
+                    params: {
+                        path: { user_id: userId, action_name: 'simulate' },
+                    },
+                },
+            );
+            if (error) throw { response };
+            return data;
         },
         meta: { suppressNotification: true },
         onSuccess: (res) => {
@@ -52,27 +53,46 @@ export default function UserManagementActions({
 
     const sendEmailConfirmationMutation = useMutation({
         mutationFn: async () => {
-            await usersApi.usersManageRetrieve({
-                userId,
-                actionName: 'send_email_confirmation',
-            });
+            const { error, response } = await fetchClient.GET(
+                '/users/{user_id}/manage/{action_name}',
+                {
+                    params: {
+                        path: {
+                            user_id: userId,
+                            action_name: 'send_email_confirmation',
+                        },
+                    },
+                },
+            );
+            if (error) throw { response };
         },
         meta: { successMessage: 'Email confirmation sent successfully' },
     });
 
     const sendPasswordResetEmailMutation = useMutation({
         mutationFn: async () => {
-            await usersApi.usersManageRetrieve({
-                userId,
-                actionName: 'password_reset_email',
-            });
+            const { error, response } = await fetchClient.GET(
+                '/users/{user_id}/manage/{action_name}',
+                {
+                    params: {
+                        path: {
+                            user_id: userId,
+                            action_name: 'password_reset_email',
+                        },
+                    },
+                },
+            );
+            if (error) throw { response };
         },
         meta: { successMessage: 'Password reset email sent successfully' },
     });
 
     const deleteUserMutation = useMutation({
         mutationFn: async () => {
-            await usersApi.usersDestroy({ userId });
+            const { error, response } = await fetchClient.DELETE('/users/{user_id}/', {
+                params: { path: { user_id: userId } },
+            });
+            if (error) throw { response };
         },
         meta: { suppressNotification: true },
         onSuccess: () => {
@@ -122,9 +142,7 @@ export default function UserManagementActions({
                                 variant='outline'
                                 size='sm'
                                 className='self-start md:self-center'
-                                onClick={() =>
-                                    sendEmailConfirmationMutation.mutate()
-                                }
+                                onClick={() => sendEmailConfirmationMutation.mutate()}
                             >
                                 Send Email
                             </Button>
@@ -146,9 +164,7 @@ export default function UserManagementActions({
                                 variant='outline'
                                 size='sm'
                                 className='self-start md:self-center'
-                                onClick={() =>
-                                    sendPasswordResetEmailMutation.mutate()
-                                }
+                                onClick={() => sendPasswordResetEmailMutation.mutate()}
                             >
                                 Send Reset
                             </Button>

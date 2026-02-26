@@ -21,9 +21,11 @@ import MultipleSelector, { type Option } from '@/components/ui/multi-select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-import { OptimizedEntryResponse } from '@/services/cradle';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+
+type OptimizedEntryResponse = components['schemas']['OptimizedEntryResponse'];
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -110,7 +112,6 @@ export default function EnrichmentRequestDialog({
     artifactsList,
     notesList,
 }: EnrichmentRequestDialogProps): React.JSX.Element {
-    const { intelioApi, entriesApi } = useApi();
     const [selectedEntities, setSelectedEntities] = useState<
         Array<{ value: number; label: string }>
     >([]);
@@ -127,20 +128,24 @@ export default function EnrichmentRequestDialog({
         request: '',
     });
 
-    // Load available enricher types
     const { data: enricherTypesData, isLoading } = useQuery({
         queryKey: ['enrichment', 'subclasses'],
-        queryFn: () => intelioApi.enrichmentSubclassesList(),
+        queryFn: async () => {
+            const { data, error, response } =
+                await fetchClient.GET('/intelio/enrichment/');
+            if (error) throw { response };
+            return data;
+        },
         enabled: open,
         meta: {
             showErrorToast: true,
         },
     });
 
-    const enricherTypes: Option[] = (enricherTypesData || [])
+    const enricherTypes: Option[] = ((enricherTypesData ?? []) as any[])
         .filter((enricher) => enricher.enabled)
         .map((enricher) => ({
-            value: enricher.className,
+            value: enricher.class_name,
             label: enricher.name,
         }));
 
@@ -187,7 +192,12 @@ export default function EnrichmentRequestDialog({
     // Load entities list
     const { data: allEntitiesData } = useQuery({
         queryKey: queryKeys.entities.list(),
-        queryFn: () => entriesApi.entitiesList(),
+        queryFn: async () => {
+            const { data, error, response } =
+                await fetchClient.GET('/entries/entities/');
+            if (error) throw { response };
+            return data;
+        },
         enabled: open && !!entitiesList,
         meta: {
             showErrorToast: true,
@@ -339,24 +349,29 @@ export default function EnrichmentRequestDialog({
         return parsed;
     };
 
-    // Mutation for creating enrichment request
     const createMutation = useMutation({
-        mutationFn: async (data: {
+        mutationFn: async (payload: {
             title: string;
             enricherNames: string[];
             request: RequestArtifact[];
             entities: number[];
             notes: string[];
-        }) =>
-            intelioApi.enrichmentRequestCreate({
-                enrichmentRequestRequest: {
-                    title: data.title,
-                    enricherNames: data.enricherNames,
-                    request: data.request,
-                    entities: data.entities,
-                    notes: data.notes,
+        }) => {
+            const { data, error, response } = await fetchClient.POST(
+                '/intelio/enrich/',
+                {
+                    body: {
+                        title: payload.title,
+                        enricher_names: payload.enricherNames,
+                        request: payload.request,
+                        entities: payload.entities,
+                        notes: payload.notes,
+                    } as any,
                 },
-            }),
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
             successMessage: 'Enrichment request created successfully',

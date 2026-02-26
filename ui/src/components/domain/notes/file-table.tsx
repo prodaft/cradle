@@ -3,7 +3,6 @@ import { DataTableColumnHeader } from '@/components/data-table/data-table-column
 import { ConfirmDeletionDialog } from '@/components/dialogs';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useApi } from '@/hooks';
 import type { FileReference } from '@/types';
 import { createDownloadPath } from '@/utils/links';
 import {
@@ -12,15 +11,16 @@ import {
     TextboxIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useCallback, useMemo, useState } from 'react';
 
 const buildReferenceTag = (file: FileReference) =>
-    file.id && file.fileName ? `${file.id}-${file.fileName}` : (file.id ?? '');
+    file.id && file.file_name ? `${file.id}-${file.file_name}` : (file.id ?? '');
 
 const buildMarkdownReference = (file: FileReference) => {
-    const name = file.fileName ?? 'file';
+    const name = file.file_name ?? 'file';
     const tag = buildReferenceTag(file);
     return `[${name}][${tag}]`;
 };
@@ -35,15 +35,17 @@ export default function FileTable({
     setFileData,
     insertTextCallback,
 }: FileTableProps) {
-    const { fileTransferApi, basePath } = useApi();
+    const basePath = import.meta.env.VITE_API_BASE_URL ?? '';
     const [deletingFile, setDeletingFile] = useState<FileReference | null>(null);
 
     const downloadMutation = useMutation({
         mutationFn: async (fileId: string) => {
-            const response = await fileTransferApi.fileTransferDownloadRetrieve({
-                fileId,
-            });
-            return response.presignedUrl;
+            const { data, error, response } = await fetchClient.GET(
+                '/file-transfer/download/',
+                { params: { query: { fileId } } },
+            );
+            if (error) throw { response };
+            return data.presigned_url;
         },
         meta: {
             suppressNotification: true,
@@ -78,7 +80,7 @@ export default function FileTable({
             const presignedUrl = await downloadFile(data.id);
             const link = document.createElement('a');
             link.href = presignedUrl;
-            link.download = data.fileName || 'data';
+            link.download = data.file_name || 'data';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -90,8 +92,8 @@ export default function FileTable({
     const columns = useMemo<ColumnDef<FileReference>[]>(
         () => [
             {
-                accessorKey: 'fileName',
-                id: 'fileName',
+                accessorKey: 'file_name',
+                id: 'file_name',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='File' />
                 ),
@@ -101,9 +103,9 @@ export default function FileTable({
                         <div className='text-foreground flex items-center'>
                             <span
                                 className='truncate max-w-[200px]'
-                                title={data.fileName ?? undefined}
+                                title={data.file_name ?? undefined}
                             >
-                                {data.fileName}
+                                {data.file_name}
                             </span>
                         </div>
                     );

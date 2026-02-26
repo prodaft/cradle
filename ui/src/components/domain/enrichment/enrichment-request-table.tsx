@@ -16,7 +16,7 @@ import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
 import { ArrowsClockwiseIcon, TrashIcon } from '@phosphor-icons/react';
-import type { EnrichmentRequestList } from '@services/cradle/models';
+import type { components } from '@services/openapi/schema';
 import { useRouter } from '@tanstack/react-router';
 import {
     type ColumnDef,
@@ -36,6 +36,8 @@ import {
     useState,
 } from 'react';
 import { StatusIcon, type StatusType } from '../notes/status-icon';
+
+type EnrichmentRequestList = components['schemas']['EnrichmentRequestList'];
 
 const SORT_FIELD_MAPPING: Record<string, string> = {
     title: 'title',
@@ -196,9 +198,9 @@ function EnrichmentRequestsList({
 
     const errorMsg = useCallback((request: EnrichmentRequest) => {
         const msgs: string[] = [];
-        if (request.ignoredCount && request.ignoredCount > 0) {
+        if (request.ignored_count && request.ignored_count > 0) {
             msgs.push(
-                `Ignored ${request.ignoredCount} artifact${request.ignoredCount > 1 ? 's' : ''}`,
+                `Ignored ${request.ignored_count} artifact${request.ignored_count > 1 ? 's' : ''}`,
             );
         }
         const warn_count =
@@ -321,7 +323,7 @@ function EnrichmentRequestsList({
                 },
                 cell: ({ row }) => (
                     <div className='w-32'>
-                        {row.original.userDetail?.username || 'N/A'}
+                        {row.original.user_detail?.username || 'N/A'}
                     </div>
                 ),
             },
@@ -333,9 +335,9 @@ function EnrichmentRequestsList({
                 ),
                 cell: ({ row }) => (
                     <div className='w-40'>
-                        {row.original.createdAt
+                        {row.original.created_at
                             ? format(
-                                  new Date(row.original.createdAt),
+                                  new Date(row.original.created_at),
                                   'dd/MM/yyyy, HH:mm',
                               )
                             : 'N/A'}

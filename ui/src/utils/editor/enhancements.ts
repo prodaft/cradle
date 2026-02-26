@@ -9,12 +9,13 @@ import {
 import { linter, type Diagnostic } from '@codemirror/lint';
 import type { EditorState } from '@codemirror/state';
 import type { MarkdownExtension } from '@lezer/markdown';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import dayjs from 'dayjs';
 import jsyaml from 'js-yaml';
-import type { LspApi } from '../../services/cradle/apis/LspApi';
-import type { NotesApi } from '../../services/cradle/apis/NotesApi';
-import type { Snippet } from '../../services/cradle/models/Snippet';
 import { DynamicTrie } from './trie';
+
+type Snippet = components['schemas']['Snippet'];
 
 /*==============================================================================
   HELPER FUNCTIONS
@@ -109,8 +110,6 @@ export class CradleEditor {
     private _ready: Promise<boolean>;
     private _onError: ((error: Error) => void) | null;
     private _onLspLoaded: (bool: boolean) => void;
-    private _notesApi: NotesApi;
-    private _lspApi: LspApi;
 
     private combinedRegex: RegExp | null = null; // for scanning large text
     private combinedWordRegex: RegExp | null = null; // for whole-word matching
@@ -119,8 +118,6 @@ export class CradleEditor {
     Constructor & Initialization
   ---------------------------------------------------------------------------*/
     constructor(
-        lspApi: LspApi,
-        notesApi: NotesApi,
         onLspLoaded: (bool: boolean) => void,
         onError: ((error: Error) => void) | null = null,
     ) {
@@ -130,8 +127,6 @@ export class CradleEditor {
         this.snippets = null;
         this._onError = onError;
         this._onLspLoaded = onLspLoaded;
-        this._notesApi = notesApi;
-        this._lspApi = lspApi;
         this._ready = this.initializeEntryClassesTriesAndSnippets().then((ready) => {
             this._onLspLoaded(ready);
             return ready;
@@ -177,7 +172,12 @@ export class CradleEditor {
                 this.entryClasses = CradleEditor.cachedEntryClasses;
             } else {
                 if (!CradleEditor.entryClassesPromise) {
-                    CradleEditor.entryClassesPromise = this._lspApi.lspTypesRetrieve();
+                    CradleEditor.entryClassesPromise = fetchClient
+                        .GET('/lsp/types/')
+                        .then(({ data, error, response }) => {
+                            if (error) throw { response };
+                            return data as any;
+                        });
                 }
                 const entryClasses = await CradleEditor.entryClassesPromise;
                 this.entryClasses = entryClasses;
@@ -189,9 +189,11 @@ export class CradleEditor {
                 this.tries = CradleEditor.cachedTries;
             } else {
                 if (!CradleEditor.triesPromise) {
-                    CradleEditor.triesPromise = this._lspApi
-                        .lspTrieRetrieve()
-                        .then((triesData: { [key: string]: any }) => {
+                    CradleEditor.triesPromise = fetchClient
+                        .GET('/lsp/trie/')
+                        .then(({ data, error, response }) => {
+                            if (error) throw { response };
+                            const triesData = data as { [key: string]: any };
                             const tries: { [key: string]: DynamicTrie } = {};
                             for (const [type, trie] of Object.entries(triesData)) {
                                 tries[type] = new DynamicTrie(null, type, -1);
@@ -207,11 +209,19 @@ export class CradleEditor {
                                 tries[entryClass.subtype] = new DynamicTrie(
                                     async (x) => {
                                         try {
-                                            const result =
-                                                await this._lspApi.lspTrieRetrieve({
-                                                    type: entryClass.subtype,
-                                                    prefix: x,
-                                                });
+                                            const {
+                                                data: trieResult,
+                                                error: trieError,
+                                            } = await fetchClient.GET('/lsp/trie/', {
+                                                params: {
+                                                    query: {
+                                                        type: entryClass.subtype,
+                                                        prefix: x,
+                                                    },
+                                                },
+                                            });
+                                            if (trieError) return {};
+                                            const result = trieResult as any;
                                             if (result && result[entryClass.subtype]) {
                                                 let trie = result[entryClass.subtype];
 
@@ -267,9 +277,12 @@ export class CradleEditor {
                 this.snippets = CradleEditor.cachedSnippets;
             } else {
                 if (!CradleEditor.snippetsPromise) {
-                    CradleEditor.snippetsPromise = this._notesApi
-                        .notesSnippetsList()
-                        .then((snippets) => snippets || []);
+                    CradleEditor.snippetsPromise = fetchClient
+                        .GET('/notes/snippets/')
+                        .then(({ data, error, response }) => {
+                            if (error) throw { response };
+                            return (data as Snippet[]) || [];
+                        });
                 }
                 const snippets = await CradleEditor.snippetsPromise;
                 this.snippets = snippets;
@@ -324,7 +337,9 @@ export class CradleEditor {
     async refreshSnippets(): Promise<Snippet[]> {
         try {
             CradleEditor.invalidateSnippetsCache();
-            const snippets = (await this._notesApi.notesSnippetsList()) || [];
+            const { data, error, response } = await fetchClient.GET('/notes/snippets/');
+            if (error) throw { response };
+            const snippets = (data as Snippet[]) || [];
             this.snippets = snippets;
             CradleEditor.cachedSnippets = snippets;
             return snippets;

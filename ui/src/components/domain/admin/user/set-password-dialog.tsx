@@ -21,9 +21,9 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
-import useApi from '@/hooks/api/use-api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -76,18 +76,16 @@ export default function SetUserPasswordDialog({
     userId,
     onSuccess,
 }: SetUserPasswordDialogProps): React.JSX.Element {
-    const { usersApi } = useApi();
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const setPasswordMutation = useMutation({
         mutationFn: async (password: string) => {
-            await usersApi.usersUpdate({
-                userId,
-                userUpdateRequest: {
-                    password,
-                },
+            const { error, response } = await fetchClient.POST('/users/{user_id}/', {
+                params: { path: { user_id: userId } },
+                body: { password },
             });
+            if (error) throw { response };
         },
         meta: {
             successMessage: 'Password updated successfully',

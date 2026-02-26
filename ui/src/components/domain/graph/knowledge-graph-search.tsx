@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { LinkTreeFlattener } from '@/utils/dashboard';
 import { logger } from '@/utils/logger';
 import { WarningCircleIcon } from '@phosphor-icons/react';
-import type { EdgeRelation } from '@services/cradle/models';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import { useQuery } from '@tanstack/react-query';
 import { Node } from './graphFilterUtils';
+
+type EdgeRelation = components['schemas']['EdgeRelation'];
 
 interface Alert {
     show: boolean;
@@ -35,14 +37,18 @@ export default function KnowledgeGraphSearch({
         color: 'red',
     });
     const appliedRef = useRef(false);
-    const { knowledgeGraphApi } = useApi();
 
     const { data, isLoading } = useQuery({
         queryKey: [...queryKeys.knowledgeGraph.all, 'full'],
         queryFn: async () => {
-            const response = await knowledgeGraphApi.knowledgeGraphRetrieveRaw({});
-            const rawData = await response.raw.json();
-            const graphData = rawData.results;
+            const {
+                data: responseData,
+                error,
+                response,
+            } = await fetchClient.GET('/knowledge-graph/');
+            if (error) throw { response };
+
+            const graphData = responseData!.results?.[0];
 
             if (!graphData?.entries) {
                 return { nodes: [], edges: [], colors: {} };
@@ -50,7 +56,7 @@ export default function KnowledgeGraphSearch({
 
             const entries = graphData.entries;
             const relations = graphData.relations;
-            const colors = graphData.colors ?? {};
+            const colors = (graphData.colors ?? {}) as Record<string, string>;
             let nodes: Node[] = [];
 
             try {
@@ -80,8 +86,10 @@ export default function KnowledgeGraphSearch({
                 logger.error('[KnowledgeGraphSearch] Error processing entries:', e);
             }
 
-            const edges =
-                Array.isArray(relations) && relations.length > 0 ? relations : [];
+            const edges: EdgeRelation[] =
+                Array.isArray(relations) && relations.length > 0
+                    ? (relations as unknown as EdgeRelation[])
+                    : [];
 
             return { nodes, edges, colors };
         },

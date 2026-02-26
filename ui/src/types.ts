@@ -1,14 +1,17 @@
 // Definition of custom types used in the application. Place types that are used in multiple files here.
 // Types that are only used in one file are fine to be defined in that file.
 //
-// NOTE: When possible, use generated types from @services/cradle/models instead of defining custom types.
-// Generated types are automatically synced with the backend API and include type guards and serialization.
+// NOTE: When possible, use generated types from @services/openapi/schema instead of defining custom types.
+// Generated types are automatically synced with the backend API schema.
 
+import type { components } from '@services/openapi/schema';
 import type React from 'react';
-import type { FileReferenceWithNote } from 'src/services/cradle/models';
+
+type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 
 // Re-export generated models that are actively used from this module
-export type { Entry, NoteRetrieve } from 'src/services/cradle/models';
+export type Entry = components['schemas']['Entry'];
+export type NoteRetrieve = components['schemas']['NoteRetrieve'];
 
 // Type alias for compatibility - FileReference is an alias for FileReferenceWithNote
 export type FileReference = FileReferenceWithNote;

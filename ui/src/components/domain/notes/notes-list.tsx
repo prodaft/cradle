@@ -26,9 +26,7 @@ import {
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-import type { OptimizedEntryResponse } from '@/services/cradle';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { parseMarkdownInline } from '@/utils/parser';
@@ -40,8 +38,9 @@ import {
     SparkleIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
-import type { NoteRetrieve } from '@services/cradle/models';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
     ColumnDef,
@@ -61,6 +60,10 @@ import StatusHeaderDropdown from '../../base/status-header-dropdown/status-heade
 import OfflineIndicator from '../../feedback/offline-indicator';
 import { NotePreviewContent } from './note-preview-content';
 import { StatusIcon } from './status-icon';
+
+type NoteRetrieve = components['schemas']['NoteRetrieve'];
+type NoteMetadata = { title?: string; description?: string };
+type OptimizedEntryResponse = components['schemas']['OptimizedEntryResponse'];
 
 interface Query {
     any_field?: string;
@@ -131,7 +134,6 @@ export default function NotesList({
     const sortField = (searchAny?.notes_sort_field ?? 'timestamp') as string;
     const sortDirection: SortDirection = (searchAny?.notes_sort_direction ??
         'desc') as SortDirection;
-    const { notesApi, managementApi } = useApi();
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteNoteIds, setBulkDeleteNoteIds] = useState<string[]>([]);
     const [singleDeleteDialogOpen, setSingleDeleteDialogOpen] = useState(false);
@@ -150,12 +152,14 @@ export default function NotesList({
 
     const retryNotesMutation = useMutation({
         mutationFn: async (noteId: string) => {
-            await managementApi.managementActionsCreate({
-                actionName: 'relinkNotes',
-                requestBody: {
-                    note_id: noteId,
+            const { error, response } = await fetchClient.POST(
+                '/management/actions/{action_name}',
+                {
+                    params: { path: { action_name: 'relinkNotes' } },
+                    body: { note_id: noteId } as any,
                 },
-            });
+            );
+            if (error) throw { response };
         },
         meta: {
             suppressNotification: true,
@@ -295,37 +299,33 @@ export default function NotesList({
     const queryParams = useMemo(() => {
         if (!query) return null;
 
-        const params = {
+        const params: Record<string, unknown> = {
             page,
-            pageSize: pageSize,
-            orderBy: orderBy,
-            linkedTo: query.linked_to,
+            page_size: pageSize,
+            order_by: orderBy,
+            linked_to: query.linked_to,
             status:
                 columnFilters.status === 'all'
                     ? hideFleetingNotes
                         ? 'finalized'
-                        : null
+                        : undefined
                     : columnFilters.status,
-            anyField: query.any_field,
+            any_field: query.any_field,
             content: query.content,
-            authorUsername: query.author__username,
+            author__username: query.author__username,
             date: query.date,
             references: query.references,
-            // Only apply timestamp filters when the range is complete.
-            // This prevents "stuck" start dates when loading with only a `*_from` param.
-            timestampGte: hasCompleteCreatedRange
+            timestamp_gte: hasCompleteCreatedRange
                 ? columnFilters.createdAt.from
                 : undefined,
-            timestampLte: hasCompleteCreatedRange
+            timestamp_lte: hasCompleteCreatedRange
                 ? columnFilters.createdAt.to
                 : undefined,
             truncate: query.truncate,
         };
 
         Object.keys(params).forEach(
-            (key) =>
-                params[key as keyof typeof params] === undefined &&
-                delete params[key as keyof typeof params],
+            (key) => params[key] === undefined && delete params[key],
         );
 
         return params;
@@ -345,27 +345,23 @@ export default function NotesList({
         data: notesData,
         isLoading,
         isPaused,
-    } = useQuery({
-        queryKey: queryKeys.notes.list({
-            page,
-            pageSize,
-            sortField,
-            sortDirection,
-            query: queryParams as any,
-            columnFilters,
-        }),
-        queryFn: () => notesApi.notesList(queryParams as any),
-        enabled: query != null && queryParams != null,
-        meta: {
-            showErrorToast: true,
+    } = $api.useQuery(
+        'get',
+        '/notes/',
+        { params: { query: queryParams as any } },
+        {
+            enabled: query != null && queryParams != null,
+            meta: {
+                showErrorToast: true,
+            },
         },
-    });
+    );
 
     const notes = useMemo(
         () => (notesData?.results as NoteRetrieve[]) ?? [],
         [notesData],
     );
-    const totalPages = notesData?.totalPages || 1;
+    const totalPages = notesData?.total_pages || 1;
     const totalCount = notesData?.count || 0;
 
     // Update total count callback
@@ -439,7 +435,12 @@ export default function NotesList({
 
     // Delete mutation
     const deleteMutation = useMutation({
-        mutationFn: (noteId: string) => notesApi.notesDelete({ noteId }),
+        mutationFn: async (noteId: string) => {
+            const { error, response } = await fetchClient.DELETE('/notes/{note_id}/', {
+                params: { path: { note_id: noteId } },
+            });
+            if (error) throw { response };
+        },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.notes.lists() }],
             suppressNotification: true,
@@ -574,9 +575,9 @@ export default function NotesList({
                                     <span>{label}</span>
                                 </Badge>
                             </TooltipTrigger>
-                            {row.original.statusMessage && (
+                            {row.original.status_message && (
                                 <TooltipContent>
-                                    {row.original.statusMessage}
+                                    {row.original.status_message}
                                 </TooltipContent>
                             )}
                         </Tooltip>
@@ -611,7 +612,8 @@ export default function NotesList({
                             <span className='truncate'>
                                 {truncateText(
                                     parseMarkdownInline(
-                                        row.original.metadata?.title || '',
+                                        (row.original.metadata as NoteMetadata)
+                                            ?.title || '',
                                     ),
                                     64,
                                 )}
@@ -626,8 +628,11 @@ export default function NotesList({
                 header: 'Description',
                 cell: ({ row }) => (
                     <div className='truncate max-w-xs'>
-                        {row.original.metadata?.description
-                            ? parseMarkdownInline(row.original.metadata?.description)
+                        {(row.original.metadata as NoteMetadata)?.description
+                            ? parseMarkdownInline(
+                                  (row.original.metadata as NoteMetadata)
+                                      ?.description ?? '',
+                              )
                             : '-'}
                     </div>
                 ),
@@ -698,9 +703,9 @@ export default function NotesList({
                 ),
                 cell: ({ row }) => (
                     <div className='w-36'>
-                        {row.original.editTimestamp
+                        {row.original.edit_timestamp
                             ? format(
-                                  new Date(row.original.editTimestamp),
+                                  new Date(row.original.edit_timestamp),
                                   'dd/MM/yyyy, HH:mm',
                               )
                             : '-'}
@@ -754,7 +759,9 @@ export default function NotesList({
                                                     {
                                                         id: String(note.id),
                                                         title:
-                                                            note.metadata?.title ||
+                                                            (
+                                                                note.metadata as NoteMetadata
+                                                            )?.title ||
                                                             note.title ||
                                                             'Untitled',
                                                     },
@@ -770,7 +777,9 @@ export default function NotesList({
                                                 setEnrichmentNotesList([
                                                     {
                                                         id: String(note.id),
-                                                        title: (note.metadata?.title ||
+                                                        title: ((
+                                                            note.metadata as NoteMetadata
+                                                        )?.title ||
                                                             note.title ||
                                                             'Untitled') as string,
                                                         entities: (note.entities ||
@@ -867,7 +876,10 @@ export default function NotesList({
             const note = noteById.get(id);
             return {
                 id,
-                title: note?.metadata?.title || note?.title || 'Untitled',
+                title:
+                    (note?.metadata as NoteMetadata)?.title ||
+                    note?.title ||
+                    'Untitled',
             };
         });
         setReportSelectedNotes(selectedNoteObjects);
@@ -880,7 +892,9 @@ export default function NotesList({
             const note = noteById.get(id);
             return {
                 id,
-                title: (note?.metadata?.title || note?.title || 'Untitled') as string,
+                title: ((note?.metadata as NoteMetadata)?.title ||
+                    note?.title ||
+                    'Untitled') as string,
                 entities: (note?.entities || []) as OptimizedEntryResponse[],
             };
         });

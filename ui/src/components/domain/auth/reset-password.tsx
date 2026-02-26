@@ -12,10 +12,10 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
-import useApi from '@/hooks/api/use-api';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -44,18 +44,15 @@ export default function ResetPassword() {
     const searchAny = search as any;
     const token = searchAny?.token as string | undefined;
     const router = useRouter();
-    const { authApi } = useApi();
     const { role } = useAuthState();
     const { isLoggedIn } = useAuthActions();
 
     const resetPasswordMutation = useMutation({
         mutationFn: async (data: { token: string; password: string }) => {
-            await authApi.authResetPasswordUpdate({
-                passwordResetConfirmRequest: {
-                    token: data.token,
-                    password: data.password,
-                },
+            const { error, response } = await fetchClient.PUT('/auth/reset_password/', {
+                body: { token: data.token, password: data.password },
             });
+            if (error) throw { response };
         },
         meta: {
             successMessage: 'Password reset successfully',

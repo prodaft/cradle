@@ -20,8 +20,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { queryKeys } from '@/hooks/query';
-import { useApi } from '@hooks';
+import { $api, fetchClient } from '@services/openapi/client';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
@@ -89,14 +88,16 @@ export default function SearchDialog({
     });
 
     const router = useRouter();
-    const { queryApi, entriesApi } = useApi();
 
-    const entryClassesQuery = useQuery({
-        queryKey: queryKeys.entryTypes.list(),
-        queryFn: () => entriesApi.entryClassesList(),
-        enabled: isOpen,
-        staleTime: 5 * 60_000,
-    });
+    const entryClassesQuery = $api.useQuery(
+        'get',
+        '/entries/entry_classes/',
+        {},
+        {
+            enabled: isOpen,
+            staleTime: 5 * 60_000,
+        },
+    );
 
     const entrySubtypes = useMemo(
         () => [
@@ -124,27 +125,44 @@ export default function SearchDialog({
         queryFn: async () => {
             const trimmed = searchState.query.trim();
             if (searchState.filters.length === 0) {
-                return queryApi.queryAdvancedRetrieve({
-                    page: searchState.page,
-                    pageSize: searchState.pageSize,
-                    query: trimmed ? [trimmed] : [],
-                    wildcard: true,
-                });
+                const { data, error, response } = await fetchClient.GET(
+                    '/query/advanced/',
+                    {
+                        params: {
+                            query: {
+                                page: searchState.page,
+                                page_size: searchState.pageSize,
+                                query: trimmed || undefined,
+                                wildcard: true,
+                            } as any,
+                        },
+                    },
+                );
+                if (error) throw { response };
+                return data;
             }
-            return queryApi.queryList({
-                page: searchState.page,
-                pageSize: searchState.pageSize,
-                name: trimmed ? [trimmed] : [],
-                subtype: searchState.filters,
+            const { data, error, response } = await fetchClient.GET('/query/', {
+                params: {
+                    query: {
+                        page: searchState.page,
+                        page_size: searchState.pageSize,
+                        name: trimmed || undefined,
+                        subtype: searchState.filters,
+                    } as any,
+                },
             });
+            if (error) throw { response };
+            return data;
         },
         enabled: isOpen && ready,
         meta: { showErrorToast: true },
     });
 
-    const results = searchResults.data?.results as SearchResultData[] | undefined;
+    const results = (searchResults.data as any)?.results as
+        | SearchResultData[]
+        | undefined;
     const hasResults = (results?.length ?? 0) > 0;
-    const totalPages = Math.max(1, searchResults.data?.totalPages ?? 1);
+    const totalPages = Math.max(1, (searchResults.data as any)?.total_pages ?? 1);
     const { page, pageSize } = searchState;
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {

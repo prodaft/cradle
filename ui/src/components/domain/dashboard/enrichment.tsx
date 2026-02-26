@@ -1,6 +1,5 @@
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-
+import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -25,8 +24,6 @@ interface ColumnFilters {
 export default function DashboardEnrichmentRequests({
     entryId,
 }: DashboardEnrichmentRequestsProps) {
-    const { intelioApi } = useApi();
-
     // Enrichment requests list state
     const [page, setPage] = useState(1);
     const [sortField, setSortField] = useState('created_at');
@@ -75,17 +72,24 @@ export default function DashboardEnrichmentRequests({
         sortDirection,
     ]);
 
-    // Query for enrichment requests
     const { data: requestsData, isPending } = useQuery({
         queryKey: queryKeys.enrichment.requests.list(queryParams),
-        queryFn: () => intelioApi.enrichmentRequestList(queryParams),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/intelio/enrich/',
+                { params: { query: queryParams as any } },
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: {
             showErrorToast: true,
         },
     });
 
-    const enrichmentRequests = requestsData?.results || [];
-    const totalPages = requestsData?.totalPages || 1;
+    const reqAny = requestsData as any;
+    const enrichmentRequests = reqAny?.results || [];
+    const totalPages = reqAny?.total_pages ?? reqAny?.totalPages ?? 1;
 
     const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -124,17 +128,28 @@ export default function DashboardEnrichmentRequests({
         setPage(1);
     };
 
-    // Delete mutation
     const deleteMutation = useMutation({
-        mutationFn: (id: string) => intelioApi.enrichmentDetailDelete({ id }),
+        mutationFn: async (id: string) => {
+            const { error, response } = await fetchClient.DELETE(
+                '/intelio/enrich/{id}/',
+                { params: { path: { id } } },
+            );
+            if (error) throw { response };
+        },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
         },
     });
 
-    // Rerun mutation
     const rerunMutation = useMutation({
-        mutationFn: (id: string) => intelioApi.enrichmentRestart({ id }),
+        mutationFn: async (id: string) => {
+            const { data, error, response } = await fetchClient.POST(
+                '/intelio/enrich/{id}/restart/',
+                { params: { path: { id } } },
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
         },

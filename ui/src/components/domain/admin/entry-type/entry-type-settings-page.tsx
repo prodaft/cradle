@@ -3,11 +3,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { ClockCounterClockwiseIcon, GearIcon } from '@phosphor-icons/react';
-import { EntryClass } from '@services/cradle/models';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useQueryClient } from '@tanstack/react-query';
 import {
     useParams,
     useRouter,
@@ -17,6 +17,8 @@ import {
 import NotFound from '../../../feedback/not-found';
 import ActivityList from '../../activity/activity-list';
 import EntryTypeForm from './entry-type-form';
+
+type EntryClass = components['schemas']['EntryClass'];
 
 const ENTRY_TYPE_SETTINGS_ITEMS = [
     {
@@ -42,24 +44,25 @@ export default function EntryTypeSettingsPage() {
     });
     const search = useSearch({ strict: false });
     const tab = (search as any)?.tab ?? ENTRY_TYPE_SETTINGS_ITEMS[0].id;
-    const { entriesApi } = useApi();
     const queryClient = useQueryClient();
 
-    // Query for entry type details
     const {
         data: entryTypeData,
         isLoading,
         isError,
-    } = useQuery({
-        queryKey: queryKeys.entryTypes.detail(subtype),
-        queryFn: () => entriesApi.entryClassesRetrieve({ classSubtype: subtype }),
-        enabled: !!subtype,
-        retry: false,
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
+    } = $api.useQuery(
+        'get',
+        '/entries/entry_classes/{class_subtype}/',
+        { params: { path: { class_subtype: subtype } } },
+        {
+            enabled: !!subtype,
+            retry: false,
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-    });
+    );
 
     const handleTabChange = (tabId: string) => {
         router.navigate({

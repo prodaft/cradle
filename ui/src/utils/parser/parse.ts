@@ -1,5 +1,5 @@
 import { HashIcon } from '@phosphor-icons/react';
-import { EntriesApi, FileTransferApi } from '@services/cradle/apis';
+import { fetchClient } from '@services/openapi/client';
 import MarkdownIt from 'markdown-it';
 import markdownItAnchor from 'markdown-it-anchor';
 import { createElement } from 'react';
@@ -10,14 +10,12 @@ const hashIcon = renderToStaticMarkup(createElement(HashIcon, { size: 16 }));
 
 export async function parseMarkdown(
     mdContent: string,
-    entriesApi: EntriesApi,
-    fileTransferApi: FileTransferApi,
     baseURL: string,
     fileData?: any[],
 ): Promise<{ html: string; metadata: Record<string, any> } | undefined> {
     try {
-        const response = await entriesApi.entryClassesList({});
-        const entries = response?.results ?? [];
+        const { data } = await fetchClient.GET('/entries/entry_classes/');
+        const entries = data?.results ?? [];
         const entryColors = new Map<string, string>();
         for (const entry of entries) {
             entryColors.set(entry.subtype, entry.color || 'var(--primary)');
@@ -36,16 +34,8 @@ export async function parseMarkdown(
                 encodeURIComponent(String(s).trim().toLowerCase().replace(/\s+/g, '-')),
         });
 
-        return await parseWithExtensions(
-            md,
-            mdContent,
-            fileData,
-            entryColors,
-            fileTransferApi,
-            baseURL,
-        );
+        return await parseWithExtensions(md, mdContent, fileData, entryColors, baseURL);
     } catch (error: any) {
-        // Handle network or authorization errors by returning undefined.
         if (
             error.code === 'ERR_NETWORK' ||
             (error.response && error.response.status === 401)

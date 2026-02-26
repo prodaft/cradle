@@ -1,11 +1,10 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { EdgeRelation } from '@/services/cradle';
 import { XIcon } from 'lucide-react';
 import type React from 'react';
 import { ComponentType } from 'react';
 import type Sigma from 'sigma';
 import GraphControl from './graph-control';
-import { Edge, Node } from './graphFilterUtils';
+import { type Edge, type EdgeRelation, type Node } from './graphFilterUtils';
 
 interface Entry {
     id: string;

@@ -13,6 +13,7 @@ import {
     InputGroupAddon,
     InputGroupInput,
 } from '@/components/ui/input-group';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import {
     Select,
     SelectContent,
@@ -20,7 +21,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import {
     Table,
@@ -32,7 +32,6 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cradleJsonTheme } from '@/config/json-view';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import {
     CalendarIcon,
@@ -47,10 +46,10 @@ import {
     WarningCircleIcon,
     WarningIcon,
 } from '@phosphor-icons/react';
-import {
-    EnrichmentRequestDetailStatusEnum,
-    EntrySerializerMinimal,
-} from '@services/cradle/models';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+
+type EntrySerializerMinimal = components['schemas']['EntrySerializerMinimal'];
 
 import NotFound from '@/components/feedback/not-found';
 import { useQuery } from '@tanstack/react-query';
@@ -86,8 +85,9 @@ const normalizeId = (value?: number | string | null) => {
 
 const getEntryLabel = (entry?: EntrySerializerMinimal | null): EntryLabel | null => {
     if (!entry) return null;
-    const subtype = entry.subtype || entry.entryClass?.subtype || entry.type || 'entry';
-    const color = entry.color || entry.entryClass?.color;
+    const subtype =
+        entry.subtype || entry.entry_class?.subtype || entry.type || 'entry';
+    const color = entry.color || entry.entry_class?.color;
     return {
         subtype,
         name: entry.name,
@@ -285,7 +285,6 @@ function ArtifactRow({
  * ```
  */
 export default function EnrichmentResults() {
-    const { intelioApi } = useApi();
     const params = useParams({ strict: false });
     const id = (params as any).id;
 
@@ -304,39 +303,53 @@ export default function EnrichmentResults() {
         isError: isErrorDetails,
     } = useQuery({
         queryKey: queryKeys.enrichment.results.detail(String(id)),
-        queryFn: () => intelioApi.enrichmentDetailRetrieve({ id }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/intelio/enrich/{id}/',
+                { params: { path: { id } } },
+            );
+            if (error) throw { response };
+            return data;
+        },
         retry: false,
         meta: {
             showErrorToast: false,
         },
     });
 
-    // Select the first enricher by default when details load
+    const detailsAny = enrichmentDetails as any;
+
     useEffect(() => {
         if (
-            enrichmentDetails?.enrichers &&
-            enrichmentDetails.enrichers.length > 0 &&
+            detailsAny?.enrichers &&
+            detailsAny.enrichers.length > 0 &&
             !selectedEnricher
         ) {
-            setSelectedEnricher(enrichmentDetails.enrichers[0].enricherType!);
+            const first = detailsAny.enrichers[0];
+            setSelectedEnricher(first.enricher_type ?? first.enricherType);
         }
-    }, [enrichmentDetails, selectedEnricher]);
+    }, [detailsAny, selectedEnricher]);
 
-    // Query for enricher details
     const { data: enricherDetails, isLoading: isLoadingEnricher } = useQuery({
         queryKey: queryKeys.enrichment.results.detail(`${id}-${selectedEnricher}`),
-        queryFn: () =>
-            intelioApi.enrichmentRequestEnricherRetrieve({
-                id,
-                enricherType: selectedEnricher!,
-            }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/intelio/enrich/{id}/{enricher_type}/',
+                {
+                    params: {
+                        path: { id, enricher_type: selectedEnricher! },
+                    },
+                },
+            );
+            if (error) throw { response };
+            return data;
+        },
         enabled: !!selectedEnricher && !showIgnored,
         meta: {
             showErrorToast: true,
         },
     });
 
-    // Query for results (relations)
     const { data: resultsData, isLoading: isLoadingResults } = useQuery({
         queryKey: queryKeys.enrichment.results.relations({
             id: String(id),
@@ -347,24 +360,37 @@ export default function EnrichmentResults() {
             query: searchParams.query || undefined,
             details: searchParams.details || undefined,
         }),
-        queryFn: () =>
-            intelioApi.enrichmentRelationsRetrieve({
-                id,
-                enricherType: selectedEnricher!,
-                entryId: selectedArtifactId!,
-                page,
-                pageSize,
-                query: searchParams.query || undefined,
-                details: searchParams.details || undefined,
-            }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/intelio/enrich/{id}/{enricher_type}/relations/',
+                {
+                    params: {
+                        path: {
+                            id,
+                            enricher_type: selectedEnricher!,
+                        },
+                        query: {
+                            entry_id: selectedArtifactId!,
+                            page,
+                            page_size: pageSize,
+                            query: searchParams.query || undefined,
+                            details: searchParams.details || undefined,
+                        } as any,
+                    },
+                },
+            );
+            if (error) throw { response };
+            return data;
+        },
         enabled: !!selectedEnricher && !showIgnored && !!selectedArtifactId,
         meta: {
             showErrorToast: true,
         },
     });
 
-    const results = useMemo(() => resultsData?.results ?? [], [resultsData?.results]);
-    const totalPages = resultsData?.totalPages || 1;
+    const resultsAny = resultsData as any;
+    const results = useMemo(() => resultsAny?.results ?? [], [resultsAny?.results]);
+    const totalPages = resultsAny?.total_pages ?? resultsAny?.totalPages ?? 1;
     const artifacts = useMemo(
         () => (enricherDetails?.artifacts || []) as EnricherArtifact[],
         [enricherDetails?.artifacts],
@@ -387,8 +413,7 @@ export default function EnrichmentResults() {
         }
     };
 
-    // Get status icon for enrichment request
-    const getStatusIcon = (status?: EnrichmentRequestDetailStatusEnum) => {
+    const getStatusIcon = (status?: string) => {
         if (!status) return null;
 
         switch (status) {
@@ -538,21 +563,21 @@ export default function EnrichmentResults() {
 
     const errorMsg = () => {
         const msgs: string[] = [];
-        if (enrichmentDetails?.ignored && enrichmentDetails.ignored.length > 0) {
+        if (detailsAny?.ignored && detailsAny.ignored.length > 0) {
             msgs.push(
-                `Ignored ${enrichmentDetails.ignored.length} artifact${enrichmentDetails.ignored.length > 1 ? 's' : ''}`,
+                `Ignored ${detailsAny.ignored.length} artifact${detailsAny.ignored.length > 1 ? 's' : ''}`,
             );
         }
         const warn_count =
-            enrichmentDetails?.enrichers?.filter(
-                (enricher) => enricher.status === 'warning',
+            detailsAny?.enrichers?.filter(
+                (enricher: any) => enricher.status === 'warning',
             ).length || 0;
         if (warn_count > 0) {
             msgs.push(`Warnings in ${warn_count} enricher${warn_count > 1 ? 's' : ''}`);
         }
         const error_count =
-            enrichmentDetails?.enrichers?.filter(
-                (enricher) => enricher.status === 'error',
+            detailsAny?.enrichers?.filter(
+                (enricher: any) => enricher.status === 'error',
             ).length || 0;
         if (error_count > 0) {
             msgs.push(`Errors in ${error_count} enricher${error_count > 1 ? 's' : ''}`);
@@ -561,17 +586,21 @@ export default function EnrichmentResults() {
         return msgs.join(', ');
     };
 
-    // Check if enricher has warnings or errors
-    const hasWarnings =
-        enricherDetails?.warnings && enricherDetails.warnings.length > 0;
-    const hasErrors = enricherDetails?.errors && enricherDetails.errors.length > 0;
+    const enricherAny = enricherDetails as any;
+    const hasWarnings = enricherAny?.warnings && enricherAny.warnings.length > 0;
+    const hasErrors = enricherAny?.errors && enricherAny.errors.length > 0;
 
-    // Get ignored artifacts from enrichmentDetails (assuming it comes from 'ignored' field)
-    const ignoredArtifacts = (enrichmentDetails as any)?.ignored ?? [];
+    const ignoredArtifacts = detailsAny?.ignored ?? [];
     const selectedEnricherName =
-        enrichmentDetails?.enrichers?.find(
-            (enricher) => enricher.enricherType === selectedEnricher,
-        )?.displayName || selectedEnricher;
+        detailsAny?.enrichers?.find(
+            (enricher: any) =>
+                (enricher.enricher_type ?? enricher.enricherType) === selectedEnricher,
+        )?.display_name ??
+        detailsAny?.enrichers?.find(
+            (enricher: any) =>
+                (enricher.enricher_type ?? enricher.enricherType) === selectedEnricher,
+        )?.displayName ??
+        selectedEnricher;
 
     if (isErrorDetails) {
         return (
@@ -581,53 +610,65 @@ export default function EnrichmentResults() {
 
     return (
         <div className='w-full h-full flex flex-col overflow-hidden'>
-            {/* Title Section */}
-            {enrichmentDetails && (
+            {detailsAny && (
                 <div className='w-full border-b border-border px-4 py-4'>
                     <h1 className='text-2xl font-medium break-all text-foreground mb-2'>
-                        {enrichmentDetails.title || `Enrichment Request #${id}`}
+                        {detailsAny.title || `Enrichment Request #${id}`}
                     </h1>
                     <div className='h-px bg-card mb-2' />
                     <div className='flex items-center gap-4 text-xs text-muted-foreground'>
-                        {enrichmentDetails.status && (
+                        {detailsAny.status && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div className='flex items-center gap-1.5'>
-                                        {getStatusIcon(enrichmentDetails.status)}
+                                        {getStatusIcon(detailsAny.status)}
                                         <span className='capitalize'>
-                                            {enrichmentDetails.status}
+                                            {detailsAny.status}
                                         </span>
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent>{errorMsg()}</TooltipContent>
                             </Tooltip>
                         )}
-                        {enrichmentDetails.createdAt && (
+                        {(detailsAny.created_at ?? detailsAny.createdAt) && (
                             <div className='flex items-center gap-1.5'>
                                 <CalendarIcon size={14} weight='bold' />
                                 <span>
                                     {format(
-                                        new Date(enrichmentDetails.createdAt),
+                                        new Date(
+                                            detailsAny.created_at ??
+                                                detailsAny.createdAt,
+                                        ),
                                         'dd/MM/yyyy, HH:mm',
                                     )}
                                 </span>
                             </div>
                         )}
-                        {enrichmentDetails.completedAt && (
+                        {(detailsAny.completed_at ?? detailsAny.completedAt) && (
                             <div className='flex items-center gap-1.5'>
                                 <ClockIcon size={14} weight='bold' />
                                 <span>
                                     {format(
-                                        new Date(enrichmentDetails.completedAt),
+                                        new Date(
+                                            detailsAny.completed_at ??
+                                                detailsAny.completedAt,
+                                        ),
                                         'dd/MM/yyyy, HH:mm',
                                     )}
                                 </span>
                             </div>
                         )}
-                        {enrichmentDetails.userDetail && (
+                        {(detailsAny.user_detail ?? detailsAny.userDetail) && (
                             <div className='flex items-center gap-1.5'>
                                 <UserIcon size={14} weight='bold' />
-                                <span>{enrichmentDetails.userDetail.username}</span>
+                                <span>
+                                    {
+                                        (
+                                            detailsAny.user_detail ??
+                                            detailsAny.userDetail
+                                        )?.username
+                                    }
+                                </span>
                             </div>
                         )}
                     </div>
@@ -662,23 +703,24 @@ export default function EnrichmentResults() {
                                         <SelectValue placeholder='Select enricher' />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {enrichmentDetails?.enrichers?.map(
-                                            (enricher) => (
-                                                <SelectItem
-                                                    key={enricher.enricherType}
-                                                    value={enricher.enricherType!}
-                                                >
+                                        {detailsAny?.enrichers?.map((enricher: any) => {
+                                            const eType =
+                                                enricher.enricher_type ??
+                                                enricher.enricherType;
+                                            const eName =
+                                                enricher.display_name ??
+                                                enricher.displayName;
+                                            return (
+                                                <SelectItem key={eType} value={eType!}>
                                                     <div className='flex items-center gap-2'>
                                                         {getEnricherStatusIcon(
                                                             enricher.status!,
                                                         )}
-                                                        <span>
-                                                            {enricher.displayName}
-                                                        </span>
+                                                        <span>{eName}</span>
                                                     </div>
                                                 </SelectItem>
-                                            ),
-                                        )}
+                                            );
+                                        })}
                                         {ignoredArtifacts.length > 0 && (
                                             <SelectItem value='ignored'>
                                                 <div className='flex items-center gap-2'>
@@ -1002,7 +1044,7 @@ export default function EnrichmentResults() {
                                 <Card className='border-border bg-muted/5'>
                                     <CardContent className='p-0'>
                                         <div className='divide-y divide-border'>
-                                            {enricherDetails!.warnings!.map(
+                                            {enricherAny!.warnings!.map(
                                                 (warning: any, index: number) => (
                                                     <div
                                                         key={index}
@@ -1036,7 +1078,7 @@ export default function EnrichmentResults() {
                                 <Card className='border-border bg-muted/5'>
                                     <CardContent className='p-0'>
                                         <div className='divide-y divide-border'>
-                                            {enricherDetails!.errors!.map(
+                                            {enricherAny!.errors!.map(
                                                 (error: any, index: number) => (
                                                     <div
                                                         key={index}

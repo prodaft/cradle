@@ -20,17 +20,19 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Entity } from '@services/cradle/models';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { SelectOption } from '@/types';
 import * as z from 'zod';
 import OfflineIndicator from '../../../feedback/offline-indicator';
+
+type Entity = components['schemas']['Entity'];
 
 interface EntityFormProps {
     id?: number | string | null;
@@ -65,15 +67,21 @@ const entitySchema = z.object({
 type EntityFormData = z.infer<typeof entitySchema>;
 
 export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
-    const { entriesApi, queryApi } = useApi();
-
     const fetchAliasesMutation = useMutation({
         mutationFn: async (q: string) => {
-            const results = await queryApi.queryAdvancedRetrieve({
-                query: [q],
-                wildcard: true,
-            });
-            return results.results.map((alias) => ({
+            const { data, error, response } = await fetchClient.GET(
+                '/query/advanced/',
+                {
+                    params: {
+                        query: {
+                            query: q,
+                            wildcard: true,
+                        } as any,
+                    },
+                },
+            );
+            if (error) throw { response };
+            return ((data as any).results ?? []).map((alias: any) => ({
                 value: alias.id!,
                 label: `${alias.subtype}:${alias.name}`,
             }));
@@ -85,10 +93,15 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
 
     const updateEntityMutation = useMutation({
         mutationFn: async (payload: any) => {
-            return await entriesApi.entitiesUpdate({
-                entityId: Number(id),
-                entityRequest: payload,
-            });
+            const { data, error, response } = await fetchClient.POST(
+                '/entries/entities/{entity_id}/',
+                {
+                    params: { path: { entity_id: Number(id) } },
+                    body: payload,
+                },
+            );
+            if (error) throw { response };
+            return data;
         },
         meta: {
             successMessage: 'Entity updated successfully!',
@@ -127,16 +140,18 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         }
     };
 
-    // Query for entry classes
-    const { data: entryClassesData } = useQuery({
-        queryKey: queryKeys.entryTypes.lists(),
-        queryFn: () => entriesApi.entryClassesList({ showCount: true }),
-        refetchOnWindowFocus: false,
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
+    const { data: entryClassesData } = $api.useQuery(
+        'get',
+        '/entries/entry_classes/',
+        { params: { query: { show_count: true } } },
+        {
+            refetchOnWindowFocus: false,
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-    });
+    );
 
     const subtypeOptions = useMemo<SubtypeOption[]>(() => {
         const results = entryClassesData?.results ?? [];
@@ -148,22 +163,19 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
             }));
     }, [entryClassesData]);
 
-    // Query for entity data when editing
     const {
         data: entityData,
         isLoading,
         isPaused,
-    } = useQuery<Entity>({
-        queryKey: queryKeys.entities.detail(String(id)),
-        queryFn: async () => {
-            const result = await entriesApi.entitiesRetrieve({ entityId: Number(id) });
-            return result as Entity;
+    } = $api.useQuery(
+        'get',
+        '/entries/entities/{entity_id}/',
+        { params: { path: { entity_id: Number(id) } } },
+        {
+            enabled: !!id,
+            meta: { showErrorToast: true },
         },
-        enabled: !!id,
-        meta: {
-            showErrorToast: true,
-        },
-    });
+    );
 
     const resolvedSubtypeOptions = useMemo(() => {
         if (!entityData?.subtype) return subtypeOptions;
@@ -186,9 +198,9 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                 name: entityData.name,
                 subtype: entityData.subtype || '',
                 description: entityData.description || '',
-                isPublic: entityData.isPublic || false,
+                isPublic: entityData.is_public || false,
                 aliases:
-                    entityData.aliasesDetail
+                    entityData.aliases_detail
                         ?.filter((alias) => alias.id !== undefined)
                         .map((alias) => ({
                             value: alias.id!,

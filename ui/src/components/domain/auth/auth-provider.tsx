@@ -1,11 +1,6 @@
-import { AuthApi } from '@/services/cradle';
 import { parseAPIError } from '@/utils/api';
-import {
-    TokenObtainRequest,
-    TokenPairRetrieve,
-    TokenRefreshRetrieve,
-} from '@services/cradle/models';
-import { Configuration } from '@services/cradle/runtime';
+import type { paths } from '@services/openapi/schema';
+import createFetchClient from 'openapi-fetch';
 import {
     createContext,
     ReactNode,
@@ -17,14 +12,10 @@ import {
 } from 'react';
 import { AuthTokenException, SessionExpiredException } from './auth-exceptions';
 
-/**
- * Get the base URL from environment variable
- */
 const getBaseUrl = (): string => {
     return import.meta.env.VITE_API_BASE_URL;
 };
 
-/** SSR-safe: returns null when localStorage is not available (e.g. during server render). */
 function getStorageItem(key: string): string | null {
     if (typeof window === 'undefined') return null;
     try {
@@ -48,7 +39,6 @@ interface LoginResult {
     message?: string;
 }
 
-// State interface - values that change and cause rerenders
 export interface AuthStateValue {
     role: string;
     userId: string | null;
@@ -58,7 +48,6 @@ export interface AuthStateValue {
     isEntryManager: boolean;
 }
 
-// Actions interface - functions that don't change
 export interface AuthActionsValue {
     logIn: (
         username: string,
@@ -71,26 +60,11 @@ export interface AuthActionsValue {
     setTokensDirectly: (data: TokenData) => void;
 }
 
-// Combined interface kept for type compatibility (useAuth removed)
 export interface AuthContextValue extends AuthStateValue, AuthActionsValue {}
 
-/**
- * AuthStateContext - provides authentication state (role, userId, isLoading, basePath)
- * Components that only need state should use useAuthState() to avoid rerenders from action changes
- */
 const AuthStateContext = createContext<AuthStateValue | undefined>(undefined);
-
-/**
- * AuthActionsContext - provides authentication actions (logIn, logOut, getAccessToken, etc.)
- * Components that only need actions should use useAuthActions() to avoid rerenders from state changes
- */
 const AuthActionsContext = createContext<AuthActionsValue | undefined>(undefined);
 
-// AuthContext removed - use AuthStateContext and AuthActionsContext instead
-
-/**
- * Authentication result enum
- */
 export const AuthResult = {
     SUCCESS: 'success',
     INVALID_CREDENTIALS: 'invalid_credentials',
@@ -104,12 +78,6 @@ interface AuthProviderProps {
     children: ReactNode;
 }
 
-/**
- * AuthProvider component - provides authentication context to the application
- *
- * Manages JWT tokens internally without exposing them directly.
- * Automatically refreshes tokens before expiration.
- */
 export function AuthProvider({ children }: AuthProviderProps) {
     const [role, setRole] = useState('');
     const [userId, setUserId] = useState<string | null>(null);
@@ -123,14 +91,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, []);
     const basePath = getBaseUrl();
 
-    const authApi = useMemo(() => {
-        const config = new Configuration({
-            basePath: basePath,
-        });
-        return new AuthApi(config);
-    }, [basePath]);
+    const fetchClient = useMemo(
+        () => createFetchClient<paths>({ baseUrl: basePath }),
+        [basePath],
+    );
 
-    // Store tokens and expiration in refs (not state) to avoid re-renders
     const accessTokenRef = useRef(getStorageItem('access_token') || '');
     const refreshTokenRef = useRef(getStorageItem('refresh_token') || '');
     const accessExpiresAtRef = useRef<string | null>(
@@ -140,32 +105,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         getStorageItem('refresh_expires_at') || null,
     );
 
-    // Timer for automatic token refresh
     const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    // Track last network error log time to throttle noisy error messages
     const lastNetworkErrorLogRef = useRef<number>(0);
-
-    // Keep latest refreshAccessToken for scheduleTokenRefresh without deps cycles
     const refreshAccessTokenRef = useRef<() => Promise<boolean>>(async () => false);
 
-    /**
-     * Check if user is currently logged in (has valid refresh token)
-     */
     const isLoggedIn = useCallback(() => {
         if (!refreshTokenRef.current || !refreshExpiresAtRef.current) {
             return false;
         }
-
         const refreshExpiry = new Date(refreshExpiresAtRef.current);
-        const now = new Date();
-
-        // Check if refresh token is still valid
-        return refreshExpiry > now;
+        return refreshExpiry > new Date();
     }, []);
 
-    /**
-     * Schedule automatic token refresh before expiration
-     */
     const scheduleTokenRefresh = useCallback(() => {
         if (refreshTimerRef.current) {
             clearTimeout(refreshTimerRef.current);
@@ -186,9 +137,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }, refreshIn);
     }, []);
 
-    /**
-     * Store tokens and metadata securely
-     */
     const storeTokens = useCallback(
         (data: TokenData) => {
             accessTokenRef.current = data.access;
@@ -214,9 +162,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         [scheduleTokenRefresh],
     );
 
-    /**
-     * Clear all stored tokens and user data
-     */
     const clearTokens = useCallback(() => {
         accessTokenRef.current = '';
         refreshTokenRef.current = '';
@@ -234,19 +179,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setRole('');
         setUserId(null);
 
-        // Clear refresh timer
         if (refreshTimerRef.current) {
             clearTimeout(refreshTimerRef.current);
             refreshTimerRef.current = null;
         }
     }, []);
 
-    /**
-     * Refresh the access token using the refresh token
-     * @returns true if refresh succeeded
-     * @throws {SessionExpiredException} if the server rejects the refresh token
-     * Note: Returns false (does NOT throw) for network/connection errors
-     */
     const refreshAccessToken = useCallback(async (): Promise<boolean> => {
         const refreshToken = refreshTokenRef.current;
 
@@ -256,48 +194,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         try {
-            const data: TokenRefreshRetrieve = await authApi.authRefreshCreate({
-                tokenRefreshRequest: { refresh: refreshToken },
+            const { data, error, response } = await fetchClient.POST('/auth/refresh/', {
+                body: { refresh: refreshToken },
             });
+
+            if (error || !data) {
+                throw { response };
+            }
 
             const tokenData: TokenData = {
                 access: data.access,
                 refresh: data.refresh,
-                accessExpiresAt: data.accessExpiresAt,
-                refreshExpiresAt: data.refreshExpiresAt,
+                accessExpiresAt: new Date(data.access_expires_at),
+                refreshExpiresAt: new Date(data.refresh_expires_at),
                 role: data.role,
             };
 
             storeTokens(tokenData);
             return true;
         } catch (error: any) {
-            // Re-throw SessionExpiredException (from above or elsewhere)
             if (error instanceof SessionExpiredException) {
                 throw error;
             }
 
-            // Network/connection error - do NOT clear tokens, just return false
-            // Throttle error logging to avoid console spam (log at most once per 5 seconds)
             const now = Date.now();
             if (now - lastNetworkErrorLogRef.current > 5000) {
-                // Network errors are throttled to avoid spam
                 lastNetworkErrorLogRef.current = now;
             }
             return false;
         }
-    }, [authApi, storeTokens, clearTokens]);
+    }, [fetchClient, storeTokens, clearTokens]);
 
     useEffect(() => {
         refreshAccessTokenRef.current = refreshAccessToken;
     }, [refreshAccessToken]);
 
-    /**
-     * Get a valid access token, refreshing if necessary
-     * @returns Valid access token
-     * @throws {AuthTokenException} If no access token is available
-     * @throws {SessionExpiredException} If the session has expired and refresh was rejected
-     * Note: If refresh fails due to network error, returns the current token anyway
-     */
     const getAccessToken = useCallback(async (): Promise<string> => {
         const accessToken = accessTokenRef.current;
         const accessExpiresAt = accessExpiresAtRef.current;
@@ -317,16 +248,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     clearTokens();
                     throw error;
                 }
-                // Unexpected error during token refresh - already handled above
             }
         }
 
         return accessTokenRef.current;
     }, [refreshAccessToken, clearTokens]);
 
-    /**
-     * Log in with username and password
-     */
     const logIn = useCallback(
         async (
             username: string,
@@ -336,21 +263,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setIsLoading(true);
 
             try {
-                const tokenRequest: TokenObtainRequest = {
-                    username,
-                    password,
-                    ...(twoFactorToken && { twoFactorToken }),
-                };
+                const { data, error, response } = await fetchClient.POST(
+                    '/auth/login/',
+                    {
+                        body: {
+                            username,
+                            password,
+                            ...(twoFactorToken && { two_factor_token: twoFactorToken }),
+                        },
+                    },
+                );
 
-                const data: TokenPairRetrieve = await authApi.authLoginCreate({
-                    tokenObtainRequest: tokenRequest,
-                });
+                if (error || !data) {
+                    throw { response };
+                }
 
                 const tokenData: TokenData = {
                     access: data.access,
                     refresh: data.refresh,
-                    accessExpiresAt: data.accessExpiresAt,
-                    refreshExpiresAt: data.refreshExpiresAt,
+                    accessExpiresAt: new Date(data.access_expires_at),
+                    refreshExpiresAt: new Date(data.refresh_expires_at),
                     role: data.role,
                 };
 
@@ -397,7 +329,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         };
                     }
 
-                    // Check for specific error messages
                     const errorMessage = parsed.detail || '';
 
                     if (errorMessage.includes('not confirmed')) {
@@ -419,7 +350,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         message: errorMessage || 'Invalid credentials',
                     };
                 } catch {
-                    // If we can't parse the error, check for network error
                     if (error && typeof error === 'object' && !error.response) {
                         return {
                             result: AuthResult.NETWORK_ERROR,
@@ -427,7 +357,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         };
                     }
 
-                    // Generic error
                     return {
                         result: AuthResult.INVALID_CREDENTIALS,
                         message: 'Invalid credentials',
@@ -437,20 +366,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 setIsLoading(false);
             }
         },
-        [authApi, storeTokens],
+        [fetchClient, storeTokens],
     );
 
-    /**
-     * Log out the current user
-     */
     const logOut = useCallback(() => {
         clearTokens();
     }, [clearTokens]);
 
-    /**
-     * Internal method: Set tokens directly (for simulate session or testing)
-     * @private
-     */
     const setTokensDirectly = useCallback(
         (data: TokenData) => {
             storeTokens(data);
@@ -462,17 +384,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         [storeTokens],
     );
 
-    // Role check helpers - computed from state
     const isAdmin = role === 'admin';
     const isEntryManager = role === 'entrymanager' || role === 'admin';
 
-    // Set up automatic token refresh on mount if logged in
     useEffect(() => {
         if (isLoggedIn()) {
             scheduleTokenRefresh();
         }
 
-        // Cleanup on unmount
         return () => {
             if (refreshTimerRef.current) {
                 clearTimeout(refreshTimerRef.current);
@@ -480,7 +399,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         };
     }, [isLoggedIn, scheduleTokenRefresh]);
 
-    // State value - memoized to prevent unnecessary rerenders
     const stateValue = useMemo<AuthStateValue>(
         () => ({
             role,
@@ -493,7 +411,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         [role, userId, isLoading, basePath, isAdmin, isEntryManager],
     );
 
-    // Actions value - memoized with stable function references
     const actionsValue = useMemo<AuthActionsValue>(
         () => ({
             logIn,

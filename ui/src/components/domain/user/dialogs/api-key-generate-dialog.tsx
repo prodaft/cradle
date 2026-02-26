@@ -15,7 +15,6 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
-import useApi from '@/hooks/api/use-api';
 import { Alert } from '@/types';
 import {
     CopyIcon,
@@ -23,6 +22,7 @@ import {
     EyeSlashIcon,
     WarningCircleIcon,
 } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
@@ -57,7 +57,6 @@ export default function ApiKeyGenerateDialog({
     onOpenChange,
     userId,
 }: ApiKeyGenerateDialogProps) {
-    const { usersApi } = useApi();
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [showApiKey, setShowApiKey] = useState(false);
     const [alert, setAlert] = useState<Alert>({
@@ -68,8 +67,14 @@ export default function ApiKeyGenerateDialog({
 
     const generateMutation = useMutation({
         mutationFn: async () => {
-            const response = await usersApi.usersApikeyCreate({ userId });
-            return response.apiKey;
+            const { data, error, response } = await fetchClient.POST(
+                '/users/{user_id}/apikey',
+                {
+                    params: { path: { user_id: userId } },
+                },
+            );
+            if (error) throw { response };
+            return data.api_key;
         },
         meta: {
             suppressNotification: true,

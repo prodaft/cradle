@@ -16,10 +16,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import useApi from '@/hooks/api/use-api';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
-import { AccessRequestAccessTypeEnum } from '@services/cradle/models';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
 interface UserPermissionsFormProps {
@@ -94,23 +93,25 @@ export default function UserPermissionsForm({
     );
     const [currentAccess, setCurrentAccess] = useState<Record<number, AccessType>>({});
     const [searchVal, setSearchVal] = useState('');
-    const { accessApi } = useApi();
     const queryClient = useQueryClient();
 
-    const permissionsQuery = useQuery({
-        queryKey: ['accessUserList', id],
-        queryFn: () => accessApi.accessUserList({ userId: id }),
-        enabled: !!id,
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: false,
-    });
+    const permissionsQuery = $api.useQuery(
+        'get',
+        '/access/user/{user_id}/',
+        { params: { path: { user_id: id } } },
+        {
+            enabled: !!id,
+            refetchOnWindowFocus: false,
+            refetchOnReconnect: false,
+        },
+    );
 
     const entities: PermissionEntity[] = useMemo(() => {
         const permissions = permissionsQuery.data ?? [];
-        return permissions.map((c) => ({
+        return permissions.map((c: any) => ({
             id: c.id,
             name: c.name,
-            description: (c as { description?: string }).description,
+            description: c.description,
         }));
     }, [permissionsQuery.data]);
 
@@ -126,8 +127,8 @@ export default function UserPermissionsForm({
         const original: Record<number, AccessType> = {};
         const current: Record<number, AccessType> = {};
 
-        permissions.forEach((c) => {
-            const accessType = (c.accessType ?? 'none') as AccessType;
+        permissions.forEach((c: any) => {
+            const accessType = (c.access_type ?? 'none') as AccessType;
             original[c.id] = accessType;
             current[c.id] = accessType;
         });
@@ -156,14 +157,14 @@ export default function UserPermissionsForm({
     const saveChangesMutation = useMutation({
         mutationFn: async () => {
             const updates = entities.reduce<
-                Array<{ entityId: number; accessType: AccessRequestAccessTypeEnum }>
+                Array<{ entityId: number; accessType: AccessType }>
             >((acc, entity) => {
                 const original = originalAccess[entity.id];
                 const current = currentAccess[entity.id];
                 if (original !== current) {
                     acc.push({
                         entityId: entity.id,
-                        accessType: current as AccessRequestAccessTypeEnum,
+                        accessType: current,
                     });
                 }
                 return acc;
@@ -171,24 +172,32 @@ export default function UserPermissionsForm({
 
             if (updates.length === 0) return;
 
-            // Save all changes
             await Promise.all(
-                updates.map((update) =>
-                    accessApi.accessUserUpdate({
-                        userId: id,
-                        entityId: update.entityId,
-                        accessRequest: { accessType: update.accessType },
-                    }),
-                ),
+                updates.map(async (update) => {
+                    const { error, response } = await fetchClient.PUT(
+                        '/access/user/{user_id}/{entity_id}/',
+                        {
+                            params: {
+                                path: {
+                                    user_id: id,
+                                    entity_id: update.entityId,
+                                },
+                            },
+                            body: { access_type: update.accessType },
+                        },
+                    );
+                    if (error) throw { response };
+                }),
             );
         },
         meta: {
             successMessage: 'Permissions updated successfully',
         },
         onSuccess: () => {
-            // Update original access to match current
             setOriginalAccess({ ...currentAccess });
-            queryClient.invalidateQueries({ queryKey: ['accessUserList', id] });
+            queryClient.invalidateQueries({
+                queryKey: ['get', '/access/user/{user_id}/'],
+            });
         },
     });
 

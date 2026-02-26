@@ -1,7 +1,8 @@
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { SparkleIcon } from '@phosphor-icons/react';
+import type { components } from '@services/openapi/schema';
 import {
     useLoaderData,
     useRouter,
@@ -10,12 +11,13 @@ import {
 } from '@tanstack/react-router';
 import { FileText, FolderOpen, History, Share2 } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
-import type { EntryResponse } from 'src/services/cradle/models';
 import ActivityList from '../activity/activity-list';
 import DashboardEnrichmentRequests from './enrichment';
 import Files from './files';
 import Notes from './notes';
 import Relations from './relations';
+
+type EntryResponse = components['schemas']['EntryResponse'];
 
 const DASHBOARD_ITEMS = [
     { id: 'notes', label: 'Notes', icon: FileText },

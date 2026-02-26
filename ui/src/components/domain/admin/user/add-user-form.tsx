@@ -21,15 +21,17 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import useApi from '@/hooks/api/use-api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
-import { UserRetrieve } from '@services/cradle/models';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
 import bytes from 'bytes';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
+
+type UserRetrieve = components['schemas']['UserRetrieve'];
 
 interface AddUserFormProps {
     onAdd?: (result: UserRetrieve) => void;
@@ -63,8 +65,6 @@ type FormData = z.infer<typeof addUserSchema>;
 
 export default function AddUserForm({ onAdd }: AddUserFormProps) {
     const [showPassword, setShowPassword] = useState(false);
-    const { usersApi } = useApi();
-
     const {
         register,
         handleSubmit,
@@ -104,9 +104,13 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                 );
             }
 
-            return await usersApi.usersCreate({
-                userCreateSerializerAdminRequest: payload,
-            });
+            const {
+                data: newUser,
+                error,
+                response,
+            } = await fetchClient.POST('/users/', { body: payload });
+            if (error) throw { response };
+            return newUser;
         },
         meta: {
             successMessage: 'User created successfully',

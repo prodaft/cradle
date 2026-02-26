@@ -11,10 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowClockwiseIcon, PlusIcon } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -32,7 +32,6 @@ const noteSettingsSchema = z.object({
 type NoteSettingsFormData = z.infer<typeof noteSettingsSchema>;
 
 export default function NoteSettingsForm() {
-    const { managementApi } = useApi();
     const snippetListRef = useRef<SnippetListRef>(null);
 
     const {
@@ -52,24 +51,34 @@ export default function NoteSettingsForm() {
 
     const { data: settingsData, isLoading } = useQuery({
         queryKey: queryKeys.management.settings(),
-        queryFn: () => managementApi.managementSettingsRetrieve(),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/management/settings/',
+            );
+            if (error) throw { response };
+            return data;
+        },
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
 
     const updateSettingsMutation = useMutation({
         mutationFn: async (data: NoteSettingsFormData) => {
-            await managementApi.managementSettingsCreate({
-                requestBody: {
-                    notes: {
-                        min_entries: data.minEntries,
-                        min_entities: data.minEntities,
-                        max_clique_size: data.maxCliqueSize,
-                        allow_dynamic_entry_class_creation:
-                            data.allowDynamicEntryClassCreation,
-                    },
+            const { error, response } = await fetchClient.POST(
+                '/management/settings/',
+                {
+                    body: {
+                        notes: {
+                            min_entries: data.minEntries,
+                            min_entities: data.minEntities,
+                            max_clique_size: data.maxCliqueSize,
+                            allow_dynamic_entry_class_creation:
+                                data.allowDynamicEntryClassCreation,
+                        },
+                    } as any,
                 },
-            });
+            );
+            if (error) throw { response };
         },
         meta: {
             successMessage: 'Settings updated successfully!',
@@ -81,9 +90,11 @@ export default function NoteSettingsForm() {
 
     const relinkNotesMutation = useMutation({
         mutationFn: async () => {
-            await managementApi.managementActionsCreate({
-                actionName: 'relinkNotes',
-            });
+            const { error, response } = await fetchClient.POST(
+                '/management/actions/{action_name}',
+                { params: { path: { action_name: 'relinkNotes' } } },
+            );
+            if (error) throw { response };
         },
         meta: {
             suppressNotification: true,
@@ -94,13 +105,14 @@ export default function NoteSettingsForm() {
     });
 
     useEffect(() => {
-        if (!settingsData?.notes) return;
+        const settings = settingsData as any;
+        if (!settings?.notes) return;
         reset({
-            minEntries: Math.max(1, settingsData.notes.min_entries ?? 1),
-            minEntities: Math.max(1, settingsData.notes.min_entities ?? 1),
-            maxCliqueSize: Math.max(1, settingsData.notes.max_clique_size ?? 1),
+            minEntries: Math.max(1, settings.notes.min_entries ?? 1),
+            minEntities: Math.max(1, settings.notes.min_entities ?? 1),
+            maxCliqueSize: Math.max(1, settings.notes.max_clique_size ?? 1),
             allowDynamicEntryClassCreation:
-                settingsData.notes.allow_dynamic_entry_class_creation ?? false,
+                settings.notes.allow_dynamic_entry_class_creation ?? false,
         });
     }, [settingsData, reset]);
 

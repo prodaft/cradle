@@ -3,10 +3,10 @@ import MarkdownEditorDialog from '@/components/dialogs/base/markdown-editor-dial
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/use-api';
 import { logger } from '@/utils/logger';
 import { PencilIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation } from '@tanstack/react-query';
 import {
     forwardRef,
     MouseEvent,
@@ -34,10 +34,7 @@ export interface SnippetListRef {
 
 const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
     ({ userId = null, showTitle = true, description }, ref) => {
-        const { notesApi } = useApi();
-
         const normalizedUserId = userId === null ? 'null' : String(userId);
-        const snippetsQueryKey = ['snippets', 'user', normalizedUserId] as const;
 
         const [addSnippetDialogOpen, setAddSnippetDialogOpen] = useState(false);
         const [editSnippetDialogOpen, setEditSnippetDialogOpen] = useState(false);
@@ -46,16 +43,16 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
         const [deletingSnippet, setDeletingSnippet] = useState<Snippet | null>(null);
 
         // Query for snippets
-        const { data: snippetsData, isLoading } = useQuery({
-            queryKey: snippetsQueryKey,
-            queryFn: () =>
-                notesApi.notesSnippetsUserList({
-                    userId: normalizedUserId,
-                }),
-            meta: {
-                showErrorToast: true,
+        const { data: snippetsData, isLoading } = $api.useQuery(
+            'get',
+            '/notes/snippets/user/{user_id}/',
+            { params: { path: { user_id: normalizedUserId } } },
+            {
+                meta: {
+                    showErrorToast: true,
+                },
             },
-        });
+        );
 
         const snippets: Snippet[] = Array.isArray(snippetsData)
             ? (snippetsData as Snippet[])
@@ -63,16 +60,21 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
 
         // Mutation for creating snippets
         const createMutation = useMutation({
-            mutationFn: (data: { name: string; content: string }) =>
-                notesApi.notesSnippetsUserCreate({
-                    userId: normalizedUserId,
-                    snippetRequest: data,
-                }),
+            mutationFn: async (data: { name: string; content: string }) => {
+                const {
+                    data: result,
+                    error,
+                    response,
+                } = await fetchClient.POST('/notes/snippets/user/{user_id}/', {
+                    params: { path: { user_id: normalizedUserId } },
+                    body: data,
+                });
+                if (error) throw { response };
+                return result;
+            },
             meta: {
                 invalidateQueries: [
-                    {
-                        queryKey: snippetsQueryKey,
-                    },
+                    { queryKey: ['get', '/notes/snippets/user/{user_id}/'] },
                 ],
                 successMessage: 'Snippet created successfully',
             },
@@ -80,22 +82,27 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
 
         // Mutation for updating snippets
         const updateMutation = useMutation({
-            mutationFn: ({
+            mutationFn: async ({
                 snippetId,
                 data,
             }: {
                 snippetId: string;
                 data: { name: string; content: string };
-            }) =>
-                notesApi.notesSnippetsUpdate({
-                    snippetId,
-                    snippetRequest: data,
-                }),
+            }) => {
+                const {
+                    data: result,
+                    error,
+                    response,
+                } = await fetchClient.PUT('/notes/snippets/{snippet_id}/', {
+                    params: { path: { snippet_id: snippetId } },
+                    body: data,
+                });
+                if (error) throw { response };
+                return result;
+            },
             meta: {
                 invalidateQueries: [
-                    {
-                        queryKey: snippetsQueryKey,
-                    },
+                    { queryKey: ['get', '/notes/snippets/user/{user_id}/'] },
                 ],
                 successMessage: 'Snippet updated successfully',
             },
@@ -103,13 +110,16 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
 
         // Mutation for deleting snippets
         const deleteMutation = useMutation({
-            mutationFn: (snippetId: string) =>
-                notesApi.notesSnippetsDestroy({ snippetId }),
+            mutationFn: async (snippetId: string) => {
+                const { error, response } = await fetchClient.DELETE(
+                    '/notes/snippets/{snippet_id}/',
+                    { params: { path: { snippet_id: snippetId } } },
+                );
+                if (error) throw { response };
+            },
             meta: {
                 invalidateQueries: [
-                    {
-                        queryKey: snippetsQueryKey,
-                    },
+                    { queryKey: ['get', '/notes/snippets/user/{user_id}/'] },
                 ],
                 successMessage: 'Snippet deleted successfully',
             },

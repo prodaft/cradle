@@ -16,9 +16,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import useApi from '@/hooks/api/use-api';
-import { AccessUser } from '@services/cradle/models';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -37,7 +36,6 @@ const ACCESS_OPTIONS = [
 export default function EntityPermissionsForm({
     entityId,
 }: EntityPermissionsFormProps) {
-    const { accessApi } = useApi();
     const queryClient = useQueryClient();
     const [searchQuery, setSearchQuery] = useState('');
     const [originalAccess, setOriginalAccess] = useState<Record<string, AccessLevel>>(
@@ -45,37 +43,36 @@ export default function EntityPermissionsForm({
     );
     const [currentAccess, setCurrentAccess] = useState<Record<string, AccessLevel>>({});
 
-    // Query for access data — fetches full list (no server-side search)
-    // because the form needs the complete dataset to track unsaved edits
-    const { data: allAccessData = [], isLoading } = useQuery({
-        queryKey: ['entities', 'access', String(entityId)],
-        queryFn: () => accessApi.accessEntityList({ entityId }),
-        enabled: !!entityId,
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
+    const { data: allAccessData = [], isLoading } = $api.useQuery(
+        'get',
+        '/access/entity/{entity_id}/',
+        { params: { path: { entity_id: entityId } } },
+        {
+            enabled: !!entityId,
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-    });
+    );
 
-    // Client-side search — preserves unsaved permission changes
     const accessData = useMemo(() => {
         if (!searchQuery.trim()) return allAccessData;
         const query = searchQuery.toLowerCase();
         return allAccessData.filter(
-            (access: AccessUser) =>
+            (access: any) =>
                 access.user.username?.toLowerCase().includes(query) ||
                 access.user.id?.toLowerCase().includes(query),
         );
     }, [allAccessData, searchQuery]);
 
-    // Initialize access states when data loads
     useEffect(() => {
         if (allAccessData.length > 0) {
             const original: Record<string, AccessLevel> = {};
             const current: Record<string, AccessLevel> = {};
-            allAccessData.forEach((access: AccessUser) => {
+            allAccessData.forEach((access: any) => {
                 if (access.user.id) {
-                    const accessType = access.accessType as AccessLevel;
+                    const accessType = access.access_type as AccessLevel;
                     original[access.user.id] = accessType;
                     current[access.user.id] = accessType;
                 }
@@ -95,7 +92,7 @@ export default function EntityPermissionsForm({
 
     const hasChanges = () => {
         if (allAccessData.length === 0) return false;
-        return allAccessData.some((access: AccessUser) => {
+        return allAccessData.some((access: any) => {
             const userId = access.user.id;
             if (!userId) return false;
             const original = originalAccess[userId];
@@ -110,7 +107,7 @@ export default function EntityPermissionsForm({
 
             const updates: Array<{ userId: string; accessType: AccessLevel }> = [];
 
-            allAccessData.forEach((access: AccessUser) => {
+            allAccessData.forEach((access: any) => {
                 const userId = access.user.id;
                 if (!userId) return;
                 const original = originalAccess[userId];
@@ -123,24 +120,29 @@ export default function EntityPermissionsForm({
                 }
             });
 
-            // Save all changes
             await Promise.all(
-                updates.map((update) =>
-                    accessApi.accessUserUpdate({
-                        userId: update.userId,
-                        entityId,
-                        accessRequest: { accessType: update.accessType },
-                    }),
-                ),
+                updates.map(async (update) => {
+                    const { error, response } = await fetchClient.PUT(
+                        '/access/user/{user_id}/{entity_id}/',
+                        {
+                            params: {
+                                path: {
+                                    user_id: update.userId,
+                                    entity_id: entityId,
+                                },
+                            },
+                            body: { access_type: update.accessType },
+                        },
+                    );
+                    if (error) throw { response };
+                }),
             );
         },
         meta: {
             successMessage: 'Permissions updated successfully',
         },
         onSuccess: () => {
-            // Update original access to match current
             setOriginalAccess({ ...currentAccess });
-            // Invalidate queries to refresh data
             queryClient.invalidateQueries();
         },
     });
@@ -190,12 +192,12 @@ export default function EntityPermissionsForm({
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            accessData.map((access: AccessUser) => {
+                            accessData.map((access: any) => {
                                 const user = access.user;
                                 const userId = user.id!;
                                 const accessValue =
                                     currentAccess[userId] ||
-                                    (access.accessType as AccessLevel);
+                                    (access.access_type as AccessLevel);
 
                                 return (
                                     <TableRow key={userId}>

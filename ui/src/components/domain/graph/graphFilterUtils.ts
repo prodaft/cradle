@@ -1,4 +1,6 @@
-import { EdgeRelation } from '@/services/cradle';
+import type { components } from '@services/openapi/schema';
+
+export type EdgeRelation = components['schemas']['EdgeRelation'];
 
 export interface Node {
     id: string;

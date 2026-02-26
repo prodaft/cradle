@@ -10,13 +10,13 @@ import {
     FieldSeparator,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import useApi from '@/hooks/api/use-api';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { cn } from '@/lib/utils';
 import { parseAPIError } from '@/utils/api';
 import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -36,18 +36,17 @@ export default function ForgotPassword() {
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const { authApi } = useApi();
     const router = useRouter();
     const { role } = useAuthState();
     const { isLoggedIn } = useAuthActions();
 
     const resetPasswordMutation = useMutation({
         mutationFn: async (email: string) => {
-            await authApi.authResetPasswordCreate({
-                passwordResetRequestRequest: {
-                    email,
-                },
-            });
+            const { error, response } = await fetchClient.POST(
+                '/auth/reset_password/',
+                { body: { email } },
+            );
+            if (error) throw { response };
         },
         meta: {
             suppressNotification: true,

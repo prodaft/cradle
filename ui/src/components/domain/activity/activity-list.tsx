@@ -24,11 +24,9 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import { cn } from '@/lib/utils';
 import { CaretDownIcon, GitForkIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
-import type { EventLog } from '@services/cradle/models';
-import { useQuery } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
 import { useParams } from '@tanstack/react-router';
 import {
     type ColumnDef,
@@ -199,7 +197,9 @@ function EventTypeFilter({
                                             >
                                                 <Check className='size-3 text-primary-foreground' />
                                             </div>
-                                            <span className='truncate'>{option.label}</span>
+                                            <span className='truncate'>
+                                                {option.label}
+                                            </span>
                                         </CommandItem>
                                     );
                                 })}
@@ -383,7 +383,6 @@ export default function ActivityList({
     content_type,
     username,
 }: ActivityListProps) {
-    const { logsApi } = useApi();
     const params = useParams({ strict: false });
     const usernameParam = (params as any).username;
     const effectiveUsername = username || usernameParam || '';
@@ -404,15 +403,13 @@ export default function ActivityList({
     const queryParams = useMemo(
         () => ({
             page,
-            pageSize,
+            page_size: pageSize,
             username: filters.username || undefined,
-            startDate: filters.dateRange.from
-                ? new Date(filters.dateRange.from)
-                : undefined,
-            endDate: filters.dateRange.to ? new Date(filters.dateRange.to) : undefined,
+            start_date: filters.dateRange.from || undefined,
+            end_date: filters.dateRange.to || undefined,
             type: filters.type || undefined,
-            contentType: filters.content_type || undefined,
-            objectId: filters.object_id || undefined,
+            content_type: filters.content_type || undefined,
+            object_id: filters.object_id || undefined,
         }),
         [page, pageSize, filters],
     );
@@ -421,24 +418,18 @@ export default function ActivityList({
         data: logsData,
         isLoading,
         isPaused,
-    } = useQuery({
-        queryKey: [
-            'activity',
-            'list',
-            page,
-            pageSize,
-            filters.username,
-            filters.dateRange.from,
-            filters.dateRange.to,
-            filters.object_id,
-            filters.content_type,
-            filters.type,
-        ],
-        queryFn: () => logsApi.logsList(queryParams),
-        meta: {
-            showErrorToast: true,
+    } = $api.useQuery(
+        'get',
+        '/logs/',
+        {
+            params: { query: queryParams },
         },
-    });
+        {
+            meta: {
+                showErrorToast: true,
+            },
+        },
+    );
 
     const events = useMemo(() => {
         if (!logsData?.results) return [];
@@ -453,44 +444,33 @@ export default function ActivityList({
         return logsData.results
             .filter((log: any) => !srcLogIds.has(log.id))
             .map(
-                (
-                    log: EventLog & {
-                        content_type?: string;
-                        object_id?: string;
-                        src_log?: any;
-                    },
-                ): ActivityEvent => ({
-                    id: (log as any).id || '',
+                (log: any): ActivityEvent => ({
+                    id: log.id || '',
                     timestamp:
                         typeof log.timestamp === 'string'
                             ? log.timestamp
-                            : log.timestamp instanceof Date
-                              ? log.timestamp.toISOString()
-                              : new Date().toISOString(),
+                            : new Date().toISOString(),
                     type: log.type,
                     username: log.user?.username || 'unknown',
-                    contentType:
-                        (log as any).content_type ||
-                        (log as any).contentType ||
-                        'unknown',
-                    objectId: (log as any).object_id || (log as any).objectId || '',
-                    objectRepr: log.objectRepr || '',
+                    contentType: log.content_type || 'unknown',
+                    objectId: log.object_id || '',
+                    objectRepr: log.object_repr || '',
                     details: log.details || undefined,
-                    srcLog: log.srcLog
+                    srcLog: log.src_log
                         ? {
-                              id: log.srcLog.id,
-                              type: log.srcLog.type,
-                              details: log.srcLog.details,
-                              content_type: log.srcLog.content_type,
-                              object_id: log.srcLog.object_id,
-                              object_repr: log.srcLog.object_repr,
+                              id: log.src_log.id,
+                              type: log.src_log.type,
+                              details: log.src_log.details,
+                              content_type: log.src_log.content_type,
+                              object_id: log.src_log.object_id,
+                              object_repr: log.src_log.object_repr,
                           }
                         : undefined,
                 }),
             );
     }, [logsData?.results]);
 
-    const totalPages = logsData?.totalPages || 1;
+    const totalPages = logsData?.total_pages || 1;
 
     // Column definitions (TanStack Table)
     const columns = useMemo<ColumnDef<ActivityEvent>[]>(

@@ -21,15 +21,16 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import useApi from '@/hooks/api/use-api';
-import { queryKeys } from '@/hooks/query';
 import { SelectOption } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Entity } from '@services/cradle/models';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
+
+type Entity = components['schemas']['Entity'];
 
 interface AddEntityFormProps {
     onAdd?: (result: Entity) => void;
@@ -67,8 +68,6 @@ const entitySchema = z.object({
 type AddEntityFormData = z.infer<typeof entitySchema>;
 
 export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
-    const { entriesApi, queryApi } = useApi();
-
     const [subtypeOptions, setSubtypeOptions] = useState<SubtypeOption[]>([]);
 
     const {
@@ -89,11 +88,19 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
 
     const fetchAliasesMutation = useMutation({
         mutationFn: async (q: string) => {
-            const results = await queryApi.queryAdvancedRetrieve({
-                query: [q],
-                wildcard: true,
-            });
-            return results.results.map((alias) => ({
+            const { data, error, response } = await fetchClient.GET(
+                '/query/advanced/',
+                {
+                    params: {
+                        query: {
+                            query: q,
+                            wildcard: true,
+                        } as any,
+                    },
+                },
+            );
+            if (error) throw { response };
+            return ((data as any).results ?? []).map((alias: any) => ({
                 value: alias.id!,
                 label: `${alias.subtype}:${alias.name}`,
             }));
@@ -103,15 +110,18 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
         },
     });
 
-    const { data: entryClassesData } = useQuery({
-        queryKey: queryKeys.entryTypes.lists(),
-        queryFn: () => entriesApi.entryClassesList({ showCount: true }),
-        refetchOnWindowFocus: false,
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
+    const { data: entryClassesData } = $api.useQuery(
+        'get',
+        '/entries/entry_classes/',
+        { params: { query: { show_count: true } } },
+        {
+            refetchOnWindowFocus: false,
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-    });
+    );
 
     const hasSetDefaultSubtype = useRef(false);
     const nextNameRequestId = useRef(0);
@@ -127,11 +137,13 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
             setValue('name', `${namePrefix}...`, { shouldDirty: true });
 
             try {
-                const result = await entriesApi.entriesNextNameRetrieve({
-                    classSubtype: subtype.value,
-                });
+                const { data: result, error } = await fetchClient.GET(
+                    '/entries/next_name/{class_subtype}/',
+                    { params: { path: { class_subtype: subtype.value } } },
+                );
 
                 if (nextNameRequestId.current !== requestId) return;
+                if (error) throw error;
 
                 setValue('name', result.name || `${namePrefix}1`, {
                     shouldDirty: true,
@@ -141,7 +153,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                 setValue('name', namePrefix, { shouldDirty: true });
             }
         },
-        [entriesApi, setValue],
+        [setValue],
     );
 
     useEffect(() => {
@@ -162,9 +174,12 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
 
     const createEntityMutation = useMutation({
         mutationFn: async (payload: any) => {
-            return await entriesApi.entitiesCreate({
-                entityRequest: payload,
-            });
+            const { data, error, response } = await fetchClient.POST(
+                '/entries/entities/',
+                { body: payload },
+            );
+            if (error) throw { response };
+            return data;
         },
         meta: {
             successMessage: 'Entity created successfully!',

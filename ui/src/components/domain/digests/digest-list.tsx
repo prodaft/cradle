@@ -13,7 +13,6 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import type { StateSetter } from '@/types';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
@@ -21,7 +20,8 @@ import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import { DateRangeFilter } from '@components/base/list-view/types';
 import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
 import { TrashIcon } from '@phosphor-icons/react';
-import type { BaseDigest } from '@services/cradle/models';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import {
     type ColumnDef,
     type RowSelectionState,
@@ -33,6 +33,8 @@ import { format } from 'date-fns';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { StatusIcon, type StatusType } from '../notes/status-icon';
+
+type BaseDigest = components['schemas']['BaseDigest'];
 
 // Mapping of table columns to API field names (stable, avoids hook dep warnings)
 const SORT_FIELD_MAPPING: Record<string, string> = {
@@ -97,7 +99,6 @@ function DigestList({
 }: DigestListProps) {
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteDigestIds, setBulkDeleteDigestIds] = useState<string[]>([]);
-    const { intelioApi } = useApi();
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
     const selectedDigestIds = useMemo(
@@ -283,8 +284,8 @@ function DigestList({
                 id: 'type',
                 header: 'Type',
                 cell: ({ row }) => (
-                    <div className='truncate w-24' title={row.original.displayName}>
-                        {truncateText(row.original.displayName || '', 24)}
+                    <div className='truncate w-24' title={row.original.display_name}>
+                        {truncateText(row.original.display_name || '', 24)}
                     </div>
                 ),
                 enableSorting: false,
@@ -306,9 +307,9 @@ function DigestList({
                 cell: ({ row }) => (
                     <div
                         className='truncate w-32'
-                        title={row.original.userDetail?.username}
+                        title={row.original.user_detail?.username}
                     >
-                        {truncateText(row.original.userDetail?.username || '', 16)}
+                        {truncateText(row.original.user_detail?.username || '', 16)}
                     </div>
                 ),
             },
@@ -321,16 +322,18 @@ function DigestList({
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-foreground shadow-sm bg-[var(--chart-4)] dark:bg-[var(--chart-3)]'>
-                                    {row.original.warnings?.length || 0}
+                                    {(row.original.warnings as any[])?.length || 0}
                                 </span>
                             </TooltipTrigger>
-                            {row.original.warnings?.length > 0 && (
+                            {(row.original.warnings as any[])?.length > 0 && (
                                 <TooltipContent
                                     side='bottom'
                                     className='[--tooltip-bg:var(--chart-4)] dark:[--tooltip-bg:var(--chart-3)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
                                 >
-                                    {row.original.warnings.slice(0, 10).join('\n') +
-                                        (row.original.warnings.length > 10
+                                    {(row.original.warnings as any[])
+                                        .slice(0, 10)
+                                        .join('\n') +
+                                        ((row.original.warnings as any[]).length > 10
                                             ? '...'
                                             : '')}
                                 </TooltipContent>
@@ -349,16 +352,18 @@ function DigestList({
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-destructive-foreground shadow-sm bg-destructive'>
-                                    {row.original.errors?.length || 0}
+                                    {(row.original.errors as any[])?.length || 0}
                                 </span>
                             </TooltipTrigger>
-                            {row.original.errors?.length > 0 && (
+                            {(row.original.errors as any[])?.length > 0 && (
                                 <TooltipContent
                                     side='bottom'
                                     className='[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
                                 >
-                                    {row.original.errors.slice(0, 10).join('\n') +
-                                        (row.original.errors.length > 10
+                                    {(row.original.errors as any[])
+                                        .slice(0, 10)
+                                        .join('\n') +
+                                        ((row.original.errors as any[]).length > 10
                                             ? '\n...'
                                             : '')}
                                 </TooltipContent>
@@ -376,9 +381,9 @@ function DigestList({
                 ),
                 cell: ({ row }) => (
                     <div className='w-36'>
-                        {row.original.createdAt
+                        {row.original.created_at
                             ? format(
-                                  new Date(row.original.createdAt),
+                                  new Date(row.original.created_at),
                                   'dd/MM/yyyy, HH:mm',
                               )
                             : 'N/A'}
@@ -449,10 +454,13 @@ function DigestList({
 
     const executeBulkDelete = async (selectedIds: string[]) => {
         try {
-            // Send all delete requests in parallel
-            const deletePromises = selectedIds.map((id) =>
-                intelioApi.intelioDigestDestroy({ id }),
-            );
+            const deletePromises = selectedIds.map(async (id) => {
+                const { error, response } = await fetchClient.DELETE(
+                    '/intelio/digest/',
+                    { params: { query: { id } } },
+                );
+                if (error) throw { response };
+            });
             const results = await Promise.allSettled(deletePromises);
 
             // Count successes and failures

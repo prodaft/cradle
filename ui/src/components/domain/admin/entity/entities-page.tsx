@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import {
@@ -30,7 +29,8 @@ import {
     PencilIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
-import { Entity } from '@services/cradle/models';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
@@ -43,6 +43,8 @@ import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import ConfirmDeletionDialog from '../../../dialogs/base/confirm-deletion-dialog';
 import AddEntityForm from './add-entity-form';
+
+type Entity = components['schemas']['Entity'];
 
 interface EntityData extends Entity {
     id: number;
@@ -61,7 +63,6 @@ export default function EntitiesPage() {
 
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const { isAdmin } = useAuthState();
-    const { queryApi, entriesApi } = useApi();
     const queryClient = useQueryClient();
     const [addEntityDialogOpen, setAddEntityDialogOpen] = useState(false);
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
@@ -85,28 +86,40 @@ export default function EntitiesPage() {
     };
     const { data: entitiesData, isPending } = useQuery({
         queryKey: queryKeys.entities.list(listFilters),
-        queryFn: () =>
-            queryApi.queryList({
-                type: 'entity',
-                page,
-                pageSize,
-                ...(searchTerm && { search: searchTerm }),
-            }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET('/query/', {
+                params: {
+                    query: {
+                        type: 'entity',
+                        page,
+                        page_size: pageSize,
+                        ...(searchTerm && { search: searchTerm }),
+                    } as any,
+                },
+            });
+            if (error) throw { response };
+            return data;
+        },
         meta: {
             showErrorToast: false,
             suppressNotification: true,
         },
     });
 
-    const entities = (entitiesData?.results as EntityData[]) ?? [];
+    const entities = ((entitiesData as any)?.results as EntityData[]) ?? [];
 
     const handleEditClick = (entity: EntityData) => {
         router.navigate({ to: `/manage/entities/${entity.id}` as any });
     };
 
-    // Delete mutation
     const deleteMutation = useMutation({
-        mutationFn: (entityId: number) => entriesApi.entitiesDestroy({ entityId }),
+        mutationFn: async (entityId: number) => {
+            const { error, response } = await fetchClient.DELETE(
+                '/entries/entities/{entity_id}/',
+                { params: { path: { entity_id: entityId } } },
+            );
+            if (error) throw { response };
+        },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.entities.lists() }],
             successMessage: 'Entity deleted successfully',
@@ -149,8 +162,8 @@ export default function EntitiesPage() {
 
     // Server-side search: entities are already filtered by API
     const totalPages = useMemo(
-        () => Math.max(1, entitiesData?.totalPages ?? 1),
-        [entitiesData?.totalPages],
+        () => Math.max(1, (entitiesData as any)?.total_pages ?? 1),
+        [entitiesData],
     );
     const handleSearchChange = useCallback(
         (value: string) => {
@@ -260,8 +273,8 @@ export default function EntitiesPage() {
                 maxSize: 28,
                 header: 'Visibility',
                 cell: ({ row }) => (
-                    <Badge variant={row.original.isPublic ? 'default' : 'secondary'}>
-                        {row.original.isPublic ? 'Public' : 'Private'}
+                    <Badge variant={row.original.is_public ? 'default' : 'secondary'}>
+                        {row.original.is_public ? 'Public' : 'Private'}
                     </Badge>
                 ),
                 enableSorting: false,

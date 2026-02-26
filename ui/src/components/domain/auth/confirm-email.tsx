@@ -1,4 +1,4 @@
-import useApi from '@/hooks/api/use-api';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
@@ -13,11 +13,13 @@ export default function ConfirmEmail() {
     const search = useSearch({ from: '/confirm-email' });
     const rawToken = (search as { token?: unknown }).token;
     const token = typeof rawToken === 'string' ? rawToken : undefined;
-    const { authApi } = useApi();
-
     const { mutate: confirmEmail } = useMutation({
-        mutationFn: (token: string) =>
-            authApi.authEmailConfirmCreate({ emailConfirmRequest: { token } }),
+        mutationFn: async (token: string) => {
+            const { error, response } = await fetchClient.POST('/auth/email_confirm/', {
+                body: { token },
+            });
+            if (error) throw { response };
+        },
         onSuccess: () => toast.success('Email confirmed successfully.'),
     });
 

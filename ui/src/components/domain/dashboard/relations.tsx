@@ -42,10 +42,10 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import useApi from '@/hooks/api/use-api';
 import { cn } from '@/lib/utils';
 import { createDashboardLink } from '@/utils/dashboard';
 import { CaretDownIcon, CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import {
@@ -79,18 +79,27 @@ interface RelationsProps {
 
 // Expanded row detail — fetches path data and renders stepper
 function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }) {
-    const { knowledgeGraphApi } = useApi();
     const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
 
     const canExpand = result.id !== undefined && result.id !== srcId;
 
     const { data: pathData, isLoading } = useQuery({
         queryKey: ['graph', 'paths', { src: String(srcId), dst: result.id }],
-        queryFn: () =>
-            knowledgeGraphApi.knowledgeGraphPathsRetrieve({
-                src: String(srcId),
-                dsts: [result.id!],
-            }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/knowledge-graph/paths/',
+                {
+                    params: {
+                        query: {
+                            src: String(srcId),
+                            dsts: [result.id!],
+                        },
+                    },
+                },
+            );
+            if (error) throw { response };
+            return data;
+        },
         enabled: canExpand,
     });
 
@@ -110,7 +119,7 @@ function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }
                             id: entry.id,
                             name: entry.name,
                             subtype: subtype,
-                            color: pathData.colors[subtype],
+                            color: (pathData.colors as Record<string, string>)[subtype],
                         });
                     }
                 });
@@ -430,20 +439,21 @@ export default function Relations({ obj }: RelationsProps) {
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [expanded, setExpanded] = useState<ExpandedState>({});
 
-    const { entriesApi, knowledgeGraphApi, accessApi } = useApi();
     const router = useRouter();
 
     const requestAccessMutation = useMutation({
         mutationFn: async (entities: string[]) => {
             await Promise.all(
-                entities.map((entity) =>
-                    accessApi.accessRequestCreate({
-                        entityId: entity,
-                        requestAccessRequest: {
-                            entityId: entity,
+                entities.map(async (entity) => {
+                    const { error, response } = await fetchClient.POST(
+                        '/access/request/{entity_id}/',
+                        {
+                            params: { path: { entity_id: entity } },
+                            body: { entity_id: entity },
                         },
-                    }),
-                ),
+                    );
+                    if (error) throw { response };
+                }),
             );
         },
         meta: {
@@ -452,11 +462,14 @@ export default function Relations({ obj }: RelationsProps) {
     });
 
     // Query for entry subtypes
-    const { data: entrySubtypesData } = useQuery({
-        queryKey: ['entrySubtypes'],
-        queryFn: () => entriesApi.entryClassesList(),
-        meta: { showErrorToast: true },
-    });
+    const { data: entrySubtypesData } = $api.useQuery(
+        'get',
+        '/entries/entry_classes/',
+        {},
+        {
+            meta: { showErrorToast: true },
+        },
+    );
 
     const entrySubtypes = useMemo(() => {
         const results = entrySubtypesData?.results ?? [];
@@ -485,28 +498,39 @@ export default function Relations({ obj }: RelationsProps) {
                 subtype: entrySubtypeFilters,
             },
         ],
-        queryFn: () =>
-            knowledgeGraphApi.knowledgeGraphNeighborsRetrieve({
-                src: String(obj.id),
-                depth,
-                page,
-                pageSize,
-                name: searchQuery ? [searchQuery] : undefined,
-                subtype:
-                    entrySubtypeFilters.length > 0 ? entrySubtypeFilters : undefined,
-            }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/knowledge-graph/neighbors/',
+                {
+                    params: {
+                        query: {
+                            src: String(obj.id),
+                            depth,
+                            page,
+                            page_size: pageSize,
+                            name: searchQuery ? [searchQuery] : undefined,
+                            subtype:
+                                entrySubtypeFilters.length > 0
+                                    ? entrySubtypeFilters
+                                    : undefined,
+                        },
+                    },
+                },
+            );
+            if (error) throw { response };
+            return data;
+        },
         enabled: !!obj.id,
         meta: { showErrorToast: true },
     });
 
-    const hasNextPage = relationsData?.hasNext ?? false;
+    const hasNextPage = relationsData?.has_next ?? false;
 
     const results = useMemo(() => {
         if (!relationsData) return [];
         return relationsData.results as unknown as Result[];
     }, [relationsData]);
 
-    // Query for inaccessible entities
     const { data: inaccessibleData } = useQuery({
         queryKey: [
             'graph',
@@ -516,11 +540,21 @@ export default function Relations({ obj }: RelationsProps) {
                 depth,
             },
         ],
-        queryFn: () =>
-            knowledgeGraphApi.knowledgeGraphInaccessibleRetrieve({
-                src: String(obj.id),
-                depth: depth,
-            }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/knowledge-graph/inaccessible/',
+                {
+                    params: {
+                        query: {
+                            src: String(obj.id),
+                            depth,
+                        },
+                    },
+                },
+            );
+            if (error) throw { response };
+            return data;
+        },
         enabled: !!obj.id && depth > 0,
         meta: { suppressNotification: true },
     });

@@ -1,14 +1,15 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/use-api';
 import { handleLinkClick, NavigateHandler } from '@/utils/editor/text-editor';
 import { parseMarkdown } from '@/utils/parser/parse';
-import type { FileReferenceWithNote } from '@services/cradle/models';
+import type { components } from '@services/openapi/schema';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import DOMPurify from 'dompurify';
 import Prism from 'prismjs';
 import { useCallback, useEffect, useRef } from 'react';
+
+type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 
 interface StaticRenderProps {
     markdownContent: string;
@@ -21,7 +22,6 @@ interface StaticRenderProps {
  */
 export default function StaticRender({ markdownContent, fileData }: StaticRenderProps) {
     const previewRef = useRef<HTMLDivElement>(null);
-    const { entriesApi, fileTransferApi } = useApi();
     const router = useRouter();
 
     // Create a NavigateHandler adapter for handleLinkClick
@@ -53,13 +53,7 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
         queryFn: async () => {
             if (markdownContent === '') return '';
             const baseURL = import.meta.env.VITE_CRADLE_API_ENDPOINT || '';
-            const result = await parseMarkdown(
-                markdownContent,
-                entriesApi,
-                fileTransferApi,
-                baseURL,
-                fileData,
-            );
+            const result = await parseMarkdown(markdownContent, baseURL, fileData);
             return result?.html ?? '';
         },
         meta: { showErrorToast: true },

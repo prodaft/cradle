@@ -5,10 +5,10 @@ import {
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/use-api';
 import { Entry, NoteRetrieve } from '@/types';
 import { createDashboardLink, SubtypeHierarchy, truncateText } from '@/utils/dashboard';
 import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -34,7 +34,6 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
     const [nextPageStatus, setNextPageStatus] = useState<
         Record<string, NextPageStatus>
     >({});
-    const { queryApi } = useApi();
 
     const fetchReferencesMutation = useMutation({
         mutationFn: async ({
@@ -46,11 +45,17 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
             page: number;
             noteId: string;
         }) => {
-            return queryApi.queryList({
-                subtype: [path],
-                referencedIn: noteId,
-                page,
+            const { data, error, response } = await fetchClient.GET('/query/', {
+                params: {
+                    query: {
+                        subtype: path,
+                        referenced_in: noteId,
+                        page,
+                    } as any,
+                },
             });
+            if (error) throw { response };
+            return data;
         },
     });
 
@@ -100,15 +105,18 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                 noteId,
             });
 
+            const responseData = response as any;
             setReferences((prev) => ({
                 ...prev,
-                [path]: [...(prev[path] || []), ...response.results],
+                [path]: [...(prev[path] || []), ...responseData.results],
             }));
 
             setNextPageStatus((prev) => ({
                 ...prev,
                 [path]:
-                    response.page === response.totalPages ? 'end' : response.page + 1,
+                    responseData.page === responseData.total_pages
+                        ? 'end'
+                        : responseData.page + 1,
             }));
         } catch (_error) {
             // Error handled by mutation

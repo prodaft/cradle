@@ -3,10 +3,8 @@ import InProgress from '@/components/feedback/in-progress';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-
-import type { EnrichmentRequestListStatusEnum } from '@services/cradle/apis/IntelioApi';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Sparkles } from 'lucide-react';
@@ -49,7 +47,6 @@ function EnrichmentRequestsInner() {
     const sortDirection: 'asc' | 'desc' = searchAny?.sort_direction || 'desc';
     const pageSize = Number(searchAny?.pagesize) || 20;
 
-    const { intelioApi } = useApi();
     const [enrichmentDialogOpen, setEnrichmentDialogOpen] = useState(false);
     const [page, setPage] = useState(1);
     const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
@@ -70,38 +67,41 @@ function EnrichmentRequestsInner() {
         user: (search as any)?.user__username || '',
     });
 
-    // Single queryParams object — used for both queryKey and queryFn
     const queryParams = useMemo(() => {
         const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
         return {
             page,
-            pageSize,
+            page_size: pageSize,
             title: submittedFilters.title || undefined,
-            userUsername: columnFilters.user || undefined,
-            status:
-                columnFilters.status === 'all'
-                    ? undefined
-                    : (columnFilters.status as EnrichmentRequestListStatusEnum),
-            orderBy,
+            user__username: columnFilters.user || undefined,
+            status: columnFilters.status === 'all' ? undefined : columnFilters.status,
+            order_by: orderBy,
         };
     }, [page, pageSize, submittedFilters, columnFilters, sortField, sortDirection]);
 
-    // Query for enrichment requests
     const {
         data: requestsData,
         isLoading,
         isPaused,
     } = useQuery({
         queryKey: queryKeys.enrichment.requests.list(queryParams),
-        queryFn: () => intelioApi.enrichmentRequestList(queryParams),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/intelio/enrich/',
+                { params: { query: queryParams as any } },
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: {
             showErrorToast: true,
         },
     });
 
-    const enrichmentRequests = requestsData?.results || [];
-    const totalPages = requestsData?.totalPages || 1;
+    const reqAny = requestsData as any;
+    const enrichmentRequests = reqAny?.results || [];
+    const totalPages = reqAny?.total_pages ?? reqAny?.totalPages ?? 1;
 
     const updateSearchParams = useCallback(
         (filters: SearchFilters) => {
@@ -134,17 +134,28 @@ function EnrichmentRequestsInner() {
         return () => clearTimeout(timeoutId);
     }, [searchFilters, updateSearchParams]);
 
-    // Delete mutation
     const deleteMutation = useMutation({
-        mutationFn: (id: string) => intelioApi.enrichmentDetailDelete({ id }),
+        mutationFn: async (id: string) => {
+            const { error, response } = await fetchClient.DELETE(
+                '/intelio/enrich/{id}/',
+                { params: { path: { id } } },
+            );
+            if (error) throw { response };
+        },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
         },
     });
 
-    // Rerun mutation
     const rerunMutation = useMutation({
-        mutationFn: (id: string) => intelioApi.enrichmentRestart({ id }),
+        mutationFn: async (id: string) => {
+            const { data, error, response } = await fetchClient.POST(
+                '/intelio/enrich/{id}/restart/',
+                { params: { path: { id } } },
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
         },

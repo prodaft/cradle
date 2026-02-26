@@ -2,39 +2,27 @@
  * Central export file for all hooks
  *
  * Hooks are organized into functional groups:
- * - api/ - API interaction hooks (useApi)
  * - auth/ - Authentication hooks (useAuthState, useAuthActions)
  * - navigation/ - Navigation hooks
  * - query/ - Query keys for TanStack Query
  *
  * Note:
  * - Theme hooks (useTheme) are available from @contexts/ui
- * - Profile data: use TanStack Query directly with queryKeys.users.detail('me')
+ * - For API calls, import { $api, fetchClient } from '@services/openapi/client'
  *
  * Usage:
  * ```typescript
- * // Import from main index
- * import { useApi, useAuthState, useAuthActions } from '@hooks';
+ * import { useAuthState, useAuthActions } from '@hooks';
+ * import { $api } from '@services/openapi/client';
  *
- * // Or import from group
- * import { useApi } from '@hooks/api';
- * import { useAuthState, useAuthActions } from '@hooks/auth';
- * // For profile data, use TanStack Query directly:
- * import { useQuery } from '@tanstack/react-query';
- * import { queryKeys } from '@hooks/query';
- * const { data: profile } = useQuery({
- *   queryKey: queryKeys.users.detail('me'),
- *   queryFn: () => usersApi.usersRetrieve({ userId: 'me' }),
- * });
+ * const { data: profile } = $api.useQuery(
+ *   'get', '/users/{user_id}/', { params: { path: { user_id: 'me' } } },
+ * );
  *
- * // For optimal performance, use split auth hooks:
  * const { role, basePath } = useAuthState();
  * const { logOut, getAccessToken } = useAuthActions();
  * ```
  */
-
-// API-related hooks
-export * from './api';
 
 // Auth-related hooks
 export * from './auth';

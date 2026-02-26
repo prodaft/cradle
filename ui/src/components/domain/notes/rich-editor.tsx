@@ -2,9 +2,7 @@ import FileUploadDialog from '@/components/domain/notes/dialogs/file-upload-dial
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from '@/contexts/ui';
-import useApi from '@/hooks/api/use-api';
 import { useAuthActions } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import {
     cradleLinkColorPlugin,
@@ -62,8 +60,9 @@ import {
 } from '@prosemark/core';
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
-import { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import {
     forwardRef,
@@ -78,6 +77,9 @@ import {
 import { toast } from 'sonner';
 import FileTable from './file-table';
 import { getSaveStatus } from './status-indicators';
+
+type FileDownload = components['schemas']['FileDownload'];
+type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 
 // Type alias for compatibility with referenceLinks
 type FileReference = FileReferenceWithNote;
@@ -192,16 +194,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const [showFileUploadDialog, setShowFileUploadDialog] = useState(false);
     const [clipboardFiles, setClipboardFiles] = useState<File[]>([]);
     const [editorReady, setEditorReady] = useState(false);
-    const { usersApi } = useApi();
     const { isLoggedIn } = useAuthActions();
-    const { data: profile } = useQuery({
-        queryKey: queryKeys.users.detail('me'),
-        queryFn: () => usersApi.usersRetrieve({ userId: 'me' }),
-        enabled: isLoggedIn(),
-        meta: { showErrorToast: false },
-    });
+    const { data: profile } = $api.useQuery(
+        'get',
+        '/users/{user_id}/',
+        { params: { path: { user_id: 'me' } } },
+        { enabled: isLoggedIn(), meta: { showErrorToast: false } },
+    );
     const { isDarkMode } = useTheme();
-    const { entriesApi, fileTransferApi } = useApi();
     const router = useRouter();
     const routerRef = useRef(router);
     routerRef.current = router;
@@ -243,22 +243,30 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     const downloadFileMutation = useMutation({
         mutationFn: async (fileId: string) => {
-            const response = await fileTransferApi.fileTransferDownloadRetrieve({
-                fileId,
-            });
-            return response;
+            const { data, error, response } = await fetchClient.GET(
+                '/file-transfer/download/',
+                { params: { query: { fileId } } },
+            );
+            if (error) throw { response };
+            return {
+                presigned_url: data!.presigned_url,
+                expires_in: data!.expires_in,
+            } satisfies FileDownload;
         },
         meta: {
             suppressNotification: true,
         },
     });
 
-    const { data: entryClassesData } = useQuery({
-        queryKey: queryKeys.entryTypes.lists(),
-        queryFn: () => entriesApi.entryClassesList(),
-        refetchOnWindowFocus: false,
-        meta: { showErrorToast: false, suppressNotification: true },
-    });
+    const { data: entryClassesData } = $api.useQuery(
+        'get',
+        '/entries/entry_classes/',
+        {},
+        {
+            refetchOnWindowFocus: false,
+            meta: { showErrorToast: false, suppressNotification: true },
+        },
+    );
 
     useEffect(() => {
         if (entryClassesData == null) return;
@@ -285,7 +293,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     const fileDownloadFn = useCallback(
         async (file: { fileId: string }): Promise<FileDownload> => {
-            return await downloadMutateRef.current(file.fileId);
+            return (await downloadMutateRef.current(file.fileId)) as FileDownload;
         },
         [],
     );
@@ -386,7 +394,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         const mappings: Record<string, FileReference> = {};
         for (const file of fileData) {
             if (file.id) mappings[file.id] = file;
-            mappings[`${file.id}-${file.fileName}`] = file;
+            mappings[`${file.id}-${file.file_name}`] = file;
         }
         return mappings;
     }, [fileData, propReferenceMappings]);
@@ -484,14 +492,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             );
         }
 
-        if (profile?.vimMode) {
+        if (profile?.vim_mode) {
             exts = exts.concat(vim());
         }
 
         return exts;
     }, [
         editorUtils,
-        profile?.vimMode,
+        profile?.vim_mode,
         additionalExtensions,
         entryColors,
         source,
@@ -506,7 +514,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     ]);
 
     useEffect(() => {
-        if (profile?.vimMode) {
+        if (profile?.vim_mode) {
             Vim.defineEx('write', 'w', (cm: CodeMirror) => {
                 try {
                     setMarkdownContentRef.current(cm.cm6.state.doc.toString());
@@ -518,7 +526,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 return true;
             });
         }
-    }, [profile?.vimMode]);
+    }, [profile?.vim_mode]);
 
     // Reconfigure extensions when they change
     useEffect(() => {
@@ -710,7 +718,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             <div className='flex-none flex items-center justify-end gap-4 px-3 py-1.5 border-t border-border bg-muted/30 text-muted-foreground text-xs'>
                 <span>{wordCount} words</span>
                 <span>{charCount} chars</span>
-                {profile?.vimMode && (
+                {profile?.vim_mode && (
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <span className='inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'>

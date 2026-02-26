@@ -11,11 +11,9 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
-import useApi from '@/hooks/api/use-api';
 import { useAuthActions } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
-import { UserRetrieve } from '@/services/cradle/models';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -27,7 +25,6 @@ interface AccountSecurityActionsProps {
 export default function AccountSecurityActions({
     target = 'me',
 }: AccountSecurityActionsProps) {
-    const { usersApi } = useApi();
     const { logOut } = useAuthActions();
     const router = useRouter();
 
@@ -38,22 +35,25 @@ export default function AccountSecurityActions({
     const [twoFactorDisabling, setTwoFactorDisabling] = useState(false);
     const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
 
-    const { data: userData } = useQuery<UserRetrieve>({
-        queryKey: queryKeys.users.detail(target),
-        queryFn: () => usersApi.usersRetrieve({ userId: target }),
-        enabled: !!target,
-        meta: { suppressNotification: true },
-    });
+    const { data: userData } = $api.useQuery(
+        'get',
+        '/users/{user_id}/',
+        { params: { path: { user_id: target } } },
+        { enabled: !!target, meta: { suppressNotification: true } },
+    );
 
     useEffect(() => {
         if (userData) {
-            setTwoFactorEnabled(userData.twoFactorEnabled || false);
+            setTwoFactorEnabled(userData.two_factor_enabled || false);
         }
     }, [userData]);
 
     const deleteAccountMutation = useMutation({
         mutationFn: async (userId: string) => {
-            await usersApi.usersDestroy({ userId });
+            const { error, response } = await fetchClient.DELETE('/users/{user_id}/', {
+                params: { path: { user_id: userId } },
+            });
+            if (error) throw { response };
         },
         meta: { suppressNotification: true },
         onSuccess: () => {
@@ -127,9 +127,7 @@ export default function AccountSecurityActions({
                             </FieldContent>
                             <Button
                                 type='button'
-                                variant={
-                                    twoFactorEnabled ? 'destructive' : 'outline'
-                                }
+                                variant={twoFactorEnabled ? 'destructive' : 'outline'}
                                 size='sm'
                                 className='self-center'
                                 onClick={() => {

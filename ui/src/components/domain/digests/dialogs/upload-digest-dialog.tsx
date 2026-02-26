@@ -29,13 +29,11 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-import { DigestSubclass } from '@/services/cradle/models/DigestSubclass';
-import { DigestUploadFinalizeCreateRequest } from '@/services/cradle/models/DigestUploadFinalizeCreateRequest';
 import { uploadFile } from '@/utils/files';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -92,12 +90,15 @@ export default function UploadDigestDialog({
     onUpload,
     dataTypeOptions: propDataTypeOptions,
 }: UploadDigestDialogProps): React.JSX.Element {
-    const { queryApi, intelioApi } = useApi();
-
-    // Fetch data type options if not provided
     const { data: dataTypesResponse } = useQuery({
         queryKey: [...queryKeys.digests.all, 'options'],
-        queryFn: () => intelioApi.intelioDigestOptionsList(),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/intelio/digest/options/',
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: {
             showErrorToast: true,
         },
@@ -109,10 +110,10 @@ export default function UploadDigestDialog({
             return propDataTypeOptions;
         }
         if (!dataTypesResponse) return [];
-        return dataTypesResponse.map((type: DigestSubclass) => ({
-            value: type.className,
+        return (dataTypesResponse as any[]).map((type: any) => ({
+            value: type.class_name,
             label: type.name,
-            inferEntities: type.inferEntities,
+            inferEntities: type.infer_entities,
         }));
     }, [propDataTypeOptions, dataTypesResponse]);
 
@@ -126,32 +127,38 @@ export default function UploadDigestDialog({
         },
     });
 
-    // Upload mutation - handles multi-step upload process
     const uploadMutation = useMutation({
         mutationFn: async (values: FormValues) => {
             const file = values.files[0];
 
-            // Step 1: Request presigned URL from backend
-            const initiateData = await intelioApi.intelioDigestUploadRetrieve({
-                fileName: file.name,
-                fileSize: file.size,
+            const {
+                data: initiateData,
+                error: initError,
+                response: initResponse,
+            } = await fetchClient.GET('/intelio/digest/upload/', {
+                params: { query: { name: file.name } as any },
             });
+            if (initError) throw { response: initResponse };
 
-            // Step 2: Upload file directly to presigned URL
-            await uploadFile(initiateData.presignedUrl, file);
+            const initAny = initiateData as any;
+            await uploadFile(initAny.presigned_url ?? initAny.presignedUrl, file);
 
-            // Step 3: Finalize upload (creates digest record and triggers processing)
             const entities = (values.associatedEntry || []).map((e) => e.value);
-            const finalizeRequest: DigestUploadFinalizeCreateRequest = {
-                title: values.title,
-                digestType: values.dataType!.value,
-                entities: entities.length > 0 ? entities : undefined,
-            };
+            const uploadId = initAny.upload_id ?? initAny.uploadId;
 
-            return await intelioApi.intelioDigestUploadFinalizeCreate({
-                uploadId: initiateData.uploadId,
-                digestUploadFinalizeCreateRequest: finalizeRequest,
-            });
+            const { data, error, response } = await fetchClient.POST(
+                '/intelio/digest/upload/{upload_id}/finalize/',
+                {
+                    params: { path: { upload_id: uploadId } },
+                    body: {
+                        title: values.title,
+                        digest_type: values.dataType!.value,
+                        entities: entities.length > 0 ? entities : undefined,
+                    } as any,
+                },
+            );
+            if (error) throw { response };
+            return data;
         },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.digests.lists() }],
@@ -430,14 +437,24 @@ export default function UploadDigestDialog({
                                                     dataType?.inferEntities,
                                                 )}
                                                 onSearch={async (query) => {
-                                                    const response =
-                                                        await queryApi.queryList({
-                                                            name: [query],
-                                                            type: 'entity',
-                                                        });
-                                                    if (response && response.results) {
-                                                        return response.results.map(
-                                                            (entry) => ({
+                                                    const { data, error } =
+                                                        await fetchClient.GET(
+                                                            '/query/',
+                                                            {
+                                                                params: {
+                                                                    query: {
+                                                                        name: query,
+                                                                        type: 'entity',
+                                                                    } as any,
+                                                                },
+                                                            },
+                                                        );
+                                                    if (error) return [];
+                                                    const results = (data as any)
+                                                        ?.results;
+                                                    if (results) {
+                                                        return results.map(
+                                                            (entry: any) => ({
                                                                 value: String(
                                                                     entry.id!,
                                                                 ),

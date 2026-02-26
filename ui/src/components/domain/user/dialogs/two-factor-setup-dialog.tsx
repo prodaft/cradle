@@ -17,10 +17,9 @@ import {
 } from '@/components/ui/input-group';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/use-api';
-import { Enable2FA } from '@/services/cradle/models';
 import { parseAPIError } from '@/utils/api';
 import { CopyIcon, QrCodeIcon } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -63,18 +62,20 @@ export default function TwoFactorSetupDialog({
     onSuccess,
     isDisabling = false,
 }: TwoFactorSetupDialogProps): React.JSX.Element {
-    const { usersApi } = useApi();
     const [verificationCode, setVerificationCode] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Query for 2FA setup data (only when enabling)
-    const { data: twoFactorData, isLoading } = useQuery<Enable2FA>({
+    // Query for 2FA setup data (only when enabling) - POST to enable returns config
+    const { data: twoFactorData, isLoading } = useQuery({
         queryKey: ['2fa', 'setup'],
-        queryFn: () => usersApi.users2faEnableCreate(),
-        enabled: open && !isDisabling,
-        meta: {
-            showErrorToast: true,
+        queryFn: async () => {
+            const { data, error, response } =
+                await fetchClient.POST('/users/2fa/enable/');
+            if (error) throw { response };
+            return data;
         },
+        enabled: open && !isDisabling,
+        meta: { showErrorToast: true },
     });
 
     // Reset state when dialog opens
@@ -84,7 +85,7 @@ export default function TwoFactorSetupDialog({
         }
     }, [open]);
 
-    const otpAuthUrl = twoFactorData?.configUrl || '';
+    const otpAuthUrl = twoFactorData?.config_url || '';
     const secret = useMemo(() => {
         if (!otpAuthUrl) return '';
         try {
@@ -111,13 +112,21 @@ export default function TwoFactorSetupDialog({
             setIsSubmitting(true);
             try {
                 if (isDisabling) {
-                    await usersApi.users2faDisableCreate({
-                        verify2FARequest: { token: verificationCode },
-                    });
+                    const { error, response } = await fetchClient.POST(
+                        '/users/2fa/disable/',
+                        {
+                            body: { token: verificationCode } as any,
+                        },
+                    );
+                    if (error) throw { response };
                 } else {
-                    await usersApi.users2faVerifyCreate({
-                        verify2FARequest: { token: verificationCode },
-                    });
+                    const { error, response } = await fetchClient.POST(
+                        '/users/2fa/verify/',
+                        {
+                            body: { token: verificationCode } as any,
+                        },
+                    );
+                    if (error) throw { response };
                 }
                 onSuccess?.();
                 onOpenChange(false);
@@ -128,7 +137,7 @@ export default function TwoFactorSetupDialog({
                 setIsSubmitting(false);
             }
         },
-        [verificationCode, isDisabling, usersApi, onSuccess, onOpenChange],
+        [verificationCode, isDisabling, fetchClient, onSuccess, onOpenChange],
     );
 
     if (!isDisabling && isLoading) {

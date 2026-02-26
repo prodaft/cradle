@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
-import useApi from '@/hooks/api/use-api';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import Logo from '@components/base/logo/logo';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef } from 'react';
@@ -33,7 +33,6 @@ const parseOAuthState = (stateValue: string | null): OAuthState | null => {
 };
 
 export default function OAuthCallback() {
-    const { authApi } = useApi();
     const { basePath } = useAuthState();
     const { isLoggedIn, getAccessToken, setTokensDirectly } = useAuthActions();
     const router = useRouter();
@@ -76,12 +75,24 @@ export default function OAuthCallback() {
                 if (!isLoggedIn()) {
                     throw new Error('You must be logged in to connect accounts.');
                 }
-
                 await getAccessToken();
-                await authApi.authOauthLogin({
-                    oAuthConnectRequest: { provider, code, redirectUri },
-                });
+            }
 
+            const {
+                error,
+                response,
+                data: resp,
+            } = await fetchClient.POST(
+                '/users/oauth/connect/' as any,
+                {
+                    body: { provider, code, redirect_uri: redirectUri } as any,
+                } as any,
+            );
+            if (error) throw { response };
+
+            const data = resp as any;
+
+            if (action === 'oauth_connect') {
                 const returnPath =
                     sessionStorage.getItem('oauth_connect_return_path') || '/settings';
                 sessionStorage.removeItem('oauth_connect_return_path');
@@ -90,17 +101,13 @@ export default function OAuthCallback() {
                 return;
             }
 
-            const data = await authApi.authOauthLogin({
-                oAuthConnectRequest: { provider, code, redirectUri },
-            });
-
             setTokensDirectly({
                 access: data.access,
                 refresh: data.refresh,
-                accessExpiresAt: data.accessExpiresAt,
-                refreshExpiresAt: data.refreshExpiresAt,
+                accessExpiresAt: new Date(data.access_expires_at),
+                refreshExpiresAt: new Date(data.refresh_expires_at),
                 role: data.role,
-                user_id: (data as any).user_id,
+                user_id: data.user_id,
             });
 
             const redirectPath = sessionStorage.getItem('oauth_login_redirect') || '/';

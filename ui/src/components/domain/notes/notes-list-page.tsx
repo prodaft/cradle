@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import { DateRangeFilter } from '@components/base/list-view/types';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { FilePlus } from 'lucide-react';
@@ -50,16 +50,15 @@ export default function NotesListPage() {
         select: (state) => state.location,
     });
     const search = useSearch({ strict: false }) as Record<string, unknown>;
-    const { notesApi } = useApi();
     const pathname = location.pathname;
 
     const createNoteMutation = useMutation({
         mutationFn: async () => {
-            return notesApi.notesCreate({
-                fleetingNoteRequest: {
-                    content: '',
-                },
+            const { data, error, response } = await fetchClient.POST('/notes/', {
+                body: { content: '' },
             });
+            if (error) throw { response };
+            return data;
         },
         onSuccess: (response) => {
             router.navigate({ to: `/notes/${response.id}` });

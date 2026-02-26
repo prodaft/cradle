@@ -1,5 +1,3 @@
-import { FileTransferDownloadRetrieveRequest } from '@/services/cradle/apis/FileTransferApi';
-import { FileDownload, FileReferenceWithNote } from '@/services/cradle/models';
 import { syntaxTree } from '@codemirror/language';
 import { EditorState, Range } from '@codemirror/state';
 import {
@@ -11,6 +9,11 @@ import {
 } from '@codemirror/view';
 import { SyntaxNode } from '@lezer/common';
 import type { InlineContext, MarkdownConfig } from '@lezer/markdown';
+import type { components } from '@services/openapi/schema';
+
+type FileDownload = components['schemas']['FileDownload'];
+type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
+type FileDownloadRequest = { fileId: string };
 
 // Type alias for compatibility - export it
 export type FileReference = FileReferenceWithNote;
@@ -22,16 +25,12 @@ export type FileReference = FileReferenceWithNote;
 export class ReferenceLinkWidget extends WidgetType {
     text: string;
     file: FileReference;
-    resolveMinioLink: (
-        file: FileTransferDownloadRetrieveRequest,
-    ) => Promise<FileDownload>;
+    resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>;
 
     constructor(
         text: string,
         file: FileReference,
-        resolveMinioLink: (
-            file: FileTransferDownloadRetrieveRequest,
-        ) => Promise<FileDownload>,
+        resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>,
     ) {
         super();
         this.text = text;
@@ -60,8 +59,8 @@ export class ReferenceLinkWidget extends WidgetType {
                 fileId: this.file.id,
             })
                 .then((fdownload) => {
-                    const { presignedUrl } = fdownload;
-                    window.open(presignedUrl, '_blank', 'noopener,noreferrer');
+                    const { presigned_url } = fdownload;
+                    window.open(presigned_url, '_blank', 'noopener,noreferrer');
                 })
                 .catch(() => {
                     console.error(
@@ -92,16 +91,12 @@ export class ReferenceImageWidget extends WidgetType {
 
     text: string;
     file: FileReference;
-    resolveMinioLink: (
-        file: FileTransferDownloadRetrieveRequest,
-    ) => Promise<FileDownload>;
+    resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>;
 
     constructor(
         text: string,
         file: FileReference,
-        resolveMinioLink: (
-            file: FileTransferDownloadRetrieveRequest,
-        ) => Promise<FileDownload>,
+        resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>,
     ) {
         super();
         this.text = text;
@@ -133,9 +128,9 @@ export class ReferenceImageWidget extends WidgetType {
                 fileId: fileId,
             })
                 .then((fdownload) => {
-                    const { presignedUrl } = fdownload;
-                    ReferenceImageWidget.urlCache.set(fileId, presignedUrl);
-                    img.src = presignedUrl;
+                    const { presigned_url } = fdownload;
+                    ReferenceImageWidget.urlCache.set(fileId, presigned_url);
+                    img.src = presigned_url;
                 })
                 .catch(() => {
                     img.alt = `Failed to load: ${this.text}`;
@@ -341,17 +336,13 @@ export function referenceLinkSyntax(
  */
 export function referenceLinksPlugin(
     mappings: Record<string, FileReference>,
-    resolveMinioLink: (
-        file: FileTransferDownloadRetrieveRequest,
-    ) => Promise<FileDownload>,
+    resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>,
     sourceMode: boolean,
 ) {
     return ViewPlugin.fromClass(
         class {
             mappings: Record<string, FileReference>;
-            resolveMinioLink: (
-                file: FileTransferDownloadRetrieveRequest,
-            ) => Promise<FileDownload>;
+            resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>;
             decorations: DecorationSet;
 
             constructor(view: EditorView) {
@@ -419,9 +410,7 @@ function createReferenceDecoration(
     text: string,
     cursorPos: number,
     mappings: Record<string, FileReference>,
-    resolveMinioLink: (
-        file: FileTransferDownloadRetrieveRequest,
-    ) => Promise<FileDownload>,
+    resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>,
     sourceMode: boolean,
 ): Range<Decoration> | null {
     if (sourceMode) {

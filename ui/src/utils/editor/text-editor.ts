@@ -5,9 +5,11 @@
 import { syntaxTree } from '@codemirror/language';
 import { EditorState } from '@codemirror/state';
 import { SyntaxNode } from '@lezer/common';
-import type { FileReferenceWithNote } from '@services/cradle/models';
+import type { components } from '@services/openapi/schema';
 import DOMPurify from 'dompurify';
 import parseMarkdown from '../parser/parse';
+
+type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 
 /**
  * Parse result from markdown parser
@@ -39,26 +41,16 @@ export interface Link {
  * Sanitizing is recommended by the marked documentation
  *
  * @param content - Markdown syntax
- * @param entriesApi - API instance for entries
- * @param fileTransferApi - API instance for file transfers
  * @param baseURL - Base URL of the backend
  * @param fileData - Information about the files that will be linked
  * @returns Parsed and sanitized HTML with metadata
  */
 export const parseContent = async (
     content: string,
-    entriesApi: any,
-    fileTransferApi: any,
     baseURL: string,
     fileData?: FileReferenceWithNote[],
 ): Promise<ParseResult> => {
-    const result = await parseMarkdown(
-        content,
-        entriesApi,
-        fileTransferApi,
-        baseURL,
-        fileData,
-    );
+    const result = await parseMarkdown(content, baseURL, fileData);
     if (!result) return { html: '', metadata: {} };
     return {
         html: DOMPurify.sanitize(result.html),

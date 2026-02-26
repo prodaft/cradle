@@ -3,10 +3,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { ClockCounterClockwiseIcon, GearIcon } from '@phosphor-icons/react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
+import { useQueryClient } from '@tanstack/react-query';
 import {
     useParams,
     useRouter,
@@ -49,24 +49,25 @@ export default function EntitySettingsPage() {
     });
     const search = useSearch({ strict: false });
     const tab = (search as any)?.tab ?? ENTITY_SETTINGS_ITEMS[0].id;
-    const { entriesApi } = useApi();
     const queryClient = useQueryClient();
 
-    // Query for entity data
     const {
         data: entityData,
         isLoading,
         isError,
-    } = useQuery({
-        queryKey: queryKeys.entities.detail(entityId),
-        queryFn: () => entriesApi.entitiesRetrieve({ entityId: Number(entityId) }),
-        enabled: !!entityId,
-        retry: false,
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
+    } = $api.useQuery(
+        'get',
+        '/entries/entities/{entity_id}/',
+        { params: { path: { entity_id: Number(entityId) } } },
+        {
+            enabled: !!entityId,
+            retry: false,
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-    });
+    );
 
     const handleTabChange = (tabId: string) => {
         router.navigate({

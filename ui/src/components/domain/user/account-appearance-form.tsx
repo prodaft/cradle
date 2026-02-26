@@ -17,12 +17,11 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { useTheme } from '@/contexts/ui/theme-context';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
-import { UserRetrieve } from '@/services/cradle/models';
 import { PRESET_THEMES } from '@/utils/themes';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -34,31 +33,29 @@ interface AccountAppearanceFormProps {
 export default function AccountAppearanceForm({
     target = 'me',
 }: AccountAppearanceFormProps) {
-    const { usersApi } = useApi();
     const queryClient = useQueryClient();
     const { setTheme } = useTheme();
 
     const [selectedThemeType, setSelectedThemeType] = useState<string>('dark');
     const [customThemeJSON, setCustomThemeJSON] = useState<string>('');
     const [themePopoverOpen, setThemePopoverOpen] = useState(false);
-    const [pendingTheme, setPendingTheme] = useState<Record<string, any> | null>(
-        null,
-    );
+    const [pendingTheme, setPendingTheme] = useState<Record<string, any> | null>(null);
 
-    const { data: userData } = useQuery<UserRetrieve>({
-        queryKey: queryKeys.users.detail(target),
-        queryFn: () => usersApi.usersRetrieve({ userId: target }),
-        enabled: !!target,
-        meta: { suppressNotification: true },
-    });
+    const { data: userData } = $api.useQuery(
+        'get',
+        '/users/{user_id}/',
+        { params: { path: { user_id: target } } },
+        { enabled: !!target, meta: { suppressNotification: true } },
+    );
 
     const saveMutation = useMutation({
         mutationFn: async (theme: Record<string, any>) => {
             if (!userData?.id) return;
-            await usersApi.usersUpdate({
-                userId: userData.id,
-                userUpdateRequest: { theme } as any,
+            const { error, response } = await fetchClient.POST('/users/{user_id}/', {
+                params: { path: { user_id: userData.id } },
+                body: { theme } as any,
             });
+            if (error) throw { response };
         },
         meta: { successMessage: 'Settings saved successfully' },
         onSuccess: () => {
@@ -182,8 +179,7 @@ export default function AccountAppearanceForm({
                                         {selectedThemeType === 'custom'
                                             ? 'Custom'
                                             : PRESET_THEMES.find(
-                                                  (p) =>
-                                                      p.id === selectedThemeType,
+                                                  (p) => p.id === selectedThemeType,
                                               )?.label || 'Select theme...'}
                                     </span>
                                     <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
@@ -196,9 +192,7 @@ export default function AccountAppearanceForm({
                                 <Command>
                                     <CommandInput placeholder='Search themes...' />
                                     <CommandList>
-                                        <CommandEmpty>
-                                            No themes found.
-                                        </CommandEmpty>
+                                        <CommandEmpty>No themes found.</CommandEmpty>
                                         <CommandGroup>
                                             {PRESET_THEMES.map((preset) => (
                                                 <CommandItem
@@ -208,9 +202,7 @@ export default function AccountAppearanceForm({
                                                         handleThemeTypeChange(
                                                             preset.id,
                                                         );
-                                                        setThemePopoverOpen(
-                                                            false,
-                                                        );
+                                                        setThemePopoverOpen(false);
                                                     }}
                                                 >
                                                     <Check
@@ -228,17 +220,14 @@ export default function AccountAppearanceForm({
                                             <CommandItem
                                                 value='Custom'
                                                 onSelect={() => {
-                                                    handleThemeTypeChange(
-                                                        'custom',
-                                                    );
+                                                    handleThemeTypeChange('custom');
                                                     setThemePopoverOpen(false);
                                                 }}
                                             >
                                                 <Check
                                                     className={cn(
                                                         'mr-2 size-4',
-                                                        selectedThemeType ===
-                                                            'custom'
+                                                        selectedThemeType === 'custom'
                                                             ? 'opacity-100'
                                                             : 'opacity-0',
                                                     )}
@@ -269,15 +258,10 @@ export default function AccountAppearanceForm({
                                 className='font-mono text-xs'
                                 placeholder='{"--background":"oklch(0.145 0 0)","--foreground":"oklch(0.985 0 0)"}'
                                 value={customThemeJSON}
-                                onChange={(e) =>
-                                    setCustomThemeJSON(e.target.value)
-                                }
+                                onChange={(e) => setCustomThemeJSON(e.target.value)}
                             />
                             <div className='flex justify-end'>
-                                <Button
-                                    type='button'
-                                    onClick={handleApplyCustomTheme}
-                                >
+                                <Button type='button' onClick={handleApplyCustomTheme}>
                                     Apply Custom Theme
                                 </Button>
                             </div>

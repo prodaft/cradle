@@ -7,21 +7,19 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
-import useApi from '@/hooks/api/use-api';
 import { ArrowClockwiseIcon, HardDrivesIcon } from '@phosphor-icons/react';
-import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 export default function GraphSettingsForm() {
-    const { managementApi } = useApi();
-
     const refreshGraphMutation = useMutation({
         mutationFn: async () => {
-            await managementApi.managementActionsCreate({
-                actionName:
-                    ManagementActionsCreateActionNameEnum.RefreshMaterializedGraph,
-            });
+            const { error, response } = await fetchClient.POST(
+                '/management/actions/{action_name}',
+                { params: { path: { action_name: 'refreshMaterializedGraph' } } },
+            );
+            if (error) throw { response };
         },
         meta: {
             suppressNotification: true,
@@ -33,9 +31,15 @@ export default function GraphSettingsForm() {
 
     const recalculatePositionsMutation = useMutation({
         mutationFn: async () => {
-            await managementApi.managementActionsCreate({
-                actionName: 'recalculateNodePositions' as any,
-            });
+            const { error, response } = await fetchClient.POST(
+                '/management/actions/{action_name}',
+                {
+                    params: {
+                        path: { action_name: 'recalculate_node_positions' as any },
+                    },
+                },
+            );
+            if (error) throw { response };
         },
         meta: {
             suppressNotification: true,

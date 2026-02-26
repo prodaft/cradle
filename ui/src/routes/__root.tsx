@@ -1,4 +1,3 @@
-import { ApiProvider } from '@/contexts/api/api-provider';
 import { QueryProvider } from '@/contexts/query/query-provider';
 import { ThemeProvider } from '@/contexts/ui';
 import * as Sentry from '@sentry/react';
@@ -54,19 +53,17 @@ function RootComponent() {
         <RootDocument>
             <AuthProvider>
                 <QueryProvider>
-                    <ApiProvider>
-                        <ThemeProvider>
-                            <Toaster />
-                            <TooltipProvider>
-                                <div id='root-content'>
-                                    <Suspense fallback={<Loading logo />}>
-                                        <Outlet />
-                                    </Suspense>
-                                </div>
-                                <div id='portal-root' />
-                            </TooltipProvider>
-                        </ThemeProvider>
-                    </ApiProvider>
+                    <ThemeProvider>
+                        <Toaster />
+                        <TooltipProvider>
+                            <div id='root-content'>
+                                <Suspense fallback={<Loading logo />}>
+                                    <Outlet />
+                                </Suspense>
+                            </div>
+                            <div id='portal-root' />
+                        </TooltipProvider>
+                    </ThemeProvider>
                 </QueryProvider>
                 {import.meta.env.DEV && <TanStackRouterDevtools />}
             </AuthProvider>

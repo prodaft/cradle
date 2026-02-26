@@ -23,12 +23,12 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { PencilIcon, TrashIcon, UserPlusIcon } from '@phosphor-icons/react';
-import { UserRetrieve } from '@services/cradle/models';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
     type ColumnDef,
@@ -40,6 +40,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import ConfirmDeletionDialog from '../../../dialogs/base/confirm-deletion-dialog';
 import AddUserForm from './add-user-form';
+
+type UserRetrieve = components['schemas']['UserRetrieve'];
 
 const getRoleBadgeVariant = (role?: string) => {
     switch (role) {
@@ -67,7 +69,6 @@ export default function UsersPage() {
     const searchQuery = (searchAny?.users_search ?? '') as string;
 
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const { usersApi } = useApi();
     const { userId: currentUserId } = useAuthState();
     const queryClient = useQueryClient();
     const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
@@ -89,14 +90,25 @@ export default function UsersPage() {
         pageSize,
         ...(searchTerm ? { search: searchTerm } : {}),
     };
-    const { data: usersData, isPending } = useQuery({
-        queryKey: queryKeys.users.list(usersListFilters),
-        queryFn: () => usersApi.usersList(usersListFilters),
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
+    const { data: usersData, isPending } = $api.useQuery(
+        'get',
+        '/users/',
+        {
+            params: {
+                query: {
+                    page: usersListFilters.page,
+                    page_size: usersListFilters.pageSize,
+                    search: usersListFilters.search,
+                },
+            },
+        } as any,
+        {
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-    });
+    );
 
     const users = usersData?.results ?? [];
 
@@ -112,7 +124,13 @@ export default function UsersPage() {
     const deleteUsersMutation = useMutation({
         mutationFn: async (userIds: string[]) => {
             await Promise.all(
-                userIds.map((userId) => usersApi.usersDestroy({ userId })),
+                userIds.map(async (userId) => {
+                    const { error, response } = await fetchClient.DELETE(
+                        '/users/{user_id}/',
+                        { params: { path: { user_id: userId } } },
+                    );
+                    if (error) throw { response };
+                }),
             );
         },
         meta: {
@@ -166,10 +184,7 @@ export default function UsersPage() {
         router.navigate({ to: `/manage/users/${userId}` as any });
     }, [selectedUserIds, router]);
 
-    const totalPages = useMemo(
-        () => Math.max(1, usersData?.totalPages ?? 1),
-        [usersData?.totalPages],
-    );
+    const totalPages = Math.max(1, usersData?.total_pages ?? 1);
 
     const handleSearchChange = useCallback(
         (value: string) => {
@@ -276,14 +291,14 @@ export default function UsersPage() {
                 enableSorting: false,
             },
             {
-                accessorKey: 'isActive',
-                id: 'isActive',
+                accessorKey: 'is_active',
+                id: 'is_active',
                 size: 28,
                 minSize: 28,
                 maxSize: 28,
                 header: 'Status',
                 cell: ({ row }) => {
-                    const isActive = row.original.isActive;
+                    const isActive = row.original.is_active;
                     return (
                         <Badge variant={isActive ? 'default' : 'secondary'}>
                             {isActive ? 'Active' : 'Inactive'}

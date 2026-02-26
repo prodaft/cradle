@@ -18,13 +18,11 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { SelectOption } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react';
-import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
-import { EntryClassTypeEnum } from '@services/cradle/models';
+import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import bytes from 'bytes';
 import { useEffect, useMemo } from 'react';
@@ -33,17 +31,6 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 
 type SubtypeOption = SelectOption<string>;
-
-interface FileSettingsResponse {
-    files?: {
-        autoprocess_files?: boolean;
-        md5_subtype?: string;
-        sha1_subtype?: string;
-        sha256_subtype?: string;
-        max_file_size_for_hashing?: number;
-        upload_limit?: number;
-    };
-}
 
 const isValidBytesString = (value: string) => {
     try {
@@ -87,14 +74,16 @@ const fileSettingsSchema = z.object({
 type FileSettingsFormValues = z.infer<typeof fileSettingsSchema>;
 
 export default function FileSettingsForm() {
-    const { entriesApi, managementApi } = useApi();
-
     const reprocessFilesMutation = useMutation({
         mutationFn: async () => {
-            await managementApi.managementActionsCreate({
-                actionName: ManagementActionsCreateActionNameEnum.ReprocessAllFiles,
-                requestBody: { action: 'reprocessAllFiles' },
-            });
+            const { error, response } = await fetchClient.POST(
+                '/management/actions/{action_name}',
+                {
+                    params: { path: { action_name: 'reprocessAllFiles' } },
+                    body: { action: 'reprocessAllFiles' },
+                },
+            );
+            if (error) throw { response };
         },
         meta: {
             suppressNotification: true,
@@ -104,12 +93,15 @@ export default function FileSettingsForm() {
         },
     });
 
-    const { data: entryClassesData } = useQuery({
-        queryKey: queryKeys.entryTypes.lists(),
-        queryFn: () => entriesApi.entryClassesList(),
-        refetchOnWindowFocus: false,
-        meta: { showErrorToast: false, suppressNotification: true },
-    });
+    const { data: entryClassesData } = $api.useQuery(
+        'get',
+        '/entries/entry_classes/',
+        {},
+        {
+            refetchOnWindowFocus: false,
+            meta: { showErrorToast: false, suppressNotification: true },
+        },
+    );
 
     const {
         data: settingsData,
@@ -119,29 +111,39 @@ export default function FileSettingsForm() {
         refetch: refetchSettings,
     } = useQuery({
         queryKey: queryKeys.management.settings(),
-        queryFn: () => managementApi.managementSettingsRetrieve(),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/management/settings/',
+            );
+            if (error) throw { response };
+            return data;
+        },
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
 
     const updateSettingsMutation = useMutation({
         mutationFn: async (data: FileSettingsFormValues) => {
-            await managementApi.managementSettingsCreate({
-                requestBody: {
-                    files: {
-                        autoprocess_files: data.autoprocessFiles,
-                        md5_subtype: data.md5Subtype?.value || null,
-                        sha1_subtype: data.sha1Subtype?.value || null,
-                        sha256_subtype: data.sha256Subtype?.value || null,
-                        max_file_size_for_hashing: data.maxFileSizeForHashing
-                            ? bytes.parse(data.maxFileSizeForHashing)
-                            : null,
-                        upload_limit: data.uploadLimit
-                            ? bytes.parse(data.uploadLimit)
-                            : null,
-                    },
+            const { error, response } = await fetchClient.POST(
+                '/management/settings/',
+                {
+                    body: {
+                        files: {
+                            autoprocess_files: data.autoprocessFiles,
+                            md5_subtype: data.md5Subtype?.value || null,
+                            sha1_subtype: data.sha1Subtype?.value || null,
+                            sha256_subtype: data.sha256Subtype?.value || null,
+                            max_file_size_for_hashing: data.maxFileSizeForHashing
+                                ? bytes.parse(data.maxFileSizeForHashing)
+                                : null,
+                            upload_limit: data.uploadLimit
+                                ? bytes.parse(data.uploadLimit)
+                                : null,
+                        },
+                    } as any,
                 },
-            });
+            );
+            if (error) throw { response };
         },
         meta: {
             successMessage: 'File settings updated successfully!',
@@ -154,7 +156,7 @@ export default function FileSettingsForm() {
     const subtypes = useMemo<SubtypeOption[]>(() => {
         const results = entryClassesData?.results ?? [];
         return results
-            .filter((entry) => entry.type === EntryClassTypeEnum.Artifact)
+            .filter((entry) => entry.type === 'artifact')
             .map((entry) => ({ value: entry.subtype, label: entry.subtype }));
     }, [entryClassesData]);
 
@@ -176,7 +178,7 @@ export default function FileSettingsForm() {
     });
 
     useEffect(() => {
-        const settings = settingsData as FileSettingsResponse | undefined;
+        const settings = settingsData as any;
         if (!settings?.files) return;
         reset({
             autoprocessFiles: settings.files.autoprocess_files ?? true,

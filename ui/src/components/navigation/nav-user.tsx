@@ -1,8 +1,6 @@
 import { Badge } from '@/components/ui/badge';
-import useApi from '@/hooks/api/use-api';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
-import { useQuery } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
 import { useRouter } from '@tanstack/react-router';
 import { LogOut, Settings, User } from 'lucide-react';
 
@@ -22,15 +20,14 @@ import {
 
 export function NavUser() {
     const { isMobile, state } = useSidebar();
-    const { usersApi } = useApi();
     const { isLoggedIn } = useAuthActions();
     const { role } = useAuthState();
-    const { data: profile } = useQuery({
-        queryKey: queryKeys.users.detail('me'),
-        queryFn: () => usersApi.usersRetrieve({ userId: 'me' }),
-        enabled: isLoggedIn(),
-        meta: { showErrorToast: false },
-    });
+    const { data: profile } = $api.useQuery(
+        'get',
+        '/users/{user_id}/',
+        { params: { path: { user_id: 'me' } } },
+        { enabled: isLoggedIn(), meta: { showErrorToast: false } },
+    );
     const { logOut } = useAuthActions();
     const router = useRouter();
     const isCollapsed = state === 'collapsed';

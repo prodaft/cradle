@@ -1,16 +1,15 @@
 import { ComponentType, useEffect, useRef, useState } from 'react';
 
-import { useRouter } from '@tanstack/react-router';
-
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import useApi from '@/hooks/api/use-api';
-import { queryKeys } from '@/hooks/query';
 import { LinkTreeFlattener } from '@/utils/dashboard';
 import { logger } from '@/utils/logger';
 import { WarningCircleIcon } from '@phosphor-icons/react';
-import type { EdgeRelation, SubGraph } from '@services/cradle/models';
-import { useQuery } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import { Node } from './graphFilterUtils';
+
+type EdgeRelation = components['schemas']['EdgeRelation'];
+type SubGraph = components['schemas']['SubGraph'];
 
 interface Alert {
     show: boolean;
@@ -38,19 +37,20 @@ export default function NoteGraphSearch(
             message: '',
             color: 'red',
         });
-        const { notesApi } = useApi();
-        const router = useRouter();
         const hasFetchedRef = useRef(false);
 
         // Query for note graph data
-        const { data: graphData } = useQuery<SubGraph>({
-            queryKey: queryKeys.notes.detail(`${noteId}-graph`),
-            queryFn: () => notesApi.notesGraphRetrieve({ noteId }),
-            enabled: !hasFetchedRef.current,
-            meta: {
-                showErrorToast: true,
+        const { data: graphData } = $api.useQuery(
+            'get',
+            '/notes/{note_id}/graph',
+            { params: { path: { note_id: noteId } } },
+            {
+                enabled: !hasFetchedRef.current,
+                meta: {
+                    showErrorToast: true,
+                },
             },
-        });
+        );
 
         // Process graph data when it loads
         useEffect(() => {
@@ -99,9 +99,9 @@ export default function NoteGraphSearch(
                     }
                 }
 
-                const edges =
+                const edges: EdgeRelation[] =
                     relations && Array.isArray(relations) && relations.length > 0
-                        ? relations
+                        ? (relations as unknown as EdgeRelation[])
                         : [];
                 if (edges.length > 0) {
                     hasData = true;
@@ -110,10 +110,8 @@ export default function NoteGraphSearch(
                 // Add nodes and edges together atomically using addBoth if available
                 if (nodes.length > 0 || edges.length > 0) {
                     if (addBoth) {
-                        // Preferred: Add both atomically
                         addBoth(nodes, edges);
                     } else {
-                        // Fallback: Add separately (may have race conditions)
                         addNodes(nodes);
                         addEdges(edges);
                     }

@@ -12,15 +12,15 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-import { ReportList } from '@/services/cradle';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import PageHeader from '@components/base/page-header';
 import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
 import { ArrowsClockwiseIcon, DownloadIcon, TrashIcon } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
@@ -36,11 +36,13 @@ import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { StatusIcon, type StatusType } from '../notes/status-icon';
 
+type ReportList = components['schemas']['ReportList'];
+
 const SORT_FIELD_MAPPING: Record<string, string> = {
     title: 'title',
     strategy: 'strategy',
     anonymized: 'anonymized',
-    createdAt: 'created_at',
+    created_at: 'created_at',
     user: 'user__username',
 };
 
@@ -100,7 +102,6 @@ export default function Reports() {
         'desc') as 'asc' | 'desc';
     const pageSize = Number(searchAny?.reports_pagesize ?? 20) || 20;
 
-    const { reportsApi } = useApi();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -116,7 +117,14 @@ export default function Reports() {
             id: string;
             downloadUrl: boolean;
         }) => {
-            return await reportsApi.reportsRetrieve({ id, downloadUrl });
+            const { data, error, response } = await fetchClient.GET('/reports/{id}/', {
+                params: {
+                    path: { id },
+                    query: { download_url: downloadUrl },
+                },
+            });
+            if (error) throw { response };
+            return data!;
         },
         meta: {
             suppressNotification: true,
@@ -143,14 +151,21 @@ export default function Reports() {
             statusFilter,
             search: searchQuery || undefined,
         }),
-        queryFn: () =>
-            reportsApi.reportsList({
-                page,
-                pageSize,
-                orderBy,
-                search: searchQuery || undefined,
-                status: statusFilter !== 'all' ? statusFilter : undefined,
-            }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET('/reports/', {
+                params: {
+                    query: {
+                        page,
+                        page_size: pageSize,
+                        order_by: orderBy,
+                        search: searchQuery || undefined,
+                        status: statusFilter !== 'all' ? statusFilter : undefined,
+                    },
+                },
+            });
+            if (error) throw { response };
+            return data!;
+        },
         meta: {
             showErrorToast: true,
         },
@@ -158,7 +173,7 @@ export default function Reports() {
 
     const reports = reportsData?.results ?? [];
 
-    const totalPages = reportsData?.totalPages || 1;
+    const totalPages = reportsData?.total_pages || 1;
 
     const resetToFirstPage = useCallback(() => {
         router.navigate({
@@ -224,9 +239,13 @@ export default function Reports() {
         [searchAny, router, location.pathname],
     );
 
-    // Delete mutation
     const deleteMutation = useMutation({
-        mutationFn: (id: string) => reportsApi.reportsDestroy({ id }),
+        mutationFn: async (id: string) => {
+            const { error, response } = await fetchClient.DELETE('/reports/{id}/', {
+                params: { path: { id } },
+            });
+            if (error) throw { response };
+        },
         meta: { suppressNotification: true },
     });
 
@@ -274,12 +293,15 @@ export default function Reports() {
         }
     };
 
-    // Retry mutation
     const retryMutation = useMutation({
-        mutationFn: (id: string) => reportsApi.reportsRetryCreate({ id }),
+        mutationFn: async (id: string) => {
+            const { error, response } = await fetchClient.POST('/reports/{id}/retry/', {
+                params: { path: { id } },
+            });
+            if (error) throw { response };
+        },
         meta: {
-            suppressNotification: true, // We handle toasts ourselves
-            // Note: We don't invalidate queries here because retry is async and refetching causes a full table rerender
+            suppressNotification: true,
         },
     });
 
@@ -352,8 +374,8 @@ export default function Reports() {
             );
 
             reports.forEach((report) => {
-                if (report.reportUrl) {
-                    window.open(report.reportUrl, '_blank', 'noopener');
+                if (report.report_url) {
+                    window.open(report.report_url, '_blank', 'noopener');
                 } else {
                     toast.error('Report URL not found for report ' + report.title);
                 }
@@ -408,7 +430,7 @@ export default function Reports() {
                         <span className='inline-flex items-center flex-shrink-0'>
                             {renderStatusIcon(
                                 row.original.status,
-                                row.original.errorMessage || undefined,
+                                row.original.error_message || undefined,
                             )}
                         </span>
                         <span className='truncate'>
@@ -442,16 +464,16 @@ export default function Reports() {
                 ),
             },
             {
-                accessorKey: 'createdAt',
-                id: 'createdAt',
+                accessorKey: 'created_at',
+                id: 'created_at',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Created At' />
                 ),
                 cell: ({ row }) => (
                     <div className='w-36'>
-                        {row.original.createdAt
+                        {row.original.created_at
                             ? format(
-                                  new Date(row.original.createdAt),
+                                  new Date(row.original.created_at),
                                   'dd/MM/yyyy, HH:mm',
                               )
                             : 'N/A'}
@@ -521,8 +543,8 @@ export default function Reports() {
                                     id: report.id!,
                                     downloadUrl: false,
                                 });
-                                if (details.reportUrl) {
-                                    window.open(details.reportUrl, '_blank');
+                                if (details.report_url) {
+                                    window.open(details.report_url, '_blank');
                                 } else {
                                     toast.error(
                                         'Report URL not found for report ' +

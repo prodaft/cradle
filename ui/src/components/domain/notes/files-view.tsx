@@ -4,10 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import { truncateText } from '@/utils/dashboard';
 import { DownloadSimpleIcon } from '@phosphor-icons/react';
-import type { FileReferenceWithNote } from '@services/cradle/models';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
 import {
     ColumnDef,
@@ -17,6 +17,8 @@ import {
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { useCallback, useMemo } from 'react';
+
+type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 
 interface FilesViewProps {
     files: FileReferenceWithNote[];
@@ -29,14 +31,14 @@ type DownloadVars = { fileId: string; fileName?: string };
  * Displays files attached to a note in a table/card view
  */
 export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
-    const { fileTransferApi } = useApi();
-
     const downloadMutation = useMutation({
         mutationFn: async ({ fileId }: DownloadVars) => {
-            const response = await fileTransferApi.fileTransferDownloadRetrieve({
-                fileId,
-            });
-            return response.presignedUrl;
+            const { data, error, response } = await fetchClient.GET(
+                '/file-transfer/download/',
+                { params: { query: { fileId } } },
+            );
+            if (error) throw { response };
+            return data.presigned_url;
         },
         meta: {
             suppressNotification: true,
@@ -56,7 +58,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
     const handleDownload = useCallback(
         (file: FileReferenceWithNote) => {
             if (!file.id) return;
-            downloadFile({ fileId: file.id, fileName: file.fileName ?? undefined });
+            downloadFile({ fileId: file.id, fileName: file.file_name ?? undefined });
         },
         [downloadFile],
     );
@@ -64,13 +66,13 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
     const columns = useMemo<ColumnDef<FileReferenceWithNote>[]>(
         () => [
             {
-                accessorKey: 'fileName',
+                accessorKey: 'file_name',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Name' />
                 ),
                 cell: ({ row }) => (
                     <div className='truncate w-32'>
-                        {truncateText((row.getValue('fileName') as string) ?? '-', 32)}
+                        {truncateText((row.getValue('file_name') as string) ?? '-', 32)}
                     </div>
                 ),
             },
@@ -115,12 +117,12 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                 enableSorting: false,
             },
             {
-                accessorKey: 'sha256Hash',
+                accessorKey: 'sha256_hash',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='SHA256' />
                 ),
                 cell: ({ row }) => {
-                    const hash = row.original.sha256Hash;
+                    const hash = row.original.sha256_hash;
                     if (!hash) return '-';
 
                     return (

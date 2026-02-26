@@ -15,10 +15,8 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import { CaretDownIcon } from '@phosphor-icons/react';
-import type { EventLog } from '@services/cradle/models';
-import { useQuery } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
 import { format } from 'date-fns';
 import { diff_match_patch } from 'diff-match-patch';
 import { useMemo, useState } from 'react';
@@ -249,23 +247,28 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
 }
 
 export default function UserActivityList({ username }: UserActivityListProps) {
-    const { logsApi } = useApi();
     const [page, setPage] = useState(1);
 
-    const { data: logsData, isLoading } = useQuery({
-        queryKey: ['activity', 'user', username, page],
-        queryFn: () =>
-            logsApi.logsList({
-                username: username || undefined,
-                page,
-            }),
-        enabled: !!username,
-        meta: {
-            showErrorToast: true,
+    const { data: logsData, isLoading } = $api.useQuery(
+        'get',
+        '/logs/',
+        {
+            params: {
+                query: {
+                    username: username || undefined,
+                    page,
+                },
+            },
         },
-    });
+        {
+            enabled: !!username,
+            meta: {
+                showErrorToast: true,
+            },
+        },
+    );
 
-    const totalPages = logsData?.totalPages || 1;
+    const totalPages = logsData?.total_pages || 1;
     const totalCount = logsData?.count || 0;
 
     const handlePageChange = (newPage: number) => {
@@ -275,7 +278,6 @@ export default function UserActivityList({ username }: UserActivityListProps) {
     const events = useMemo(() => {
         if (!logsData?.results) return [];
 
-        // Track IDs we've seen as src_logs to filter duplicates
         const srcLogIds = new Set<string>();
         logsData.results.forEach((log: any) => {
             if (log.src_log?.id) {
@@ -283,40 +285,28 @@ export default function UserActivityList({ username }: UserActivityListProps) {
             }
         });
 
-        // Filter out logs that appear as src_log of another log (to avoid duplicates)
         return logsData.results
             .filter((log: any) => !srcLogIds.has(log.id))
             .map(
-                (
-                    log: EventLog & {
-                        content_type?: string;
-                        object_id?: string;
-                        src_log?: any;
-                    },
-                ): ActivityEvent => ({
-                    id: (log as any).id || '',
+                (log: any): ActivityEvent => ({
+                    id: log.id || '',
                     timestamp:
                         typeof log.timestamp === 'string'
                             ? log.timestamp
-                            : log.timestamp instanceof Date
-                              ? log.timestamp.toISOString()
-                              : new Date().toISOString(),
+                            : new Date().toISOString(),
                     type: log.type,
-                    contentType:
-                        (log as any).content_type ||
-                        (log as any).contentType ||
-                        'unknown',
-                    objectId: (log as any).object_id || (log as any).objectId || '',
-                    objectRepr: log.objectRepr || '',
+                    contentType: log.content_type || 'unknown',
+                    objectId: log.object_id || '',
+                    objectRepr: log.object_repr || '',
                     details: log.details || undefined,
-                    srcLog: (log as any).src_log
+                    srcLog: log.src_log
                         ? {
-                              id: (log as any).src_log.id,
-                              type: (log as any).src_log.type,
-                              details: (log as any).src_log.details,
-                              content_type: (log as any).src_log.content_type,
-                              object_id: (log as any).src_log.object_id,
-                              object_repr: (log as any).src_log.object_repr,
+                              id: log.src_log.id,
+                              type: log.src_log.type,
+                              details: log.src_log.details,
+                              content_type: log.src_log.content_type,
+                              object_id: log.src_log.object_id,
+                              object_repr: log.src_log.object_repr,
                           }
                         : undefined,
                 }),

@@ -23,7 +23,6 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import {
@@ -31,8 +30,9 @@ import {
     PencilIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
-import { EntryClass } from '@services/cradle/models';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
     type ColumnDef,
@@ -44,6 +44,8 @@ import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import ConfirmDeletionDialog from '../../../dialogs/base/confirm-deletion-dialog';
 import AddEntryTypeForm from './add-entry-type-form';
+
+type EntryClass = components['schemas']['EntryClass'];
 
 interface EntryTypeData {
     id: string;
@@ -64,7 +66,6 @@ export default function EntryTypesPage() {
 
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const { isAdmin } = useAuthState();
-    const { entriesApi } = useApi();
     const queryClient = useQueryClient();
     const [addEntryTypeDialogOpen, setAddEntryTypeDialogOpen] = useState(false);
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
@@ -82,28 +83,31 @@ export default function EntryTypesPage() {
     }, []);
 
     const searchTerm = searchQuery.trim() || undefined;
-    const entryTypesListFilters = {
-        page,
-        pageSize,
-        ...(searchTerm ? { search: searchTerm } : {}),
-    };
-    const { data: entryTypesData, isPending } = useQuery({
-        queryKey: queryKeys.entryTypes.list(entryTypesListFilters),
-        queryFn: () =>
-            entriesApi.entryClassesList({
-                showCount: true,
-                ...entryTypesListFilters,
-            }),
-        refetchOnWindowFocus: false,
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
+    const { data: entryTypesData, isPending } = $api.useQuery(
+        'get',
+        '/entries/entry_classes/',
+        {
+            params: {
+                query: {
+                    show_count: true,
+                    page,
+                    page_size: pageSize,
+                    search: searchTerm,
+                },
+            },
         },
-    });
+        {
+            refetchOnWindowFocus: false,
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
+        },
+    );
 
     const entryTypes = useMemo<EntryTypeData[]>(() => {
         const results = entryTypesData?.results ?? [];
-        return results.map((c) => ({
+        return results.map((c: any) => ({
             id: c.subtype,
             subtype: c.subtype,
             count: c.count,
@@ -117,8 +121,13 @@ export default function EntryTypesPage() {
     };
 
     const deleteMutation = useMutation({
-        mutationFn: (subtype: string) =>
-            entriesApi.entryClassesDestroy({ classSubtype: subtype }),
+        mutationFn: async (subtype: string) => {
+            const { error, response } = await fetchClient.DELETE(
+                '/entries/entry_classes/{class_subtype}/',
+                { params: { path: { class_subtype: subtype } } },
+            );
+            if (error) throw { response };
+        },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.entryTypes.lists() }],
             successMessage: 'Entry type deleted successfully',
@@ -160,8 +169,8 @@ export default function EntryTypesPage() {
     }, [selectedEntryTypeIds, router]);
 
     const totalPages = useMemo(
-        () => Math.max(1, entryTypesData?.totalPages ?? 1),
-        [entryTypesData?.totalPages],
+        () => Math.max(1, entryTypesData?.total_pages ?? 1),
+        [entryTypesData?.total_pages],
     );
 
     const handleSearchChange = useCallback(

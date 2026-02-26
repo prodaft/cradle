@@ -10,11 +10,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
-import { UserRetrieve } from '@/services/cradle/models';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import bytes from 'bytes';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -51,21 +50,24 @@ export default function UserAdministrativeForm({
     userId,
     isOtherAdmin,
 }: UserAdministrativeFormProps) {
-    const { usersApi } = useApi();
     const queryClient = useQueryClient();
     const previousValuesRef = useRef<Partial<FormData> | null>(null);
     const [setPasswordDialogOpen, setSetPasswordDialogOpen] = useState(false);
 
-    const { data: userData } = useQuery<UserRetrieve>({
-        queryKey: queryKeys.users.detail(userId),
-        queryFn: () => usersApi.usersRetrieve({ userId }),
-        enabled: !!userId,
-        meta: { suppressNotification: true },
-    });
+    const { data: userData } = $api.useQuery(
+        'get',
+        '/users/{user_id}/',
+        { params: { path: { user_id: userId } } },
+        { enabled: !!userId, meta: { suppressNotification: true } },
+    );
 
     const saveMutation = useMutation({
         mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
-            await usersApi.usersUpdate({ userId, userUpdateRequest: payload });
+            const { error, response } = await fetchClient.POST('/users/{user_id}/', {
+                params: { path: { user_id: userId } },
+                body: payload,
+            });
+            if (error) throw { response };
         },
         meta: { successMessage: 'User settings saved successfully' },
         onSuccess: () => {
@@ -92,11 +94,11 @@ export default function UserAdministrativeForm({
 
     useEffect(() => {
         if (!userData) return;
-        const fileUploadLimitBytes = (userData as any).fileUploadLimitOverride;
+        const fileUploadLimitBytes = (userData as any).file_upload_limit_override;
         const data = {
             id: userData.id,
-            emailConfirmed: userData.emailConfirmed || false,
-            isActive: userData.isActive || false,
+            emailConfirmed: userData.email_confirmed || false,
+            isActive: userData.is_active || false,
             fileUploadLimitOverride: fileUploadLimitBytes
                 ? bytes.format(fileUploadLimitBytes, { unitSeparator: ' ' })
                 : '',
@@ -112,18 +114,18 @@ export default function UserAdministrativeForm({
 
         const payload: any = {};
         if (data.emailConfirmed !== prev?.emailConfirmed)
-            payload.emailConfirmed = data.emailConfirmed;
-        if (data.isActive !== prev?.isActive) payload.isActive = data.isActive;
+            payload.email_confirmed = data.emailConfirmed;
+        if (data.isActive !== prev?.isActive) payload.is_active = data.isActive;
         if (data.fileUploadLimitOverride !== prev?.fileUploadLimitOverride) {
             if (
                 data.fileUploadLimitOverride &&
                 data.fileUploadLimitOverride.trim() !== ''
             ) {
-                payload.fileUploadLimitOverride = bytes.parse(
+                payload.file_upload_limit_override = bytes.parse(
                     data.fileUploadLimitOverride,
                 );
             } else {
-                payload.fileUploadLimitOverride = null;
+                payload.file_upload_limit_override = null;
             }
         }
 

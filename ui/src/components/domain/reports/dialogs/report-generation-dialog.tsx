@@ -17,6 +17,7 @@ import {
     FieldSet,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     Select,
     SelectContent,
@@ -24,9 +25,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/use-api';
 import {
     CodeIcon,
     DownloadSimpleIcon,
@@ -34,6 +33,7 @@ import {
     EyeSlashIcon,
     FileTextIcon,
 } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -87,7 +87,6 @@ export default function ReportGenerationDialog({
     selectedNotes,
     noteTitle,
 }: ReportGenerationDialogProps): React.JSX.Element {
-    const { reportsApi } = useApi();
     const [title, setTitle] = useState(noteTitle || '');
     const [format, setFormat] = useState<ReportFormat>('html');
     const [mode, setMode] = useState<ReportMode>('anonymized');
@@ -99,14 +98,15 @@ export default function ReportGenerationDialog({
             mode: ReportMode;
             noteIds: string[];
         }) => {
-            await reportsApi.reportsPublishCreate({
-                publishReportRequest: {
+            const { error, response } = await fetchClient.POST('/reports/publish/', {
+                body: {
                     strategy: data.format,
-                    noteIds: data.noteIds,
+                    note_ids: data.noteIds,
                     title: data.title.trim(),
                     anonymized: data.mode === 'anonymized',
                 },
             });
+            if (error) throw { response };
         },
         meta: {
             successMessage: 'Report generated successfully!',

@@ -21,20 +21,18 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import useApi from '@/hooks/api/use-api';
-import { queryKeys } from '@/hooks/query';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-    EntryClass,
-    EntryClassRequest,
-    EntryClassRequestTypeEnum,
-} from '@services/cradle/models';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation } from '@tanstack/react-query';
 import { useMemo, useRef, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
+
+type EntryClass = components['schemas']['EntryClass'];
+type EntryClassRequest = components['schemas']['EntryClassRequest'];
 
 interface AddEntryTypeFormProps {
     onAdd?: (result: EntryClass) => void;
@@ -43,7 +41,7 @@ interface AddEntryTypeFormProps {
 type ChildOption = Option;
 
 type TypeOption = {
-    value: EntryClassRequestTypeEnum;
+    value: EntryClassRequest['type'];
     label: string;
 };
 
@@ -54,8 +52,8 @@ type FormatOption = {
 };
 
 const typeOptions: TypeOption[] = [
-    { value: EntryClassRequestTypeEnum.Artifact, label: 'Artifact' },
-    { value: EntryClassRequestTypeEnum.Entity, label: 'Entity' },
+    { value: 'artifact', label: 'Artifact' },
+    { value: 'entity', label: 'Entity' },
 ];
 
 const formatOptions: FormatOption[] = [
@@ -67,10 +65,7 @@ const formatOptions: FormatOption[] = [
 const entryTypeSchema = z.object({
     type: z
         .object({
-            value: z.enum([
-                EntryClassRequestTypeEnum.Artifact,
-                EntryClassRequestTypeEnum.Entity,
-            ]),
+            value: z.enum(['artifact', 'entity'] as const),
             label: z.string().min(1),
         })
         .nullable()
@@ -94,7 +89,6 @@ const entryTypeSchema = z.object({
 type FormData = z.infer<typeof entryTypeSchema>;
 
 export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
-    const { entriesApi } = useApi();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [showColorPicker, setShowColorPicker] = useState(false);
     const colorButtonRef = useRef<HTMLDivElement>(null);
@@ -122,12 +116,15 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
         },
     });
 
-    const { data: entryClassesListData } = useQuery({
-        queryKey: queryKeys.entryTypes.lists(),
-        queryFn: () => entriesApi.entryClassesList(),
-        refetchOnWindowFocus: false,
-        meta: { showErrorToast: false, suppressNotification: true },
-    });
+    const { data: entryClassesListData } = $api.useQuery(
+        'get',
+        '/entries/entry_classes/',
+        {},
+        {
+            refetchOnWindowFocus: false,
+            meta: { showErrorToast: false, suppressNotification: true },
+        },
+    );
 
     const entryTypes = useMemo<ChildOption[]>(() => {
         const results = entryClassesListData?.results ?? [];
@@ -140,8 +137,8 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
     const watchType = watch('type');
     const watchTypeFormat = watch('typeFormat');
     const watchColor = watch('color');
-    const isEntity = watchType?.value === EntryClassRequestTypeEnum.Entity;
-    const isArtifact = watchType?.value === EntryClassRequestTypeEnum.Artifact;
+    const isEntity = watchType?.value === 'entity';
+    const isArtifact = watchType?.value === 'artifact';
     const isOptions = watchTypeFormat?.value === 'options';
     const isRegex = watchTypeFormat?.value === 'regex';
 
@@ -150,8 +147,14 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
     };
 
     const createEntryMutation = useMutation({
-        mutationFn: (payload: EntryClassRequest) =>
-            entriesApi.entryClassesCreate({ entryClassRequest: payload }),
+        mutationFn: async (payload: EntryClassRequest) => {
+            const { data, error, response } = await fetchClient.POST(
+                '/entries/entry_classes/',
+                { body: payload },
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: {
             successMessage: 'Entry created successfully!',
         },
@@ -163,9 +166,9 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
     const onSubmit = async (data: FormData) => {
         const formatValue = data.typeFormat?.value;
         const payload: EntryClassRequest = {
-            generativeRegex: data.generativeRegex,
+            generative_regex: data.generativeRegex,
             format: formatValue === 'any' ? null : (formatValue ?? null),
-            type: data.type?.value ?? EntryClassRequestTypeEnum.Artifact,
+            type: data.type?.value ?? 'artifact',
             subtype: data.subtype,
             description: data.description,
             prefix: data.prefix,

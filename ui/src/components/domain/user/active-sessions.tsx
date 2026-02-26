@@ -15,12 +15,11 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/use-api';
 import { useAuthActions } from '@/hooks/auth/use-auth';
-import { UserSession } from '@/services/cradle/models';
 import { parseAPIError } from '@/utils/api';
 import { TrashIcon } from '@phosphor-icons/react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
     ColumnDef,
@@ -37,13 +36,13 @@ interface ActiveSessionsProps {
     userId: string;
 }
 
-/** Maps react-table camelCase accessorKeys to the API's snake_case order_by fields. */
+/** Maps react-table accessorKeys (snake_case) to the API's order_by fields. */
 const COLUMN_TO_FIELD: Record<string, string> = {
-    deviceInfo: 'device_info',
-    ipAddress: 'ip_address',
-    createdAt: 'created_at',
-    lastActivity: 'last_activity',
-    expiresAt: 'expires_at',
+    device_info: 'device_info',
+    ip_address: 'ip_address',
+    created_at: 'created_at',
+    last_activity: 'last_activity',
+    expires_at: 'expires_at',
 };
 
 /**
@@ -65,7 +64,6 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
     const [revokeSessionId, setRevokeSessionId] = useState<string | null>(null);
     const [bulkRevokeDialogOpen, setBulkRevokeDialogOpen] = useState(false);
-    const { usersApi } = useApi();
     const { logOut } = useAuthActions();
     const queryClient = useQueryClient();
 
@@ -88,15 +86,21 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     }, [sorting]);
 
     // Query for sessions
-    const { data: sessions = [], isPending } = useQuery<UserSession[]>({
-        queryKey: ['users', 'detail', `${userId}-sessions`, searchQuery, orderByParam],
-        queryFn: () =>
-            usersApi.usersSessionsList({
-                userId,
+    const sessionsInit = {
+        params: {
+            path: { user_id: userId },
+            query: {
                 search: searchQuery || undefined,
-                orderBy: orderByParam,
-            }),
-    });
+                order_by: orderByParam,
+            } as any,
+        },
+    };
+    const { data: sessionsData, isPending } = $api.useQuery(
+        'get',
+        '/users/{user_id}/sessions/',
+        sessionsInit,
+    );
+    const sessions = sessionsData ?? [];
 
     const selectedSessionIds = useMemo(
         () =>
@@ -129,11 +133,16 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     // Revoke session mutation
     const revokeSessionMutation = useMutation({
         mutationFn: async (sessionId: string) => {
-            return await usersApi.usersSessionsDestroy({ userId, sessionId });
+            const { data, error, response } = await fetchClient.DELETE(
+                '/users/{user_id}/sessions/{session_id}/',
+                { params: { path: { user_id: userId, session_id: sessionId } } },
+            );
+            if (error) throw { response };
+            return data;
         },
         meta: {
             invalidateQueries: [
-                { queryKey: ['users', 'detail', `${userId}-sessions`] },
+                { queryKey: ['get', '/users/{user_id}/sessions/'] },
             ],
             successMessage: 'Session revoked successfully',
         },
@@ -148,10 +157,10 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 const session = sessions.find((s) => s.id === sessionId);
                 const currentJti = getCurrentSessionJti();
                 const isCurrentSession =
-                    session && currentJti && session.refreshTokenJti === currentJti;
+                    session && currentJti && session.refresh_token_jti === currentJti;
 
                 // If current session was revoked, log out immediately
-                if (isCurrentSession || session?.isCurrent) {
+                if (isCurrentSession || session?.is_current) {
                     // Clear tokens and log out
                     logOut();
                 } else {
@@ -171,9 +180,18 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const revokeSessions = useCallback(
         async (sessionIds: string[]) => {
             try {
-                const revokePromises = sessionIds.map((sessionId) =>
-                    usersApi.usersSessionsDestroy({ userId, sessionId }),
-                );
+                const revokePromises = sessionIds.map(async (sessionId) => {
+                    const { data, error, response } = await fetchClient.DELETE(
+                        '/users/{user_id}/sessions/{session_id}/',
+                        {
+                            params: {
+                                path: { user_id: userId, session_id: sessionId },
+                            },
+                        },
+                    );
+                    if (error) throw { response };
+                    return data;
+                });
 
                 const results = await Promise.allSettled(revokePromises);
                 const successes = results.filter(
@@ -202,14 +220,14 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     sessionIds.includes(s.id || ''),
                 );
                 const isCurrentSessionRevoked = revokedSessions.some(
-                    (s) => currentJti && s.refreshTokenJti === currentJti,
+                    (s) => currentJti && s.refresh_token_jti === currentJti,
                 );
 
                 if (isCurrentSessionRevoked) {
                     logOut();
                 } else {
                     queryClient.invalidateQueries({
-                        queryKey: [`users`, `detail`, `${userId}-sessions`],
+                        queryKey: ['get', '/users/{user_id}/sessions/'],
                     });
                     clearSelection();
                 }
@@ -220,7 +238,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         },
         [
             userId,
-            usersApi,
+            fetchClient,
             sessions,
             queryClient,
             getCurrentSessionJti,
@@ -256,9 +274,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         () =>
             sessions.map((session) => ({
                 ...session,
-                isCurrent: currentJti
-                    ? session.refreshTokenJti === currentJti
-                    : session.isCurrent,
+                is_current: currentJti
+                    ? session.refresh_token_jti === currentJti
+                    : session.is_current,
             })),
         [sessions, currentJti],
     );
@@ -327,7 +345,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         [page, pageSize, handlePageChange, handlePageSizeChange],
     );
 
-    const columns = useMemo<ColumnDef<UserSession>[]>(
+    const columns = useMemo<ColumnDef<NonNullable<typeof sessions>[number]>[]>(
         () => [
             {
                 id: 'select',
@@ -358,7 +376,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 enableHiding: false,
             },
             {
-                accessorKey: 'deviceInfo',
+                accessorKey: 'device_info',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Device' />
                 ),
@@ -367,9 +385,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     return (
                         <div className='flex items-center gap-2'>
                             <span className='text-sm'>
-                                {formatDeviceInfo(session.deviceInfo || null)}
+                                {formatDeviceInfo(session.device_info || null)}
                             </span>
-                            {session.isCurrent && (
+                            {session.is_current && (
                                 <Badge variant='default' className='text-xs'>
                                     Current
                                 </Badge>
@@ -379,12 +397,12 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 },
             },
             {
-                accessorKey: 'ipAddress',
+                accessorKey: 'ip_address',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='IP Address' />
                 ),
                 cell: ({ row }) => {
-                    const ip = row.original.ipAddress;
+                    const ip = row.original.ip_address;
                     return (
                         <span className='text-sm text-muted-foreground'>
                             {ip || '-'}
@@ -393,35 +411,35 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 },
             },
             {
-                accessorKey: 'createdAt',
+                accessorKey: 'created_at',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Created' />
                 ),
                 cell: ({ row }) => (
                     <span className='text-sm text-muted-foreground'>
-                        {formatDate(row.original.createdAt)}
+                        {formatDate(row.original.created_at)}
                     </span>
                 ),
             },
             {
-                accessorKey: 'lastActivity',
+                accessorKey: 'last_activity',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Last Activity' />
                 ),
                 cell: ({ row }) => (
                     <span className='text-sm text-muted-foreground'>
-                        {formatDate(row.original.lastActivity)}
+                        {formatDate(row.original.last_activity)}
                     </span>
                 ),
             },
             {
-                accessorKey: 'expiresAt',
+                accessorKey: 'expires_at',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Expires' />
                 ),
                 cell: ({ row }) => (
                     <span className='text-sm text-muted-foreground'>
-                        {formatDate(row.original.expiresAt)}
+                        {formatDate(row.original.expires_at)}
                     </span>
                 ),
             },
@@ -551,7 +569,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 (() => {
                     const session = sessions.find((s) => s.id === revokeSessionId);
                     const isCurrentSession =
-                        session && currentJti && session.refreshTokenJti === currentJti;
+                        session &&
+                        currentJti &&
+                        session.refresh_token_jti === currentJti;
                     return (
                         <ActionConfirmationDialog
                             open={revokeDialogOpen}

@@ -1,5 +1,6 @@
-import useApi from '@/hooks/api/use-api';
 import { EnvelopeIcon, EnvelopeOpenIcon } from '@phosphor-icons/react';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { format } from 'date-fns';
@@ -8,15 +9,14 @@ import { toast } from 'sonner';
 import { Button } from 'src/components/ui/button';
 import { Card, CardContent } from 'src/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from 'src/components/ui/tooltip';
-import {
-    AccessRequestAccessTypeEnum,
-    AccessRequestNotification,
-    EnrichmentCompleteNotification,
-    EnrichmentErrorNotification,
-    NewUserNotification,
-    Notification,
-    ReportRenderNotification,
-} from 'src/services/cradle';
+
+type Notification = components['schemas']['Notification'];
+type AccessRequestNotification = components['schemas']['AccessRequestNotification'];
+type NewUserNotification = components['schemas']['NewUserNotification'];
+type ReportRenderNotification = components['schemas']['ReportRenderNotification'];
+type EnrichmentCompleteNotification =
+    components['schemas']['EnrichmentCompleteNotification'];
+type EnrichmentErrorNotification = components['schemas']['EnrichmentErrorNotification'];
 
 interface NotificationCardProps {
     notification: Notification;
@@ -27,34 +27,35 @@ export default function NotificationCard({
     notification,
     updateFlaggedNotificationsCount,
 }: NotificationCardProps): React.JSX.Element {
-    const { id, message, timestamp, isMarkedUnread } = notification;
-    const [unreadStatus, setUnreadStatus] = useState(isMarkedUnread);
-    const { reportsApi, notificationsApi, accessApi, usersApi } = useApi();
+    const { id, message, timestamp, is_marked_unread } = notification;
+    const [unreadStatus, setUnreadStatus] = useState(is_marked_unread);
     const router = useRouter();
 
     const markUnreadMutation = useMutation({
         mutationFn: async ({
             id,
-            isMarkedUnread: nextIsMarkedUnread,
+            is_marked_unread,
         }: {
             id: string;
-            isMarkedUnread: boolean;
+            is_marked_unread: boolean;
         }) => {
-            await notificationsApi.notificationsUpdate({
-                notificationId: id,
-                updateNotificationRequest: {
-                    isMarkedUnread: nextIsMarkedUnread,
+            const { error, response } = await fetchClient.PUT(
+                '/notifications/{notification_id}/',
+                {
+                    params: { path: { notification_id: id } },
+                    body: { is_marked_unread },
                 },
-            });
+            );
+            if (error) throw { response };
         },
         meta: {
-            suppressNotification: true, // We handle state updates ourselves
+            suppressNotification: true,
         },
         onSuccess: (_data, variables) => {
             updateFlaggedNotificationsCount(
-                (prevCount) => prevCount + (variables.isMarkedUnread ? 1 : -1),
+                (prevCount) => prevCount + (variables.is_marked_unread ? 1 : -1),
             );
-            setUnreadStatus(variables.isMarkedUnread);
+            setUnreadStatus(variables.is_marked_unread);
         },
     });
 
@@ -66,15 +67,16 @@ export default function NotificationCard({
         }: {
             userId: string;
             entityId: number;
-            accessType: AccessRequestAccessTypeEnum;
+            accessType: 'none' | 'read' | 'read-write';
         }) => {
-            await accessApi.accessUserUpdate({
-                userId,
-                entityId,
-                accessRequest: {
-                    accessType,
+            const { error, response } = await fetchClient.PUT(
+                '/access/user/{user_id}/{entity_id}/',
+                {
+                    params: { path: { user_id: userId, entity_id: entityId } },
+                    body: { access_type: accessType },
                 },
-            });
+            );
+            if (error) throw { response };
         },
         meta: {
             successMessage: 'Access level changed successfully',
@@ -83,12 +85,11 @@ export default function NotificationCard({
 
     const activateUserMutation = useMutation({
         mutationFn: async (userId: string) => {
-            await usersApi.usersUpdate({
-                userId,
-                userUpdateRequest: {
-                    isActive: true,
-                },
+            const { error, response } = await fetchClient.POST('/users/{user_id}/', {
+                params: { path: { user_id: userId } },
+                body: { is_active: true },
             });
+            if (error) throw { response };
         },
         meta: {
             successMessage: 'User activated successfully.',
@@ -97,11 +98,14 @@ export default function NotificationCard({
 
     const viewReportMutation = useMutation({
         mutationFn: async (reportId: string) => {
-            const report = await reportsApi.reportsRetrieve({
-                id: reportId,
-                downloadUrl: false,
+            const { data, error, response } = await fetchClient.GET('/reports/{id}/', {
+                params: {
+                    path: { id: reportId },
+                    query: { download_url: false },
+                },
             });
-            return report.reportUrl;
+            if (error) throw { response };
+            return data?.report_url;
         },
         meta: {
             suppressNotification: true,
@@ -118,29 +122,29 @@ export default function NotificationCard({
     const handleMarkUnread = () => {
         if (!id) return;
         const next = !unreadStatus;
-        markUnreadMutation.mutate({ id, isMarkedUnread: next });
+        markUnreadMutation.mutate({ id, is_marked_unread: next });
     };
 
-    const handleChangeAccess = (newAccess: AccessRequestAccessTypeEnum) => () => {
+    const handleChangeAccess = (newAccess: 'none' | 'read' | 'read-write') => () => {
         const notif = notification as AccessRequestNotification;
-        if (!notif.requestingUserId || !notif.entityId) return;
+        if (!notif.requesting_user_id || !notif.entity_id) return;
         changeAccessMutation.mutate({
-            userId: notif.requestingUserId,
-            entityId: notif.entityId,
+            userId: notif.requesting_user_id,
+            entityId: notif.entity_id,
             accessType: newAccess,
         });
     };
 
     const handleActivateUser = () => {
         const notif = notification as NewUserNotification;
-        if (!notif.newUser) return;
-        activateUserMutation.mutate(notif.newUser.id!);
+        if (!notif.new_user) return;
+        activateUserMutation.mutate(notif.new_user.id!);
     };
 
     const handleViewReport = () => {
         const notif = notification as ReportRenderNotification;
-        if (!notif.publishedReportId) return;
-        viewReportMutation.mutate(notif.publishedReportId);
+        if (!notif.published_report_id) return;
+        viewReportMutation.mutate(notif.published_report_id);
     };
 
     const formattedDate = timestamp
@@ -195,7 +199,7 @@ export default function NotificationCard({
                     </p>
                 </div>
                 <div className='flex justify-end gap-2 mt-1'>
-                    {notification.notificationType ===
+                    {notification.notification_type ===
                         'request_access_notification' && (
                         <>
                             <Button
@@ -217,7 +221,7 @@ export default function NotificationCard({
                         </>
                     )}
 
-                    {notification.notificationType === 'new_user_notification' && (
+                    {notification.notification_type === 'new_user_notification' && (
                         <Button
                             variant='outline'
                             size='sm'
@@ -228,7 +232,8 @@ export default function NotificationCard({
                         </Button>
                     )}
 
-                    {notification.notificationType === 'report_render_notification' && (
+                    {notification.notification_type ===
+                        'report_render_notification' && (
                         <Button
                             variant='outline'
                             size='sm'
@@ -239,7 +244,7 @@ export default function NotificationCard({
                         </Button>
                     )}
 
-                    {notification.notificationType ===
+                    {notification.notification_type ===
                         'report_processing_error_notification' && (
                         <Button
                             variant='outline'
@@ -251,7 +256,7 @@ export default function NotificationCard({
                         </Button>
                     )}
 
-                    {notification.notificationType ===
+                    {notification.notification_type ===
                         'enrichment_complete_notification' && (
                         <Button
                             variant='outline'
@@ -263,7 +268,7 @@ export default function NotificationCard({
                                 router.navigate({
                                     to: '/enrichment/$id',
                                     params: {
-                                        id: notif.enrichmentRequestId.toString(),
+                                        id: notif.enrichment_request_id.toString(),
                                     },
                                 });
                             }}
@@ -272,7 +277,7 @@ export default function NotificationCard({
                         </Button>
                     )}
 
-                    {notification.notificationType ===
+                    {notification.notification_type ===
                         'enrichment_error_notification' && (
                         <Button
                             variant='outline'
@@ -284,7 +289,7 @@ export default function NotificationCard({
                                 router.navigate({
                                     to: '/enrichment/$id',
                                     params: {
-                                        id: notif.enrichmentRequestId.toString(),
+                                        id: notif.enrichment_request_id.toString(),
                                     },
                                 });
                             }}

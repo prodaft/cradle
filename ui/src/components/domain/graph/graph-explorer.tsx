@@ -3,13 +3,12 @@ import {
     ResizablePanel,
     ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { EdgeRelation } from '@/services/cradle';
 import { logger } from '@/utils/logger';
 import { ComponentType, useCallback, useMemo, useRef, useState } from 'react';
 import type Sigma from 'sigma';
 import Graph from './graph';
 import GraphQuery from './graph-query';
-import { filterGraph, Node } from './graphFilterUtils';
+import { type EdgeRelation, filterGraph, type Node } from './graphFilterUtils';
 
 interface GraphConfig {
     nodeRadiusCoefficient: number;

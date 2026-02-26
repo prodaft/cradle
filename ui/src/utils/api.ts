@@ -5,7 +5,6 @@
  * All functions are explicit and require manual invocation.
  */
 
-import { FetchError } from '@/services/cradle/runtime';
 import { toast } from 'sonner';
 
 /**
@@ -47,7 +46,7 @@ interface APIErrorResponse {
 export async function parseAPIError(error: any): Promise<ParsedAPIError> {
     // Network error (no response from server)
     if (!error.response) {
-        if (error instanceof FetchError) {
+        if (error instanceof TypeError) {
             return {
                 code: 'NETWORK_ERROR',
                 detail: 'Unable to connect to the server. Please check your connection.',
@@ -59,19 +58,18 @@ export async function parseAPIError(error: any): Promise<ParsedAPIError> {
                 fieldErrors: {},
                 raw: error,
             };
-        } else {
-            return {
-                code: 'UNKNOWN_ERROR',
-                detail: 'An unknown error occurred',
-                status: 0,
-                title: 'Unknown Error',
-                instance: 'unknown',
-                timestamp: new Date().toISOString(),
-                isValidationError: false,
-                fieldErrors: {},
-                raw: error,
-            };
         }
+        return {
+            code: 'UNKNOWN_ERROR',
+            detail: 'An unknown error occurred',
+            status: 0,
+            title: 'Unknown Error',
+            instance: 'unknown',
+            timestamp: new Date().toISOString(),
+            isValidationError: false,
+            fieldErrors: {},
+            raw: error,
+        };
     }
 
     const data: APIErrorResponse = (await error.response.json()) || {};

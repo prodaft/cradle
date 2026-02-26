@@ -9,9 +9,8 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
-import useApi from '@/hooks/api/use-api';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
-import { EnrichmentSubclass } from '@services/cradle/models';
+import { fetchClient } from '@services/openapi/client';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Search } from 'lucide-react';
@@ -32,35 +31,47 @@ export default function EnrichmentPage() {
         (value: string) => setDebouncedSearch(value),
         300,
     );
-    const { intelioApi } = useApi();
-
-    const { data: enrichmentTypesData = [], isPending } = useQuery({
+    const { data: enrichmentTypesData, isPending } = useQuery({
         queryKey: ['enrichmentTypes', debouncedSearch],
-        queryFn: () =>
-            intelioApi.enrichmentSubclassesList({
-                search: debouncedSearch || undefined,
-            }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/intelio/enrichment/',
+                {
+                    params: {
+                        query: { search: debouncedSearch || undefined },
+                    },
+                },
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: {
             showErrorToast: false,
             suppressNotification: true,
         },
     });
 
-    const enrichmentTypes = enrichmentTypesData as EnrichmentSubclass[];
+    const enrichmentTypes = (enrichmentTypesData ?? []) as Array<{
+        class_name: string;
+        name: string;
+    }>;
     const tab: string | undefined =
         (search as any)?.tab ??
-        (enrichmentTypes.length > 0 ? enrichmentTypes[0].className : undefined);
+        (enrichmentTypes.length > 0 ? enrichmentTypes[0].class_name : undefined);
 
-    const handleEnrichmentClick = (enrichment: EnrichmentSubclass) => {
+    const handleEnrichmentClick = (enrichment: {
+        class_name: string;
+        name: string;
+    }) => {
         router.navigate({
             to: location.pathname as any,
-            search: { ...(search as any), tab: enrichment.className },
+            search: { ...(search as any), tab: enrichment.class_name },
             replace: true,
         });
     };
 
     const selectedEnrichment = tab
-        ? enrichmentTypes.find((e) => e.className === tab)
+        ? enrichmentTypes.find((e) => e.class_name === tab)
         : null;
 
     return (
@@ -101,9 +112,9 @@ export default function EnrichmentPage() {
                                     </div>
                                 ) : (
                                     enrichmentTypes.map((enrichment) => (
-                                        <SidebarMenuItem key={enrichment.className}>
+                                        <SidebarMenuItem key={enrichment.class_name}>
                                             <SidebarMenuButton
-                                                isActive={tab === enrichment.className}
+                                                isActive={tab === enrichment.class_name}
                                                 onClick={() =>
                                                     handleEnrichmentClick(enrichment)
                                                 }

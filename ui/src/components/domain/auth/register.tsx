@@ -16,9 +16,7 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
-import useApi from '@/hooks/api/use-api';
 import { useAuthActions } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
 import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -27,8 +25,8 @@ import {
     EyeSlashIcon,
     WarningCircleIcon,
 } from '@phosphor-icons/react';
-import { UserConfig } from '@services/cradle/models';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -87,7 +85,7 @@ export default function Register() {
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const { authApi, usersApi, basePath } = useApi();
+    const basePath = import.meta.env.VITE_API_BASE_URL ?? '';
     const { isLoggedIn } = useAuthActions();
     const loggedIn = isLoggedIn();
 
@@ -97,29 +95,35 @@ export default function Register() {
             email: string;
             password: string;
         }) => {
-            return await authApi.authSignupCreate({
-                userCreateRequest: {
+            const {
+                error,
+                response,
+                data: user,
+            } = await fetchClient.POST('/auth/signup/', {
+                body: {
                     username: data.username,
                     email: data.email,
                     password: data.password,
                 },
             });
+            if (error) throw { response };
+            return user;
         },
         meta: {
             suppressNotification: true, // We handle toasts ourselves
         },
         onSuccess: (user) => {
-            if (!user.emailConfirmed) {
+            if (!user.email_confirmed) {
                 toast.success('Please check your email for a confirmation link.');
             }
 
-            if (!user.isActive) {
+            if (!user.is_active) {
                 toast.info(
                     'Your account must be activated by an administrator before you can login.',
                 );
             }
 
-            if (user.emailConfirmed && user.isActive) {
+            if (user.email_confirmed && user.is_active) {
                 toast.info('Account created successfully.');
             }
 
@@ -141,12 +145,27 @@ export default function Register() {
     });
 
     // Query for OAuth configuration
-    const { data: userConfig } = useQuery<UserConfig>({
-        queryKey: queryKeys.users.config(),
-        queryFn: () => usersApi.usersConfig(),
+    const { data: userConfig } = $api.useQuery('get', '/users/config/', undefined, {
         enabled: !!basePath && !loggedIn,
         meta: {
             suppressNotification: true,
+        },
+        select: (raw) => {
+            const config = raw as Record<string, unknown>;
+            const oauthMethods =
+                (config.oauthMethods as unknown[]) ??
+                (config.oauth_methods as unknown[]) ??
+                [];
+            const signup =
+                (config.signup as boolean | undefined) ??
+                (config.registration_enabled as boolean | undefined);
+
+            return {
+                oauthMethods: (Array.isArray(oauthMethods)
+                    ? oauthMethods
+                    : []) as OAuthMethod[],
+                signup: signup ?? true,
+            };
         },
     });
 

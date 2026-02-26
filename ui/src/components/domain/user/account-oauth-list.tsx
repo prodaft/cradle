@@ -6,10 +6,7 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
-import useApi from '@/hooks/api/use-api';
-import { queryKeys } from '@/hooks/query';
-import { UserConfig, UserRetrieve } from '@/services/cradle/models';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
 import { useRouterState } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -31,27 +28,46 @@ interface AccountOAuthListProps {
 }
 
 export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProps) {
-    const { usersApi, basePath } = useApi();
+    const basePath = import.meta.env.VITE_API_BASE_URL ?? '';
     const location = useRouterState({ select: (state) => state.location });
 
-    const [oauthConnections, setOauthConnections] = useState<
-        Record<string, boolean>
-    >({});
+    const [oauthConnections, setOauthConnections] = useState<Record<string, boolean>>(
+        {},
+    );
     const [oauthMethods, setOauthMethods] = useState<OAuthMethod[]>([]);
     const [busyProvider, setBusyProvider] = useState<string | null>(null);
 
-    const { data: userData } = useQuery<UserRetrieve>({
-        queryKey: queryKeys.users.detail(target),
-        queryFn: () => usersApi.usersRetrieve({ userId: target }),
-        enabled: !!target,
-        meta: { suppressNotification: true },
-    });
+    const { data: userData } = $api.useQuery(
+        'get',
+        '/users/{user_id}/',
+        {
+            params: {
+                path: {
+                    user_id: target,
+                },
+            },
+        },
+        {
+            enabled: !!target,
+            meta: { suppressNotification: true },
+        },
+    );
 
-    const { data: userConfig } = useQuery<UserConfig>({
-        queryKey: queryKeys.users.config(),
-        queryFn: () => usersApi.usersConfig(),
+    const { data: userConfig } = $api.useQuery('get', '/users/config/', undefined, {
         enabled: !!basePath,
         meta: { suppressNotification: true },
+        select: (raw) => {
+            const config = raw as Record<string, unknown>;
+            const oauthMethods =
+                (config.oauthMethods as unknown[]) ??
+                (config.oauth_methods as unknown[]) ??
+                [];
+            return {
+                oauthMethods: (Array.isArray(oauthMethods)
+                    ? oauthMethods
+                    : []) as OAuthMethod[],
+            };
+        },
     });
 
     useEffect(() => {
@@ -67,9 +83,7 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
     useEffect(() => {
         if (userConfig?.oauthMethods) {
             setOauthMethods(
-                Array.isArray(userConfig.oauthMethods)
-                    ? userConfig.oauthMethods
-                    : [],
+                Array.isArray(userConfig.oauthMethods) ? userConfig.oauthMethods : [],
             );
         } else {
             setOauthMethods([]);
@@ -131,9 +145,7 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
     const connectionsList = useMemo(
         () =>
             Object.entries(mergedConnections).map(([provider, connected]) => {
-                const method = oauthMethods.find(
-                    (m) => getOAuthKey(m) === provider,
-                );
+                const method = oauthMethods.find((m) => getOAuthKey(m) === provider);
                 return {
                     provider,
                     label: method ? getOAuthLabel(method) : provider,
@@ -159,20 +171,28 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
         window.location.href = url;
     };
 
-    const disconnectMutation = useMutation({
-        mutationFn: async (provider: string) => {
-            return await usersApi.usersOauthDisconnect({ provider });
+    const disconnectMutation = $api.useMutation(
+        'delete',
+        '/users/oauth/disconnect/{provider}/',
+        {
+            onSuccess: (_, provider) => {
+                const providerId = provider.params.path.provider;
+                setOauthConnections((prev) => ({ ...prev, [providerId]: false }));
+                toast.success(`${providerId} disconnected.`);
+            },
         },
-        onSuccess: (_, provider) => {
-            setOauthConnections((prev) => ({ ...prev, [provider]: false }));
-            toast.success(`${provider} disconnected.`);
-        },
-    });
+    );
 
     const handleDisconnect = async (provider: string) => {
         setBusyProvider(provider);
         try {
-            await disconnectMutation.mutateAsync(provider);
+            await disconnectMutation.mutateAsync({
+                params: {
+                    path: {
+                        provider,
+                    },
+                },
+            });
         } finally {
             setBusyProvider(null);
         }

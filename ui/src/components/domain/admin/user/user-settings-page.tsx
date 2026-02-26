@@ -3,9 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import useApi from '@/hooks/api/use-api';
 import { useAuthState } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
 import {
     ClockCounterClockwiseIcon,
     GearSixIcon,
@@ -13,7 +11,7 @@ import {
     PasswordIcon,
     UserIcon,
 } from '@phosphor-icons/react';
-import { useQuery } from '@tanstack/react-query';
+import { $api } from '@services/openapi/client';
 import {
     useParams,
     useRouter,
@@ -21,8 +19,8 @@ import {
     useSearch,
 } from '@tanstack/react-router';
 import { useMemo } from 'react';
-import ActiveSessions from '../../user/active-sessions';
 import NotFound from '../../../feedback/not-found';
+import ActiveSessions from '../../user/active-sessions';
 import UserAccountForm from './user-account-form';
 import UserActivityList from './user-activity-list';
 import UserAdministrativeForm from './user-administrative-form';
@@ -77,23 +75,25 @@ export default function UserSettingsPage() {
     });
     const search = useSearch({ strict: false });
     const tab = (search as any)?.tab ?? USER_SETTINGS_ITEMS[0].id;
-    const { usersApi } = useApi();
     const { userId: currentUserId } = useAuthState();
 
     const {
         data: userData,
         isLoading,
         isError,
-    } = useQuery({
-        queryKey: queryKeys.users.detail(userId),
-        queryFn: () => usersApi.usersRetrieve({ userId }),
-        enabled: !!userId,
-        retry: false,
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
+    } = $api.useQuery(
+        'get',
+        '/users/{user_id}/',
+        { params: { path: { user_id: userId } } },
+        {
+            enabled: !!userId,
+            retry: false,
+            meta: {
+                showErrorToast: false,
+                suppressNotification: true,
+            },
         },
-    });
+    );
 
     const isOtherAdmin = userData?.role === 'admin' && userData?.id !== currentUserId;
 

@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import {
     Select,
     SelectContent,
@@ -36,7 +37,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import {
     Table,
@@ -46,8 +46,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import useApi from '@/hooks/api/use-api';
 import { cn } from '@/lib/utils';
+import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { startCase } from 'lodash';
 import {
@@ -174,24 +174,40 @@ const InternalClassCombobox = ({
 const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     const [rows, setRows] = useState<RowData[]>([]);
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
-    const { intelioApi, entriesApi } = useApi();
     const rowsInitializedForId = useRef<string | null>(null);
 
     const mappingKeysQuery = useQuery({
         queryKey: ['mappings', 'keys', id],
-        queryFn: () => intelioApi.mappingsKeysSchema({ className: id }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/intelio/mappings/{class_name}/keys',
+                { params: { path: { class_name: id } } },
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: { showErrorToast: true },
     });
 
-    const entryClassesQuery = useQuery({
-        queryKey: ['entries', 'classes'],
-        queryFn: () => entriesApi.entryClassesList({}),
-        meta: { showErrorToast: true },
-    });
+    const entryClassesQuery = $api.useQuery(
+        'get',
+        '/entries/entry_classes/',
+        {},
+        {
+            meta: { showErrorToast: true },
+        },
+    );
 
     const mappingsQuery = useQuery({
         queryKey: ['mappings', 'schema', id],
-        queryFn: () => intelioApi.mappingsSchemaList({ className: id }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/intelio/mappings/{class_name}/',
+                { params: { path: { class_name: id } } },
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: { showErrorToast: true },
     });
 
@@ -242,7 +258,14 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     // Mutations for saving/deleting
     const deleteMappingMutation = useMutation({
         mutationFn: async (mappingId: string) => {
-            return await intelioApi.mappingsSchemaDestroy({ className: id, mappingId });
+            const { error, response } = await fetchClient.DELETE(
+                '/intelio/mappings/{class_name}/',
+                {
+                    params: { path: { class_name: id } },
+                    body: { id: mappingId } as any,
+                },
+            );
+            if (error) throw { response };
         },
         meta: {
             successMessage: 'Mapping deleted successfully',
@@ -251,10 +274,15 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
     const saveMappingMutation = useMutation({
         mutationFn: async (rowData: Record<string, any>) => {
-            return await intelioApi.mappingsSchemaCreateOrUpdate({
-                className: id,
-                requestBody: rowData,
-            });
+            const { data, error, response } = await fetchClient.POST(
+                '/intelio/mappings/{class_name}/',
+                {
+                    params: { path: { class_name: id } },
+                    body: rowData as any,
+                },
+            );
+            if (error) throw { response };
+            return data;
         },
         meta: {
             successMessage: 'Mapping saved successfully',
@@ -263,13 +291,17 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
     const saveAllMappingsMutation = useMutation({
         mutationFn: async (dataToSave: Record<string, any>[]) => {
-            // Save all mappings sequentially
-            const promises = dataToSave.map((rowData) =>
-                intelioApi.mappingsSchemaCreateOrUpdate({
-                    className: id,
-                    requestBody: rowData,
-                }),
-            );
+            const promises = dataToSave.map(async (rowData) => {
+                const { data, error, response } = await fetchClient.POST(
+                    '/intelio/mappings/{class_name}/',
+                    {
+                        params: { path: { class_name: id } },
+                        body: rowData as any,
+                    },
+                );
+                if (error) throw { response };
+                return data;
+            });
             return await Promise.all(promises);
         },
         meta: {

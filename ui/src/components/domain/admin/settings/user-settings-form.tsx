@@ -9,9 +9,9 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import useApi from '@/hooks/api/use-api';
 import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
@@ -30,8 +30,6 @@ const accountSettingsSchema = z.object({
 type UserSettingsFormData = z.infer<typeof accountSettingsSchema>;
 
 export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
-    const { managementApi } = useApi();
-
     const {
         handleSubmit,
         reset,
@@ -46,28 +44,37 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         },
     });
 
-    // Query for management settings
     const { data: settingsData, isPending } = useQuery({
         queryKey: queryKeys.management.settings(),
-        queryFn: () => managementApi.managementSettingsRetrieve(),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/management/settings/',
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: {
             showErrorToast: false,
             suppressNotification: true,
         },
     });
 
-    // Mutation for saving settings
     const saveMutation = useMutation({
-        mutationFn: (data: UserSettingsFormData) =>
-            managementApi.managementSettingsCreate({
-                requestBody: {
-                    users: {
-                        allow_registration: data.allowRegistration,
-                        require_email_confirmation: data.requireEmailActivation,
-                        require_admin_confirmation: data.requireAdminConfirmation,
-                    },
+        mutationFn: async (data: UserSettingsFormData) => {
+            const { error, response } = await fetchClient.POST(
+                '/management/settings/',
+                {
+                    body: {
+                        users: {
+                            allow_registration: data.allowRegistration,
+                            require_email_confirmation: data.requireEmailActivation,
+                            require_admin_confirmation: data.requireAdminConfirmation,
+                        },
+                    } as any,
                 },
-            }),
+            );
+            if (error) throw { response };
+        },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.management.settings() }],
             successMessage: 'Account settings updated successfully!',
@@ -77,15 +84,15 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         },
     });
 
-    // Populate form when settings data is loaded
     useEffect(() => {
-        if (settingsData && settingsData.users) {
+        const settings = settingsData as any;
+        if (settings?.users) {
             reset({
-                allowRegistration: settingsData.users.allow_registration ?? false,
+                allowRegistration: settings.users.allow_registration ?? false,
                 requireEmailActivation:
-                    settingsData.users.require_email_confirmation ?? false,
+                    settings.users.require_email_confirmation ?? false,
                 requireAdminConfirmation:
-                    settingsData.users.require_admin_confirmation ?? false,
+                    settings.users.require_admin_confirmation ?? false,
             });
         }
     }, [settingsData, reset]);

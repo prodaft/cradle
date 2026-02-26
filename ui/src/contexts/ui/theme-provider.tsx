@@ -7,12 +7,11 @@
  * - Else → fallback to localStorage
  */
 
-import useApi from '@/hooks/api/use-api';
 import { useAuthActions } from '@/hooks/auth/use-auth';
-import { queryKeys } from '@/hooks/query';
 import type { ThemeConfig, ThemeContextValue } from '@/types/index';
 import { darkTheme, lightTheme } from '@/utils/themes';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, {
     ReactNode,
     useCallback,
@@ -73,14 +72,21 @@ export interface ThemeProviderProps {
  * Provides theme state and controls to the application
  */
 export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Element {
-    const { usersApi } = useApi();
     const { isLoggedIn } = useAuthActions();
     const queryClient = useQueryClient();
-    const { data: profile } = useQuery({
-        queryKey: queryKeys.users.detail('me'),
-        queryFn: () => usersApi.usersRetrieve({ userId: 'me' }),
+    const { data: profile } = $api.useQuery('get', '/users/{user_id}/', {
+        params: { path: { user_id: 'me' } },
+    }, {
         enabled: isLoggedIn(),
         meta: { showErrorToast: false },
+        select: (raw) => {
+            const user = raw as Record<string, unknown>;
+            return {
+                ...user,
+                theme:
+                    (user.theme as unknown) ?? (user.theme_settings as unknown) ?? null,
+            };
+        },
     });
 
     const [localTheme, setLocalTheme] = useState<ThemeConfig | null>(null);
@@ -94,15 +100,18 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
     // Mutation to update theme on server
     const updateThemeMutation = useMutation({
         mutationFn: async (theme: ThemeConfig) => {
-            return await usersApi.usersUpdate({
-                userId: 'me',
-                userUpdateRequest: { theme },
-            });
+            const { data, error, response } = await fetchClient.POST(
+                '/users/{user_id}/',
+                {
+                    params: { path: { user_id: 'me' } },
+                    body: { theme } as any,
+                },
+            );
+            if (error) throw { response };
+            return data;
         },
-        onSuccess: (data) => {
-            // Update query cache with new profile data
-            const meKey = queryKeys.users.detail('me');
-            queryClient.setQueryData(meKey, data);
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['get', '/users/{user_id}/'] });
         },
         meta: {
             suppressNotification: true, // Theme changes are silent

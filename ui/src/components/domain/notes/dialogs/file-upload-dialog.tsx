@@ -21,15 +21,14 @@ import {
 } from '@/components/ui/file-upload';
 import { Spinner } from '@/components/ui/spinner';
 import { parseAPIError } from '@/utils/api';
-import { useApi } from '@hooks';
 import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
-import type {
-    FileReferenceWithNote,
-    FileUploadFinalizeRequest,
-} from '@services/cradle/models';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import { uploadFile } from '@utils/files';
 import React, { useCallback, useState } from 'react';
 import { toast } from 'sonner';
+
+type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 
 type FileUploadStatus = 'pending' | 'uploading' | 'success' | 'error';
 
@@ -75,7 +74,6 @@ export default function FileUploadDialog({
     initialFiles = [],
     noteId,
 }: FileUploadDialogProps): React.JSX.Element {
-    const { fileTransferApi } = useApi();
     const [pendingFiles, setPendingFiles] = useState<File[]>(initialFiles);
     const [filesWithStatus, setFilesWithStatus] = useState<FileWithStatus[]>([]);
     const [isUploading, setIsUploading] = useState(false);
@@ -120,35 +118,41 @@ export default function FileUploadDialog({
                 updateFileStatus(file, 'uploading', 10);
 
                 // Step 1: Request presigned URL from backend
-                const uploadResponse = await fileTransferApi.fileTransferUploadRetrieve(
-                    {
-                        fileName: file.name,
-                        fileSize: file.size,
-                    },
-                );
+                const {
+                    data: uploadData,
+                    error: uploadError,
+                    response: uploadResp,
+                } = await fetchClient.GET('/file-transfer/upload/', {
+                    params: { query: { fileName: file.name, fileSize: file.size } },
+                });
+                if (uploadError) throw { response: uploadResp };
 
                 updateFileStatus(file, 'uploading', 30);
 
                 // Step 2: Upload file directly to presigned URL
-                await uploadFile(uploadResponse.presignedUrl, file);
+                await uploadFile(uploadData.presigned_url, file);
 
                 updateFileStatus(file, 'uploading', 70);
 
                 // Step 3: Finalize upload with note_id
-                const finalizeRequest: FileUploadFinalizeRequest = noteId
-                    ? { noteId }
-                    : {};
-                const finalizeResponse =
-                    await fileTransferApi.fileTransferUploadFinalizeCreate({
-                        uploadId: uploadResponse.uploadId,
-                        fileUploadFinalizeRequest: finalizeRequest,
-                    });
+                const {
+                    data: finalizeData,
+                    error: finalizeError,
+                    response: finalizeResp,
+                } = await fetchClient.POST(
+                    '/file-transfer/upload/{upload_id}/finalize/',
+                    {
+                        params: { path: { upload_id: uploadData.upload_id } },
+                        body: noteId ? { note_id: noteId } : {},
+                    },
+                );
+                if (finalizeError) throw { response: finalizeResp };
 
                 updateFileStatus(file, 'success', 100);
 
                 newFiles.push({
-                    id: finalizeResponse.fileId,
-                    fileName: finalizeResponse.fileName,
+                    id: finalizeData.file_id,
+                    fileName: finalizeData.file_name,
                 } as FileReferenceWithNote);
             } catch (error) {
                 const parsed = await parseAPIError(error);
@@ -183,7 +187,7 @@ export default function FileUploadDialog({
         }
 
         setIsUploading(false);
-    }, [pendingFiles, fileTransferApi, noteId, files, onFilesChange, filesWithStatus]);
+    }, [pendingFiles, noteId, files, onFilesChange, filesWithStatus]);
 
     const getFileStatus = (file: File): FileWithStatus | undefined => {
         return filesWithStatus.find((f) => f.file === file);

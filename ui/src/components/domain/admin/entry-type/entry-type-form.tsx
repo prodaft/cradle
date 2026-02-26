@@ -35,21 +35,19 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import useApi from '@/hooks/api/use-api';
-import { queryKeys } from '@/hooks/query';
 import { SelectOption } from '@/types';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-    EntryClass,
-    EntryClassRequest,
-    EntryClassRequestTypeEnum,
-} from '@services/cradle/models';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 import OfflineIndicator from '../../../feedback/offline-indicator';
+
+type EntryClass = components['schemas']['EntryClass'];
+type EntryClassRequest = components['schemas']['EntryClassRequest'];
 
 interface EntryTypeFormProps {
     id?: string | null;
@@ -62,7 +60,7 @@ interface ChildOption extends SelectOption<string> {
 }
 
 interface TypeOption extends SelectOption<string> {
-    value: EntryClassRequestTypeEnum;
+    value: EntryClassRequest['type'];
     label: string;
 }
 
@@ -72,8 +70,8 @@ interface FormatOption extends SelectOption<string> {
 }
 
 const typeOptions: TypeOption[] = [
-    { value: EntryClassRequestTypeEnum.Artifact, label: 'Artifact' },
-    { value: EntryClassRequestTypeEnum.Entity, label: 'Entity' },
+    { value: 'artifact', label: 'Artifact' },
+    { value: 'entity', label: 'Entity' },
 ];
 
 const formatOptions: FormatOption[] = [
@@ -85,10 +83,7 @@ const formatOptions: FormatOption[] = [
 const entryTypeSchema = z.object({
     type: z.object(
         {
-            value: z.enum([
-                EntryClassRequestTypeEnum.Artifact,
-                EntryClassRequestTypeEnum.Entity,
-            ]),
+            value: z.enum(['artifact', 'entity'] as const),
             label: z.string().min(1),
         },
         {
@@ -112,7 +107,6 @@ const entryTypeSchema = z.object({
 type EntryTypeFormValues = z.infer<typeof entryTypeSchema>;
 
 export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) {
-    const { entriesApi } = useApi();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
 
     const {
@@ -138,30 +132,33 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         },
     });
 
-    // Fetch entry type details in edit mode
     const {
         data: entryTypeData,
         isLoading: isEntryTypeLoading,
         isPaused: isEntryTypePaused,
-    } = useQuery({
-        queryKey: queryKeys.entryTypes.detail(id!),
-        queryFn: () => entriesApi.entryClassesRetrieve({ classSubtype: id! }),
-        enabled: !!id,
-        meta: {
-            showErrorToast: true,
+    } = $api.useQuery(
+        'get',
+        '/entries/entry_classes/{class_subtype}/',
+        { params: { path: { class_subtype: id! } } },
+        {
+            enabled: !!id,
+            meta: { showErrorToast: true },
         },
-    });
+    );
 
     const {
         data: entryClassesListData,
         isLoading: isEntryTypesListLoading,
         isPaused: isEntryTypesListPaused,
-    } = useQuery({
-        queryKey: queryKeys.entryTypes.lists(),
-        queryFn: () => entriesApi.entryClassesList(),
-        refetchOnWindowFocus: false,
-        meta: { showErrorToast: false, suppressNotification: true },
-    });
+    } = $api.useQuery(
+        'get',
+        '/entries/entry_classes/',
+        {},
+        {
+            refetchOnWindowFocus: false,
+            meta: { showErrorToast: false, suppressNotification: true },
+        },
+    );
 
     const entryTypes = useMemo<ChildOption[]>(() => {
         const results = entryClassesListData?.results ?? [];
@@ -181,14 +178,14 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
             description: entryTypeData.description || '',
             prefix: entryTypeData.prefix || '',
             color: entryTypeData.color || colorGenerator.nextHexColor(),
-            generativeRegex: entryTypeData.generativeRegex || '',
+            generativeRegex: entryTypeData.generative_regex || '',
             typeFormat:
                 formatOptions.find((o) => o.value === entryTypeData.format) ||
                 formatOptions[0],
             regex: entryTypeData.regex || '',
             options: entryTypeData.options || '',
             children:
-                entryTypeData.childrenDetail?.map((x: any) => ({
+                entryTypeData.children_detail?.map((x: any) => ({
                     value: x.subtype,
                     label: x.subtype,
                 })) || [],
@@ -200,10 +197,15 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
 
     const updateEntryTypeMutation = useMutation({
         mutationFn: async (payload: EntryClassRequest) => {
-            return await entriesApi.entryClassesUpdate({
-                classSubtype: id!,
-                entryClassRequest: payload,
-            });
+            const { data, error, response } = await fetchClient.POST(
+                '/entries/entry_classes/{class_subtype}/',
+                {
+                    params: { path: { class_subtype: id! } },
+                    body: payload,
+                },
+            );
+            if (error) throw { response };
+            return data;
         },
         meta: {
             successMessage: 'Entry type updated successfully!',
@@ -215,7 +217,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
 
     const onSubmit = async (data: EntryTypeFormValues) => {
         const payload: EntryClassRequest = {
-            generativeRegex: data.generativeRegex,
+            generative_regex: data.generativeRegex,
             format:
                 !data.typeFormat || data.typeFormat.value === 'any'
                     ? null
@@ -244,8 +246,8 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
 
     const watchType = watch('type');
     const watchTypeFormat = watch('typeFormat');
-    const isArtifact = watchType.value === EntryClassRequestTypeEnum.Artifact;
-    const isEntity = watchType.value === EntryClassRequestTypeEnum.Entity;
+    const isArtifact = watchType.value === 'artifact';
+    const isEntity = watchType.value === 'entity';
     const isOptions = watchTypeFormat?.value === 'options';
     const isRegex = watchTypeFormat?.value === 'regex';
 

@@ -1,8 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/use-api';
-import type { BaseDigest } from '@services/cradle/models';
+import { fetchClient } from '@services/openapi/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { debounce } from 'lodash';
@@ -61,7 +60,6 @@ export default function DigestData() {
         return Number.isFinite(parsed) && parsed > 0 ? parsed : 20;
     })();
 
-    const { intelioApi } = useApi();
     const [uploadDigestDialogOpen, setUploadDigestDialogOpen] = useState(false);
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
@@ -136,17 +134,23 @@ export default function DigestData() {
         return searchQueryParams;
     }, [page, pageSize, sortField, sortDirection, columnFilters, submittedFilters]);
 
-    // Query for digests
     const { data: digestsData, isLoading } = useQuery({
         queryKey: ['digests', queryParams],
-        queryFn: () => intelioApi.intelioDigestRetrieve(queryParams),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/intelio/digest/',
+                { params: { query: queryParams as any } },
+            );
+            if (error) throw { response };
+            return data;
+        },
         meta: {
             showErrorToast: true,
         },
     });
 
-    const digests = (digestsData?.results ?? []) as BaseDigest[];
-    const totalPages = digestsData?.totalPages ?? 1;
+    const digests = (digestsData as any)?.results ?? [];
+    const totalPages = (digestsData as any)?.total_pages ?? 1;
 
     // Initialize filters from URL parameters
     useEffect(() => {

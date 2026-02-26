@@ -2,7 +2,9 @@
  * Dashboard utilities for organizing and rendering dashboard content
  */
 
-import { EntryListCompressedTree } from '@/services/cradle';
+import type { components } from '@services/openapi/schema';
+
+type EntryListCompressedTree = components['schemas']['EntryListCompressedTree'];
 
 /**
  * Dashboard entry structure

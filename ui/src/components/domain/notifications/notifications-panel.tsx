@@ -1,11 +1,13 @@
-import useApi from '@/hooks/api/use-api';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Loading from 'src/components/base/loading/loading';
-import { Notification } from 'src/services/cradle';
 import NotificationCard from './notification-card';
+
+type Notification = components['schemas']['Notification'];
 
 interface NotificationsPanelProps {
     unreadNotificationsCount: number;
@@ -26,22 +28,26 @@ export default function NotificationsPanel({
     unreadNotificationsCount,
     setUnreadNotificationsCount,
 }: NotificationsPanelProps) {
-    const { notificationsApi } = useApi();
     const [flaggedNotificationsCount, setFlaggedNotificationsCount] = useState(0);
     const parentRef = useRef<HTMLDivElement>(null);
 
-    // Infinite query for paginated notifications
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch } =
         useInfiniteQuery({
             queryKey: ['notifications'],
             queryFn: async ({ pageParam }) => {
-                return notificationsApi.notificationsRetrieve({
-                    page: pageParam,
-                    pageSize: PAGE_SIZE,
-                });
+                const { data, error, response } = await fetchClient.GET(
+                    '/notifications/',
+                    {
+                        params: {
+                            query: { page: pageParam, page_size: PAGE_SIZE },
+                        },
+                    },
+                );
+                if (error) throw { response };
+                return data!;
             },
             getNextPageParam: (lastPage) => {
-                if (lastPage.page < lastPage.totalPages) {
+                if (lastPage.page < lastPage.total_pages) {
                     return lastPage.page + 1;
                 }
                 return undefined;
@@ -60,7 +66,7 @@ export default function NotificationsPanel({
     // Calculate flagged notifications count from loaded notifications
     const calculatedFlaggedCount = useMemo(() => {
         return notifications.filter(
-            (notification: Notification) => notification.isMarkedUnread,
+            (notification: Notification) => notification.is_marked_unread,
         ).length;
     }, [notifications]);
 
@@ -91,7 +97,8 @@ export default function NotificationsPanel({
     // Setup virtualizer for the notifications list
     const virtualizer = useVirtualizer({
         count: hasNextPage ? notifications.length + 1 : notifications.length,
-        getScrollElement: () => parentRef.current?.parentElement as HTMLDivElement | null,
+        getScrollElement: () =>
+            parentRef.current?.parentElement as HTMLDivElement | null,
         estimateSize: () => ESTIMATED_NOTIFICATION_HEIGHT,
         overscan: OVERSCAN,
     });

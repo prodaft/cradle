@@ -1,5 +1,5 @@
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClockCounterClockwiseIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
