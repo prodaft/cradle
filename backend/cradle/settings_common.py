@@ -13,10 +13,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "../media")
 
-# CORS_ALLOW_HEADERS = ["*"]
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS: restrict to allowed origins (set CORS_ALLOWED_ORIGINS in env or settings_docker)
 CORS_ALLOW_CREDENTIALS = True
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOWED_ORIGINS = []
 
 
 # Application definition
@@ -141,6 +140,9 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "core.openapi.CradleAutoSchema",
     "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
     "EXCEPTION_HANDLER": "core.exception_handler.custom_exception_handler",
+    "DEFAULT_THROTTLE_RATES": {
+        "auth": "10/minute",
+    },
 }
 
 SPECTACULAR_SETTINGS = {
@@ -182,6 +184,8 @@ JWT_COOKIE_PATH = "/"
 OAUTH_METHODS = []
 # OAuth provider settings used by backend OAuth flows.
 OAUTH_PROVIDERS = {}
+# Allowed redirect_uri origins for OAuth (scheme + netloc). Override in settings_docker.
+OAUTH_REDIRECT_URI_WHITELIST = []
 
 
 def build_oauth_methods(oauth_providers: dict) -> list[dict]:
@@ -198,6 +202,14 @@ def build_oauth_methods(oauth_providers: dict) -> list[dict]:
         methods.append(method)
     return methods
 
+
+# Cache for rate limiting (throttling). Uses local memory by default.
+# Override with Redis in production for multi-worker deployments.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
 
 ROOT_URLCONF = "cradle.urls"
 

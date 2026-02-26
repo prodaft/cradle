@@ -1,3 +1,4 @@
+import { useAuthState } from '@/hooks/auth/use-auth';
 import { AppSidebar } from '@/components/layout/sidebar/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
@@ -20,6 +21,7 @@ import Navbar from '../navbar/navbar';
  * ```
  */
 export default function MainLayout(): React.JSX.Element {
+    const { isInitializing } = useAuthState();
     const [showNotifications, setShowNotifications] = useState(false);
     const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
     const [panelWidth, setPanelWidth] = useState(384); // 24rem default
@@ -56,6 +58,14 @@ export default function MainLayout(): React.JSX.Element {
             }
         };
     }, []);
+
+    if (isInitializing) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <Spinner className="size-10" />
+            </div>
+        );
+    }
 
     return (
         <SidebarProvider defaultOpen={false}>

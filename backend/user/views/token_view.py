@@ -15,6 +15,7 @@ from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from core.openapi import get_error_responses, get_validation_error_response
+from core.throttling import AuthRateThrottle
 from ..exceptions import (
     EmailNotConfirmedException,
     AccountNotActivatedException,
@@ -88,6 +89,7 @@ def create_or_update_session(request: Request, user, refresh_token: RefreshToken
 
 class TokenObtainPairLogView(TokenObtainPairView):
     serializer_class = TokenObtainSerializer
+    throttle_classes = [AuthRateThrottle]
 
     @extend_schema(
         description="Obtain a new pair of access and refresh tokens by providing valid user credentials. If 2FA is enabled for the user, a two_factor_token must be provided.",  # noqa: E501
@@ -177,6 +179,8 @@ class TokenObtainPairLogView(TokenObtainPairView):
     )
 )
 class TokenRefreshLogView(TokenRefreshView):
+    throttle_classes = [AuthRateThrottle]
+
     @extend_schema(
         description="Refresh the access token using a valid refresh token.",
         request=TokenRefreshSerializer,
@@ -262,6 +266,7 @@ class TokenRefreshLogView(TokenRefreshView):
 )
 class LogoutView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [AuthRateThrottle]
 
     def post(self, request: Request) -> Response:
         refresh_cookie_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")

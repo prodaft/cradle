@@ -69,6 +69,12 @@ BASE_URL = ""
 STATIC_URL = "static/"
 FRONTEND_URL = "http://localhost:5173"
 
+CORS_ALLOWED_ORIGINS = [
+    FRONTEND_URL,
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "mail.prodaft.com"
 EMAIL_PORT = 587
@@ -105,3 +111,8 @@ OAUTH_PROVIDERS = {
 }
 
 OAUTH_METHODS = build_oauth_methods(OAUTH_PROVIDERS)
+OAUTH_REDIRECT_URI_WHITELIST = [
+    FRONTEND_URL,
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]

@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, cast
+from urllib.parse import urlsplit
 
+from django.conf import settings
 from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
@@ -227,6 +229,16 @@ class OAuthConnectSerializer(serializers.Serializer):
     provider = serializers.CharField()
     code = serializers.CharField()
     redirect_uri = serializers.URLField()
+
+    def validate_redirect_uri(self, value: str) -> str:
+        whitelist = getattr(settings, "OAUTH_REDIRECT_URI_WHITELIST", [])
+        if not whitelist:
+            return value
+        parsed = urlsplit(value)
+        origin = f"{parsed.scheme}://{parsed.netloc}"
+        if origin.rstrip("/") not in [o.rstrip("/") for o in whitelist]:
+            raise serializers.ValidationError("redirect_uri is not allowed.")
+        return value
 
 
 class UserConfigSerializer(serializers.Serializer):

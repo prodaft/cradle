@@ -24,8 +24,12 @@ sentry_sdk.init(
 )
 
 SECRET_KEY = env.str("SECRET_KEY", "django-insecure-default-secret-key")
-
 DEBUG = env.bool("DEBUG", False)
+
+if not DEBUG and SECRET_KEY == "django-insecure-default-secret-key":
+    raise ValueError(
+        "SECRET_KEY must be set in production. Set the SECRET_KEY environment variable."
+    )
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", ["localhost", "127.0.0.1"])
 
@@ -79,6 +83,18 @@ AWS_S3_ADDRESSING_STYLE = "path"
 BASE_URL = env.str("BASE_URL", "")
 STATIC_URL = env.str("STATIC_URL", "static/")
 FRONTEND_URL = env.str("FRONTEND_URL", "http://localhost:5173")
+
+# CORS: allow FRONTEND_URL and any additional origins from env
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS",
+    [FRONTEND_URL, "http://localhost:5173", "http://127.0.0.1:5173"],
+)
+
+# OAuth redirect_uri must match one of these origins (scheme + netloc)
+OAUTH_REDIRECT_URI_WHITELIST = env.list(
+    "OAUTH_REDIRECT_URI_WHITELIST",
+    CORS_ALLOWED_ORIGINS,
+)
 
 RABBITMQ_URL = env.str("RABBITMQ_URL", None)
 REDIS_URL = env.str("REDIS_URL", None)

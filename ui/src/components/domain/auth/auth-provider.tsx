@@ -26,7 +26,26 @@ function getStorageItem(key: string): string | null {
     }
 }
 
+function setStorageItem(key: string, value: string): void {
+    if (typeof window === 'undefined') return;
+    try {
+        localStorage.setItem(key, value);
+    } catch {
+        // ignore storage failures (private mode, blocked storage, quota)
+    }
+}
+
+function removeStorageItem(key: string): void {
+    if (typeof window === 'undefined') return;
+    try {
+        localStorage.removeItem(key);
+    } catch {
+        // ignore storage failures (private mode, blocked storage, quota)
+    }
+}
+
 function getCsrfToken(): string | null {
+    if (typeof document === 'undefined') return null;
     const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
     return match ? decodeURIComponent(match[1]) : null;
 }
@@ -52,6 +71,7 @@ export interface AuthStateValue {
     basePath: string;
     isAdmin: boolean;
     isEntryManager: boolean;
+    isInitializing: boolean;
 }
 
 export interface AuthActionsValue {
@@ -95,6 +115,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (storedRole) setRole(storedRole);
         if (storedUserId) setUserId(storedUserId);
     }, []);
+
+    const [isInitializing, setIsInitializing] = useState(true);
     const basePath = getBaseUrl();
 
     const fetchClient = useMemo(
@@ -103,7 +125,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     );
 
     const accessTokenRef = useRef('');
-    const refreshTokenRef = useRef('');
     const accessExpiresAtRef = useRef<string | null>(
         getStorageItem('access_expires_at') || null,
     );
@@ -112,7 +133,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     );
 
     const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const lastNetworkErrorLogRef = useRef<number>(0);
+    const refreshInFlightRef = useRef<Promise<boolean> | null>(null);
     const refreshAccessTokenRef = useRef<() => Promise<boolean>>(async () => false);
 
     const isLoggedIn = useCallback(() => {
@@ -146,21 +167,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const storeTokens = useCallback(
         (data: TokenData) => {
             accessTokenRef.current = data.access;
-            refreshTokenRef.current = data.refresh;
             accessExpiresAtRef.current = data.accessExpiresAt.toISOString();
             refreshExpiresAtRef.current = data.refreshExpiresAt.toISOString();
 
             setClientAccessToken(data.access);
 
-            localStorage.setItem(
-                'access_expires_at',
-                data.accessExpiresAt.toISOString(),
-            );
-            localStorage.setItem(
-                'refresh_expires_at',
-                data.refreshExpiresAt.toISOString(),
-            );
-            localStorage.setItem('role', data.role);
+            setStorageItem('access_expires_at', data.accessExpiresAt.toISOString());
+            setStorageItem('refresh_expires_at', data.refreshExpiresAt.toISOString());
+            setStorageItem('role', data.role);
 
             setRole(data.role);
             scheduleTokenRefresh();
@@ -170,16 +184,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const clearTokens = useCallback(() => {
         accessTokenRef.current = '';
-        refreshTokenRef.current = '';
         accessExpiresAtRef.current = null;
         refreshExpiresAtRef.current = null;
 
         setClientAccessToken(null);
 
-        localStorage.removeItem('access_expires_at');
-        localStorage.removeItem('refresh_expires_at');
-        localStorage.removeItem('role');
-        localStorage.removeItem('user_id');
+        removeStorageItem('access_expires_at');
+        removeStorageItem('refresh_expires_at');
+        removeStorageItem('role');
+        removeStorageItem('user_id');
 
         setRole('');
         setUserId(null);
@@ -191,45 +204,71 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, []);
 
     const refreshAccessToken = useCallback(async (): Promise<boolean> => {
+        if (refreshInFlightRef.current) {
+            return refreshInFlightRef.current;
+        }
+
         if (!isLoggedIn()) {
             clearTokens();
             throw new SessionExpiredException('No refresh token available');
         }
 
-        try {
-            const { data, error, response } = await fetchClient.POST('/auth/refresh/', {
-                body: { refresh: refreshTokenRef.current } as any,
-                headers: {
-                    'X-CSRFToken': getCsrfToken() ?? '',
-                },
-            });
+        refreshInFlightRef.current = (async () => {
+            try {
+                const { data, error, response } = await fetchClient.POST('/auth/refresh/', {
+                    body: {} as any,
+                    headers: {
+                        'X-CSRFToken': getCsrfToken() ?? '',
+                    },
+                });
 
-            if (error || !data) {
-                throw { response };
+                if (error || !data) {
+                    if (response?.status === 401 || response?.status === 403) {
+                        clearTokens();
+                    }
+                    return false;
+                }
+
+                const tokenData: TokenData = {
+                    access: data.access,
+                    refresh: data.refresh,
+                    accessExpiresAt: new Date(data.access_expires_at),
+                    refreshExpiresAt: new Date(data.refresh_expires_at),
+                    role: data.role,
+                };
+
+                storeTokens(tokenData);
+                return true;
+            } catch {
+                return false;
+            } finally {
+                refreshInFlightRef.current = null;
             }
+        })();
 
-            const tokenData: TokenData = {
-                access: data.access,
-                refresh: data.refresh,
-                accessExpiresAt: new Date(data.access_expires_at),
-                refreshExpiresAt: new Date(data.refresh_expires_at),
-                role: data.role,
-            };
-
-            storeTokens(tokenData);
-            return true;
-        } catch (error: any) {
-            if (error instanceof SessionExpiredException) {
-                throw error;
-            }
-
-            const now = Date.now();
-            if (now - lastNetworkErrorLogRef.current > 5000) {
-                lastNetworkErrorLogRef.current = now;
-            }
-            return false;
-        }
+        return refreshInFlightRef.current;
     }, [fetchClient, storeTokens, clearTokens, isLoggedIn]);
+
+    const restoreSession = useCallback(async () => {
+        if (!isLoggedIn()) {
+            setIsInitializing(false);
+            return;
+        }
+        try {
+            const ok = await refreshAccessToken();
+            if (!ok) {
+                clearTokens();
+            }
+        } catch {
+            clearTokens();
+        } finally {
+            setIsInitializing(false);
+        }
+    }, [clearTokens, isLoggedIn, refreshAccessToken]);
+
+    useEffect(() => {
+        void restoreSession();
+    }, [restoreSession]);
 
     useEffect(() => {
         refreshAccessTokenRef.current = refreshAccessToken;
@@ -238,26 +277,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const getAccessToken = useCallback(async (): Promise<string> => {
         const accessExpiresAt = accessExpiresAtRef.current;
 
-        if (!accessExpiresAt) {
-            throw new AuthTokenException('No access token available');
+        if (!accessTokenRef.current) {
+            if (!isLoggedIn()) {
+                throw new AuthTokenException('No access token available');
+            }
+            const ok = await refreshAccessToken();
+            if (!ok || !accessTokenRef.current) {
+                clearTokens();
+                throw new SessionExpiredException('Unable to refresh access token');
+            }
         }
 
-        const expiresAt = new Date(accessExpiresAt);
-        const now = new Date();
+        if (accessExpiresAt) {
+            const expiresAt = new Date(accessExpiresAt);
+            const now = new Date();
 
-        if (expiresAt.getTime() - now.getTime() < 60000) {
-            try {
-                await refreshAccessToken();
-            } catch (error) {
-                if (error instanceof SessionExpiredException) {
+            if (expiresAt.getTime() - now.getTime() < 60000) {
+                const ok = await refreshAccessToken();
+                if (!ok || !accessTokenRef.current) {
                     clearTokens();
-                    throw error;
+                    throw new SessionExpiredException('Unable to refresh access token');
                 }
             }
         }
 
+        if (!accessTokenRef.current) {
+            throw new AuthTokenException('No access token available');
+        }
+
         return accessTokenRef.current;
-    }, [refreshAccessToken, clearTokens]);
+    }, [clearTokens, isLoggedIn, refreshAccessToken]);
 
     const logIn = useCallback(
         async (
@@ -304,7 +353,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         );
                         const extractedUserId = payload.user_id || payload.sub || null;
                         if (extractedUserId) {
-                            localStorage.setItem('user_id', extractedUserId);
+                            setStorageItem('user_id', extractedUserId);
                             setUserId(extractedUserId);
                         }
                     }
@@ -394,7 +443,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         (data: TokenData) => {
             storeTokens(data);
             if (data.user_id !== undefined) {
-                localStorage.setItem('user_id', data.user_id || '');
+                if (data.user_id) {
+                    setStorageItem('user_id', data.user_id);
+                } else {
+                    removeStorageItem('user_id');
+                }
                 setUserId(data.user_id || null);
             }
         },
@@ -416,6 +469,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
         };
     }, [isLoggedIn, scheduleTokenRefresh]);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const onStorage = (event: StorageEvent) => {
+            if (
+                event.key === 'refresh_expires_at' &&
+                event.newValue === null
+            ) {
+                clearTokens();
+            }
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
+    }, [clearTokens]);
+
     const stateValue = useMemo<AuthStateValue>(
         () => ({
             role,
@@ -424,8 +491,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             basePath,
             isAdmin,
             isEntryManager,
+            isInitializing,
         }),
-        [role, userId, isLoading, basePath, isAdmin, isEntryManager],
+        [role, userId, isLoading, basePath, isAdmin, isEntryManager, isInitializing],
     );
 
     const actionsValue = useMemo<AuthActionsValue>(

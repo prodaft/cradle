@@ -26,6 +26,11 @@ class FileTransferErrorCodes(ErrorCode):
         "File Reference Not Found",
         "file-reference-not-found",
     )
+    FILE_ACCESS_DENIED = (
+        status.HTTP_403_FORBIDDEN,
+        "Access Denied",
+        "file-access-denied",
+    )
     INVALID_REQUEST_BODY = (
         status.HTTP_400_BAD_REQUEST,
         "Invalid Request Body",
@@ -80,6 +85,12 @@ class FileReferenceNotFoundException(CradleAPIException):
     """Exception raised when file reference is not found"""
 
     error_code = FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND
+
+
+class FileAccessDeniedException(CradleAPIException):
+    """Exception raised when user does not have access to the file"""
+
+    error_code = FileTransferErrorCodes.FILE_ACCESS_DENIED
 
 
 class InvalidRequestBodyException(CradleAPIException):

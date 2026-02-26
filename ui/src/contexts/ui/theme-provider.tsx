@@ -7,7 +7,7 @@
  * - Else → fallback to localStorage
  */
 
-import { useAuthActions } from '@/hooks/auth/use-auth';
+import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import type { ThemeConfig, ThemeContextValue } from '@/types/index';
 import { darkTheme, lightTheme } from '@/utils/themes';
 import { $api, fetchClient } from '@services/openapi/client';
@@ -73,11 +73,12 @@ export interface ThemeProviderProps {
  */
 export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Element {
     const { isLoggedIn } = useAuthActions();
+    const { isInitializing } = useAuthState();
     const queryClient = useQueryClient();
     const { data: profile } = $api.useQuery('get', '/users/{user_id}/', {
         params: { path: { user_id: 'me' } },
     }, {
-        enabled: isLoggedIn(),
+        enabled: isLoggedIn() && !isInitializing,
         meta: { showErrorToast: false },
         select: (raw) => {
             const user = raw as Record<string, unknown>;

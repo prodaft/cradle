@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from core.exceptions import ValidationException
+from core.throttling import AuthRateThrottle
 from user.exceptions import (
     AccountNotActivatedException,
     EmailNotConfirmedException,
@@ -170,6 +171,7 @@ class OAuthConnectView(APIView):
 class OAuthLoginView(APIView):
     authentication_classes = []
     permission_classes = []
+    throttle_classes = [AuthRateThrottle]
 
     def post(self, request):
         serializer = OAuthConnectSerializer(data=request.data)

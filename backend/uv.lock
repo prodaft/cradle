@@ -627,6 +627,7 @@ dependencies = [
     { name = "minio" },
     { name = "mistune" },
     { name = "mwdblib" },
+    { name = "pathvalidate" },
     { name = "psycopg2-binary" },
     { name = "pycti" },
     { name = "pydantic" },
@@ -688,6 +689,7 @@ requires-dist = [
     { name = "minio", specifier = "==7.2.20" },
     { name = "mistune", specifier = "==3.2.0" },
     { name = "mwdblib", specifier = ">=4.7.0" },
+    { name = "pathvalidate", specifier = ">=3.3.1" },
     { name = "psycopg2-binary", specifier = "==2.9.11" },
     { name = "pycti", specifier = "==7.260224.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
@@ -1551,6 +1553,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/81/76/a1e769043c0c0c9fe391b702539d594731a4362334cdf4dc25d0c09761e7/parso-0.8.6.tar.gz", hash = "sha256:2b9a0332696df97d454fa67b81618fd69c35a7b90327cbe6ba5c92d2c68a7bfd", size = 401621, upload-time = "2026-02-09T15:45:24.425Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b6/61/fae042894f4296ec49e3f193aff5d7c18440da9e48102c3315e1bc4519a7/parso-0.8.6-py2.py3-none-any.whl", hash = "sha256:2c549f800b70a5c4952197248825584cb00f033b29c692671d3bf08bf380baff", size = 106894, upload-time = "2026-02-09T15:45:21.391Z" },
+]
+
+[[package]]
+name = "pathvalidate"
+version = "3.3.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/2a/52a8da6fe965dea6192eb716b357558e103aea0a1e9a8352ad575a8406ca/pathvalidate-3.3.1.tar.gz", hash = "sha256:b18c07212bfead624345bb8e1d6141cdcf15a39736994ea0b94035ad2b1ba177", size = 63262, upload-time = "2025-06-15T09:07:20.736Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9a/70/875f4a23bfc4731703a5835487d0d2fb999031bd415e7d17c0ae615c18b7/pathvalidate-3.3.1-py3-none-any.whl", hash = "sha256:5263baab691f8e1af96092fa5137ee17df5bdfbd6cff1fcac4d6ef4bc2e1735f", size = 24305, upload-time = "2025-06-15T09:07:19.117Z" },
 ]
 
 [[package]]

@@ -4,7 +4,7 @@
  *
  * Best practice recommendations:
  * - useAuth() - Convenience hook that combines state and actions (use for most components)
- * - useAuthState() - For state values only (role, userId, isLoading, basePath, isAdmin, isEntryManager)
+ * - useAuthState() - For state values only (role, userId, isLoading, basePath, isAdmin, isEntryManager, isInitializing)
  * - useAuthActions() - For actions only (logIn, logOut, getAccessToken, isLoggedIn, setTokensDirectly)
  *
  * For performance-sensitive components, use the split hooks to avoid unnecessary rerenders.

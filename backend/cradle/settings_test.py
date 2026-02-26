@@ -30,6 +30,8 @@ BASE_URL = ""
 STATIC_URL = "static/"
 FRONTEND_URL = "http://localhost:5173"
 
+CORS_ALLOWED_ORIGINS = [FRONTEND_URL, "http://localhost:5173", "http://127.0.0.1:5173"]
+OAUTH_REDIRECT_URI_WHITELIST = CORS_ALLOWED_ORIGINS
 
 RESULT_BACKEND = "redis://redis:6379/0"
 REDIS_URL = "redis://redis:6379/0"

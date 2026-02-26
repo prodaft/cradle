@@ -17,6 +17,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from core.exceptions import ValidationException
+from core.throttling import AuthRateThrottle
 from core.openapi import (
     get_common_error_responses,
     get_error_responses,
@@ -173,6 +174,7 @@ class UserList(APIView):
 class SignupView(APIView):
     authentication_classes = []
     permission_classes = []
+    throttle_classes = [AuthRateThrottle]
 
     def post(self, request):
         if not cradle_settings.users.allow_registration:
@@ -541,6 +543,7 @@ class APIKey(APIView):
 class EmailConfirm(APIView):
     permission_classes = ()
     authentication_classes = ()
+    throttle_classes = [AuthRateThrottle]
 
     def post(self, request):
         serializer = EmailConfirmSerializer(data=request.data)
@@ -589,6 +592,7 @@ class PasswordReset(APIView):
     permission_classes = ()
     authentication_classes = ()
     serializer_class = PasswordResetRequestSerializer
+    throttle_classes = [AuthRateThrottle]
 
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)

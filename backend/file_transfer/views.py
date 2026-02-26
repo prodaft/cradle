@@ -1,5 +1,7 @@
+import os
 import uuid
 
+from pathvalidate import sanitize_filename
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -12,6 +14,7 @@ from core.openapi import get_common_error_responses, get_error_responses
 from notes.models import Note
 
 from .exceptions import (
+    FileAccessDeniedException,
     FileReferenceNotFoundException,
     FileTransferErrorCodes,
     InvalidRequestBodyException,
@@ -37,6 +40,55 @@ from .uploads.exceptions import (
 
 # Download URL expiration time
 DOWNLOAD_EXPIRY_SECONDS = 7 * 24 * 60 * 60  # 7 days
+
+def _sanitize_filename(name: str | None, *, default: str | None = None) -> str:
+    """Sanitize filename: strip path traversal, replace invalid chars.
+    If default is set, return it on invalid input; otherwise raise InvalidFileNameException.
+    """
+    if not name or not name.strip():
+        if default is not None:
+            return default
+        raise InvalidFileNameException(detail="Invalid file name.")
+
+    base = os.path.basename(name.strip())
+    if not base:
+        if default is not None:
+            return default
+        raise InvalidFileNameException(detail="Invalid file name.")
+
+    def _on_empty(_):
+        if default is not None:
+            return default
+        raise InvalidFileNameException(detail="Invalid file name.")
+
+    try:
+        safe = sanitize_filename(
+            base,
+            replacement_text="_",
+            platform="universal",
+            max_len=255,
+            null_value_handler=_on_empty,
+        )
+        return safe if safe else (default or "")
+    except InvalidFileNameException:
+        raise
+    except Exception:
+        if default is not None:
+            return default
+        raise InvalidFileNameException(detail="Invalid file name.")
+
+
+def _user_can_access_file(file_reference, user) -> bool:
+    """Check if user has permission to access the file."""
+    if user.is_cradle_admin:
+        return True
+    if file_reference.note_id:
+        return Note.objects.get_accessible_notes(user).filter(id=file_reference.note_id).exists()
+    if file_reference.digest_id:
+        return file_reference.digest.user_id == user.id
+    if file_reference.user_id:
+        return file_reference.user_id == user.id
+    return False
 
 
 def get_storage():
@@ -178,6 +230,7 @@ class FileUpload(APIView):
         file_name = request.query_params.get("fileName")
         if not file_name:
             raise InvalidFileNameException(detail="The 'fileName' query parameter is required.")
+        file_name = _sanitize_filename(file_name)
 
         # Get and validate file size
         file_size_str = request.query_params.get("fileSize")
@@ -267,6 +320,7 @@ class FileUploadFinalize(APIView):
             **get_error_responses(
                 FileTransferErrorCodes.INVALID_FILE_NAME,
                 FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND,
+                FileTransferErrorCodes.FILE_ACCESS_DENIED,
             ),
             **get_common_error_responses(),
         },
@@ -299,6 +353,11 @@ class FileDownload(APIView):
         if not file_reference.file:
             raise MinioObjectNotFound(detail="File not found in storage.")
 
+        if not _user_can_access_file(file_reference, request.user):
+            raise FileAccessDeniedException(detail="You do not have access to this file.")
+
+        safe_filename = _sanitize_filename(file_reference.file_name, default="download")
+
         # Generate presigned URL for download
         storage = get_storage()
         presigned_url = storage.connection.meta.client.generate_presigned_url(
@@ -306,7 +365,7 @@ class FileDownload(APIView):
             Params={
                 "Bucket": storage.bucket_name,
                 "Key": file_reference.file.name,
-                "ResponseContentDisposition": f'attachment; filename="{file_reference.file_name}"',
+                "ResponseContentDisposition": f'attachment; filename="{safe_filename}"',
             },
             ExpiresIn=DOWNLOAD_EXPIRY_SECONDS,
         )
@@ -353,6 +412,8 @@ class FileProcess(APIView):
 
         try:
             file_reference = FileReference.objects.get(id=serializer.validated_data["file_id"])
+            if not _user_can_access_file(file_reference, request.user):
+                raise FileAccessDeniedException(detail="You do not have access to this file.")
             file_reference.process_file()
 
             return Response({"message": "File processing started"}, status=status.HTTP_200_OK)
@@ -404,6 +465,8 @@ class FileDelete(APIView):
 
         try:
             file_reference = FileReference.objects.get(id=file_id)
+            if not _user_can_access_file(file_reference, request.user):
+                raise FileAccessDeniedException(detail="You do not have access to this file.")
             file_reference.delete()
 
             return Response({"message": "File deleted successfully"}, status=status.HTTP_200_OK)
