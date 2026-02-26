@@ -121,9 +121,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             return data;
         },
         meta: {
-            invalidateQueries: [
-                { queryKey: ['get', '/users/{user_id}/sessions/'] },
-            ],
+            invalidateQueries: [{ queryKey: ['get', '/users/{user_id}/sessions/'] }],
             successMessage: 'Session revoked successfully',
         },
     });
@@ -210,14 +208,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 toast.error(parsed.detail);
             }
         },
-        [
-            userId,
-            fetchClient,
-            sessions,
-            queryClient,
-            logOut,
-            clearSelection,
-        ],
+        [userId, fetchClient, sessions, queryClient, logOut, clearSelection],
     );
 
     const openRevokeConfirmationDialog = useCallback((sessionId: string) => {

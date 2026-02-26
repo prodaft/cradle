@@ -87,15 +87,19 @@ export const queryClient = new QueryClient({
             const meta = (query.meta ?? {}) as AppMeta;
 
             void (async () => {
-                const res = await handleErrorCommon(error);
-                if (res.kind === 'sessionExpired') return;
-                if (res.ignore) return;
+                try {
+                    const res = await handleErrorCommon(error);
+                    if (res.kind === 'sessionExpired') return;
+                    if (res.ignore) return;
 
-                // Queries: opt-in toast (prevents refetch spam)
-                if (meta.showErrorToast) {
-                    toast.error(meta.errorMessage ?? res.parsed.detail, {
-                        duration: meta.duration ?? 5000,
-                    });
+                    // Queries: opt-in toast (prevents refetch spam)
+                    if (meta.showErrorToast) {
+                        toast.error(meta.errorMessage ?? res.parsed.detail, {
+                            duration: meta.duration ?? 5000,
+                        });
+                    }
+                } catch {
+                    toast.error('An error occurred');
                 }
             })();
         },
@@ -120,15 +124,20 @@ export const queryClient = new QueryClient({
             const meta = (mutation.meta ?? {}) as AppMeta;
 
             void (async () => {
-                const res = await handleErrorCommon(error);
-                if (res.kind === 'sessionExpired') return;
-                if (res.ignore) return;
+                try {
+                    const res = await handleErrorCommon(error);
+                    if (res.kind === 'sessionExpired') return;
+                    if (res.ignore) return;
 
-                if (!meta.suppressNotification) {
-                    // Mutations: toast by default
-                    toast.error(meta.errorMessage ?? res.parsed.detail, {
-                        duration: meta.duration ?? 5000,
-                    });
+                    if (!meta.suppressNotification) {
+                        toast.error(meta.errorMessage ?? res.parsed.detail, {
+                            duration: meta.duration ?? 5000,
+                        });
+                    }
+                } catch {
+                    if (!meta.suppressNotification) {
+                        toast.error('An error occurred');
+                    }
                 }
             })();
         },

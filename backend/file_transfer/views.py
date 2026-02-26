@@ -41,6 +41,7 @@ from .uploads.exceptions import (
 # Download URL expiration time
 DOWNLOAD_EXPIRY_SECONDS = 7 * 24 * 60 * 60  # 7 days
 
+
 def _sanitize_filename(name: str | None, *, default: str | None = None) -> str:
     """Sanitize filename: strip path traversal, replace invalid chars.
     If default is set, return it on invalid input; otherwise raise InvalidFileNameException.

@@ -1,7 +1,7 @@
-import { useAuthState } from '@/hooks/auth/use-auth';
 import { AppSidebar } from '@/components/layout/sidebar/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
+import { useAuthState } from '@/hooks/auth/use-auth';
 import { NotificationsPanel } from '@components/domain/notifications';
 import { Outlet } from '@tanstack/react-router';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
@@ -61,8 +61,8 @@ export default function MainLayout(): React.JSX.Element {
 
     if (isInitializing) {
         return (
-            <div className="flex items-center justify-center h-screen">
-                <Spinner className="size-10" />
+            <div className='flex items-center justify-center h-screen'>
+                <Spinner className='size-10' />
             </div>
         );
     }

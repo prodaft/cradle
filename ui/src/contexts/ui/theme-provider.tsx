@@ -75,20 +75,27 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
     const { isLoggedIn } = useAuthActions();
     const { isInitializing } = useAuthState();
     const queryClient = useQueryClient();
-    const { data: profile } = $api.useQuery('get', '/users/{user_id}/', {
-        params: { path: { user_id: 'me' } },
-    }, {
-        enabled: isLoggedIn() && !isInitializing,
-        meta: { showErrorToast: false },
-        select: (raw) => {
-            const user = raw as Record<string, unknown>;
-            return {
-                ...user,
-                theme:
-                    (user.theme as unknown) ?? (user.theme_settings as unknown) ?? null,
-            };
+    const { data: profile } = $api.useQuery(
+        'get',
+        '/users/{user_id}/',
+        {
+            params: { path: { user_id: 'me' } },
         },
-    });
+        {
+            enabled: isLoggedIn() && !isInitializing,
+            meta: { showErrorToast: false },
+            select: (raw) => {
+                const user = raw as Record<string, unknown>;
+                return {
+                    ...user,
+                    theme:
+                        (user.theme as unknown) ??
+                        (user.theme_settings as unknown) ??
+                        null,
+                };
+            },
+        },
+    );
 
     const [localTheme, setLocalTheme] = useState<ThemeConfig | null>(null);
 

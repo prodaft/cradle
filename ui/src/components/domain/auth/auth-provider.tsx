@@ -2,15 +2,15 @@ import { parseAPIError } from '@/utils/api';
 import { setClientAccessToken } from '@services/openapi/client';
 import type { paths } from '@services/openapi/schema';
 import createFetchClient from 'openapi-fetch';
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    createContext,
-    ReactNode,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
+    AuthActionsContext,
+    AuthStateContext,
+    type AuthActionsValue,
+    type AuthStateValue,
+    type LoginResult,
+    type TokenData,
+} from './auth-context';
 import { AuthTokenException, SessionExpiredException } from './auth-exceptions';
 
 const getBaseUrl = (): string => {
@@ -49,47 +49,6 @@ function getCsrfToken(): string | null {
     const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
     return match ? decodeURIComponent(match[1]) : null;
 }
-
-interface TokenData {
-    access: string;
-    refresh: string;
-    accessExpiresAt: Date;
-    refreshExpiresAt: Date;
-    role: string;
-    user_id?: string;
-}
-
-interface LoginResult {
-    result: string;
-    message?: string;
-}
-
-export interface AuthStateValue {
-    role: string;
-    userId: string | null;
-    isLoading: boolean;
-    basePath: string;
-    isAdmin: boolean;
-    isEntryManager: boolean;
-    isInitializing: boolean;
-}
-
-export interface AuthActionsValue {
-    logIn: (
-        username: string,
-        password: string,
-        twoFactorToken?: string | null,
-    ) => Promise<LoginResult>;
-    logOut: () => void;
-    getAccessToken: () => Promise<string>;
-    isLoggedIn: () => boolean;
-    setTokensDirectly: (data: TokenData) => void;
-}
-
-export interface AuthContextValue extends AuthStateValue, AuthActionsValue {}
-
-const AuthStateContext = createContext<AuthStateValue | undefined>(undefined);
-const AuthActionsContext = createContext<AuthActionsValue | undefined>(undefined);
 
 export const AuthResult = {
     SUCCESS: 'success',
@@ -215,12 +174,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         refreshInFlightRef.current = (async () => {
             try {
-                const { data, error, response } = await fetchClient.POST('/auth/refresh/', {
-                    body: {} as any,
-                    headers: {
-                        'X-CSRFToken': getCsrfToken() ?? '',
+                const { data, error, response } = await fetchClient.POST(
+                    '/auth/refresh/',
+                    {
+                        body: {} as any,
+                        headers: {
+                            'X-CSRFToken': getCsrfToken() ?? '',
+                        },
                     },
-                });
+                );
 
                 if (error || !data) {
                     if (response?.status === 401 || response?.status === 403) {
@@ -332,7 +294,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 );
 
                 if (error || !data) {
-                    throw { response };
+                    const parsed = error
+                        ? {
+                              code: (error as any).code || 'UNKNOWN_ERROR',
+                              detail: (error as any).detail || 'An error occurred',
+                          }
+                        : await parseAPIError({ response });
+                    throw { ...parsed, status: response?.status };
                 }
 
                 const tokenData: TokenData = {
@@ -364,7 +332,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 return { result: AuthResult.SUCCESS };
             } catch (error: any) {
                 try {
-                    const parsed = await parseAPIError(error);
+                    const parsed =
+                        error?.code != null
+                            ? { ...error, detail: error.detail || 'An error occurred' }
+                            : await parseAPIError(error);
                     if (
                         parsed.code === 'TWO_FACTOR_REQUIRED' ||
                         parsed.code === 'two-factor-required' ||
@@ -378,11 +349,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
                     if (
                         parsed.code === 'INVALID_TWO_FACTOR_TOKEN' ||
-                        parsed.code === 'invalid-two-factor-token'
+                        parsed.code === 'invalid-two-factor-token' ||
+                        parsed.detail?.toLowerCase?.().includes('invalid 2fa')
                     ) {
                         return {
                             result: AuthResult.INVALID_CREDENTIALS,
-                            message: parsed.detail || 'Invalid 2FA token',
+                            message: parsed.detail || 'Invalid 2FA code',
                         };
                     }
 
@@ -472,10 +444,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     useEffect(() => {
         if (typeof window === 'undefined') return;
         const onStorage = (event: StorageEvent) => {
-            if (
-                event.key === 'refresh_expires_at' &&
-                event.newValue === null
-            ) {
+            if (event.key === 'refresh_expires_at' && event.newValue === null) {
                 clearTokens();
             }
         };

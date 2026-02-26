@@ -2,6 +2,12 @@ from .settings_common import *  # noqa:F401,F403
 
 SECRET_KEY = "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&"
 
+# Disable auth rate limiting in tests (tests run many requests in quick succession)
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,  # noqa: F405
+    "DEFAULT_THROTTLE_RATES": {"auth": "10000/minute"},
+}
+
 DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]

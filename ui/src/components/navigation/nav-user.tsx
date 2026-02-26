@@ -32,8 +32,8 @@ export function NavUser() {
     const router = useRouter();
     const isCollapsed = state === 'collapsed';
 
-    const handleLogout = () => {
-        logOut();
+    const handleLogout = async () => {
+        await logOut();
         router.navigate({ to: '/login' });
     };
 

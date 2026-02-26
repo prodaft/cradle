@@ -56,8 +56,8 @@ export default function AccountSecurityActions({
             if (error) throw { response };
         },
         meta: { suppressNotification: true },
-        onSuccess: () => {
-            logOut();
+        onSuccess: async () => {
+            await logOut();
             router.navigate({ to: '/login', replace: true });
         },
     });

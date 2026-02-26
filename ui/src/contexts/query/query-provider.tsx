@@ -25,9 +25,9 @@ export function QueryProvider({ children }: QueryProviderProps) {
     const { logOut } = useAuthActions();
 
     useEffect(() => {
-        setSessionExpiredHandler(() => {
+        setSessionExpiredHandler(async () => {
             // Clear auth tokens to prevent redirect loops
-            logOut();
+            await logOut();
             // Navigate to login with current location for post-login redirect
             router.navigate({
                 to: '/login',

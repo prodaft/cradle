@@ -289,14 +289,12 @@ class LogoutView(APIView):
             access_name,
             path=kwargs["path"],
             domain=kwargs.get("domain"),
-            secure=kwargs["secure"],
             samesite=kwargs["samesite"],
         )
         response.delete_cookie(
             refresh_cookie_name,
             path=kwargs["path"],
             domain=kwargs.get("domain"),
-            secure=kwargs["secure"],
             samesite=kwargs["samesite"],
         )
         return response

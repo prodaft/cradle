@@ -72,12 +72,19 @@ export async function parseAPIError(error: any): Promise<ParsedAPIError> {
         };
     }
 
-    const data: APIErrorResponse = (await error.response.json()) || {};
+    let data: APIErrorResponse = {
+        status: error.response?.status ?? 500,
+    };
+    try {
+        data = (await error.response.json()) || data;
+    } catch {
+        // Response body empty, not JSON, or already consumed
+    }
 
     return {
         code: data.code || 'UNKNOWN_ERROR',
         detail: data.detail || 'An error occurred',
-        status: data.status,
+        status: data.status ?? error.response?.status ?? 500,
         title: data.title || 'Error',
         type: data.type,
         instance: data.instance || error.config?.url || 'unknown',
