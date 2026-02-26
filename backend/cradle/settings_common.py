@@ -62,6 +62,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -134,6 +135,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "user.authentication.APIKeyAuthentication",
+        "user.authentication.CookieJWTAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_SCHEMA_CLASS": "core.openapi.CradleAutoSchema",
@@ -165,7 +167,16 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
     "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
+
+# JWT HttpOnly cookie settings
+JWT_ACCESS_COOKIE_NAME = "access_token"
+JWT_REFRESH_COOKIE_NAME = "refresh_token"
+JWT_COOKIE_SECURE = True
+JWT_COOKIE_SAMESITE = "Lax"
+JWT_COOKIE_DOMAIN = None
+JWT_COOKIE_PATH = "/"
 
 # OAuth provider metadata exposed by the users/config endpoint.
 OAUTH_METHODS = []
@@ -190,6 +201,7 @@ def build_oauth_methods(oauth_providers: dict) -> list[dict]:
 
 ROOT_URLCONF = "cradle.urls"
 
+CSRF_COOKIE_NAME = "csrf_token"
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = "None"

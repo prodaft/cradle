@@ -34,7 +34,7 @@ const parseOAuthState = (stateValue: string | null): OAuthState | null => {
 
 export default function OAuthCallback() {
     const { basePath } = useAuthState();
-    const { isLoggedIn, getAccessToken, setTokensDirectly } = useAuthActions();
+    const { isLoggedIn, setTokensDirectly } = useAuthActions();
     const router = useRouter();
     const hasExchangedRef = useRef(false);
 
@@ -75,7 +75,6 @@ export default function OAuthCallback() {
                 if (!isLoggedIn()) {
                     throw new Error('You must be logged in to connect accounts.');
                 }
-                await getAccessToken();
             }
 
             const {

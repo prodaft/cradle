@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    '/access/entity/{entity_id}/': {
+    "/access/entity/{entity_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -15,7 +15,7 @@ export interface paths {
          * Get entity access privileges
          * @description Returns a list of all users with their access types for a specific entity. Only available to admin users.
          */
-        get: operations['access_entity_list'];
+        get: operations["access_entity_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -24,7 +24,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/access/request/{entity_id}/': {
+    "/access/request/{entity_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -37,14 +37,14 @@ export interface paths {
          * Request access to entity
          * @description Allows a user to request access for an entity. All users with read-write access for that specific entity will receive a notification. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.
          */
-        post: operations['access_request_create'];
+        post: operations["access_request_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/access/user/{user_id}/': {
+    "/access/user/{user_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -55,7 +55,7 @@ export interface paths {
          * Get user access privileges
          * @description Returns a list of all entities with their access types for a specific user. Only available to admin users.
          */
-        get: operations['access_user_list'];
+        get: operations["access_user_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -64,7 +64,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/access/user/{user_id}/{entity_id}/': {
+    "/access/user/{user_id}/{entity_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -76,7 +76,7 @@ export interface paths {
          * Update user access for entity
          * @description Updates a user's access privileges for a specific entity. Admin users can update access for non-admin users. Users with read-write access can update access for non-admin users who don't have read-write access.
          */
-        put: operations['access_user_update'];
+        put: operations["access_user_update"];
         post?: never;
         delete?: never;
         options?: never;
@@ -84,7 +84,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/auth/change_password/': {
+    "/auth/change_password/": {
         parameters: {
             query?: never;
             header?: never;
@@ -97,14 +97,14 @@ export interface paths {
          * Change Password
          * @description Allows authenticated users to change their password by providing their old password and a new password.
          */
-        post: operations['auth_change_password_create'];
+        post: operations["auth_change_password_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/auth/email_confirm/': {
+    "/auth/email_confirm/": {
         parameters: {
             query?: never;
             header?: never;
@@ -117,14 +117,14 @@ export interface paths {
          * Email confirmation
          * @description Confirms a user's email using the token sent to their email address.
          */
-        post: operations['auth_email_confirm_create'];
+        post: operations["auth_email_confirm_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/auth/login/': {
+    "/auth/login/": {
         parameters: {
             query?: never;
             header?: never;
@@ -137,14 +137,34 @@ export interface paths {
          * Obtain JWT Pair
          * @description Obtain a new pair of access and refresh tokens by providing valid user credentials. If 2FA is enabled for the user, a two_factor_token must be provided.
          */
-        post: operations['auth_login_create'];
+        post: operations["auth_login_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/auth/oauth/login/': {
+    "/auth/logout/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Logout
+         * @description Log out by blacklisting the refresh token, removing the session, and clearing JWT cookies.
+         */
+        post: operations["auth_logout_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/oauth/login/": {
         parameters: {
             query?: never;
             header?: never;
@@ -154,14 +174,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Login with OAuth provider */
-        post: operations['auth_oauth_login'];
+        post: operations["auth_oauth_login"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/auth/refresh/': {
+    "/auth/refresh/": {
         parameters: {
             query?: never;
             header?: never;
@@ -174,14 +194,14 @@ export interface paths {
          * Refresh Access Token
          * @description Refresh the access token using a valid refresh token.
          */
-        post: operations['auth_refresh_create'];
+        post: operations["auth_refresh_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/auth/reset_password/': {
+    "/auth/reset_password/": {
         parameters: {
             query?: never;
             header?: never;
@@ -193,19 +213,19 @@ export interface paths {
          * Reset password with token
          * @description Resets user password using a valid reset token and new password.
          */
-        put: operations['auth_reset_password_update'];
+        put: operations["auth_reset_password_update"];
         /**
          * Request password reset
          * @description Sends a password reset email to the user using their email address.
          */
-        post: operations['auth_reset_password_create'];
+        post: operations["auth_reset_password_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/auth/signup/': {
+    "/auth/signup/": {
         parameters: {
             query?: never;
             header?: never;
@@ -218,14 +238,14 @@ export interface paths {
          * User signup
          * @description Creates a new user account. Available to unauthenticated users.
          */
-        post: operations['auth_signup_create'];
+        post: operations["auth_signup_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/entries/entities/': {
+    "/entries/entities/": {
         parameters: {
             query?: never;
             header?: never;
@@ -236,20 +256,20 @@ export interface paths {
          * List entities
          * @description Returns a list of entities. For regular users, returns only entities they have access to. For admin users, returns all entities.
          */
-        get: operations['entities_list'];
+        get: operations["entities_list"];
         put?: never;
         /**
          * Create entity
          * @description Creates a new entity. Only available to admin users.
          */
-        post: operations['entities_create'];
+        post: operations["entities_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/entries/entities/{entity_id}/': {
+    "/entries/entities/{entity_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -260,24 +280,24 @@ export interface paths {
          * Get entity details
          * @description Returns details of a specific entity. Regular users can only access entities they have permissions for. Admin users can access any entity.
          */
-        get: operations['entities_retrieve'];
+        get: operations["entities_retrieve"];
         put?: never;
         /**
          * Update entity
          * @description Updates an existing entity.
          */
-        post: operations['entities_update'];
+        post: operations["entities_update"];
         /**
          * Delete entity
          * @description Deletes an entity. Only available to admin users.
          */
-        delete: operations['entities_destroy'];
+        delete: operations["entities_destroy"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/entries/entries/': {
+    "/entries/entries/": {
         parameters: {
             query?: never;
             header?: never;
@@ -290,14 +310,14 @@ export interface paths {
          * Create a new entry
          * @description Creates a new entry (artifact or entity). Only admins can create entities.
          */
-        post: operations['entries_entries_create'];
+        post: operations["entries_entries_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/entries/entries/{id}/': {
+    "/entries/entries/{id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -308,7 +328,7 @@ export interface paths {
          * Retrieve entry details
          * @description Returns detailed information about a specific entry by ID. Access control applies for entities.
          */
-        get: operations['entries_entries_retrieve'];
+        get: operations["entries_entries_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -317,7 +337,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/entries/entry_classes/': {
+    "/entries/entry_classes/": {
         parameters: {
             query?: never;
             header?: never;
@@ -328,20 +348,20 @@ export interface paths {
          * List Entry Classes
          * @description Retrieve a paginated list of all entry classes.
          */
-        get: operations['entry_classes_list'];
+        get: operations["entry_classes_list"];
         put?: never;
         /**
          * Create entry class
          * @description Creates a new entry class. Only available to admin users.
          */
-        post: operations['entry_classes_create'];
+        post: operations["entry_classes_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/entries/entry_classes/{class_subtype}/': {
+    "/entries/entry_classes/{class_subtype}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -352,24 +372,24 @@ export interface paths {
          * Get entry class details
          * @description Returns details of a specific entry class.
          */
-        get: operations['entry_classes_retrieve'];
+        get: operations["entry_classes_retrieve"];
         put?: never;
         /**
          * Update entry class
          * @description Updates an existing entry class. Cannot edit the 'alias' entry class.
          */
-        post: operations['entry_classes_update'];
+        post: operations["entry_classes_update"];
         /**
          * Delete entry class
          * @description Deletes an entry class. Only available to admin users. Cannot delete the 'alias' entry class.
          */
-        delete: operations['entry_classes_destroy'];
+        delete: operations["entry_classes_destroy"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/entries/next_name/{class_subtype}/': {
+    "/entries/next_name/{class_subtype}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -380,7 +400,7 @@ export interface paths {
          * Get next available name
          * @description Returns the next available name for entries of this class based on the class prefix and existing entries.
          */
-        get: operations['entries_next_name_retrieve'];
+        get: operations["entries_next_name_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -389,7 +409,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/entries/relations/': {
+    "/entries/relations/": {
         parameters: {
             query?: never;
             header?: never;
@@ -400,7 +420,7 @@ export interface paths {
          * List relations between entries
          * @description Returns a paginated list of relations between specified entries.Requires 'relates' query parameter with entry IDs.
          */
-        get: operations['entries_relations_list'];
+        get: operations["entries_relations_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -409,7 +429,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/entries/relations/{relation_id}/': {
+    "/entries/relations/{relation_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -420,20 +440,20 @@ export interface paths {
          * Get relation details
          * @description Retrieves detailed information about a relation including its attachments with presigned URLs.
          */
-        get: operations['entries_relations_retrieve'];
+        get: operations["entries_relations_retrieve"];
         put?: never;
         post?: never;
         /**
          * Delete a relation
          * @description Deletes a specific relation by ID. Only admin users can perform this action.
          */
-        delete: operations['entries_relations_destroy'];
+        delete: operations["entries_relations_destroy"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/file-transfer/delete/': {
+    "/file-transfer/delete/": {
         parameters: {
             query?: never;
             header?: never;
@@ -447,13 +467,13 @@ export interface paths {
          * Delete a file reference
          * @description Deletes a file reference and removes the associated file from storage.
          */
-        delete: operations['file_transfer_delete_destroy'];
+        delete: operations["file_transfer_delete_destroy"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/file-transfer/download/': {
+    "/file-transfer/download/": {
         parameters: {
             query?: never;
             header?: never;
@@ -464,7 +484,7 @@ export interface paths {
          * Get file download URL
          * @description Generates a presigned URL for downloading a file.
          */
-        get: operations['file_transfer_download_retrieve'];
+        get: operations["file_transfer_download_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -473,7 +493,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/file-transfer/process/': {
+    "/file-transfer/process/": {
         parameters: {
             query?: never;
             header?: never;
@@ -486,14 +506,14 @@ export interface paths {
          * Process an uploaded file
          * @description Triggers processing for a file (calculates hashes, mimetype, etc.).
          */
-        post: operations['file_transfer_process_create'];
+        post: operations["file_transfer_process_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/file-transfer/upload/': {
+    "/file-transfer/upload/": {
         parameters: {
             query?: never;
             header?: never;
@@ -504,7 +524,7 @@ export interface paths {
          * Initiate file upload
          * @description Generates a presigned URL for uploading a file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
          */
-        get: operations['file_transfer_upload_retrieve'];
+        get: operations["file_transfer_upload_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -513,7 +533,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/file-transfer/upload/{upload_id}/finalize/': {
+    "/file-transfer/upload/{upload_id}/finalize/": {
         parameters: {
             query?: never;
             header?: never;
@@ -526,14 +546,14 @@ export interface paths {
          * Finalize file upload
          * @description Verifies the file was uploaded to storage and creates a FileReference. Optionally connects the file to a note.
          */
-        post: operations['file_transfer_upload_finalize_create'];
+        post: operations["file_transfer_upload_finalize_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/intelio/digest/': {
+    "/intelio/digest/": {
         parameters: {
             query?: never;
             header?: never;
@@ -544,24 +564,24 @@ export interface paths {
          * Manage digests
          * @description Create and retrieve digests for the current user.
          */
-        get: operations['intelio_digest_retrieve'];
+        get: operations["intelio_digest_retrieve"];
         put?: never;
         /**
          * Create digest
          * @description Create a new digest for the current user with file upload.
          */
-        post: operations['intelio_digest_create'];
+        post: operations["intelio_digest_create"];
         /**
          * Delete digest
          * @description Delete a specific digest by ID.
          */
-        delete: operations['intelio_digest_destroy'];
+        delete: operations["intelio_digest_destroy"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/intelio/digest/options/': {
+    "/intelio/digest/options/": {
         parameters: {
             query?: never;
             header?: never;
@@ -572,7 +592,7 @@ export interface paths {
          * Get digest subclasses
          * @description Returns a list of all subclasses of BaseDigest with their names.
          */
-        get: operations['intelio_digest_options_list'];
+        get: operations["intelio_digest_options_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -581,7 +601,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/intelio/digest/upload/': {
+    "/intelio/digest/upload/": {
         parameters: {
             query?: never;
             header?: never;
@@ -592,7 +612,7 @@ export interface paths {
          * Initiate digest file upload
          * @description Generates a presigned URL for uploading a digest file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
          */
-        get: operations['intelio_digest_upload_retrieve'];
+        get: operations["intelio_digest_upload_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -601,7 +621,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/intelio/digest/upload/{upload_id}/finalize/': {
+    "/intelio/digest/upload/{upload_id}/finalize/": {
         parameters: {
             query?: never;
             header?: never;
@@ -614,14 +634,14 @@ export interface paths {
          * Finalize digest file upload
          * @description Verifies the digest file was uploaded to storage and creates the digest record, then triggers processing.
          */
-        post: operations['intelio_digest_upload_finalize_create'];
+        post: operations["intelio_digest_upload_finalize_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/intelio/enrich/': {
+    "/intelio/enrich/": {
         parameters: {
             query?: never;
             header?: never;
@@ -632,20 +652,20 @@ export interface paths {
          * List enrichment requests
          * @description Returns a paginated list of enrichment requests for the current user. Can filter by user and title. Results are ordered by created_at descending.
          */
-        get: operations['enrichment_request_list'];
+        get: operations["enrichment_request_list"];
         put?: never;
         /**
          * Create enrichment request
          * @description Create a new enrichment request for an entity. Required fields: enricher_name, entity, title, and request.
          */
-        post: operations['enrichment_request_create'];
+        post: operations["enrichment_request_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/intelio/enrich/{id}/': {
+    "/intelio/enrich/{id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -656,20 +676,20 @@ export interface paths {
          * Retrieve enrichment request details
          * @description Retrieve detailed information about a specific enrichment request including enricher types, entries requested, warnings, and errors.
          */
-        get: operations['enrichment_detail_retrieve'];
+        get: operations["enrichment_detail_retrieve"];
         put?: never;
         post?: never;
         /**
          * Delete enrichment request
          * @description Delete a specific enrichment request. Only the owner or staff can delete an enrichment request.
          */
-        delete: operations['enrichment_detail_delete'];
+        delete: operations["enrichment_detail_delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/intelio/enrich/{id}/{enricher_type}/': {
+    "/intelio/enrich/{id}/{enricher_type}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -680,7 +700,7 @@ export interface paths {
          * Retrieve enrichment request enricher information
          * @description Retrieve detailed information about a specific enrichment request enricher.
          */
-        get: operations['enrichment_request_enricher_retrieve'];
+        get: operations["enrichment_request_enricher_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -689,7 +709,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/intelio/enrich/{id}/{enricher_type}/relations/': {
+    "/intelio/enrich/{id}/{enricher_type}/relations/": {
         parameters: {
             query?: never;
             header?: never;
@@ -700,7 +720,7 @@ export interface paths {
          * Retrieve relations created by enrichment
          * @description Retrieve the relations created by a specific enrichment request, filtered by enricher type.
          */
-        get: operations['enrichment_relations_retrieve'];
+        get: operations["enrichment_relations_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -709,7 +729,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/intelio/enrich/{id}/restart/': {
+    "/intelio/enrich/{id}/restart/": {
         parameters: {
             query?: never;
             header?: never;
@@ -722,14 +742,14 @@ export interface paths {
          * Restart enrichment request
          * @description Restart a specific enrichment request by resetting its status and rerunning the enrichment process. Only the owner or staff can restart an enrichment request.
          */
-        post: operations['enrichment_restart'];
+        post: operations["enrichment_restart"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/intelio/enrichment/': {
+    "/intelio/enrichment/": {
         parameters: {
             query?: never;
             header?: never;
@@ -740,7 +760,7 @@ export interface paths {
          * Get enrichment subclasses
          * @description Returns a list of all subclasses of BaseEnricher with their names.
          */
-        get: operations['enrichment_subclasses_list'];
+        get: operations["enrichment_subclasses_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -749,7 +769,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/intelio/enrichment/{enricher_type}/': {
+    "/intelio/enrichment/{enricher_type}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -760,20 +780,20 @@ export interface paths {
          * Get enrichment settings
          * @description Get enrichment settings for a specific enricher type.
          */
-        get: operations['enrichment_settings_retrieve'];
+        get: operations["enrichment_settings_retrieve"];
         put?: never;
         /**
          * Update enrichment settings
          * @description Create or update enrichment settings for a specific enricher type.
          */
-        post: operations['enrichment_settings_update'];
+        post: operations["enrichment_settings_update"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/intelio/mappings/': {
+    "/intelio/mappings/": {
         parameters: {
             query?: never;
             header?: never;
@@ -784,7 +804,7 @@ export interface paths {
          * Get class mapping subclasses
          * @description Returns a list of all subclasses of ClassMapping with their names.
          */
-        get: operations['mappings_subclasses_list'];
+        get: operations["mappings_subclasses_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -793,7 +813,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/intelio/mappings/{class_name}/': {
+    "/intelio/mappings/{class_name}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -804,24 +824,24 @@ export interface paths {
          * Get mapping instances
          * @description Get all mapping instances for a given class.
          */
-        get: operations['mappings_schema_list'];
+        get: operations["mappings_schema_list"];
         put?: never;
         /**
          * Create or update mapping
          * @description Create a new mapping or update an existing one for a given class.
          */
-        post: operations['mappings_schema_create_or_update'];
+        post: operations["mappings_schema_create_or_update"];
         /**
          * Delete mapping
          * @description Delete a mapping instance for a given class.
          */
-        delete: operations['mappings_schema_destroy'];
+        delete: operations["mappings_schema_destroy"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/intelio/mappings/{class_name}/keys': {
+    "/intelio/mappings/{class_name}/keys": {
         parameters: {
             query?: never;
             header?: never;
@@ -832,7 +852,7 @@ export interface paths {
          * Get mapping keys schema
          * @description Given a class name, return the possible field mappings.
          */
-        get: operations['mappings_keys_schema'];
+        get: operations["mappings_keys_schema"];
         put?: never;
         post?: never;
         delete?: never;
@@ -841,7 +861,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/knowledge-graph/': {
+    "/knowledge-graph/": {
         parameters: {
             query?: never;
             header?: never;
@@ -852,7 +872,7 @@ export interface paths {
          * Get knowledge graph
          * @description Returns the full knowledge graph accessible to the user.
          */
-        get: operations['knowledge_graph_retrieve'];
+        get: operations["knowledge_graph_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -861,7 +881,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/knowledge-graph/inaccessible/': {
+    "/knowledge-graph/inaccessible/": {
         parameters: {
             query?: never;
             header?: never;
@@ -872,7 +892,7 @@ export interface paths {
          * Get inaccessible graph entries
          * @description Get entries in the knowledge graph that are inaccessible to the current user.
          */
-        get: operations['knowledge_graph_inaccessible_retrieve'];
+        get: operations["knowledge_graph_inaccessible_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -881,7 +901,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/knowledge-graph/neighbors/': {
+    "/knowledge-graph/neighbors/": {
         parameters: {
             query?: never;
             header?: never;
@@ -892,7 +912,7 @@ export interface paths {
          * Get graph neighbors
          * @description Get neighboring entries in the knowledge graph for a given source entry.
          */
-        get: operations['knowledge_graph_neighbors_retrieve'];
+        get: operations["knowledge_graph_neighbors_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -901,7 +921,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/knowledge-graph/paths/': {
+    "/knowledge-graph/paths/": {
         parameters: {
             query?: never;
             header?: never;
@@ -912,7 +932,7 @@ export interface paths {
          * Find paths in knowledge graph
          * @description Find paths between source and destination entries in the knowledge graph.
          */
-        get: operations['knowledge_graph_paths_retrieve'];
+        get: operations["knowledge_graph_paths_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -921,7 +941,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/logs/': {
+    "/logs/": {
         parameters: {
             query?: never;
             header?: never;
@@ -932,7 +952,7 @@ export interface paths {
          * List event logs
          * @description Returns a paginated and filtered list of event logs. Only available to admin users.
          */
-        get: operations['logs_list'];
+        get: operations["logs_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -941,7 +961,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/lsp/trie/': {
+    "/lsp/trie/": {
         parameters: {
             query?: never;
             header?: never;
@@ -952,7 +972,7 @@ export interface paths {
          * Get LSP Completion Trie
          * @description Returns LSP completion trie data for entity types and types without regex/options. Used for autocomplete suggestions in the LSP interface.
          */
-        get: operations['lsp_trie_retrieve'];
+        get: operations["lsp_trie_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -961,7 +981,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/lsp/types/': {
+    "/lsp/types/": {
         parameters: {
             query?: never;
             header?: never;
@@ -972,7 +992,7 @@ export interface paths {
          * Get LSP Types
          * @description Returns LSP type definitions grouped by subtype, excluding aliases.
          */
-        get: operations['lsp_types_retrieve'];
+        get: operations["lsp_types_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -981,7 +1001,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/management/actions/{action_name}': {
+    "/management/actions/{action_name}": {
         parameters: {
             query?: never;
             header?: never;
@@ -994,14 +1014,14 @@ export interface paths {
          * Execute management actions
          * @description Executes various management actions for admin users. Available actions:relinkNotes, refreshMaterializedGraph, recalculateNodePositions, propagateAccessVectors, reprocessAllFiles, deleteHangingArtifacts
          */
-        post: operations['management_actions_create'];
+        post: operations["management_actions_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/management/settings/': {
+    "/management/settings/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1012,20 +1032,20 @@ export interface paths {
          * Get all settings with defaults
          * @description Returns all known settings in a nested JSON format, including defaults for any missing values.
          */
-        get: operations['management_settings_retrieve'];
+        get: operations["management_settings_retrieve"];
         put?: never;
         /**
          * Update one or more settings
          * @description Accepts a nested JSON object to create or update multiple settings at once. Each key becomes a namespaced setting key like `notes.max_note_wordcount`.
          */
-        post: operations['management_settings_create'];
+        post: operations["management_settings_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/notes/': {
+    "/notes/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1036,20 +1056,20 @@ export interface paths {
          * Get accessible notes
          * @description Returns paginated list of notes that the user has access to. Can filter by references and other parameters. Results are ordered by timestamp descending.
          */
-        get: operations['notes_list'];
+        get: operations["notes_list"];
         put?: never;
         /**
          * Create note
          * @description Creates a new note for the authenticated user.
          */
-        post: operations['notes_create'];
+        post: operations["notes_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/notes/{note_id}/': {
+    "/notes/{note_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1060,24 +1080,24 @@ export interface paths {
          * Get note details
          * @description Returns the full details of a specific note. User must have access to view the note. Can optionally include footnotes.
          */
-        get: operations['notes_retrieve'];
+        get: operations["notes_retrieve"];
         put?: never;
         /**
          * Update note
          * @description Updates an existing note. User must have read-write access to referenced entities.
          */
-        post: operations['notes_update'];
+        post: operations["notes_update"];
         /**
          * Delete note
          * @description Deletes an existing note. User must have read-write access to all referenced entities.
          */
-        delete: operations['notes_delete'];
+        delete: operations["notes_delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/notes/{note_id}/final/': {
+    "/notes/{note_id}/final/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1089,7 +1109,7 @@ export interface paths {
          * Convert fleeting note to regular note
          * @description Converts a fleeting note to a regular note. Only the owner can convert it.
          */
-        put: operations['notes_final_update'];
+        put: operations["notes_final_update"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1097,7 +1117,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/notes/{note_id}/graph': {
+    "/notes/{note_id}/graph": {
         parameters: {
             query?: never;
             header?: never;
@@ -1108,7 +1128,7 @@ export interface paths {
          * Get subgraph formed by note
          * @description Returns the full subgraph formed by a single note the user has access to.
          */
-        get: operations['notes_graph_retrieve'];
+        get: operations["notes_graph_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1117,7 +1137,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/notes/files/': {
+    "/notes/files/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1128,7 +1148,7 @@ export interface paths {
          * Get files from accessible notes
          * @description Returns paginated list of files that are linked to notes the user has access to. Can filter by references and other parameters. Results are ordered by note timestamp descending.
          */
-        get: operations['notes_files_retrieve'];
+        get: operations["notes_files_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1137,7 +1157,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/notes/snippets/': {
+    "/notes/snippets/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1148,7 +1168,7 @@ export interface paths {
          * List all accessible snippets
          * @description Returns all snippets accessible to the current user (user's own snippets and system snippets).
          */
-        get: operations['notes_snippets_list'];
+        get: operations["notes_snippets_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1157,7 +1177,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/notes/snippets/{snippet_id}/': {
+    "/notes/snippets/{snippet_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1168,28 +1188,28 @@ export interface paths {
          * Retrieve a snippet
          * @description Get details of a specific snippet by ID.
          */
-        get: operations['notes_snippets_retrieve'];
+        get: operations["notes_snippets_retrieve"];
         /**
          * Update a snippet
          * @description Update a specific snippet by ID.
          */
-        put: operations['notes_snippets_update'];
+        put: operations["notes_snippets_update"];
         post?: never;
         /**
          * Delete a snippet
          * @description Delete a specific snippet by ID.
          */
-        delete: operations['notes_snippets_destroy'];
+        delete: operations["notes_snippets_destroy"];
         options?: never;
         head?: never;
         /**
          * Partially update a snippet
          * @description Partially update a specific snippet by ID.
          */
-        patch: operations['notes_snippets_partial_update'];
+        patch: operations["notes_snippets_partial_update"];
         trace?: never;
     };
-    '/notes/snippets/user/{user_id}/': {
+    "/notes/snippets/user/{user_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1200,20 +1220,20 @@ export interface paths {
          * List snippets for user or system
          * @description Returns all snippets owned by the specified user. Use 'null' as user_id for system snippets.
          */
-        get: operations['notes_snippets_user_list'];
+        get: operations["notes_snippets_user_list"];
         put?: never;
         /**
          * Create snippet for user or system
          * @description Creates a new snippet for the specified user. Use 'null' as user_id for system snippets.
          */
-        post: operations['notes_snippets_user_create'];
+        post: operations["notes_snippets_user_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/notifications/': {
+    "/notifications/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1224,7 +1244,7 @@ export interface paths {
          * Fetch Notifications
          * @description Retrieve paginated notifications for the authenticated user, sorted with unread notifications first, then by newest to oldest.
          */
-        get: operations['notifications_retrieve'];
+        get: operations["notifications_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1233,7 +1253,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/notifications/{notification_id}/': {
+    "/notifications/{notification_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1245,7 +1265,7 @@ export interface paths {
          * Update Notification
          * @description Update a notification's read/unread status by providing its ID.
          */
-        put: operations['notifications_update'];
+        put: operations["notifications_update"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1253,7 +1273,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/notifications/unread-count/': {
+    "/notifications/unread-count/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1264,7 +1284,7 @@ export interface paths {
          * Unread Notifications Count
          * @description Retrieve the number of unread notifications for the authenticated user.
          */
-        get: operations['notifications_unread_count_retrieve'];
+        get: operations["notifications_unread_count_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1273,7 +1293,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/query/': {
+    "/query/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1284,7 +1304,7 @@ export interface paths {
          * Query Entries
          * @description Allow a user to query entries they have access to by providing filters.
          */
-        get: operations['query_list'];
+        get: operations["query_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1293,7 +1313,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/query/advanced/': {
+    "/query/advanced/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1304,7 +1324,7 @@ export interface paths {
          * Advanced Query Entries
          * @description Allow a user to query entries they have access to using advanced syntax:`<subtype>:<name>` with wildcards and logical operators (&&, ||).
          */
-        get: operations['query_advanced_retrieve'];
+        get: operations["query_advanced_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1313,7 +1333,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/reports/': {
+    "/reports/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1324,7 +1344,7 @@ export interface paths {
          * Get published reports
          * @description Returns a paginated list of published reports for the authenticated user, ordered by creation date descending. Can be filtered by search term matching report ID or title.
          */
-        get: operations['reports_list'];
+        get: operations["reports_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1333,7 +1353,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/reports/{id}/': {
+    "/reports/{id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1344,20 +1364,20 @@ export interface paths {
          * Get report details
          * @description Returns the details of a specific report belonging to the authenticated user.
          */
-        get: operations['reports_retrieve'];
+        get: operations["reports_retrieve"];
         put?: never;
         post?: never;
         /**
          * Delete report
          * @description Deletes a specific report belonging to the authenticated user.
          */
-        delete: operations['reports_destroy'];
+        delete: operations["reports_destroy"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/reports/{id}/retry/': {
+    "/reports/{id}/retry/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1370,14 +1390,14 @@ export interface paths {
          * Retry failed report generation
          * @description Resets the report status, re-queues the generation task, and returns the updated report. Only works for failed reports - cannot retry reports that are currently processing or already completed.
          */
-        post: operations['reports_retry_create'];
+        post: operations["reports_retry_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/reports/publish/': {
+    "/reports/publish/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1388,20 +1408,20 @@ export interface paths {
          * Get publish strategies
          * @description Returns available upload and download strategies for publishing reports.
          */
-        get: operations['reports_publish_retrieve'];
+        get: operations["reports_publish_retrieve"];
         put?: never;
         /**
          * Create published report
          * @description Creates a new published report from selected notes using specified strategy.
          */
-        post: operations['reports_publish_create'];
+        post: operations["reports_publish_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/statistics/': {
+    "/statistics/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1412,7 +1432,7 @@ export interface paths {
          * Get user statistics
          * @description Returns statistics about the user's notes and entries. Includes the 10 most recent notes, 3 most recently referenced entities, and 3 most recently referenced artifacts.
          */
-        get: operations['statistics_retrieve'];
+        get: operations["statistics_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1421,7 +1441,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/users/': {
+    "/users/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1432,20 +1452,20 @@ export interface paths {
          * List users
          * @description Returns a paginated list of all users. Only available to admin users.
          */
-        get: operations['users_list'];
+        get: operations["users_list"];
         put?: never;
         /**
          * Create user
          * @description Creates a new user account. Only available to admin users.
          */
-        post: operations['users_create'];
+        post: operations["users_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/users/{user_id}/': {
+    "/users/{user_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1456,20 +1476,20 @@ export interface paths {
          * Get user details
          * @description Returns details of a specific user. Regular users can only access their own details. Admin users can access any user's details.
          */
-        get: operations['users_retrieve'];
+        get: operations["users_retrieve"];
         put?: never;
         /**
          * Update user details
          * @description Updates details of a specific user. Regular users can only update their own details. Admin users can update details of non-admin users.
          */
-        post: operations['users_update'];
-        delete: operations['users_destroy'];
+        post: operations["users_update"];
+        delete: operations["users_destroy"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/users/{user_id}/apikey': {
+    "/users/{user_id}/apikey": {
         parameters: {
             query?: never;
             header?: never;
@@ -1482,14 +1502,14 @@ export interface paths {
          * Generate API key
          * @description Generates a new API key for the specified user. Users can onlygenerate keys for themselves, or admins can generate keys for non-admin users.
          */
-        post: operations['users_apikey_create'];
+        post: operations["users_apikey_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/users/{user_id}/default_note_template/': {
+    "/users/{user_id}/default_note_template/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1500,20 +1520,20 @@ export interface paths {
          * Get default note template
          * @description Returns the user's default note template. Users can only retrieve their own template.
          */
-        get: operations['users_default_note_template_retrieve'];
+        get: operations["users_default_note_template_retrieve"];
         put?: never;
         /**
          * Update default note template
          * @description Updates a user's default note template. Users can only update their own template.
          */
-        post: operations['users_default_note_template_create'];
+        post: operations["users_default_note_template_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/users/{user_id}/manage/{action_name}': {
+    "/users/{user_id}/manage/{action_name}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1524,7 +1544,7 @@ export interface paths {
          * Manage user actions
          * @description Perform various admin actions on a user account. Available actions: simulate, send_email_confirmation, password_reset_email
          */
-        get: operations['users_manage_retrieve'];
+        get: operations["users_manage_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1533,7 +1553,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/users/{user_id}/sessions/': {
+    "/users/{user_id}/sessions/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1544,7 +1564,7 @@ export interface paths {
          * List user sessions
          * @description Returns a list of active sessions for the specified user. Users can view their own sessions; admins can view any user's sessions.
          */
-        get: operations['users_sessions_list'];
+        get: operations["users_sessions_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1553,7 +1573,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/users/{user_id}/sessions/{session_id}/': {
+    "/users/{user_id}/sessions/{session_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1567,13 +1587,13 @@ export interface paths {
          * Revoke user session
          * @description Revokes a specific session by ID. Users can revoke their own sessions; admins can revoke non-admin users' sessions.
          */
-        delete: operations['users_sessions_destroy'];
+        delete: operations["users_sessions_destroy"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/users/2fa/disable/': {
+    "/users/2fa/disable/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1586,14 +1606,14 @@ export interface paths {
          * Disable 2FA
          * @description Disables 2FA for the user
          */
-        post: operations['users_2fa_disable_create'];
+        post: operations["users_2fa_disable_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/users/2fa/enable/': {
+    "/users/2fa/enable/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1606,14 +1626,14 @@ export interface paths {
          * Enable 2FA
          * @description Initiates 2FA setup for the user and returns a QR code URL
          */
-        post: operations['users_2fa_enable_create'];
+        post: operations["users_2fa_enable_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/users/2fa/verify/': {
+    "/users/2fa/verify/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1626,14 +1646,14 @@ export interface paths {
          * Verify 2FA Setup
          * @description Verifies the 2FA token and completes the setup
          */
-        post: operations['users_2fa_verify_create'];
+        post: operations["users_2fa_verify_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/users/config/': {
+    "/users/config/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1644,7 +1664,7 @@ export interface paths {
          * Get user config
          * @description Returns OAuth configuration metadata and signup status.
          */
-        get: operations['users_config'];
+        get: operations["users_config"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1653,7 +1673,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    '/users/oauth/connect/': {
+    "/users/oauth/connect/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1663,14 +1683,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Connect OAuth provider */
-        post: operations['users_oauth_connect'];
+        post: operations["users_oauth_connect"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    '/users/oauth/disconnect/{provider}/': {
+    "/users/oauth/disconnect/{provider}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1681,7 +1701,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** Disconnect OAuth provider */
-        delete: operations['users_oauth_disconnect'];
+        delete: operations["users_oauth_disconnect"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1709,7 +1729,7 @@ export interface components {
              *     * `read-write` - read-write
              * @enum {string}
              */
-            access_type: 'none' | 'read' | 'read-write';
+            access_type: "none" | "read" | "read-write";
         };
         AccessRequestNotification: {
             /** Format: uuid */
@@ -1725,17 +1745,17 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            notification_type: 'request_access_notification';
+            notification_type: "request_access_notification";
         };
         AccessUser: {
-            user: components['schemas']['UserRetrieve'];
+            user: components["schemas"]["UserRetrieve"];
             /**
              * @description * `none` - none
              *     * `read` - read
              *     * `read-write` - read-write
              * @enum {string}
              */
-            access_type: 'none' | 'read' | 'read-write';
+            access_type: "none" | "read" | "read-write";
         };
         /** @description Serializer for Attachment model with presigned download URL. */
         Attachment: {
@@ -1750,7 +1770,7 @@ export interface components {
             /** Format: uuid */
             readonly id?: string;
             title: string;
-            readonly user_detail?: components['schemas']['EssentialUserRetrieve'];
+            readonly user_detail?: components["schemas"]["EssentialUserRetrieve"];
             /** Format: date-time */
             readonly created_at?: string;
             /**
@@ -1760,12 +1780,12 @@ export interface components {
              *     * `error` - Error
              * @enum {string}
              */
-            status?: 'working' | 'warning' | 'done' | 'error';
+            status?: "working" | "warning" | "done" | "error";
             errors?: unknown;
             warnings?: unknown;
             digest_type: string;
             readonly display_name?: string;
-            readonly entity_detail?: components['schemas']['Entry'];
+            readonly entity_detail?: components["schemas"]["Entry"];
         };
         /** @description Serializer for creating digests with file upload. */
         BaseDigestCreateRequest: {
@@ -1864,7 +1884,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            notification_type: 'enrichment_complete_notification';
+            notification_type: "enrichment_complete_notification";
         };
         EnrichmentErrorNotification: {
             /** Format: uuid */
@@ -1880,7 +1900,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            notification_type: 'enrichment_error_notification';
+            notification_type: "enrichment_error_notification";
         };
         /**
          * @description Serializer for relations created by enrichment requests.
@@ -1891,8 +1911,8 @@ export interface components {
         EnrichmentRelation: {
             /** Format: uuid */
             readonly id?: string;
-            readonly e1?: components['schemas']['EntrySerializerMinimal'];
-            readonly e2?: components['schemas']['EntrySerializerMinimal'];
+            readonly e1?: components["schemas"]["EntrySerializerMinimal"];
+            readonly e2?: components["schemas"]["EntrySerializerMinimal"];
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
@@ -1906,13 +1926,7 @@ export interface components {
              *     * `note` - Note
              * @enum {string}
              */
-            reason:
-                | 'digest'
-                | 'enrichment'
-                | 'contains'
-                | 'alias'
-                | 'encounter'
-                | 'note';
+            reason: "digest" | "enrichment" | "contains" | "alias" | "encounter" | "note";
             details?: unknown;
         };
         /** @description Serializer for enrichment requests. */
@@ -1932,16 +1946,16 @@ export interface components {
              *     * `error` - Error
              * @enum {string}
              */
-            readonly status?: 'waiting' | 'working' | 'warning' | 'done' | 'error';
+            readonly status?: "waiting" | "working" | "warning" | "done" | "error";
             /**
              * Format: uuid
              * @description The user who created the request
              */
             readonly user?: string;
-            readonly user_detail?: components['schemas']['EssentialUserRetrieve'];
+            readonly user_detail?: components["schemas"]["EssentialUserRetrieve"];
             /** @description The entities to enrich */
             entities: number[];
-            readonly entities_detail?: components['schemas']['Entry'][];
+            readonly entities_detail?: components["schemas"]["Entry"][];
             /** @description The enrichment settings used for this request */
             readonly enrichment_settings?: string[];
             readonly enricher_classes?: string[];
@@ -1968,9 +1982,9 @@ export interface components {
              *     * `error` - Error
              * @enum {string}
              */
-            readonly status?: 'waiting' | 'working' | 'warning' | 'done' | 'error';
-            readonly user_detail?: components['schemas']['EssentialUserRetrieve'];
-            readonly enrichers?: components['schemas']['EnrichmentRequestEnricherMinimal'][];
+            readonly status?: "waiting" | "working" | "warning" | "done" | "error";
+            readonly user_detail?: components["schemas"]["EssentialUserRetrieve"];
+            readonly enrichers?: components["schemas"]["EnrichmentRequestEnricherMinimal"][];
             readonly request?: unknown;
         };
         /** @description Serializer for enrichment request enricher information. */
@@ -2008,9 +2022,9 @@ export interface components {
              *     * `error` - Error
              * @enum {string}
              */
-            readonly status?: 'waiting' | 'working' | 'warning' | 'done' | 'error';
-            readonly user_detail?: components['schemas']['EssentialUserRetrieve'];
-            readonly enrichers?: components['schemas']['EnrichmentRequestEnricherMinimal'][];
+            readonly status?: "waiting" | "working" | "warning" | "done" | "error";
+            readonly user_detail?: components["schemas"]["EssentialUserRetrieve"];
+            readonly enrichers?: components["schemas"]["EnrichmentRequestEnricherMinimal"][];
             readonly request?: unknown;
         };
         /** @description Serializer for enrichment requests. */
@@ -2028,7 +2042,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             enabled?: boolean;
-            readonly for_eclasses_detail?: components['schemas']['EntryClass'][];
+            readonly for_eclasses_detail?: components["schemas"]["EntryClass"][];
             readonly enricher_type?: string;
             settings?: unknown;
             readonly display_name?: string;
@@ -2057,7 +2071,7 @@ export interface components {
             name: string;
             description?: string | null;
             is_public?: boolean;
-            readonly aliases_detail?: components['schemas']['Entry'][];
+            readonly aliases_detail?: components["schemas"]["Entry"][];
             /** @description Type of the entry (should be 'entity') */
             type: string;
             /** @description Subtype for the entity */
@@ -2076,7 +2090,7 @@ export interface components {
         Entry: {
             readonly id?: number;
             name: string;
-            readonly entry_class?: components['schemas']['EntryClassSerializerNoChildren'];
+            readonly entry_class?: components["schemas"]["EntryClassSerializerNoChildren"];
             /** @description Subtype for the entry */
             subtype: string;
         };
@@ -2086,7 +2100,7 @@ export interface components {
              *     * `artifact` - Artifact
              * @enum {string}
              */
-            type: 'entity' | 'artifact';
+            type: "entity" | "artifact";
             subtype: string;
             description?: string | null;
             generative_regex?: string;
@@ -2105,7 +2119,7 @@ export interface components {
              *     * `artifact` - Artifact
              * @enum {string}
              */
-            type: 'entity' | 'artifact';
+            type: "entity" | "artifact";
             subtype: string;
             description?: string | null;
             generative_regex?: string;
@@ -2122,7 +2136,7 @@ export interface components {
              *     * `artifact` - Artifact
              * @enum {string}
              */
-            type: 'entity' | 'artifact';
+            type: "entity" | "artifact";
             subtype: string;
             description?: string | null;
             generative_regex?: string;
@@ -2141,7 +2155,7 @@ export interface components {
              *     * `artifact` - Artifact
              * @enum {string}
              */
-            type: 'entity' | 'artifact';
+            type: "entity" | "artifact";
             subtype: string;
             color?: string;
         };
@@ -2151,7 +2165,7 @@ export interface components {
              *     * `artifact` - Artifact
              * @enum {string}
              */
-            type: 'entity' | 'artifact';
+            type: "entity" | "artifact";
             subtype: string;
             description?: string | null;
             generative_regex?: string;
@@ -2167,7 +2181,7 @@ export interface components {
              *     * `artifact` - Artifact
              * @enum {string}
              */
-            type: 'entity' | 'artifact';
+            type: "entity" | "artifact";
             subtype: string;
             description?: string | null;
             generative_regex?: string;
@@ -2188,9 +2202,7 @@ export interface components {
             [key: string]: string | number;
         };
         /** EntryCompressedTreeValue */
-        EntryCompressedTreeValue:
-            | string
-            | components['schemas']['EntryCompressedTreeObject'];
+        EntryCompressedTreeValue: string | components["schemas"]["EntryCompressedTreeObject"];
         /**
          * EntryListCompressedTree
          * @description A compressed tree representation of entries, organized by type (entities/artifacts) and subtype.
@@ -2198,11 +2210,11 @@ export interface components {
         EntryListCompressedTree: {
             /** @description Entities organized by subtype */
             entities: {
-                [key: string]: components['schemas']['EntryCompressedTreeValue'][];
+                [key: string]: components["schemas"]["EntryCompressedTreeValue"][];
             };
             /** @description Artifacts organized by subtype */
             artifacts: {
-                [key: string]: components['schemas']['EntryCompressedTreeValue'][];
+                [key: string]: components["schemas"]["EntryCompressedTreeValue"][];
             };
         };
         EntryRequest: {
@@ -2225,7 +2237,7 @@ export interface components {
         EntrySerializerMinimal: {
             readonly id?: number;
             name: string;
-            readonly entry_class?: components['schemas']['EntryClassSerializerMinimal'];
+            readonly entry_class?: components["schemas"]["EntryClassSerializerMinimal"];
             type?: string;
             subtype?: string;
             color?: string;
@@ -2263,8 +2275,8 @@ export interface components {
              *     * `login` - Login
              * @enum {string}
              */
-            type: 'create' | 'delete' | 'edit' | 'fetch' | 'login';
-            user: components['schemas']['EssentialUserRetrieve'];
+            type: "create" | "delete" | "edit" | "fetch" | "login";
+            user: components["schemas"]["EssentialUserRetrieve"];
             details?: string | null;
             readonly src_log?: {
                 [key: string]: unknown;
@@ -2288,7 +2300,7 @@ export interface components {
             /** Format: uuid */
             readonly id?: string;
             mimetype?: string | null;
-            readonly entities?: components['schemas']['OptimizedEntryResponse'][];
+            readonly entities?: components["schemas"]["OptimizedEntryResponse"][];
             /** Format: int64 */
             file_size?: number | null;
             file_name?: string | null;
@@ -2350,16 +2362,16 @@ export interface components {
             inaccessible: string[];
         };
         HomePageStatistics: {
-            notes: components['schemas']['StatisticsNote'][];
-            entities: components['schemas']['StatisticsEntry'][];
-            artifacts: components['schemas']['StatisticsEntry'][];
+            notes: components["schemas"]["StatisticsNote"][];
+            entities: components["schemas"]["StatisticsEntry"][];
+            artifacts: components["schemas"]["StatisticsEntry"][];
         };
         LazyPaginatedEntryWithDepthSerializerViewResponse: {
             /** @description Current page number */
             page: number;
             /** @description Whether there are more pages available */
             has_next: boolean;
-            results: components['schemas']['EntryWithDepthSerializerView'][];
+            results: components["schemas"]["EntryWithDepthSerializerView"][];
         };
         /** @description Serializer for management action response. */
         ManagementActionResponse: {
@@ -2384,7 +2396,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            notification_type: 'message_notification';
+            notification_type: "message_notification";
         };
         NewUserNotification: {
             /** Format: uuid */
@@ -2393,12 +2405,12 @@ export interface components {
             is_marked_unread?: boolean;
             /** Format: date-time */
             readonly timestamp?: string;
-            new_user: components['schemas']['EssentialUserRetrieve'];
+            new_user: components["schemas"]["EssentialUserRetrieve"];
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            notification_type: 'new_user_notification';
+            notification_type: "new_user_notification";
         };
         /** @description Serializer for the next available name response. */
         NextNameResponse: {
@@ -2411,7 +2423,7 @@ export interface components {
         NoteRetrieve: {
             /** Format: uuid */
             readonly id?: string;
-            readonly entities?: components['schemas']['OptimizedEntryResponse'][];
+            readonly entities?: components["schemas"]["OptimizedEntryResponse"][];
             fleeting?: boolean;
             /**
              * @description * `healthy` - Healthy
@@ -2420,7 +2432,7 @@ export interface components {
              *     * `invalid` - Invalid
              * @enum {string}
              */
-            status?: 'healthy' | 'processing' | 'warning' | 'invalid';
+            status?: "healthy" | "processing" | "warning" | "invalid";
             status_message?: string;
             /** Format: date-time */
             status_timestamp?: string | null;
@@ -2430,23 +2442,16 @@ export interface components {
             metadata?: unknown;
             /** Format: date-time */
             readonly timestamp?: string;
-            author: components['schemas']['EssentialUserRetrieve'];
-            entries: components['schemas']['EntryTypesCompressedTree'];
+            author: components["schemas"]["EssentialUserRetrieve"];
+            entries: components["schemas"]["EntryTypesCompressedTree"];
             /** Format: date-time */
             edit_timestamp?: string | null;
-            editor: components['schemas']['EssentialUserRetrieve'];
+            editor: components["schemas"]["EssentialUserRetrieve"];
             /** Format: date-time */
             last_linked?: string | null;
-            files: components['schemas']['FileReferenceWithNote'][];
+            files: components["schemas"]["FileReferenceWithNote"][];
         };
-        Notification:
-            | components['schemas']['MessageNotification']
-            | components['schemas']['NewUserNotification']
-            | components['schemas']['AccessRequestNotification']
-            | components['schemas']['ReportRenderNotification']
-            | components['schemas']['ReportProcessingErrorNotification']
-            | components['schemas']['EnrichmentCompleteNotification']
-            | components['schemas']['EnrichmentErrorNotification'];
+        Notification: components["schemas"]["MessageNotification"] | components["schemas"]["NewUserNotification"] | components["schemas"]["AccessRequestNotification"] | components["schemas"]["ReportRenderNotification"] | components["schemas"]["ReportProcessingErrorNotification"] | components["schemas"]["EnrichmentCompleteNotification"] | components["schemas"]["EnrichmentErrorNotification"];
         OAuthConnectRequest: {
             provider: string;
             code: string;
@@ -2467,7 +2472,7 @@ export interface components {
             count: number;
             /** @description Total number of pages */
             total_pages: number;
-            results: components['schemas']['BaseDigest'][];
+            results: components["schemas"]["BaseDigest"][];
         };
         PaginatedEnrichmentRelationSerializerResponse: {
             /** @description Current page number */
@@ -2476,7 +2481,7 @@ export interface components {
             count: number;
             /** @description Total number of pages */
             total_pages: number;
-            results: components['schemas']['EnrichmentRelation'][];
+            results: components["schemas"]["EnrichmentRelation"][];
         };
         PaginatedEnrichmentRequestListSerializerResponse: {
             /** @description Current page number */
@@ -2485,7 +2490,7 @@ export interface components {
             count: number;
             /** @description Total number of pages */
             total_pages: number;
-            results: components['schemas']['EnrichmentRequestList'][];
+            results: components["schemas"]["EnrichmentRequestList"][];
         };
         PaginatedEntryClassSerializerCountResponse: {
             /** @description Current page number */
@@ -2494,7 +2499,7 @@ export interface components {
             count: number;
             /** @description Total number of pages */
             total_pages: number;
-            results: components['schemas']['EntryClassSerializerCount'][];
+            results: components["schemas"]["EntryClassSerializerCount"][];
         };
         PaginatedEntryResponseList: {
             /**
@@ -2512,7 +2517,7 @@ export interface components {
              * @example 10
              */
             total_pages: number;
-            results: components['schemas']['EntryResponse'][];
+            results: components["schemas"]["EntryResponse"][];
         };
         PaginatedEntryResponseSerializerResponse: {
             /** @description Current page number */
@@ -2521,7 +2526,7 @@ export interface components {
             count: number;
             /** @description Total number of pages */
             total_pages: number;
-            results: components['schemas']['EntryResponse'][];
+            results: components["schemas"]["EntryResponse"][];
         };
         PaginatedEventLogList: {
             /**
@@ -2539,7 +2544,7 @@ export interface components {
              * @example 10
              */
             total_pages: number;
-            results: components['schemas']['EventLog'][];
+            results: components["schemas"]["EventLog"][];
         };
         PaginatedFileReferenceWithNoteSerializerResponse: {
             /** @description Current page number */
@@ -2548,7 +2553,7 @@ export interface components {
             count: number;
             /** @description Total number of pages */
             total_pages: number;
-            results: components['schemas']['FileReferenceWithNote'][];
+            results: components["schemas"]["FileReferenceWithNote"][];
         };
         PaginatedNoteRetrieveSerializerResponse: {
             /** @description Current page number */
@@ -2557,7 +2562,7 @@ export interface components {
             count: number;
             /** @description Total number of pages */
             total_pages: number;
-            results: components['schemas']['NoteRetrieve'][];
+            results: components["schemas"]["NoteRetrieve"][];
         };
         PaginatedNotificationResponse: {
             /** @description Current page number */
@@ -2566,7 +2571,7 @@ export interface components {
             count: number;
             /** @description Total number of pages */
             total_pages: number;
-            results: components['schemas']['Notification'][];
+            results: components["schemas"]["Notification"][];
         };
         PaginatedRelationSerializerResponse: {
             /** @description Current page number */
@@ -2575,7 +2580,7 @@ export interface components {
             count: number;
             /** @description Total number of pages */
             total_pages: number;
-            results: components['schemas']['Relation'][];
+            results: components["schemas"]["Relation"][];
         };
         PaginatedReportListList: {
             /**
@@ -2593,7 +2598,7 @@ export interface components {
              * @example 10
              */
             total_pages: number;
-            results: components['schemas']['ReportList'][];
+            results: components["schemas"]["ReportList"][];
         };
         PaginatedSubGraphSerializerResponse: {
             /** @description Current page number */
@@ -2602,7 +2607,7 @@ export interface components {
             count: number;
             /** @description Total number of pages */
             total_pages: number;
-            results: components['schemas']['SubGraph'][];
+            results: components["schemas"]["SubGraph"][];
         };
         PaginatedUserRetrieveSerializerResponse: {
             /** @description Current page number */
@@ -2611,7 +2616,7 @@ export interface components {
             count: number;
             /** @description Total number of pages */
             total_pages: number;
-            results: components['schemas']['UserRetrieve'][];
+            results: components["schemas"]["UserRetrieve"][];
         };
         /** @description Serializer for password reset confirmation */
         PasswordResetConfirmRequest: {
@@ -2646,9 +2651,9 @@ export interface components {
         /** @description Serializer for publish strategies response. */
         PublishStrategiesResponse: {
             /** @description Available upload strategies */
-            upload: components['schemas']['PublishStrategy'][];
+            upload: components["schemas"]["PublishStrategy"][];
             /** @description Available download strategies */
-            download: components['schemas']['PublishStrategy'][];
+            download: components["schemas"]["PublishStrategy"][];
         };
         /** @description Serializer for individual publish strategy. */
         PublishStrategy: {
@@ -2660,8 +2665,8 @@ export interface components {
         Relation: {
             /** Format: uuid */
             readonly id?: string;
-            readonly e1?: components['schemas']['EntrySerializerMinimal'];
-            readonly e2?: components['schemas']['EntrySerializerMinimal'];
+            readonly e1?: components["schemas"]["EntrySerializerMinimal"];
+            readonly e2?: components["schemas"]["EntrySerializerMinimal"];
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
@@ -2675,21 +2680,15 @@ export interface components {
              *     * `note` - Note
              * @enum {string}
              */
-            reason:
-                | 'digest'
-                | 'enrichment'
-                | 'contains'
-                | 'alias'
-                | 'encounter'
-                | 'note';
+            reason: "digest" | "enrichment" | "contains" | "alias" | "encounter" | "note";
             details?: unknown;
         };
         /** @description Detailed serializer for Relation with attachments. */
         RelationDetail: {
             /** Format: uuid */
             readonly id?: string;
-            readonly e1?: components['schemas']['EntrySerializerMinimal'];
-            readonly e2?: components['schemas']['EntrySerializerMinimal'];
+            readonly e1?: components["schemas"]["EntrySerializerMinimal"];
+            readonly e2?: components["schemas"]["EntrySerializerMinimal"];
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
@@ -2703,17 +2702,11 @@ export interface components {
              *     * `note` - Note
              * @enum {string}
              */
-            reason:
-                | 'digest'
-                | 'enrichment'
-                | 'contains'
-                | 'alias'
-                | 'encounter'
-                | 'note';
+            reason: "digest" | "enrichment" | "contains" | "alias" | "encounter" | "note";
             reason_context?: string | null;
             details?: unknown;
             virtual?: boolean;
-            readonly attachments?: components['schemas']['Attachment'][];
+            readonly attachments?: components["schemas"]["Attachment"][];
         };
         ReportDetail: {
             /** Format: uuid */
@@ -2725,7 +2718,7 @@ export interface components {
              *     * `error` - Error
              * @enum {string}
              */
-            status?: 'working' | 'done' | 'error';
+            status?: "working" | "done" | "error";
             anonymized?: boolean;
             /** Format: date-time */
             readonly created_at?: string;
@@ -2736,7 +2729,7 @@ export interface components {
              *     * `json` - JSON
              * @enum {string}
              */
-            strategy: 'catalyst' | 'html' | 'plain' | 'json';
+            strategy: "catalyst" | "html" | "plain" | "json";
             readonly strategy_label?: string;
             readonly report_url?: string | null;
             error_message?: string | null;
@@ -2753,7 +2746,7 @@ export interface components {
              *     * `error` - Error
              * @enum {string}
              */
-            status?: 'working' | 'done' | 'error';
+            status?: "working" | "done" | "error";
             anonymized?: boolean;
             /** Format: date-time */
             readonly created_at?: string;
@@ -2764,7 +2757,7 @@ export interface components {
              *     * `json` - JSON
              * @enum {string}
              */
-            strategy: 'catalyst' | 'html' | 'plain' | 'json';
+            strategy: "catalyst" | "html" | "plain" | "json";
             readonly strategy_label?: string;
             error_message?: string | null;
             extra_data?: unknown;
@@ -2783,7 +2776,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            notification_type: 'report_processing_error_notification';
+            notification_type: "report_processing_error_notification";
         };
         ReportRenderNotification: {
             /** Format: uuid */
@@ -2798,7 +2791,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            notification_type: 'report_render_notification';
+            notification_type: "report_render_notification";
         };
         /** @description Serializer for the RequestAccess view. */
         RequestAccessRequest: {
@@ -2809,7 +2802,7 @@ export interface components {
         Snippet: {
             /** Format: uuid */
             readonly id?: string;
-            readonly owner?: components['schemas']['UserRetrieve'];
+            readonly owner?: components["schemas"]["UserRetrieve"];
             name: string;
             content: string;
             /** Format: date-time */
@@ -2833,7 +2826,7 @@ export interface components {
             title: string;
             /** Format: date-time */
             timestamp: string;
-            author: components['schemas']['StatisticsUser'];
+            author: components["schemas"]["StatisticsUser"];
         };
         /** @description Serializer for user in statistics */
         StatisticsUser: {
@@ -2841,8 +2834,8 @@ export interface components {
             username: string;
         };
         SubGraph: {
-            entries: components['schemas']['EntryListCompressedTree'];
-            relations: components['schemas']['EdgeRelation'][];
+            entries: components["schemas"]["EntryListCompressedTree"];
+            relations: components["schemas"]["EdgeRelation"][];
             colors: {
                 [key: string]: unknown;
             };
@@ -2914,7 +2907,7 @@ export interface components {
              *     * `author` - User
              * @enum {string}
              */
-            role?: 'admin' | 'manager' | 'entrymanager' | 'author';
+            role?: "admin" | "manager" | "entrymanager" | "author";
             email_confirmed?: boolean;
             is_active?: boolean;
             two_factor_enabled?: boolean;
@@ -2952,7 +2945,7 @@ export interface components {
              *     * `author` - User
              * @enum {string}
              */
-            role?: 'admin' | 'manager' | 'entrymanager' | 'author';
+            role?: "admin" | "manager" | "entrymanager" | "author";
             two_factor_enabled?: boolean;
             is_active?: boolean;
             /** @description Whether to enable Vim keybindings in the editor */
@@ -2982,7 +2975,7 @@ export interface components {
              *     * `author` - User
              * @enum {string}
              */
-            role?: 'admin' | 'manager' | 'entrymanager' | 'author';
+            role?: "admin" | "manager" | "entrymanager" | "author";
             two_factor_enabled?: boolean;
             is_active?: boolean;
             /** @description Whether to enable Vim keybindings in the editor */
@@ -3039,7 +3032,7 @@ export interface components {
              *     * `author` - User
              * @enum {string}
              */
-            role?: 'admin' | 'manager' | 'entrymanager' | 'author';
+            role?: "admin" | "manager" | "entrymanager" | "author";
             email_confirmed?: boolean;
             is_active?: boolean;
             two_factor_enabled?: boolean;
@@ -3081,7 +3074,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['AccessUser'][];
+                    "application/json": components["schemas"]["AccessUser"][];
                 };
             };
             /** @description Authentication Required */
@@ -3090,7 +3083,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3150,7 +3143,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3210,7 +3203,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3270,7 +3263,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3341,7 +3334,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['RequestAccessRequest'];
+                "application/json": components["schemas"]["RequestAccessRequest"];
             };
         };
         responses: {
@@ -3350,7 +3343,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -3359,7 +3352,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3419,7 +3412,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3479,7 +3472,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3539,7 +3532,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3612,7 +3605,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['AccessEntity'][];
+                    "application/json": components["schemas"]["AccessEntity"][];
                 };
             };
             /** @description Authentication Required */
@@ -3621,7 +3614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3681,7 +3674,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3741,7 +3734,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3801,7 +3794,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3871,7 +3864,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['AccessRequest'];
+                "application/json": components["schemas"]["AccessRequest"];
             };
         };
         responses: {
@@ -3880,7 +3873,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -3889,7 +3882,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -3949,7 +3942,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4009,7 +4002,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4069,7 +4062,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4129,7 +4122,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4194,7 +4187,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['ChangePasswordRequestRequest'];
+                "application/json": components["schemas"]["ChangePasswordRequestRequest"];
             };
         };
         responses: {
@@ -4203,7 +4196,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['ChangePasswordResponse'];
+                    "application/json": components["schemas"]["ChangePasswordResponse"];
                 };
             };
             /** @description Incorrect Old Password */
@@ -4212,7 +4205,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4272,7 +4265,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4332,7 +4325,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4392,7 +4385,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4457,7 +4450,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['EmailConfirmRequest'];
+                "application/json": components["schemas"]["EmailConfirmRequest"];
             };
         };
         responses: {
@@ -4466,7 +4459,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -4475,7 +4468,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4540,7 +4533,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['TokenObtainRequest'];
+                "application/json": components["schemas"]["TokenObtainRequest"];
             };
         };
         responses: {
@@ -4549,7 +4542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['TokenPairRetrieve'];
+                    "application/json": components["schemas"]["TokenPairRetrieve"];
                 };
             };
             /** @description Validation Error */
@@ -4558,7 +4551,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4618,7 +4611,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4674,6 +4667,24 @@ export interface operations {
             };
         };
     };
+    auth_logout_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     auth_oauth_login: {
         parameters: {
             query?: never;
@@ -4683,7 +4694,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['OAuthConnectRequest'];
+                "application/json": components["schemas"]["OAuthConnectRequest"];
             };
         };
         responses: {
@@ -4692,7 +4703,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['TokenPairRetrieve'];
+                    "application/json": components["schemas"]["TokenPairRetrieve"];
                 };
             };
             /** @description Validation Error */
@@ -4701,7 +4712,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4761,7 +4772,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4826,7 +4837,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['TokenRefreshRequest'];
+                "application/json": components["schemas"]["TokenRefreshRequest"];
             };
         };
         responses: {
@@ -4835,7 +4846,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['TokenRefreshRetrieve'];
+                    "application/json": components["schemas"]["TokenRefreshRetrieve"];
                 };
             };
             /** @description Validation Error */
@@ -4844,7 +4855,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4909,7 +4920,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['PasswordResetConfirmRequest'];
+                "application/json": components["schemas"]["PasswordResetConfirmRequest"];
             };
         };
         responses: {
@@ -4918,7 +4929,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -4927,7 +4938,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -4992,7 +5003,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['PasswordResetRequestRequest'];
+                "application/json": components["schemas"]["PasswordResetRequestRequest"];
             };
         };
         responses: {
@@ -5001,7 +5012,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -5010,7 +5021,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5075,7 +5086,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['UserCreateRequest'];
+                "application/json": components["schemas"]["UserCreateRequest"];
             };
         };
         responses: {
@@ -5084,7 +5095,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['UserRetrieve'];
+                    "application/json": components["schemas"]["UserRetrieve"];
                 };
             };
             /** @description Validation Error */
@@ -5093,7 +5104,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5153,7 +5164,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5213,7 +5224,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5283,7 +5294,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['EntryResponse'][];
+                    "application/json": components["schemas"]["EntryResponse"][];
                 };
             };
             /** @description Authentication Required */
@@ -5292,7 +5303,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5352,7 +5363,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5412,7 +5423,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5477,7 +5488,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['EntityRequest'];
+                "application/json": components["schemas"]["EntityRequest"];
             };
         };
         responses: {
@@ -5486,7 +5497,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['Entity'];
+                    "application/json": components["schemas"]["Entity"];
                 };
             };
             /** @description Validation Error */
@@ -5495,7 +5506,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5555,7 +5566,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5615,7 +5626,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5675,7 +5686,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5735,7 +5746,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5808,7 +5819,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['Entity'];
+                    "application/json": components["schemas"]["Entity"];
                 };
             };
             /** @description Authentication Required */
@@ -5817,7 +5828,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5877,7 +5888,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5937,7 +5948,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -5997,7 +6008,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6065,7 +6076,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['EntityRequest'];
+                "application/json": components["schemas"]["EntityRequest"];
             };
         };
         responses: {
@@ -6074,7 +6085,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['Entity'];
+                    "application/json": components["schemas"]["Entity"];
                 };
             };
             /** @description Validation Error */
@@ -6083,7 +6094,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6143,7 +6154,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6203,7 +6214,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6263,7 +6274,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6323,7 +6334,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6396,7 +6407,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Authentication Required */
@@ -6405,7 +6416,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6465,7 +6476,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6525,7 +6536,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6585,7 +6596,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6650,7 +6661,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['EntryRequest'];
+                "application/json": components["schemas"]["EntryRequest"];
             };
         };
         responses: {
@@ -6659,7 +6670,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['Entry'];
+                    "application/json": components["schemas"]["Entry"];
                 };
             };
             /** @description Invalid Entry Type */
@@ -6668,7 +6679,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6728,7 +6739,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6788,7 +6799,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6848,7 +6859,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6908,7 +6919,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -6980,7 +6991,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['Entry'];
+                    "application/json": components["schemas"]["Entry"];
                 };
             };
             /** @description Authentication Required */
@@ -6989,7 +7000,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7049,7 +7060,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7109,7 +7120,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7169,7 +7180,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7248,7 +7259,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedEntryClassSerializerCountResponse'];
+                    "application/json": components["schemas"]["PaginatedEntryClassSerializerCountResponse"];
                 };
             };
             /** @description Authentication Required */
@@ -7257,7 +7268,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7317,7 +7328,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7377,7 +7388,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7442,7 +7453,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['EntryClassRequest'];
+                "application/json": components["schemas"]["EntryClassRequest"];
             };
         };
         responses: {
@@ -7451,7 +7462,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['EntryClass'];
+                    "application/json": components["schemas"]["EntryClass"];
                 };
             };
             /** @description Validation Error */
@@ -7460,7 +7471,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7520,7 +7531,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7580,7 +7591,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7640,7 +7651,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7713,7 +7724,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['EntryClass'];
+                    "application/json": components["schemas"]["EntryClass"];
                 };
             };
             /** @description Authentication Required */
@@ -7722,7 +7733,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7782,7 +7793,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7842,7 +7853,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7902,7 +7913,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -7970,7 +7981,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['EntryClassRequest'];
+                "application/json": components["schemas"]["EntryClassRequest"];
             };
         };
         responses: {
@@ -7979,7 +7990,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['EntryClass'];
+                    "application/json": components["schemas"]["EntryClass"];
                 };
             };
             /** @description Validation Error */
@@ -7988,7 +7999,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8048,7 +8059,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8108,7 +8119,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8168,7 +8179,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8228,7 +8239,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8301,7 +8312,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Authentication Required */
@@ -8310,7 +8321,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8370,7 +8381,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8430,7 +8441,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8490,7 +8501,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8563,7 +8574,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['NextNameResponse'];
+                    "application/json": components["schemas"]["NextNameResponse"];
                 };
             };
             /** @description Authentication Required */
@@ -8572,7 +8583,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8632,7 +8643,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8692,7 +8703,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8752,7 +8763,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8829,7 +8840,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedRelationSerializerResponse'];
+                    "application/json": components["schemas"]["PaginatedRelationSerializerResponse"];
                 };
             };
             /** @description Relates Parameter Required */
@@ -8838,7 +8849,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8898,7 +8909,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -8958,7 +8969,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9018,7 +9029,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9090,7 +9101,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['RelationDetail'];
+                    "application/json": components["schemas"]["RelationDetail"];
                 };
             };
             /** @description Authentication Required */
@@ -9099,7 +9110,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9159,7 +9170,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9218,7 +9229,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Internal Server Error */
@@ -9227,7 +9238,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9299,7 +9310,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Authentication Required */
@@ -9308,7 +9319,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9368,7 +9379,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9428,7 +9439,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9501,7 +9512,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Invalid File Name */
@@ -9510,7 +9521,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9570,7 +9581,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9630,7 +9641,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9690,7 +9701,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9750,7 +9761,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9823,7 +9834,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['FileDownload'];
+                    "application/json": components["schemas"]["FileDownload"];
                 };
             };
             /** @description Invalid File Name */
@@ -9832,7 +9843,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9892,7 +9903,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -9952,7 +9963,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10012,7 +10023,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10072,7 +10083,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10137,7 +10148,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['FileProcessRequest'];
+                "application/json": components["schemas"]["FileProcessRequest"];
             };
         };
         responses: {
@@ -10146,7 +10157,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Invalid Request Body */
@@ -10155,7 +10166,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10215,7 +10226,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10275,7 +10286,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10335,7 +10346,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10395,7 +10406,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10470,7 +10481,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['FileUploadResponse'];
+                    "application/json": components["schemas"]["FileUploadResponse"];
                 };
             };
             /** @description Invalid File Name */
@@ -10479,7 +10490,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10539,7 +10550,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10599,7 +10610,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10659,7 +10670,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10719,7 +10730,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10787,7 +10798,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                'application/json': components['schemas']['FileUploadFinalizeRequest'];
+                "application/json": components["schemas"]["FileUploadFinalizeRequest"];
             };
         };
         responses: {
@@ -10796,7 +10807,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['FileUploadFinalizeResponse'];
+                    "application/json": components["schemas"]["FileUploadFinalizeResponse"];
                 };
             };
             /** @description File Not Uploaded */
@@ -10805,7 +10816,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10865,7 +10876,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10925,7 +10936,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -10985,7 +10996,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11045,7 +11056,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11105,7 +11116,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11179,7 +11190,7 @@ export interface operations {
                 /** @description Number of digests to return per page. Max 200. */
                 page_size?: number;
                 /** @description Filter by status */
-                status?: 'done' | 'error' | 'warning' | 'working';
+                status?: "done" | "error" | "warning" | "working";
                 /** @description Filter by title (case-insensitive partial match) */
                 title?: string;
             };
@@ -11194,7 +11205,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedBaseDigestSerializerResponse'];
+                    "application/json": components["schemas"]["PaginatedBaseDigestSerializerResponse"];
                 };
             };
             /** @description Invalid Page Size */
@@ -11203,7 +11214,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11263,7 +11274,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11323,7 +11334,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11383,7 +11394,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11448,7 +11459,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'multipart/form-data': components['schemas']['BaseDigestCreateRequest'];
+                "multipart/form-data": components["schemas"]["BaseDigestCreateRequest"];
             };
         };
         responses: {
@@ -11457,7 +11468,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['BaseDigest'];
+                    "application/json": components["schemas"]["BaseDigest"];
                 };
             };
             /** @description Validation Error */
@@ -11466,7 +11477,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11526,7 +11537,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11586,7 +11597,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11646,7 +11657,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11719,7 +11730,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Missing Digest ID */
@@ -11728,7 +11739,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11788,7 +11799,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11848,7 +11859,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11908,7 +11919,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -11968,7 +11979,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12038,7 +12049,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['DigestSubclass'][];
+                    "application/json": components["schemas"]["DigestSubclass"][];
                 };
             };
             /** @description Authentication Required */
@@ -12047,7 +12058,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12107,7 +12118,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12167,7 +12178,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12242,7 +12253,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['DigestUploadResponse'];
+                    "application/json": components["schemas"]["DigestUploadResponse"];
                 };
             };
             /** @description Invalid File Name */
@@ -12251,7 +12262,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12311,7 +12322,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12371,7 +12382,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12431,7 +12442,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12491,7 +12502,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12559,7 +12570,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['DigestUploadFinalizeCreateRequest'];
+                "application/json": components["schemas"]["DigestUploadFinalizeCreateRequest"];
             };
         };
         responses: {
@@ -12568,7 +12579,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['BaseDigest'];
+                    "application/json": components["schemas"]["BaseDigest"];
                 };
             };
             /** @description Validation Error */
@@ -12577,7 +12588,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12637,7 +12648,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12697,7 +12708,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12757,7 +12768,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12817,7 +12828,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12877,7 +12888,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -12947,7 +12958,7 @@ export interface operations {
                 /** @description Number of enrichment requests to return per page. Max 100. */
                 page_size?: number;
                 /** @description Filter by status */
-                status?: 'done' | 'error' | 'waiting' | 'warning' | 'working';
+                status?: "done" | "error" | "waiting" | "warning" | "working";
                 /** @description Filter by title (case-insensitive partial match) */
                 title?: string;
                 /** @description Filter by user username (case-insensitive partial match) */
@@ -12964,7 +12975,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedEnrichmentRequestListSerializerResponse'];
+                    "application/json": components["schemas"]["PaginatedEnrichmentRequestListSerializerResponse"];
                 };
             };
             /** @description Invalid Page Size */
@@ -12973,7 +12984,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13033,7 +13044,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13093,7 +13104,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13153,7 +13164,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13218,7 +13229,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['EnrichmentRequestRequest'];
+                "application/json": components["schemas"]["EnrichmentRequestRequest"];
             };
         };
         responses: {
@@ -13227,7 +13238,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['EnrichmentRequest'];
+                    "application/json": components["schemas"]["EnrichmentRequest"];
                 };
             };
             /** @description Validation Error */
@@ -13236,7 +13247,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13296,7 +13307,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13356,7 +13367,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13416,7 +13427,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13488,7 +13499,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['EnrichmentRequestDetail'];
+                    "application/json": components["schemas"]["EnrichmentRequestDetail"];
                 };
             };
             /** @description Authentication Required */
@@ -13497,7 +13508,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13557,7 +13568,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13617,7 +13628,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13677,7 +13688,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13757,7 +13768,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13817,7 +13828,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13877,7 +13888,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -13937,7 +13948,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14010,7 +14021,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['EnrichmentRequestEnricher'];
+                    "application/json": components["schemas"]["EnrichmentRequestEnricher"];
                 };
             };
             /** @description Authentication Required */
@@ -14019,7 +14030,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14079,7 +14090,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14139,7 +14150,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14199,7 +14210,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14283,7 +14294,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedEnrichmentRelationSerializerResponse'];
+                    "application/json": components["schemas"]["PaginatedEnrichmentRelationSerializerResponse"];
                 };
             };
             /** @description Invalid Page Size */
@@ -14292,7 +14303,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14352,7 +14363,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14412,7 +14423,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14472,7 +14483,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14532,7 +14543,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14604,7 +14615,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['EnrichmentRequestDetail'];
+                    "application/json": components["schemas"]["EnrichmentRequestDetail"];
                 };
             };
             /** @description Authentication Required */
@@ -14613,7 +14624,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14673,7 +14684,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14733,7 +14744,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14793,7 +14804,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14866,7 +14877,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['EnrichmentSubclass'][];
+                    "application/json": components["schemas"]["EnrichmentSubclass"][];
                 };
             };
             /** @description Authentication Required */
@@ -14875,7 +14886,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14935,7 +14946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -14995,7 +15006,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15067,7 +15078,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['EnrichmentSettings'];
+                    "application/json": components["schemas"]["EnrichmentSettings"];
                 };
             };
             /** @description Authentication Required */
@@ -15076,7 +15087,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15136,7 +15147,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15196,7 +15207,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15256,7 +15267,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15323,7 +15334,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                'application/json': components['schemas']['EnrichmentSettingsRequest'];
+                "application/json": components["schemas"]["EnrichmentSettingsRequest"];
             };
         };
         responses: {
@@ -15332,7 +15343,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['EnrichmentSettings'];
+                    "application/json": components["schemas"]["EnrichmentSettings"];
                 };
             };
             /** @description Validation Error */
@@ -15341,7 +15352,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15401,7 +15412,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15461,7 +15472,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15521,7 +15532,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15581,7 +15592,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15654,7 +15665,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['MappingSubclass'][];
+                    "application/json": components["schemas"]["MappingSubclass"][];
                 };
             };
             /** @description Authentication Required */
@@ -15663,7 +15674,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15723,7 +15734,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15783,7 +15794,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15855,7 +15866,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': Record<string, never>[];
+                    "application/json": Record<string, never>[];
                 };
             };
             /** @description Invalid Class Name */
@@ -15864,7 +15875,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15924,7 +15935,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -15984,7 +15995,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16044,7 +16055,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16111,7 +16122,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                'application/json': {
+                "application/json": {
                     [key: string]: unknown;
                 };
             };
@@ -16122,7 +16133,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': Record<string, never>;
+                    "application/json": Record<string, never>;
                 };
             };
             /** @description Invalid Class Name */
@@ -16131,7 +16142,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16191,7 +16202,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16251,7 +16262,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16311,7 +16322,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16386,7 +16397,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Invalid Class Name */
@@ -16395,7 +16406,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16455,7 +16466,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16515,7 +16526,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16575,7 +16586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16635,7 +16646,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16707,7 +16718,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': Record<string, never>;
+                    "application/json": Record<string, never>;
                 };
             };
             /** @description Invalid Class Name */
@@ -16716,7 +16727,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16776,7 +16787,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16836,7 +16847,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16896,7 +16907,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -16966,7 +16977,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedSubGraphSerializerResponse'];
+                    "application/json": components["schemas"]["PaginatedSubGraphSerializerResponse"];
                 };
             };
             401: {
@@ -16974,7 +16985,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
         };
@@ -16998,7 +17009,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['GraphInaccessibleResponse'];
+                    "application/json": components["schemas"]["GraphInaccessibleResponse"];
                 };
             };
             400: {
@@ -17006,7 +17017,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             401: {
@@ -17014,7 +17025,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             404: {
@@ -17022,7 +17033,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
         };
@@ -17058,7 +17069,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['LazyPaginatedEntryWithDepthSerializerViewResponse'];
+                    "application/json": components["schemas"]["LazyPaginatedEntryWithDepthSerializerViewResponse"];
                 };
             };
             400: {
@@ -17066,7 +17077,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             401: {
@@ -17074,7 +17085,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             404: {
@@ -17082,7 +17093,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
         };
@@ -17110,7 +17121,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['SubGraph'];
+                    "application/json": components["schemas"]["SubGraph"];
                 };
             };
             400: {
@@ -17118,7 +17129,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             401: {
@@ -17126,7 +17137,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
         };
@@ -17157,7 +17168,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedEventLogList'];
+                    "application/json": components["schemas"]["PaginatedEventLogList"];
                 };
             };
             401: {
@@ -17165,7 +17176,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             403: {
@@ -17173,7 +17184,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
         };
@@ -17197,7 +17208,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             400: {
@@ -17205,7 +17216,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             401: {
@@ -17213,7 +17224,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
         };
@@ -17232,7 +17243,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             401: {
@@ -17240,7 +17251,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
         };
@@ -17251,18 +17262,13 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Name of the action to execute */
-                action_name:
-                    | 'deleteHangingArtifacts'
-                    | 'propagateAccessVectors'
-                    | 'refreshMaterializedGraph'
-                    | 'relinkNotes'
-                    | 'reprocessAllFiles';
+                action_name: "deleteHangingArtifacts" | "propagateAccessVectors" | "refreshMaterializedGraph" | "relinkNotes" | "reprocessAllFiles";
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
-                'application/json': {
+                "application/json": {
                     [key: string]: unknown;
                 };
             };
@@ -17273,7 +17279,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['ManagementActionResponse'];
+                    "application/json": components["schemas"]["ManagementActionResponse"];
                 };
             };
             400: {
@@ -17281,7 +17287,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             401: {
@@ -17289,7 +17295,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             403: {
@@ -17297,7 +17303,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
         };
@@ -17317,7 +17323,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         [key: string]: unknown;
                     };
                 };
@@ -17333,7 +17339,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                'application/json': {
+                "application/json": {
                     [key: string]: unknown;
                 };
             };
@@ -17345,7 +17351,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         [key: string]: unknown;
                     };
                 };
@@ -17356,7 +17362,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         [key: string]: unknown;
                     };
                 };
@@ -17385,13 +17391,7 @@ export interface operations {
                 /** @description Filter notes by referenced entry IDs */
                 references?: string[];
                 /** @description Filter by note status, finalized covers all statuses except for fleeting */
-                status?:
-                    | 'finalized'
-                    | 'fleeting'
-                    | 'healthy'
-                    | 'invalid'
-                    | 'processing'
-                    | 'warning';
+                status?: "finalized" | "fleeting" | "healthy" | "invalid" | "processing" | "warning";
                 /** @description Filter by timestamp greater than or equal to (ISO datetime format) */
                 timestamp_gte?: string;
                 /** @description Filter by timestamp less than or equal to (ISO datetime format) */
@@ -17410,7 +17410,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedNoteRetrieveSerializerResponse'];
+                    "application/json": components["schemas"]["PaginatedNoteRetrieveSerializerResponse"];
                 };
             };
             /** @description Invalid Page Size */
@@ -17419,7 +17419,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -17479,7 +17479,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -17539,7 +17539,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -17599,7 +17599,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -17659,7 +17659,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -17724,7 +17724,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                'application/json': components['schemas']['FleetingNoteRequest'];
+                "application/json": components["schemas"]["FleetingNoteRequest"];
             };
         };
         responses: {
@@ -17733,7 +17733,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['FleetingNote'];
+                    "application/json": components["schemas"]["FleetingNote"];
                 };
             };
             /** @description Validation Error */
@@ -17742,7 +17742,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -17802,7 +17802,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -17862,7 +17862,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -17922,7 +17922,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -17998,7 +17998,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['NoteRetrieve'];
+                    "application/json": components["schemas"]["NoteRetrieve"];
                 };
             };
             /** @description Authentication Required */
@@ -18007,7 +18007,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18067,7 +18067,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18127,7 +18127,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18187,7 +18187,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18255,7 +18255,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                'application/json': components['schemas']['NoteEditRequest'];
+                "application/json": components["schemas"]["NoteEditRequest"];
             };
         };
         responses: {
@@ -18264,7 +18264,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['NoteRetrieve'];
+                    "application/json": components["schemas"]["NoteRetrieve"];
                 };
             };
             /** @description Validation Error */
@@ -18273,7 +18273,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18333,7 +18333,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18393,7 +18393,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18453,7 +18453,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18513,7 +18513,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18586,7 +18586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Authentication Required */
@@ -18595,7 +18595,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18655,7 +18655,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18715,7 +18715,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18775,7 +18775,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18848,7 +18848,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['NoteRetrieve'];
+                    "application/json": components["schemas"]["NoteRetrieve"];
                 };
             };
             /** @description Validation Error */
@@ -18857,7 +18857,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18917,7 +18917,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -18977,7 +18977,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19037,7 +19037,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19097,7 +19097,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19170,7 +19170,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['SubGraph'];
+                    "application/json": components["schemas"]["SubGraph"];
                 };
             };
             /** @description Authentication Required */
@@ -19179,7 +19179,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19239,7 +19239,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19299,7 +19299,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19359,7 +19359,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19454,7 +19454,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedFileReferenceWithNoteSerializerResponse'];
+                    "application/json": components["schemas"]["PaginatedFileReferenceWithNoteSerializerResponse"];
                 };
             };
             /** @description Invalid Page Size */
@@ -19463,7 +19463,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19523,7 +19523,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19583,7 +19583,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19643,7 +19643,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19703,7 +19703,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19773,7 +19773,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['Snippet'][];
+                    "application/json": components["schemas"]["Snippet"][];
                 };
             };
             /** @description Authentication Required */
@@ -19782,7 +19782,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19842,7 +19842,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19902,7 +19902,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -19975,7 +19975,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['Snippet'];
+                    "application/json": components["schemas"]["Snippet"];
                 };
             };
             /** @description Authentication Required */
@@ -19984,7 +19984,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20044,7 +20044,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20104,7 +20104,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20164,7 +20164,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20232,7 +20232,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['SnippetRequest'];
+                "application/json": components["schemas"]["SnippetRequest"];
             };
         };
         responses: {
@@ -20241,7 +20241,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['Snippet'];
+                    "application/json": components["schemas"]["Snippet"];
                 };
             };
             /** @description Validation Error */
@@ -20250,7 +20250,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20310,7 +20310,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20370,7 +20370,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20430,7 +20430,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20490,7 +20490,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20571,7 +20571,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20631,7 +20631,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20691,7 +20691,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20751,7 +20751,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20819,7 +20819,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                'application/json': components['schemas']['PatchedSnippetRequest'];
+                "application/json": components["schemas"]["PatchedSnippetRequest"];
             };
         };
         responses: {
@@ -20828,7 +20828,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['Snippet'];
+                    "application/json": components["schemas"]["Snippet"];
                 };
             };
             /** @description Validation Error */
@@ -20837,7 +20837,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20897,7 +20897,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -20957,7 +20957,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21017,7 +21017,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21077,7 +21077,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21150,7 +21150,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['Snippet'][];
+                    "application/json": components["schemas"]["Snippet"][];
                 };
             };
             /** @description Authentication Required */
@@ -21159,7 +21159,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21219,7 +21219,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21279,7 +21279,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21339,7 +21339,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21407,7 +21407,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['SnippetRequest'];
+                "application/json": components["schemas"]["SnippetRequest"];
             };
         };
         responses: {
@@ -21416,7 +21416,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['Snippet'];
+                    "application/json": components["schemas"]["Snippet"];
                 };
             };
             /** @description Validation Error */
@@ -21425,7 +21425,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21485,7 +21485,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21545,7 +21545,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21605,7 +21605,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21665,7 +21665,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21740,7 +21740,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedNotificationResponse'];
+                    "application/json": components["schemas"]["PaginatedNotificationResponse"];
                 };
             };
             /** @description Authentication Required */
@@ -21749,7 +21749,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21809,7 +21809,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21869,7 +21869,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -21936,7 +21936,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['UpdateNotificationRequest'];
+                "application/json": components["schemas"]["UpdateNotificationRequest"];
             };
         };
         responses: {
@@ -21945,7 +21945,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': string;
+                    "application/json": string;
                 };
             };
             400: {
@@ -21953,7 +21953,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': string;
+                    "application/json": string;
                 };
             };
             401: {
@@ -21961,7 +21961,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             404: {
@@ -21969,7 +21969,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': string;
+                    "application/json": string;
                 };
             };
         };
@@ -21988,7 +21988,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['UnreadNotifications'];
+                    "application/json": components["schemas"]["UnreadNotifications"];
                 };
             };
             401: {
@@ -21996,7 +21996,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
         };
@@ -22031,7 +22031,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedEntryResponseList'];
+                    "application/json": components["schemas"]["PaginatedEntryResponseList"];
                 };
             };
             /** @description Authentication Required */
@@ -22040,7 +22040,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22100,7 +22100,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22160,7 +22160,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22239,7 +22239,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedEntryResponseSerializerResponse'];
+                    "application/json": components["schemas"]["PaginatedEntryResponseSerializerResponse"];
                 };
             };
             /** @description Invalid Page Size */
@@ -22248,7 +22248,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22308,7 +22308,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22368,7 +22368,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22428,7 +22428,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22509,7 +22509,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedReportListList'];
+                    "application/json": components["schemas"]["PaginatedReportListList"];
                 };
             };
             /** @description Invalid Page Size */
@@ -22518,7 +22518,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22578,7 +22578,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22638,7 +22638,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22698,7 +22698,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22773,7 +22773,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['ReportDetail'];
+                    "application/json": components["schemas"]["ReportDetail"];
                 };
             };
             /** @description Authentication Required */
@@ -22782,7 +22782,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22842,7 +22842,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22902,7 +22902,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -22962,7 +22962,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23034,7 +23034,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Report ID Required */
@@ -23043,7 +23043,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23103,7 +23103,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23163,7 +23163,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23223,7 +23223,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23283,7 +23283,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23355,7 +23355,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['ReportList'];
+                    "application/json": components["schemas"]["ReportList"];
                 };
             };
             /** @description Report Already Generating */
@@ -23364,7 +23364,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23424,7 +23424,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23484,7 +23484,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23544,7 +23544,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23604,7 +23604,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23674,7 +23674,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PublishStrategiesResponse'];
+                    "application/json": components["schemas"]["PublishStrategiesResponse"];
                 };
             };
             /** @description Authentication Required */
@@ -23683,7 +23683,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23743,7 +23743,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23803,7 +23803,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23868,7 +23868,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['PublishReportRequest'];
+                "application/json": components["schemas"]["PublishReportRequest"];
             };
         };
         responses: {
@@ -23877,7 +23877,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['ReportList'];
+                    "application/json": components["schemas"]["ReportList"];
                 };
             };
             /** @description Validation Error */
@@ -23886,7 +23886,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -23946,7 +23946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24006,7 +24006,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24066,7 +24066,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24126,7 +24126,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24196,7 +24196,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['HomePageStatistics'];
+                    "application/json": components["schemas"]["HomePageStatistics"];
                 };
             };
             401: {
@@ -24204,7 +24204,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
         };
@@ -24230,7 +24230,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['PaginatedUserRetrieveSerializerResponse'];
+                    "application/json": components["schemas"]["PaginatedUserRetrieveSerializerResponse"];
                 };
             };
             /** @description Authentication Required */
@@ -24239,7 +24239,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24299,7 +24299,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24359,7 +24359,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24424,7 +24424,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['UserCreateSerializerAdminRequest'];
+                "application/json": components["schemas"]["UserCreateSerializerAdminRequest"];
             };
         };
         responses: {
@@ -24433,7 +24433,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['UserRetrieve'];
+                    "application/json": components["schemas"]["UserRetrieve"];
                 };
             };
             /** @description Validation Error */
@@ -24442,7 +24442,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24502,7 +24502,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24562,7 +24562,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24622,7 +24622,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24682,7 +24682,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24755,7 +24755,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['UserRetrieve'];
+                    "application/json": components["schemas"]["UserRetrieve"];
                 };
             };
             /** @description Authentication Required */
@@ -24764,7 +24764,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24824,7 +24824,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24884,7 +24884,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -24944,7 +24944,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25012,7 +25012,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                'application/json': components['schemas']['UserUpdateRequest'];
+                "application/json": components["schemas"]["UserUpdateRequest"];
             };
         };
         responses: {
@@ -25021,7 +25021,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['UserRetrieve'];
+                    "application/json": components["schemas"]["UserRetrieve"];
                 };
             };
             /** @description Validation Error */
@@ -25030,7 +25030,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25090,7 +25090,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25150,7 +25150,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25210,7 +25210,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25270,7 +25270,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25363,7 +25363,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['APIKeyResponse'];
+                    "application/json": components["schemas"]["APIKeyResponse"];
                 };
             };
             /** @description Authentication Required */
@@ -25372,7 +25372,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25432,7 +25432,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25492,7 +25492,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25552,7 +25552,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25625,7 +25625,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['DefaultNoteTemplateResponse'];
+                    "application/json": components["schemas"]["DefaultNoteTemplateResponse"];
                 };
             };
             /** @description Authentication Required */
@@ -25634,7 +25634,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25694,7 +25694,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25754,7 +25754,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25814,7 +25814,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25882,7 +25882,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['DefaultNoteTemplateRequest'];
+                "application/json": components["schemas"]["DefaultNoteTemplateRequest"];
             };
         };
         responses: {
@@ -25891,7 +25891,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['DefaultNoteTemplateResponse'];
+                    "application/json": components["schemas"]["DefaultNoteTemplateResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25900,7 +25900,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -25960,7 +25960,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26020,7 +26020,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26080,7 +26080,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26140,7 +26140,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26215,7 +26215,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['UserManageResponse'];
+                    "application/json": components["schemas"]["UserManageResponse"];
                 };
             };
             /** @description Unknown Action */
@@ -26224,7 +26224,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26284,7 +26284,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26344,7 +26344,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26404,7 +26404,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26464,7 +26464,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26542,7 +26542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['UserSession'][];
+                    "application/json": components["schemas"]["UserSession"][];
                 };
             };
             /** @description Authentication Required */
@@ -26551,7 +26551,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26611,7 +26611,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26671,7 +26671,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26731,7 +26731,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26806,7 +26806,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Authentication Required */
@@ -26815,7 +26815,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26875,7 +26875,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26935,7 +26935,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -26995,7 +26995,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27060,7 +27060,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['Verify2FARequest'];
+                "application/json": components["schemas"]["Verify2FARequest"];
             };
         };
         responses: {
@@ -27069,7 +27069,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Two Factor Not Enabled */
@@ -27078,7 +27078,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27138,7 +27138,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27198,7 +27198,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27258,7 +27258,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27328,7 +27328,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['Enable2FA'];
+                    "application/json": components["schemas"]["Enable2FA"];
                 };
             };
             /** @description Two Factor Already Enabled */
@@ -27337,7 +27337,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27397,7 +27397,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27457,7 +27457,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27517,7 +27517,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27582,7 +27582,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['Verify2FARequest'];
+                "application/json": components["schemas"]["Verify2FARequest"];
             };
         };
         responses: {
@@ -27591,7 +27591,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': unknown;
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -27600,7 +27600,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27660,7 +27660,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27720,7 +27720,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27780,7 +27780,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': {
+                    "application/json": {
                         /**
                          * @description URI reference identifying the problem type
                          * @example /errors/validation-error
@@ -27850,7 +27850,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    'application/json': components['schemas']['UserConfig'];
+                    "application/json": components["schemas"]["UserConfig"];
                 };
             };
         };
@@ -27864,7 +27864,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                'application/json': components['schemas']['OAuthConnectRequest'];
+                "application/json": components["schemas"]["OAuthConnectRequest"];
             };
         };
         responses: {

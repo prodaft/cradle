@@ -1,9 +1,14 @@
 from datetime import datetime, timezone
 
+from django.conf import settings
+from django.middleware.csrf import get_token
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
@@ -23,6 +28,25 @@ from ..serializers import (
     TokenPairRetrieveSerializer,
     TokenRefreshRetrieveSerializer,
 )
+
+
+def _cookie_kwargs():
+    return dict(
+        httponly=True,
+        secure=getattr(settings, "JWT_COOKIE_SECURE", True),
+        samesite=getattr(settings, "JWT_COOKIE_SAMESITE", "Lax"),
+        domain=getattr(settings, "JWT_COOKIE_DOMAIN", None),
+        path=getattr(settings, "JWT_COOKIE_PATH", "/"),
+    )
+
+
+def set_token_cookies(response, access, refresh, access_max_age, refresh_max_age):
+    access_name = getattr(settings, "JWT_ACCESS_COOKIE_NAME", "access_token")
+    refresh_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
+    kwargs = _cookie_kwargs()
+    response.set_cookie(access_name, access, max_age=access_max_age, **kwargs)
+    response.set_cookie(refresh_name, refresh, max_age=refresh_max_age, **kwargs)
+    return response
 
 
 def get_client_ip(request: Request) -> str:
@@ -124,7 +148,20 @@ class TokenObtainPairLogView(TokenObtainPairView):
         # Create session record
         create_or_update_session(request, user, refresh_token, refresh_expires_at)
 
-        return Response(response_data, status=status.HTTP_200_OK)
+        response = Response(response_data, status=status.HTTP_200_OK)
+
+        access_max_age = int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
+        refresh_max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
+        set_token_cookies(
+            response,
+            serializer.validated_data["access"],
+            serializer.validated_data["refresh"],
+            access_max_age,
+            refresh_max_age,
+        )
+        get_token(request)
+
+        return response
 
 
 @extend_schema_view(
@@ -151,80 +188,110 @@ class TokenRefreshLogView(TokenRefreshView):
         tags=["auth"],
     )
     def post(self, request: Request, *args, **kwargs) -> Response:
-        """Takes a refresh type JSON web token and returns an access type
-        JSON web token if the refresh token is valid.
+        # Fall back to the refresh cookie if the body doesn't contain a token
+        refresh_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
+        refresh_token_str = request.data.get("refresh") or request.COOKIES.get(refresh_name)
+        if not refresh_token_str:
+            return Response({"detail": "No refresh token provided"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        Args:
-            request (Request): The HTTP request object. Request.data JSON
-            should contain a "refresh" artifact with a refresh type JSON web
-            token.
+        # Inject into request data so the parent serializer sees it
+        request._full_data = {**request.data, "refresh": refresh_token_str}
 
-        Returns:
-            Response(body, status=200): If the request is successful. The
-            body has a field "access" with the new access type JSON web
-            token, along with role, access_expires_at, and refresh_expires_at.
-            Response(status=400): If the request body is invalid.
-            Response(status=401): If the provided refresh type JSON web
-            token is invalid.
-        """
         # Check if the refresh token is blacklisted before processing
-        refresh_token_str = request.data.get("refresh")
-        if refresh_token_str:
-            try:
-                old_refresh_token = RefreshToken(refresh_token_str)
-                jti = old_refresh_token.get("jti")
-                if jti and BlacklistedToken.is_blacklisted(jti):
-                    raise InvalidToken("Token has been revoked")
-            except (TokenError, InvalidToken):
-                # Re-raise token errors
-                raise
-            except Exception:
-                # If we can't decode the token, let the parent class handle it
-                pass
+        try:
+            old_refresh_token = RefreshToken(refresh_token_str)
+            jti = old_refresh_token.get("jti")
+            if jti and BlacklistedToken.is_blacklisted(jti):
+                raise InvalidToken("Token has been revoked")
+        except (TokenError, InvalidToken):
+            raise
+        except Exception:
+            pass
 
         response = super().post(request, *args, **kwargs)
 
         if response.status_code == 200:
-            # Get the refresh token from request
-            refresh_token_str = request.data.get("refresh")
             old_refresh_token = RefreshToken(refresh_token_str)
-
-            # Extract role from the refresh token payload
             role = old_refresh_token.get("role", "")
 
-            # Get access token expiry time from the newly generated access token
             access_token = AccessToken(response.data["access"])
             access_expires_at = datetime.fromtimestamp(access_token["exp"], tz=timezone.utc)
 
-            # Get new refresh token (if rotated) or use old one
             new_refresh_token_str = response.data.get("refresh", refresh_token_str)
             new_refresh_token = RefreshToken(new_refresh_token_str)
-
-            # Get refresh token expiry time
             refresh_expires_at = datetime.fromtimestamp(new_refresh_token["exp"], tz=timezone.utc)
 
-            # Add additional fields to response
             response.data["role"] = role
             response.data["access_expires_at"] = access_expires_at
             response.data["refresh_expires_at"] = refresh_expires_at
 
-            # Update session record with new refresh token (if rotated)
-            # Get user from the old refresh token by validating it
-            from rest_framework_simplejwt.authentication import JWTAuthentication
+            # Set updated cookies
+            access_max_age = int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
+            refresh_max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
+            set_token_cookies(
+                response,
+                response.data["access"],
+                new_refresh_token_str,
+                access_max_age,
+                refresh_max_age,
+            )
 
             try:
-                # Validate the old refresh token to get the user
                 jwt_auth = JWTAuthentication()
                 validated_token = jwt_auth.get_validated_token(old_refresh_token)
                 user = jwt_auth.get_user(validated_token)
 
-                # Delete old session if token was rotated
                 old_jti = old_refresh_token.get("jti")
                 if old_jti and new_refresh_token_str != refresh_token_str:
                     UserSession.objects.filter(refresh_token_jti=old_jti).delete()
-                # Create/update session with new token
                 create_or_update_session(request, user, new_refresh_token, refresh_expires_at)
             except Exception:
-                pass  # If we can't get the user, skip session tracking
+                pass
 
+        return response
+
+
+@extend_schema_view(
+    post=extend_schema(
+        description="Log out by blacklisting the refresh token, removing the session, and clearing JWT cookies.",
+        request=None,
+        responses={200: None},
+        summary="Logout",
+        tags=["auth"],
+    ),
+)
+class LogoutView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request) -> Response:
+        refresh_cookie_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
+        refresh_token_str = request.COOKIES.get(refresh_cookie_name)
+        if refresh_token_str:
+            try:
+                token = RefreshToken(refresh_token_str)
+                jti = token.get("jti")
+                exp = datetime.fromtimestamp(token["exp"], tz=timezone.utc)
+                if jti:
+                    BlacklistedToken.blacklist_token(jti, exp)
+                    UserSession.objects.filter(refresh_token_jti=jti).delete()
+            except (TokenError, Exception):
+                pass
+
+        access_name = getattr(settings, "JWT_ACCESS_COOKIE_NAME", "access_token")
+        response = Response({"detail": "logged out"}, status=status.HTTP_200_OK)
+        kwargs = _cookie_kwargs()
+        response.delete_cookie(
+            access_name,
+            path=kwargs["path"],
+            domain=kwargs.get("domain"),
+            secure=kwargs["secure"],
+            samesite=kwargs["samesite"],
+        )
+        response.delete_cookie(
+            refresh_cookie_name,
+            path=kwargs["path"],
+            domain=kwargs.get("domain"),
+            secure=kwargs["secure"],
+            samesite=kwargs["samesite"],
+        )
         return response

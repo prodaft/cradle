@@ -97,6 +97,20 @@ DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", None)
 EMAIL_HOST_PASSWORD = env.str("EMAIL_HOST_PASSWORD", None)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", False)
 
+# JWT settings
+_access_lifetime_minutes = env.int("JWT_ACCESS_TOKEN_LIFETIME_MINUTES", 30)
+_refresh_lifetime_days = env.int("JWT_REFRESH_TOKEN_LIFETIME_DAYS", 14)
+
+SIMPLE_JWT = {
+    **SIMPLE_JWT,  # noqa: F405
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=_access_lifetime_minutes),  # noqa: F405
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=_refresh_lifetime_days),  # noqa: F405
+}
+
+JWT_COOKIE_SECURE = env.bool("JWT_COOKIE_SECURE", True)
+JWT_COOKIE_DOMAIN = env.str("JWT_COOKIE_DOMAIN", "") or None
+JWT_COOKIE_PATH = env.str("JWT_COOKIE_PATH", "/")
+
 USE_SILK = env.bool("USE_SILK", False)
 
 if USE_SILK:

@@ -45,8 +45,14 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
             return data;
         },
         meta: { suppressNotification: true },
-        onSuccess: (res) => {
-            setTokensDirectly(res as any);
+        onSuccess: (res: any) => {
+            setTokensDirectly({
+                access: res.access,
+                refresh: res.refresh,
+                accessExpiresAt: new Date(res.access_expires_at),
+                refreshExpiresAt: new Date(res.refresh_expires_at),
+                role: res.role,
+            });
             router.navigate({ to: '/', replace: true });
         },
     });

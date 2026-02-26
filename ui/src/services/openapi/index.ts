@@ -1,1 +1,1 @@
-export { $api, fetchClient } from './client';
+export { $api, fetchClient, setClientAccessToken } from './client';

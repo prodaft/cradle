@@ -1,4 +1,5 @@
 import { parseAPIError } from '@/utils/api';
+import { setClientAccessToken } from '@services/openapi/client';
 import type { paths } from '@services/openapi/schema';
 import createFetchClient from 'openapi-fetch';
 import {
@@ -23,6 +24,11 @@ function getStorageItem(key: string): string | null {
     } catch {
         return null;
     }
+}
+
+function getCsrfToken(): string | null {
+    const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : null;
 }
 
 interface TokenData {
@@ -92,12 +98,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const basePath = getBaseUrl();
 
     const fetchClient = useMemo(
-        () => createFetchClient<paths>({ baseUrl: basePath }),
+        () => createFetchClient<paths>({ baseUrl: basePath, credentials: 'include' }),
         [basePath],
     );
 
-    const accessTokenRef = useRef(getStorageItem('access_token') || '');
-    const refreshTokenRef = useRef(getStorageItem('refresh_token') || '');
+    const accessTokenRef = useRef('');
+    const refreshTokenRef = useRef('');
     const accessExpiresAtRef = useRef<string | null>(
         getStorageItem('access_expires_at') || null,
     );
@@ -110,7 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const refreshAccessTokenRef = useRef<() => Promise<boolean>>(async () => false);
 
     const isLoggedIn = useCallback(() => {
-        if (!refreshTokenRef.current || !refreshExpiresAtRef.current) {
+        if (!refreshExpiresAtRef.current) {
             return false;
         }
         const refreshExpiry = new Date(refreshExpiresAtRef.current);
@@ -144,8 +150,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
             accessExpiresAtRef.current = data.accessExpiresAt.toISOString();
             refreshExpiresAtRef.current = data.refreshExpiresAt.toISOString();
 
-            localStorage.setItem('access_token', data.access);
-            localStorage.setItem('refresh_token', data.refresh);
+            setClientAccessToken(data.access);
+
             localStorage.setItem(
                 'access_expires_at',
                 data.accessExpiresAt.toISOString(),
@@ -168,11 +174,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         accessExpiresAtRef.current = null;
         refreshExpiresAtRef.current = null;
 
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        setClientAccessToken(null);
+
         localStorage.removeItem('access_expires_at');
         localStorage.removeItem('refresh_expires_at');
-
         localStorage.removeItem('role');
         localStorage.removeItem('user_id');
 
@@ -186,16 +191,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, []);
 
     const refreshAccessToken = useCallback(async (): Promise<boolean> => {
-        const refreshToken = refreshTokenRef.current;
-
-        if (!refreshToken) {
+        if (!isLoggedIn()) {
             clearTokens();
             throw new SessionExpiredException('No refresh token available');
         }
 
         try {
             const { data, error, response } = await fetchClient.POST('/auth/refresh/', {
-                body: { refresh: refreshToken },
+                body: { refresh: refreshTokenRef.current } as any,
+                headers: {
+                    'X-CSRFToken': getCsrfToken() ?? '',
+                },
             });
 
             if (error || !data) {
@@ -223,17 +229,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
             return false;
         }
-    }, [fetchClient, storeTokens, clearTokens]);
+    }, [fetchClient, storeTokens, clearTokens, isLoggedIn]);
 
     useEffect(() => {
         refreshAccessTokenRef.current = refreshAccessToken;
     }, [refreshAccessToken]);
 
     const getAccessToken = useCallback(async (): Promise<string> => {
-        const accessToken = accessTokenRef.current;
         const accessExpiresAt = accessExpiresAtRef.current;
 
-        if (!accessToken || !accessExpiresAt) {
+        if (!accessExpiresAt) {
             throw new AuthTokenException('No access token available');
         }
 
@@ -270,6 +275,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
                             username,
                             password,
                             ...(twoFactorToken && { two_factor_token: twoFactorToken }),
+                        },
+                        headers: {
+                            'X-CSRFToken': getCsrfToken() ?? '',
                         },
                     },
                 );
@@ -369,9 +377,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         [fetchClient, storeTokens],
     );
 
-    const logOut = useCallback(() => {
+    const logOut = useCallback(async () => {
+        try {
+            await fetchClient.POST('/auth/logout/' as any, {
+                headers: {
+                    'X-CSRFToken': getCsrfToken() ?? '',
+                },
+            });
+        } catch {
+            // best-effort
+        }
         clearTokens();
-    }, [clearTokens]);
+    }, [clearTokens, fetchClient]);
 
     const setTokensDirectly = useCallback(
         (data: TokenData) => {

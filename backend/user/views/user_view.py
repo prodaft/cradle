@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from core.exceptions import ValidationException
 from core.openapi import (
     get_common_error_responses,
     get_error_responses,
@@ -39,6 +40,7 @@ from ..exceptions import (
     UserNotFoundException,
 )
 from ..models import BlacklistedToken, CradleUser, UserSession
+from .token_view import set_token_cookies
 from ..serializers import (
     APIKeyRequestSerializer,
     APIKeyResponseSerializer,
@@ -466,7 +468,15 @@ class ManageUser(APIView):
             raise UserNotFoundException(detail="There is no user with the specified ID.")
         if user.is_cradle_admin:
             raise DisallowedActionException(detail="You are not allowed to simulate an admin.")
-        return Response(self.get_tokens_for_user(user), status=status.HTTP_200_OK)
+
+        token_data = self.get_tokens_for_user(user)
+        response = Response(token_data, status=status.HTTP_200_OK)
+
+        access_max_age = int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
+        refresh_max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
+        set_token_cookies(response, token_data["access"], token_data["refresh"], access_max_age, refresh_max_age)
+
+        return response
 
 
 @extend_schema(
@@ -541,8 +551,6 @@ class EmailConfirm(APIView):
         # Check if token expired
         if user.email_confirmation_token_expiry < timezone.now():
             user.send_email_confirmation()
-            from core.exceptions import ValidationException
-
             raise ValidationException(detail="Email confirmation token has expired a new one was sent.")
 
         user.email_confirmed = True
@@ -597,8 +605,6 @@ class PasswordReset(APIView):
         return Response({"message": "Password reset email sent."}, status=status.HTTP_200_OK)
 
     def put(self, request):
-        from core.exceptions import ValidationException
-
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -791,10 +797,19 @@ class UserSessionsListView(APIView):
             if order_fields:
                 sessions = sessions.order_by(*order_fields)
 
-        # Mark current session - we can't get refresh token from Authorization header
-        # (it contains access token), so we'll rely on frontend to determine current session
-        # by comparing refresh_token_jti. For now, mark all as not current.
+        # Mark current session using the refresh token cookie
+        current_jti = None
+        refresh_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
+        refresh_cookie = request.COOKIES.get(refresh_name)
+        if refresh_cookie:
+            try:
+                rt = RefreshToken(refresh_cookie)
+                current_jti = rt.get("jti")
+            except Exception:
+                pass
         sessions.update(is_current=False)
+        if current_jti:
+            sessions.filter(refresh_token_jti=current_jti).update(is_current=True)
 
         serializer = UserSessionSerializer(sessions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

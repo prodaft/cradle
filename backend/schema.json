@@ -1823,6 +1823,21 @@ paths:
                     code: EMAIL_NOT_CONFIRMED
                   summary: EMAIL_NOT_CONFIRMED
           description: Email Not Confirmed
+  /auth/logout/:
+    post:
+      operationId: auth_logout_create
+      description: Log out by blacklisting the refresh token, removing the session,
+        and clearing JWT cookies.
+      summary: Logout
+      tags:
+      - auth
+      security:
+      - ApiKey: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
   /auth/oauth/login/:
     post:
       operationId: auth_oauth_login
@@ -28680,9 +28695,9 @@ components:
           type: string
           description: Subtype for the entity
       required:
-      - type
       - name
       - subtype
+      - type
     EntityRequest:
       type: object
       properties:
@@ -28708,9 +28723,9 @@ components:
           type: string
           description: Subtype for the entity
       required:
-      - type
       - name
       - subtype
+      - type
     Entry:
       type: object
       properties:
@@ -29062,9 +29077,9 @@ components:
           description: Color associated with the entry class
           nullable: true
       required:
-      - type
       - name
       - subtype
+      - type
     EntrySerializerMinimal:
       type: object
       properties:

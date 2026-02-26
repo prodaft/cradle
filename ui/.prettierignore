@@ -6,6 +6,6 @@ docs
 node_modules
 dist
 src/assets
-src/services/cradle/
+src/services/openapi/schema.d.ts
 src/components/ui
 public/

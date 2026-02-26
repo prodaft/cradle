@@ -24,6 +24,7 @@ from user.serializers import (
     TokenPairRetrieveSerializer,
 )
 from user.views.token_view import (
+    set_token_cookies,
     create_or_update_session,
     get_error_responses,
     get_validation_error_response,
@@ -218,7 +219,13 @@ class OAuthLoginView(APIView):
 
         create_or_update_session(request, user, refresh, refresh_expires_at)
 
-        return Response(response_data)
+        response = Response(response_data)
+
+        access_max_age = int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
+        refresh_max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
+        set_token_cookies(response, str(access_token), str(refresh), access_max_age, refresh_max_age)
+
+        return response
 
 
 @extend_schema_view(

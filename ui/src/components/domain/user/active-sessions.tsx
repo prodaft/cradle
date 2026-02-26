@@ -110,26 +110,6 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         [rowSelection, sessions],
     );
 
-    const getCurrentSessionJti = useCallback((): string | null => {
-        // Get the refresh token from localStorage and decode it to get the JTI
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (!refreshToken) return null;
-
-        try {
-            // Decode JWT token (base64url decode the payload)
-            const parts = refreshToken.split('.');
-            if (parts.length !== 3) return null;
-
-            const payload = JSON.parse(
-                atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')),
-            );
-            return payload.jti || null;
-        } catch {
-            // Invalid token, return null
-            return null;
-        }
-    }, []);
-
     // Revoke session mutation
     const revokeSessionMutation = useMutation({
         mutationFn: async (sessionId: string) => {
@@ -153,14 +133,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             try {
                 await revokeSessionMutation.mutateAsync(sessionId);
 
-                // Check if this is the current session by comparing JTI
                 const session = sessions.find((s) => s.id === sessionId);
-                const currentJti = getCurrentSessionJti();
-                const isCurrentSession =
-                    session && currentJti && session.refresh_token_jti === currentJti;
 
-                // If current session was revoked, log out immediately
-                if (isCurrentSession || session?.is_current) {
+                if (session?.is_current) {
                     // Clear tokens and log out
                     logOut();
                 } else {
@@ -174,7 +149,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 // Error already handled by mutation meta/toasts
             }
         },
-        [sessions, revokeSessionMutation, getCurrentSessionJti, logOut],
+        [sessions, revokeSessionMutation, logOut],
     );
 
     const revokeSessions = useCallback(
@@ -215,12 +190,11 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     );
                 }
 
-                const currentJti = getCurrentSessionJti();
                 const revokedSessions = sessions.filter((s) =>
                     sessionIds.includes(s.id || ''),
                 );
                 const isCurrentSessionRevoked = revokedSessions.some(
-                    (s) => currentJti && s.refresh_token_jti === currentJti,
+                    (s) => s.is_current,
                 );
 
                 if (isCurrentSessionRevoked) {
@@ -241,7 +215,6 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             fetchClient,
             sessions,
             queryClient,
-            getCurrentSessionJti,
             logOut,
             clearSelection,
         ],
@@ -268,30 +241,17 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             : deviceInfo;
     }, []);
 
-    // Mark current session by comparing JTI
-    const currentJti = getCurrentSessionJti();
-    const sessionsWithCurrent = useMemo(
-        () =>
-            sessions.map((session) => ({
-                ...session,
-                is_current: currentJti
-                    ? session.refresh_token_jti === currentJti
-                    : session.is_current,
-            })),
-        [sessions, currentJti],
-    );
-
     // Calculate total pages
     const totalPages = useMemo(() => {
-        return Math.max(1, Math.ceil(sessionsWithCurrent.length / pageSize));
-    }, [sessionsWithCurrent.length, pageSize]);
+        return Math.max(1, Math.ceil(sessions.length / pageSize));
+    }, [sessions.length, pageSize]);
 
     // Paginate sessions
     const paginatedSessions = useMemo(() => {
         const start = (page - 1) * pageSize;
         const end = start + pageSize;
-        return sessionsWithCurrent.slice(start, end);
-    }, [sessionsWithCurrent, page, pageSize]);
+        return sessions.slice(start, end);
+    }, [sessions, page, pageSize]);
 
     const handlePageChange = useCallback(
         (newPage: number) => {
@@ -568,10 +528,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             {revokeSessionId !== null &&
                 (() => {
                     const session = sessions.find((s) => s.id === revokeSessionId);
-                    const isCurrentSession =
-                        session &&
-                        currentJti &&
-                        session.refresh_token_jti === currentJti;
+                    const isCurrentSession = session?.is_current;
                     return (
                         <ActionConfirmationDialog
                             open={revokeDialogOpen}

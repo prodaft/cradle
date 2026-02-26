@@ -20,10 +20,9 @@
 export function isLoggedIn(): boolean {
     if (typeof window === 'undefined') return false;
     try {
-        const refreshToken = localStorage.getItem('refresh_token');
         const refreshExpiresAt = localStorage.getItem('refresh_expires_at');
 
-        if (!refreshToken || !refreshExpiresAt) {
+        if (!refreshExpiresAt) {
             return false;
         }
 

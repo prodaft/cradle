@@ -23,7 +23,7 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from user.views.token_view import TokenObtainPairLogView, TokenRefreshLogView
+from user.views.token_view import TokenObtainPairLogView, TokenRefreshLogView, LogoutView
 from user.views.user_view import SignupView, EmailConfirm, PasswordReset, ChangePasswordView
 from user.views.oauth_view import OAuthLoginView
 
@@ -43,6 +43,7 @@ urlpatterns = [
         include(
             [
                 path("auth/login/", TokenObtainPairLogView.as_view(), name="auth_login"),
+                path("auth/logout/", LogoutView.as_view(), name="auth_logout"),
                 path("auth/signup/", SignupView.as_view(), name="auth_signup"),
                 path("auth/refresh/", TokenRefreshLogView.as_view(), name="auth_refresh"),
                 path("auth/reset_password/", PasswordReset.as_view(), name="auth_reset_password"),
