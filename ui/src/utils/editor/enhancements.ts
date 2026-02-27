@@ -175,7 +175,7 @@ export class CradleEditor {
                     CradleEditor.entryClassesPromise = fetchClient
                         .GET('/lsp/types/')
                         .then(({ data, error, response }) => {
-                            if (error) throw { response };
+                            if (error) throw { response, error };
                             return data as any;
                         });
                 }
@@ -192,7 +192,7 @@ export class CradleEditor {
                     CradleEditor.triesPromise = fetchClient
                         .GET('/lsp/trie/')
                         .then(({ data, error, response }) => {
-                            if (error) throw { response };
+                            if (error) throw { response, error };
                             const triesData = data as { [key: string]: any };
                             const tries: { [key: string]: DynamicTrie } = {};
                             for (const [type, trie] of Object.entries(triesData)) {
@@ -280,7 +280,7 @@ export class CradleEditor {
                     CradleEditor.snippetsPromise = fetchClient
                         .GET('/notes/snippets/')
                         .then(({ data, error, response }) => {
-                            if (error) throw { response };
+                            if (error) throw { response, error };
                             return (data as Snippet[]) || [];
                         });
                 }
@@ -338,7 +338,7 @@ export class CradleEditor {
         try {
             CradleEditor.invalidateSnippetsCache();
             const { data, error, response } = await fetchClient.GET('/notes/snippets/');
-            if (error) throw { response };
+            if (error) throw { response, error };
             const snippets = (data as Snippet[]) || [];
             this.snippets = snippets;
             CradleEditor.cachedSnippets = snippets;

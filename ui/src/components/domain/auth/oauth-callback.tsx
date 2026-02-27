@@ -87,7 +87,7 @@ export default function OAuthCallback() {
                     body: { provider, code, redirect_uri: redirectUri } as any,
                 } as any,
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
 
             const data = resp as any;
 

@@ -133,7 +133,7 @@ export default function EnrichmentRequestDialog({
         queryFn: async () => {
             const { data, error, response } =
                 await fetchClient.GET('/intelio/enrichment/');
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         enabled: open,
@@ -195,7 +195,7 @@ export default function EnrichmentRequestDialog({
         queryFn: async () => {
             const { data, error, response } =
                 await fetchClient.GET('/entries/entities/');
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         enabled: open && !!entitiesList,
@@ -369,7 +369,7 @@ export default function EnrichmentRequestDialog({
                     } as any,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {

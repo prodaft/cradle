@@ -1,3 +1,4 @@
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import ConfirmDeletionDialog from '@/components/dialogs/base/confirm-deletion-dialog';
@@ -14,7 +15,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { queryKeys } from '@/hooks/query';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import PageHeader from '@components/base/page-header';
 import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
@@ -123,7 +123,7 @@ export default function Reports() {
                     query: { download_url: downloadUrl },
                 },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data!;
         },
         meta: {
@@ -163,7 +163,7 @@ export default function Reports() {
                     },
                 },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data!;
         },
         meta: {
@@ -244,7 +244,7 @@ export default function Reports() {
             const { error, response } = await fetchClient.DELETE('/reports/{id}/', {
                 params: { path: { id } },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: { suppressNotification: true },
     });
@@ -298,7 +298,7 @@ export default function Reports() {
             const { error, response } = await fetchClient.POST('/reports/{id}/retry/', {
                 params: { path: { id } },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             suppressNotification: true,

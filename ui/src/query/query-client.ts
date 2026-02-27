@@ -11,7 +11,7 @@ import {
     QueryKey,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { parseAPIError } from 'src/utils/api';
+import { getSuccessMessage, parseAPIError } from 'src/utils/api';
 
 export type InvalidateTarget = { queryKey: QueryKey };
 
@@ -106,11 +106,12 @@ export const queryClient = new QueryClient({
     }),
 
     mutationCache: new MutationCache({
-        onSuccess: (_data, _variables, _ctx, mutation) => {
+        onSuccess: (data, _variables, _ctx, mutation) => {
             const meta = (mutation.meta ?? {}) as AppMeta;
+            const message = getSuccessMessage(data) ?? meta.successMessage;
 
-            if (meta.successMessage) {
-                toast.success(meta.successMessage, { duration: meta.duration ?? 3500 });
+            if (!meta.suppressNotification && message) {
+                toast.success(message, { duration: meta.duration ?? 3500 });
             }
 
             meta.invalidateQueries?.forEach((t) => {

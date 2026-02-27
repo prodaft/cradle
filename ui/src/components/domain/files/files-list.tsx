@@ -1,3 +1,4 @@
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { ConfirmDeletionDialog } from '@/components/dialogs';
@@ -34,7 +35,6 @@ import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import { useDroppable } from '@dnd-kit/core';
 import {
@@ -118,7 +118,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                 '/file-transfer/download/',
                 { params: { query: { fileId } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data.presigned_url;
         },
         onSuccess: (presignedUrl) => {
@@ -134,7 +134,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                 '/file-transfer/process/',
                 { body: { file_id: fileId } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'File queued for reprocessing',
@@ -288,7 +288,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                 '/file-transfer/delete/',
                 { params: { query: { fileId } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.files.lists() }],

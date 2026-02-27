@@ -134,7 +134,7 @@ export default function EntityPermissionsForm({
                             body: { access_type: update.accessType },
                         },
                     );
-                    if (error) throw { response };
+                    if (error) throw { response, error };
                 }),
             );
         },

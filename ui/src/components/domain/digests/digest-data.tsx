@@ -141,7 +141,7 @@ export default function DigestData() {
                 '/intelio/digest/',
                 { params: { query: queryParams as any } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {

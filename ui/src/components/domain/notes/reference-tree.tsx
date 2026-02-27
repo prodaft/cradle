@@ -54,7 +54,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                     } as any,
                 },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
     });

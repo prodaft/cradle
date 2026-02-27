@@ -57,7 +57,7 @@ export default function NotesListPage() {
             const { data, error, response } = await fetchClient.POST('/notes/', {
                 body: { content: '' },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         onSuccess: (response) => {

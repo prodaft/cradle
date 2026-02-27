@@ -91,7 +91,7 @@ function EnrichmentRequestsInner() {
                 '/intelio/enrich/',
                 { params: { query: queryParams as any } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {
@@ -140,7 +140,7 @@ function EnrichmentRequestsInner() {
                 '/intelio/enrich/{id}/',
                 { params: { path: { id } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
@@ -153,7 +153,7 @@ function EnrichmentRequestsInner() {
                 '/intelio/enrich/{id}/restart/',
                 { params: { path: { id } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {

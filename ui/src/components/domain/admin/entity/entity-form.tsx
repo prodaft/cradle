@@ -80,7 +80,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return ((data as any).results ?? []).map((alias: any) => ({
                 value: alias.id!,
                 label: `${alias.subtype}:${alias.name}`,
@@ -100,7 +100,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                     body: payload,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {

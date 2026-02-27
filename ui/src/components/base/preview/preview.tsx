@@ -11,12 +11,14 @@ interface PreviewProps {
     htmlContent: string;
     currentLine?: number;
     setCurrentLine?: ((line: number) => void) | null;
+    isLoading?: boolean;
 }
 
 export default function Preview({
     htmlContent,
     currentLine = 0,
     setCurrentLine = null,
+    isLoading = false,
 }: PreviewProps) {
     const sanitizedContent = useMemo(
         () => DOMPurify.sanitize(htmlContent),
@@ -28,8 +30,6 @@ export default function Preview({
     const headingId = (search as any).heading as string | undefined;
     const preventScrollRef = useRef(false);
     const previewRef = useRef<HTMLDivElement | null>(null);
-
-    const isLoading = sanitizedContent.length === 0;
 
     // Create a NavigateHandler adapter for handleLinkClick
     const navigateHandler: NavigateHandler = useCallback(

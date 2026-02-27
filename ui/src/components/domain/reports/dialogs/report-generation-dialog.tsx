@@ -106,7 +106,7 @@ export default function ReportGenerationDialog({
                     anonymized: data.mode === 'anonymized',
                 },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'Report generated successfully!',

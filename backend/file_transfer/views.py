@@ -417,7 +417,7 @@ class FileProcess(APIView):
                 raise FileAccessDeniedException(detail="You do not have access to this file.")
             file_reference.process_file()
 
-            return Response({"message": "File processing started"}, status=status.HTTP_200_OK)
+            return Response({"detail": "File processing started"}, status=status.HTTP_200_OK)
         except FileReference.DoesNotExist:
             raise FileReferenceNotFoundException(
                 detail=f"File reference with ID {serializer.validated_data['file_id']} not found."
@@ -470,7 +470,7 @@ class FileDelete(APIView):
                 raise FileAccessDeniedException(detail="You do not have access to this file.")
             file_reference.delete()
 
-            return Response({"message": "File deleted successfully"}, status=status.HTTP_200_OK)
+            return Response({"detail": "File deleted successfully"}, status=status.HTTP_200_OK)
         except FileReference.DoesNotExist:
             raise FileReferenceNotFoundException(detail=f"File reference with ID {file_id} not found.")
         except ValueError:

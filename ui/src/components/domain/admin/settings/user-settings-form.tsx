@@ -50,7 +50,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
             const { data, error, response } = await fetchClient.GET(
                 '/management/settings/',
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {
@@ -73,7 +73,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                     } as any,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.management.settings() }],

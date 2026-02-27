@@ -1,3 +1,4 @@
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { DateRangeFilterButton } from '@/components/data-table/data-table-date-range-filter';
@@ -15,7 +16,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import type { StateSetter } from '@/types';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import { DateRangeFilter } from '@components/base/list-view/types';
 import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
@@ -459,7 +459,7 @@ function DigestList({
                     '/intelio/digest/',
                     { params: { query: { id } } },
                 );
-                if (error) throw { response };
+                if (error) throw { response, error };
             });
             const results = await Promise.allSettled(deletePromises);
 

@@ -1,3 +1,4 @@
+import { getSuccessMessage } from '@/utils/api';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
@@ -15,12 +16,18 @@ export default function ConfirmEmail() {
     const token = typeof rawToken === 'string' ? rawToken : undefined;
     const { mutate: confirmEmail } = useMutation({
         mutationFn: async (token: string) => {
-            const { error, response } = await fetchClient.POST('/auth/email_confirm/', {
-                body: { token },
-            });
-            if (error) throw { response };
+            const { data, error, response } = await fetchClient.POST(
+                '/auth/email_confirm/',
+                { body: { token } },
+            );
+            if (error) throw { response, error };
+            return data;
         },
-        onSuccess: () => toast.success('Email confirmed successfully.'),
+        onSuccess: (response) => {
+            toast.success(
+                getSuccessMessage(response) || 'Email confirmed successfully.',
+            );
+        },
     });
 
     const calledRef = useRef(false);

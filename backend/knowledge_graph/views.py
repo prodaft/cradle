@@ -377,7 +377,7 @@ class KnowledgeGraphView(APIView):
                         "entries": {},
                         "relations": [],
                         "colors": {},
-                        "message": "No graph relations are accessible.",
+                        "detail": "No graph relations are accessible.",
                     },
                 },
                 status=status.HTTP_200_OK,

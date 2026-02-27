@@ -108,7 +108,7 @@ export default function EnrichmentSettingsForm({
                 '/entries/entry_classes/',
                 { params: { query: { search: q || undefined } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             const results = data?.results ?? [];
             return results.map((entry) => ({
                 value: entry.subtype,
@@ -129,7 +129,7 @@ export default function EnrichmentSettingsForm({
                     body: formatted_data,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'Enrichment settings saved successfully',
@@ -172,7 +172,7 @@ export default function EnrichmentSettingsForm({
                     params: { path: { enricher_type: enrichment_class } },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         enabled: !!enrichment_class,

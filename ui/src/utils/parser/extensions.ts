@@ -107,7 +107,7 @@ function fetchMinioDownloadLink(fileId: string): Promise<FileDownload> {
                 params: { query: { fileId } },
             })
             .then(({ data, error, response }) => {
-                if (error) throw { response };
+                if (error) throw { response, error };
                 return {
                     presigned_url: data!.presigned_url,
                     expires_in: Date.now() + data!.expires_in,

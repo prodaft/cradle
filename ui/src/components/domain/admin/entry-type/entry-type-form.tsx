@@ -204,7 +204,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                     body: payload,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {

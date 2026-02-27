@@ -7,6 +7,7 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
+import { getSuccessMessage } from '@/utils/api';
 import { HardDrivesIcon, TrashIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
@@ -15,17 +16,20 @@ import { toast } from 'sonner';
 export default function EntriesSettingsForm() {
     const propagateAccessMutation = useMutation({
         mutationFn: async () => {
-            const { error, response } = await fetchClient.POST(
+            const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}',
                 { params: { path: { action_name: 'propagateAccessVectors' } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
+            return data;
         },
         meta: {
             suppressNotification: true,
         },
-        onSuccess: () => {
-            toast.success('Propagate Access Vectors action triggered successfully!');
+        onSuccess: (response) => {
+            toast.success(
+                getSuccessMessage(response) || 'Action completed successfully!',
+            );
         },
     });
 
@@ -35,7 +39,7 @@ export default function EntriesSettingsForm() {
                 '/management/actions/{action_name}',
                 { params: { path: { action_name: 'deleteHangingArtifacts' } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {
@@ -43,7 +47,7 @@ export default function EntriesSettingsForm() {
         },
         onSuccess: (response) => {
             toast.success(
-                (response as any)?.message || 'Action completed successfully!',
+                getSuccessMessage(response) || 'Action completed successfully!',
             );
         },
     });

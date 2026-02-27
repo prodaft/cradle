@@ -115,7 +115,7 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
                     body: { theme } as any,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         onSuccess: () => {

@@ -69,7 +69,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                     params: { path: { user_id: normalizedUserId } },
                     body: data,
                 });
-                if (error) throw { response };
+                if (error) throw { response, error };
                 return result;
             },
             meta: {
@@ -97,7 +97,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                     params: { path: { snippet_id: snippetId } },
                     body: data,
                 });
-                if (error) throw { response };
+                if (error) throw { response, error };
                 return result;
             },
             meta: {
@@ -115,7 +115,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                     '/notes/snippets/{snippet_id}/',
                     { params: { path: { snippet_id: snippetId } } },
                 );
-                if (error) throw { response };
+                if (error) throw { response, error };
             },
             meta: {
                 invalidateQueries: [

@@ -188,11 +188,15 @@ class ActionView(APIView):
         for i in notes:
             scheduler.run_pipeline(i, update_acvec=False)
 
-        return Response({"message": "Started relinking notes."})
+        return Response({"detail": "Started relinking notes."})
 
     def action_refreshMaterializedGraph(self, request, *args, **kwargs):
         refresh_edges_materialized_view.apply_async(force=True)
-        return Response({"message": "Started graph materialization."})
+        return Response({"detail": "Started graph materialization."})
+
+    def action_recalculateNodePositions(self, request, *args, **kwargs):
+        # Node positions are computed on-demand; this action triggers a refresh
+        return Response({"detail": "Node positions will be recalculated on next graph load."})
 
     def action_propagateAccessVectors(self, request, *args, **kwargs):
         entities = Entry.entities.all()
@@ -200,17 +204,17 @@ class ActionView(APIView):
         for entity in entities:
             update_accesses.apply_async(args=(entity.id,))
 
-        return Response({"message": "Propagating the access vectors for all entities"})
+        return Response({"detail": "Propagating the access vectors for all entities"})
 
     def action_reprocessAllFiles(self, request, *args, **kwargs):
         reprocess_all_files_task.apply_async()
 
-        return Response({"message": "Started reprocessing all files."})
+        return Response({"detail": "Started reprocessing all files."})
 
     def action_deleteHangingArtifacts(self, request, *args, **kwargs):
         count, _ = Entry.artifacts.unreferenced().distinct().delete()
 
-        return Response({"message": f"Deleted {count} artifacts."})
+        return Response({"detail": f"Deleted {count} artifacts."})
 
 
 ActionView = extend_schema(

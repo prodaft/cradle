@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
 import { useAuthActions } from '@/hooks/auth/use-auth';
+import { getSuccessMessage } from '@/utils/api';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -41,7 +42,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: { suppressNotification: true },
@@ -70,7 +71,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: { successMessage: 'Email confirmation sent successfully' },
     });
@@ -88,21 +89,23 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: { successMessage: 'Password reset email sent successfully' },
     });
 
     const deleteUserMutation = useMutation({
         mutationFn: async () => {
-            const { error, response } = await fetchClient.DELETE('/users/{user_id}/', {
-                params: { path: { user_id: userId } },
-            });
-            if (error) throw { response };
+            const { data, error, response } = await fetchClient.DELETE(
+                '/users/{user_id}/',
+                { params: { path: { user_id: userId } } },
+            );
+            if (error) throw { response, error };
+            return data;
         },
         meta: { suppressNotification: true },
-        onSuccess: () => {
-            toast.success('User deleted successfully');
+        onSuccess: (response) => {
+            toast.success(getSuccessMessage(response) || 'User deleted successfully');
             router.navigate({ to: '/manage/users' } as any);
         },
     });

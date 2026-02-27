@@ -159,7 +159,7 @@ export default function NotesList({
                     body: { note_id: noteId } as any,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             suppressNotification: true,
@@ -439,7 +439,7 @@ export default function NotesList({
             const { error, response } = await fetchClient.DELETE('/notes/{note_id}/', {
                 params: { path: { note_id: noteId } },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.notes.lists() }],

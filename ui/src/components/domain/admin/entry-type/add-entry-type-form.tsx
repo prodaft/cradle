@@ -152,7 +152,7 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
                 '/entries/entry_classes/',
                 { body: payload },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {

@@ -96,7 +96,7 @@ export default function UploadDigestDialog({
             const { data, error, response } = await fetchClient.GET(
                 '/intelio/digest/options/',
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {
@@ -138,7 +138,7 @@ export default function UploadDigestDialog({
             } = await fetchClient.GET('/intelio/digest/upload/', {
                 params: { query: { name: file.name } as any },
             });
-            if (initError) throw { response: initResponse };
+            if (initError) throw { response: initResponse, error: initError };
 
             const initAny = initiateData as any;
             await uploadFile(initAny.presigned_url ?? initAny.presignedUrl, file);
@@ -157,7 +157,7 @@ export default function UploadDigestDialog({
                     } as any,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {

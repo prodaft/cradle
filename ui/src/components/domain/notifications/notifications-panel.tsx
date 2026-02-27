@@ -44,7 +44,7 @@ export default function NotificationsPanel({
                         },
                     },
                 );
-                if (error) throw { response };
+                if (error) throw { response, error };
                 return data!;
             },
             getNextPageParam: (lastPage) => {

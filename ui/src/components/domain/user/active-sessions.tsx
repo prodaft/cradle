@@ -1,6 +1,6 @@
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import TableActionsButton from '@/components/base/table-actions-button';
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import ActionConfirmationDialog from '@/components/dialogs/base/action-confirmation-dialog';
@@ -117,7 +117,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 '/users/{user_id}/sessions/{session_id}/',
                 { params: { path: { user_id: userId, session_id: sessionId } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {
@@ -162,7 +162,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                             },
                         },
                     );
-                    if (error) throw { response };
+                    if (error) throw { response, error };
                     return data;
                 });
 

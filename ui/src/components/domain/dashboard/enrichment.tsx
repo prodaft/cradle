@@ -79,7 +79,7 @@ export default function DashboardEnrichmentRequests({
                 '/intelio/enrich/',
                 { params: { query: queryParams as any } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {
@@ -134,7 +134,7 @@ export default function DashboardEnrichmentRequests({
                 '/intelio/enrich/{id}/',
                 { params: { path: { id } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
@@ -147,7 +147,7 @@ export default function DashboardEnrichmentRequests({
                 '/intelio/enrich/{id}/restart/',
                 { params: { path: { id } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {

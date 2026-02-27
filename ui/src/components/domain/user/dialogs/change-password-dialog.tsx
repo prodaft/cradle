@@ -83,7 +83,7 @@ export default function ChangePasswordDialog({
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'Password changed successfully',

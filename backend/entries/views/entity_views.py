@@ -185,7 +185,7 @@ class EntityDetail(APIView):
         entity.delete_renaming(request.user.id)
         refresh_edges_materialized_view.apply_async()
 
-        return Response({"message": "Requested entity was deleted"}, status=status.HTTP_200_OK)
+        return Response({"detail": "Requested entity was deleted"}, status=status.HTTP_200_OK)
 
     def post(self, request: Request, entity_id: UUID) -> Response:
         try:

@@ -20,6 +20,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { queryKeys } from '@/hooks/query';
 import { SelectOption } from '@/types';
+import { getSuccessMessage } from '@/utils/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
@@ -76,20 +77,23 @@ type FileSettingsFormValues = z.infer<typeof fileSettingsSchema>;
 export default function FileSettingsForm() {
     const reprocessFilesMutation = useMutation({
         mutationFn: async () => {
-            const { error, response } = await fetchClient.POST(
+            const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}',
                 {
                     params: { path: { action_name: 'reprocessAllFiles' } },
                     body: { action: 'reprocessAllFiles' },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
+            return data;
         },
         meta: {
             suppressNotification: true,
         },
-        onSuccess: () => {
-            toast.success('Files are being re-processed');
+        onSuccess: (response) => {
+            toast.success(
+                getSuccessMessage(response) || 'Action completed successfully!',
+            );
         },
     });
 
@@ -115,7 +119,7 @@ export default function FileSettingsForm() {
             const { data, error, response } = await fetchClient.GET(
                 '/management/settings/',
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         refetchOnWindowFocus: false,
@@ -143,7 +147,7 @@ export default function FileSettingsForm() {
                     } as any,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'File settings updated successfully!',

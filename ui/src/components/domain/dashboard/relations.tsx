@@ -98,7 +98,7 @@ function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         enabled: canExpand,
@@ -456,7 +456,7 @@ export default function Relations({ obj }: RelationsProps) {
                             body: { entity_id: entity },
                         },
                     );
-                    if (error) throw { response };
+                    if (error) throw { response, error };
                 }),
             );
         },
@@ -521,7 +521,7 @@ export default function Relations({ obj }: RelationsProps) {
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         enabled: !!obj.id,
@@ -556,7 +556,7 @@ export default function Relations({ obj }: RelationsProps) {
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         enabled: !!obj.id && depth > 0,

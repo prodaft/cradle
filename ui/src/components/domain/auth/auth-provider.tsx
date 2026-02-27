@@ -295,10 +295,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
                 if (error || !data) {
                     const parsed = error
-                        ? {
-                              code: (error as any).code || 'UNKNOWN_ERROR',
-                              detail: (error as any).detail || 'An error occurred',
-                          }
+                        ? await parseAPIError({ response, error })
                         : await parseAPIError({ response });
                     throw { ...parsed, status: response?.status };
                 }

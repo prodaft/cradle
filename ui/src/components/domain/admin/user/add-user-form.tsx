@@ -109,7 +109,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                 error,
                 response,
             } = await fetchClient.POST('/users/', { body: payload });
-            if (error) throw { response };
+            if (error) throw { response, error };
             return newUser;
         },
         meta: {

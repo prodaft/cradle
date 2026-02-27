@@ -73,7 +73,7 @@ export default function ApiKeyGenerateDialog({
                     params: { path: { user_id: userId } },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data.api_key;
         },
         meta: {

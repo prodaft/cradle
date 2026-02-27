@@ -46,7 +46,7 @@ export default function NotificationCard({
                     body: { is_marked_unread },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             suppressNotification: true,
@@ -76,7 +76,7 @@ export default function NotificationCard({
                     body: { access_type: accessType },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'Access level changed successfully',
@@ -89,7 +89,7 @@ export default function NotificationCard({
                 params: { path: { user_id: userId } },
                 body: { is_active: true },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'User activated successfully.',
@@ -104,7 +104,7 @@ export default function NotificationCard({
                     query: { download_url: false },
                 },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data?.report_url;
         },
         meta: {

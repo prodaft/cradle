@@ -99,7 +99,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return ((data as any).results ?? []).map((alias: any) => ({
                 value: alias.id!,
                 label: `${alias.subtype}:${alias.name}`,
@@ -178,7 +178,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                 '/entries/entities/',
                 { body: payload },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {

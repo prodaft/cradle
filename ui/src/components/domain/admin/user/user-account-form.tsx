@@ -59,7 +59,7 @@ export default function UserAccountForm({
                 params: { path: { user_id: userId } },
                 body: payload,
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: { successMessage: 'User settings saved successfully' },
         onSuccess: () => {

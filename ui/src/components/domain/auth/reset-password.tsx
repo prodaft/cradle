@@ -52,7 +52,7 @@ export default function ResetPassword() {
             const { error, response } = await fetchClient.PUT('/auth/reset_password/', {
                 body: { token: data.token, password: data.password },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'Password reset successfully',

@@ -45,7 +45,7 @@ export default function TypeMappingsPage() {
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {

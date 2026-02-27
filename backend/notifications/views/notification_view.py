@@ -158,7 +158,7 @@ class NotificationDetail(APIView):
         serializer = UpdateNotificationSerializer(notification, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Notification updated successfully"}, status=status.HTTP_200_OK)
+            return Response({"detail": "Notification updated successfully"}, status=status.HTTP_200_OK)
 
         raise BadRequestException(detail="Request body is invalid.")
 

@@ -2373,10 +2373,10 @@ export interface components {
             has_next: boolean;
             results: components["schemas"]["EntryWithDepthSerializerView"][];
         };
-        /** @description Serializer for management action response. */
+        /** @description Serializer for management action response (RFC 9457-aligned). */
         ManagementActionResponse: {
             /** @description Success message */
-            message: string;
+            detail: string;
         };
         /** @description Serializer for mapping subclass information. */
         MappingSubclass: {
@@ -17262,7 +17262,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Name of the action to execute */
-                action_name: "deleteHangingArtifacts" | "propagateAccessVectors" | "refreshMaterializedGraph" | "relinkNotes" | "reprocessAllFiles";
+                action_name: "deleteHangingArtifacts" | "propagateAccessVectors" | "recalculateNodePositions" | "refreshMaterializedGraph" | "relinkNotes" | "reprocessAllFiles";
             };
             cookie?: never;
         };

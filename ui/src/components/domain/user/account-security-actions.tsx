@@ -53,7 +53,7 @@ export default function AccountSecurityActions({
             const { error, response } = await fetchClient.DELETE('/users/{user_id}/', {
                 params: { path: { user_id: userId } },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: { suppressNotification: true },
         onSuccess: async () => {

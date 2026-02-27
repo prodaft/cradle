@@ -82,9 +82,7 @@ export default function MainLayout(): React.JSX.Element {
                                 className='bg-card overflow-hidden'
                             >
                                 <NotificationsPanel
-                                    unreadNotificationsCount={
-                                        unreadNotificationsCount
-                                    }
+                                    unreadNotificationsCount={unreadNotificationsCount}
                                     setUnreadNotificationsCount={
                                         setUnreadNotificationsCount
                                     }

@@ -85,7 +85,7 @@ export default function SetUserPasswordDialog({
                 params: { path: { user_id: userId } },
                 body: { password },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'Password updated successfully',

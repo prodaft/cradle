@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { queryKeys } from '@/hooks/query';
+import { getSuccessMessage } from '@/utils/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowClockwiseIcon, PlusIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
@@ -55,7 +56,7 @@ export default function NoteSettingsForm() {
             const { data, error, response } = await fetchClient.GET(
                 '/management/settings/',
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         refetchOnWindowFocus: false,
@@ -78,7 +79,7 @@ export default function NoteSettingsForm() {
                     } as any,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'Settings updated successfully!',
@@ -90,17 +91,20 @@ export default function NoteSettingsForm() {
 
     const relinkNotesMutation = useMutation({
         mutationFn: async () => {
-            const { error, response } = await fetchClient.POST(
+            const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}',
                 { params: { path: { action_name: 'relinkNotes' } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
+            return data;
         },
         meta: {
             suppressNotification: true,
         },
-        onSuccess: () => {
-            toast.success('Re-Link all Notes action triggered!');
+        onSuccess: (response) => {
+            toast.success(
+                getSuccessMessage(response) || 'Action completed successfully!',
+            );
         },
     });
 

@@ -308,7 +308,7 @@ export default function EnrichmentResults() {
                 '/intelio/enrich/{id}/',
                 { params: { path: { id } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         retry: false,
@@ -341,7 +341,7 @@ export default function EnrichmentResults() {
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         enabled: !!selectedEnricher && !showIgnored,
@@ -379,7 +379,7 @@ export default function EnrichmentResults() {
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         enabled: !!selectedEnricher && !showIgnored && !!selectedArtifactId,

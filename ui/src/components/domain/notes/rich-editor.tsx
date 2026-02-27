@@ -247,7 +247,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 '/file-transfer/download/',
                 { params: { query: { fileId } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return {
                 presigned_url: data!.presigned_url,
                 expires_in: data!.expires_in,
@@ -470,7 +470,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     },
                 },
             ]),
-            autocompletion(),
+            autocompletion({ interactionDelay: 0 }),
             ...editorUtils.autocomplete(),
             editorUtils.lint(),
             EditorView.theme({

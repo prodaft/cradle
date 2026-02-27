@@ -126,7 +126,7 @@ export default function EntryTypesPage() {
                 '/entries/entry_classes/{class_subtype}/',
                 { params: { path: { class_subtype: subtype } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.entryTypes.lists() }],

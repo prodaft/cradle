@@ -71,7 +71,7 @@ export default function TwoFactorSetupDialog({
         queryFn: async () => {
             const { data, error, response } =
                 await fetchClient.POST('/users/2fa/enable/');
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         enabled: open && !isDisabling,
@@ -118,7 +118,7 @@ export default function TwoFactorSetupDialog({
                             body: { token: verificationCode } as any,
                         },
                     );
-                    if (error) throw { response };
+                    if (error) throw { response, error };
                 } else {
                     const { error, response } = await fetchClient.POST(
                         '/users/2fa/verify/',
@@ -126,7 +126,7 @@ export default function TwoFactorSetupDialog({
                             body: { token: verificationCode } as any,
                         },
                     );
-                    if (error) throw { response };
+                    if (error) throw { response, error };
                 }
                 onSuccess?.();
                 onOpenChange(false);

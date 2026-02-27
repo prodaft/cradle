@@ -106,7 +106,7 @@ export default function Register() {
                     password: data.password,
                 },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
             return user;
         },
         meta: {

@@ -137,7 +137,7 @@ export default function NoteViewer() {
                 '/notes/{note_id}/final/',
                 { params: { path: { note_id: noteId } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {
@@ -157,7 +157,7 @@ export default function NoteViewer() {
                     body: { note_id: noteId } as any,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'Note relinked successfully.',
@@ -361,7 +361,7 @@ export default function NoteViewer() {
             const { error, response } = await fetchClient.DELETE('/notes/{note_id}/', {
                 params: { path: { note_id: noteId } },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             invalidateQueries: [
@@ -374,10 +374,15 @@ export default function NoteViewer() {
 
     // Use a ref to store the latest values for the save function
     const saveDataRef = useRef({ markdownContent });
+    const lastSaveFailedRef = useRef(false);
 
     useEffect(() => {
         saveDataRef.current = { markdownContent };
     }, [markdownContent]);
+
+    useEffect(() => {
+        lastSaveFailedRef.current = false;
+    }, [noteId]);
 
     const saveNoteMutation = useMutation({
         mutationFn: async ({ content }: { content: string }) => {
@@ -388,7 +393,7 @@ export default function NoteViewer() {
                     body: { content },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
     });
@@ -409,12 +414,14 @@ export default function NoteViewer() {
 
             try {
                 await saveNoteMutation.mutateAsync({ content });
+                lastSaveFailedRef.current = false;
                 setInitialMarkdown(content);
                 setHasUnsavedChanges(false);
                 if (successMessage) {
                     toast.success(successMessage);
                 }
             } catch {
+                lastSaveFailedRef.current = true;
                 // Error toast handled by global mutation handler
             } finally {
                 setSaving(false);
@@ -525,20 +532,20 @@ export default function NoteViewer() {
         [handleSaveNote],
     );
 
-    // Auto-save when content changes
+    // Auto-save when content changes (skip if last save failed - manual save only)
     useEffect(() => {
         if (!markdownContent || markdownContent === initialMarkdown) {
-            // Clear any pending debounced calls if content matches initial
             debouncedSaveNote.cancel();
             return;
         }
 
-        // Update unsaved status after a short delay
         setHasUnsavedChanges(true);
-        // Trigger save after a longer delay
+        if (lastSaveFailedRef.current) {
+            debouncedSaveNote.cancel();
+            return;
+        }
         debouncedSaveNote();
 
-        // Cleanup function to cancel pending debounced calls
         return () => {
             debouncedSaveNote.cancel();
         };

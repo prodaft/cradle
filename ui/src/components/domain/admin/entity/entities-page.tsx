@@ -97,7 +97,7 @@ export default function EntitiesPage() {
                     } as any,
                 },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {
@@ -118,7 +118,7 @@ export default function EntitiesPage() {
                 '/entries/entities/{entity_id}/',
                 { params: { path: { entity_id: entityId } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.entities.lists() }],

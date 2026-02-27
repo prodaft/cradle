@@ -129,7 +129,7 @@ export default function UsersPage() {
                         '/users/{user_id}/',
                         { params: { path: { user_id: userId } } },
                     );
-                    if (error) throw { response };
+                    if (error) throw { response, error };
                 }),
             );
         },

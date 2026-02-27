@@ -484,7 +484,7 @@ class NoteDetail(APIView):
 
         refresh_edges_materialized_view.apply_async()
 
-        return Response({"message": "Note was deleted."}, status=status.HTTP_200_OK)
+        return Response({"detail": "Note was deleted."}, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -779,7 +779,7 @@ class NoteGraph(APIView):
                     "entries": {},
                     "relations": [],
                     "colors": {},
-                    "message": "This note has no graph relations or all relations are inaccessible.",
+                    "detail": "This note has no graph relations or all relations are inaccessible.",
                 },
                 status=status.HTTP_200_OK,
             )

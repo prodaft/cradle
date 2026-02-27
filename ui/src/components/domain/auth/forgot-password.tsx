@@ -46,7 +46,7 @@ export default function ForgotPassword() {
                 '/auth/reset_password/',
                 { body: { email } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             suppressNotification: true,

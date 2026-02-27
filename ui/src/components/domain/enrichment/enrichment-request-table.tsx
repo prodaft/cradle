@@ -1,3 +1,4 @@
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import ConfirmDeletionDialog from '@/components/dialogs/base/confirm-deletion-dialog';
@@ -12,7 +13,6 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { truncateText } from '@/utils/dashboard';
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
 import { ArrowsClockwiseIcon, TrashIcon } from '@phosphor-icons/react';

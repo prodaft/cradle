@@ -125,7 +125,7 @@ export default function FileUploadDialog({
                 } = await fetchClient.GET('/file-transfer/upload/', {
                     params: { query: { fileName: file.name, fileSize: file.size } },
                 });
-                if (uploadError) throw { response: uploadResp };
+                if (uploadError) throw { response: uploadResp, error: uploadError };
 
                 updateFileStatus(file, 'uploading', 30);
 
@@ -146,7 +146,8 @@ export default function FileUploadDialog({
                         body: noteId ? { note_id: noteId } : {},
                     },
                 );
-                if (finalizeError) throw { response: finalizeResp };
+                if (finalizeError)
+                    throw { response: finalizeResp, error: finalizeError };
 
                 updateFileStatus(file, 'success', 100);
 

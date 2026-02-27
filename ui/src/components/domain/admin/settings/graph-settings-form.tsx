@@ -7,6 +7,7 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
+import { getSuccessMessage } from '@/utils/api';
 import { ArrowClockwiseIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
@@ -15,37 +16,43 @@ import { toast } from 'sonner';
 export default function GraphSettingsForm() {
     const refreshGraphMutation = useMutation({
         mutationFn: async () => {
-            const { error, response } = await fetchClient.POST(
+            const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}',
                 { params: { path: { action_name: 'refreshMaterializedGraph' } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
+            return data;
         },
         meta: {
             suppressNotification: true,
         },
-        onSuccess: () => {
-            toast.success('Refresh Materialized Graph action triggered!');
+        onSuccess: (response) => {
+            toast.success(
+                getSuccessMessage(response) || 'Action completed successfully!',
+            );
         },
     });
 
     const recalculatePositionsMutation = useMutation({
         mutationFn: async () => {
-            const { error, response } = await fetchClient.POST(
+            const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}',
                 {
                     params: {
-                        path: { action_name: 'recalculate_node_positions' as any },
+                        path: { action_name: 'recalculateNodePositions' },
                     },
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
+            return data;
         },
         meta: {
             suppressNotification: true,
         },
-        onSuccess: () => {
-            toast.success('Re-calculate Node Positions action triggered!');
+        onSuccess: (response) => {
+            toast.success(
+                getSuccessMessage(response) || 'Action completed successfully!',
+            );
         },
     });
 

@@ -55,7 +55,7 @@ export default function AccountAppearanceForm({
                 params: { path: { user_id: userData.id } },
                 body: { theme } as any,
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: { successMessage: 'Settings saved successfully' },
         onSuccess: () => {

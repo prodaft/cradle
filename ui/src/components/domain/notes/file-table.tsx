@@ -44,7 +44,7 @@ export default function FileTable({
                 '/file-transfer/download/',
                 { params: { query: { fileId } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data.presigned_url;
         },
         meta: {

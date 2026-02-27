@@ -85,7 +85,7 @@ class Verify2FASetupView(APIView):
             request.user.two_factor_enabled = True
             request.user.save(update_fields=["two_factor_enabled"])
 
-        return Response({"message": "2FA enabled successfully"})
+        return Response({"detail": "2FA enabled successfully"})
 
 
 @extend_schema_view(
@@ -118,6 +118,6 @@ class Disable2FAView(APIView):
         # The verify_2fa_token and disable_2fa methods now handle transactions internally
         if request.user.verify_2fa_token(serializer.validated_data["token"]):
             request.user.disable_2fa()
-            return Response({"message": "2FA disabled successfully"})
+            return Response({"detail": "2FA disabled successfully"})
 
         raise InvalidTwoFactorTokenException(detail="Invalid token")

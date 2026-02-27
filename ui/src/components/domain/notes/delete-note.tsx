@@ -38,7 +38,7 @@ export default function DeleteNote({ note, setHidden, classNames }: DeleteNotePr
             const { error, response } = await fetchClient.DELETE('/notes/{note_id}/', {
                 params: { path: { note_id: note.id } },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
             setHidden(true);
         },
         meta: {

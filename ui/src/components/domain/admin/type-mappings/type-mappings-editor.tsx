@@ -183,7 +183,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                 '/intelio/mappings/{class_name}/keys',
                 { params: { path: { class_name: id } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: { showErrorToast: true },
@@ -205,7 +205,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                 '/intelio/mappings/{class_name}/',
                 { params: { path: { class_name: id } } },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: { showErrorToast: true },
@@ -265,7 +265,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                     body: { id: mappingId } as any,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
         },
         meta: {
             successMessage: 'Mapping deleted successfully',
@@ -281,7 +281,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                     body: rowData as any,
                 },
             );
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         meta: {
@@ -299,7 +299,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                         body: rowData as any,
                     },
                 );
-                if (error) throw { response };
+                if (error) throw { response, error };
                 return data;
             });
             return await Promise.all(promises);

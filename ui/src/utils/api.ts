@@ -40,10 +40,34 @@ interface APIErrorResponse {
 /**
  * Parse RFC 9457 error response into structured format
  *
- * @param error - Error object with response
+ * @param error - Error object: { response, error? } from openapi-fetch throw,
+ *   parsed body from openapi-react-query ($api.useMutation throws it directly),
+ *   or axios-style { response } (body may be consumed)
  * @returns Parsed error object
  */
 export async function parseAPIError(error: any): Promise<ParsedAPIError> {
+    // openapi-react-query throws the parsed body directly (no .response)
+    const isRfc9457Body =
+        error &&
+        typeof error === 'object' &&
+        !error.response &&
+        (typeof error.detail === 'string' || typeof error.code === 'string');
+    if (isRfc9457Body) {
+        const data = error as APIErrorResponse;
+        return {
+            code: data.code || 'UNKNOWN_ERROR',
+            detail: data.detail || 'An error occurred',
+            status: data.status ?? 500,
+            title: data.title || 'Error',
+            type: data.type,
+            instance: data.instance || 'unknown',
+            timestamp: data.timestamp || new Date().toISOString(),
+            isValidationError: data.code === 'VALIDATION_ERROR',
+            fieldErrors: data.errors || {},
+            raw: data,
+        };
+    }
+
     // Network error (no response from server)
     if (!error.response) {
         if (error instanceof TypeError) {
@@ -75,10 +99,20 @@ export async function parseAPIError(error: any): Promise<ParsedAPIError> {
     let data: APIErrorResponse = {
         status: error.response?.status ?? 500,
     };
-    try {
-        data = (await error.response.json()) || data;
-    } catch {
-        // Response body empty, not JSON, or already consumed
+    // openapi-fetch returns pre-parsed body in error.error; use it when available
+    const preParsed = error.error;
+    if (preParsed && typeof preParsed === 'object') {
+        data = {
+            ...data,
+            ...preParsed,
+            status: preParsed.status ?? data.status,
+        };
+    } else {
+        try {
+            data = (await error.response.json()) || data;
+        } catch {
+            // Response body empty, not JSON, or already consumed by openapi-fetch
+        }
     }
 
     return {
@@ -93,6 +127,14 @@ export async function parseAPIError(error: any): Promise<ParsedAPIError> {
         fieldErrors: data.errors || {},
         raw: data,
     };
+}
+
+/**
+ * Extract success message from API response (RFC 9457-aligned: "detail").
+ */
+export function getSuccessMessage(data: any): string | undefined {
+    if (!data || typeof data !== 'object') return undefined;
+    return data.detail;
 }
 
 /**

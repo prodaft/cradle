@@ -162,4 +162,4 @@ class UpdateAccess(APIView):
                 ),
             )
 
-        return Response("Access has been updated.")
+        return Response({"detail": "Access has been updated."})

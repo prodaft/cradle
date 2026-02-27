@@ -137,7 +137,7 @@ export default function SearchDialog({
                         },
                     },
                 );
-                if (error) throw { response };
+                if (error) throw { response, error };
                 return data;
             }
             const { data, error, response } = await fetchClient.GET('/query/', {
@@ -150,7 +150,7 @@ export default function SearchDialog({
                     } as any,
                 },
             });
-            if (error) throw { response };
+            if (error) throw { response, error };
             return data;
         },
         enabled: isOpen && ready,
