@@ -268,7 +268,10 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
             <div className='flex flex-col gap-6'>
                 {/* Basic Section */}
                 <div className='flex flex-col gap-4'>
-                    <h3 className='font-semibold text-base'>Basic Information</h3>
+                    <div className='space-y-4'>
+                        <h3 className='font-semibold text-base'>Basic Information</h3>
+                        <Separator className='mt-4' />
+                    </div>
                     <FieldGroup className='gap-4'>
                         <Controller
                             name='type'
@@ -498,15 +501,12 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                         />
                     </FieldGroup>
                 </div>
-                <Separator
-                    data-orientation='horizontal'
-                    role='none'
-                    className='shrink-0 touch-manipulation bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px'
-                    data-slot='separator'
-                />
                 {/* Advanced Section */}
                 <div className='flex flex-col gap-4'>
-                    <h3 className='font-semibold text-base'>Advanced Settings</h3>
+                    <div className='space-y-4'>
+                        <h3 className='font-semibold text-base'>Advanced Settings</h3>
+                        <Separator className='mt-4' />
+                    </div>
                     <FieldGroup className='gap-4'>
                         {isEntity && (
                             <>

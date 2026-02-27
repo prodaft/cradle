@@ -493,8 +493,13 @@ export default function EnrichmentSettingsForm({
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <div className='flex flex-col gap-6'>
                         {/* General Information */}
-                        <FieldSet id='general'>
-                            <FieldLegend>General Information</FieldLegend>
+                        <FieldSet id='general' className='gap-4'>
+                            <div className='space-y-4'>
+                                <FieldLegend className='mb-0'>
+                                    General Information
+                                </FieldLegend>
+                                <Separator className='mt-4' />
+                            </div>
                             <FieldGroup className='gap-4'>
                                 <Controller
                                     name='enabled'
@@ -602,20 +607,17 @@ export default function EnrichmentSettingsForm({
                         </FieldSet>
 
                         {Object.keys(formFields).length > 0 && (
-                            <>
-                                <Separator
-                                    data-orientation='horizontal'
-                                    role='none'
-                                    className='shrink-0'
-                                />
-                                {/* Enrichment Parameters */}
-                                <FieldSet id='settings'>
-                                    <FieldLegend>Enrichment Parameters</FieldLegend>
-                                    <FieldGroup className='gap-4'>
-                                        {renderSettingsFields()}
-                                    </FieldGroup>
-                                </FieldSet>
-                            </>
+                            <FieldSet id='settings' className='gap-4'>
+                                <div className='space-y-4'>
+                                    <FieldLegend className='mb-0'>
+                                        Enrichment Parameters
+                                    </FieldLegend>
+                                    <Separator className='mt-4' />
+                                </div>
+                                <FieldGroup className='gap-4'>
+                                    {renderSettingsFields()}
+                                </FieldGroup>
+                            </FieldSet>
                         )}
                     </div>
 

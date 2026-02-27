@@ -136,7 +136,10 @@ export default function NoteSettingsForm() {
             <div className='flex flex-col gap-6'>
                 {/* General Section */}
                 <div className='flex flex-col gap-4'>
-                    <h3 className='font-semibold text-base'>General</h3>
+                    <div className='space-y-4'>
+                        <h3 className='font-semibold text-base'>General</h3>
+                        <Separator className='mt-4' />
+                    </div>
                     <FieldGroup className='gap-4'>
                         <Controller
                             name='minEntries'
@@ -323,15 +326,12 @@ export default function NoteSettingsForm() {
                         />
                     </FieldGroup>
                 </div>
-                <Separator
-                    data-orientation='horizontal'
-                    role='none'
-                    className='shrink-0 touch-manipulation bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px'
-                    data-slot='separator'
-                />
                 {/* Snippets Section */}
                 <div className='flex flex-col gap-4'>
-                    <h3 className='font-semibold text-base'>Global Snippets</h3>
+                    <div className='space-y-4'>
+                        <h3 className='font-semibold text-base'>Global Snippets</h3>
+                        <Separator className='mt-4' />
+                    </div>
                     <FieldGroup className='gap-4'>
                         <Field orientation='responsive'>
                             <FieldContent className='flex-1'>
@@ -358,15 +358,12 @@ export default function NoteSettingsForm() {
                     </FieldGroup>
                     <SnippetList ref={snippetListRef} userId='null' showTitle={false} />
                 </div>
-                <Separator
-                    data-orientation='horizontal'
-                    role='none'
-                    className='shrink-0 touch-manipulation bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px'
-                    data-slot='separator'
-                />
                 {/* Actions Section */}
                 <div className='flex flex-col gap-4'>
-                    <h3 className='font-semibold text-base'>Actions</h3>
+                    <div className='space-y-4'>
+                        <h3 className='font-semibold text-base'>Actions</h3>
+                        <Separator className='mt-4' />
+                    </div>
                     <FieldGroup className='gap-4'>
                         <Field orientation='responsive'>
                             <FieldContent className='flex-1'>

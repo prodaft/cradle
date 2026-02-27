@@ -249,7 +249,10 @@ export default function FileSettingsForm() {
             <div className='flex flex-col gap-6'>
                 {/* Processing Section */}
                 <div className='flex flex-col gap-4'>
-                    <h3 className='font-semibold text-base'>Processing</h3>
+                    <div className='space-y-4'>
+                        <h3 className='font-semibold text-base'>Processing</h3>
+                        <Separator className='mt-4' />
+                    </div>
                     <FieldGroup className='gap-4'>
                         <Controller
                             name='autoprocessFiles'
@@ -582,15 +585,12 @@ export default function FileSettingsForm() {
                         />
                     </FieldGroup>
                 </div>
-                <Separator
-                    data-orientation='horizontal'
-                    role='none'
-                    className='shrink-0 touch-manipulation bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px'
-                    data-slot='separator'
-                />
                 {/* Actions Section */}
                 <div className='flex flex-col gap-4'>
-                    <h3 className='font-semibold text-base'>Actions</h3>
+                    <div className='space-y-4'>
+                        <h3 className='font-semibold text-base'>Actions</h3>
+                        <Separator className='mt-4' />
+                    </div>
                     <FieldGroup className='gap-4'>
                         <Field orientation='responsive'>
                             <FieldContent className='flex-1'>

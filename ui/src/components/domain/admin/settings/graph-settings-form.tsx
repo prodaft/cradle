@@ -61,7 +61,10 @@ export default function GraphSettingsForm() {
         <div className='flex flex-col gap-6'>
             {/* Actions Section */}
             <div className='flex flex-col gap-4'>
-                <h3 className='font-semibold text-base'>Actions</h3>
+                <div className='space-y-4'>
+                    <h3 className='font-semibold text-base'>Actions</h3>
+                    <Separator className='mt-4' />
+                </div>
                 <FieldGroup className='gap-4'>
                     <Field orientation='responsive'>
                         <FieldContent className='flex-1'>
