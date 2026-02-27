@@ -1,3 +1,4 @@
+import { PageLoader } from '@/components/base/page-loader';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { createFileRoute, notFound } from '@tanstack/react-router';
@@ -18,7 +19,7 @@ export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name'
     }),
     gcTime: 1000 * 60 * 5,
     staleTime: 1000 * 60,
-    pendingComponent: () => <div>Loading dashboard...</div>,
+    pendingComponent: () => <PageLoader fill='container' />,
     loader: async ({ params }) => {
         const { subtype, name } = params;
 

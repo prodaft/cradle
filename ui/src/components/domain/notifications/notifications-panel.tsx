@@ -1,10 +1,11 @@
+import { PageLoader } from '@/components/base/page-loader';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Spinner } from '@/components/ui/spinner';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Loading from 'src/components/base/loading/loading';
 import NotificationCard from './notification-card';
 
 type Notification = components['schemas']['Notification'];
@@ -146,7 +147,7 @@ export default function NotificationsPanel({
                 </div>
             ) : isLoading && notifications.length === 0 ? (
                 <div className='flex flex-col items-center justify-center h-full p-3'>
-                    <Loading />
+                    <PageLoader fill='container' />
                 </div>
             ) : (
                 <ScrollArea className='flex-1'>
@@ -181,7 +182,7 @@ export default function NotificationsPanel({
                                         {isLoaderRow ? (
                                             <div className='flex justify-center p-4'>
                                                 {isFetchingNextPage ? (
-                                                    <Loading />
+                                                    <Spinner className='size-8' />
                                                 ) : (
                                                     <span className='text-sm text-muted-foreground'>
                                                         Load more...

@@ -29,12 +29,12 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import { useDroppable } from '@dnd-kit/core';
 import {
@@ -711,9 +711,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
 
                 <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
                     {isLoading ? (
-                        <div className='flex min-h-[200px] items-center justify-center'>
-                            <Spinner className='size-10' />
-                        </div>
+                        <TableSkeleton />
                     ) : (
                         <DataTable table={table} showViewOptions>
                             <ActionBarSearch

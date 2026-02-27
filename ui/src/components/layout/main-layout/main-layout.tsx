@@ -1,10 +1,15 @@
+import { PageLoader } from '@/components/base/page-loader';
 import { AppSidebar } from '@/components/layout/sidebar/app-sidebar';
+import {
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
+} from '@/components/ui/resizable';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { Spinner } from '@/components/ui/spinner';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { NotificationsPanel } from '@components/domain/notifications';
 import { Outlet } from '@tanstack/react-router';
-import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import Navbar from '../navbar/navbar';
 
 /**
@@ -24,47 +29,13 @@ export default function MainLayout(): React.JSX.Element {
     const { isInitializing } = useAuthState();
     const [showNotifications, setShowNotifications] = useState(false);
     const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
-    const [panelWidth, setPanelWidth] = useState(384); // 24rem default
-    const isResizing = useRef(false);
 
     const handleNotifications = () => {
         setShowNotifications(!showNotifications);
     };
 
-    const handleMouseDown = useCallback((e: React.MouseEvent) => {
-        isResizing.current = true;
-        e.preventDefault();
-
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!isResizing.current) return;
-            const newWidth = window.innerWidth - e.clientX;
-            setPanelWidth(Math.max(280, Math.min(600, newWidth)));
-        };
-
-        const handleMouseUp = () => {
-            isResizing.current = false;
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
-
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-    }, []);
-
-    useEffect(() => {
-        return () => {
-            if (isResizing.current) {
-                isResizing.current = false;
-            }
-        };
-    }, []);
-
     if (isInitializing) {
-        return (
-            <div className='flex items-center justify-center h-screen'>
-                <Spinner className='size-10' />
-            </div>
-        );
+        return <PageLoader fill='screen' />;
     }
 
     return (
@@ -83,50 +54,43 @@ export default function MainLayout(): React.JSX.Element {
                 {/* Content Area */}
                 <div className='flex-1 overflow-hidden relative'>
                     <div className='absolute inset-0 overflow-y-auto overflow-x-hidden'>
-                        <Suspense
-                            fallback={
-                                <div className='flex items-center justify-center h-full'>
-                                    <Spinner className='size-10' />
-                                </div>
-                            }
-                        >
+                        <Suspense fallback={<PageLoader fill='container' />}>
                             <Outlet />
                         </Suspense>
                     </div>
 
                     {/* Notifications Panel - Overlay */}
                     {showNotifications && (
-                        <>
-                            {/* Dark backdrop */}
-                            <div
-                                className='absolute inset-0 bg-black/50 z-40'
+                        <ResizablePanelGroup
+                            direction='horizontal'
+                            className='absolute inset-0 z-50'
+                        >
+                            <ResizablePanel
+                                defaultSize={75}
+                                minSize={50}
+                                className='cursor-pointer bg-black/50'
                                 onClick={() => setShowNotifications(false)}
                             />
-
-                            {/* Panel */}
-                            <div
-                                className='absolute right-0 top-0 h-full z-50 flex'
-                                style={{ width: panelWidth }}
+                            <ResizableHandle
+                                withHandle
+                                className='bg-muted hover:bg-primary transition-colors'
+                            />
+                            <ResizablePanel
+                                defaultSize={25}
+                                minSize={18}
+                                maxSize={40}
+                                className='bg-card overflow-hidden'
                             >
-                                {/* Resize handle */}
-                                <div
-                                    className='w-[3px] h-full bg-muted hover:bg-primary cursor-col-resize transition-colors flex-shrink-0'
-                                    onMouseDown={handleMouseDown}
+                                <NotificationsPanel
+                                    unreadNotificationsCount={
+                                        unreadNotificationsCount
+                                    }
+                                    setUnreadNotificationsCount={
+                                        setUnreadNotificationsCount
+                                    }
                                 />
-
-                                {/* Panel content */}
-                                <div className='flex-1 h-full bg-card overflow-hidden'>
-                                    <NotificationsPanel
-                                        unreadNotificationsCount={
-                                            unreadNotificationsCount
-                                        }
-                                        setUnreadNotificationsCount={
-                                            setUnreadNotificationsCount
-                                        }
-                                    />
-                                </div>
-                            </div>
-                        </>
+                            </ResizablePanel>
+                        </ResizablePanelGroup>
                     )}
                 </div>
             </SidebarInset>

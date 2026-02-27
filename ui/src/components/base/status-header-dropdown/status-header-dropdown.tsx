@@ -20,10 +20,6 @@ interface StatusHeaderDropdownProps {
     onStatusChange: (status: string) => void;
     status?: string | null;
     statusOptions: StatusOption[];
-    /** @deprecated No longer needed — kept for backwards compat */
-    hideFleetingNotes?: boolean;
-    /** @deprecated No longer needed — kept for backwards compat */
-    triggerClassName?: string;
 }
 
 export default function StatusHeaderDropdown({

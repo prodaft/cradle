@@ -10,9 +10,9 @@ import {
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { truncateText } from '@/utils/dashboard';
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
 import { ArrowsClockwiseIcon, TrashIcon } from '@phosphor-icons/react';
@@ -388,9 +388,7 @@ function EnrichmentRequestsList({
         <div className='flex flex-col space-y-4'>
             {/* Table */}
             {loading ? (
-                <div className='flex min-h-[200px] items-center justify-center'>
-                    <Spinner className='size-10' />
-                </div>
+                <TableSkeleton />
             ) : (
                 <DataTable table={table} showViewOptions>
                     <div className='flex items-center gap-2'>

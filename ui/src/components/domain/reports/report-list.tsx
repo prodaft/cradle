@@ -10,11 +10,11 @@ import {
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import PageHeader from '@components/base/page-header';
 import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
@@ -530,9 +530,7 @@ export default function Reports() {
             {/* Content Area */}
             <div className='flex flex-col space-y-4 px-4 pb-4'>
                 {isLoading ? (
-                    <div className='flex min-h-[200px] items-center justify-center'>
-                        <Spinner className='size-10' />
-                    </div>
+                    <TableSkeleton />
                 ) : (
                     <DataTable
                         table={table}

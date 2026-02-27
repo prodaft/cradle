@@ -1,5 +1,6 @@
 import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import PageHeader from '@/components/base/page-header';
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -21,7 +22,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
@@ -337,9 +337,7 @@ export default function EntryTypesPage() {
                 <div className='px-4 flex-1 flex flex-col'>
                     <div className='flex-1 space-y-4'>
                         {isPending ? (
-                            <div className='flex min-h-[200px] items-center justify-center'>
-                                <Spinner className='size-10' />
-                            </div>
+                            <TableSkeleton />
                         ) : (
                             <DataTable
                                 table={table}

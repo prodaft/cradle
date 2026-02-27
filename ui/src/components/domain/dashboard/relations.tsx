@@ -1,3 +1,4 @@
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
 import {
@@ -32,7 +33,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { defineStepper } from '@/components/ui/stepper';
 import {
     Table,
@@ -193,8 +194,11 @@ function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }
         <div className='bg-muted/30 border-t'>
             <div className='p-4 flex flex-col gap-6'>
                 {isLoading ? (
-                    <div className='flex justify-center p-4'>
-                        <Spinner className='size-10' />
+                    <div className='flex gap-2 p-4'>
+                        <Skeleton className='h-8 w-24' />
+                        <Skeleton className='h-8 w-32' />
+                        <Skeleton className='h-8 w-28' />
+                        <Skeleton className='h-8 w-20' />
                     </div>
                 ) : pathSteps.length > 0 ? (
                     <>
@@ -799,9 +803,7 @@ export default function Relations({ obj }: RelationsProps) {
             </div>
 
             {isLoading ? (
-                <div className='flex min-h-[200px] items-center justify-center'>
-                    <Spinner className='size-10' />
-                </div>
+                <TableSkeleton />
             ) : (
                 <>
                     <div className='overflow-hidden rounded-md border'>

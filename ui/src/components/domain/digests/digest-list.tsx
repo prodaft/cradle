@@ -11,11 +11,11 @@ import {
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { StateSetter } from '@/types';
 import { parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import { DateRangeFilter } from '@components/base/list-view/types';
 import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
@@ -495,9 +495,7 @@ function DigestList({
     return (
         <>
             {loading ? (
-                <div className='flex min-h-[200px] items-center justify-center'>
-                    <Spinner className='size-10' />
-                </div>
+                <TableSkeleton />
             ) : (
                 <DataTable table={table} showViewOptions>
                     <div className='flex items-center gap-2'>

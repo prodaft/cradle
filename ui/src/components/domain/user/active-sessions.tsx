@@ -1,3 +1,4 @@
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import TableActionsButton from '@/components/base/table-actions-button';
 import { DataTable } from '@/components/data-table/data-table';
@@ -14,7 +15,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { Spinner } from '@/components/ui/spinner';
 import { useAuthActions } from '@/hooks/auth/use-auth';
 import { parseAPIError } from '@/utils/api';
 import { TrashIcon } from '@phosphor-icons/react';
@@ -470,9 +470,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     return (
         <div className='w-full space-y-4'>
             {isPending ? (
-                <div className='flex min-h-[200px] items-center justify-center'>
-                    <Spinner className='size-10' />
-                </div>
+                <TableSkeleton />
             ) : (
                 <DataTable table={table} showViewOptions>
                     <ActionBarSearch

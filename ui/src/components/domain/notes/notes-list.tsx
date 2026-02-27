@@ -1,3 +1,4 @@
+import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { DateRangeFilterButton } from '@/components/data-table/data-table-date-range-filter';
@@ -24,7 +25,6 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
-import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
 import { parseAPIError } from '@/utils/api';
@@ -913,9 +913,7 @@ export default function NotesList({
 
                 <div className='grid grid-cols-1 gap-2'>
                     {isLoading ? (
-                        <div className='flex min-h-[200px] items-center justify-center'>
-                            <Spinner className='size-10' />
-                        </div>
+                        <TableSkeleton />
                     ) : (
                         <DataTable
                             table={table}
