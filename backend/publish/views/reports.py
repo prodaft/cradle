@@ -262,4 +262,4 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
                 raise ReportDeleteErrorException(detail="Error deleting report.")
 
         report.delete()
-        return Response({"detail": "Report deleted."}, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_204_NO_CONTENT)

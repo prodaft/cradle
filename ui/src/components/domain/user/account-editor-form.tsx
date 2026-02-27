@@ -52,7 +52,7 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
         },
     );
 
-    const saveMutation = $api.useMutation('post', '/users/{user_id}/', {
+    const saveMutation = $api.useMutation('patch', '/users/{user_id}/', {
         meta: { successMessage: 'Settings saved successfully' },
         onSuccess: () => {
             queryClient.invalidateQueries({
@@ -70,7 +70,7 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
     );
 
     const saveNoteTemplateMutation = $api.useMutation(
-        'post',
+        'patch',
         '/users/{user_id}/default_note_template/',
         {
             meta: { successMessage: 'Note template saved successfully' },

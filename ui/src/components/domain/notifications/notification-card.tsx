@@ -85,7 +85,7 @@ export default function NotificationCard({
 
     const activateUserMutation = useMutation({
         mutationFn: async (userId: string) => {
-            const { error, response } = await fetchClient.POST('/users/{user_id}/', {
+            const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
                 params: { path: { user_id: userId } },
                 body: { is_active: true },
             });

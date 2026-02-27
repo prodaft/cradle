@@ -134,7 +134,7 @@ export default function NoteViewer() {
     const finalizeNoteMutation = useMutation({
         mutationFn: async (noteId: string) => {
             const { data, error, response } = await fetchClient.PUT(
-                '/notes/{note_id}/final/',
+                '/notes/{note_id}/finalize/',
                 { params: { path: { note_id: noteId } } },
             );
             if (error) throw { response, error };
@@ -386,7 +386,7 @@ export default function NoteViewer() {
 
     const saveNoteMutation = useMutation({
         mutationFn: async ({ content }: { content: string }) => {
-            const { data, error, response } = await fetchClient.POST(
+            const { data, error, response } = await fetchClient.PATCH(
                 '/notes/{note_id}/',
                 {
                     params: { path: { note_id: noteId || '' } },

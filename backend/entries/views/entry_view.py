@@ -1,5 +1,6 @@
 from uuid import UUID
-from rest_framework import generics
+
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -77,7 +78,7 @@ class EntryView(generics.CreateAPIView):
 
         serializer.save()
         serializer.instance.log_create(request.user)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(

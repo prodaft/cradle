@@ -151,7 +151,7 @@ class UserList(APIView):
         user = serializer.save()
         serializer = UserRetrieveSerializer(user)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -198,7 +198,7 @@ class SignupView(APIView):
         user.send_email_confirmation()
         serializer = UserRetrieveSerializer(user)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -242,7 +242,7 @@ class UserConfigView(APIView):
             **get_common_error_responses(),
         },
     ),
-    post=extend_schema(
+    patch=extend_schema(
         operation_id="users_update",
         summary="Update user details",
         description="Updates details of a specific user. Regular users can only update their own details. Admin users can update details of non-admin users.",  # noqa: E501
@@ -285,7 +285,7 @@ class UserDetail(APIView):
         json_user = UserRetrieveSerializer(user, many=False).data
         return Response(json_user, status=status.HTTP_200_OK)
 
-    def post(self, request, user_id):
+    def patch(self, request, user_id):
         editor = cast(CradleUser, request.user)
         edited = None
 
@@ -331,7 +331,7 @@ class UserDetail(APIView):
             raise DisallowedActionException(detail="You are not allowed to delete this user.")
 
         removed_user.delete()
-        return Response({"detail": "Requested user account was deleted."}, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(
@@ -376,7 +376,7 @@ class ChangePasswordView(APIView):
 
 
 @extend_schema_view(
-    get=extend_schema(
+    post=extend_schema(
         summary="Manage user actions",
         description="Perform various admin actions on a user account. Available actions: simulate, send_email_confirmation, password_reset_email",  # noqa: E501
         parameters=[
@@ -425,7 +425,7 @@ class ManageUser(APIView):
             "role": user.role,
         }
 
-    def get(self, request, user_id, action_name, *args, **kwargs):
+    def post(self, request, user_id, action_name, *args, **kwargs):
         if action_name not in [
             "simulate",
             "send_email_confirmation",
@@ -525,9 +525,7 @@ class APIKey(APIView):
         hashed_key = bcrypt.hashpw(key.encode(), bcrypt.gensalt()).decode()
         user.api_key = hashed_key
         user.save(update_fields=["api_key"])
-        return Response(
-            {"api_key": key},
-        )
+        return Response({"api_key": key}, status=status.HTTP_200_OK)
 
 
 @extend_schema(
@@ -650,7 +648,7 @@ class PasswordReset(APIView):
             **get_common_error_responses(),
         },
     ),
-    post=extend_schema(
+    patch=extend_schema(
         summary="Update default note template",
         description="Updates a user's default note template. Users can only update their own template.",
         parameters=[
@@ -694,7 +692,7 @@ class DefaultNoteTemplateView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    def post(self, request, user_id):
+    def patch(self, request, user_id):
         editor = cast(CradleUser, request.user)
         edited = None
 

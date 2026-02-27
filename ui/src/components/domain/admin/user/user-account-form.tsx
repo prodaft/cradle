@@ -55,7 +55,7 @@ export default function UserAccountForm({
 
     const saveMutation = useMutation({
         mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
-            const { error, response } = await fetchClient.POST('/users/{user_id}/', {
+            const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
                 params: { path: { user_id: userId } },
                 body: payload,
             });

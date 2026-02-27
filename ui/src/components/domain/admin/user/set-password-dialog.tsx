@@ -81,7 +81,7 @@ export default function SetUserPasswordDialog({
 
     const setPasswordMutation = useMutation({
         mutationFn: async (password: string) => {
-            const { error, response } = await fetchClient.POST('/users/{user_id}/', {
+            const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
                 params: { path: { user_id: userId } },
                 body: { password },
             });

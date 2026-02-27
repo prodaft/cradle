@@ -51,7 +51,7 @@ export default function AccountAppearanceForm({
     const saveMutation = useMutation({
         mutationFn: async (theme: Record<string, any>) => {
             if (!userData?.id) return;
-            const { error, response } = await fetchClient.POST('/users/{user_id}/', {
+            const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
                 params: { path: { user_id: userData.id } },
                 body: { theme } as any,
             });

@@ -23119,7 +23119,7 @@
                     }
                 }
             },
-            "post": {
+            "patch": {
                 "operationId": "notes_update",
                 "description": "Updates an existing note. User must have read-write access to referenced entities.",
                 "summary": "Update note",
@@ -23142,7 +23142,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/NoteEditRequest"
+                                "$ref": "#/components/schemas/PatchedNoteEditRequest"
                             }
                         }
                     }
@@ -24001,9 +24001,9 @@
                 }
             }
         },
-        "/notes/{note_id}/final/": {
+        "/notes/{note_id}/finalize/": {
             "put": {
-                "operationId": "notes_final_update",
+                "operationId": "notes_finalize_update",
                 "description": "Converts a fleeting note to a regular note. Only the owner can convert it.",
                 "summary": "Convert fleeting note to regular note",
                 "parameters": [
@@ -33400,7 +33400,7 @@
                     }
                 }
             },
-            "post": {
+            "patch": {
                 "operationId": "users_update",
                 "description": "Updates details of a specific user. Regular users can only update their own details. Admin users can update details of non-admin users.",
                 "summary": "Update user details",
@@ -33422,7 +33422,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/UserUpdateRequest"
+                                "$ref": "#/components/schemas/PatchedUserUpdateRequest"
                             }
                         }
                     }
@@ -34702,8 +34702,8 @@
                     }
                 }
             },
-            "post": {
-                "operationId": "users_default_note_template_create",
+            "patch": {
+                "operationId": "users_default_note_template_partial_update",
                 "description": "Updates a user's default note template. Users can only update their own template.",
                 "summary": "Update default note template",
                 "parameters": [
@@ -34724,11 +34724,10 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/DefaultNoteTemplateRequest"
+                                "$ref": "#/components/schemas/PatchedDefaultNoteTemplateRequest"
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "security": [
                     {
@@ -35197,8 +35196,8 @@
             }
         },
         "/users/{user_id}/manage/{action_name}/": {
-            "get": {
-                "operationId": "users_manage_retrieve",
+            "post": {
+                "operationId": "users_manage_create",
                 "description": "Perform various admin actions on a user account. Available actions: simulate, send_email_confirmation, password_reset_email",
                 "summary": "Manage user actions",
                 "parameters": [
@@ -38010,19 +38009,6 @@
                     }
                 }
             },
-            "DefaultNoteTemplateRequest": {
-                "type": "object",
-                "description": "Serializer for default note template.",
-                "properties": {
-                    "template": {
-                        "type": "string",
-                        "description": "Default template text for new notes"
-                    }
-                },
-                "required": [
-                    "template"
-                ]
-            },
             "DefaultNoteTemplateResponse": {
                 "type": "object",
                 "description": "Serializer for default note template response.",
@@ -38736,8 +38722,8 @@
                     }
                 },
                 "required": [
-                    "name",
                     "type",
+                    "name",
                     "subtype"
                 ]
             },
@@ -38774,8 +38760,8 @@
                     }
                 },
                 "required": [
-                    "name",
                     "type",
+                    "name",
                     "subtype"
                 ]
             },
@@ -39243,8 +39229,8 @@
                     }
                 },
                 "required": [
-                    "name",
                     "type",
+                    "name",
                     "subtype"
                 ]
             },
@@ -39780,14 +39766,6 @@
                 "required": [
                     "name"
                 ]
-            },
-            "NoteEditRequest": {
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "type": "string"
-                    }
-                }
             },
             "NoteRetrieve": {
                 "type": "object",
@@ -40415,6 +40393,24 @@
                     "email"
                 ]
             },
+            "PatchedDefaultNoteTemplateRequest": {
+                "type": "object",
+                "description": "Serializer for default note template.",
+                "properties": {
+                    "template": {
+                        "type": "string",
+                        "description": "Default template text for new notes"
+                    }
+                }
+            },
+            "PatchedNoteEditRequest": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string"
+                    }
+                }
+            },
             "PatchedSnippetRequest": {
                 "type": "object",
                 "properties": {
@@ -40426,6 +40422,61 @@
                     "content": {
                         "type": "string",
                         "minLength": 1
+                    }
+                }
+            },
+            "PatchedUserUpdateRequest": {
+                "type": "object",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "minLength": 1
+                    },
+                    "password": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "catalyst_api_key": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "vim_mode": {
+                        "type": "boolean",
+                        "description": "Whether to enable Vim keybindings in the editor"
+                    },
+                    "theme": {},
+                    "role": {
+                        "enum": [
+                            "admin",
+                            "manager",
+                            "entrymanager",
+                            "author"
+                        ],
+                        "type": "string",
+                        "description": "* `admin` - Admin\n* `manager` - Manager\n* `entrymanager` - Entry Manager\n* `author` - User",
+                        "x-spec-enum-id": "632e0f526798aebd"
+                    },
+                    "email_confirmed": {
+                        "type": "boolean"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "two_factor_enabled": {
+                        "type": "boolean"
+                    },
+                    "file_upload_limit_override": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64",
+                        "nullable": true,
+                        "description": "File upload limit in bytes"
                     }
                 }
             },
@@ -41418,61 +41469,6 @@
                         "type": "boolean",
                         "readOnly": true,
                         "description": "Whether this is the current session"
-                    }
-                }
-            },
-            "UserUpdateRequest": {
-                "type": "object",
-                "properties": {
-                    "username": {
-                        "type": "string",
-                        "minLength": 1
-                    },
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "minLength": 1
-                    },
-                    "password": {
-                        "type": "string",
-                        "minLength": 1
-                    },
-                    "catalyst_api_key": {
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "vim_mode": {
-                        "type": "boolean",
-                        "description": "Whether to enable Vim keybindings in the editor"
-                    },
-                    "theme": {},
-                    "role": {
-                        "enum": [
-                            "admin",
-                            "manager",
-                            "entrymanager",
-                            "author"
-                        ],
-                        "type": "string",
-                        "description": "* `admin` - Admin\n* `manager` - Manager\n* `entrymanager` - Entry Manager\n* `author` - User",
-                        "x-spec-enum-id": "632e0f526798aebd"
-                    },
-                    "email_confirmed": {
-                        "type": "boolean"
-                    },
-                    "is_active": {
-                        "type": "boolean"
-                    },
-                    "two_factor_enabled": {
-                        "type": "boolean"
-                    },
-                    "file_upload_limit_override": {
-                        "type": "integer",
-                        "maximum": 9223372036854775807,
-                        "minimum": 0,
-                        "format": "int64",
-                        "nullable": true,
-                        "description": "File upload limit in bytes"
                     }
                 }
             },

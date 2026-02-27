@@ -108,7 +108,7 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
     // Mutation to update theme on server
     const updateThemeMutation = useMutation({
         mutationFn: async (theme: ThemeConfig) => {
-            const { data, error, response } = await fetchClient.POST(
+            const { data, error, response } = await fetchClient.PATCH(
                 '/users/{user_id}/',
                 {
                     params: { path: { user_id: 'me' } },

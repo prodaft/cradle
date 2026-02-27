@@ -1082,11 +1082,7 @@ export interface paths {
          */
         get: operations["notes_retrieve"];
         put?: never;
-        /**
-         * Update note
-         * @description Updates an existing note. User must have read-write access to referenced entities.
-         */
-        post: operations["notes_update"];
+        post?: never;
         /**
          * Delete note
          * @description Deletes an existing note. User must have read-write access to all referenced entities.
@@ -1094,10 +1090,14 @@ export interface paths {
         delete: operations["notes_delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update note
+         * @description Updates an existing note. User must have read-write access to referenced entities.
+         */
+        patch: operations["notes_update"];
         trace?: never;
     };
-    "/notes/{note_id}/final/": {
+    "/notes/{note_id}/finalize/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1109,7 +1109,7 @@ export interface paths {
          * Convert fleeting note to regular note
          * @description Converts a fleeting note to a regular note. Only the owner can convert it.
          */
-        put: operations["notes_final_update"];
+        put: operations["notes_finalize_update"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1478,15 +1478,15 @@ export interface paths {
          */
         get: operations["users_retrieve"];
         put?: never;
+        post?: never;
+        delete: operations["users_destroy"];
+        options?: never;
+        head?: never;
         /**
          * Update user details
          * @description Updates details of a specific user. Regular users can only update their own details. Admin users can update details of non-admin users.
          */
-        post: operations["users_update"];
-        delete: operations["users_destroy"];
-        options?: never;
-        head?: never;
-        patch?: never;
+        patch: operations["users_update"];
         trace?: never;
     };
     "/users/{user_id}/apikey/": {
@@ -1522,15 +1522,15 @@ export interface paths {
          */
         get: operations["users_default_note_template_retrieve"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
         /**
          * Update default note template
          * @description Updates a user's default note template. Users can only update their own template.
          */
-        post: operations["users_default_note_template_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
+        patch: operations["users_default_note_template_partial_update"];
         trace?: never;
     };
     "/users/{user_id}/manage/{action_name}/": {
@@ -1540,13 +1540,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * Manage user actions
          * @description Perform various admin actions on a user account. Available actions: simulate, send_email_confirmation, password_reset_email
          */
-        get: operations["users_manage_retrieve"];
-        put?: never;
-        post?: never;
+        post: operations["users_manage_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1813,11 +1813,6 @@ export interface components {
              * @default Password changed successfully.
              */
             detail: string;
-        };
-        /** @description Serializer for default note template. */
-        DefaultNoteTemplateRequest: {
-            /** @description Default template text for new notes */
-            template: string;
         };
         /** @description Serializer for default note template response. */
         DefaultNoteTemplateResponse: {
@@ -2417,9 +2412,6 @@ export interface components {
             /** @description Next available name, or null if class has no prefix */
             name: string | null;
         };
-        NoteEditRequest: {
-            content?: string;
-        };
         NoteRetrieve: {
             /** Format: uuid */
             readonly id?: string;
@@ -2631,9 +2623,43 @@ export interface components {
              */
             email: string;
         };
+        /** @description Serializer for default note template. */
+        PatchedDefaultNoteTemplateRequest: {
+            /** @description Default template text for new notes */
+            template?: string;
+        };
+        PatchedNoteEditRequest: {
+            content?: string;
+        };
         PatchedSnippetRequest: {
             name?: string;
             content?: string;
+        };
+        PatchedUserUpdateRequest: {
+            username?: string;
+            /** Format: email */
+            email?: string;
+            password?: string;
+            catalyst_api_key?: string | null;
+            /** @description Whether to enable Vim keybindings in the editor */
+            vim_mode?: boolean;
+            theme?: unknown;
+            /**
+             * @description * `admin` - Admin
+             *     * `manager` - Manager
+             *     * `entrymanager` - Entry Manager
+             *     * `author` - User
+             * @enum {string}
+             */
+            role?: "admin" | "manager" | "entrymanager" | "author";
+            email_confirmed?: boolean;
+            is_active?: boolean;
+            two_factor_enabled?: boolean;
+            /**
+             * Format: int64
+             * @description File upload limit in bytes
+             */
+            file_upload_limit_override?: number | null;
         };
         PublishReportRequest: {
             /** @description List of note IDs to publish. */
@@ -3015,32 +3041,6 @@ export interface components {
             readonly expires_at?: string;
             /** @description Whether this is the current session */
             readonly is_current?: boolean;
-        };
-        UserUpdateRequest: {
-            username?: string;
-            /** Format: email */
-            email?: string;
-            password?: string;
-            catalyst_api_key?: string | null;
-            /** @description Whether to enable Vim keybindings in the editor */
-            vim_mode?: boolean;
-            theme?: unknown;
-            /**
-             * @description * `admin` - Admin
-             *     * `manager` - Manager
-             *     * `entrymanager` - Entry Manager
-             *     * `author` - User
-             * @enum {string}
-             */
-            role?: "admin" | "manager" | "entrymanager" | "author";
-            email_confirmed?: boolean;
-            is_active?: boolean;
-            two_factor_enabled?: boolean;
-            /**
-             * Format: int64
-             * @description File upload limit in bytes
-             */
-            file_upload_limit_override?: number | null;
         };
         Verify2FARequest: {
             token: string;
@@ -18243,6 +18243,268 @@ export interface operations {
             };
         };
     };
+    notes_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID of the note to delete. Must be a valid UUID */
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Authentication Required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "username": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description Permission Denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "username": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description Note Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "username": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "username": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+        };
+    };
     notes_update: {
         parameters: {
             query?: never;
@@ -18255,7 +18517,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["NoteEditRequest"];
+                "application/json": components["schemas"]["PatchedNoteEditRequest"];
             };
         };
         responses: {
@@ -18569,269 +18831,7 @@ export interface operations {
             };
         };
     };
-    notes_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description ID of the note to delete. Must be a valid UUID */
-                note_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Authentication Required */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description URI reference identifying the problem type
-                         * @example /errors/validation-error
-                         */
-                        type: string;
-                        /**
-                         * @description Short, human-readable summary of the problem type
-                         * @example Validation Error
-                         */
-                        title: string;
-                        /**
-                         * @description HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /**
-                         * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
-                         */
-                        detail: string;
-                        /**
-                         * @description URI reference identifying the specific occurrence
-                         * @example /api/users/create
-                         */
-                        instance?: string;
-                        /**
-                         * Format: date-time
-                         * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
-                         */
-                        timestamp: string;
-                        /**
-                         * @description Machine-readable error code
-                         * @example VALIDATION_ERROR
-                         */
-                        code: string;
-                        /**
-                         * @description Field-level validation errors (only present for validation errors)
-                         * @example {
-                         *       "username": [
-                         *         "This field is required."
-                         *       ],
-                         *       "email": [
-                         *         "Enter a valid email address."
-                         *       ]
-                         *     }
-                         */
-                        errors?: {
-                            [key: string]: string[];
-                        };
-                    };
-                };
-            };
-            /** @description Permission Denied */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description URI reference identifying the problem type
-                         * @example /errors/validation-error
-                         */
-                        type: string;
-                        /**
-                         * @description Short, human-readable summary of the problem type
-                         * @example Validation Error
-                         */
-                        title: string;
-                        /**
-                         * @description HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /**
-                         * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
-                         */
-                        detail: string;
-                        /**
-                         * @description URI reference identifying the specific occurrence
-                         * @example /api/users/create
-                         */
-                        instance?: string;
-                        /**
-                         * Format: date-time
-                         * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
-                         */
-                        timestamp: string;
-                        /**
-                         * @description Machine-readable error code
-                         * @example VALIDATION_ERROR
-                         */
-                        code: string;
-                        /**
-                         * @description Field-level validation errors (only present for validation errors)
-                         * @example {
-                         *       "username": [
-                         *         "This field is required."
-                         *       ],
-                         *       "email": [
-                         *         "Enter a valid email address."
-                         *       ]
-                         *     }
-                         */
-                        errors?: {
-                            [key: string]: string[];
-                        };
-                    };
-                };
-            };
-            /** @description Note Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description URI reference identifying the problem type
-                         * @example /errors/validation-error
-                         */
-                        type: string;
-                        /**
-                         * @description Short, human-readable summary of the problem type
-                         * @example Validation Error
-                         */
-                        title: string;
-                        /**
-                         * @description HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /**
-                         * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
-                         */
-                        detail: string;
-                        /**
-                         * @description URI reference identifying the specific occurrence
-                         * @example /api/users/create
-                         */
-                        instance?: string;
-                        /**
-                         * Format: date-time
-                         * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
-                         */
-                        timestamp: string;
-                        /**
-                         * @description Machine-readable error code
-                         * @example VALIDATION_ERROR
-                         */
-                        code: string;
-                        /**
-                         * @description Field-level validation errors (only present for validation errors)
-                         * @example {
-                         *       "username": [
-                         *         "This field is required."
-                         *       ],
-                         *       "email": [
-                         *         "Enter a valid email address."
-                         *       ]
-                         *     }
-                         */
-                        errors?: {
-                            [key: string]: string[];
-                        };
-                    };
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description URI reference identifying the problem type
-                         * @example /errors/validation-error
-                         */
-                        type: string;
-                        /**
-                         * @description Short, human-readable summary of the problem type
-                         * @example Validation Error
-                         */
-                        title: string;
-                        /**
-                         * @description HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /**
-                         * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
-                         */
-                        detail: string;
-                        /**
-                         * @description URI reference identifying the specific occurrence
-                         * @example /api/users/create
-                         */
-                        instance?: string;
-                        /**
-                         * Format: date-time
-                         * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
-                         */
-                        timestamp: string;
-                        /**
-                         * @description Machine-readable error code
-                         * @example VALIDATION_ERROR
-                         */
-                        code: string;
-                        /**
-                         * @description Field-level validation errors (only present for validation errors)
-                         * @example {
-                         *       "username": [
-                         *         "This field is required."
-                         *       ],
-                         *       "email": [
-                         *         "Enter a valid email address."
-                         *       ]
-                         *     }
-                         */
-                        errors?: {
-                            [key: string]: string[];
-                        };
-                    };
-                };
-            };
-        };
-    };
-    notes_final_update: {
+    notes_finalize_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -25000,6 +25000,26 @@ export interface operations {
             };
         };
     };
+    users_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     users_update: {
         parameters: {
             query?: never;
@@ -25012,7 +25032,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["UserUpdateRequest"];
+                "application/json": components["schemas"]["PatchedUserUpdateRequest"];
             };
         };
         responses: {
@@ -25323,26 +25343,6 @@ export interface operations {
                         };
                     };
                 };
-            };
-        };
-    };
-    users_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -25870,7 +25870,7 @@ export interface operations {
             };
         };
     };
-    users_default_note_template_create: {
+    users_default_note_template_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -25880,9 +25880,9 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["DefaultNoteTemplateRequest"];
+                "application/json": components["schemas"]["PatchedDefaultNoteTemplateRequest"];
             };
         };
         responses: {
@@ -26196,7 +26196,7 @@ export interface operations {
             };
         };
     };
-    users_manage_retrieve: {
+    users_manage_create: {
         parameters: {
             query?: never;
             header?: never;

@@ -328,7 +328,7 @@ class NoteList(APIView):
         serializer = FleetingNoteSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -359,7 +359,7 @@ class NoteList(APIView):
             **get_common_error_responses(),
         },
     ),
-    post=extend_schema(
+    patch=extend_schema(
         operation_id="notes_update",
         summary="Update note",
         description="Updates an existing note. User must have read-write access to referenced entities.",  # noqa: E501
@@ -434,7 +434,7 @@ class NoteDetail(APIView):
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
-    def post(self, request: Request, note_id: UUID) -> Response:
+    def patch(self, request: Request, note_id: UUID) -> Response:
         try:
             note: Note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
@@ -484,7 +484,7 @@ class NoteDetail(APIView):
 
         refresh_edges_materialized_view.apply_async()
 
-        return Response({"detail": "Note was deleted."}, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(
