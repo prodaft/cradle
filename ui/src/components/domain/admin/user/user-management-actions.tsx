@@ -35,7 +35,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
     const simulateSessionMutation = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/users/{user_id}/manage/{action_name}',
+                '/users/{user_id}/manage/{action_name}/',
                 {
                     params: {
                         path: { user_id: userId, action_name: 'simulate' },
@@ -61,7 +61,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
     const sendEmailConfirmationMutation = useMutation({
         mutationFn: async () => {
             const { error, response } = await fetchClient.GET(
-                '/users/{user_id}/manage/{action_name}',
+                '/users/{user_id}/manage/{action_name}/',
                 {
                     params: {
                         path: {
@@ -79,7 +79,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
     const sendPasswordResetEmailMutation = useMutation({
         mutationFn: async () => {
             const { error, response } = await fetchClient.GET(
-                '/users/{user_id}/manage/{action_name}',
+                '/users/{user_id}/manage/{action_name}/',
                 {
                     params: {
                         path: {

@@ -17,7 +17,7 @@ export default function EntriesSettingsForm() {
     const propagateAccessMutation = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
-                '/management/actions/{action_name}',
+                '/management/actions/{action_name}/',
                 { params: { path: { action_name: 'propagateAccessVectors' } } },
             );
             if (error) throw { response, error };
@@ -36,7 +36,7 @@ export default function EntriesSettingsForm() {
     const deleteHangingArtifactsMutation = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
-                '/management/actions/{action_name}',
+                '/management/actions/{action_name}/',
                 { params: { path: { action_name: 'deleteHangingArtifacts' } } },
             );
             if (error) throw { response, error };

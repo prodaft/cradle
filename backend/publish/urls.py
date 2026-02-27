@@ -7,8 +7,8 @@ from .views.reports import (
 )
 
 urlpatterns = [
-    path("publish/", PublishReportAPIView.as_view(), name="publish-report"),
-    path("", ReportListDeleteAPIView.as_view(), name="report-list-delete"),
-    path("<uuid:pk>/", ReportDetailAPIView.as_view(), name="report-detail"),
-    path("<uuid:pk>/retry/", ReportRetryAPIView.as_view(), name="report-retry"),
+    path("publish/", PublishReportAPIView.as_view(), name="publish_report"),
+    path("", ReportListDeleteAPIView.as_view(), name="report_list_delete"),
+    path("<uuid:pk>/", ReportDetailAPIView.as_view(), name="report_detail"),
+    path("<uuid:pk>/retry/", ReportRetryAPIView.as_view(), name="report_retry"),
 ]

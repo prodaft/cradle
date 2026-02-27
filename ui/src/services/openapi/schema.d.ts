@@ -841,7 +841,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/intelio/mappings/{class_name}/keys": {
+    "/intelio/mappings/{class_name}/keys/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1001,7 +1001,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/management/actions/{action_name}": {
+    "/management/actions/{action_name}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1117,7 +1117,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/notes/{note_id}/graph": {
+    "/notes/{note_id}/graph/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1489,7 +1489,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/users/{user_id}/apikey": {
+    "/users/{user_id}/apikey/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1533,7 +1533,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/users/{user_id}/manage/{action_name}": {
+    "/users/{user_id}/manage/{action_name}/": {
         parameters: {
             query?: never;
             header?: never;

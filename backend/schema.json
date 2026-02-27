@@ -2462,6 +2462,9 @@
                         "ApiKey": []
                     },
                     {
+                        "CookieJWT": []
+                    },
+                    {
                         "jwtAuth": []
                     },
                     {}
@@ -5441,6 +5444,9 @@
                         "ApiKey": []
                     },
                     {
+                        "CookieJWT": []
+                    },
+                    {
                         "jwtAuth": []
                     }
                 ],
@@ -5919,6 +5925,9 @@
                 "security": [
                     {
                         "ApiKey": []
+                    },
+                    {
+                        "CookieJWT": []
                     },
                     {
                         "jwtAuth": []
@@ -19317,6 +19326,9 @@
                         "ApiKey": []
                     },
                     {
+                        "CookieJWT": []
+                    },
+                    {
                         "jwtAuth": []
                     }
                 ],
@@ -19720,6 +19732,9 @@
                         "ApiKey": []
                     },
                     {
+                        "CookieJWT": []
+                    },
+                    {
                         "jwtAuth": []
                     }
                 ],
@@ -20116,6 +20131,9 @@
                 "security": [
                     {
                         "ApiKey": []
+                    },
+                    {
+                        "CookieJWT": []
                     },
                     {
                         "jwtAuth": []
@@ -20574,7 +20592,7 @@
                 }
             }
         },
-        "/intelio/mappings/{class_name}/keys": {
+        "/intelio/mappings/{class_name}/keys/": {
             "get": {
                 "operationId": "mappings_keys_schema",
                 "description": "Given a class name, return the possible field mappings.",
@@ -20595,6 +20613,9 @@
                 "security": [
                     {
                         "ApiKey": []
+                    },
+                    {
+                        "CookieJWT": []
                     },
                     {
                         "jwtAuth": []
@@ -21523,7 +21544,7 @@
                 }
             }
         },
-        "/management/actions/{action_name}": {
+        "/management/actions/{action_name}/": {
             "post": {
                 "operationId": "management_actions_create",
                 "description": "Executes various management actions for admin users. Available actions:relinkNotes, refreshMaterializedGraph, recalculateNodePositions, propagateAccessVectors, reprocessAllFiles, deleteHangingArtifacts",
@@ -21568,6 +21589,9 @@
                 "security": [
                     {
                         "ApiKey": []
+                    },
+                    {
+                        "CookieJWT": []
                     },
                     {
                         "jwtAuth": []
@@ -21630,6 +21654,9 @@
                         "ApiKey": []
                     },
                     {
+                        "CookieJWT": []
+                    },
+                    {
                         "jwtAuth": []
                     }
                 ],
@@ -21681,6 +21708,9 @@
                 "security": [
                     {
                         "ApiKey": []
+                    },
+                    {
+                        "CookieJWT": []
                     },
                     {
                         "jwtAuth": []
@@ -24456,7 +24486,7 @@
                 }
             }
         },
-        "/notes/{note_id}/graph": {
+        "/notes/{note_id}/graph/": {
             "get": {
                 "operationId": "notes_graph_retrieve",
                 "description": "Returns the full subgraph formed by a single note the user has access to.",
@@ -25428,6 +25458,9 @@
                         "ApiKey": []
                     },
                     {
+                        "CookieJWT": []
+                    },
+                    {
                         "jwtAuth": []
                     }
                 ],
@@ -25733,6 +25766,9 @@
                 "security": [
                     {
                         "ApiKey": []
+                    },
+                    {
+                        "CookieJWT": []
                     },
                     {
                         "jwtAuth": []
@@ -26133,6 +26169,9 @@
                 "security": [
                     {
                         "ApiKey": []
+                    },
+                    {
+                        "CookieJWT": []
                     },
                     {
                         "jwtAuth": []
@@ -26630,6 +26669,9 @@
                         "ApiKey": []
                     },
                     {
+                        "CookieJWT": []
+                    },
+                    {
                         "jwtAuth": []
                     }
                 ],
@@ -27116,6 +27158,9 @@
                         "ApiKey": []
                     },
                     {
+                        "CookieJWT": []
+                    },
+                    {
                         "jwtAuth": []
                     }
                 ],
@@ -27499,6 +27544,9 @@
                 "security": [
                     {
                         "ApiKey": []
+                    },
+                    {
+                        "CookieJWT": []
                     },
                     {
                         "jwtAuth": []
@@ -27902,6 +27950,9 @@
                 "security": [
                     {
                         "ApiKey": []
+                    },
+                    {
+                        "CookieJWT": []
                     },
                     {
                         "jwtAuth": []
@@ -33874,7 +33925,7 @@
                 }
             }
         },
-        "/users/{user_id}/apikey": {
+        "/users/{user_id}/apikey/": {
             "post": {
                 "operationId": "users_apikey_create",
                 "description": "Generates a new API key for the specified user. Users can onlygenerate keys for themselves, or admins can generate keys for non-admin users.",
@@ -35145,7 +35196,7 @@
                 }
             }
         },
-        "/users/{user_id}/manage/{action_name}": {
+        "/users/{user_id}/manage/{action_name}/": {
             "get": {
                 "operationId": "users_manage_retrieve",
                 "description": "Perform various admin actions on a user account. Available actions: simulate, send_email_confirmation, password_reset_email",
@@ -37643,6 +37694,9 @@
                         "ApiKey": []
                     },
                     {
+                        "CookieJWT": []
+                    },
+                    {
                         "jwtAuth": []
                     }
                 ],
@@ -37673,6 +37727,9 @@
                 "security": [
                     {
                         "ApiKey": []
+                    },
+                    {
+                        "CookieJWT": []
                     },
                     {
                         "jwtAuth": []
@@ -38679,9 +38736,9 @@
                     }
                 },
                 "required": [
-                    "subtype",
                     "name",
-                    "type"
+                    "type",
+                    "subtype"
                 ]
             },
             "EntityRequest": {
@@ -38717,9 +38774,9 @@
                     }
                 },
                 "required": [
-                    "subtype",
                     "name",
-                    "type"
+                    "type",
+                    "subtype"
                 ]
             },
             "Entry": {
@@ -39186,9 +39243,9 @@
                     }
                 },
                 "required": [
-                    "subtype",
                     "name",
-                    "type"
+                    "type",
+                    "subtype"
                 ]
             },
             "EntrySerializerMinimal": {
@@ -41438,6 +41495,12 @@
                 "in": "header",
                 "name": "Api-Key",
                 "description": "API key authentication. The value must be prefixed with 'Api-Key '."
+            },
+            "CookieJWT": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "access_token",
+                "description": "JWT access token in HttpOnly cookie. Obtain via /api/auth/login/."
             },
             "jwtAuth": {
                 "type": "http",

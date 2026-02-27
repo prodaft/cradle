@@ -19,7 +19,7 @@ urlpatterns = [
         name="user_detail",
     ),
     path(
-        "<str:user_id>/apikey",
+        "<str:user_id>/apikey/",
         user_view.APIKey.as_view(),
         name="user_apikey",
     ),
@@ -29,7 +29,7 @@ urlpatterns = [
         name="user_default_note_template",
     ),
     path(
-        "<uuid:user_id>/manage/<str:action_name>",
+        "<uuid:user_id>/manage/<str:action_name>/",
         user_view.ManageUser.as_view(),
         name="user_manage",
     ),
@@ -43,7 +43,7 @@ urlpatterns = [
         user_view.UserSessionRevokeView.as_view(),
         name="user_session_revoke",
     ),
-    path("2fa/enable/", Enable2FAView.as_view(), name="enable-2fa"),
-    path("2fa/verify/", Verify2FASetupView.as_view(), name="verify-2fa"),
-    path("2fa/disable/", Disable2FAView.as_view(), name="disable-2fa"),
+    path("2fa/enable/", Enable2FAView.as_view(), name="enable_2fa"),
+    path("2fa/verify/", Verify2FASetupView.as_view(), name="verify_2fa"),
+    path("2fa/disable/", Disable2FAView.as_view(), name="disable_2fa"),
 ]

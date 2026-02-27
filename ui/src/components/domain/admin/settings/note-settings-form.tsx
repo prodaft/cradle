@@ -92,7 +92,7 @@ export default function NoteSettingsForm() {
     const relinkNotesMutation = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
-                '/management/actions/{action_name}',
+                '/management/actions/{action_name}/',
                 { params: { path: { action_name: 'relinkNotes' } } },
             );
             if (error) throw { response, error };

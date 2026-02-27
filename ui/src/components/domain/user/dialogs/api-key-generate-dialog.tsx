@@ -68,7 +68,7 @@ export default function ApiKeyGenerateDialog({
     const generateMutation = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
-                '/users/{user_id}/apikey',
+                '/users/{user_id}/apikey/',
                 {
                     params: { path: { user_id: userId } },
                 },

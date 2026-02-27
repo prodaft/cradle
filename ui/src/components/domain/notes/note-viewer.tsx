@@ -151,7 +151,7 @@ export default function NoteViewer() {
     const relinkNoteMutation = useMutation({
         mutationFn: async (noteId: string) => {
             const { error, response } = await fetchClient.POST(
-                '/management/actions/{action_name}',
+                '/management/actions/{action_name}/',
                 {
                     params: { path: { action_name: 'relinkNotes' } },
                     body: { note_id: noteId } as any,

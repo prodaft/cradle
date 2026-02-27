@@ -180,7 +180,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         queryKey: ['mappings', 'keys', id],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/intelio/mappings/{class_name}/keys',
+                '/intelio/mappings/{class_name}/keys/',
                 { params: { path: { class_name: id } } },
             );
             if (error) throw { response, error };

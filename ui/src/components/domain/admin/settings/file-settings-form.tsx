@@ -78,7 +78,7 @@ export default function FileSettingsForm() {
     const reprocessFilesMutation = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
-                '/management/actions/{action_name}',
+                '/management/actions/{action_name}/',
                 {
                     params: { path: { action_name: 'reprocessAllFiles' } },
                     body: { action: 'reprocessAllFiles' },

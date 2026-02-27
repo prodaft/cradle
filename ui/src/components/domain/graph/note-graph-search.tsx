@@ -42,7 +42,7 @@ export default function NoteGraphSearch(
         // Query for note graph data
         const { data: graphData } = $api.useQuery(
             'get',
-            '/notes/{note_id}/graph',
+            '/notes/{note_id}/graph/',
             { params: { path: { note_id: noteId } } },
             {
                 enabled: !hasFetchedRef.current,

@@ -17,7 +17,7 @@ export default function GraphSettingsForm() {
     const refreshGraphMutation = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
-                '/management/actions/{action_name}',
+                '/management/actions/{action_name}/',
                 { params: { path: { action_name: 'refreshMaterializedGraph' } } },
             );
             if (error) throw { response, error };
@@ -36,7 +36,7 @@ export default function GraphSettingsForm() {
     const recalculatePositionsMutation = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
-                '/management/actions/{action_name}',
+                '/management/actions/{action_name}/',
                 {
                     params: {
                         path: { action_name: 'recalculateNodePositions' },

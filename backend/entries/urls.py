@@ -27,12 +27,12 @@ urlpatterns = [
         entry_class_views.NextName.as_view(),
         name="next_name",
     ),
-    path("entries/", entry_view.EntryView.as_view(), name="entry-list-create"),
-    path("entries/<uuid:id>/", entry_view.EntryDetailView.as_view(), name="entry-detail"),
-    path("relations/", relation_view.RelationListView.as_view(), name="relation-list"),
+    path("entries/", entry_view.EntryView.as_view(), name="entry_list_create"),
+    path("entries/<uuid:id>/", entry_view.EntryDetailView.as_view(), name="entry_detail"),
+    path("relations/", relation_view.RelationListView.as_view(), name="relation_list"),
     path(
         "relations/<uuid:relation_id>/",
         relation_view.RelationDetailView.as_view(),
-        name="relation-detail",
+        name="relation_detail",
     ),
 ]
