@@ -6,7 +6,6 @@ import {
     CommandInput,
     CommandItem,
     CommandList,
-    CommandSeparator,
     CommandShortcut,
 } from '@/components/ui/command';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -236,7 +235,7 @@ export default function SearchDialog({
                         entryClassColors={entryClassColors}
                     />
 
-                    <ScrollArea className='max-h-[50vh]'>
+                    <ScrollArea className='min-h-0 flex-1 max-h-[50vh]'>
                         <CommandList className='max-h-none'>
                             {searchResults.isFetching ? (
                                 <div className='flex items-center justify-center py-6'>
@@ -280,8 +279,8 @@ export default function SearchDialog({
                         </CommandList>
                     </ScrollArea>
 
-                    <CommandSeparator />
-                    <div className='flex items-center justify-between px-3 py-1.5 text-xs text-muted-foreground'>
+                    <div className='bg-border -mx-1 h-px shrink-0' role='separator' />
+                    <div className='flex shrink-0 items-center justify-between px-3 py-1.5 text-xs text-muted-foreground'>
                         <div className='flex items-center gap-3'>
                             <span>
                                 <Kbd>↵</Kbd> search
