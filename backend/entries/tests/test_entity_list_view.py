@@ -86,7 +86,7 @@ class PostEntityListTest(EntriesTestCase):
         )
         print(response_post.content)
 
-        self.assertEqual(response_post.status_code, 200)
+        self.assertEqual(response_post.status_code, 201)
         self.assertEqual(Entry.entities.count(), 1)
 
         self.assertEqual(Entry.entities.get().name, "entity1")
@@ -100,7 +100,7 @@ class PostEntityListTest(EntriesTestCase):
             format="json",
             **self.headers_admin,
         )
-        self.assertEqual(response_post.status_code, 200)
+        self.assertEqual(response_post.status_code, 201)
 
         self.assertEqual(Entry.entities.count(), 1)
         self.assertEqual(Entry.entities.get().name, "entity1")
@@ -119,7 +119,7 @@ class PostEntityListTest(EntriesTestCase):
             format="json",
             **self.headers_admin,
         )
-        self.assertEqual(response_post.status_code, 200)
+        self.assertEqual(response_post.status_code, 201)
 
         response_post = self.client.post(
             reverse("entry_list_create"),

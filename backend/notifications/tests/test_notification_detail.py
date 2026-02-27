@@ -67,7 +67,7 @@ class NotificationDetailTest(NotificationsTestCase):
             **self.headers,
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         updated_notification = MessageNotification.objects.get(user=self.user, message="Test message")
         self.assertTrue(updated_notification.is_marked_unread)
@@ -83,7 +83,7 @@ class NotificationDetailTest(NotificationsTestCase):
             **self.headers,
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         updated_notification = AccessRequestNotification.objects.get(user=self.user, message="Access Request")
         self.assertTrue(updated_notification.is_marked_unread)

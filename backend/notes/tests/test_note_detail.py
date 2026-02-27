@@ -138,7 +138,7 @@ class DeleteNoteTest(NotesTestCase):
             **self.headers,
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
         with self.assertRaises(Note.DoesNotExist):
             Note.objects.get(id=note_id)
 
@@ -147,7 +147,7 @@ class DeleteNoteTest(NotesTestCase):
         response = self.client.delete(reverse("note_detail", kwargs={"note_id": note_id}), **self.headers)
 
         with self.subTest("Check response code is correct"):
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 204)
 
         with self.assertRaises(Note.DoesNotExist):
             Note.objects.get(id=note_id)

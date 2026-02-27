@@ -379,6 +379,7 @@ class ChangePasswordView(APIView):
     post=extend_schema(
         summary="Manage user actions",
         description="Perform various admin actions on a user account. Available actions: simulate, send_email_confirmation, password_reset_email",  # noqa: E501
+        request=None,
         parameters=[
             OpenApiParameter(
                 name="user_id",

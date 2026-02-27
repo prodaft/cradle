@@ -27,7 +27,7 @@ class CreateUserTest(UserTestCase):
 
     def test_user_create_successfully(self):
         response = self.create_user_request("user", "userR1#1234112", email="alabala@gmail.com")
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         self.assertIsNotNone(CradleUser.objects.get(username="user"))
 
         self.mocked_create_user_bucket.assert_called_once()

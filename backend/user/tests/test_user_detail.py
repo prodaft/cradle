@@ -25,7 +25,7 @@ class DeleteUserTest(UserTestCase):
             **self.headers_admin,
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_delete_user_not_found(self):
         response = self.client.delete(
@@ -54,7 +54,7 @@ class DeleteUserTest(UserTestCase):
             **self.headers_normal,
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_delete_user_cannot_remove_admin(self):
         response = self.client.delete(

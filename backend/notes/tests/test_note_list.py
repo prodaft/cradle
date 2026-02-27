@@ -31,7 +31,7 @@ class CreateFleetingNoteTest(NotesTestCase):
         )
 
         saved_note = Note.objects.first()
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json()["content"], "Default note template")
         self.assertTrue(response.json()["fleeting"])
         self.assertTrue(saved_note.fleeting)
@@ -46,7 +46,7 @@ class CreateFleetingNoteTest(NotesTestCase):
         )
 
         saved_note = Note.objects.first()
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json()["content"], note_content)
         self.assertTrue(response.json()["fleeting"])
         self.assertEqual(saved_note.content, note_content)

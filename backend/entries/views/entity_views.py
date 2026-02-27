@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -174,7 +172,7 @@ class EntityDetail(APIView):
         serializer = EntitySerializer(entity)
         return Response(serializer.data)
 
-    def delete(self, request: Request, entity_id: UUID) -> Response:
+    def delete(self, request: Request, entity_id: int) -> Response:
         if not request.user.is_cradle_admin:
             raise AdminOnlyEntityDeleteException(detail="Only admins can delete entities!")
         try:
@@ -187,7 +185,7 @@ class EntityDetail(APIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def post(self, request: Request, entity_id: UUID) -> Response:
+    def post(self, request: Request, entity_id: int) -> Response:
         try:
             entity = Entry.entities.get(pk=entity_id)
         except Entry.DoesNotExist:
