@@ -1,23 +1,19 @@
+"""S3/MinIO utilities using django-storages.
+
+Provides bucket management, object CRUD, presigned URLs, and byte fetch/put.
+Uses boto3 via storage.connection; supports both S3 and MinIO.
+"""
+
 from __future__ import annotations
 
-import os
-import shutil
-from dataclasses import dataclass
 from io import BytesIO
 from typing import Optional
 
 from .storage import DigestStorage, FileTransferStorage, RelationStorage, ReportStorage
 
 
-@dataclass(frozen=True)
-class S3ObjectRef:
-    bucket: str
-    key: str
-
-
 def _get_storage_for_bucket(bucket_name: str):
-    """
-    Return the django-storages backend for a known bucket.
+    """Return the django-storages backend for a known bucket.
 
     Notes:
     - Keep this mapping centralized so other apps can move away from the legacy
@@ -34,8 +30,7 @@ def _get_storage_for_bucket(bucket_name: str):
 
 
 def _ensure_bucket_exists(storage) -> None:
-    """
-    Best-effort ensure bucket exists.
+    """Best-effort ensure bucket exists.
 
     S3/MinIO do not auto-create buckets on PutObject. This helper avoids
     NoSuchBucket errors for our fixed, app-owned buckets.
@@ -69,14 +64,21 @@ def _ensure_bucket_exists(storage) -> None:
 
 
 def ensure_bucket_exists(bucket_name: str) -> None:
-    """
-    Public wrapper to ensure a bucket exists.
+    """Public wrapper to ensure a bucket exists.
 
     This is safe to call repeatedly; it is best-effort and will only create the bucket
     if it does not already exist.
     """
     storage = _get_storage_for_bucket(bucket_name)
     _ensure_bucket_exists(storage)
+
+
+def get_file_transfer_storage(*, ensure_bucket: bool = True):
+    """Get FileTransferStorage instance. Set ensure_bucket=False when bucket is known to exist (e.g. in tasks)."""
+    storage = FileTransferStorage()
+    if ensure_bucket:
+        _ensure_bucket_exists(storage)
+    return storage
 
 
 def ensure_cradle_buckets_exist() -> None:
@@ -108,8 +110,7 @@ def presign_get(
     response_content_type: Optional[str] = None,
     response_content_disposition: Optional[str] = None,
 ) -> str:
-    """
-    Create a presigned GET URL for an object.
+    """Create a presigned GET URL for an object.
 
     We use boto3 via django-storages' storage.connection.
     """
@@ -161,30 +162,3 @@ def exists(bucket_name: str, key: str) -> bool:
         return storage.exists(key)
     except Exception:
         return False
-
-
-def list_keys(bucket_name: str, prefix: str = "") -> set[str]:
-    """List object keys in the given bucket, optionally filtered by prefix."""
-    storage = _get_storage_for_bucket(bucket_name)
-    _ensure_bucket_exists(storage)
-    client = storage.connection.meta.client
-    keys: set[str] = set()
-
-    paginator = client.get_paginator("list_objects_v2")
-    for page in paginator.paginate(Bucket=storage.bucket_name, Prefix=prefix):
-        for obj in page.get("Contents", []) or []:
-            key = obj.get("Key")
-            if key:
-                keys.add(key)
-
-    return keys
-
-
-def download_to_path(bucket_name: str, key: str, dst_path: str) -> None:
-    """Download an object to a local path (streaming)."""
-    storage = _get_storage_for_bucket(bucket_name)
-    _ensure_bucket_exists(storage)
-
-    os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-    with storage.open(key, "rb") as src, open(dst_path, "wb") as dst:
-        shutil.copyfileobj(src, dst)

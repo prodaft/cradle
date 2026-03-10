@@ -8,25 +8,23 @@ from ..models import PublishedReport
 
 
 class BasePublishStrategy:
-    """
-    Base interface for a publishing strategy.
-    """
+    """Base interface for a publishing strategy."""
 
     def __init__(self, anonymize: bool):
+        """Initialize with anonymization flag for report content."""
         self.anonymize = anonymize
         self.anonymizer = Anonymizer()
         self._eclasses = None
 
     def get_remote_url(self, report: PublishedReport) -> str:
-        """
-        Get the remote URL of the published report.
-        """
+        """Get the remote URL of the published report."""
         if not report.external_ref:
             raise ValueError("Report does not have an external reference.")
         return report.external_ref
 
     @property
     def eclasses(self) -> Dict[str, EntryClass]:
+        """Entry classes keyed by subtype, lazily loaded."""
         if self._eclasses is None:
             eclasses = list(EntryClass.objects.all())
             self._eclasses = {eclass.subtype: eclass for eclass in eclasses}
@@ -34,9 +32,7 @@ class BasePublishStrategy:
         return self._eclasses
 
     def _anonymize_note(self, note: Note) -> Note:
-        """
-        Anonymize a note.
-        """
+        """Anonymize a note."""
         if not self.anonymize:
             return note
 
@@ -51,9 +47,7 @@ class BasePublishStrategy:
         )
 
     def _anonymize_entry(self, entry: Entry) -> Entry:
-        """
-        Anonymize an entry.
-        """
+        """Anonymize an entry."""
         if not self.anonymize:
             return entry
 
@@ -65,19 +59,13 @@ class BasePublishStrategy:
         )
 
     def edit_report(self, report: PublishedReport) -> bool:
-        """
-        Edit an existing published resource
-        """
+        """Edit an existing published resource."""
         raise NotImplementedError()
 
     def create_report(self, report: PublishedReport) -> bool:
-        """
-        Create a brand new report/publication from scratch.
-        """
+        """Create a brand new report/publication from scratch."""
         raise NotImplementedError()
 
     def delete_report(self, report: PublishedReport) -> bool:
-        """
-        Delete an existing published resource (given its location).
-        """
+        """Delete an existing published resource (given its location)."""
         raise NotImplementedError()

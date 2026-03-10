@@ -63,7 +63,7 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
 
     const fetchNoteTemplateMutation = $api.useMutation(
         'get',
-        '/users/{user_id}/default_note_template/',
+        '/users/{user_id}/default-note-template/',
         {
             meta: { suppressNotification: true },
         },
@@ -71,7 +71,7 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
 
     const saveNoteTemplateMutation = $api.useMutation(
         'patch',
-        '/users/{user_id}/default_note_template/',
+        '/users/{user_id}/default-note-template/',
         {
             meta: { successMessage: 'Note template saved successfully' },
         },

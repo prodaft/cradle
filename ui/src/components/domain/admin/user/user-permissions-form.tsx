@@ -17,8 +17,9 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
-import { $api, fetchClient } from '@services/openapi/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchClient } from '@services/openapi/client';
+import { fetchAllUserAccess } from '@services/openapi/fetch-all-pages';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
 interface UserPermissionsFormProps {
@@ -95,16 +96,13 @@ export default function UserPermissionsForm({
     const [searchVal, setSearchVal] = useState('');
     const queryClient = useQueryClient();
 
-    const permissionsQuery = $api.useQuery(
-        'get',
-        '/access/user/{user_id}/',
-        { params: { path: { user_id: id } } },
-        {
-            enabled: !!id,
-            refetchOnWindowFocus: false,
-            refetchOnReconnect: false,
-        },
-    );
+    const permissionsQuery = useQuery({
+        queryKey: ['get', '/access/user/{user_id}/', id],
+        queryFn: () => fetchAllUserAccess(id),
+        enabled: !!id,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+    });
 
     const entities: PermissionEntity[] = useMemo(() => {
         const permissions = permissionsQuery.data ?? [];
@@ -196,7 +194,7 @@ export default function UserPermissionsForm({
         onSuccess: () => {
             setOriginalAccess({ ...currentAccess });
             queryClient.invalidateQueries({
-                queryKey: ['get', '/access/user/{user_id}/'],
+                queryKey: ['get', '/access/user/{user_id}/', id],
             });
         },
     });

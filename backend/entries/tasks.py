@@ -1,10 +1,10 @@
+"""Celery tasks for entries: access updates, note remapping, graph refresh."""
+
 from celery import group, shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection, transaction
 
 from core.decorators import debounce_task, distributed_lock
-from entries.enums import EntryType, RelationReason
-from entries.models import Edge, Entry, Relation
 from intelio.tasks import propagate_acvec_digest, propagate_acvec_enrich
 from notes.markdown.to_markdown import remap_links
 from notes.models import Note
@@ -13,10 +13,14 @@ from notes.tasks import propagate_acvec
 from notes.utils import calculate_acvec
 from user.models import CradleUser
 
+from .enums import EntryType, RelationReason
+from .models import Edge, Entry, Relation
+
 
 @shared_task
 @distributed_lock("update_accesses_{entry_id}", timeout=3600)
 def update_accesses(entry_id):
+    """Propagate access vector changes from an entry to its notes, digests, and enrichments."""
     entry = Entry.objects.get(id=entry_id)
     entry.status = {"status": "warning", "message": "Updating access controls"}
     entry.save()
@@ -38,7 +42,7 @@ def update_accesses(entry_id):
     digest_ids = entry.digests.all().values_list("id", flat=True)
     enrich_ids = entry.enrichments.all().values_list("id", flat=True)
 
-    # Reset the status field.
+    entry.status = {}
     entry.save()
 
     g_notes = group(*[propagate_acvec.si(n.id) for n in update_notes])
@@ -54,6 +58,7 @@ def update_accesses(entry_id):
 
 @shared_task
 def remap_notes_task(note_ids, mapping_eclass, mapping_entry, user_id=None):
+    """Remap entry links in notes after entry class or entry rename/deletion."""
     notes = list(Note.objects.filter(id__in=note_ids))
     if user_id:
         user = CradleUser.objects.get(id=user_id)
@@ -69,6 +74,7 @@ def remap_notes_task(note_ids, mapping_eclass, mapping_entry, user_id=None):
 
 @shared_task
 def scan_for_children(entry_ids, content_type_id, content_id):
+    """Create CONTAINS relations from entries to matched child entries via regex/options."""
     content_type = ContentType.objects.get(id=content_type_id)
     content_object = content_type.get_object_for_this_type(id=content_id)
 
@@ -82,8 +88,6 @@ def scan_for_children(entry_ids, content_type_id, content_id):
 
     relations = []
 
-    created = False
-
     for entry in entries:
         matches = {}
         for child in entry.entry_class.children.all():
@@ -91,21 +95,18 @@ def scan_for_children(entry_ids, content_type_id, content_id):
 
         for k, v in matches.items():
             for i in v:
-                e, new = Entry.objects.get_or_create(name=i, entry_class=k)
-                created = created or new
+                e, _ = Entry.objects.get_or_create(name=i, entry_class=k)
                 rel = Relation(
                     e1=e,
                     e2=entry,
                     reason=RelationReason.CONTAINS,
                     inherit_av=True,
-                    access_vector=(
-                        getattr(content_object, "access_vector") if hasattr(content_object, "access_vector") else 1
-                    ),
+                    access_vector=getattr(content_object, "access_vector", 1),
                     content_object=content_object,
                 )
                 relations.append(rel)
 
-    if len(relations) > 0:
+    if relations:
         Relation.objects.bulk_create(relations)
 
     refresh_edges_materialized_view.apply_async()
@@ -114,8 +115,7 @@ def scan_for_children(entry_ids, content_type_id, content_id):
 @debounce_task(timeout=180)
 @shared_task
 def refresh_edges_materialized_view():
-    """
-    Refreshes the 'edges' materialized view concurrently.
+    """Refreshes the 'edges' materialized view concurrently.
 
     Ensure that a unique index (e.g., on 'id') exists on the view, like:
 
@@ -127,14 +127,11 @@ def refresh_edges_materialized_view():
     with connection.cursor() as cursor:
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY edges;")
 
-    entryids = Entry.objects.exclude(entry_class__subtype="note").values_list("id", flat=True)
-    degrees = [None for _ in range(len(entryids))]
-
-    for i, entryid in enumerate(entryids):
-        degrees[i] = Edge.objects.filter(src=entryid).count()
+    entry_ids = list(Entry.objects.exclude(entry_class__subtype="note").values_list("id", flat=True))
+    degrees = [Edge.objects.filter(src=eid).count() for eid in entry_ids]
 
     Entry.objects.bulk_update(
-        [Entry(id=id, degree=degree) for id, degree in zip(entryids, degrees)],
+        [Entry(id=eid, degree=degree) for eid, degree in zip(entry_ids, degrees)],
         ["degree"],
     )
 
@@ -143,4 +140,5 @@ def refresh_edges_materialized_view():
 
 @shared_task
 def delete_hanging_artifacts():
+    """Delete artifacts that have no relations (unreferenced)."""
     return Entry.artifacts.unreferenced().delete()[0]

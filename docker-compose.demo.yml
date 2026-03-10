@@ -73,7 +73,7 @@ services:
       CRADLE_ADMIN_EMAIL: admin@cradle.sh
       CRADLE_ADMIN_PASSWORD: admin
 
-      CRADLE_SECRET_KEY: "super-secret-key"
+      SECRET_KEY: "super-secret-key"
 
       ALLOWED_HOSTS: localhost
       CRADLE_TRUSTED_ORIGINS: http://localhost

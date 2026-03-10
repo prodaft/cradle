@@ -1,1 +1,6 @@
-export { $api, fetchClient, setClientAccessToken } from './client';
+export {
+    $api,
+    fetchClient,
+    setClientAccessToken,
+    setClientAuthCallbacks,
+} from './client';

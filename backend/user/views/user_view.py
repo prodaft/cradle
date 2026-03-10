@@ -1,33 +1,37 @@
+"""User CRUD, signup, config, sessions, API key, password reset, and management views."""
+
 import secrets
 from datetime import datetime
 from datetime import timezone as dt_timezone
 from typing import cast
+from uuid import UUID
 
 import bcrypt
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
-from django.conf import settings
+from django.db.utils import IntegrityError
+from django.urls import reverse
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
+from rest_framework.generics import ListCreateAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from core.exceptions import ValidationException
-from core.throttling import AuthRateThrottle
-from core.openapi import (
-    get_common_error_responses,
-    get_error_responses,
-    get_validation_error_response,
-)
+from core.exceptions import CoreErrorCodes, ValidationException
+from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
+from core.throttling import AuthRateThrottle
 from core.utils import validate_order_by
 from management.settings import cradle_settings
 from notifications.models import NewUserNotification
-from user.permissions import HasAdminRole
 
 from ..authentication import APIKeyAuthentication
 from ..exceptions import (
@@ -35,17 +39,17 @@ from ..exceptions import (
     EmailAlreadyConfirmedException,
     IncorrectOldPasswordException,
     RegistrationDisabledException,
+    SessionNotFoundException,
     UnknownActionException,
     UserAlreadyExistsException,
     UserErrorCodes,
     UserNotFoundException,
 )
-from ..models import BlacklistedToken, CradleUser, UserSession
-from .token_view import set_token_cookies
+from ..filters import UserFilter
+from ..models import BlacklistedToken, CradleUser, UserRoles, UserSession
+from ..permissions import HasAdminRole
 from ..serializers import (
-    APIKeyRequestSerializer,
     APIKeyResponseSerializer,
-    ChangePasswordRequestSerializer,
     ChangePasswordResponseSerializer,
     ChangePasswordSerializer,
     DefaultNoteTemplateResponseSerializer,
@@ -53,14 +57,15 @@ from ..serializers import (
     EmailConfirmSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    UserConfigSerializer,
     UserCreateSerializer,
     UserCreateSerializerAdmin,
     UserManageResponseSerializer,
     UserRetrieveSerializer,
-    UserConfigSerializer,
     UserSessionSerializer,
     UserUpdateSerializer,
 )
+from .token_view import set_token_cookies
 
 
 @extend_schema_view(
@@ -81,15 +86,13 @@ from ..serializers import (
                 location=OpenApiParameter.QUERY,
                 description="Number of results per page",
             ),
-            OpenApiParameter(
-                name="search",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="Filter by username, email or role (case-insensitive substring)",
-            ),
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(UserRetrieveSerializer),
+            **get_error_responses(
+                CoreErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
+            ),
             **get_common_error_responses(),
         },
     ),
@@ -99,59 +102,57 @@ from ..serializers import (
         description="Creates a new user account. Only available to admin users.",
         request=UserCreateSerializerAdmin,
         responses={
-            200: UserRetrieveSerializer,
-            **get_validation_error_response(),
+            201: UserRetrieveSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_ALREADY_EXISTS,
+                include_validation_error=True,
             ),
             **get_common_error_responses(),
         },
     ),
 )
-class UserList(APIView):
+class UserList(ListCreateAPIView):
+    """List or create users. Admin only."""
+
     authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, HasAdminRole]
+    pagination_class = TotalPagesPagination
+    serializer_class = UserRetrieveSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = UserFilter
 
-    def get_permissions(self):
-        if self.request.method == "GET":
-            self.permission_classes = [IsAuthenticated, HasAdminRole]
-        else:
-            self.permission_classes = [IsAuthenticated, HasAdminRole]
-        return super().get_permissions()
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return CradleUser.objects.none()
+        return CradleUser.objects.all().order_by("username")
 
-    def get(self, request):
-        users_qs = CradleUser.objects.all().order_by("username")
-        search = (request.query_params.get("search") or "").strip()
-        if search:
-            users_qs = users_qs.filter(
-                Q(username__icontains=search) | Q(email__icontains=search) | Q(role__icontains=search)
-            )
-        page_size = request.query_params.get("page_size", "10")
-        if not page_size.isdigit() or int(page_size) <= 0:
-            page_size = 10
-        else:
-            page_size = int(page_size)
-        has_pagination = "page" in request.query_params or "page_size" in request.query_params
-        if has_pagination:
-            paginator = TotalPagesPagination(page_size=page_size)
-            paginated = paginator.paginate_queryset(users_qs, request)
-            if paginated is not None:
-                serializer = UserRetrieveSerializer(paginated, many=True)
-                return paginator.get_paginated_response(serializer.data)
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return UserCreateSerializerAdmin
+        return UserRetrieveSerializer
 
-        serializer = UserRetrieveSerializer(users_qs, many=True)
-        return Response(serializer.data)
+    def perform_create(self, serializer):
+        try:
+            with transaction.atomic():
+                if CradleUser.objects.filter(email=serializer.validated_data["email"]).exists():
+                    raise UserAlreadyExistsException(detail="User with this email already exists.")
+                serializer.save()
+        except IntegrityError:
+            raise UserAlreadyExistsException(detail="A user with this email or username already exists.")
 
-    def post(self, request):
-        serializer = UserCreateSerializerAdmin(data=request.data)
+    def get_success_headers(self, data):
+        return {"Location": self.request.build_absolute_uri(reverse("user_detail", kwargs={"user_id": data["id"]}))}
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        if CradleUser.objects.filter(email=serializer.validated_data["email"]).exists():
-            raise UserAlreadyExistsException(detail="User with this email already exists.")
-
-        user = serializer.save()
-        serializer = UserRetrieveSerializer(user)
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        self.perform_create(serializer)
+        headers = self.get_success_headers({"id": serializer.instance.id})
+        return Response(
+            UserRetrieveSerializer(serializer.instance).data,
+            status=status.HTTP_201_CREATED,
+            headers=headers,
+        )
 
 
 @extend_schema_view(
@@ -161,11 +162,11 @@ class UserList(APIView):
         description="Creates a new user account. Available to unauthenticated users.",
         request=UserCreateSerializer,
         responses={
-            200: UserRetrieveSerializer,
-            **get_validation_error_response(),
+            201: UserRetrieveSerializer,
             **get_error_responses(
                 UserErrorCodes.REGISTRATION_DISABLED,
                 UserErrorCodes.USER_ALREADY_EXISTS,
+                include_validation_error=True,
             ),
         },
         tags=["auth"],
@@ -176,29 +177,31 @@ class SignupView(APIView):
     permission_classes = []
     throttle_classes = [AuthRateThrottle]
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         if not cradle_settings.users.allow_registration:
             raise RegistrationDisabledException(detail="User registration is disabled.")
 
         serializer = UserCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        if CradleUser.objects.filter(email=serializer.validated_data["email"]).exists():
-            raise UserAlreadyExistsException(detail="User with this email already exists.")
-
-        user = serializer.save()
-        admins = CradleUser.objects.filter(role="admin")
-        with transaction.atomic():
-            for i in admins:
-                NewUserNotification.objects.create(
-                    user_id=i.id,
-                    new_user=user,
-                    message=f"A new user has registered: {user.username}",
-                )
+        try:
+            with transaction.atomic():
+                user = serializer.save()
+                admins = CradleUser.objects.filter(role=UserRoles.ADMIN)
+                for i in admins:
+                    NewUserNotification.objects.create(
+                        user_id=i.id,
+                        new_user=user,
+                        message=f"A new user has registered: {user.username}",
+                    )
+        except IntegrityError:
+            raise UserAlreadyExistsException(detail="A user with this email or username already exists.")
         user.send_email_confirmation()
         serializer = UserRetrieveSerializer(user)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # Signup is at /api/auth/signup/ but user resource is at /api/users/<id>/
+        location = request.build_absolute_uri(reverse("user_detail", kwargs={"user_id": user.id}))
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers={"Location": location})
 
 
 @extend_schema_view(
@@ -206,14 +209,17 @@ class SignupView(APIView):
         operation_id="users_config",
         summary="Get user config",
         description="Returns OAuth configuration metadata and signup status.",
-        responses={200: UserConfigSerializer},
+        responses={
+            200: UserConfigSerializer,
+            **get_common_error_responses(),
+        },
     ),
 )
 class UserConfigView(APIView):
     authentication_classes = []
     permission_classes = []
 
-    def get(self, request):
+    def get(self, request: Request) -> Response:
         payload = {
             "oauth_methods": settings.OAUTH_METHODS,
             "signup": cradle_settings.users.allow_registration,
@@ -238,7 +244,10 @@ class UserConfigView(APIView):
         ],
         responses={
             200: UserRetrieveSerializer,
-            **get_error_responses(UserErrorCodes.USER_NOT_FOUND),
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
             **get_common_error_responses(),
         },
     ),
@@ -257,8 +266,32 @@ class UserConfigView(APIView):
         request=UserUpdateSerializer,
         responses={
             200: UserRetrieveSerializer,
-            **get_validation_error_response(),
-            **get_error_responses(UserErrorCodes.USER_NOT_FOUND),
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+                include_validation_error=True,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+    delete=extend_schema(
+        operation_id="users_destroy",
+        summary="Delete user",
+        description="Deletes a user account. Users can delete their own account; admins can delete non-admin users.",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user, or 'me' to delete own account",
+            )
+        ],
+        responses={
+            204: {"description": "User successfully deleted"},
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
             **get_common_error_responses(),
         },
     ),
@@ -266,9 +299,8 @@ class UserConfigView(APIView):
 class UserDetail(APIView):
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = UserRetrieveSerializer
 
-    def get(self, request, user_id):
+    def get(self, request: Request, user_id: str | UUID) -> Response:
         initiator = cast(CradleUser, request.user)
         user = None
         if user_id == "me":
@@ -282,10 +314,10 @@ class UserDetail(APIView):
         if not (initiator.pk == user.pk or initiator.is_cradle_admin):
             raise DisallowedActionException(detail="You are not allowed to view this user.")
 
-        json_user = UserRetrieveSerializer(user, many=False).data
+        json_user = UserRetrieveSerializer(user).data
         return Response(json_user, status=status.HTTP_200_OK)
 
-    def patch(self, request, user_id):
+    def patch(self, request: Request, user_id: str | UUID) -> Response:
         editor = cast(CradleUser, request.user)
         edited = None
 
@@ -300,23 +332,23 @@ class UserDetail(APIView):
         if not (editor.pk == edited.pk or (editor.is_cradle_admin and not edited.is_cradle_admin)):
             raise DisallowedActionException(detail="You are not allowed to edit this user.")
 
-        if request.data.get("username", None) == edited.username:
-            request.data.pop("username")
-
-        if request.data.get("email", None) == edited.email:
-            request.data.pop("email")
+        data = dict(request.data)
+        if data.get("username") == edited.username:
+            data.pop("username", None)
+        if data.get("email") == edited.email:
+            data.pop("email", None)
 
         if editor.is_cradle_admin and editor.pk != edited.pk:
-            serializer = UserCreateSerializerAdmin(edited, data=request.data, partial=True)
+            serializer = UserCreateSerializerAdmin(edited, data=data, partial=True)
         else:
-            serializer = UserCreateSerializer(edited, data=request.data, partial=True)
+            serializer = UserCreateSerializer(edited, data=data, partial=True)
 
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        json_user = UserRetrieveSerializer(user, many=False).data
+        json_user = UserRetrieveSerializer(user).data
         return Response(json_user, status=status.HTTP_200_OK)
 
-    def delete(self, request, user_id):
+    def delete(self, request: Request, user_id: str | UUID) -> Response:
         deleter = cast(CradleUser, request.user)
         removed_user = None
         if user_id == "me":
@@ -330,33 +362,81 @@ class UserDetail(APIView):
         if not (deleter.pk == removed_user.pk or (deleter.is_cradle_admin and not removed_user.is_cradle_admin)):
             raise DisallowedActionException(detail="You are not allowed to delete this user.")
 
-        removed_user.delete()
+        with transaction.atomic():
+            removed_user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="users_me_retrieve",
+        summary="Get current user details",
+        description="Returns the authenticated user's own details.",
+        responses={
+            200: UserRetrieveSerializer,
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+    patch=extend_schema(
+        operation_id="users_me_update",
+        summary="Update current user details",
+        description="Updates the authenticated user's own details.",
+        request=UserUpdateSerializer,
+        responses={
+            200: UserRetrieveSerializer,
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+                include_validation_error=True,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+    delete=extend_schema(
+        operation_id="users_me_destroy",
+        summary="Delete current user account",
+        description="Deletes the authenticated user's own account.",
+        responses={
+            204: {"description": "User successfully deleted"},
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+)
+class UserMeDetail(UserDetail):
+    """Same as UserDetail but with distinct operation_ids for /users/me/ to avoid schema collisions."""
 
 
 @extend_schema_view(
     post=extend_schema(
         summary="Change Password",
         description="Allows authenticated users to change their password by providing their old password and a new password.",  # noqa: E501
-        request=ChangePasswordRequestSerializer,
+        request=ChangePasswordSerializer,
         responses={
             200: ChangePasswordResponseSerializer,
-            **get_validation_error_response(),
-            **get_error_responses(UserErrorCodes.INCORRECT_OLD_PASSWORD),
+            **get_error_responses(
+                UserErrorCodes.INCORRECT_OLD_PASSWORD,
+                include_validation_error=True,
+            ),
             **get_common_error_responses(),
         },
         tags=["auth"],
     )
 )
 class ChangePasswordView(APIView):
-    """
-    An endpoint for users to change their password if they know their old password.
-    """
+    """An endpoint for users to change their password if they know their old password."""
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         user: CradleUser = request.user
         serializer = ChangePasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -377,6 +457,7 @@ class ChangePasswordView(APIView):
 
 @extend_schema_view(
     post=extend_schema(
+        operation_id="users_manage_create",
         summary="Manage user actions",
         description="Perform various admin actions on a user account. Available actions: simulate, send_email_confirmation, password_reset_email",  # noqa: E501
         request=None,
@@ -385,7 +466,7 @@ class ChangePasswordView(APIView):
                 name="user_id",
                 type=str,
                 location=OpenApiParameter.PATH,
-                description="UUID of the user to perform action on",
+                description="UUID of the user, or 'me' for the current user",
             ),
             OpenApiParameter(
                 name="action_name",
@@ -426,49 +507,54 @@ class ManageUser(APIView):
             "role": user.role,
         }
 
-    def post(self, request, user_id, action_name, *args, **kwargs):
+    def post(self, request: Request, user_id: str | UUID, action_name: str, *args, **kwargs) -> Response:
         if action_name not in [
             "simulate",
             "send_email_confirmation",
             "password_reset_email",
         ]:
             raise UnknownActionException(detail="Unknown action")
-        return self.__getattribute__(action_name)(request, user_id, *args, **kwargs)
+        return getattr(self, action_name)(request, user_id, *args, **kwargs)
 
-    def password_reset_email(self, request, user_id, *args, **kwargs):
-        try:
-            user = CradleUser.objects.get(id=user_id)
-        except CradleUser.DoesNotExist:
-            raise UserNotFoundException(detail="There is no user with the specified ID.")
+    def password_reset_email(self, request: Request, user_id: str | UUID, *args, **kwargs) -> Response:
+        user = request.user if user_id == "me" else None
+        if user is None:
+            try:
+                user = CradleUser.objects.get(id=user_id)
+            except CradleUser.DoesNotExist:
+                raise UserNotFoundException(detail="There is no user with the specified ID.")
 
         user.send_password_reset()
 
         return Response(
-            "Password reset email has been sent.",
+            {"detail": "Password reset email has been sent."},
             status=status.HTTP_200_OK,
         )
 
-    def send_email_confirmation(self, request, user_id, *args, **kwargs):
-        try:
-            user = CradleUser.objects.get(id=user_id)
-        except CradleUser.DoesNotExist:
-            raise UserNotFoundException(detail="There is no user with the specified ID.")
+    def send_email_confirmation(self, request: Request, user_id: str | UUID, *args, **kwargs) -> Response:
+        user = request.user if user_id == "me" else None
+        if user is None:
+            try:
+                user = CradleUser.objects.get(id=user_id)
+            except CradleUser.DoesNotExist:
+                raise UserNotFoundException(detail="There is no user with the specified ID.")
 
         if user.email_confirmed:
             raise EmailAlreadyConfirmedException(detail="User's email is already confirmed.")
 
         user.send_email_confirmation()
         return Response(
-            "Email confirmation has been sent.",
+            {"detail": "Email confirmation has been sent."},
             status=status.HTTP_200_OK,
         )
 
-    def simulate(self, request, user_id, *args, **kwargs):
-        user = None
-        try:
-            user = CradleUser.objects.get(id=user_id)
-        except CradleUser.DoesNotExist:
-            raise UserNotFoundException(detail="There is no user with the specified ID.")
+    def simulate(self, request: Request, user_id: str | UUID, *args, **kwargs) -> Response:
+        user = request.user if user_id == "me" else None
+        if user is None:
+            try:
+                user = CradleUser.objects.get(id=user_id)
+            except CradleUser.DoesNotExist:
+                raise UserNotFoundException(detail="There is no user with the specified ID.")
         if user.is_cradle_admin:
             raise DisallowedActionException(detail="You are not allowed to simulate an admin.")
 
@@ -482,35 +568,88 @@ class ManageUser(APIView):
         return response
 
 
-@extend_schema(
-    summary="Generate API key",
-    description="Generates a new API key for the specified user. Users can only"
-    + "generate keys for themselves, or admins can generate keys for non-admin users.",
-    parameters=[
-        OpenApiParameter(
-            name="user_id",
-            type=str,
-            location=OpenApiParameter.PATH,
-            description="UUID of the user, or 'me' to generate key for self",
-        )
-    ],
-    responses={
-        200: APIKeyResponseSerializer,
-        **get_error_responses(
-            UserErrorCodes.USER_NOT_FOUND,
-            UserErrorCodes.DISALLOWED_ACTION,
-        ),
-        **get_common_error_responses(),
-    },
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="users_me_manage_create",
+        summary="Manage current user actions",
+        description="Perform admin actions on the current user. Available actions: simulate, send_email_confirmation, password_reset_email.",
+        request=None,
+        parameters=[
+            OpenApiParameter(
+                name="action_name",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Action to perform: simulate, send_email_confirmation, or password_reset_email",
+            ),
+        ],
+        responses={
+            200: UserManageResponseSerializer,
+            **get_error_responses(
+                UserErrorCodes.UNKNOWN_ACTION,
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.EMAIL_ALREADY_CONFIRMED,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
+        },
+    )
+)
+class UserMeManage(ManageUser):
+    """Same as ManageUser but with distinct operation_id for /users/me/manage/."""
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="users_api_key_create",
+        summary="Generate API key",
+        description="Generates a new API key for the specified user. Users can only "
+        "generate keys for themselves, or admins can generate keys for non-admin users. "
+        "Regenerating invalidates any existing key.",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user, or 'me' to generate key for self",
+            )
+        ],
+        responses={
+            201: APIKeyResponseSerializer,
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+    delete=extend_schema(
+        operation_id="users_api_key_destroy",
+        summary="Revoke API key",
+        description="Revokes the API key for the specified user. Users can revoke their own key; admins can revoke non-admin users' keys.",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user, or 'me' to revoke own key",
+            )
+        ],
+        responses={
+            204: {"description": "API key revoked successfully"},
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
 )
 class APIKey(APIView):
+    serializer_class = APIKeyResponseSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = APIKeyRequestSerializer
 
-    def post(self, request, user_id):
-        requesting_user = cast(CradleUser, request.user)
-
+    def _get_user_and_check_permission(self, requesting_user: CradleUser, user_id: str | UUID) -> CradleUser:
         if user_id == "me":
             user = requesting_user
         else:
@@ -520,13 +659,54 @@ class APIKey(APIView):
                 raise UserNotFoundException(detail="There is no user with the specified ID.")
 
         if not (requesting_user.pk == user.pk or (requesting_user.is_cradle_admin and not user.is_cradle_admin)):
-            raise DisallowedActionException(detail="You are not allowed to generate API key for this user.")
+            raise DisallowedActionException(detail="You are not allowed to manage API key for this user.")
+        return user
 
+    def post(self, request: Request, user_id: str | UUID) -> Response:
+        user = self._get_user_and_check_permission(cast(CradleUser, request.user), user_id)
         key = secrets.token_hex(24)
         hashed_key = bcrypt.hashpw(key.encode(), bcrypt.gensalt()).decode()
         user.api_key = hashed_key
         user.save(update_fields=["api_key"])
-        return Response({"api_key": key}, status=status.HTTP_200_OK)
+        return Response({"api_key": key}, status=status.HTTP_201_CREATED)
+
+    def delete(self, request: Request, user_id: str | UUID) -> Response:
+        user = self._get_user_and_check_permission(cast(CradleUser, request.user), user_id)
+        user.api_key = None
+        user.save(update_fields=["api_key"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="users_me_api_key_create",
+        summary="Generate API key for current user",
+        description="Generates a new API key for the authenticated user.",
+        responses={
+            201: APIKeyResponseSerializer,
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+    delete=extend_schema(
+        operation_id="users_me_api_key_destroy",
+        summary="Revoke API key for current user",
+        description="Revokes the API key for the authenticated user.",
+        responses={
+            204: {"description": "API key revoked successfully"},
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+)
+class UserMeAPIKey(APIKey):
+    """Same as APIKey but with distinct operation_ids for /users/me/api-key/."""
 
 
 @extend_schema(
@@ -535,7 +715,8 @@ class APIKey(APIView):
     request=EmailConfirmSerializer,
     responses={
         200: {"description": "Email confirmed successfully"},
-        **get_validation_error_response(),
+        **get_error_responses(include_validation_error=True),
+        **get_common_error_responses(),
     },
     tags=["auth"],
 )
@@ -544,7 +725,7 @@ class EmailConfirm(APIView):
     authentication_classes = ()
     throttle_classes = [AuthRateThrottle]
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         serializer = EmailConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -553,7 +734,7 @@ class EmailConfirm(APIView):
         # Check if token expired
         if user.email_confirmation_token_expiry < timezone.now():
             user.send_email_confirmation()
-            raise ValidationException(detail="Email confirmation token has expired a new one was sent.")
+            raise ValidationException(detail="Email confirmation token has expired. A new one was sent.")
 
         user.email_confirmed = True
         user.email_confirmation_token = None
@@ -571,7 +752,8 @@ class EmailConfirm(APIView):
         request=PasswordResetRequestSerializer,
         responses={
             200: {"description": "Password reset email sent"},
-            **get_validation_error_response(),
+            **get_error_responses(include_validation_error=True),
+            **get_common_error_responses(),
         },
         tags=["auth"],
     ),
@@ -582,7 +764,11 @@ class EmailConfirm(APIView):
         request=PasswordResetConfirmSerializer,
         responses={
             200: {"description": "Password reset successfully"},
-            **get_validation_error_response(),
+            **get_error_responses(
+                UserErrorCodes.INVALID_PASSWORD,
+                include_validation_error=True,
+            ),
+            **get_common_error_responses(),
         },
         tags=["auth"],
     ),
@@ -590,10 +776,9 @@ class EmailConfirm(APIView):
 class PasswordReset(APIView):
     permission_classes = ()
     authentication_classes = ()
-    serializer_class = PasswordResetRequestSerializer
     throttle_classes = [AuthRateThrottle]
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -607,32 +792,32 @@ class PasswordReset(APIView):
 
         return Response({"detail": "Password reset email sent."}, status=status.HTTP_200_OK)
 
-    def put(self, request):
+    def put(self, request: Request) -> Response:
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         token = serializer.validated_data["token"]
         password = serializer.validated_data["password"]
 
-        if CradleUser.objects.active().filter(password_reset_token=token).exists():
-            user = CradleUser.objects.active().get(password_reset_token=token)
+        with transaction.atomic():
+            try:
+                user = CradleUser.objects.active().select_for_update().get(password_reset_token=token)
+            except CradleUser.DoesNotExist:
+                raise ValidationException(detail="Token not found!")
 
-            # Check if token was expired
             if user.password_reset_token_expiry < timezone.now():
                 raise ValidationException(detail="Password reset token has expired.")
 
-            # Reset the token and set new password
-            user.password_reset_token = ""
+            user.password_reset_token = None
             user.set_password(password)
-            user.save()
+            user.save(update_fields=["password_reset_token", "password"])
 
             return Response({"detail": "Password reset successfully."}, status=status.HTTP_200_OK)
-
-        raise ValidationException(detail="Token not found!")
 
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="users_default_note_template_retrieve",
         summary="Get default note template",
         description="Returns the user's default note template. Users can only retrieve their own template.",
         parameters=[
@@ -645,11 +830,15 @@ class PasswordReset(APIView):
         ],
         responses={
             200: DefaultNoteTemplateResponseSerializer,
-            **get_error_responses(UserErrorCodes.USER_NOT_FOUND),
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
             **get_common_error_responses(),
         },
     ),
     patch=extend_schema(
+        operation_id="users_default_note_template_partial_update",
         summary="Update default note template",
         description="Updates a user's default note template. Users can only update their own template.",
         parameters=[
@@ -663,8 +852,11 @@ class PasswordReset(APIView):
         request=DefaultNoteTemplateSerializer,
         responses={
             200: DefaultNoteTemplateResponseSerializer,
-            **get_validation_error_response(),
-            **get_error_responses(UserErrorCodes.USER_NOT_FOUND),
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+                include_validation_error=True,
+            ),
             **get_common_error_responses(),
         },
     ),
@@ -673,7 +865,7 @@ class DefaultNoteTemplateView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, user_id):
+    def get(self, request: Request, user_id: str | UUID) -> Response:
         initiator = cast(CradleUser, request.user)
         user = None
         if user_id == "me":
@@ -693,7 +885,7 @@ class DefaultNoteTemplateView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    def patch(self, request, user_id):
+    def patch(self, request: Request, user_id: str | UUID) -> Response:
         editor = cast(CradleUser, request.user)
         edited = None
 
@@ -722,6 +914,40 @@ class DefaultNoteTemplateView(APIView):
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="users_me_default_note_template_retrieve",
+        summary="Get current user's default note template",
+        description="Returns the authenticated user's default note template.",
+        responses={
+            200: DefaultNoteTemplateResponseSerializer,
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+    patch=extend_schema(
+        operation_id="users_me_default_note_template_partial_update",
+        summary="Update current user's default note template",
+        description="Updates the authenticated user's default note template.",
+        request=DefaultNoteTemplateSerializer,
+        responses={
+            200: DefaultNoteTemplateResponseSerializer,
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+                include_validation_error=True,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+)
+class UserMeDefaultNoteTemplateView(DefaultNoteTemplateView):
+    """Same as DefaultNoteTemplateView but with distinct operation_ids for /users/me/default-note-template/."""
+
+
+@extend_schema_view(
+    get=extend_schema(
         operation_id="users_sessions_list",
         summary="List user sessions",
         description="Returns a list of active sessions for the specified user. Users can view their own sessions; admins can view any user's sessions.",
@@ -746,12 +972,28 @@ class DefaultNoteTemplateView(APIView):
                 description="Comma-separated list of fields to order by. Prefix with '-' for descending. Valid fields: device_info, ip_address, created_at, last_activity, expires_at",
                 required=False,
             ),
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page size",
+                required=False,
+            ),
         ],
         responses={
-            200: UserSessionSerializer(many=True),
+            200: TotalPagesPagination().get_paginated_response_serializer(UserSessionSerializer),
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
                 UserErrorCodes.DISALLOWED_ACTION,
+                CoreErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
             ),
             **get_common_error_responses(),
         },
@@ -760,8 +1002,9 @@ class DefaultNoteTemplateView(APIView):
 class UserSessionsListView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    pagination_class = TotalPagesPagination
 
-    def get(self, request, user_id):
+    def get(self, request: Request, user_id: str | UUID) -> Response:
         """List all active sessions for a user."""
         initiator = cast(CradleUser, request.user)
         user = None
@@ -794,9 +1037,7 @@ class UserSessionsListView(APIView):
                 "last_activity",
                 "expires_at",
             ]
-            order_fields, error_response = validate_order_by(order_by, valid_order_fields)
-            if error_response:
-                return error_response
+            order_fields = validate_order_by(order_by, valid_order_fields)
             if order_fields:
                 sessions = sessions.order_by(*order_fields)
 
@@ -808,14 +1049,45 @@ class UserSessionsListView(APIView):
             try:
                 rt = RefreshToken(refresh_cookie)
                 current_jti = rt.get("jti")
-            except Exception:
+            except (TokenError, InvalidToken):
                 pass
         sessions.update(is_current=False)
         if current_jti:
             sessions.filter(refresh_token_jti=current_jti).update(is_current=True)
 
-        serializer = UserSessionSerializer(sessions, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(sessions, request)
+        serializer = UserSessionSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="users_me_sessions_list",
+        summary="List current user's sessions",
+        description="Returns a list of active sessions for the authenticated user.",
+        parameters=[
+            OpenApiParameter(name="search", type=str, location=OpenApiParameter.QUERY, required=False),
+            OpenApiParameter(name="order_by", type=str, location=OpenApiParameter.QUERY, required=False),
+            OpenApiParameter(name="page", type=int, location=OpenApiParameter.QUERY, required=False),
+            OpenApiParameter(name="page_size", type=int, location=OpenApiParameter.QUERY, required=False),
+        ],
+        responses={
+            200: TotalPagesPagination().get_paginated_response_serializer(
+                UserSessionSerializer, name="UserMeSessionsPaginatedResponse"
+            ),
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+                CoreErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+)
+class UserMeSessionsListView(UserSessionsListView):
+    """Same as UserSessionsListView but with distinct operation_id for /users/me/sessions/."""
 
 
 @extend_schema_view(
@@ -841,6 +1113,7 @@ class UserSessionsListView(APIView):
             204: {"description": "Session revoked successfully"},
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.SESSION_NOT_FOUND,
                 UserErrorCodes.DISALLOWED_ACTION,
             ),
             **get_common_error_responses(),
@@ -851,7 +1124,7 @@ class UserSessionRevokeView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, user_id, session_id):
+    def delete(self, request: Request, user_id: str | UUID, session_id: UUID) -> Response:
         """Revoke a specific session."""
         initiator = cast(CradleUser, request.user)
         user = None
@@ -880,4 +1153,32 @@ class UserSessionRevokeView(APIView):
             session.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except UserSession.DoesNotExist:
-            raise UserNotFoundException(detail="Session not found.")
+            raise SessionNotFoundException(detail="Session not found.")
+
+
+@extend_schema_view(
+    delete=extend_schema(
+        operation_id="users_me_sessions_destroy",
+        summary="Revoke current user's session",
+        description="Revokes a specific session for the authenticated user.",
+        parameters=[
+            OpenApiParameter(
+                name="session_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the session to revoke",
+            ),
+        ],
+        responses={
+            204: {"description": "Session revoked successfully"},
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.SESSION_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+)
+class UserMeSessionRevokeView(UserSessionRevokeView):
+    """Same as UserSessionRevokeView but with distinct operation_id for /users/me/sessions/{session_id}/."""

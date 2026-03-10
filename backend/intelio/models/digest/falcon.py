@@ -10,8 +10,8 @@ from access.models import Access
 from entries.enums import EntryType, RelationReason
 from entries.exceptions import InvalidEntryException
 from entries.models import Entry, EntryClass, Relation
-from intelio.enums import DigestStatus
 
+from ...enums import DigestStatus
 from ...tasks.falcon import digest_chunk
 from ..base import BaseDigest
 from ..mappings.falcon import FalconMapping
@@ -21,14 +21,16 @@ REL_CHUNK_SIZE = 4000  # Number of relations to save in each chunk
 
 
 class FalconDigest(BaseDigest):
-    display_name = "Falcon"
+    """Digest for Falcon threat intelligence JSON exports (entities and relations)."""
 
+    display_name = "Falcon"
     infer_entities = True
 
     class Meta:
         proxy = True
 
     def digest_data(self):
+        """Load and return Falcon JSON data from the digest file."""
         self.ensure_local_file()
         with open(self.path, "r") as report_file:
             report_data = json.load(report_file)
@@ -39,6 +41,7 @@ class FalconDigest(BaseDigest):
         return report_data
 
     def _digest(self):
+        """Split Falcon data into chunks and schedule Celery tasks for processing."""
         try:
             report_data = self.digest_data()
         except json.JSONDecodeError as e:
@@ -70,6 +73,7 @@ class FalconDigest(BaseDigest):
             chain(*chunks).apply_async()
 
     def digest_chunk(self, start, end):
+        """Process a slice of Falcon objects, creating entries and relations."""
         rels = []
         typemapping: dict[str, EntryClass] = FalconMapping.get_typemapping_rev()
         digest_entry = self.entry
@@ -80,7 +84,7 @@ class FalconDigest(BaseDigest):
 
             if entity_obj is None:
                 self._append_warning("Entity fields missing")
-                return
+                continue
 
             if f"{entity_obj.get('type')}:{entity_obj.get('value')}" not in entities:
                 eclass = typemapping.get(entity_obj.get("type"))
@@ -95,10 +99,10 @@ class FalconDigest(BaseDigest):
                 ).first()
 
                 if entity is None or not Access.objects.has_access_to_entities(
-                    self.user, [entity], [AccessType.READ_WRITE]
+                    self.user, {entity}, {AccessType.READ_WRITE}
                 ):
                     self._append_warning(
-                        f"Entity {entity_obj.get('type')}:{entity_obj.get('value')} not found or you don't have access."
+                        f"Entity {entity_obj.get('type')}:{entity_obj.get('value')} could not be found."
                     )
                     continue
 
@@ -120,7 +124,7 @@ class FalconDigest(BaseDigest):
 
             if value is None:
                 self._append_warning("Entity value missing")
-                return
+                continue
 
             if len(value) > 1024:
                 self._append_warning(f"Entity value {value} is too long ({len(value)} characters, max 1024).")
@@ -182,7 +186,7 @@ class FalconDigest(BaseDigest):
                     continue
 
                 if len(value) > 1024:
-                    self._append_warning(f"Entity value {value} is too long ({len(value)} characters, max 1024).")
+                    self._append_warning(f"Link value {value} is too long ({len(value)} characters, max 1024).")
                     continue
 
                 try:
@@ -242,5 +246,5 @@ class FalconDigest(BaseDigest):
         ]
 
         Relation.objects.bulk_create(rels)
-        for entity in entities.values():
-            self.entities.add(entity)
+        if entities:
+            self.entities.add(*entities.values())

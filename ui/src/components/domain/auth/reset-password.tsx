@@ -49,7 +49,7 @@ export default function ResetPassword() {
 
     const resetPasswordMutation = useMutation({
         mutationFn: async (data: { token: string; password: string }) => {
-            const { error, response } = await fetchClient.PUT('/auth/reset_password/', {
+            const { error, response } = await fetchClient.PUT('/auth/reset-password/', {
                 body: { token: data.token, password: data.password },
             });
             if (error) throw { response, error };

@@ -1,6 +1,9 @@
+"""Django app configuration for the entries application."""
+
 from django.apps import AppConfig
 
 
 class EntriesConfig(AppConfig):
-    default_auto_field = "django.db.models.BigAutoField"
+    """App config for entries: entry classes, entries, relations, and graph edges."""
+
     name = "entries"

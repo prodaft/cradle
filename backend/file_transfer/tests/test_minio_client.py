@@ -1,6 +1,6 @@
-from .utils import FileTransferTestCase
-from ..utils import MinioClient
 from ..exceptions import MinioObjectNotFound
+from ..utils import MinioClient
+from .utils import FileTransferTestCase
 
 
 class TestMinioClient(FileTransferTestCase):

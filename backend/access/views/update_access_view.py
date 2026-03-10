@@ -1,36 +1,34 @@
+"""View for updating a user's access level on an entity."""
+
 from typing import cast
 from uuid import UUID
 
 from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from core.openapi import (
-    get_common_error_responses,
-    get_error_responses,
-    get_validation_error_response,
-)
+from core.exceptions import CoreErrorCodes
+from core.openapi import get_common_error_responses, get_error_responses
+from entries.exceptions import EntityNotFoundException, EntriesErrorCodes
 from entries.models import Entry
 from notifications.models import AccessGrantedNotification
+from user.exceptions import UserErrorCodes, UserNotFoundException
 from user.models import CradleUser
 
 from ..enums import AccessType
-from ..exceptions import (
-    AccessErrorCodes,
-    EntityNotFoundException,
-    UpdateNotAllowedException,
-    UserNotFoundException,
-)
+from ..exceptions import AccessErrorCodes, UpdateNotAllowedException
 from ..models import Access
 from ..serializers import AccessSerializer
 
 
 @extend_schema_view(
     put=extend_schema(
+        operation_id="access_user_update",
         summary="Update user access for entity",
         description="Updates a user's access privileges for a specific entity. Admin users can update access for non-admin users. Users with read-write access can update access for non-admin users who don't have read-write access.",  # noqa: E501
         parameters=[
@@ -44,49 +42,44 @@ from ..serializers import AccessSerializer
                 name="entity_id",
                 type=int,
                 location=OpenApiParameter.PATH,
-                description="Id of the entity to update access for",
+                description="ID of the entity to update access for",
             ),
         ],
         request=AccessSerializer,
         responses={
-            200: {"description": "Access updated successfully"},
+            200: AccessSerializer,
             **get_error_responses(
-                AccessErrorCodes.USER_NOT_FOUND,
-                AccessErrorCodes.ENTITY_NOT_FOUND,
+                UserErrorCodes.USER_NOT_FOUND,
+                EntriesErrorCodes.ENTITY_NOT_FOUND,
                 AccessErrorCodes.UPDATE_NOT_ALLOWED,
-                AccessErrorCodes.INVALID_REQUEST,
+                CoreErrorCodes.INVALID_REQUEST,
+                include_validation_error=True,
             ),
-            **get_validation_error_response(),
             **get_common_error_responses(),
         },
     )
 )
 class UpdateAccess(APIView):
+    """Update a user's access level for an entity (admin or read-write users)."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = AccessSerializer
 
     def __can_update_access(self, request_user: CradleUser, updated_user: CradleUser, updated_entity: Entry) -> bool:
-        """Determines whether the request_user can change the access of updated_user
-        for entity updated_entity. We can outline three entities:
-        1. request_user is an admin: they can change the access of
-            updated_user if updated_user is not an admin
-        2. request_user has read_write access for updated_entity: they can
-            change the access of updated_user if updated_user is not an admin and if
-            updated_user does not have read_write access for updated_entity
-        3. request_user has either read or none access for updated_entity: they cannot
-            change the access of updated_user for updated_entity
+        """Determines whether request_user can change updated_user's access for updated_entity.
+
+        Rules: (1) Admin can change non-admin access. (2) Read-write user can change
+        access if updated_user is not admin and lacks read-write. (3) Read/none cannot.
 
         Args:
-            request_user: the user making the request
-            updated_user: the user whose access is to be updated
-            updated_entity: the entity for which the access is to be updated
+            request_user: User making the request.
+            updated_user: User whose access is to be updated.
+            updated_entity: Entity for which the access is to be updated.
 
         Returns:
-            True: if the access can be changed
-            False: otherwise
+            True if the access can be changed; False otherwise.
         """
-
         if request_user.is_cradle_admin:
             # Entity 1: user is a superuser
             if updated_user.is_cradle_admin:
@@ -105,44 +98,17 @@ class UpdateAccess(APIView):
 
         return True
 
-    def put(self, request: Request, user_id: UUID, entity_id: UUID) -> Response:
-        """Allows a user to change the access privileges of another user for
-        the specified entity. If the user making the request is an admin, they
-        can change the permission of any other non-admin user. If the user
-        making the request has read-write access for the specified entity, they
-        can change the mentioned user's access if that user does not already
-        have read-write access and if they are not an admin. Otherwise, they
-        are not allowed to perform the operation.
-
-        Args:
-            request: The request that was sent
-            user_id: Id of the user whose access is updated
-            entity_id: Id of the entity to which access is updated
-
-        Returns:
-            Response("Access was updated", status=200):
-                if the request was successful
-            Response("Request is invalid", status=400):
-                if the request body is not valid
-            Response("User is not authenticated", status=401):
-                if the user was not authenticated.
-            Response("User is not allowed to perform this operation", status=403):
-                if the update request is for an admin user.
-            Response("User does not exist.", status=404):
-                if the user does not exist.
-            Response("Entity does not exist.", status=404):
-                if the entity does not exist.
-        """
-
+    def put(self, request: Request, user_id: UUID, entity_id: int) -> Response:
+        """Update a user's access for an entity. See schema for permission rules."""
         try:
             updated_user = CradleUser.objects.get(id=user_id)
         except CradleUser.DoesNotExist:
-            raise UserNotFoundException(detail="User does not exist.")
+            raise UserNotFoundException(detail="There is no user with the specified ID.")
 
         try:
             updated_entity = Entry.entities.get(id=entity_id)
         except Entry.DoesNotExist:
-            raise EntityNotFoundException(detail="Entity does not exist.")
+            raise EntityNotFoundException(detail="There is no entity with the specified ID.")
 
         user: CradleUser = cast(CradleUser, request.user)
         if not self.__can_update_access(user, updated_user, updated_entity):
@@ -154,12 +120,11 @@ class UpdateAccess(APIView):
         serializer.is_valid(raise_exception=True)
         with transaction.atomic():
             serializer.save()
+            access_type = serializer.validated_data["access_type"]
             AccessGrantedNotification.objects.create(
                 user=updated_user,
                 entity=updated_entity,
-                message=(
-                    f"Your access for entity {updated_entity.name} has been changed to {request.data['access_type']}"
-                ),
+                message=f"Your access for entity {updated_entity.name} has been changed to {access_type}",
             )
 
-        return Response({"detail": "Access has been updated."})
+        return Response(serializer.data, status=status.HTTP_200_OK)

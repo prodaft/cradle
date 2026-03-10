@@ -1,3 +1,5 @@
+"""Production/Docker settings for Cradle. Reads from env; Sentry, RabbitMQ/Redis, JWT tuning."""
+
 import random
 
 # Ugly hack to get graph_tool working
@@ -33,9 +35,16 @@ if not DEBUG and SECRET_KEY == "django-insecure-default-secret-key":
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", ["localhost", "127.0.0.1"])
 
-CSRF_TRUSTED_ORIGINS = env.list(
-    "CSRF_TRUSTED_ORIGINS", ["http://localhost", "http://127.0.0.1"]
+BASE_URL = env.str("BASE_URL", "")
+STATIC_URL = env.str("STATIC_URL", "static/")
+FRONTEND_URL = env.str("FRONTEND_URL", "http://localhost:5173")
+
+_csrf_origins = list(
+    dict.fromkeys(
+        [FRONTEND_URL, "http://localhost", "http://127.0.0.1", "http://localhost:5173", "http://127.0.0.1:5173"]
+    )
 )
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", _csrf_origins)
 
 DATABASES = {
     "default": {
@@ -69,25 +78,23 @@ STORAGES = {
     },
 }
 
-AWS_ACCESS_KEY_ID = env.str("MINIO_ROOT_USER", "admin")
-AWS_SECRET_ACCESS_KEY = env.str("MINIO_ROOT_PASSWORD", "admin")
+AWS_ACCESS_KEY_ID = MINIO_CONFIG["access_key"]
+AWS_SECRET_ACCESS_KEY = MINIO_CONFIG["secret_key"]
 AWS_S3_ENDPOINT_URL = env.str(
     "AWS_S3_ENDPOINT_URL",
-    MINIO_BACKEND_URL if MINIO_BACKEND_URL else f"{'https' if env.bool('MINIO_SECURE', True) else 'http'}://{env.str('MINIO_ENDPOINT', 'localhost')}",
+    MINIO_BACKEND_URL
+    if MINIO_BACKEND_URL
+    else f"{'https' if MINIO_CONFIG['secure'] else 'http'}://{MINIO_CONFIG['endpoint']}",
 )
-AWS_S3_USE_SSL = env.bool("MINIO_SECURE", True)
+AWS_S3_USE_SSL = MINIO_CONFIG["secure"]
 AWS_S3_VERIFY = env.bool("AWS_S3_VERIFY", True)
 AWS_S3_SIGNATURE_VERSION = "s3v4"
 AWS_S3_ADDRESSING_STYLE = "path"
 
-BASE_URL = env.str("BASE_URL", "")
-STATIC_URL = env.str("STATIC_URL", "static/")
-FRONTEND_URL = env.str("FRONTEND_URL", "http://localhost:5173")
-
-# CORS: allow FRONTEND_URL and any additional origins from env
+# CORS: frontend origins (subset of CSRF)
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
-    [FRONTEND_URL, "http://localhost:5173", "http://127.0.0.1:5173"],
+    list(dict.fromkeys(o for o in _csrf_origins if o == FRONTEND_URL or ":5173" in o)),
 )
 
 # OAuth redirect_uri must match one of these origins (scheme + netloc)

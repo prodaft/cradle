@@ -61,8 +61,9 @@ import {
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
 import { $api, fetchClient } from '@services/openapi/client';
+import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import {
     forwardRef,
@@ -118,7 +119,7 @@ const sourceModeSyntaxHighlighting = syntaxHighlighting(
         { tag: tags.meta, color: 'var(--pm-muted-color)' },
         { tag: tags.comment, color: 'var(--pm-syntax-comment)' },
         { tag: markdownTags.escapeMark, color: 'var(--pm-muted-color)' },
-        { tag: markdownTags.inlineCode, color: 'var(--pm-syntax-keyword)' },
+        { tag: tags.monospace, color: 'var(--pm-syntax-keyword)' },
         {
             tag: markdownTags.linkURL,
             color: 'var(--pm-link-color)',
@@ -258,19 +259,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         },
     });
 
-    const { data: entryClassesData } = $api.useQuery(
-        'get',
-        '/entries/entry_classes/',
-        {},
-        {
-            refetchOnWindowFocus: false,
-            meta: { showErrorToast: false, suppressNotification: true },
-        },
-    );
+    const { data: entryClassesData } = useQuery({
+        queryKey: ['entry_classes', 'rich-editor'],
+        queryFn: () => fetchAllEntryClasses(),
+        refetchOnWindowFocus: false,
+        meta: { showErrorToast: false, suppressNotification: true },
+    });
 
     useEffect(() => {
         if (entryClassesData == null) return;
-        const results = entryClassesData.results ?? [];
+        const results = entryClassesData;
         const colorMap = new Map<string, string>();
         for (const entry of results) {
             if (entry.color) {

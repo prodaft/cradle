@@ -1,19 +1,21 @@
 # Ported from IntelOwl: https://github.com/intelowlproject/IntelOwl
+import logging
 from typing import Optional
+
+import mwdblib
 from django.db import models
-from entries.models import Entry, Relation
+
 from entries.enums import RelationReason
+from entries.models import Entry, Relation
+
 from ..base import BaseEnricher
 from ..mappings.mwdb import MWDBMapping
-import logging
-import mwdblib
 
 logger = logging.getLogger(__name__)
 
 
 class MWDBEnricher(BaseEnricher):
-    """
-    Enriches file hashes with MWDB (Malware Database) information.
+    """Enriches file hashes with MWDB (Malware Database) information.
 
     MWDB (mwdb.cert.pl) is a malware repository and analysis system operated by CERT.PL.
     This enricher queries file hashes to retrieve associated malware data, attributes,

@@ -1,19 +1,20 @@
-from django.db import models
 from collections import defaultdict
+
+from django.db import models
+
 from ..base import ClassMapping
 
 
 class DNSMapping(ClassMapping):
-    """
-    Maps DNS record types to CRADLE entry classes.
+    """Maps DNS record types to CRADLE entry classes.
 
     DNS resolution and passive DNS queries return various record types.
     This mapping allows CRADLE to automatically convert DNS records
     into the appropriate CRADLE entry classes.
 
     Used by:
-    - DNSEnricher: Active DNS resolution
-    - CIRCLPDNSEnricher: Passive DNS queries
+    - DNSEnricher: Active DNS resolution.
+    - CIRCLPDNSEnricher: Passive DNS queries.
     """
 
     display_name = "dns"
@@ -55,11 +56,10 @@ class DNSMapping(ClassMapping):
 
     @classmethod
     def get_typemapping_rev(cls):
-        """
-        Returns a dictionary mapping DNS record types to EntryClass objects.
+        """Returns a dictionary mapping DNS record types to EntryClass objects.
 
         Returns:
-            dict: {record_type: EntryClass}
+            dict: Mapping of record_type to EntryClass.
         """
         typemapping = defaultdict(lambda: None)
 

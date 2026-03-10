@@ -1,8 +1,13 @@
+"""S3/MinIO storage backends for CRADLE.
+
+Uses django-storages S3 backend. Each storage class maps to a dedicated bucket.
+"""
+
 from storages.backends.s3 import S3Storage
 
 
 class FileTransferStorage(S3Storage):
-    """S3 storage for file transfers."""
+    """S3 storage for user-uploaded files (notes, digests, standalone)."""
 
     bucket_name = "cradle-files"
     file_overwrite = False
@@ -11,7 +16,7 @@ class FileTransferStorage(S3Storage):
 
 
 class RelationStorage(S3Storage):
-    """S3 storage for relation attachments."""
+    """S3 storage for knowledge graph relation attachments."""
 
     bucket_name = "cradle-relations"
     file_overwrite = False
@@ -20,7 +25,7 @@ class RelationStorage(S3Storage):
 
 
 class ReportStorage(S3Storage):
-    """S3 storage for published reports."""
+    """S3 storage for published report exports (HTML, JSON, etc.)."""
 
     bucket_name = "cradle-reports"
     file_overwrite = False
@@ -29,7 +34,7 @@ class ReportStorage(S3Storage):
 
 
 class DigestStorage(S3Storage):
-    """S3 storage for digest files."""
+    """S3 storage for intel digest uploads (STIX, Falcon, etc.)."""
 
     bucket_name = "cradle-digests"
     file_overwrite = False

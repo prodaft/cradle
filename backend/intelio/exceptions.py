@@ -1,9 +1,12 @@
+"""IntelIO-specific API exceptions and error codes."""
+
 from rest_framework import status
-from core.exceptions import ErrorCode, CradleAPIException
+
+from core.exceptions import CradleAPIException, ErrorCode
 
 
 class IntelioErrorCodes(ErrorCode):
-    """Error codes for intelio operations"""
+    """Error codes for intelio operations."""
 
     ENRICHER_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
@@ -25,22 +28,7 @@ class IntelioErrorCodes(ErrorCode):
         "Digest Not Found",
         "digest-not-found",
     )
-    INVALID_PAGE_SIZE = (
-        status.HTTP_400_BAD_REQUEST,
-        "Invalid Page Size",
-        "invalid-page-size",
-    )
-    PAGE_SIZE_TOO_LARGE = (
-        status.HTTP_400_BAD_REQUEST,
-        "Page Size Too Large",
-        "page-size-too-large",
-    )
     MISSING_FILE = (status.HTTP_400_BAD_REQUEST, "Missing File", "missing-file")
-    MISSING_DIGEST_ID = (
-        status.HTTP_400_BAD_REQUEST,
-        "Missing Digest ID",
-        "missing-digest-id",
-    )
     INVALID_CLASS_NAME = (
         status.HTTP_400_BAD_REQUEST,
         "Invalid Class Name",
@@ -66,20 +54,15 @@ class IntelioErrorCodes(ErrorCode):
         "Mapping ID Required",
         "mapping-id-required",
     )
+    INVALID_MAPPING_ID = (
+        status.HTTP_400_BAD_REQUEST,
+        "Invalid Mapping ID",
+        "invalid-mapping-id",
+    )
     MAPPING_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
         "Mapping Not Found",
         "mapping-not-found",
-    )
-    PERMISSION_DENIED = (
-        status.HTTP_403_FORBIDDEN,
-        "Permission Denied",
-        "permission-denied",
-    )
-    INVALID_FILE_NAME = (
-        status.HTTP_400_BAD_REQUEST,
-        "Invalid File Name",
-        "invalid-file-name",
     )
     DIGEST_UPLOAD_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
@@ -96,139 +79,75 @@ class IntelioErrorCodes(ErrorCode):
         "Digest File Not Uploaded",
         "digest-file-not-uploaded",
     )
-    ALREADY_UPLOADING = (
-        status.HTTP_400_BAD_REQUEST,
-        "Already Uploading",
-        "already-uploading",
-    )
-    INVALID_REQUEST_BODY = (
-        status.HTTP_400_BAD_REQUEST,
-        "Invalid Request Body",
-        "invalid-request-body",
-    )
 
 
 class EnricherNotFoundException(CradleAPIException):
-    """Exception raised when enricher is not found"""
+    """Exception raised when enricher is not found."""
 
     error_code = IntelioErrorCodes.ENRICHER_NOT_FOUND
 
 
 class EnrichmentRequestNotFoundException(CradleAPIException):
-    """Exception raised when enrichment request is not found"""
+    """Exception raised when enrichment request is not found."""
 
     error_code = IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND
 
 
 class EnricherTypeNotFoundException(CradleAPIException):
-    """Exception raised when enricher type is not found in enrichment request"""
+    """Exception raised when enricher type is not found in enrichment request."""
 
     error_code = IntelioErrorCodes.ENRICHER_TYPE_NOT_FOUND
 
 
 class DigestNotFoundException(CradleAPIException):
-    """Exception raised when digest is not found"""
+    """Exception raised when digest is not found."""
 
     error_code = IntelioErrorCodes.DIGEST_NOT_FOUND
 
 
-class InvalidPageSizeException(CradleAPIException):
-    """Exception raised when page_size parameter is invalid"""
-
-    error_code = IntelioErrorCodes.INVALID_PAGE_SIZE
-
-
-class PageSizeTooLargeException(CradleAPIException):
-    """Exception raised when page_size exceeds maximum allowed"""
-
-    error_code = IntelioErrorCodes.PAGE_SIZE_TOO_LARGE
-
-
 class MissingFileException(CradleAPIException):
-    """Exception raised when file is missing from request"""
+    """Exception raised when file is missing from request."""
 
     error_code = IntelioErrorCodes.MISSING_FILE
 
 
-class MissingDigestIdException(CradleAPIException):
-    """Exception raised when digest ID is missing from request"""
-
-    error_code = IntelioErrorCodes.MISSING_DIGEST_ID
-
-
 class InvalidClassNameException(CradleAPIException):
-    """Exception raised when class name is invalid"""
+    """Exception raised when class name is invalid."""
 
     error_code = IntelioErrorCodes.INVALID_CLASS_NAME
 
 
 class NotMappingClassException(CradleAPIException):
-    """Exception raised when class is not a valid mapping class"""
+    """Exception raised when class is not a valid mapping class."""
 
     error_code = IntelioErrorCodes.NOT_MAPPING_CLASS
 
 
 class InternalClassRequiredException(CradleAPIException):
-    """Exception raised when internal_class field is required but missing"""
+    """Exception raised when internal_class field is required but missing."""
 
     error_code = IntelioErrorCodes.INTERNAL_CLASS_REQUIRED
 
 
 class IntegrityErrorException(CradleAPIException):
-    """Exception raised when database integrity constraint is violated"""
+    """Exception raised when database integrity constraint is violated."""
 
     error_code = IntelioErrorCodes.INTEGRITY_ERROR
 
 
 class MappingIdRequiredException(CradleAPIException):
-    """Exception raised when mapping_id is required but missing"""
+    """Exception raised when mapping_id is required but missing."""
 
     error_code = IntelioErrorCodes.MAPPING_ID_REQUIRED
 
 
+class InvalidMappingIdException(CradleAPIException):
+    """Exception raised when mapping ID has invalid format (not a valid UUID)."""
+
+    error_code = IntelioErrorCodes.INVALID_MAPPING_ID
+
+
 class MappingNotFoundException(CradleAPIException):
-    """Exception raised when mapping is not found"""
+    """Exception raised when mapping is not found."""
 
     error_code = IntelioErrorCodes.MAPPING_NOT_FOUND
-
-
-class PermissionDeniedException(CradleAPIException):
-    """Exception raised when user doesn't have permission"""
-
-    error_code = IntelioErrorCodes.PERMISSION_DENIED
-
-
-class InvalidFileNameException(CradleAPIException):
-    """Exception raised when a file name is invalid or missing."""
-
-    error_code = IntelioErrorCodes.INVALID_FILE_NAME
-
-
-class DigestUploadNotFoundException(CradleAPIException):
-    """Exception raised when pending digest upload is not found."""
-
-    error_code = IntelioErrorCodes.DIGEST_UPLOAD_NOT_FOUND
-
-
-class DigestUploadExpiredException(CradleAPIException):
-    """Exception raised when pending digest upload has expired."""
-
-    error_code = IntelioErrorCodes.DIGEST_UPLOAD_EXPIRED
-
-
-class DigestFileNotUploadedException(CradleAPIException):
-    """Exception raised when digest file was not uploaded to presigned URL."""
-
-    error_code = IntelioErrorCodes.DIGEST_FILE_NOT_UPLOADED
-
-
-class AlreadyUploadingException(CradleAPIException):
-    """Exception raised when user is already uploading a digest file."""
-
-    error_code = IntelioErrorCodes.ALREADY_UPLOADING
-
-
-class InvalidRequestBodyException(CradleAPIException):
-    """Exception raised when request body is invalid."""
-
-    error_code = IntelioErrorCodes.INVALID_REQUEST_BODY

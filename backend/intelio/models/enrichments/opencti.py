@@ -1,13 +1,16 @@
 # Ported from IntelOwl: https://github.com/intelowlproject/IntelOwl
+import logging
 from typing import Optional
+
+import pycti
 from django.db import models
-from entries.models import Entry, Relation
+from pycti.api.opencti_api_client import File
+
 from entries.enums import RelationReason
+from entries.models import Entry, Relation
+
 from ..base import BaseEnricher
 from ..mappings.opencti import OpenCTIMapping
-import logging
-import pycti
-from pycti.api.opencti_api_client import File
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +36,7 @@ RESULT_TRIM_MAP = {
 
 
 class OpenCTIEnricher(BaseEnricher):
-    """
-    Enriches observables with OpenCTI threat intelligence data.
+    """Enriches observables with OpenCTI threat intelligence data.
 
     OpenCTI is an open-source platform for managing cyber threat intelligence.
     This enricher queries OpenCTI for observables and retrieves associated reports.

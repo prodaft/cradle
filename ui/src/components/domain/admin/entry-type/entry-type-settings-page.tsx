@@ -52,7 +52,7 @@ export default function EntryTypeSettingsPage() {
         isError,
     } = $api.useQuery(
         'get',
-        '/entries/entry_classes/{class_subtype}/',
+        '/entries/entry-classes/{class_subtype}/',
         { params: { path: { class_subtype: subtype } } },
         {
             enabled: !!subtype,

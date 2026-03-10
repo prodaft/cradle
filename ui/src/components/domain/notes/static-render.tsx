@@ -52,7 +52,7 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
         queryKey: ['parseMarkdown', markdownContent, fileData],
         queryFn: async () => {
             if (markdownContent === '') return '';
-            const baseURL = import.meta.env.VITE_CRADLE_API_ENDPOINT || '';
+            const baseURL = import.meta.env.VITE_API_BASE_URL ?? '';
             const result = await parseMarkdown(markdownContent, baseURL, fileData);
             return result?.html ?? '';
         },

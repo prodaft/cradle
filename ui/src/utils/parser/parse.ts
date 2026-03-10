@@ -1,5 +1,5 @@
 import { HashIcon } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import MarkdownIt from 'markdown-it';
 import markdownItAnchor from 'markdown-it-anchor';
 import { createElement } from 'react';
@@ -14,8 +14,7 @@ export async function parseMarkdown(
     fileData?: any[],
 ): Promise<{ html: string; metadata: Record<string, any> } | undefined> {
     try {
-        const { data } = await fetchClient.GET('/entries/entry_classes/');
-        const entries = data?.results ?? [];
+        const entries = await fetchAllEntryClasses();
         const entryColors = new Map<string, string>();
         for (const entry of entries) {
             entryColors.set(entry.subtype, entry.color || 'var(--primary)');

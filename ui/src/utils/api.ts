@@ -24,17 +24,18 @@ export interface ParsedAPIError {
 }
 
 /**
- * API error response structure
+ * API error response structure.
+ * DRF validation errors can be nested: {"field": {"nested": ["error"]}}
  */
 interface APIErrorResponse {
     code?: string;
     detail?: string;
-    status: number;
+    status?: number;
     title?: string;
     type?: string;
     instance?: string;
     timestamp?: string;
-    errors?: Record<string, string[]>;
+    errors?: Record<string, unknown>;
 }
 
 /**
@@ -45,14 +46,19 @@ interface APIErrorResponse {
  *   or axios-style { response } (body may be consumed)
  * @returns Parsed error object
  */
+function isRfc9457Error(obj: unknown): obj is APIErrorResponse {
+    if (!obj || typeof obj !== 'object') return false;
+    const o = obj as Record<string, unknown>;
+    return (
+        !o.response &&
+        typeof (o.status ?? o.detail ?? o.code) !== 'undefined' &&
+        (typeof o.detail === 'string' || typeof o.code === 'string')
+    );
+}
+
 export async function parseAPIError(error: any): Promise<ParsedAPIError> {
     // openapi-react-query throws the parsed body directly (no .response)
-    const isRfc9457Body =
-        error &&
-        typeof error === 'object' &&
-        !error.response &&
-        (typeof error.detail === 'string' || typeof error.code === 'string');
-    if (isRfc9457Body) {
+    if (isRfc9457Error(error)) {
         const data = error as APIErrorResponse;
         return {
             code: data.code || 'UNKNOWN_ERROR',
@@ -63,7 +69,7 @@ export async function parseAPIError(error: any): Promise<ParsedAPIError> {
             instance: data.instance || 'unknown',
             timestamp: data.timestamp || new Date().toISOString(),
             isValidationError: data.code === 'VALIDATION_ERROR',
-            fieldErrors: data.errors || {},
+            fieldErrors: flattenFieldErrors(data.errors),
             raw: data,
         };
     }
@@ -124,9 +130,49 @@ export async function parseAPIError(error: any): Promise<ParsedAPIError> {
         instance: data.instance || error.config?.url || 'unknown',
         timestamp: data.timestamp || new Date().toISOString(),
         isValidationError: data.code === 'VALIDATION_ERROR',
-        fieldErrors: data.errors || {},
+        fieldErrors: flattenFieldErrors(data.errors),
         raw: data,
     };
+}
+
+/** Flatten DRF nested validation errors to Record<string, string[]> */
+function flattenFieldErrors(errors: unknown): Record<string, string[]> {
+    if (!errors || typeof errors !== 'object') return {};
+    const out: Record<string, string[]> = {};
+    for (const [key, val] of Object.entries(errors)) {
+        if (Array.isArray(val) && val.every((v) => typeof v === 'string')) {
+            out[key] = val as string[];
+        } else if (Array.isArray(val)) {
+            val.forEach((item, i) => {
+                if (item && typeof item === 'object') {
+                    const nested = flattenFieldErrors(item);
+                    for (const [k, v] of Object.entries(nested)) {
+                        out[`${key}.${i}.${k}`] = v;
+                    }
+                }
+            });
+        } else if (val && typeof val === 'object') {
+            const nested = flattenFieldErrors(val);
+            for (const [k, v] of Object.entries(nested)) {
+                out[`${key}.${k}`] = v;
+            }
+        }
+    }
+    return out;
+}
+
+/**
+ * Get the best display message for an error, including field-level errors when present.
+ * Use this for validation errors (e.g. filter params) to show actionable feedback.
+ */
+export function getDisplayMessage(parsed: ParsedAPIError): string {
+    const fieldParts = Object.entries(parsed.fieldErrors)
+        .filter(([, msgs]) => Array.isArray(msgs) && msgs.length > 0)
+        .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(', ')}`);
+    if (fieldParts.length > 0) {
+        return `${parsed.detail} ${fieldParts.join('; ')}`;
+    }
+    return parsed.detail;
 }
 
 /**
@@ -147,11 +193,10 @@ export interface HandleAPIErrorOptions {
 }
 
 /**
- * Simple helper to show error notification
+ * Show error notification via toast.
  *
  * @param parsed - Parsed error object
- * @param notify - Notification function from useNotif
- * @param options - Options for notification
+ * @param options - Options (message, duration, notifyValidation)
  * @returns Parsed error object
  */
 export function handleAPIError(
@@ -162,7 +207,7 @@ export function handleAPIError(
         return parsed;
     }
 
-    toast.error(options.message || parsed.detail, {
+    toast.error(options.message || getDisplayMessage(parsed), {
         duration: options.duration || 5000,
     });
 

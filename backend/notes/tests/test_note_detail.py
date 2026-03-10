@@ -1,21 +1,16 @@
-import io
 import uuid
 from unittest.mock import patch
 
+from django.urls import reverse
+from rest_framework_simplejwt.tokens import AccessToken
+
 from access.enums import AccessType
 from access.models import Access
-from django.urls import reverse
 from entries.models import Entry
-from rest_framework.parsers import JSONParser
-from rest_framework_simplejwt.tokens import AccessToken
 from user.models import CradleUser
 
 from ..models import Note
 from .utils import NotesTestCase
-
-
-def bytes_to_json(data):
-    return JSONParser().parse(io.BytesIO(data))
 
 
 class SingleNoteGetMocker:
@@ -84,7 +79,7 @@ class GetNoteTest(NotesTestCase):
             self.assertEqual(response.status_code, 200)
 
         with self.subTest("Correct note"):
-            self.assertEqual(bytes_to_json(response.content)["id"], str(uuid1))
+            self.assertEqual(response.json()["id"], str(uuid1))
 
 
 class DeleteNoteTest(NotesTestCase):

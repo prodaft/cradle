@@ -39,8 +39,9 @@ import { SelectOption } from '@/types';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { $api, fetchClient } from '@services/openapi/client';
+import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -138,7 +139,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         isPaused: isEntryTypePaused,
     } = $api.useQuery(
         'get',
-        '/entries/entry_classes/{class_subtype}/',
+        '/entries/entry-classes/{class_subtype}/',
         { params: { path: { class_subtype: id! } } },
         {
             enabled: !!id,
@@ -150,18 +151,15 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         data: entryClassesListData,
         isLoading: isEntryTypesListLoading,
         isPaused: isEntryTypesListPaused,
-    } = $api.useQuery(
-        'get',
-        '/entries/entry_classes/',
-        {},
-        {
-            refetchOnWindowFocus: false,
-            meta: { showErrorToast: false, suppressNotification: true },
-        },
-    );
+    } = useQuery({
+        queryKey: ['entry_classes', 'entry-type-form'],
+        queryFn: () => fetchAllEntryClasses(),
+        refetchOnWindowFocus: false,
+        meta: { showErrorToast: false, suppressNotification: true },
+    });
 
     const entryTypes = useMemo<ChildOption[]>(() => {
-        const results = entryClassesListData?.results ?? [];
+        const results = entryClassesListData ?? [];
         return results.map((entry) => ({
             value: entry.subtype,
             label: entry.subtype,
@@ -198,7 +196,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     const updateEntryTypeMutation = useMutation({
         mutationFn: async (payload: EntryClassRequest) => {
             const { data, error, response } = await fetchClient.POST(
-                '/entries/entry_classes/{class_subtype}/',
+                '/entries/entry-classes/{class_subtype}/',
                 {
                     params: { path: { class_subtype: id! } },
                     body: payload,

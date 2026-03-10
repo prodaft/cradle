@@ -23,9 +23,10 @@ import {
 } from '@/components/ui/select';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { $api, fetchClient } from '@services/openapi/client';
+import { fetchClient } from '@services/openapi/client';
+import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useMemo, useRef, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
@@ -116,18 +117,15 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
         },
     });
 
-    const { data: entryClassesListData } = $api.useQuery(
-        'get',
-        '/entries/entry_classes/',
-        {},
-        {
-            refetchOnWindowFocus: false,
-            meta: { showErrorToast: false, suppressNotification: true },
-        },
-    );
+    const { data: entryClassesListData } = useQuery({
+        queryKey: ['entry_classes', 'add-entry-type'],
+        queryFn: () => fetchAllEntryClasses(),
+        refetchOnWindowFocus: false,
+        meta: { showErrorToast: false, suppressNotification: true },
+    });
 
     const entryTypes = useMemo<ChildOption[]>(() => {
-        const results = entryClassesListData?.results ?? [];
+        const results = entryClassesListData ?? [];
         return results.map((entry) => ({
             value: entry.subtype,
             label: entry.subtype,
@@ -149,7 +147,7 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
     const createEntryMutation = useMutation({
         mutationFn: async (payload: EntryClassRequest) => {
             const { data, error, response } = await fetchClient.POST(
-                '/entries/entry_classes/',
+                '/entries/entry-classes/',
                 { body: payload },
             );
             if (error) throw { response, error };

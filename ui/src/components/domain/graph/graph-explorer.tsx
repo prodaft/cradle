@@ -260,7 +260,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
                     <GraphQuery {...graphQueryProps} />
                 </div>
             )}
-            <ResizablePanelGroup direction='horizontal' className='h-full'>
+            <ResizablePanelGroup orientation='horizontal' className='h-full'>
                 {activePanel && (
                     <>
                         <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>

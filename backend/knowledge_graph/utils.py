@@ -1,47 +1,63 @@
-from typing import List
+"""Graph traversal utilities: neighbor discovery, path finding, and edge filtering."""
 
+from datetime import datetime
+from typing import Callable, List, Optional
+
+from django.contrib.auth import get_user_model
 from django.db import connection
-from django.db.models import IntegerField, Q, Value
+from django.db.models import IntegerField, Q, QuerySet, Value
 
-from core.fields import BitStringField
+from entries.managers import fieldtype
 from entries.models import Edge, Entry
 
-fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
+User = get_user_model()
 
 
-def get_neighbors(sourceset, depth, user=None, skip_virtual=False, cumulative=False, filter=None):
-    """
-    Returns a QuerySet of Entry objects that are exactly `depth` hops away from source_entry.
-    Only follows relations where accessible=True, and ensures nodes visited at earlier
-    depths are not revisited.
+def _get_next_level(
+    current_level: QuerySet,
+    visited: list,
+    user: Optional[User],
+    skip_virtual: bool,
+) -> QuerySet:
+    """Compute raw next level of neighbors from current_level, excluding visited nodes."""
+    if skip_virtual:
+        virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
+        virt_ids = virt_edges.values_list("dst", flat=True).distinct()
+        edges = Edge.objects.filter(Q(src__in=current_level, virtual=False) | Q(src__in=virt_ids, virtual=True))
+    else:
+        edges = Edge.objects.filter(src__in=current_level)
+
+    if user:
+        edges = edges.accessible(user=user)
+
+    dst_ids = edges.values_list("dst", flat=True).distinct()
+    qs = Entry.objects.filter(id__in=dst_ids)
+    for v in visited:
+        qs = qs.exclude(pk__in=v)
+    return qs.distinct()
+
+
+def get_neighbors(
+    sourceset: QuerySet,
+    depth: int,
+    user: Optional[User] = None,
+    skip_virtual: bool = False,
+    cumulative: bool = False,
+    filter: Optional[Callable[[QuerySet], QuerySet]] = None,
+) -> QuerySet:
+    """Return entries exactly `depth` hops away from the source set.
+
+    Follows only accessible relations; avoids revisiting nodes from earlier depths.
     """
     current_level = sourceset
-    result = current_level
+    result = filter(current_level) if filter else current_level
     visited = [current_level]
+    if skip_virtual:
+        virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
+        visited.append(virt_edges.values_list("dst", flat=True).distinct())
 
-    for current_depth in range(depth):
-        if skip_virtual:
-            virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
-            virt_ids = virt_edges.values_list("dst", flat=True).distinct()
-
-            edges = Edge.objects.filter(Q(src__in=current_level, virtual=False) | Q(src__in=virt_ids, virtual=True))
-        else:
-            edges = Edge.objects.filter(src__in=current_level)
-
-        if user:
-            edges = edges.accessible(user=user)
-
-        dst_ids = edges.values_list("dst", flat=True).distinct()
-
-        qs = Entry.objects.filter(
-            id__in=dst_ids,
-        )
-        for v in visited:
-            qs = qs.exclude(pk__in=v)
-
-        qs = qs.distinct()
-
-        current_level = qs
+    for _ in range(depth):
+        current_level = _get_next_level(current_level, visited, user, skip_virtual)
         lvl = filter(current_level) if filter else current_level
         if cumulative:
             result = result | lvl
@@ -49,29 +65,27 @@ def get_neighbors(sourceset, depth, user=None, skip_virtual=False, cumulative=Fa
             result = lvl
 
         visited.append(current_level)
-
         if skip_virtual:
-            visited.append(virt_ids)
+            virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
+            visited.append(virt_edges.values_list("dst", flat=True).distinct())
 
-    # Return a queryset for the final level
     return result
 
 
 def get_neighbors_paginated(
-    sourceset,
-    depth,
-    user=None,
-    skip_virtual=False,
-    cumulative=False,
-    filter=None,
-    page_size=1000,
-    page_number=1,
-    order_by="-last_seen",
-):
-    """
-    Returns a QuerySet of Entry objects that are exactly `depth` hops away from source_entry.
-    Only follows relations where accessible=True, and ensures nodes visited at earlier
-    depths are not revisited.
+    sourceset: QuerySet,
+    depth: int,
+    user: Optional[User] = None,
+    skip_virtual: bool = False,
+    cumulative: bool = False,
+    filter: Optional[Callable[[QuerySet], QuerySet]] = None,
+    page_size: int = 1000,
+    page_number: int = 1,
+    order_by: str = "-last_seen",
+) -> QuerySet:
+    """Return paginated neighbors at `depth` hops from the source set.
+
+    Same traversal logic as get_neighbors but with pagination and ordering.
     """
     current_level = sourceset
 
@@ -79,6 +93,9 @@ def get_neighbors_paginated(
     count = 0
     results = {}
     visited = [current_level]
+    if skip_virtual:
+        virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
+        visited.append(virt_edges.values_list("dst", flat=True).distinct())
 
     if offset == 0:
         lvl = (filter(current_level) if filter else current_level).order_by(order_by)
@@ -89,30 +106,13 @@ def get_neighbors_paginated(
         if count >= page_size:
             break
 
+        current_level = _get_next_level(current_level, visited, user, skip_virtual)
+        lvl = (filter(current_level) if filter else current_level).order_by(order_by)
+
+        visited.append(current_level)
         if skip_virtual:
             virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
-            virt_ids = virt_edges.values_list("dst", flat=True).distinct()
-
-            edges = Edge.objects.filter(Q(src__in=current_level, virtual=False) | Q(src__in=virt_ids, virtual=True))
-        else:
-            edges = Edge.objects.filter(src__in=current_level)
-
-        if user:
-            edges = edges.accessible(user=user)
-
-        dst_ids = edges.values_list("dst", flat=True).distinct()
-
-        qs = Entry.objects.filter(
-            id__in=dst_ids,
-        )
-
-        for v in visited:
-            qs = qs.exclude(pk__in=v)
-
-        qs = qs.distinct()
-
-        current_level = qs
-        lvl = (filter(current_level) if filter else current_level).order_by(order_by)
+            visited.append(virt_edges.values_list("dst", flat=True).distinct())
 
         if cumulative:
             if offset > 0:
@@ -128,11 +128,6 @@ def get_neighbors_paginated(
         else:
             results = {current_depth + 1: lvl[offset : offset + page_size]}
 
-        visited.append(current_level)
-
-        if skip_virtual:
-            visited.append(virt_ids)
-
     final_result = None
     for k, v in results.items():
         v = v.annotate(depth=Value(k, output_field=IntegerField()))
@@ -141,15 +136,21 @@ def get_neighbors_paginated(
         else:
             final_result = final_result.union(v)
 
-    if final_result is not None:
-        final_result = final_result.order_by("depth")
+    if final_result is None:
+        return Entry.objects.none()
+    return final_result.order_by("depth")
 
-    return final_result
 
+def get_edges_for_paths(
+    start_id: int,
+    targets: List[int],
+    user: User,
+    start_time: datetime,
+    end_time: datetime,
+) -> List[Edge]:
+    """Compute Dijkstra shortest paths from one source to multiple targets.
 
-def get_edges_for_paths(start_id, targets, user, start_time, end_time) -> List[Edge]:
-    """
-    Compute Dijkstra shortest paths from a single source to multiple targets with time and access vector filtering.
+    Filters edges by time range and user access vector.
     """
     # Safely format the target array as SQL literal
     target_array = "ARRAY[%s]" % ",".join(str(int(t)) for t in targets)
@@ -193,12 +194,8 @@ def get_edges_for_paths(start_id, targets, user, start_time, end_time) -> List[E
 
 
 def filter_valid_edges(edges: List[Edge]) -> List[Edge]:
-    srcids = {edge.src for edge in edges}
-    dstids = {edge.dst for edge in edges}
+    """Drop edges whose src or dst entry no longer exists."""
+    ids = {e.src for e in edges} | {e.dst for e in edges}
+    valid_ids = set(Entry.objects.filter(id__in=ids).values_list("id", flat=True))
 
-    ids = srcids | dstids
-
-    entries = set(Entry.objects.filter(id__in=ids).values_list("id", flat=True))
-
-    edges = [edge for edge in edges if edge.src in entries and edge.dst in entries]
-    return edges
+    return [e for e in edges if e.src in valid_ids and e.dst in valid_ids]

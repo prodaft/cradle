@@ -1,5 +1,4 @@
-"""
-Unified file upload infrastructure.
+"""Unified file upload infrastructure.
 
 This package provides reusable abstractions for two-phase presigned upload workflows.
 """

@@ -1,3 +1,5 @@
+"""Shared Django settings for Cradle. Installed apps, middleware, REST/OpenAPI config."""
+
 import django_stubs_ext
 
 django_stubs_ext.monkeypatch()
@@ -71,10 +73,8 @@ MIDDLEWARE = [
 
 def get_log_directory():
     """Get the log directory for the application.
-    This is /var/log/cradle/ if /var/log/ exists and is writable,
-    and cradle/ can be created in it. Otherwise, it is the BASE_DIR.
 
-    Args:
+    Returns /var/log/cradle/ if /var/log/ exists and is writable; else BASE_DIR.
 
     Returns:
         str: The log directory for the application.
@@ -101,10 +101,6 @@ LOGGING = {
     "formatters": {
         "verbose": {
             "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
-            "style": "{",
-        },
-        "simple": {
-            "format": "{levelname} {message}",
             "style": "{",
         },
     },
@@ -150,13 +146,14 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Threat Intelligence Knowledge Management",
     "VERSION": VERSION,
     "SERVE_INCLUDE_SCHEMA": False,
-    "SCHEMA_PATH_PREFIX": r"/api/v[0-9]",
+    "SCHEMA_PATH_PREFIX": r"/api",
+    "SCHEMA_PATH_PREFIX_TRIM": True,
     "COMPONENT_SPLIT_REQUEST": True,
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
     "POSTPROCESSING_HOOKS": [
         "cradle.schema_processors.postprocess_schema_enums",
         "cradle.schema_processors.postprocess_schema_operation_ids",
-        "cradle.schema_processors.postprocess_schema_path_prefix",
+        "cradle.schema_processors.postprocess_schema_pagination_refs",
     ],
     # Error handling - RFC 9457 compliant
     "ENUM_NAME_OVERRIDES": {
@@ -180,8 +177,6 @@ JWT_COOKIE_SAMESITE = "Lax"
 JWT_COOKIE_DOMAIN = None
 JWT_COOKIE_PATH = "/"
 
-# OAuth provider metadata exposed by the users/config endpoint.
-OAUTH_METHODS = []
 # OAuth provider settings used by backend OAuth flows.
 OAUTH_PROVIDERS = {}
 # Allowed redirect_uri origins for OAuth (scheme + netloc). Override in settings_docker.
@@ -189,6 +184,7 @@ OAUTH_REDIRECT_URI_WHITELIST = []
 
 
 def build_oauth_methods(oauth_providers: dict) -> list[dict]:
+    """Build OAuth method metadata for the users/config endpoint from provider config."""
     methods = []
     for provider, config in oauth_providers.items():
         if not isinstance(config, dict):
@@ -202,6 +198,9 @@ def build_oauth_methods(oauth_providers: dict) -> list[dict]:
         methods.append(method)
     return methods
 
+
+# OAuth provider metadata exposed by the users/config endpoint.
+OAUTH_METHODS = build_oauth_methods(OAUTH_PROVIDERS)
 
 # Cache for rate limiting (throttling). Uses local memory by default.
 # Override with Redis in production for multi-worker deployments.
@@ -276,18 +275,18 @@ STATICFILES_DIRS = []
 # Can be set in specific config files if needed
 MINIO_BACKEND_URL = None
 
-## Application Specific Config
+# Application-specific config
 ADMIN_PATH = "29acee84-15db-481b-b602-2c1a579178d0/"
 
 CATALYST_HOST = "https://prod.blindspot.prodaft.com"
 CATALYST_PUBLISH_CATEGORY = "RESEARCH"
 CATALYST_PUBLISH_SUBCATEGORY = "4dff0ddf-fc2f-4a8e-b43f-1bc25973537b"
 
-## File Upload max size limit
+# File upload max size limit
 FILE_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024
 
-## Default settings dict
+# Default settings dict
 DEFAULT_SETTINGS = {}
 
-## Internal Subtypes
-INTERNAL_SUBTYPES = set(["alias", "note", "file", "digest", "enrichment"])
+# Internal subtypes (excluded from user-managed entry classes)
+INTERNAL_SUBTYPES = {"alias", "note", "file", "digest", "enrichment"}

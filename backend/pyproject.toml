@@ -32,7 +32,7 @@ dependencies = [
     "psycopg2-binary==2.9.11",
     "dnspython==2.8.0",
     "bcrypt==5.0.0",
-    "django-celery-beat==2.8.1",
+    "django-celery-beat==2.9.0",
     "requests==2.32.5",
     "python-frontmatter==1.1.0",
     "django-otp==1.7.0",
@@ -55,9 +55,6 @@ dev = [
     "ruff>=0.15.2",
     "ipython>=9.10.0",
 ]
-
-[tool.uv.sources]
-django-celery-beat = { git = "https://github.com/celery/django-celery-beat", branch = "main" }
 
 [tool.mypy]
 namespace_packages = true
@@ -83,10 +80,15 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-ignore = ["E203"]
+extend-select = ["I", "D"]
+ignore = ["E203", "D100", "D101", "D102", "D104", "D105", "D106", "D107", "D417"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [dependency-groups]
 dev = [
     "pytest==9.0.2",
     "pytest-django==4.12.0",
+    "vulture>=2.14",
 ]

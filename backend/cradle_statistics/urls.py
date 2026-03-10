@@ -1,7 +1,8 @@
+"""URL routing for cradle_statistics endpoints."""
+
 from django.urls import path
 
 from cradle_statistics.views.statistics_view import StatisticsList
-
 
 urlpatterns = [
     path(

@@ -1,3 +1,6 @@
+"""Serializers for published reports and publish strategy responses."""
+
+import uuid
 from datetime import timedelta
 
 from drf_spectacular.utils import extend_schema_field
@@ -9,11 +12,18 @@ from file_transfer.storage import ReportStorage
 from .models import DownloadStrategies, PublishedReport, ReportStatus, UploadStrategies
 from .strategies import PUBLISH_STRATEGIES
 
+# Presigned URL expiry for report downloads (8 hours).
+_REPORT_DOWNLOAD_EXPIRY_SECONDS = int(timedelta(hours=8).total_seconds())
+
 
 class ReportDetailSerializer(serializers.ModelSerializer):
-    note_ids = serializers.SerializerMethodField()
-    report_url = serializers.SerializerMethodField()
-    strategy_label = serializers.SerializerMethodField()
+    """Serializer for full report details including presigned download URL and note IDs."""
+
+    note_ids = serializers.SerializerMethodField(help_text="IDs of notes included in the report.")
+    report_url = serializers.SerializerMethodField(
+        help_text="Presigned URL to download the report file, or external URL for Catalyst."
+    )
+    strategy_label = serializers.SerializerMethodField(help_text="Human-readable strategy name.")
 
     class Meta:
         model = PublishedReport
@@ -31,35 +41,33 @@ class ReportDetailSerializer(serializers.ModelSerializer):
             "extra_data",
         ]
 
-    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
-    def get_note_ids(self, obj):
+    @extend_schema_field(serializers.ListField(child=serializers.UUIDField()))
+    def get_note_ids(self, obj: PublishedReport) -> list[uuid.UUID]:
+        """Return UUIDs of notes included in the report."""
         return list(obj.notes.values_list("id", flat=True))
 
     @extend_schema_field(serializers.CharField(allow_null=True))
-    def get_report_url(self, obj):
-        download_url = self.context.get("download_url", False)
-        if download_url:
-            response_disposition = f'attachment; filename="{obj.title}.{obj.strategy.lower()}"'
-        else:
-            response_disposition = None
-
+    def get_report_url(self, obj: PublishedReport) -> str | None:
+        """Return presigned S3 URL, external Catalyst URL, or None if not ready."""
         if obj.status != ReportStatus.DONE:
             return None
 
-        if obj.external_ref:
-            strategy = PUBLISH_STRATEGIES.get(obj.strategy.lower())
-            if strategy:
-                return strategy(False).get_remote_url(obj)
+        strategy_factory = PUBLISH_STRATEGIES.get((obj.strategy or "").lower())
+        download_url = self.context.get("download_url", False)
+        response_disposition = (
+            f'attachment; filename="{obj.title}.{(obj.strategy or "").lower()}"' if download_url else None
+        )
 
-        # Check if report has a file stored in S3
+        if obj.external_ref and strategy_factory:
+            return strategy_factory(False).get_remote_url(obj)
+
         if obj.file:
-            strategy = PUBLISH_STRATEGIES.get(obj.strategy.lower())
-            response_content_type = strategy(False).content_type if strategy else None
-
+            publisher = strategy_factory(False) if strategy_factory else None
+            response_content_type = getattr(publisher, "content_type", None) if publisher else None
             return presign_get(
                 ReportStorage.bucket_name,
                 obj.file.name,
-                expires_in=int(timedelta(hours=8).total_seconds()),
+                expires_in=_REPORT_DOWNLOAD_EXPIRY_SECONDS,
                 response_content_type=response_content_type,
                 response_content_disposition=response_disposition,
             )
@@ -67,15 +75,15 @@ class ReportDetailSerializer(serializers.ModelSerializer):
         return None
 
     @extend_schema_field(serializers.CharField())
-    def get_strategy_label(self, obj):
+    def get_strategy_label(self, obj: PublishedReport) -> str:
+        """Return human-readable strategy label from model choices."""
         return obj.get_strategy_display()
 
 
-class ReportListSerializer(serializers.ModelSerializer):
-    strategy_label = serializers.SerializerMethodField()
+class ReportListSerializer(ReportDetailSerializer):
+    """Serializer for report list items (summary view, no report_url or note_ids)."""
 
-    class Meta:
-        model = PublishedReport
+    class Meta(ReportDetailSerializer.Meta):
         fields = [
             "id",
             "title",
@@ -88,54 +96,42 @@ class ReportListSerializer(serializers.ModelSerializer):
             "extra_data",
         ]
 
-    @extend_schema_field(serializers.CharField())
-    def get_strategy_label(self, obj):
-        return obj.get_strategy_display()
-
 
 class PublishReportSerializer(serializers.Serializer):
+    """Input serializer for creating a new published report."""
+
     note_ids = serializers.ListField(
-        child=serializers.CharField(),
+        child=serializers.UUIDField(),
         allow_empty=False,
-        help_text="List of note IDs to publish.",
+        max_length=100,
+        help_text="UUIDs of notes to include in the report.",
     )
-    title = serializers.CharField(help_text="Title for the published report.")
-    strategy = serializers.CharField(help_text="Name of the strategy to use.")
-    anonymized = serializers.BooleanField(help_text="Whether the report should be anonymized.", default=False)
-
-    def validate_strategy(self, value):
-        allowed = [choice[0] for choice in UploadStrategies.choices] + [
-            choice[0] for choice in DownloadStrategies.choices
-        ]
-        if value not in allowed:
-            raise serializers.ValidationError("Invalid strategy.")
-        return value
-
-
-class ReportRetryErrorResponseSerializer(serializers.Serializer):
-    """Serializer for report retry error responses."""
-
-    detail = serializers.CharField(help_text="Error detail message")
-
-    class Meta:
-        ref_name = "ReportRetryErrorResponse"
+    title = serializers.CharField(max_length=512, help_text="Title for the published report.")
+    strategy = serializers.ChoiceField(
+        choices=UploadStrategies.choices + DownloadStrategies.choices,
+        help_text="Strategy to use (upload or download).",
+    )
+    anonymized = serializers.BooleanField(
+        default=False,
+        help_text="Whether the report content should be anonymized.",
+    )
 
 
 class PublishStrategySerializer(serializers.Serializer):
-    """Serializer for individual publish strategy."""
+    """Serializer for a single publish strategy item."""
 
-    label = serializers.CharField(help_text="Human-readable label for the strategy")
-    strategy = serializers.CharField(help_text="Strategy identifier")
+    label = serializers.CharField(help_text="Human-readable label for the strategy.")
+    strategy = serializers.CharField(help_text="Strategy identifier (e.g. 'html', 'catalyst').")
 
     class Meta:
         ref_name = "PublishStrategy"
 
 
 class PublishStrategiesResponseSerializer(serializers.Serializer):
-    """Serializer for publish strategies response."""
+    """Serializer for the publish strategies endpoint response."""
 
-    upload = PublishStrategySerializer(many=True, help_text="Available upload strategies")
-    download = PublishStrategySerializer(many=True, help_text="Available download strategies")
+    upload = PublishStrategySerializer(many=True, help_text="Available upload strategies.")
+    download = PublishStrategySerializer(many=True, help_text="Available download strategies.")
 
     class Meta:
         ref_name = "PublishStrategiesResponse"

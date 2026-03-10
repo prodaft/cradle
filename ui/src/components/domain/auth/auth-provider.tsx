@@ -1,5 +1,5 @@
 import { parseAPIError } from '@/utils/api';
-import { setClientAccessToken } from '@services/openapi/client';
+import { setClientAccessToken, setClientAuthCallbacks } from '@services/openapi/client';
 import type { paths } from '@services/openapi/schema';
 import createFetchClient from 'openapi-fetch';
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -437,6 +437,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
         };
     }, [isLoggedIn, scheduleTokenRefresh]);
+
+    useEffect(() => {
+        setClientAuthCallbacks(getAccessToken, refreshAccessToken);
+        return () => setClientAuthCallbacks(null, null);
+    }, [getAccessToken, refreshAccessToken]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;

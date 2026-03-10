@@ -1,3 +1,8 @@
+"""URL routing for file transfer API.
+
+Endpoints: upload (initiate/finalize), download, delete, process.
+"""
+
 from django.urls import path
 
 from .views import FileDelete, FileDownload, FileProcess, FileUpload, FileUploadFinalize

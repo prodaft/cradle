@@ -20,7 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAuthState } from '@/hooks/auth';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
-import { parseAPIError } from '@/utils/api';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import extractHeaderHierarchy, { HeaderNode } from '@/utils/editor/outline';
 import { logger } from '@/utils/logger';
@@ -172,7 +172,7 @@ export default function NoteViewer() {
                 parsed.code !== 'UNAUTHENTICATED' &&
                 parsed.code !== 'SESSION_EXPIRED'
             ) {
-                toast.error(parsed.detail, { duration: 5000 });
+                toast.error(getDisplayMessage(parsed), { duration: 5000 });
             }
         });
     }, []);
@@ -309,7 +309,6 @@ export default function NoteViewer() {
         {
             params: {
                 path: { note_id: noteId || '' },
-                query: { footnotes: false },
             },
         },
         {
@@ -693,7 +692,7 @@ export default function NoteViewer() {
                             <div className='h-full w-full overflow-y-hidden'>
                                 {showOutline ? (
                                     <ResizablePanelGroup
-                                        direction='horizontal'
+                                        orientation='horizontal'
                                         className='h-full'
                                     >
                                         {/* Outline sidebar - rendered once */}

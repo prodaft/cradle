@@ -1,13 +1,19 @@
+"""Django app configuration for file transfer.
+
+Handles presigned URL uploads, file storage (S3/MinIO), and file metadata.
+"""
+
 from django.apps import AppConfig
 
 
 class FileTransferConfig(AppConfig):
-    default_auto_field = "django.db.models.BigAutoField"
+    """App config for file_transfer: uploads, downloads, and file metadata."""
+
     name = "file_transfer"
+    verbose_name = "File Transfer"
 
     def ready(self) -> None:
-        """
-        Best-effort ensure our S3/MinIO buckets exist.
+        """Best-effort ensure our S3/MinIO buckets exist.
 
         This avoids runtime `NoSuchBucket` errors when generating presigned URLs or
         saving via django-storages. Failures are logged but never crash startup.

@@ -106,7 +106,7 @@ export default function EntitiesPage() {
         },
     });
 
-    const entities = ((entitiesData as any)?.results as EntityData[]) ?? [];
+    const entities = (entitiesData?.results ?? []) as EntityData[];
 
     const handleEditClick = (entity: EntityData) => {
         router.navigate({ to: `/manage/entities/${entity.id}` as any });
@@ -162,7 +162,7 @@ export default function EntitiesPage() {
 
     // Server-side search: entities are already filtered by API
     const totalPages = useMemo(
-        () => Math.max(1, (entitiesData as any)?.total_pages ?? 1),
+        () => Math.max(1, entitiesData?.total_pages ?? 1),
         [entitiesData],
     );
     const handleSearchChange = useCallback(

@@ -1,21 +1,23 @@
 # Ported from IntelOwl: https://github.com/intelowlproject/IntelOwl
 
+import logging
 from typing import Optional
 from urllib.parse import urlparse
+
+import pypdns
 from django.db import models
-from entries.models import Entry, Relation
+
 from entries.enums import RelationReason
+from entries.models import Entry, Relation
+
 from ..base import BaseEnricher
 from ..mappings.dns import DNSMapping
-import logging
-import pypdns
 
 logger = logging.getLogger(__name__)
 
 
 class CIRCLPDNSEnricher(BaseEnricher):
-    """
-    Enriches domains with passive DNS data from CIRCL.
+    """Enriches domains with passive DNS data from CIRCL.
 
     Queries the CIRCL Passive DNS service to retrieve historical DNS records
     for domains and URLs. Creates relations to discovered IP addresses.

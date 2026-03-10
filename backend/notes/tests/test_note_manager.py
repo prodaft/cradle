@@ -1,39 +1,12 @@
-from .utils import NotesTestCase
-from user.models import CradleUser, UserRoles
-from rest_framework_simplejwt.tokens import AccessToken
-
-from entries.models import Entry
-from access.models import Access
-from notes.models import Note
-
 from collections import Counter
+
+from access.models import Access
+from entries.models import Entry
+from user.models import CradleUser, UserRoles
+
+from ..models import Note
 from ..utils import calculate_acvec
-
-
-class DeleteUnfilteredEntriesTest(NotesTestCase):
-    def setUp(self):
-        super().setUp()
-
-        self.entity = Entry.objects.create(name="Clearly not an entity", entry_class=self.entryclass1)
-        self.entity1 = Entry.objects.create(name="Unreferenced entity", entry_class=self.entryclass1)
-        # init entries
-        self.entries = [Entry.objects.create(name=f"Entry{i}", entry_class=self.entryclass_ip) for i in range(0, 4)]
-
-        self.metadata = [
-            Entry.objects.create(
-                name=f"Metadata{i}",
-                entry_class=self.entryclass_country,
-            )
-            for i in range(0, 3)
-        ]
-
-        self.actor = Entry.objects.create(name="Actor", entry_class=self.entryclass2)
-
-        self.note = Note.objects.create()
-        self.note.entries.add(self.entries[0])
-        self.note.entries.add(self.entries[1])
-        self.note.entries.add(self.metadata[0])
-        self.note.entries.add(self.metadata[1])
+from .utils import NotesTestCase
 
 
 class AccessibleNotesTest(NotesTestCase):
@@ -55,14 +28,6 @@ class AccessibleNotesTest(NotesTestCase):
             is_staff=False,
             email="c@d.e",
         )
-
-    def create_tokens(self):
-        self.token_user2 = str(AccessToken.for_user(self.user2))
-        self.token_admin = str(AccessToken.for_user(self.admin_user))
-        self.token_user1 = str(AccessToken.for_user(self.user1))
-        self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
-        self.headers_user1 = {"HTTP_AUTHORIZATION": f"Bearer {self.token_user1}"}
-        self.headers_user2 = {"HTTP_AUTHORIZATION": f"Bearer {self.token_user2}"}
 
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
@@ -114,8 +79,6 @@ class AccessibleNotesTest(NotesTestCase):
         super().setUp()
 
         self.create_users()
-
-        self.create_tokens()
 
         self.create_entities()
 
@@ -322,25 +285,6 @@ class GetEntriesOfTypeTest(NotesTestCase):
 
 
 class GetRelatedAccessibleEntriesTest(NotesTestCase):
-    def create_users(self):
-        self.user.is_staff = True
-        self.user.role = UserRoles.ADMIN
-        self.user.save()
-
-        self.admin_user = self.user
-        self.user1 = CradleUser.objects.create_user(
-            username="user1",
-            password="password",
-            is_staff=False,
-            email="b@c.d",
-        )
-        self.user2 = CradleUser.objects.create_user(
-            username="user2",
-            password="password",
-            is_staff=False,
-            email="c@d.e",
-        )
-
     def create_notes(self):
         self.note1 = Note.objects.create(content="Note1")
         self.note1.entries.set([self.entity1, self.actor1, self.metadata1])
@@ -371,19 +315,8 @@ class GetRelatedAccessibleEntriesTest(NotesTestCase):
             entry_class=self.entryclass_country,
         )
 
-    def create_access(self):
-        self.access1 = Access.objects.create(user=self.user1, entity=self.entity1, access_type="read-write")
-
-        self.access2 = Access.objects.create(user=self.user1, entity=self.entity2, access_type="read")
-
-        self.access3 = Access.objects.create(user=self.user2, entity=self.entity1, access_type="read")
-
-        self.access4 = Access.objects.create(user=self.user2, entity=self.entity2, access_type="none")
-
     def setUp(self):
         super().setUp()
-
-        self.create_users()
 
         self.create_entities()
 
@@ -393,15 +326,13 @@ class GetRelatedAccessibleEntriesTest(NotesTestCase):
 
         self.create_notes()
 
-        self.create_access()
-
     def test_related_accessible_entries_all(self):
         expected = Entry.objects.filter(entry_class__subtype="actor")
         entries = Note.objects.get_entries_from_notes(Note.objects.all()).filter(entry_class=self.entryclass2)
 
         self.assertQuerySetEqual(entries, expected, ordered=False)
 
-    def test_related_accessible_entries_one_inaccessbile(self):
+    def test_related_accessible_entries_one_inaccessible(self):
         expected = Entry.objects.filter(id=self.actor1.id)
         entries = Note.objects.get_entries_from_notes(Note.objects.filter(id=self.note1.id)).filter(
             entry_class=self.entryclass2
@@ -409,7 +340,7 @@ class GetRelatedAccessibleEntriesTest(NotesTestCase):
 
         self.assertQuerySetEqual(entries, expected)
 
-    def test_related_accessible_entries_no_accessbile(self):
+    def test_related_accessible_entries_no_accessible(self):
         expected = Entry.objects.none()
         entries = Note.objects.get_entries_from_notes(Note.objects.none()).filter(entry_class=self.entryclass2)
 

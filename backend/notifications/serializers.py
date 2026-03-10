@@ -1,3 +1,5 @@
+"""Serializers for notification API responses."""
+
 from typing import Any
 
 from rest_framework import serializers
@@ -5,6 +7,7 @@ from rest_framework import serializers
 from user.serializers import EssentialUserRetrieveSerializer
 
 from .models import (
+    AccessGrantedNotification,
     AccessRequestNotification,
     EnrichmentCompleteNotification,
     EnrichmentErrorNotification,
@@ -14,21 +17,55 @@ from .models import (
     ReportRenderNotification,
 )
 
+_NOTIFICATION_TYPE_HELP = "Discriminator for polymorphic type."
 
-class MessageNotificationSerializer(serializers.ModelSerializer):
-    notification_type = serializers.SerializerMethodField()
+
+class NotificationTypeMixin:
+    """Mixin that adds notification_type discriminator from notification_type_value."""
+
+    notification_type = serializers.SerializerMethodField(help_text=_NOTIFICATION_TYPE_HELP)
+    notification_type_value: str = "message_notification"
+
+    def get_notification_type(self, obj: Any) -> str:
+        """Return the notification type discriminator."""
+        return self.notification_type_value
+
+
+class MessageNotificationSerializer(NotificationTypeMixin, serializers.ModelSerializer):
+    """Base notification serializer with common fields."""
+
+    notification_type = serializers.SerializerMethodField(help_text=_NOTIFICATION_TYPE_HELP)
 
     class Meta:
         model = MessageNotification
         fields = ["id", "message", "is_marked_unread", "timestamp", "notification_type"]
 
-    def get_notification_type(self, obj: MessageNotification) -> str:
-        return "message_notification"
+
+class AccessGrantedNotificationSerializer(NotificationTypeMixin, serializers.ModelSerializer):
+    """Serializer for access granted notifications."""
+
+    notification_type = serializers.SerializerMethodField(help_text=_NOTIFICATION_TYPE_HELP)
+    notification_type_value = "access_granted_notification"
+    entity_id = serializers.IntegerField(source="entity.id", help_text="ID of the entity access was granted for.")
+
+    class Meta:
+        model = AccessGrantedNotification
+        fields = [
+            "id",
+            "message",
+            "is_marked_unread",
+            "entity_id",
+            "timestamp",
+            "notification_type",
+        ]
 
 
-class NewUserNotificationSerializer(serializers.ModelSerializer):
-    notification_type = serializers.SerializerMethodField()
-    new_user = EssentialUserRetrieveSerializer()
+class NewUserNotificationSerializer(NotificationTypeMixin, serializers.ModelSerializer):
+    """Serializer for new user registration notifications."""
+
+    notification_type = serializers.SerializerMethodField(help_text=_NOTIFICATION_TYPE_HELP)
+    notification_type_value = "new_user_notification"
+    new_user = EssentialUserRetrieveSerializer(help_text="The newly registered user.")
 
     class Meta:
         model = NewUserNotification
@@ -41,12 +78,16 @@ class NewUserNotificationSerializer(serializers.ModelSerializer):
             "notification_type",
         ]
 
-    def get_notification_type(self, obj: NewUserNotification) -> str:
-        return "new_user_notification"
 
+class AccessRequestNotificationSerializer(NotificationTypeMixin, serializers.ModelSerializer):
+    """Serializer for access request notifications."""
 
-class AccessRequestNotificationSerializer(serializers.ModelSerializer):
-    notification_type = serializers.SerializerMethodField()
+    notification_type = serializers.SerializerMethodField(help_text=_NOTIFICATION_TYPE_HELP)
+    notification_type_value = "request_access_notification"
+    entity_id = serializers.IntegerField(source="entity.id", help_text="ID of the entity access was requested for.")
+    requesting_user_id = serializers.UUIDField(
+        source="requesting_user.id", help_text="ID of the user who requested access."
+    )
 
     class Meta:
         model = AccessRequestNotification
@@ -60,13 +101,13 @@ class AccessRequestNotificationSerializer(serializers.ModelSerializer):
             "notification_type",
         ]
 
-    def get_notification_type(self, obj: AccessRequestNotification) -> str:
-        return "request_access_notification"
 
+class ReportRenderNotificationSerializer(NotificationTypeMixin, serializers.ModelSerializer):
+    """Serializer for report ready notifications."""
 
-class ReportRenderNotificationSerializer(serializers.ModelSerializer):
-    notification_type = serializers.SerializerMethodField()
-    published_report_id = serializers.UUIDField(source="published_report.id")
+    notification_type = serializers.SerializerMethodField(help_text=_NOTIFICATION_TYPE_HELP)
+    notification_type_value = "report_render_notification"
+    published_report_id = serializers.UUIDField(source="published_report.id", help_text="ID of the published report.")
 
     class Meta:
         model = ReportRenderNotification
@@ -79,13 +120,13 @@ class ReportRenderNotificationSerializer(serializers.ModelSerializer):
             "notification_type",
         ]
 
-    def get_notification_type(self, obj: ReportRenderNotification) -> str:
-        return "report_render_notification"
 
+class ReportProcessingErrorNotificationSerializer(NotificationTypeMixin, serializers.ModelSerializer):
+    """Serializer for report processing error notifications."""
 
-class ReportProcessingErrorNotificationSerializer(serializers.ModelSerializer):
-    notification_type = serializers.SerializerMethodField()
-    published_report_id = serializers.UUIDField(source="published_report.id")
+    notification_type = serializers.SerializerMethodField(help_text=_NOTIFICATION_TYPE_HELP)
+    notification_type_value = "report_processing_error_notification"
+    published_report_id = serializers.UUIDField(source="published_report.id", help_text="ID of the report that failed.")
 
     class Meta:
         model = ReportProcessingErrorNotification
@@ -99,13 +140,15 @@ class ReportProcessingErrorNotificationSerializer(serializers.ModelSerializer):
             "notification_type",
         ]
 
-    def get_notification_type(self, obj: ReportProcessingErrorNotification) -> str:
-        return "report_processing_error_notification"
 
+class EnrichmentCompleteNotificationSerializer(NotificationTypeMixin, serializers.ModelSerializer):
+    """Serializer for enrichment complete notifications."""
 
-class EnrichmentCompleteNotificationSerializer(serializers.ModelSerializer):
-    notification_type = serializers.SerializerMethodField()
-    enrichment_request_id = serializers.UUIDField(source="enrichment_request.id")
+    notification_type = serializers.SerializerMethodField(help_text=_NOTIFICATION_TYPE_HELP)
+    notification_type_value = "enrichment_complete_notification"
+    enrichment_request_id = serializers.UUIDField(
+        source="enrichment_request.id", help_text="ID of the completed enrichment request."
+    )
 
     class Meta:
         model = EnrichmentCompleteNotification
@@ -118,13 +161,15 @@ class EnrichmentCompleteNotificationSerializer(serializers.ModelSerializer):
             "notification_type",
         ]
 
-    def get_notification_type(self, obj: EnrichmentCompleteNotification) -> str:
-        return "enrichment_complete_notification"
 
+class EnrichmentErrorNotificationSerializer(NotificationTypeMixin, serializers.ModelSerializer):
+    """Serializer for enrichment error notifications."""
 
-class EnrichmentErrorNotificationSerializer(serializers.ModelSerializer):
-    notification_type = serializers.SerializerMethodField()
-    enrichment_request_id = serializers.UUIDField(source="enrichment_request.id")
+    notification_type = serializers.SerializerMethodField(help_text=_NOTIFICATION_TYPE_HELP)
+    notification_type_value = "enrichment_error_notification"
+    enrichment_request_id = serializers.UUIDField(
+        source="enrichment_request.id", help_text="ID of the failed enrichment request."
+    )
 
     class Meta:
         model = EnrichmentErrorNotification
@@ -138,12 +183,11 @@ class EnrichmentErrorNotificationSerializer(serializers.ModelSerializer):
             "notification_type",
         ]
 
-    def get_notification_type(self, obj: EnrichmentErrorNotification) -> str:
-        return "enrichment_error_notification"
 
-
+# Maps notification model classes to their serializers for polymorphic dispatch.
 NOTIFICATION_SERIALIZER_MAP: dict[type, type[serializers.ModelSerializer]] = {
     MessageNotification: MessageNotificationSerializer,
+    AccessGrantedNotification: AccessGrantedNotificationSerializer,
     NewUserNotification: NewUserNotificationSerializer,
     AccessRequestNotification: AccessRequestNotificationSerializer,
     ReportRenderNotification: ReportRenderNotificationSerializer,
@@ -154,15 +198,13 @@ NOTIFICATION_SERIALIZER_MAP: dict[type, type[serializers.ModelSerializer]] = {
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-    """
-    Polymorphic serializer that dispatches to the correct
-    notification-specific serializer.
-    """
+    """Polymorphic serializer that dispatches to notification-specific serializers."""
 
     class Meta:
         fields = []
 
     def to_representation(self, instance: Any) -> dict[str, Any]:
+        """Dispatch to the appropriate serializer based on notification subclass."""
         model_class = instance.__class__
 
         serializer_class = NOTIFICATION_SERIALIZER_MAP.get(model_class, MessageNotificationSerializer)
@@ -172,7 +214,9 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 
 class UpdateNotificationSerializer(serializers.ModelSerializer):
-    is_marked_unread = serializers.BooleanField(required=True)
+    """Serializer for updating notification read/unread status."""
+
+    is_marked_unread = serializers.BooleanField(required=True, help_text="Whether to mark the notification as unread.")
 
     class Meta:
         model = MessageNotification
@@ -180,4 +224,6 @@ class UpdateNotificationSerializer(serializers.ModelSerializer):
 
 
 class UnreadNotificationsSerializer(serializers.Serializer):
-    count = serializers.IntegerField()
+    """Serializer for unread notification count response."""
+
+    count = serializers.IntegerField(help_text="Number of unread notifications.")

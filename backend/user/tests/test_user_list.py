@@ -1,10 +1,10 @@
-from django.urls import reverse
-from ..models import CradleUser
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.parsers import JSONParser
-from ..serializers import UserRetrieveSerializer
-import io
 import json
+
+from django.urls import reverse
+from rest_framework_simplejwt.tokens import AccessToken
+
+from ..models import CradleUser
+from ..serializers import UserRetrieveSerializer
 from .utils import UserTestCase
 
 
@@ -112,10 +112,6 @@ class CreateUserTest(UserTestCase):
         self.assertEqual(response.status_code, 400)
 
 
-def bytes_to_json(data):
-    return JSONParser().parse(io.BytesIO(data))
-
-
 class GetAllUsersTest(UserTestCase):
     def setUp(self):
         super().setUp()
@@ -132,7 +128,7 @@ class GetAllUsersTest(UserTestCase):
 
         self.assertEqual(response.status_code, 200)  # Actually verify the entries sent
         expected = UserRetrieveSerializer([self.admin, self.user], many=True).data
-        self.assertCountEqual(expected, bytes_to_json(response.content))
+        self.assertCountEqual(expected, response.json())
 
     def test_get_all_users_not_authenticated(self):
         response = self.client.get(reverse("user_list"))

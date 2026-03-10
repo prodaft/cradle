@@ -1,9 +1,11 @@
+"""User serializers for CRUD, auth, OAuth, 2FA, sessions, and config."""
+
 from typing import Any, Dict, List, cast
 from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.contrib.auth import password_validation
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework_simplejwt.authentication import AuthUser
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -13,14 +15,17 @@ from .exceptions import (
     DisallowedActionException,
     DuplicateUserException,
     InvalidPasswordException,
+    UserAlreadyExistsException,
 )
 from .models import CradleUser, UserSession
 from .utils.validators import password_validator
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(required=True)
-    theme = serializers.JSONField(required=False)
+    """Serializer for user creation (signup). Validates username, email, password."""
+
+    email = serializers.EmailField(required=True, help_text="User email address")
+    theme = serializers.JSONField(required=False, help_text="UI theme settings (JSON object)")
 
     class Meta:
         model = CradleUser
@@ -32,39 +37,45 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "vim_mode",
             "theme",
         ]
-        extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
+        extra_kwargs: Dict[str, Dict[str, List]] = {
+            "username": {"validators": [], "help_text": "Unique username for login"},
+            "password": {"help_text": "User password (min 12 chars, upper, lower, digit, special)"},
+        }
 
     def validate(self, data: Any, nocheck_pw: bool = False) -> Any:
-        """First checks whether there exists another user with the
-        same username, in which entity it returns error code 409. Then, the
-        password is validated. In entity the password validation fails, error
-        code 400 is returned. Otherwise, it applies the other validations
-        from the superclass.
+        """Check duplicate username (409), validate password (400), then superclass.
 
         Args:
-            data: a dictionary containing the attributes of
-                the User entry
+            data: Dictionary containing the attributes of the User entry.
 
         Returns:
-            True iff the validations pass. Otherwise, it raises DuplicateUserException
-                which returns error code 409.
-        """
+            The validated data.
 
+        Raises:
+            DuplicateUserException: If username already exists (409).
+            UserAlreadyExistsException: If email already exists (409).
+            InvalidPasswordException: If password fails validation (400).
+        """
         if "username" in data:
             user_exists: bool = CradleUser.objects.filter(username=data["username"]).exists()
 
             if user_exists:
                 raise DuplicateUserException()
 
+        if "email" in data:
+            if CradleUser.objects.filter(email=data["email"]).exists():
+                raise UserAlreadyExistsException(detail="User with this email already exists.")
+
         if "password" in data and not nocheck_pw:
             try:
                 password_validation.validate_password(data["password"], password_validators=password_validator())
-            except ValidationError as e:
-                raise InvalidPasswordException(e.messages)
+            except DjangoValidationError as e:
+                raise InvalidPasswordException(list(e.messages))
 
         return super().validate(data)
 
     def validate_theme(self, value: Any) -> Any:
+        """Ensure theme is a JSON object or None."""
         if value is None:
             return value
         if not isinstance(value, dict):
@@ -75,23 +86,22 @@ class UserCreateSerializer(serializers.ModelSerializer):
         """Creates a new Users entry based on the validated data.
 
         Args:
-            validated_data: a dictionary containing the attributes of
-                the User entry
+            validated_data: Dictionary containing the attributes of the User entry.
 
         Returns:
-            The created User entry
+            The created User entry.
         """
-
         return CradleUser.objects.create_user(
             **validated_data,
         )
 
     def update(self, instance: CradleUser, validated_data: dict[str, Any]):
+        """Update catalyst_api_key, vim_mode, theme only. Username and email cannot be changed."""
         if validated_data.get("username", instance.username) != instance.username:
-            raise DisallowedActionException("You cannot change your username!")
+            raise DisallowedActionException(detail="You cannot change your username!")
 
         if validated_data.get("email", instance.email) != instance.email:
-            raise DisallowedActionException("You cannot change your email")
+            raise DisallowedActionException(detail="You cannot change your email")
 
         instance.catalyst_api_key = validated_data.get("catalyst_api_key", instance.catalyst_api_key)
         instance.vim_mode = validated_data.get("vim_mode", instance.vim_mode)
@@ -102,7 +112,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class UserCreateSerializerAdmin(UserCreateSerializer):
-    email = serializers.EmailField(required=True)
+    """Admin serializer for user creation/update. Skips password validation, allows role/status fields."""
 
     class Meta:
         model = CradleUser
@@ -119,14 +129,19 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
             "two_factor_enabled",
             "file_upload_limit_override",
         ]
-        extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
+        extra_kwargs: Dict[str, Dict[str, List]] = {
+            "username": {"validators": [], "help_text": "Unique username for login"},
+            "password": {"help_text": "User password (admin can skip validation)"},
+        }
 
     def validate(self, data: Any) -> Any:
         return super().validate(data, nocheck_pw=True)
 
     def update(self, instance: CradleUser, validated_data: dict[str, Any]):
-        for i in validated_data:
-            instance.__setattr__(i, validated_data[i])
+        """Update user fields. Handles password separately via set_password."""
+        for field, value in validated_data.items():
+            if field != "password":
+                setattr(instance, field, value)
 
         if "password" in validated_data:
             instance.set_password(validated_data["password"])
@@ -136,42 +151,35 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
         return instance
 
 
-class UserUpdateSerializer(UserCreateSerializer):
+class UserUpdateSerializer(UserCreateSerializerAdmin):
+    """Schema for PATCH user; all fields optional."""
+
     email = serializers.EmailField(required=False)
     username = serializers.CharField(required=False)
     password = serializers.CharField(required=False)
 
-    class Meta:
-        model = CradleUser
-        fields = [
-            "username",
-            "email",
-            "password",
-            "catalyst_api_key",
-            "vim_mode",
-            "theme",
-            "role",
-            "email_confirmed",
-            "is_active",
-            "two_factor_enabled",
-            "file_upload_limit_override",
-        ]
-
-    def validate(self, data: Any) -> Any:
-        return super().validate(data, nocheck_pw=True)
-
 
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True)
+    """Serializer for change password request and validation."""
+
+    old_password = serializers.CharField(required=True, help_text="Current password of the user")
+    new_password = serializers.CharField(required=True, help_text="New password to set")
+
+    class Meta:
+        ref_name = "ChangePasswordRequest"
 
     def validate(self, data):
-        password_validation.validate_password(data["new_password"], password_validators=password_validator())
-
+        """Validate new_password against password policy."""
+        try:
+            password_validation.validate_password(data["new_password"], password_validators=password_validator())
+        except DjangoValidationError as e:
+            raise InvalidPasswordException(list(e.messages))
         return data
 
 
 class UserRetrieveSerializer(serializers.ModelSerializer):
+    """Serializer for user detail response. Includes role, 2FA status, theme, OAuth connections."""
+
     catalyst_api_key = serializers.SerializerMethodField()
     oauth_connections = serializers.SerializerMethodField()
 
@@ -193,11 +201,11 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
         ]
 
     def get_catalyst_api_key(self, obj) -> bool:
-        return True if obj.catalyst_api_key else False
+        """Return True if user has Catalyst API key set (masked for security)."""
+        return bool(obj.catalyst_api_key)
 
     def get_oauth_connections(self, obj) -> dict:
-        from django.conf import settings
-
+        """Return dict of provider -> connected for each configured OAuth provider."""
         from .models import ExternalIdentity
 
         available = []
@@ -220,15 +228,19 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
 
 
 class EssentialUserRetrieveSerializer(serializers.ModelSerializer):
+    """Minimal user serializer (id, username) for nested references."""
+
     class Meta:
         model = CradleUser
         fields = ["id", "username"]
 
 
 class OAuthConnectSerializer(serializers.Serializer):
-    provider = serializers.CharField()
-    code = serializers.CharField()
-    redirect_uri = serializers.URLField()
+    """Serializer for OAuth connect/login. Validates redirect_uri against whitelist."""
+
+    provider = serializers.CharField(help_text="OAuth provider ID (e.g. google, github)")
+    code = serializers.CharField(help_text="Authorization code from OAuth callback")
+    redirect_uri = serializers.URLField(help_text="Redirect URI used in the OAuth flow")
 
     def validate_redirect_uri(self, value: str) -> str:
         whitelist = getattr(settings, "OAUTH_REDIRECT_URI_WHITELIST", [])
@@ -242,27 +254,28 @@ class OAuthConnectSerializer(serializers.Serializer):
 
 
 class UserConfigSerializer(serializers.Serializer):
-    oauth_methods = serializers.ListField(child=serializers.DictField())
-    signup = serializers.BooleanField()
+    """Public config: OAuth methods and signup availability."""
+
+    oauth_methods = serializers.ListField(
+        child=serializers.DictField(),
+        help_text="List of configured OAuth providers",
+    )
+    signup = serializers.BooleanField(help_text="Whether user registration is enabled")
 
 
 class TokenPairRetrieveSerializer(serializers.Serializer):
-    access = serializers.CharField(required=True)
-    refresh = serializers.CharField(required=True)
-    role = serializers.CharField(required=True)
-    access_expires_at = serializers.DateTimeField(required=True)
-    refresh_expires_at = serializers.DateTimeField(required=True)
+    """Response schema for token obtain and refresh endpoints."""
 
-
-class TokenRefreshRetrieveSerializer(serializers.Serializer):
-    access = serializers.CharField(required=True)
-    refresh = serializers.CharField(required=True)
-    role = serializers.CharField(required=True)
-    access_expires_at = serializers.DateTimeField(required=True)
-    refresh_expires_at = serializers.DateTimeField(required=True)
+    access = serializers.CharField(required=True, help_text="JWT access token")
+    refresh = serializers.CharField(required=True, help_text="JWT refresh token")
+    role = serializers.CharField(required=True, help_text="User role")
+    access_expires_at = serializers.DateTimeField(required=True, help_text="Access token expiry")
+    refresh_expires_at = serializers.DateTimeField(required=True, help_text="Refresh token expiry")
 
 
 class TokenObtainSerializer(TokenObtainPairSerializer):
+    """JWT obtain serializer with 2FA support and role in token claims."""
+
     two_factor_token = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -274,12 +287,11 @@ class TokenObtainSerializer(TokenObtainPairSerializer):
         """Retrieves a JWT token for a given CradleUser instance.
 
         Args:
-            user: an instance of the CradleUser object.
+            user: Instance of the CradleUser object.
 
         Returns:
             A JWT token to be used for validating further requests.
         """
-
         token = super().get_token(user)
 
         token["role"] = cast(CradleUser, user).role
@@ -288,41 +300,37 @@ class TokenObtainSerializer(TokenObtainPairSerializer):
 
 
 class EmailConfirmSerializer(serializers.Serializer):
-    token = serializers.CharField(required=True)
+    """Serializer for email confirmation. Validates token and fetches user."""
+
+    token = serializers.CharField(required=True, help_text="Email confirmation token from the link")
 
     def validate(self, data):
         token = data["token"]
 
         if not token:
-            raise ValidationError("We had trouble confirming with this token.")
+            raise serializers.ValidationError("We had trouble confirming with this token.")
 
         try:
             self.user = CradleUser.objects.get(email_confirmation_token=token)
         except (CradleUser.DoesNotExist, CradleUser.MultipleObjectsReturned):
-            raise ValidationError("We had trouble confirming with this token.")
+            raise serializers.ValidationError("We had trouble confirming with this token.")
 
         if self.user.email_confirmed:
-            raise ValidationError("We had trouble confirming with this token.")
+            raise serializers.ValidationError("We had trouble confirming with this token.")
 
         return data
 
 
 class Enable2FASerializer(serializers.Serializer):
-    config_url = serializers.CharField(required=True)
+    """Response serializer for 2FA enable. Contains TOTP config URL for QR code."""
+
+    config_url = serializers.CharField(required=True, help_text="TOTP provisioning URL for authenticator apps")
 
 
 class Verify2FASerializer(serializers.Serializer):
-    token = serializers.CharField(required=True)
+    """Serializer for 2FA token verification (enable or disable)."""
 
-
-class Login2FASerializer(serializers.Serializer):
-    token = serializers.CharField(required=True)
-
-
-class APIKeyRequestSerializer(serializers.Serializer):
-    """Serializer for API key generation requests"""
-
-    pass
+    token = serializers.CharField(required=True, help_text="6-digit TOTP code from authenticator app")
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
@@ -332,17 +340,17 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    """Serializer for password reset confirmation"""
+    """Serializer for password reset confirmation."""
 
-    token = serializers.CharField(required=True)
-    password = serializers.CharField(required=True)
+    token = serializers.CharField(required=True, help_text="Password reset token from the email link")
+    password = serializers.CharField(required=True, help_text="New password to set")
 
     def validate_password(self, value):
-        """Validate the password using Django's password validators"""
+        """Validate the password using Django's password validators."""
         try:
             password_validation.validate_password(value, password_validators=password_validator())
-        except ValidationError as e:
-            raise serializers.ValidationError(e.messages)
+        except DjangoValidationError as e:
+            raise InvalidPasswordException(list(e.messages))
         return value
 
 
@@ -361,22 +369,16 @@ class UserManageResponseSerializer(serializers.Serializer):
     refresh = serializers.CharField(required=False, help_text="JWT refresh token (only for simulate action)")
     access = serializers.CharField(required=False, help_text="JWT access token (only for simulate action)")
     message = serializers.CharField(required=False, help_text="Success message for other actions")
-    access_expires_at = serializers.DateTimeField(required=False)
-    refresh_expires_at = serializers.DateTimeField(required=False)
-    role = serializers.CharField(required=False)
+    access_expires_at = serializers.DateTimeField(
+        required=False, help_text="Access token expiry (simulate action only)"
+    )
+    refresh_expires_at = serializers.DateTimeField(
+        required=False, help_text="Refresh token expiry (simulate action only)"
+    )
+    role = serializers.CharField(required=False, help_text="User role (simulate action only)")
 
     class Meta:
         ref_name = "UserManageResponse"
-
-
-class ChangePasswordRequestSerializer(serializers.Serializer):
-    """Serializer for change password request."""
-
-    old_password = serializers.CharField(help_text="Current password of the user")
-    new_password = serializers.CharField(help_text="New password to set")
-
-    class Meta:
-        ref_name = "ChangePasswordRequest"
 
 
 class ChangePasswordResponseSerializer(serializers.Serializer):

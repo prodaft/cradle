@@ -19,7 +19,9 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { $api, fetchClient } from '@services/openapi/client';
+import { fetchClient } from '@services/openapi/client';
+import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
+import type { components } from '@services/openapi/schema';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
@@ -33,16 +35,7 @@ import React, {
 } from 'react';
 import SearchFilterSection from './search-filter';
 
-/**
- * Search result from API
- * Note: Entry IDs are numbers (BigAutoField in backend)
- */
-interface SearchResultData {
-    id: number;
-    name: string;
-    type: string;
-    subtype: string;
-}
+type SearchResultEntry = components['schemas']['EntryResponse'];
 
 /**
  * SearchDialog component props
@@ -88,26 +81,21 @@ export default function SearchDialog({
 
     const router = useRouter();
 
-    const entryClassesQuery = $api.useQuery(
-        'get',
-        '/entries/entry_classes/',
-        {},
-        {
-            enabled: isOpen,
-            staleTime: 5 * 60_000,
-        },
-    );
+    const entryClassesQuery = useQuery({
+        queryKey: ['entry_classes', 'search-command'],
+        queryFn: () => fetchAllEntryClasses(),
+        enabled: isOpen,
+        staleTime: 5 * 60_000,
+    });
 
     const entrySubtypes = useMemo(
-        () => [
-            ...new Set((entryClassesQuery.data?.results ?? []).map((c) => c.subtype)),
-        ],
+        () => [...new Set((entryClassesQuery.data ?? []).map((c) => c.subtype))],
         [entryClassesQuery.data],
     );
 
     const entryClassColors = useMemo(() => {
         const colorMap = new Map<string, string>();
-        (entryClassesQuery.data?.results ?? []).forEach((ec) => {
+        (entryClassesQuery.data ?? []).forEach((ec) => {
             if (ec.color) {
                 colorMap.set(ec.subtype, ec.color);
                 const parts = ec.subtype.split('/');
@@ -157,11 +145,9 @@ export default function SearchDialog({
         meta: { showErrorToast: true },
     });
 
-    const results = (searchResults.data as any)?.results as
-        | SearchResultData[]
-        | undefined;
-    const hasResults = (results?.length ?? 0) > 0;
-    const totalPages = Math.max(1, (searchResults.data as any)?.total_pages ?? 1);
+    const results = searchResults.data?.results ?? [];
+    const hasResults = results.length > 0;
+    const totalPages = Math.max(1, searchResults.data?.total_pages ?? 1);
     const { page, pageSize } = searchState;
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -177,7 +163,7 @@ export default function SearchDialog({
     };
 
     const handleSelectResult = useCallback(
-        (result: SearchResultData) => {
+        (result: SearchResultEntry) => {
             onClose();
             router.navigate({
                 to: '/dashboards/$subtype/$name',
@@ -243,13 +229,13 @@ export default function SearchDialog({
                                 </div>
                             ) : hasResults ? (
                                 <CommandGroup>
-                                    {results!.map((result) => {
+                                    {results.map((result) => {
                                         const color = entryClassColors.get(
                                             result.subtype,
                                         );
                                         return (
                                             <CommandItem
-                                                key={result.id}
+                                                key={`${result.subtype}:${result.id ?? result.name}`}
                                                 value={`${result.subtype}:${result.id}`}
                                                 onSelect={() =>
                                                     handleSelectResult(result)

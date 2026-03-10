@@ -1,17 +1,12 @@
 from django.urls import reverse
-from user.models import CradleUser
-from ..models import Access
-from ..enums import AccessType
-from entries.models import Entry
-from rest_framework.parsers import JSONParser
 from rest_framework_simplejwt.tokens import AccessToken
+
+from entries.models import Entry
+from user.models import CradleUser
+
+from ..enums import AccessType
+from ..models import Access
 from .utils import AccessTestCase
-
-import io
-
-
-def bytes_to_json(data):
-    return JSONParser().parse(io.BytesIO(data))
 
 
 class AccessListTest(AccessTestCase):
@@ -31,48 +26,46 @@ class AccessListTest(AccessTestCase):
     def test_access_list_success(self):
         response = self.client.get(
             reverse(
-                "access_list",
+                "user_access_list",
                 kwargs={"user_id": self.user.id},
             ),
             **self.headers_admin,
         )
 
-        expected_response = [{"id": self.entity.id, "name": "Entity 1", "access_type": "none"}]
+        expected_results = [{"id": self.entity.id, "name": "Entity 1", "access_type": "none"}]
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(bytes_to_json(data=response.content), expected_response)
+        self.assertEqual(response.json()["results"], expected_results)
 
     def test_access_list_not_admin(self):
         response = self.client.get(
             reverse(
-                "access_list",
+                "user_access_list",
                 kwargs={"user_id": self.user.id},
             ),
             **self.headers_normal,
         )
-
-        print(response.content)
 
         self.assertEqual(response.status_code, 403)
 
     def test_access_list_admin(self):
         response = self.client.get(
             reverse(
-                "access_list",
+                "user_access_list",
                 kwargs={"user_id": self.admin.id},
             ),
             **self.headers_admin,
         )
 
-        expected_response = [{"id": self.entity.id, "name": "Entity 1", "access_type": "read-write"}]
+        expected_results = [{"id": self.entity.id, "name": "Entity 1", "access_type": "read-write"}]
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(bytes_to_json(data=response.content), expected_response)
+        self.assertEqual(response.json()["results"], expected_results)
 
     def test_access_list_not_authenticated(self):
         response = self.client.get(
             reverse(
-                "access_list",
+                "user_access_list",
                 kwargs={"user_id": self.user.id},
             ),
         )
@@ -83,16 +76,16 @@ class AccessListTest(AccessTestCase):
         Access.objects.create(user=self.user, entity=self.entity, access_type=AccessType.READ)
         response = self.client.get(
             reverse(
-                "access_list",
+                "user_access_list",
                 kwargs={"user_id": self.user.id},
             ),
             **self.headers_admin,
         )
 
-        expected_response = [{"id": self.entity.id, "name": "Entity 1", "access_type": "read"}]
+        expected_results = [{"id": self.entity.id, "name": "Entity 1", "access_type": "read"}]
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(bytes_to_json(data=response.content), expected_response)
+        self.assertEqual(response.json()["results"], expected_results)
 
     def test_access_list_multiple_entities(self):
         Access.objects.create(user=self.user, entity=self.entity, access_type=AccessType.READ)
@@ -100,16 +93,16 @@ class AccessListTest(AccessTestCase):
 
         response = self.client.get(
             reverse(
-                "access_list",
+                "user_access_list",
                 kwargs={"user_id": self.user.id},
             ),
             **self.headers_admin,
         )
 
-        expected_response = [
+        expected_results = [
             {"id": self.entity.id, "name": "Entity 1", "access_type": "read"},
             {"id": entity2.id, "name": "Entity 2", "access_type": "none"},
         ]
 
         self.assertEqual(response.status_code, 200)
-        self.assertCountEqual(bytes_to_json(data=response.content), expected_response)
+        self.assertCountEqual(response.json()["results"], expected_results)

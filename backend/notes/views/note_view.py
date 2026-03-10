@@ -1,9 +1,15 @@
+"""Note list, detail, finalize, files, and graph API views."""
+
+import re
 from typing import cast
 from uuid import UUID
 
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q
+from django.urls import reverse
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -12,24 +18,22 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.enums import AccessType
 from access.models import Access
-from core.openapi import (
-    get_common_error_responses,
-    get_error_responses,
-    get_validation_error_response,
-)
+from core.exceptions import CoreErrorCodes
+from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
+from core.validators import validate_choice_param, validate_int_list_param, validate_int_param
 from entries.enums import EntryType
+from entries.exceptions import EntriesErrorCodes, EntryNotFoundException
 from entries.models import Entry
+from entries.tasks import refresh_edges_materialized_view
 from file_transfer.models import FileReference
 from knowledge_graph.serializers import SubGraphSerializer
-from notes.enums import NoteStatus
 from user.models import CradleUser
 
+from ..enums import NoteStatus
 from ..exceptions import (
     CannotEditNoteException,
-    EntryNotFoundException,
-    InvalidPageSizeException,
     InvalidReferencesAtLeastException,
     NoAccessToEntriesException,
     NoteDoesNotExistException,
@@ -44,6 +48,7 @@ from ..serializers import (
     FileReferenceWithNoteSerializer,
     FleetingNoteSerializer,
     NoteEditSerializer,
+    NoteListResponseSerializer,
     NoteListSerializer,
     NoteRetrieveSerializer,
 )
@@ -134,7 +139,7 @@ from ..serializers import (
                 name="order_by",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Order notes by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: timestamp, edit_timestamp, title, author__username. Default: -timestamp",  # noqa: E501
+                description="Order notes by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: timestamp, edit_timestamp, title, author__username, editor__username. Default: -timestamp",  # noqa: E501
                 required=False,
                 default="-timestamp",
             ),
@@ -147,12 +152,13 @@ from ..serializers import (
             ),
         ],
         responses={
-            200: TotalPagesPagination().get_paginated_response_serializer(NoteRetrieveSerializer),
+            200: TotalPagesPagination().get_paginated_response_serializer(NoteListResponseSerializer),
             **get_error_responses(
-                NotesErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
                 NotesErrorCodes.INVALID_REFERENCES_AT_LEAST,
-                NotesErrorCodes.ENTRY_NOT_FOUND,
-                NotesErrorCodes.INVALID_REQUEST,
+                EntriesErrorCodes.ENTRY_NOT_FOUND,
+                CoreErrorCodes.INVALID_REQUEST,
             ),
             **get_common_error_responses(),
         },
@@ -163,20 +169,26 @@ from ..serializers import (
         description="Creates a new note for the authenticated user.",
         request=FleetingNoteSerializer,
         responses={
-            200: FleetingNoteSerializer,
-            **get_validation_error_response(),
+            201: FleetingNoteSerializer,
+            **get_error_responses(include_validation_error=True),
             **get_common_error_responses(),
         },
     ),
 )
 class NoteList(APIView):
+    """List and create notes; supports filtering and pagination."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
 
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
-        status_filter = request.query_params.get("status")
+        status_filter = validate_choice_param(
+            request.query_params.get("status"),
+            ["fleeting", "finalized"] + [c[0] for c in NoteStatus.choices],
+            param_name="status",
+        )
         if status_filter == "fleeting":
             queryset = Note.objects.filter(author=user, fleeting=True)
         else:
@@ -185,33 +197,35 @@ class NoteList(APIView):
                 author_fleeting = Note.objects.filter(author=user, fleeting=True).distinct()
                 queryset = (queryset | author_fleeting).distinct()
 
-        try:
-            page_size = int(request.query_params.get("page_size", 10))
-        except ValueError:
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
-
-        if page_size > 200:
-            raise InvalidPageSizeException(detail="page_size cannot be greater than 200.")
-
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
-            try:
-                references_at_least = int(request.query_params.get("references_at_least", len(entrylist)))
-            except ValueError:
+            entry_ids = validate_int_list_param(entrylist, param_name="Reference IDs")
+            references_at_least = validate_int_param(
+                request.query_params.get("references_at_least"),
+                param_name="references_at_least",
+                default=len(entry_ids),
+            )
+            if references_at_least < 1 or references_at_least > len(entry_ids):
                 raise InvalidReferencesAtLeastException(detail="Invalid references_at_least value.")
 
-            queryset = queryset.annotate(matching_entries=Count("entries", filter=Q(entries__in=entrylist))).filter(
+            queryset = queryset.annotate(matching_entries=Count("entries", filter=Q(entries__in=entry_ids))).filter(
                 matching_entries=references_at_least
             )
         elif "linked_to" in request.query_params:
             queryset = queryset.non_fleeting()
-            entryid = request.query_params.get("linked_to")
-            entry = Entry.objects.filter(id=entryid)
-
-            if not entry.exists():
-                raise EntryNotFoundException(detail="Entry not found.")
-
-            entry = entry.first()
+            entryid = validate_int_param(
+                request.query_params.get("linked_to"),
+                param_name="linked_to",
+            )
+            try:
+                entry = Entry.objects.get(id=entryid)
+            except Entry.DoesNotExist:
+                raise EntryNotFoundException(detail="There is no entry with the specified ID.")
+            if entry.entry_class.type == EntryType.ENTITY and not (
+                user.is_cradle_admin
+                or Access.objects.has_access_to_entities(user, {entry}, {AccessType.READ, AccessType.READ_WRITE})
+            ):
+                raise EntryNotFoundException(detail="There is no entry with the specified ID.")
 
             linked_to_exact_match = request.query_params.get("linked_to_exact_match", "false") == "true"
 
@@ -226,7 +240,7 @@ class NoteList(APIView):
 
         if status_filter == "finalized":
             queryset = queryset.filter(fleeting=False)
-        elif status_filter not in (None, "fleeting"):
+        elif status_filter and status_filter != "fleeting":
             queryset = queryset.filter(status=status_filter, fleeting=False)
 
         if "any_field" in request.query_params:
@@ -253,14 +267,17 @@ class NoteList(APIView):
             ]
 
             # Parse and validate order_by parameter
-            order_fields, error_response = validate_order_by(order_by, valid_order_fields)
-            if error_response:
-                return error_response
-
+            order_fields = validate_order_by(order_by, valid_order_fields)
             if order_fields:
                 notes = notes.order_by(*order_fields)
             else:
                 notes = notes.order_by("-timestamp")
+
+            truncate = validate_int_param(
+                request.query_params.get("truncate"),
+                param_name="truncate",
+                default=200,
+            )
 
             entries_prefetch = Prefetch("entries", queryset=Entry.objects.select_related("entry_class"))
 
@@ -291,64 +308,51 @@ class NoteList(APIView):
                 )
             )
 
-            paginator = TotalPagesPagination(page_size=page_size)
-            paginated_notes = paginator.paginate_queryset(notes, request)
-
-            if paginated_notes is not None:
-                serializer = NoteListSerializer(
-                    truncate=int(request.query_params.get("truncate", 200)),
-                    many=True,
-                )
-                serialized_data = serializer.to_representation(paginated_notes)
-                return paginator.get_paginated_response(serialized_data)
-
-            serializer = NoteListSerializer(truncate=200, many=True)
-            return Response(serializer.to_representation(notes), status=status.HTTP_200_OK)
+            paginator = self.pagination_class()
+            page = paginator.paginate_queryset(notes, request)
+            serializer = NoteListSerializer(truncate=truncate, many=True)
+            serialized_data = serializer.to_representation(page)
+            return paginator.get_paginated_response(serialized_data)
         else:
-            from ..exceptions import InvalidRequestException
-
-            raise InvalidRequestException(detail=str(filterset.errors))
+            raise DRFValidationError(filterset.errors)
 
     def post(self, request: Request) -> Response:
-        """
-        Create a new fleeting note based on the request data.
-        The user field is set to correspond to the authenticated user.
+        """Create a new fleeting note from request data.
+
+        User field is set to the authenticated user.
 
         Args:
-            request: The request that was sent
+            request: The request that was sent.
 
         Returns:
-            Response(serializer.data, status=200):
-                The created fleeting note entry
-            Response(serializer.errors, status=400):
-                if the request was unsuccessful
-            Response("User is not authenticated.", status=401):
-                if the user is not authenticated
+            Response with the created fleeting note (201 Created).
+
+        Raises:
+            ValidationError: If request validation fails (via exception handler).
         """
         serializer = FleetingNoteSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        with transaction.atomic():
+            serializer.save()
+        location = request.build_absolute_uri(reverse("note_detail", kwargs={"note_id": serializer.instance.id}))
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers={"Location": location},
+        )
 
 
 @extend_schema_view(
     get=extend_schema(
         operation_id="notes_retrieve",
         summary="Get note details",
-        description="Returns the full details of a specific note. User must have access to view the note. Can optionally include footnotes.",  # noqa: E501
+        description="Returns the full details of a specific note. User must have access to view the note.",
         parameters=[
             OpenApiParameter(
                 name="note_id",
                 type=UUID,
                 location=OpenApiParameter.PATH,
                 description="ID of the note to retrieve.",
-            ),
-            OpenApiParameter(
-                name="footnotes",
-                type=bool,
-                location=OpenApiParameter.QUERY,
-                description="Whether to include footnotes in response. Defaults to true",
-                default=True,
             ),
         ],
         responses={
@@ -374,10 +378,10 @@ class NoteList(APIView):
         ],
         responses={
             200: NoteRetrieveSerializer,
-            **get_validation_error_response(),
             **get_error_responses(
                 NotesErrorCodes.NOTE_DOES_NOT_EXIST,
                 NotesErrorCodes.CANNOT_EDIT_NOTE,
+                include_validation_error=True,
             ),
             **get_common_error_responses(),
         },
@@ -395,7 +399,7 @@ class NoteList(APIView):
             )
         ],
         responses={
-            200: {"description": "Note was deleted successfully"},
+            204: {"description": "Note was deleted successfully"},
             **get_error_responses(
                 NotesErrorCodes.NOTE_DOES_NOT_EXIST,
                 NotesErrorCodes.NO_ACCESS_TO_ENTRIES,
@@ -405,6 +409,8 @@ class NoteList(APIView):
     ),
 )
 class NoteDetail(APIView):
+    """Retrieve, update, or delete a single note."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = NoteRetrieveSerializer
@@ -429,9 +435,6 @@ class NoteDetail(APIView):
                 ):
                     raise NoteDoesNotExistException(detail="Note was not found.")
 
-        if request.query_params.get("footnotes", "true") == "true":
-            return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
-
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
     def patch(self, request: Request, note_id: UUID) -> Response:
@@ -450,26 +453,25 @@ class NoteDetail(APIView):
             raise NoteDoesNotExistException(detail="Note was not found.")
 
         if not user.is_cradle_admin and note.author != user:
-            raise CannotEditNoteException(detail="You cannot edit this note")
+            raise CannotEditNoteException(detail="Note was not found.")
 
         serializer = NoteEditSerializer(note, data=request.data, context={"request": request})
 
         serializer.is_valid(raise_exception=True)
-        note = serializer.save()
-        json_note = NoteRetrieveSerializer(note, many=False).data
+        with transaction.atomic():
+            note = serializer.save()
+        json_note = NoteRetrieveSerializer(note).data
         return Response(json_note, status=status.HTTP_200_OK)
 
     def delete(self, request: Request, note_id: UUID) -> Response:
-        from entries.tasks import refresh_edges_materialized_view
-
         try:
             note_to_delete = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
-            raise NoteDoesNotExistException(detail="Note not found.")
+            raise NoteDoesNotExistException(detail="Note was not found.")
 
         if note_to_delete.fleeting:
             if note_to_delete.author_id != request.user.id:
-                raise NoteDoesNotExistException(detail="Note not found.")
+                raise NoteDoesNotExistException(detail="Note was not found.")
         else:
             if not Access.objects.has_access_to_entities(
                 cast(CradleUser, request.user),
@@ -477,10 +479,10 @@ class NoteDetail(APIView):
                 {AccessType.READ, AccessType.READ_WRITE},
             ):
                 raise NoAccessToEntriesException(
-                    detail="User does not have Read-Write access to all referenced entities",
                     links=list(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)),
                 )
-        note_to_delete.delete()
+        with transaction.atomic():
+            note_to_delete.delete()
 
         refresh_edges_materialized_view.apply_async()
 
@@ -502,13 +504,17 @@ class NoteDetail(APIView):
         request=None,
         responses={
             200: NoteRetrieveSerializer,
-            **get_error_responses(NotesErrorCodes.NOTE_DOES_NOT_EXIST),
-            **get_validation_error_response(),
+            **get_error_responses(
+                NotesErrorCodes.NOTE_DOES_NOT_EXIST,
+                NotesErrorCodes.NOTE_IS_EMPTY,
+            ),
             **get_common_error_responses(),
         },
     )
 )
 class NoteFinalize(APIView):
+    """Convert a fleeting note to a regular note (triggers processing pipeline)."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -521,8 +527,9 @@ class NoteFinalize(APIView):
         if not note.content:
             raise NoteIsEmptyException()
 
-        note.fleeting = False
-        finalized_note = TaskScheduler(request.user).run_pipeline(note)
+        with transaction.atomic():
+            note.fleeting = False
+            finalized_note = TaskScheduler(request.user).run_pipeline(note)
         return Response(NoteRetrieveSerializer(finalized_note).data, status=status.HTTP_200_OK)
 
 
@@ -594,7 +601,7 @@ class NoteFinalize(APIView):
                 name="order_by",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Order files by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: timestamp, file_name, mimetype. Default: -timestamp",  # noqa: E501
+                description="Order files by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: timestamp, file_name, mimetype, note__timestamp, file_size. Default: -timestamp",  # noqa: E501
                 required=False,
                 default="-timestamp",
             ),
@@ -616,45 +623,55 @@ class NoteFinalize(APIView):
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(FileReferenceWithNoteSerializer),
             **get_error_responses(
-                NotesErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
+                CoreErrorCodes.INVALID_REQUEST,
                 NotesErrorCodes.INVALID_REFERENCES_AT_LEAST,
-                NotesErrorCodes.ENTRY_NOT_FOUND,
+                EntriesErrorCodes.ENTRY_NOT_FOUND,
             ),
             **get_common_error_responses(),
         },
     ),
 )
 class NoteFiles(APIView):
+    """List files from accessible notes with filtering."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    pagination_class = TotalPagesPagination
 
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
         queryset = Note.objects.get_accessible_notes(user)
 
-        try:
-            page_size = int(request.query_params.get("page_size", 10))
-        except ValueError:
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
-
-        if page_size > 200:
-            raise InvalidPageSizeException(detail="page_size cannot be greater than 200.")
-
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
-            try:
-                references_at_least = int(request.query_params.get("references_at_least", len(entrylist)))
-            except ValueError:
+            entry_ids = validate_int_list_param(entrylist, param_name="Reference IDs")
+            references_at_least = validate_int_param(
+                request.query_params.get("references_at_least"),
+                param_name="references_at_least",
+                default=len(entry_ids),
+            )
+            if references_at_least < 1 or references_at_least > len(entry_ids):
                 raise InvalidReferencesAtLeastException(detail="Invalid references_at_least value.")
-            queryset = queryset.annotate(matching_entries=Count("entries", filter=Q(entries__in=entrylist))).filter(
+            queryset = queryset.annotate(matching_entries=Count("entries", filter=Q(entries__in=entry_ids))).filter(
                 matching_entries=references_at_least
             )
         elif "linked_to" in request.query_params:
-            entryid = request.query_params.get("linked_to")
-            entry = Entry.objects.filter(id=entryid)
-            if not entry.exists():
-                raise EntryNotFoundException(detail="Entry not found.")
-            entry = entry.first()
+            queryset = queryset.non_fleeting()
+            entryid = validate_int_param(
+                request.query_params.get("linked_to"),
+                param_name="linked_to",
+            )
+            try:
+                entry = Entry.objects.get(id=entryid)
+            except Entry.DoesNotExist:
+                raise EntryNotFoundException(detail="There is no entry with the specified ID.")
+            if entry.entry_class.type == EntryType.ENTITY and not (
+                user.is_cradle_admin
+                or Access.objects.has_access_to_entities(user, {entry}, {AccessType.READ, AccessType.READ_WRITE})
+            ):
+                raise EntryNotFoundException(detail="There is no entry with the specified ID.")
             linked_to_exact_match = request.query_params.get("linked_to_exact_match", "false") == "true"
             if linked_to_exact_match:
                 queryset = queryset.annotate(
@@ -669,6 +686,8 @@ class NoteFiles(APIView):
         filterset = NoteFilter(request.query_params, queryset=queryset)
         if filterset.is_valid():
             queryset = filterset.qs
+        else:
+            raise DRFValidationError(filterset.errors)
 
         notes_prefetch = Prefetch(
             "files",
@@ -698,12 +717,17 @@ class NoteFiles(APIView):
         # Filter by mimetype (wildcard match)
         if "mimetype" in request.query_params and request.query_params["mimetype"]:
             mimetype = request.query_params.get("mimetype")
-            # Convert wildcard pattern to regex pattern
-            mimetype_pattern = mimetype.replace("*", ".*")
+            # Convert wildcard pattern to regex: * = .*, other chars escaped to prevent injection
+            parts = mimetype.split("*")
+            mimetype_pattern = ".*".join(re.escape(p) for p in parts)
             files = files.filter(mimetype__regex=mimetype_pattern)
 
         # Filter by status (healthy = has sha256 hash, warning = missing sha256 hash)
-        status_filter = request.query_params.get("status")
+        status_filter = validate_choice_param(
+            request.query_params.get("status"),
+            ["healthy", "warning"],
+            param_name="status",
+        )
         if status_filter == "healthy":
             files = files.filter(sha256_hash__isnull=False).exclude(sha256_hash="")
         elif status_filter == "warning":
@@ -720,23 +744,16 @@ class NoteFiles(APIView):
         ]
 
         # Parse and validate order_by parameter
-        order_fields, error_response = validate_order_by(order_by, valid_order_fields)
-        if error_response:
-            return error_response
-
+        order_fields = validate_order_by(order_by, valid_order_fields)
         if order_fields:
             files = files.order_by(*order_fields)
         else:
             files = files.order_by("-timestamp")
 
-        paginator = TotalPagesPagination(page_size=page_size)
-        paginated_files = paginator.paginate_queryset(files, request)
-        if paginated_files is not None:
-            serializer = FileReferenceListSerializer(many=True)
-            serialized_data = serializer.to_representation(paginated_files)
-            return paginator.get_paginated_response(serialized_data)
-        serializer = FileReferenceListSerializer(many=True)
-        return Response(serializer.to_representation(files), status=status.HTTP_200_OK)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(files, request)
+        serializer = FileReferenceListSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 @extend_schema_view(
@@ -759,6 +776,8 @@ class NoteFiles(APIView):
     ),
 )
 class NoteGraph(APIView):
+    """Return knowledge graph subgraph for notes matching filters."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -769,18 +788,12 @@ class NoteGraph(APIView):
             raise NoteDoesNotExistException(detail="Note was not found.")
 
         # Get all relations for this note, filtered by user access
-        rels = note.relations.accessible(user=request.user)
+        rels = note.relations.accessible(user=cast(CradleUser, request.user))
 
         # Check if there are any relations
         if not rels.exists():
-            # Return empty graph with helpful message
             return Response(
-                {
-                    "entries": {},
-                    "relations": [],
-                    "colors": {},
-                    "detail": "This note has no graph relations or all relations are inaccessible.",
-                },
+                {"entries": {}, "relations": [], "colors": {}},
                 status=status.HTTP_200_OK,
             )
 

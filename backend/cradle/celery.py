@@ -1,3 +1,5 @@
+"""Celery app for Cradle. Task routing, beat schedule, and worker config."""
+
 from __future__ import absolute_import, unicode_literals
 
 import os
@@ -25,7 +27,6 @@ app.conf.task_routes = {
     "notes.tasks.entry_class_creation_task": {"queue": "notes"},
     "notes.tasks.entry_population_task": {"queue": "notes"},
     "notes.tasks.connect_aliases": {"queue": "notes"},
-    "notes.tasks.ping_entries": {"queue": "notes"},
     "notes.tasks.note_finalize_task": {"queue": "notes"},
     "notes.tasks.link_files_task": {"queue": "notes"},
     "notes.tasks.note_metadata_process_task": {"queue": "notes"},
@@ -44,26 +45,14 @@ app.conf.task_routes = {
     "intelio.tasks.cradle.download_file_for_note": {"queue": "digest"},
     "intelio.tasks.falcon.digest_chunk": {"queue": "digest"},
     "entries.tasks.delete_hanging_artifacts": {"queue": "cleanup"},
+    "file_transfer.uploads.tasks.cleanup_expired_upload_generic": {"queue": "cleanup"},
     "file_transfer.tasks.process_file_task": {"queue": "files"},
     "file_transfer.tasks.reprocess_all_files_task": {"queue": "files"},
-    "file_transfer.tasks.cleanup_expired_uploads": {"queue": "cleanup"},
+    "file_transfer.uploads.tasks.cleanup_all_expired_uploads": {"queue": "cleanup"},
 }
 
 app.conf.task_default_priority = 5
 app.conf.task_send_sent_event = True
-
-app.conf.task_routes.update(
-    {
-        "send_email_task": {
-            "queue": "email",
-            "rate_limit": "100/m",
-        },
-        "smart_linker_task": {
-            "queue": "email",
-            "rate_limit": "100/m",
-        },
-    },
-)
 
 app.conf.task_time_limit = 30 * 60
 app.conf.task_soft_time_limit = 15 * 60
@@ -84,7 +73,7 @@ app.conf.beat_schedule = {
         "schedule": crontab(hour=2, minute=0),
     },
     "cleanup-expired-uploads-every-10-minutes": {
-        "task": "file_transfer.tasks.cleanup_expired_uploads",
-        "schedule": crontab(hour=10, minute=0),
+        "task": "file_transfer.uploads.tasks.cleanup_all_expired_uploads",
+        "schedule": crontab(minute="*/10"),
     },
 }

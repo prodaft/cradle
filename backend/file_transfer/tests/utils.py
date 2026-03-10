@@ -1,22 +1,24 @@
-from django.test import TestCase
-from unittest.mock import patch
-from ..exceptions import MinioObjectNotFound
+"""Test utilities for file transfer: MinIO client mocks and shared fixtures."""
+
 from datetime import timedelta
+from unittest.mock import patch
+
+from django.test import TestCase
 
 
 class FileTransferTestCase(TestCase):
-    def setUp(self):
-        self.success_logger_patcher = patch("logs.utils.success_logger")
-        self.error_logger_patcher = patch("logs.utils.error_logger")
+    """Base test case with MinIO client mocking helpers."""
 
-        self.mocked_success_logger = self.success_logger_patcher.start()
-        self.mocked_error_logger = self.error_logger_patcher.start()
+    def setUp(self):
+        """Set up test fixtures."""
+        pass
 
     def tearDown(self):
-        self.success_logger_patcher.stop()
-        self.error_logger_patcher.stop()
+        """Tear down test fixtures."""
+        pass
 
     def init_minio_constants(self):
+        """Initialize sample file name, expiry, presigned URL, and UUID for tests."""
         self.file_name = "evidence.png"
         self.expiry_time = timedelta(minutes=5)
         self.minio_file_name = "aad5cae6-5737-409d-8ce2-5f116ed5e2de-evidence.png"
@@ -33,35 +35,8 @@ class FileTransferTestCase(TestCase):
         )
         self.uuid = "aad5cae6-5737-409d-8ce2-5f116ed5e2de"
 
-    def mock_minio_client_create(self):
-        self.init_minio_constants()
-
-        def mocked_presigned_get_call(bucket_name, minio_file_name, expiry_time, **kwargs):
-            if bucket_name == self.bucket_name and minio_file_name == self.minio_file_name:
-                return self.presigned_url
-            else:
-                raise MinioObjectNotFound()
-
-        self.patcher_bucket = patch("file_transfer.utils.MinioClient.create_user_bucket")
-        self.patcher_put = patch("file_transfer.utils.MinioClient.create_presigned_put")
-        self.patcher_get = patch("file_transfer.utils.MinioClient.create_presigned_get")
-
-        self.mocked_create_user_bucket = self.patcher_bucket.start()
-        self.mocked_presigned_put = self.patcher_put.start()
-        self.mocked_presigned_get = self.patcher_get.start()
-
-        self.mocked_presigned_put.return_value = (
-            self.minio_file_name,
-            self.presigned_url,
-        )
-        self.mocked_presigned_get.side_effect = mocked_presigned_get_call
-
-    def mock_minio_client_destroy(self):
-        self.patcher_put.stop()
-        self.patcher_get.stop()
-        self.patcher_bucket.stop()
-
     def mock_minio_create(self):
+        """Patch minio.Minio directly for low-level tests."""
         self.init_minio_constants()
 
         self.patcher_bucket = patch("minio.Minio.make_bucket")
@@ -79,7 +54,7 @@ class FileTransferTestCase(TestCase):
         self.mocked_presigned_put.return_value = self.presigned_url
         self.mocked_uuid.return_value = self.uuid
 
-        def mocked_presigned_get_call(bucket_name, minio_file_name, expires, **kwargs):
+        def mocked_presigned_get_call(bucket_name, minio_file_name, _expires, **kwargs):
             if bucket_name == self.bucket_name and minio_file_name == self.minio_file_name:
                 return self.presigned_url
             else:
@@ -95,6 +70,7 @@ class FileTransferTestCase(TestCase):
         self.mocked_stat_object.side_effect = mocked_stat_object_call
 
     def mock_minio_destroy(self):
+        """Stop minio.Minio patches started by mock_minio_create."""
         self.patcher_put.stop()
         self.patcher_get.stop()
         self.patcher_bucket.stop()

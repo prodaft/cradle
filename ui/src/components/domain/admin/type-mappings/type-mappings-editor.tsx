@@ -47,7 +47,8 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { $api, fetchClient } from '@services/openapi/client';
+import { fetchClient } from '@services/openapi/client';
+import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { startCase } from 'lodash';
 import {
@@ -189,14 +190,11 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         meta: { showErrorToast: true },
     });
 
-    const entryClassesQuery = $api.useQuery(
-        'get',
-        '/entries/entry_classes/',
-        {},
-        {
-            meta: { showErrorToast: true },
-        },
-    );
+    const entryClassesQuery = useQuery({
+        queryKey: ['entry_classes', 'type-mappings'],
+        queryFn: () => fetchAllEntryClasses(),
+        meta: { showErrorToast: true },
+    });
 
     const mappingsQuery = useQuery({
         queryKey: ['mappings', 'schema', id],
@@ -220,7 +218,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         if (!mappingKeysQuery.data || !entryClassesQuery.data) return null;
 
         const mappingKeys = mappingKeysQuery.data as unknown as ColumnDefinitions;
-        const entryClasses = entryClassesQuery.data?.results ?? [];
+        const entryClasses = entryClassesQuery.data ?? [];
 
         const transformedMappingKeys: ColumnDefinitions = {};
         for (const [key, colDef] of Object.entries(mappingKeys)) {
@@ -261,8 +259,10 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             const { error, response } = await fetchClient.DELETE(
                 '/intelio/mappings/{class_name}/',
                 {
-                    params: { path: { class_name: id } },
-                    body: { id: mappingId } as any,
+                    params: {
+                        path: { class_name: id },
+                        query: { mapping_id: mappingId },
+                    },
                 },
             );
             if (error) throw { response, error };

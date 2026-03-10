@@ -1,17 +1,22 @@
+"""Core intelio Celery tasks: digest and enrichment orchestration."""
+
+import logging
 import uuid
 
 from celery import group, shared_task
 
 from entries.enums import EntryType
 from entries.models import EntryClass
-from intelio.enums import EnrichmentStatus
-from intelio.models.base import BaseDigest, EnricherSettings, EnrichmentRequest
 
-BATCH_SIZE = 2048
+from ..enums import EnrichmentStatus
+from ..models.base import BaseDigest, EnricherSettings, EnrichmentRequest
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task
 def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
+    """Run a single enricher for an enrichment request. Appends errors on failure."""
     from entries.tasks import refresh_edges_materialized_view
 
     request = EnrichmentRequest.objects.get(id=request_id)
@@ -25,10 +30,10 @@ def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
     except Exception as e:
         error_message = f"Enricher {settings.enricher_type} failed: {str(e)}"
         request._append_error(error_message, settings.enricher_type)
-        request._set_enricher_status(enricher.name, EnrichmentStatus.ERROR)
+        request._set_enricher_status(settings.enricher_type, EnrichmentStatus.ERROR)
         return
 
-    request._set_enricher_status(enricher.name, EnrichmentStatus.DONE)
+    request._set_enricher_status(settings.enricher_type, EnrichmentStatus.DONE)
 
     refresh_edges_materialized_view.apply_async()
     return
@@ -36,15 +41,16 @@ def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
 
 @shared_task
 def start_digest(digest_id):
+    """Start digest processing for the given digest ID. Runs digest.digest()."""
     EntryClass.objects.get_or_create(type=EntryType.ARTIFACT, subtype="digest")
-    print(f"Starting digest {digest_id}")
+    logger.debug("Starting digest %s", digest_id)
     digest = BaseDigest.objects.get(id=digest_id)
-    print(digest)
     digest.digest()
 
 
 @shared_task
 def start_enrich(enrich_id):
+    """Start enrichment: run all enrichers for the request in parallel."""
     EntryClass.objects.get_or_create(type=EntryType.ARTIFACT, subtype="enrichment")
     request = EnrichmentRequest.objects.get(id=enrich_id)
     tasks = []
@@ -56,11 +62,13 @@ def start_enrich(enrich_id):
 
 @shared_task
 def propagate_acvec_digest(digest_id):
+    """Propagate access vector from digest entities to its relations."""
     digest = BaseDigest.objects.get(id=digest_id)
     digest.update_access_vector()
 
 
 @shared_task
 def propagate_acvec_enrich(enrich_id):
+    """Propagate access vector from enrichment entities to its relations."""
     request = EnrichmentRequest.objects.get(id=enrich_id)
     request.update_access_vector()

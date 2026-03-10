@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/input-group';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Spinner } from '@/components/ui/spinner';
-import { parseAPIError } from '@/utils/api';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { CopyIcon, QrCodeIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useQuery } from '@tanstack/react-query';
@@ -132,7 +132,7 @@ export default function TwoFactorSetupDialog({
                 onOpenChange(false);
             } catch (err) {
                 const parsed = await parseAPIError(err);
-                toast.error(parsed.detail);
+                toast.error(getDisplayMessage(parsed));
             } finally {
                 setIsSubmitting(false);
             }

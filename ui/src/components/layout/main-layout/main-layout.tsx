@@ -62,7 +62,7 @@ export default function MainLayout(): React.JSX.Element {
                     {/* Notifications Panel - Overlay */}
                     {showNotifications && (
                         <ResizablePanelGroup
-                            direction='horizontal'
+                            orientation='horizontal'
                             className='absolute inset-0 z-50'
                         >
                             <ResizablePanel

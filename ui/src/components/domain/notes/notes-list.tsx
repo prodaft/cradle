@@ -27,7 +27,7 @@ import {
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
-import { parseAPIError } from '@/utils/api';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { parseMarkdownInline } from '@/utils/parser';
 import {
@@ -59,9 +59,9 @@ import PreviewTip, { PreviewTipProvider } from '../../base/preview/preview-tip';
 import StatusHeaderDropdown from '../../base/status-header-dropdown/status-header-dropdown';
 import OfflineIndicator from '../../feedback/offline-indicator';
 import { NotePreviewContent } from './note-preview-content';
-import { StatusIcon } from './status-icon';
+import { StatusIcon, type StatusType } from './status-icon';
 
-type NoteRetrieve = components['schemas']['NoteRetrieve'];
+type NoteListResponse = components['schemas']['NoteListResponse'];
 type NoteMetadata = { title?: string; description?: string };
 type OptimizedEntryResponse = components['schemas']['OptimizedEntryResponse'];
 
@@ -100,7 +100,7 @@ interface ContentSearch {
 
 interface NotesListProps {
     query: Query | null;
-    filteredNotes?: NoteRetrieve[];
+    filteredNotes?: NoteListResponse[];
     hideFleetingNotes?: boolean;
     noteActions?: unknown[];
     hideActionBar?: boolean;
@@ -357,10 +357,7 @@ export default function NotesList({
         },
     );
 
-    const notes = useMemo(
-        () => (notesData?.results as NoteRetrieve[]) ?? [],
-        [notesData],
-    );
+    const notes = useMemo(() => notesData?.results ?? [], [notesData]);
     const totalPages = notesData?.total_pages || 1;
     const totalCount = notesData?.count || 0;
 
@@ -466,7 +463,7 @@ export default function NotesList({
                     (r) => r.status === 'rejected',
                 ) as PromiseRejectedResult;
                 const parsed = await parseAPIError(firstRejected.reason);
-                toast.error(parsed.detail);
+                toast.error(getDisplayMessage(parsed));
             } else {
                 toast.warning(
                     `Deleted ${successes} note${successes > 1 ? 's' : ''}, ${failures} failed`,
@@ -476,7 +473,7 @@ export default function NotesList({
             setRowSelection({});
         } catch (error) {
             const parsed = await parseAPIError(error);
-            toast.error(parsed.detail);
+            toast.error(getDisplayMessage(parsed));
         }
     };
 
@@ -518,12 +515,12 @@ export default function NotesList({
         return notes.filter((note) => !filteredNoteIds.has(note.id));
     }, [notes, filteredNotes]);
 
-    const renderNotePreview = useCallback((note: NoteRetrieve) => {
+    const renderNotePreview = useCallback((note: NoteListResponse) => {
         return <NotePreviewContent note={note} />;
     }, []);
 
     // Memoize columns to prevent recreation on every render
-    const columns = useMemo<ColumnDef<NoteRetrieve>[]>(
+    const columns = useMemo<ColumnDef<NoteListResponse>[]>(
         () => [
             {
                 id: 'select',
@@ -571,7 +568,10 @@ export default function NotesList({
                                     variant='outline'
                                     className='py-1 [&>svg]:size-3.5 capitalize'
                                 >
-                                    <StatusIcon status={status} size={14} />
+                                    <StatusIcon
+                                        status={status as StatusType}
+                                        size={14}
+                                    />
                                     <span>{label}</span>
                                 </Badge>
                             </TooltipTrigger>
@@ -861,7 +861,7 @@ export default function NotesList({
 
     // Memoize notes map to avoid recreating it on every render
     const noteById = useMemo(() => {
-        const map = new Map<string, NoteRetrieve>();
+        const map = new Map<string, NoteListResponse>();
         for (const note of notes) {
             if (note.id) {
                 map.set(String(note.id), note);
@@ -1080,7 +1080,7 @@ export default function NotesList({
                                 toast.success('Note deleted successfully');
                             } catch (_error) {
                                 const parsed = await parseAPIError(_error);
-                                toast.error(parsed.detail);
+                                toast.error(getDisplayMessage(parsed));
                             }
                         }
                     }}

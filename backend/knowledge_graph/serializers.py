@@ -1,4 +1,7 @@
-import re
+"""Serializers for knowledge graph API responses."""
+
+import uuid
+from collections import Counter
 
 from drf_spectacular.extensions import OpenApiSerializerExtension
 from rest_framework import serializers
@@ -14,16 +17,25 @@ from notes.models import Note
 
 
 class EdgeRelationSerializer(serializers.ModelSerializer):
+    """Edge between two entries for graph visualization."""
+
     class Meta:
         model = Edge
         fields = ["id", "src", "dst", "created_at", "last_seen"]
+        extra_kwargs = {
+            "id": {"help_text": "Edge ID"},
+            "src": {"help_text": "Source entry ID"},
+            "dst": {"help_text": "Destination entry ID"},
+            "created_at": {"help_text": "When the relation was first observed"},
+            "last_seen": {"help_text": "When the relation was last observed"},
+        }
 
 
 class GraphInaccessibleResponseSerializer(serializers.Serializer):
     """Serializer for graph inaccessible response."""
 
     inaccessible = serializers.ListField(
-        child=serializers.CharField(),
+        child=serializers.IntegerField(),
         help_text="List of inaccessible entry IDs",
     )
 
@@ -32,55 +44,44 @@ class GraphInaccessibleResponseSerializer(serializers.Serializer):
 
 
 class SubGraphSerializer(serializers.Serializer):
-    entries = EntryListCompressedTreeSerializer(fields=("name", "id", "location", "degree", "note_id"))
-    relations = EdgeRelationSerializer(many=True)
-    colors = serializers.DictField()
+    """Graph data with entries, relations, and colors keyed by subtype."""
 
-    class Meta:
-        fields = ["entries", "paths", "colors"]
+    entries = EntryListCompressedTreeSerializer(
+        fields=("name", "id", "location", "degree", "note_id"),
+        help_text="Compressed tree of entries in the subgraph",
+    )
+    relations = EdgeRelationSerializer(many=True, help_text="Edges between entries")
+    colors = serializers.DictField(help_text="Colors keyed by entry subtype")
 
     @classmethod
     def from_relations(cls, relations: list[Relation]) -> "SubGraphSerializer":
-        """
-        Create a SubGraphSerializer instance from a Relation queryset.
-        Ensures consistent ID types (integers) for src and dst in edges.
-        Calculates node degrees based on actual connections.
+        """Create a SubGraphSerializer instance from a Relation queryset.
+
+        Ensures consistent ID types (integers) for src and dst. Calculates node degrees.
         """
         entries = set(flatten([(r.e1, r.e2) for r in relations]))
 
-        # Calculate degree for each entry based on relations
-        degree_map = {}
+        degree_map: Counter[int] = Counter()
         for r in relations:
-            e1_id = int(r.e1.id)
-            e2_id = int(r.e2.id)
-            degree_map[e1_id] = degree_map.get(e1_id, 0) + 1
-            degree_map[e2_id] = degree_map.get(e2_id, 0) + 1
+            degree_map[int(r.e1.id)] += 1
+            degree_map[int(r.e2.id)] += 1
 
         # Annotate entries with their calculated degree and enrich note entries with note titles and UUIDs
         for entry in entries:
             entry.degree = degree_map.get(int(entry.id), 0)
 
             # For note entries, replace the name with the note title and add note_id
-            if entry.entry_class.subtype == "note" and entry.name:
-                # Extract UUID from note entry name (format: "uuid-hash")
-                uuid_match = re.match(
-                    r"^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})",
-                    entry.name,
-                    re.IGNORECASE,
-                )
-                if uuid_match:
-                    note_uuid = uuid_match.group(1)
-                    entry.note_id = note_uuid  # Add note UUID to entry
+            if entry.entry_class.subtype == "note" and entry.name and len(entry.name) >= 36:
+                try:
+                    note_uuid = str(uuid.UUID(entry.name[:36]))
+                    entry.note_id = note_uuid
                     try:
                         note = Note.objects.get(id=note_uuid)
-                        # Use metadata title if available, otherwise fall back to title field
-                        note_title = (note.metadata or {}).get("title") or note.title or note_uuid
-                        entry.name = note_title
+                        entry.name = (note.metadata or {}).get("title") or note.title or note_uuid
                     except Note.DoesNotExist:
-                        # If note not found, keep the UUID
                         entry.name = note_uuid
                         entry.note_id = note_uuid
-                else:
+                except ValueError:
                     entry.note_id = None
             else:
                 entry.note_id = None
@@ -150,22 +151,11 @@ class EntryWithDepthSerializerExtension(OpenApiSerializerExtension):
 
 
 class EntryWithDepthSerializer(EntrySerializer):
+    """Entry with graph traversal depth. Output is flattened (type, subtype, color at top level)."""
+
     entry_class = EntryClassSerializerNoChildren(read_only=True)
-    depth = serializers.IntegerField(read_only=True)
+    depth = serializers.IntegerField(read_only=True, help_text="Hops from source in graph traversal")
 
     class Meta:
         model = Entry
         fields = ["id", "name", "entry_class", "depth"]
-
-
-class EntryWithDepthSerializerView(serializers.Serializer):
-    depth = serializers.IntegerField(read_only=True)
-    id = serializers.IntegerField(read_only=True)
-    name = serializers.CharField(read_only=True)
-    subtype = serializers.CharField(read_only=True)
-    type = serializers.CharField(read_only=True)
-    description = serializers.CharField(read_only=True, allow_blank=True)
-    color = serializers.CharField(read_only=True, allow_blank=True)
-
-    class Meta:
-        fields = ["id", "name", "depth", "subtype", "type", "description", "color"]

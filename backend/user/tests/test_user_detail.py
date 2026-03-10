@@ -1,11 +1,13 @@
-from django.urls import reverse
-from ..models import CradleUser
-from rest_framework_simplejwt.tokens import AccessToken
-from .utils import UserTestCase
 import uuid
 
+from django.urls import reverse
+from rest_framework_simplejwt.tokens import AccessToken
 
-class DeleteUserTest(UserTestCase):
+from ..models import CradleUser
+from .utils import UserTestCase
+
+
+class UserDetailTest(UserTestCase):
     def setUp(self):
         super().setUp()
 
@@ -50,7 +52,7 @@ class DeleteUserTest(UserTestCase):
 
     def test_delete_user_authorized(self):
         response = self.client.delete(
-            reverse("user_detail", kwargs={"user_id": str(self.user.id)}),
+            reverse("user_detail", kwargs={"user_id": self.user.id}),
             **self.headers_normal,
         )
 
@@ -63,3 +65,12 @@ class DeleteUserTest(UserTestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+
+    def test_get_me_returns_own_profile(self):
+        """GET /users/me/ returns the authenticated user's profile."""
+        response = self.client.get(
+            reverse("user_detail_me"),
+            **self.headers_normal,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["username"], "user")

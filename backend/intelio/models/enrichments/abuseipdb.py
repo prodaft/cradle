@@ -1,15 +1,17 @@
 # Ported from IntelOwl: https://github.com/intelowlproject/IntelOwl
 from typing import Optional
-from django.db import models
-from entries.models import Entry, Relation
-from entries.enums import RelationReason
-from ..base import BaseEnricher
+
 import requests
+from django.db import models
+
+from entries.enums import RelationReason
+from entries.models import Entry, Relation
+
+from ..base import BaseEnricher
 
 
 class AbuseIPDBEnricher(BaseEnricher):
-    """
-    Enriches IP addresses with AbuseIPDB reputation data.
+    """Enriches IP addresses with AbuseIPDB reputation data.
 
     Queries the AbuseIPDB API to retrieve abuse reports and confidence scores
     for IP addresses. Creates relations with reputation metadata.

@@ -12,8 +12,7 @@ from ..base import BaseEnricher
 
 
 class VirusTotalEnricher(BaseEnricher):
-    """
-    Enriches file hashes with VirusTotal scan results.
+    """Enriches file hashes with VirusTotal scan results.
 
     Queries the VirusTotal API to retrieve malware detection information
     for file hashes (MD5, SHA1, SHA256).

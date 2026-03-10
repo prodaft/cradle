@@ -16,8 +16,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { $api, fetchClient } from '@services/openapi/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchClient } from '@services/openapi/client';
+import { fetchAllEntityAccess } from '@services/openapi/fetch-all-pages';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -43,18 +44,11 @@ export default function EntityPermissionsForm({
     );
     const [currentAccess, setCurrentAccess] = useState<Record<string, AccessLevel>>({});
 
-    const { data: allAccessData = [], isLoading } = $api.useQuery(
-        'get',
-        '/access/entity/{entity_id}/',
-        { params: { path: { entity_id: entityId } } },
-        {
-            enabled: !!entityId,
-            meta: {
-                showErrorToast: false,
-                suppressNotification: true,
-            },
-        },
-    );
+    const { data: allAccessData = [], isLoading } = useQuery({
+        queryKey: ['get', '/access/entity/{entity_id}/', entityId],
+        queryFn: () => fetchAllEntityAccess(entityId),
+        enabled: !!entityId,
+    });
 
     const accessData = useMemo(() => {
         if (!searchQuery.trim()) return allAccessData;

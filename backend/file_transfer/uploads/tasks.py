@@ -17,16 +17,15 @@ def cleanup_expired_upload_generic(
     model_path: str,
     bucket_name: str,
 ):
-    """
-    Generic cleanup task for any pending upload model.
+    """Generic cleanup task for any pending upload model.
 
     This task is scheduled when an upload is initiated and runs after
     the upload expires. It deletes both the S3 object and the database record.
 
     Args:
-        pending_upload_id: UUID of the pending upload
-        model_path: Full model path (e.g., "file_transfer.PendingUpload")
-        bucket_name: S3 bucket name where file was uploaded
+        pending_upload_id: UUID of the pending upload.
+        model_path: Full model path (e.g., "file_transfer.PendingUpload").
+        bucket_name: S3 bucket name where file was uploaded.
 
     Example:
         >>> cleanup_expired_upload_generic.apply_async(
@@ -70,8 +69,7 @@ def cleanup_expired_upload_generic(
 
 @shared_task
 def cleanup_all_expired_uploads():
-    """
-    Periodic task to clean up all expired pending uploads.
+    """Periodic task to clean up all expired pending uploads.
 
     This task should be scheduled to run periodically (e.g., every 10 minutes)
     via Celery Beat. It scans all pending upload models and cleans up expired ones.
@@ -102,12 +100,14 @@ def cleanup_all_expired_uploads():
         except Exception as e:
             logger.error(f"Error cleaning up file upload {pending.id}: {e}")
 
-    # Clean up digest uploads
-    try:
-        from intelio.models.uploads import PendingDigestUpload
+    # Clean up digest uploads (if intelio app is installed)
+    digest_count = 0
+    if apps.is_installed("intelio"):
         from file_transfer.storage import DigestStorage
 
+        PendingDigestUpload = apps.get_model("intelio", "PendingDigestUpload")
         expired_digest_uploads = PendingDigestUpload.objects.filter(expires_at__lt=timezone.now())
+        digest_count = expired_digest_uploads.count()
         for pending in expired_digest_uploads:
             try:
                 cleanup_expired_upload_generic(
@@ -117,11 +117,5 @@ def cleanup_all_expired_uploads():
                 )
             except Exception as e:
                 logger.error(f"Error cleaning up digest upload {pending.id}: {e}")
-    except ImportError:
-        # Intelio app not installed
-        pass
 
-    logger.info(
-        f"Cleaned up {expired_file_uploads.count()} file uploads and "
-        f"{expired_digest_uploads.count() if 'expired_digest_uploads' in locals() else 0} digest uploads"
-    )
+    logger.info(f"Cleaned up {expired_file_uploads.count()} file uploads and {digest_count} digest uploads")

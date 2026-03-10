@@ -1,12 +1,14 @@
+"""URL routing for intelio API: digests, enrichment, and mappings."""
+
 from django.urls import path
 
-from intelio.views.digest import (
+from .views.digest import (
     DigestAPIView,
+    DigestDetailAPIView,
     DigestSubclassesAPIView,
     DigestUploadAPIView,
     DigestUploadFinalizeAPIView,
 )
-
 from .views.enrichment import (
     EnrichmentAPIView,
     EnrichmentDetailAPIView,
@@ -69,6 +71,11 @@ urlpatterns = [
         name="digest_upload_finalize",
     ),
     path(
+        "digest/<uuid:pk>/",
+        DigestDetailAPIView.as_view(),
+        name="digest_detail",
+    ),
+    path(
         "enrich/",
         EnrichmentAPIView.as_view(),
         name="enrichment_requests",
@@ -84,13 +91,13 @@ urlpatterns = [
         name="enrichment_restart",
     ),
     path(
-        "enrich/<uuid:pk>/<str:enricher_type>/",
-        EnrichmentRequestEnricherAPIView.as_view(),
-        name="enrichment_enricher",
-    ),
-    path(
         "enrich/<uuid:pk>/<str:enricher_type>/relations/",
         EnrichmentRelationsAPIView.as_view(),
         name="enrichment_relations",
+    ),
+    path(
+        "enrich/<uuid:pk>/<str:enricher_type>/",
+        EnrichmentRequestEnricherAPIView.as_view(),
+        name="enrichment_enricher",
     ),
 ]

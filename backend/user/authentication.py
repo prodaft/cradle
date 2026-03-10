@@ -1,14 +1,20 @@
+"""JWT cookie and API key authentication backends."""
+
 import bcrypt
 from django.conf import settings
+from django.middleware.csrf import CsrfViewMiddleware
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from .models import CradleUser
 
 
 class CookieJWTAuthentication(JWTAuthentication):
-    """Read the access JWT from an HttpOnly cookie instead of the Authorization header.
-    Enforces CSRF for unsafe methods since cookies are sent automatically."""
+    """Read access JWT from HttpOnly cookie instead of Authorization header.
+
+    Enforces CSRF for unsafe methods since cookies are sent automatically.
+    """
 
     def authenticate(self, request):
         cookie_name = getattr(settings, "JWT_ACCESS_COOKIE_NAME", "access_token")
@@ -20,9 +26,9 @@ class CookieJWTAuthentication(JWTAuthentication):
         return self.get_user(validated_token), validated_token
 
     def enforce_csrf(self, request):
+        """Enforce CSRF check for unsafe methods. Safe methods are skipped."""
         if request.method in ("GET", "HEAD", "OPTIONS", "TRACE"):
             return
-        from django.middleware.csrf import CsrfViewMiddleware
 
         class CSRFCheck(CsrfViewMiddleware):
             def _reject(self, request, reason):
@@ -34,23 +40,21 @@ class CookieJWTAuthentication(JWTAuthentication):
 
 
 class APIKeyAuthentication(BaseAuthentication):
-    """
-    API Key based authentication.
+    """API Key based authentication.
 
-    Clients should include the API key in the Authorization header.
-    Format: 'Api-Key <api_key>'
+    Clients should include the API key in the Api-Key header as the raw key value.
     """
 
     def authenticate(self, request):
         auth_header = request.headers.get("Api-Key")
-        if auth_header is None:
+        if not auth_header:
             return None
 
         key = auth_header.encode()
+        users_with_keys = CradleUser.objects.exclude(api_key__isnull=True).exclude(api_key="")
 
-        # Iterate through all users with an API key set
-        for user in CradleUser.objects.exclude(api_key__isnull=True):
-            if user.api_key and bcrypt.checkpw(key, user.api_key.encode()):
+        for user in users_with_keys:
+            if bcrypt.checkpw(key, user.api_key.encode()):
                 return (user, None)
 
         raise AuthenticationFailed("Invalid API Key")

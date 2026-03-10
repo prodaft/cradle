@@ -1,22 +1,28 @@
+"""Enrichment API views: settings, requests, relations, restart."""
+
+import uuid
+
+from django.db import transaction
 from django.db.models import Q
+from django.urls import reverse
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from core.openapi import (
-    get_common_error_responses,
-    get_error_responses,
-    get_validation_error_response,
-)
+from core.exceptions import CoreErrorCodes, PermissionDeniedException
+from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
+from core.validators import validate_choice_param, validate_optional_int_param
 from entries.models import Entry
-from query.exceptions import InvalidQuerySyntaxException
+from query.exceptions import InvalidQuerySyntaxException, QueryErrorCodes
 from query.utils import parse_query
+from user.authentication import APIKeyAuthentication
 from user.permissions import HasAdminRole
 
 from ..enums import EnrichmentStatus
@@ -25,9 +31,6 @@ from ..exceptions import (
     EnricherTypeNotFoundException,
     EnrichmentRequestNotFoundException,
     IntelioErrorCodes,
-    InvalidPageSizeException,
-    PageSizeTooLargeException,
-    PermissionDeniedException,
 )
 from ..models.base import BaseEnricher, EnricherSettings, EnrichmentRequest
 from ..serializers import (
@@ -40,6 +43,36 @@ from ..serializers import (
     EnrichmentSubclassSerializer,
 )
 from ..utils import get_or_default_enricher
+
+
+class EnrichmentRequestObjectMixin:
+    """Mixin for views that need to fetch EnrichmentRequest by pk with access control."""
+
+    enrichment_prefetch = ("enrichers_settings", "entities")
+
+    def get_enrichment_request(self, pk, user):
+        """Return EnrichmentRequest by pk if user has access, else None."""
+        if user.is_cradle_admin:
+            queryset = EnrichmentRequest.objects.all()
+        else:
+            queryset = EnrichmentRequest.objects.get_accessible_by(user)
+        try:
+            return queryset.prefetch_related(*self.enrichment_prefetch).get(pk=pk)
+        except EnrichmentRequest.DoesNotExist:
+            return None
+
+    def _check_owner_or_admin(self, enrichment_request, user, action: str):
+        """Raise PermissionDeniedException if user is not owner or admin."""
+        if enrichment_request.user != user and not user.is_cradle_admin:
+            raise PermissionDeniedException(detail=f"You don't have permission to {action} this enrichment request.")
+
+    def _verify_enricher_type(self, enrichment_request, enricher_type: str):
+        """Raise EnricherTypeNotFoundException if enricher_type is not in this request."""
+        enricher_types = [s.enricher_type for s in enrichment_request.enrichers_settings.all()]
+        if enricher_type not in enricher_types:
+            raise EnricherTypeNotFoundException(
+                detail=f"Enricher type '{enricher_type}' not found in this enrichment request."
+            )
 
 
 @extend_schema_view(
@@ -63,15 +96,12 @@ from ..utils import get_or_default_enricher
     )
 )
 class EnrichmentSubclassesAPIView(APIView):
-    """
-    DRF API view that returns a list of all subclasses of Enricment
-    with their names.
-    """
+    """DRF API view that returns all BaseEnricher subclasses with their names."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: Request, *args, **kwargs) -> Response:
         subclasses = BaseEnricher.__subclasses__()
 
         enabled_enrichers = set(EnricherSettings.objects.filter(enabled=True).values_list("enricher_type", flat=True))
@@ -94,7 +124,7 @@ class EnrichmentSubclassesAPIView(APIView):
             ]
 
         serializer = EnrichmentSubclassSerializer(subclass_data, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -115,30 +145,30 @@ class EnrichmentSubclassesAPIView(APIView):
         request=EnrichmentSettingsSerializer,
         responses={
             200: EnrichmentSettingsSerializer,
-            **get_error_responses(IntelioErrorCodes.ENRICHER_NOT_FOUND),
-            **get_validation_error_response(),
+            **get_error_responses(
+                IntelioErrorCodes.ENRICHER_NOT_FOUND,
+                include_validation_error=True,
+            ),
             **get_common_error_responses(),
         },
     ),
 )
 class EnrichmentSettingsAPIView(GenericAPIView):
-    """
-    Get, create and update enrichment settings
-    """
+    """Get, create and update enrichment settings."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
     serializer_class = EnrichmentSettingsSerializer
 
-    def get(self, request, enricher_type):
+    def get(self, request: Request, enricher_type: str) -> Response:
         enricher = get_or_default_enricher(enricher_type)
 
         if enricher is None:
             raise EnricherNotFoundException(detail="Enricher type not found.")
 
-        return Response(self.get_serializer(enricher).data)
+        return Response(self.get_serializer(enricher).data, status=status.HTTP_200_OK)
 
-    def post(self, request, enricher_type):
+    def post(self, request: Request, enricher_type: str) -> Response:
         enricher = get_or_default_enricher(enricher_type)
         if enricher is None:
             raise EnricherNotFoundException(detail="Enricher type not found.")
@@ -216,8 +246,9 @@ class EnrichmentSettingsAPIView(GenericAPIView):
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(EnrichmentRequestListSerializer),
             **get_error_responses(
-                IntelioErrorCodes.INVALID_PAGE_SIZE,
-                IntelioErrorCodes.PAGE_SIZE_TOO_LARGE,
+                CoreErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
+                CoreErrorCodes.INVALID_REQUEST,
             ),
             **get_common_error_responses(),
         },
@@ -231,38 +262,29 @@ class EnrichmentSettingsAPIView(GenericAPIView):
         request=EnrichmentRequestSerializer,
         responses={
             201: EnrichmentRequestSerializer,
-            **get_validation_error_response(),
+            **get_error_responses(include_validation_error=True),
             **get_common_error_responses(),
         },
     ),
 )
 class EnrichmentAPIView(APIView):
-    """
-    API view for enrichment-related actions.
+    """API view for enrichment-related actions.
 
     GET: List all enrichment requests for the current user with filtering and pagination.
     POST: Create a new enrichment request for an entity.
     """
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = EnrichmentRequestSerializer
+    pagination_class = TotalPagesPagination
 
-    def get(self, request):
-        """List enrichment requests with optional filters, sorting, and pagination"""
+    def get(self, request: Request) -> Response:
+        """List enrichment requests with optional filters, sorting, and pagination."""
         if request.user.is_cradle_admin:
             queryset = EnrichmentRequest.objects.all()
         else:
             queryset = EnrichmentRequest.objects.get_accessible_by(request.user)
-
-        # Handle page_size parameter
-        try:
-            page_size = int(request.query_params.get("page_size", 10))
-        except ValueError:
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
-
-        if page_size > 100:
-            raise PageSizeTooLargeException(detail="page_size cannot be greater than 100.")
 
         # Filter by user username
         user_username = request.query_params.get("user__username")
@@ -274,19 +296,17 @@ class EnrichmentAPIView(APIView):
         if title:
             queryset = queryset.filter(title__icontains=title)
 
-        if request.query_params.get("any_value"):
-            queryset = queryset.filter(
-                Q(title__icontains=request.query_params.get("any_value"))
-                | Q(user__username__icontains=request.query_params.get("any_value"))
-            )
+        any_value = request.query_params.get("any_value")
+        if any_value:
+            queryset = queryset.filter(Q(title__icontains=any_value) | Q(user__username__icontains=any_value))
 
-        if request.query_params.get("entry_id"):
-            entry = Entry.objects.filter(id=request.query_params.get("entry_id"))
-            if not entry.exists():
-                queryset = queryset.filter(id__in=[])
-            else:
-                entry = entry.first()
+        entry_id = validate_optional_int_param(request.query_params.get("entry_id"), param_name="entry_id")
+        if entry_id is not None:
+            try:
+                entry = Entry.objects.get(id=entry_id)
                 queryset = queryset.filter(Q(relations__e1=entry) | Q(relations__e2=entry))
+            except Entry.DoesNotExist:
+                queryset = queryset.filter(id__in=[])
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
@@ -298,35 +318,40 @@ class EnrichmentAPIView(APIView):
         ]
 
         # Parse and validate order_by parameter
-        order_fields, error_response = validate_order_by(order_by, valid_order_fields)
-        if error_response:
-            return error_response
-
+        order_fields = validate_order_by(order_by, valid_order_fields)
         if order_fields:
             queryset = queryset.order_by(*order_fields)
         else:
             queryset = queryset.order_by("-created_at")
 
-        if request.query_params.get("status"):
-            queryset = queryset.filter(status=request.query_params.get("status"))
+        status_val = validate_choice_param(
+            request.query_params.get("status"),
+            [c[0] for c in EnrichmentStatus.choices],
+            param_name="status",
+        )
+        if status_val:
+            queryset = queryset.filter(status=status_val)
 
         queryset = queryset.select_related("user").prefetch_related("enrichers_settings")
 
-        # Apply pagination
-        paginator = TotalPagesPagination(page_size=page_size)
-        result_page = paginator.paginate_queryset(queryset, request)
+        # Apply pagination (max 100 for enrichment)
+        paginator = self.pagination_class(max_page_size=100)
+        page = paginator.paginate_queryset(queryset, request)
 
-        serializer = EnrichmentRequestListSerializer(result_page, many=True, context={"request": request})
+        serializer = EnrichmentRequestListSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
-    def post(self, request, *args, **kwargs):
-        """Create a new enrichment request"""
+    def post(self, request: Request, *args, **kwargs) -> Response:
+        """Create a new enrichment request."""
         serializer = EnrichmentRequestSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        enrichment_request = serializer.save()
+        with transaction.atomic():
+            enrichment_request = serializer.save()
+        location = request.build_absolute_uri(reverse("enrichment_detail", kwargs={"pk": enrichment_request.id}))
         return Response(
             EnrichmentRequestSerializer(enrichment_request, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
+            headers={"Location": location},
         )
 
 
@@ -339,7 +364,7 @@ class EnrichmentAPIView(APIView):
             200: EnrichmentRequestDetailSerializer,
             **get_error_responses(
                 IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
-                IntelioErrorCodes.PERMISSION_DENIED,
+                CoreErrorCodes.PERMISSION_DENIED,
             ),
             **get_common_error_responses(),
         },
@@ -347,64 +372,48 @@ class EnrichmentAPIView(APIView):
     delete=extend_schema(
         operation_id="enrichment_detail_delete",
         summary="Delete enrichment request",
-        description="Delete a specific enrichment request. Only the owner or staff can delete an enrichment request.",
+        description="Delete a specific enrichment request. Only the owner or admin can delete an enrichment request.",
         responses={
             204: None,
             **get_error_responses(
                 IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
-                IntelioErrorCodes.PERMISSION_DENIED,
+                CoreErrorCodes.PERMISSION_DENIED,
             ),
             **get_common_error_responses(),
         },
     ),
 )
-class EnrichmentDetailAPIView(APIView):
-    """
-    API view for retrieving detailed information about a specific enrichment request.
+class EnrichmentDetailAPIView(EnrichmentRequestObjectMixin, APIView):
+    """API view for retrieving detailed information about a specific enrichment request.
 
     GET: Retrieve enrichment request details.
     DELETE: Delete an enrichment request.
     """
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk, user):
-        if user.is_cradle_admin:
-            queryset = EnrichmentRequest.objects.all()
-        else:
-            queryset = EnrichmentRequest.objects.get_accessible_by(user)
-        try:
-            return queryset.prefetch_related("enrichers_settings", "entities").get(pk=pk)
-        except EnrichmentRequest.DoesNotExist:
-            return None
-
-    def get(self, request, pk):
-        """Retrieve enrichment request details"""
-        enrichment_request = self.get_object(pk, request.user)
+    def get(self, request: Request, pk: uuid.UUID) -> Response:
+        """Retrieve enrichment request details."""
+        enrichment_request = self.get_enrichment_request(pk, request.user)
 
         if enrichment_request is None:
             raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
 
-        # Check if user has access to this request
-        if enrichment_request.user != request.user and not request.user.is_staff:
-            raise PermissionDeniedException(detail="You don't have permission to view this enrichment request.")
-
+        self._check_owner_or_admin(enrichment_request, request.user, "view")
         serializer = EnrichmentRequestDetailSerializer(enrichment_request)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def delete(self, request, pk):
-        """Delete an enrichment request"""
-        enrichment_request = self.get_object(pk, request.user)
+    def delete(self, request: Request, pk: uuid.UUID) -> Response:
+        """Delete an enrichment request."""
+        enrichment_request = self.get_enrichment_request(pk, request.user)
 
         if enrichment_request is None:
             raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
 
-        # Check if user has access to this request
-        if enrichment_request.user != request.user and not request.user.is_staff:
-            raise PermissionDeniedException(detail="You don't have permission to delete this enrichment request.")
-
-        enrichment_request.delete()
+        self._check_owner_or_admin(enrichment_request, request.user, "delete")
+        with transaction.atomic():
+            enrichment_request.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -412,72 +421,57 @@ class EnrichmentDetailAPIView(APIView):
     post=extend_schema(
         operation_id="enrichment_restart",
         summary="Restart enrichment request",
-        description="Restart a specific enrichment request by resetting its status and rerunning the enrichment process. Only the owner or staff can restart an enrichment request.",
+        description="Restart a specific enrichment request by resetting its status and rerunning the enrichment process. Only the owner or admin can restart an enrichment request.",
         responses={
             200: EnrichmentRequestDetailSerializer,
             **get_error_responses(
                 IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
-                IntelioErrorCodes.PERMISSION_DENIED,
+                CoreErrorCodes.PERMISSION_DENIED,
             ),
             **get_common_error_responses(),
         },
     ),
 )
-class EnrichmentRestartAPIView(APIView):
-    """
-    API view for restarting an enrichment request.
+class EnrichmentRestartAPIView(EnrichmentRequestObjectMixin, APIView):
+    """API view for restarting an enrichment request.
 
     POST: Restart an enrichment request.
     """
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = EnrichmentRequestDetailSerializer
 
-    def get_object(self, pk, user):
-        if user.is_cradle_admin:
-            queryset = EnrichmentRequest.objects.all()
-        else:
-            queryset = EnrichmentRequest.objects.get_accessible_by(user)
-
-        try:
-            return queryset.prefetch_related("enrichers_settings", "entities").get(pk=pk)
-        except EnrichmentRequest.DoesNotExist:
-            return None
-
-    def post(self, request, pk):
-        """Restart an enrichment request"""
-        enrichment_request = self.get_object(pk, request.user)
+    def post(self, request: Request, pk: uuid.UUID) -> Response:
+        """Restart an enrichment request."""
+        enrichment_request = self.get_enrichment_request(pk, request.user)
 
         if enrichment_request is None:
             raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
 
-        # Check if user has access to this request
-        if enrichment_request.user != request.user and not request.user.is_staff:
-            raise PermissionDeniedException(detail="You don't have permission to restart this enrichment request.")
-
-        # Reset the enrichment request state
-        enrichment_request.status = EnrichmentStatus.WAITING
-        enrichment_request.errors = []
-        enrichment_request.warnings = []
-        enrichment_request.enricher_status = {}
-        enrichment_request.completed_at = None
-        enrichment_request.save(
-            update_fields=[
-                "status",
-                "errors",
-                "warnings",
-                "enricher_status",
-                "completed_at",
-            ]
-        )
-
-        # Start the enrichment process
-        enrichment_request.start_enrichment()
+        self._check_owner_or_admin(enrichment_request, request.user, "restart")
+        with transaction.atomic():
+            # Reset the enrichment request state
+            enrichment_request.status = EnrichmentStatus.WAITING
+            enrichment_request.errors = []
+            enrichment_request.warnings = []
+            enrichment_request.enricher_status = {}
+            enrichment_request.completed_at = None
+            enrichment_request.save(
+                update_fields=[
+                    "status",
+                    "errors",
+                    "warnings",
+                    "enricher_status",
+                    "completed_at",
+                ]
+            )
+            # Start the enrichment process
+            enrichment_request.start_enrichment()
 
         # Return the updated enrichment request
         serializer = EnrichmentRequestDetailSerializer(enrichment_request)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -489,55 +483,37 @@ class EnrichmentRestartAPIView(APIView):
             200: EnrichmentRequestEnricherSerializer,
             **get_error_responses(
                 IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
-                IntelioErrorCodes.PERMISSION_DENIED,
+                IntelioErrorCodes.ENRICHER_TYPE_NOT_FOUND,
+                CoreErrorCodes.PERMISSION_DENIED,
             ),
             **get_common_error_responses(),
         },
     ),
 )
-class EnrichmentRequestEnricherAPIView(APIView):
-    """
-    API view for retrieving enrichment request enricher information.
+class EnrichmentRequestEnricherAPIView(EnrichmentRequestObjectMixin, APIView):
+    """API view for retrieving enrichment request enricher information.
 
     GET: Retrieve enrichment request enricher information.
     """
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = EnrichmentRequestEnricherSerializer
+    enrichment_prefetch = ("enrichers_settings",)
 
-    def get_object(self, pk, user):
-        if user.is_cradle_admin:
-            queryset = EnrichmentRequest.objects.all()
-        else:
-            queryset = EnrichmentRequest.objects.get_accessible_by(user)
-
-        try:
-            return queryset.prefetch_related("enrichers_settings").get(pk=pk)
-        except EnrichmentRequest.DoesNotExist:
-            return None
-
-    def get(self, request, pk, enricher_type):
-        """Retrieve enrichment request enricher information"""
-        enrichment_request = self.get_object(pk, request.user)
+    def get(self, request: Request, pk: uuid.UUID, enricher_type: str) -> Response:
+        """Retrieve enrichment request enricher information."""
+        enrichment_request = self.get_enrichment_request(pk, request.user)
 
         if enrichment_request is None:
             raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
 
-        # Check if user has access to this request
-        if enrichment_request.user != request.user and not request.user.is_staff:
-            raise PermissionDeniedException(detail="You don't have permission to view this enrichment request.")
-
-        # Verify enricher_type is valid for this enrichment request
-        enricher_types = [settings.enricher_type for settings in enrichment_request.enrichers_settings.all()]
-        if enricher_type not in enricher_types:
-            raise EnricherTypeNotFoundException(
-                detail=f"Enricher type '{enricher_type}' not found in this enrichment request."
-            )
+        self._check_owner_or_admin(enrichment_request, request.user, "view")
+        self._verify_enricher_type(enrichment_request, enricher_type)
 
         # Get enricher information
         serializer = EnrichmentRequestEnricherSerializer.for_enrichment(enrichment_request, enricher_type)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -586,76 +562,49 @@ class EnrichmentRequestEnricherAPIView(APIView):
             **get_error_responses(
                 IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
                 IntelioErrorCodes.ENRICHER_TYPE_NOT_FOUND,
-                IntelioErrorCodes.PERMISSION_DENIED,
-                IntelioErrorCodes.INVALID_PAGE_SIZE,
-                IntelioErrorCodes.PAGE_SIZE_TOO_LARGE,
+                CoreErrorCodes.PERMISSION_DENIED,
+                CoreErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
+                CoreErrorCodes.INVALID_REQUEST,
+                QueryErrorCodes.INVALID_QUERY_SYNTAX,
             ),
             **get_common_error_responses(),
         },
     ),
 )
-class EnrichmentRelationsAPIView(APIView):
-    """
-    API view for retrieving relations created by a specific enrichment request,
-    filtered by enricher type.
+class EnrichmentRelationsAPIView(EnrichmentRequestObjectMixin, APIView):
+    """API view for relations created by an enrichment request, filtered by enricher type.
 
-    GET: Retrieve relations created by an enrichment request with a specific enricher type.
+    GET: Retrieve relations for a specific enricher type.
     """
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
+    pagination_class = TotalPagesPagination
+    enrichment_prefetch = ("enrichers_settings",)
 
-    def get_object(self, pk, user):
-        if user.is_cradle_admin:
-            queryset = EnrichmentRequest.objects.all()
-        else:
-            queryset = EnrichmentRequest.objects.get_accessible_by(user)
-
-        try:
-            return queryset.prefetch_related("enrichers_settings").get(pk=pk)
-        except EnrichmentRequest.DoesNotExist:
-            return None
-
-    def get(self, request, pk, enricher_type):
-        """Retrieve relations created by an enrichment request filtered by enricher type"""
-
-        enrichment_request = self.get_object(pk, request.user)
+    def get(self, request: Request, pk: uuid.UUID, enricher_type: str) -> Response:
+        """Retrieve relations created by an enrichment request filtered by enricher type."""
+        enrichment_request = self.get_enrichment_request(pk, request.user)
 
         if enrichment_request is None:
             raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
 
-        # Check if user has access to this request
-        if enrichment_request.user != request.user and not request.user.is_staff:
-            raise PermissionDeniedException(detail="You don't have permission to view this enrichment request.")
-
-        # Verify enricher_type is valid for this enrichment request
-        enricher_types = [settings.enricher_type for settings in enrichment_request.enrichers_settings.all()]
-        if enricher_type not in enricher_types:
-            raise EnricherTypeNotFoundException(
-                detail=f"Enricher type '{enricher_type}' not found in this enrichment request."
-            )
+        self._check_owner_or_admin(enrichment_request, request.user, "view")
+        self._verify_enricher_type(enrichment_request, enricher_type)
 
         # Get relations associated with this enrichment request and enricher type
         relations = enrichment_request.relations.filter(reason_context=enricher_type)
 
-        entry_id = request.query_params.get("entry_id")
-        if entry_id:
+        entry_id = validate_optional_int_param(request.query_params.get("entry_id"), param_name="entry_id")
+        if entry_id is not None:
             relations = relations.filter(Q(e1__id=entry_id) | Q(e2__id=entry_id))
-
-        # Handle page_size parameter
-        try:
-            page_size = int(request.query_params.get("page_size", 10))
-        except ValueError:
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
-
-        if page_size > 100:
-            raise PageSizeTooLargeException(detail="page_size cannot be greater than 100.")
 
         query_str = request.query_params.get("query")
         if query_str:
             try:
                 query_filter = parse_query(query_str + "*")
-            except Exception as e:
+            except ValueError as e:
                 raise InvalidQuerySyntaxException(detail=f"Invalid query syntax: {str(e)}")
 
             entries_qs = Entry.objects.filter(query_filter)
@@ -669,9 +618,9 @@ class EnrichmentRelationsAPIView(APIView):
         # Optimize query
         relations = relations.select_related("e1", "e2")
 
-        # Apply pagination
-        paginator = TotalPagesPagination(page_size=page_size)
-        result_page = paginator.paginate_queryset(relations, request)
+        # Apply pagination (max 100 for enrichment)
+        paginator = self.pagination_class(max_page_size=100)
+        page = paginator.paginate_queryset(relations, request)
 
-        serializer = EnrichmentRelationSerializer(result_page, many=True)
+        serializer = EnrichmentRelationSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)

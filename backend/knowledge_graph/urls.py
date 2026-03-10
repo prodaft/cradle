@@ -1,3 +1,5 @@
+"""URL routing for knowledge graph API endpoints."""
+
 from django.urls import path
 
 from .views import (

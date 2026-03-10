@@ -2,18 +2,22 @@ import inspect
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django_lifecycle.mixins import transaction
+from django.db import IntegrityError, transaction
 from drf_spectacular.utils import (
     OpenApiExample,
     OpenApiParameter,
     OpenApiResponse,
     extend_schema,
 )
-from rest_framework import serializers, status
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.exceptions import BadRequestException, CoreErrorCodes
+from core.openapi import get_common_error_responses, get_error_responses
 from entries.models import Entry, Relation
 from entries.tasks import (
     refresh_edges_materialized_view,
@@ -36,26 +40,25 @@ from .serializers import ManagementActionResponseSerializer
 from .settings import cradle_settings
 
 
-class ActionSerializer(serializers.Serializer):
-    """Basic serializer for action requests"""
-
-    pass
-
-
 class SettingsView(APIView):
-    permission_classes = [HasAdminRole, IsAuthenticated]
+    """Get or update namespaced settings (notes, users, files). Admin only."""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, HasAdminRole]
 
     @extend_schema(
+        operation_id="management_settings_retrieve",
         summary="Get all settings with defaults",
         description="Returns all known settings in a nested JSON format, including defaults for any missing values.",
         responses={
             200: OpenApiResponse(
                 response=dict,
                 description="Nested settings dictionary with defaults applied.",
-            )
+            ),
+            **get_common_error_responses(),
         },
     )
-    def get(self, request, *args, **kwargs):
+    def get(self, request: Request, *args, **kwargs) -> Response:
         result = {}
 
         for section_name in dir(cradle_settings):
@@ -68,42 +71,44 @@ class SettingsView(APIView):
 
             result[section.prefix] = {}
 
-            for name, member in inspect.getmembers(type(section), lambda m: isinstance(m, property)):
+            for name, _ in inspect.getmembers(type(section), lambda m: isinstance(m, property)):
                 try:
                     value = getattr(section, name)
                     result[section.prefix][name] = value
-                except Exception as e:
+                except (AttributeError, TypeError, ValueError) as e:
                     result[section.prefix][name] = f"<error: {str(e)}>"
 
-        return Response(result)
+        return Response(result, status=status.HTTP_200_OK)
 
     @extend_schema(
+        operation_id="management_settings_update",
         summary="Update one or more settings",
         description=(
             "Accepts a nested JSON object to create or update multiple settings at once. "
-            "Each key becomes a namespaced setting key like `notes.max_note_wordcount`."
+            "Each key becomes a namespaced setting key like `notes.min_entries`."
         ),
         request=dict,
         responses={
             200: OpenApiResponse(response=dict, description="Successfully updated all settings."),
             207: OpenApiResponse(response=dict, description="Some settings updated, others failed."),
+            **get_common_error_responses(),
         },
         examples=[
             OpenApiExample(
                 name="Example POST",
                 request_only=True,
                 value={
-                    "notes": {"max_note_wordcount": 2000, "allow_file_uploads": True},
-                    "ui": {"theme": "dark"},
+                    "notes": {"min_entries": 2, "allow_dynamic_entry_class_creation": True},
+                    "files": {"autoprocess_files": True},
                 },
             )
         ],
     )
-    def post(self, request, *args, **kwargs):
+    def post(self, request: Request, *args, **kwargs) -> Response:
         updated = []
         errors = []
 
-        flat_settings = self._flatten_settings(request.data)
+        flat_settings = self._flatten_settings(request.data or {})
 
         with transaction.atomic():
             for full_key, value in flat_settings.items():
@@ -111,10 +116,13 @@ class SettingsView(APIView):
                     Setting.objects.update_or_create(key=full_key, defaults={"value": value})
                     cache.set(f"setting:{full_key}", value, timeout=300)
                     updated.append(full_key)
-                except Exception as e:
+                except IntegrityError:
+                    errors.append({full_key: "A database constraint was violated."})
+                except (ValueError, TypeError) as e:
                     errors.append({full_key: str(e)})
 
-        response_data = self._nest_settings(flat_settings)
+        successful_updates = {k: flat_settings[k] for k in updated}
+        response_data = self._nest_settings(successful_updates)
         status_code = status.HTTP_200_OK if not errors else status.HTTP_207_MULTI_STATUS
 
         return Response(
@@ -123,6 +131,7 @@ class SettingsView(APIView):
         )
 
     def _flatten_settings(self, nested_dict, parent_key=""):
+        """Convert nested dict to flat dotted keys (e.g. notes.min_entries -> value)."""
         items = {}
         for k, v in nested_dict.items():
             full_key = f"{parent_key}.{k}" if parent_key else k
@@ -133,6 +142,7 @@ class SettingsView(APIView):
         return items
 
     def _nest_settings(self, flat_dict):
+        """Convert flat dotted keys back to nested dict."""
         nested = {}
         for key, value in flat_dict.items():
             parts = key.split(".")
@@ -144,31 +154,30 @@ class SettingsView(APIView):
 
 
 class ActionView(APIView):
+    """Execute admin management actions (relink notes, refresh graph, reprocess files, etc.)."""
+
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
-    serializer_class = ActionSerializer
 
     @classmethod
     def get_action_names(cls):
+        """Return action names (method names without action_ prefix)."""
         return [
             name[len("action_") :] for name in dir(cls) if name.startswith("action_") and callable(getattr(cls, name))
         ]
 
-    def post(self, request, action_name: str | None = None, *args, **kwargs):
+    def post(self, request: Request, action_name: str | None = None, *args, **kwargs) -> Response:
+        """Dispatch to the action handler for the given action_name."""
         handler = getattr(self, "action_" + action_name, None) if action_name else None
         if handler and callable(handler):
             return handler(request, *args, **kwargs)
-        return Response(
-            {"error": f"Unknown action: {action_name}"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        raise BadRequestException(detail=f"Unknown action: {action_name}")
 
     def action_relinkNotes(self, request, *args, **kwargs):
+        """Re-run note processing pipeline (entry creation, linking, metadata)."""
         notes = Note.objects.non_fleeting()
-
         if request.data and "note_id" in request.data:
             notes = notes.filter(id=request.data["note_id"])
-        else:
-            notes = notes.all()
 
         Relation.objects.filter(content_type=ContentType.objects.get_for_model(Note)).delete()
 
@@ -185,51 +194,51 @@ class ActionView(APIView):
             ],
         )
 
-        for i in notes:
-            scheduler.run_pipeline(i, update_acvec=False)
+        for note in notes:
+            scheduler.run_pipeline(note, update_acvec=False)
 
-        return Response({"detail": "Started relinking notes."})
+        return Response({"detail": "Started relinking notes."}, status=status.HTTP_202_ACCEPTED)
 
     def action_refreshMaterializedGraph(self, request, *args, **kwargs):
+        """Refresh the materialized graph view (edges)."""
         refresh_edges_materialized_view.apply_async(force=True)
-        return Response({"detail": "Started graph materialization."})
+        return Response({"detail": "Started graph materialization."}, status=status.HTTP_202_ACCEPTED)
 
     def action_recalculateNodePositions(self, request, *args, **kwargs):
-        # Node positions are computed on-demand; this action triggers a refresh
-        return Response({"detail": "Node positions will be recalculated on next graph load."})
+        """No-op: positions are computed client-side on graph load. Kept for API/UI consistency."""
+        return Response(
+            {"detail": "Node positions will be recalculated on next graph load."}, status=status.HTTP_202_ACCEPTED
+        )
 
     def action_propagateAccessVectors(self, request, *args, **kwargs):
+        """Propagate access vectors for all entities."""
         entities = Entry.entities.all()
 
         for entity in entities:
             update_accesses.apply_async(args=(entity.id,))
 
-        return Response({"detail": "Propagating the access vectors for all entities"})
+        return Response(
+            {"detail": "Propagating the access vectors for all entities."},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
     def action_reprocessAllFiles(self, request, *args, **kwargs):
+        """Re-run file processing for all uploaded files."""
         reprocess_all_files_task.apply_async()
 
-        return Response({"detail": "Started reprocessing all files."})
+        return Response({"detail": "Started reprocessing all files."}, status=status.HTTP_202_ACCEPTED)
 
     def action_deleteHangingArtifacts(self, request, *args, **kwargs):
-        count, _ = Entry.artifacts.unreferenced().distinct().delete()
+        """Delete artifact entries that are not referenced by any note."""
+        count, _ = Entry.artifacts.unreferenced().delete()
 
-        return Response({"detail": f"Deleted {count} artifacts."})
+        return Response({"detail": f"Deleted {count} artifacts."}, status=status.HTTP_200_OK)
 
 
 ActionView = extend_schema(
     summary="Execute management actions",
-    description="Executes various management actions for admin users. Available actions:"
-    + ", ".join(
-        [
-            "relinkNotes",
-            "refreshMaterializedGraph",
-            "recalculateNodePositions",
-            "propagateAccessVectors",
-            "reprocessAllFiles",
-            "deleteHangingArtifacts",
-        ]
-    ),
+    description="Executes various management actions for admin users. Available actions: "
+    + ", ".join(ActionView.get_action_names()),
     parameters=[
         OpenApiParameter(
             name="action_name",
@@ -244,13 +253,13 @@ ActionView = extend_schema(
             "type": "object",
             "additionalProperties": True,
             "description": "Action-specific parameters",
-            "example": {"note_id": "123", "any_param": "any_value"},
+            "example": {"note_id": "550e8400-e29b-41d4-a716-446655440000", "any_param": "any_value"},
         }
     },
     responses={
         200: ManagementActionResponseSerializer,
-        400: {"description": "Unknown action"},
-        401: {"description": "User is not authenticated"},
-        403: {"description": "User is not an admin"},
+        202: ManagementActionResponseSerializer,
+        **get_error_responses(CoreErrorCodes.BAD_REQUEST),
+        **get_common_error_responses(),
     },
 )(ActionView)

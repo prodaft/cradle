@@ -1,12 +1,24 @@
-"""
-Custom schema processors for DRF Spectacular
-"""
+"""Custom schema processors for DRF Spectacular OpenAPI generation."""
+
+
+def _update_schema_refs(obj, mapping):
+    """Recursively update $ref values according to mapping (old_name -> new_name)."""
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key == "$ref" and isinstance(value, str):
+                for old_name, new_name in mapping.items():
+                    if value.endswith(f"/{old_name}"):
+                        obj[key] = value.replace(f"/{old_name}", f"/{new_name}")
+                        break
+            else:
+                _update_schema_refs(value, mapping)
+    elif isinstance(obj, list):
+        for item in obj:
+            _update_schema_refs(item, mapping)
 
 
 def postprocess_schema_enums(result, generator, request, public):
-    """
-    Post-process schema to rename auto-generated enum names to more meaningful ones
-    """
+    """Rename auto-generated enum names (e.g. Status613Enum) to meaningful ones (DigestStatusEnum)."""
     if "components" not in result or "schemas" not in result["components"]:
         return result
 
@@ -24,28 +36,12 @@ def postprocess_schema_enums(result, generator, request, public):
         if old_name in schemas:
             schemas[new_name] = schemas.pop(old_name)
 
-    # Update all references to the old enum names
-    def update_refs(obj):
-        if isinstance(obj, dict):
-            for key, value in obj.items():
-                if key == "$ref" and isinstance(value, str):
-                    for old_name, new_name in enum_name_mapping.items():
-                        if value.endswith(f"/{old_name}"):
-                            obj[key] = value.replace(f"/{old_name}", f"/{new_name}")
-                else:
-                    update_refs(value)
-        elif isinstance(obj, list):
-            for item in obj:
-                update_refs(item)
-
-    update_refs(result)
+    _update_schema_refs(result, enum_name_mapping)
     return result
 
 
 def postprocess_schema_operation_ids(result, generator, request, public):
-    """
-    Post-process schema to remove auto "api" prefixes from operationIds.
-    """
+    """Remove auto-generated 'api' prefix from operationIds for cleaner client codegen."""
     paths = result.get("paths", {})
 
     for path_item in paths.values():
@@ -68,26 +64,19 @@ def postprocess_schema_operation_ids(result, generator, request, public):
     return result
 
 
-def postprocess_schema_path_prefix(result, generator, request, public):
-    """
-    Post-process schema to remove the leading /api path prefix.
-    """
-    paths = result.get("paths", {})
-    if not paths:
-        return result
-
-    rewritten = {}
-    for path, path_item in paths.items():
-        if not isinstance(path, str):
-            rewritten[path] = path_item
-            continue
-        if path.startswith("/api/"):
-            rewritten_path = "/" + path[5:]
-        elif path == "/api":
-            rewritten_path = "/"
-        else:
-            rewritten_path = path
-        rewritten[rewritten_path] = path_item
-
-    result["paths"] = rewritten
+def postprocess_schema_pagination_refs(result, generator, request, public):
+    """Fix ListAPIView double-wrapping so paginated endpoints reference the correct response schema."""
+    pagination_ref_fixes = {
+        "PaginatedReportListPaginatedResponseList": "ReportListPaginatedResponse",
+        "PaginatedEntryQueryPaginatedResponseList": "EntryQueryPaginatedResponse",
+        "PaginatedAdvancedQueryPaginatedResponseList": "AdvancedQueryPaginatedResponse",
+        "PaginatedPaginatedEventLogSerializerResponseList": "PaginatedEventLogSerializerResponse",
+        "PaginatedPaginatedAccessUserSerializerResponseList": "PaginatedAccessUserSerializerResponse",
+        "PaginatedPaginatedAccessEntitySerializerResponseList": "PaginatedAccessEntitySerializerResponse",
+        "PaginatedPaginatedUserRetrieveSerializerResponseList": "PaginatedUserRetrieveSerializerResponse",
+        "PaginatedPaginatedEntryResponseSerializerResponseList": "PaginatedEntryResponseSerializerResponse",
+        "PaginatedPaginatedEntryClassSerializerCountResponseList": "PaginatedEntryClassSerializerCountResponse",
+    }
+    _update_schema_refs(result, pagination_ref_fixes)
     return result
+

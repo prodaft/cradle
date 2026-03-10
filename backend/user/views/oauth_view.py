@@ -1,38 +1,43 @@
-from datetime import datetime, timezone as dt_timezone
+"""OAuth connect, login, and disconnect views."""
+
+from datetime import datetime
+from datetime import timezone as dt_timezone
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
 from django.conf import settings
+from django.middleware.csrf import get_token
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from core.exceptions import ValidationException
+from core.openapi import get_common_error_responses, get_error_responses
 from core.throttling import AuthRateThrottle
-from user.exceptions import (
+
+from ..exceptions import (
     AccountNotActivatedException,
     EmailNotConfirmedException,
     ExternalIdentityConflictException,
     UserErrorCodes,
 )
-from user.models import ExternalIdentity
-from user.serializers import (
+from ..models import ExternalIdentity
+from ..serializers import (
     OAuthConnectSerializer,
     TokenObtainSerializer,
     TokenPairRetrieveSerializer,
 )
-from user.views.token_view import (
-    set_token_cookies,
-    create_or_update_session,
-    get_error_responses,
-    get_validation_error_response,
-)
+from .token_view import create_or_update_session, set_token_cookies
 
 
 def _get_provider_config(provider: str) -> dict | None:
+    """Return OAuth provider config dict or None if not configured."""
     config = settings.OAUTH_PROVIDERS.get(provider)
     if isinstance(config, dict):
         return config
@@ -40,6 +45,7 @@ def _get_provider_config(provider: str) -> dict | None:
 
 
 def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> tuple[dict, dict]:
+    """Exchange OAuth code for tokens and fetch userinfo. Returns (token_data, userinfo)."""
     config = _get_provider_config(provider)
     if not config:
         raise ValidationException(detail="OAuth provider is not configured.")
@@ -90,7 +96,7 @@ def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> 
 
     if not userinfo_response.ok:
         raise ValidationException(
-            detail=(f"OAuth user info request failed ({userinfo_response.status_code}): {userinfo_response.text}")
+            detail=f"OAuth user info request failed ({userinfo_response.status_code}): {userinfo_response.text}"
         )
 
     return token_data, userinfo_response.json()
@@ -101,13 +107,21 @@ def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> 
         operation_id="users_oauth_connect",
         summary="Connect OAuth provider",
         request=OAuthConnectSerializer,
-        responses={200: None},
+        responses={
+            200: None,
+            **get_error_responses(
+                UserErrorCodes.EXTERNAL_IDENTITY_CONFLICT,
+                include_validation_error=True,
+            ),
+            **get_common_error_responses(),
+        },
     ),
 )
 class OAuthConnectView(APIView):
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         serializer = OAuthConnectSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -159,11 +173,12 @@ class OAuthConnectView(APIView):
         request=OAuthConnectSerializer,
         responses={
             200: TokenPairRetrieveSerializer,
-            **get_validation_error_response(),
             **get_error_responses(
                 UserErrorCodes.EMAIL_NOT_CONFIRMED,
                 UserErrorCodes.ACCOUNT_NOT_ACTIVATED,
+                include_validation_error=True,
             ),
+            **get_common_error_responses(),
         },
         tags=["auth"],
     ),
@@ -173,7 +188,7 @@ class OAuthLoginView(APIView):
     permission_classes = []
     throttle_classes = [AuthRateThrottle]
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         serializer = OAuthConnectSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -204,6 +219,9 @@ class OAuthLoginView(APIView):
         if not user.is_active:
             raise AccountNotActivatedException(detail="Your account is not activated")
 
+        identity.last_login_at = timezone.now()
+        identity.save(update_fields=["last_login_at"])
+
         refresh: RefreshToken = TokenObtainSerializer.get_token(user)
         access_token = refresh.access_token
 
@@ -226,6 +244,7 @@ class OAuthLoginView(APIView):
         access_max_age = int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
         refresh_max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
         set_token_cookies(response, str(access_token), str(refresh), access_max_age, refresh_max_age)
+        get_token(request)
 
         return response
 
@@ -234,12 +253,16 @@ class OAuthLoginView(APIView):
     delete=extend_schema(
         operation_id="users_oauth_disconnect",
         summary="Disconnect OAuth provider",
-        responses={204: None},
+        responses={
+            204: None,
+            **get_common_error_responses(),
+        },
     ),
 )
 class OAuthDisconnectView(APIView):
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, provider: str):
+    def delete(self, request: Request, provider: str) -> Response:
         ExternalIdentity.objects.filter(user=request.user, provider=provider).delete()
-        return Response(status=204)
+        return Response(status=status.HTTP_204_NO_CONTENT)

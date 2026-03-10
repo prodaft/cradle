@@ -1,11 +1,14 @@
+"""Task to link file references in a note to entries."""
+
 from typing import Iterable, Tuple
 
-from celery import Celery
+from celery.canvas import Signature
+
 from entries.models import Entry
 
-from .base_task import BaseTask
 from ..models import Note
 from ..tasks import link_files_task
+from .base_task import BaseTask
 
 
 class LinkFilesTask(BaseTask):
@@ -13,14 +16,14 @@ class LinkFilesTask(BaseTask):
     def is_validator(self) -> bool:
         return False
 
-    def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[Celery, Iterable[Entry]]:
-        """
-        Create the links between the entries, using the note
+    def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[Signature, Iterable[Entry]]:
+        """Link file references in a note to entries (hashes, entities).
 
         Args:
-            note: The note object being processde
+            note: The note object being processed.
+            entries: Entries from previous tasks (passed through).
 
         Returns:
-            The processed note object.
+            Tuple of (Celery task signature, entries).
         """
         return link_files_task.si(note.id), entries

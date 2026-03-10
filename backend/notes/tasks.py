@@ -1,10 +1,13 @@
+"""Celery tasks for note processing: linking, population, metadata, access vectors."""
+
 import json
 import logging
 
 from celery import shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db import close_old_connections
+from django.db import close_old_connections, transaction
+from django.db.models import Count
 from django.utils import timezone
 
 from core.decorators import distributed_lock
@@ -12,12 +15,12 @@ from entries.enums import EntryType, RelationReason
 from entries.exceptions import InvalidEntryException
 from entries.models import Entry, EntryClass, Relation
 from management.settings import cradle_settings
-from notes.enums import NoteStatus
-from notes.exceptions import EntriesDoNotExistException, EntryClassesDoNotExistException
-from notes.markdown.to_links import Link
-from notes.markdown.to_metadata import infer_metadata
 from user.models import CradleUser
 
+from .enums import NoteStatus
+from .exceptions import EntriesDoNotExistException, EntryClassesDoNotExistException
+from .markdown.to_links import Link
+from .markdown.to_metadata import infer_metadata
 from .models import Note
 
 logger = logging.getLogger(__name__)
@@ -26,15 +29,13 @@ logger = logging.getLogger(__name__)
 @shared_task
 @distributed_lock("smartlinker_note_{note_id}", timeout=1800)
 def smart_linker_task(note_id, user_id=None):
-    from entries.tasks import refresh_edges_materialized_view
-
-    """
-    Celery task to create links between entries for a given note.
+    """Create links between entries for a note from its reference tree.
 
     Args:
-        note_id: ID of the Note object to process
-        user_id: ID of the user performing the action (optional, for logging)
+        note_id: ID of the Note object to process.
+        user_id: ID of the user performing the action (optional, for logging).
     """
+    from entries.tasks import refresh_edges_materialized_view
 
     note = Note.objects.get(id=note_id)
 
@@ -104,30 +105,27 @@ def smart_linker_task(note_id, user_id=None):
 @shared_task
 @distributed_lock("link_files_note_{note_id}", timeout=1800)
 def link_files_task(note_id, file_ref_id=None):
-    from entries.tasks import refresh_edges_materialized_view
-
-    """
-    Celery task to create links between entries for a given note.
+    """Link file references in a note to entries (hashes, entities).
 
     Args:
-        note_id: ID of the Note object to process
+        note_id: ID of the Note object to process.
+        file_ref_id: Optional specific file reference ID; if omitted, all files are processed.
     """
+    from entries.tasks import refresh_edges_materialized_view
+
     note = Note.objects.get(id=note_id)
 
     md5_subclass = cradle_settings.files.md5_subtype
     sha256_subclass = cradle_settings.files.sha256_subtype
     sha1_subclass = cradle_settings.files.sha1_subtype
 
-    md5_et, sha256_et, sha1_et = None, None, None
-
-    if md5_subclass and EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=md5_subclass).exists():
-        md5_et = EntryClass.objects.get(type=EntryType.ARTIFACT, subtype=md5_subclass)
-
-    if sha256_subclass and EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=sha256_subclass).exists():
-        sha256_et = EntryClass.objects.get(type=EntryType.ARTIFACT, subtype=sha256_subclass)
-
-    if sha1_subclass and EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=sha1_subclass).exists():
-        sha1_et = EntryClass.objects.get(type=EntryType.ARTIFACT, subtype=sha1_subclass)
+    md5_et = EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=md5_subclass).first() if md5_subclass else None
+    sha256_et = (
+        EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=sha256_subclass).first() if sha256_subclass else None
+    )
+    sha1_et = (
+        EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=sha1_subclass).first() if sha1_subclass else None
+    )
 
     relations = []
     if file_ref_id is None:
@@ -192,30 +190,24 @@ def link_files_task(note_id, file_ref_id=None):
 
 @shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=60, max_retries=1)
 def entry_class_creation_task(note_id, user_id=None):
-    """
-    Celery task to create missing entry classes for a note.
+    """Create missing entry classes referenced by a note.
+
+    Args:
+        note_id: ID of the Note object to process.
+        user_id: ID of the user performing the action (optional, for logging).
     """
     note = Note.objects.get(id=note_id)
     if user_id:
         user = CradleUser.objects.get(id=user_id)
 
-    note_class = EntryClass.objects.filter(subtype="note")
-
-    if not note_class.exists():  # If note type does not exist, create it
-        note_class = EntryClass.objects.create(
-            type=EntryType.ARTIFACT,
-            subtype="note",
-            color="#7f8389",
-        )
-
-    file_class = EntryClass.objects.filter(subtype="file")
-
-    if not file_class.exists():  # If alias type does not exist, create it
-        file_class = EntryClass.objects.create(
-            type=EntryType.ARTIFACT,
-            subtype="file",
-            color="#7f8389",
-        )
+    EntryClass.objects.get_or_create(
+        subtype="note",
+        defaults={"type": EntryType.ARTIFACT, "color": "#7f8389"},
+    )
+    EntryClass.objects.get_or_create(
+        subtype="file",
+        defaults={"type": EntryType.ARTIFACT, "color": "#7f8389"},
+    )
 
     try:
         nonexistent_entries = set()
@@ -239,9 +231,12 @@ def entry_class_creation_task(note_id, user_id=None):
 
 
 @shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3)
-def entry_population_task(note_id, user_id=None, force_contains_check=False):
-    """
-    Celery task to create missing entries for a note.
+def entry_population_task(note_id, user_id=None):
+    """Create missing entries for a note from its reference tree.
+
+    Args:
+        note_id: ID of the Note object to process.
+        user_id: ID of the user performing the action (optional, for logging).
     """
     from entries.tasks import scan_for_children
 
@@ -249,67 +244,72 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
     if user_id:
         user = CradleUser.objects.get(id=user_id)
 
-    note.entries.clear()
-
     try:
-        entries = []
-        for r in note.reference_tree.all_links():
-            entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
-            if not entry.exists():
+        with transaction.atomic():
+            note.entries.clear()
+
+            entries = []
+            for r in note.reference_tree.all_links():
                 try:
-                    entry_class = EntryClass.objects.get(subtype=r.key)
-                except EntryClass.DoesNotExist:
-                    logging.warning(f"Entry class {r.key} does not exist. Skipping entry creation.")
-                    continue
-
-                if entry_class.type == EntryType.ARTIFACT:
+                    entry = Entry.objects.get(name=r.value, entry_class__subtype=r.key)
+                    note.entries.add(entry)
+                except Entry.DoesNotExist:
                     try:
-                        entries.append(Entry(name=r.value, entry_class=entry_class))
-                    except InvalidEntryException as e:
-                        note.set_status(
-                            NoteStatus.INVALID,
-                            note.status_message + e.detail.strip() + "\n",
-                        )
-                        note.save()
+                        entry_class = EntryClass.objects.get(subtype=r.key)
+                    except EntryClass.DoesNotExist:
+                        logger.warning(f"Entry class {r.key} does not exist. Skipping entry creation.")
+                        continue
 
-                        logger.warning(e.detail)
+                    if entry_class.type == EntryType.ARTIFACT:
+                        try:
+                            entries.append(Entry(name=r.value, entry_class=entry_class))
+                        except InvalidEntryException as e:
+                            note.set_status(
+                                NoteStatus.INVALID,
+                                (note.status_message or "") + e.detail.strip() + "\n",
+                            )
+                            note.save()
+
+                            logger.warning(e.detail)
+                    else:
+                        raise EntriesDoNotExistException([r])
+
+            new_objs = Entry.objects.bulk_create(entries, ignore_conflicts=True)
+            created_lookup = {(e.name, e.entry_class_id): e for e in new_objs}
+            objs = []
+            for entry in entries:
+                key = (entry.name, entry.entry_class_id)
+                if key in created_lookup:
+                    objs.append(created_lookup[key])
                 else:
-                    raise EntriesDoNotExistException([r])
-            else:
-                entry = entry.first()
-                note.entries.add(entry)
+                    obj, _ = Entry.objects.get_or_create(
+                        name=entry.name,
+                        entry_class__subtype=entry.entry_class.subtype,
+                        defaults={"entry_class": entry.entry_class},
+                    )
+                    objs.append(obj)
 
-        new_objs = Entry.objects.bulk_create(entries, ignore_conflicts=True)
+            note.entries.add(*objs)
 
-        objs = [None] * len(new_objs)
-        for i, e in enumerate(new_objs):
-            # print(e.name, e.entry_class.subtype)
-            if e.id is None:
-                objs[i], _ = Entry.objects.get_or_create(name=e.name, entry_class__subtype=e.entry_class.subtype)
-            else:
-                objs[i] = e
-
-        note.entries.add(*objs)
-
-        childscan = []
-        for entry in objs:
             content_type = ContentType.objects.get_for_model(note)
+            entry_class_ids = [e.entry_class_id for e in objs]
+            ec_with_children = set(
+                EntryClass.objects.filter(pk__in=entry_class_ids)
+                .annotate(child_count=Count("children"))
+                .filter(child_count__gt=0)
+                .values_list("pk", flat=True)
+            )
+            childscan = [e.id for e in objs if e.entry_class_id in ec_with_children]
 
-            if entry.entry_class.children.count() > 0:
-                childscan.append(entry.id)
+            for entry in objs:
+                if user_id:
+                    entry.save()
+                    entry.log_create(user)
 
-        for entry in objs:
-            if entry is None:
-                continue
+            if childscan:
+                scan_for_children.delay(childscan, content_type.id, note.id)
 
-            if user_id:
-                entry.save()
-                entry.log_create(user)  # Pass user_id for logging
-
-        if len(childscan):
-            scan_for_children.delay(childscan, content_type.id, note.id)
-
-        note.save()
+            note.save()
     except EntriesDoNotExistException as e:
         note.set_status(NoteStatus.INVALID, e.detail)
         note.save()
@@ -319,27 +319,24 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
 
 @shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3)
 def connect_aliases(note_id, user_id=None):
-    """
-    Celery task to connect aliases in a note
+    """Create alias entries and relations from note reference tree.
+
+    Args:
+        note_id: ID of the Note object to process.
+        user_id: ID of the user performing the action (optional, for logging).
     """
     from entries.tasks import refresh_edges_materialized_view
 
-    alias_class = EntryClass.objects.filter(subtype="alias")
-
-    if not alias_class.exists():  # If alias type does not exist, create it
-        alias_class = EntryClass.objects.create(
-            type=EntryType.ARTIFACT,
-            subtype="alias",
-            color="#7f8389",
-        )
+    alias_class, _ = EntryClass.objects.get_or_create(
+        subtype="alias",
+        defaults={
+            "type": EntryType.ARTIFACT,
+            "color": "#7f8389",
+        },
+    )
 
     note = Note.objects.get(id=note_id)
-
-    if user_id:
-        user = CradleUser.objects.get(id=user_id)
-    else:
-        user = None
-
+    user = CradleUser.objects.get(id=user_id) if user_id else None
     aliases = {}
 
     for r in note.reference_tree.all_links():
@@ -351,21 +348,22 @@ def connect_aliases(note_id, user_id=None):
         aliases[r.alias].add((r.key, r.value))
 
     for aname, entries in aliases.items():
-        if len(entries) == 0:
+        if not entries:
             continue
 
-        alias, created = Entry.objects.get_or_create(name=aname, entry_class_id="alias")
+        alias, created = Entry.objects.get_or_create(name=aname, entry_class=alias_class)
 
         if created and user:
             alias.log_create(user)
 
         note.entries.add(alias)
 
-        subtypes, names = zip(*entries)
         relations = []
-
         for subtype, name in entries:
-            e = Entry.objects.get(name=name, entry_class__subtype=subtype)
+            try:
+                e = Entry.objects.get(name=name, entry_class__subtype=subtype)
+            except (Entry.DoesNotExist, Entry.MultipleObjectsReturned):
+                continue
             relations.append(
                 Relation(
                     e1=e,
@@ -377,24 +375,24 @@ def connect_aliases(note_id, user_id=None):
                 )
             )
 
-        refresh_edges_materialized_view.apply_async()
-
         Relation.objects.bulk_create(relations)
+
+    refresh_edges_materialized_view.apply_async()
 
 
 @shared_task
 @distributed_lock("propagate_acvec_{note_id}", timeout=3600)
 def propagate_acvec(note_id):
+    """Propagate note's access vector to all its relations."""
     note = Note.objects.get(id=note_id)
-
     return note.relations.update(access_vector=note.access_vector)
 
 
 @shared_task
 @distributed_lock("finalize_note_{note_id}", timeout=1800)
 def note_finalize_task(note_id):
+    """Mark note as healthy when processing is complete."""
     note = Note.objects.get(id=note_id)
-
     if note.status == NoteStatus.PROCESSING:
         note.set_status(NoteStatus.HEALTHY)
         note.save()
@@ -403,6 +401,7 @@ def note_finalize_task(note_id):
 @shared_task
 @distributed_lock("metadata_process_{note_id}", timeout=1800)
 def note_metadata_process_task(note_id):
+    """Extract and apply metadata (title, description) from note frontmatter."""
     note = Note.objects.get(id=note_id)
 
     offset, metadata = infer_metadata(note.content)
@@ -424,7 +423,7 @@ def note_metadata_process_task(note_id):
     note.content_offset = offset
     note.metadata = json.loads(json.dumps(metadata, cls=DjangoJSONEncoder))
 
-    if note.title is None or len(note.title.strip()) == 0:
+    if not (note.title or "").strip():
         note.set_status(NoteStatus.WARNING, "Note title is empty.")
 
     note.save()

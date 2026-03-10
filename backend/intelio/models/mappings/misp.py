@@ -1,11 +1,12 @@
-from django.db import models
 from collections import defaultdict
+
+from django.db import models
+
 from ..base import ClassMapping
 
 
 class MISPMapping(ClassMapping):
-    """
-    Maps MISP attribute types to CRADLE entry classes.
+    """Maps MISP attribute types to CRADLE entry classes.
 
     MISP uses various attribute types to categorize indicators.
     This mapping allows CRADLE to automatically convert MISP attributes
@@ -67,11 +68,10 @@ class MISPMapping(ClassMapping):
 
     @classmethod
     def get_typemapping_rev(cls):
-        """
-        Returns a dictionary mapping MISP attribute types to EntryClass objects.
+        """Returns a dictionary mapping MISP attribute types to EntryClass objects.
 
         Returns:
-            dict: {attribute_type: EntryClass}
+            dict: Mapping of attribute_type to EntryClass.
         """
         typemapping = defaultdict(lambda: None)
 
@@ -82,16 +82,15 @@ class MISPMapping(ClassMapping):
 
     @classmethod
     def get_misp_types_for_entry_class(cls, entry_class_subtype: str):
-        """
-        Returns a list of MISP attribute types that map to a given CRADLE entry class subtype.
+        """Returns a list of MISP attribute types that map to a given CRADLE entry class subtype.
 
         This is used when querying MISP to filter by attribute type.
 
         Args:
-            entry_class_subtype: CRADLE entry class subtype (e.g., "ip", "domain")
+            entry_class_subtype: CRADLE entry class subtype (e.g., "ip", "domain").
 
         Returns:
-            list: List of MISP attribute types
+            list: List of MISP attribute types.
         """
         misp_types = []
 

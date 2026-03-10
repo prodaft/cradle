@@ -1,31 +1,42 @@
+"""Email abstraction layer for CRADLE.
+
+Provides base classes and concrete implementations for transactional emails
+(password reset, confirmations, access requests, reports, enrichments).
+"""
+
 import abc
-from typing import Dict, Any, Optional
-from django.template.loader import render_to_string
+from typing import Any, Dict, Optional
+
 from django.conf import settings
+from django.template.loader import render_to_string
 
 from .tasks import send_email_task
 
 
 class Mail(abc.ABC):
+    """Abstract base for all email types. Subclasses define body, mimetype, and dispatch."""
+
     def __init__(self, subject: str) -> None:
         self.subject = subject
 
     @property
-    def body(self) -> str:
-        raise NotImplementedError()
+    @abc.abstractmethod
+    def body(self) -> str: ...
 
     @property
-    def mimetype(self) -> str:
-        raise NotImplementedError()
+    @abc.abstractmethod
+    def mimetype(self) -> str: ...
 
     @property
     def from_email(self) -> str:
+        """Sender address from settings."""
         return settings.DEFAULT_FROM_EMAIL
 
-    def dispatch(self):
-        raise NotImplementedError()
+    @abc.abstractmethod
+    def dispatch(self) -> None: ...
 
-    def _dispatch_celery(self, recipient: str):
+    def _dispatch_celery(self, recipient: str) -> None:
+        """Queue email via Celery task."""
         send_email_task.delay(
             subject=self.subject,
             body=self.body,
@@ -36,6 +47,8 @@ class Mail(abc.ABC):
 
 
 class TemplatedMail(Mail):
+    """Mail whose body is rendered from a Django template."""
+
     def __init__(
         self,
         subject: str,
@@ -58,6 +71,8 @@ class TemplatedMail(Mail):
 
 
 class ResetPasswordMail(TemplatedMail):
+    """Password reset link email for users who forgot their password."""
+
     def __init__(self, user) -> None:
         self.user = user
         reset_url = f"{settings.FRONTEND_URL}/reset-password?token={user.password_reset_token}"
@@ -71,11 +86,13 @@ class ResetPasswordMail(TemplatedMail):
             params=params,
         )
 
-    def dispatch(self):
+    def dispatch(self) -> None:
         self._dispatch_celery(self.user.email)
 
 
 class ConfirmationMail(TemplatedMail):
+    """Email verification link for new user registration."""
+
     def __init__(self, user) -> None:
         self.user = user
         confirm_url = f"{settings.FRONTEND_URL}/confirm-email?token={user.email_confirmation_token}"
@@ -89,11 +106,13 @@ class ConfirmationMail(TemplatedMail):
             params=params,
         )
 
-    def dispatch(self):
+    def dispatch(self) -> None:
         self._dispatch_celery(self.user.email)
 
 
 class AccessRequestMail(TemplatedMail):
+    """Notifies an entity owner that someone requested access to an entry."""
+
     def __init__(self, user, requester, entry) -> None:
         self.recipient = user
         self.requester = requester
@@ -110,11 +129,13 @@ class AccessRequestMail(TemplatedMail):
             params=params,
         )
 
-    def dispatch(self):
+    def dispatch(self) -> None:
         self._dispatch_celery(self.recipient.email)
 
 
 class AccessGrantedMail(TemplatedMail):
+    """Notifies a requester that their access request was approved."""
+
     def __init__(self, user, entry) -> None:
         self.recipient = user
         self.entry = entry
@@ -129,11 +150,13 @@ class AccessGrantedMail(TemplatedMail):
             params=params,
         )
 
-    def dispatch(self):
+    def dispatch(self) -> None:
         self._dispatch_celery(self.recipient.email)
 
 
 class NewUserNotificationMail(TemplatedMail):
+    """Notifies admins when a new user registers and awaits activation."""
+
     def __init__(self, user, new_user) -> None:
         self.user = user
         activate_url = f"{settings.FRONTEND_URL}/account/{new_user.id}"
@@ -148,11 +171,13 @@ class NewUserNotificationMail(TemplatedMail):
             params=params,
         )
 
-    def dispatch(self):
+    def dispatch(self) -> None:
         self._dispatch_celery(self.user.email)
 
 
 class ReportReadyMail(TemplatedMail):
+    """Notifies a user when their published report is ready for download."""
+
     def __init__(self, user, published_report) -> None:
         self.user = user
         self.published_report = published_report
@@ -167,15 +192,16 @@ class ReportReadyMail(TemplatedMail):
             params=params,
         )
 
-    def dispatch(self):
+    def dispatch(self) -> None:
         self._dispatch_celery(self.user.email)
 
 
 class ReportErrorMail(TemplatedMail):
+    """Notifies a user when report publication fails."""
+
     def __init__(self, user, published_report, error_message=None) -> None:
         self.user = user
         self.published_report = published_report
-        self.error_message = error_message
         params = {
             "user": user,
             "report": published_report,
@@ -187,11 +213,13 @@ class ReportErrorMail(TemplatedMail):
             params=params,
         )
 
-    def dispatch(self):
+    def dispatch(self) -> None:
         self._dispatch_celery(self.user.email)
 
 
 class EnrichmentReadyMail(TemplatedMail):
+    """Notifies a user when their enrichment request has completed."""
+
     def __init__(self, user, enrichment_request) -> None:
         self.user = user
         self.enrichment_request = enrichment_request
@@ -206,15 +234,16 @@ class EnrichmentReadyMail(TemplatedMail):
             params=params,
         )
 
-    def dispatch(self):
+    def dispatch(self) -> None:
         self._dispatch_celery(self.user.email)
 
 
 class EnrichmentErrorMail(TemplatedMail):
+    """Notifies a user when enrichment processing fails."""
+
     def __init__(self, user, enrichment_request, error_message=None) -> None:
         self.user = user
         self.enrichment_request = enrichment_request
-        self.error_message = error_message
         params = {
             "user": user,
             "enrichment": enrichment_request,
@@ -226,5 +255,5 @@ class EnrichmentErrorMail(TemplatedMail):
             params=params,
         )
 
-    def dispatch(self):
+    def dispatch(self) -> None:
         self._dispatch_celery(self.user.email)

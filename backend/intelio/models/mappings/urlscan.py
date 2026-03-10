@@ -1,11 +1,12 @@
-from django.db import models
 from collections import defaultdict
+
+from django.db import models
+
 from ..base import ClassMapping
 
 
 class URLScanMapping(ClassMapping):
-    """
-    Maps URLScan observable types to CRADLE entry classes.
+    """Maps URLScan observable types to CRADLE entry classes.
 
     URLScan returns various observable types in their scan results.
     This mapping allows CRADLE to automatically convert URLScan observables
@@ -35,11 +36,10 @@ class URLScanMapping(ClassMapping):
 
     @classmethod
     def get_typemapping_rev(cls):
-        """
-        Returns a dictionary mapping URLScan observable types to EntryClass objects.
+        """Returns a dictionary mapping URLScan observable types to EntryClass objects.
 
         Returns:
-            dict: {observable_type: EntryClass}
+            dict: Mapping of observable_type to EntryClass.
         """
         typemapping = defaultdict(lambda: None)
 

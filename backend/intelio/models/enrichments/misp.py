@@ -1,20 +1,23 @@
 # Ported from IntelOwl: https://github.com/intelowlproject/IntelOwl
 import datetime
+import logging
 from typing import Optional
+
+import pymisp
 from django.db import models
-from entries.models import Entry, Relation
+from django.utils import timezone
+
 from entries.enums import RelationReason
+from entries.models import Entry, Relation
+
 from ..base import BaseEnricher
 from ..mappings.misp import MISPMapping
-import logging
-import pymisp
 
 logger = logging.getLogger(__name__)
 
 
 class MISPEnricher(BaseEnricher):
-    """
-    Enriches observables with MISP (Malware Information Sharing Platform) data.
+    """Enriches observables with MISP (Malware Information Sharing Platform) data.
 
     MISP is an open-source threat intelligence platform for sharing, storing and
     correlating Indicators of Compromise (IoCs). This enricher queries MISP for
@@ -122,7 +125,8 @@ class MISPEnricher(BaseEnricher):
             self.request._append_warning(
                 "No MISP type mappings configured. "
                 "Type filtering and artifact extraction will be disabled. "
-                "Configure MISPMapping in Django admin to enable these features."
+                "Configure MISPMapping in Django admin to enable these features.",
+                self.name,
             )
 
         return None
@@ -146,7 +150,7 @@ class MISPEnricher(BaseEnricher):
                 timeout=timeout,
             )
         except Exception as e:
-            self.request._append_warning(f"Failed to initialize MISP client: {str(e)}")
+            self.request._append_warning(f"Failed to initialize MISP client: {str(e)}", self.name)
             return
 
         enrichment_entry = self.request.entry
@@ -163,7 +167,7 @@ class MISPEnricher(BaseEnricher):
                 if isinstance(result_search, dict):
                     errors = result_search.get("errors", [])
                     if errors:
-                        self.request._append_warning(f"MISP search errors for {entry.name}: {errors}")
+                        self.request._append_warning(f"MISP search errors for {entry.name}: {errors}", self.name)
                         continue
 
                 # Create relation with results
@@ -189,7 +193,7 @@ class MISPEnricher(BaseEnricher):
                     self._extract_artifacts_from_events(entry, result_search)
 
             except Exception as e:
-                self.request._append_warning(f"MISP query failed for {entry.name}: {str(e)}")
+                self.request._append_warning(f"MISP query failed for {entry.name}: {str(e)}", self.name)
 
     def _build_search_params(self, entry: Entry) -> dict:
         """Build MISP search parameters based on settings and entry."""
@@ -216,7 +220,7 @@ class MISPEnricher(BaseEnricher):
         # Time filter
         from_days = self.settings.get("from_days", 0)
         if from_days > 0:
-            now = datetime.datetime.now()
+            now = timezone.now()
             date_from = now - datetime.timedelta(days=from_days)
             params["date_from"] = date_from.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -287,5 +291,6 @@ class MISPEnricher(BaseEnricher):
             self.request._append_warning(
                 f"Skipped {len(unmapped_types)} MISP attribute type(s) without mappings: "
                 f"{', '.join(sorted(unmapped_types))}. "
-                f"Configure MISPMapping in Django admin to extract these artifacts."
+                f"Configure MISPMapping in Django admin to extract these artifacts.",
+                self.name,
             )

@@ -23,8 +23,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { $api, fetchClient } from '@services/openapi/client';
+import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
@@ -93,7 +94,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
 
     const updateEntityMutation = useMutation({
         mutationFn: async (payload: any) => {
-            const { data, error, response } = await fetchClient.POST(
+            const { data, error, response } = await fetchClient.PATCH(
                 '/entries/entities/{entity_id}/',
                 {
                     params: { path: { entity_id: Number(id) } },
@@ -140,21 +141,18 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         }
     };
 
-    const { data: entryClassesData } = $api.useQuery(
-        'get',
-        '/entries/entry_classes/',
-        { params: { query: { show_count: true } } },
-        {
-            refetchOnWindowFocus: false,
-            meta: {
-                showErrorToast: false,
-                suppressNotification: true,
-            },
+    const { data: entryClassesData } = useQuery({
+        queryKey: ['entry_classes', 'entity-form', 'show_count'],
+        queryFn: () => fetchAllEntryClasses({ show_count: true }),
+        refetchOnWindowFocus: false,
+        meta: {
+            showErrorToast: false,
+            suppressNotification: true,
         },
-    );
+    });
 
     const subtypeOptions = useMemo<SubtypeOption[]>(() => {
-        const results = entryClassesData?.results ?? [];
+        const results = entryClassesData ?? [];
         return results
             .filter((entry: any) => entry.type === 'entity')
             .map((c: any) => ({

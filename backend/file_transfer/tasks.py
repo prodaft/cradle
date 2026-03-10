@@ -1,3 +1,9 @@
+"""Celery tasks for file processing.
+
+process_file_task: compute hashes, mimetype; link files to notes.
+reprocess_all_files_task: reprocess all files for metadata fixes.
+"""
+
 import hashlib
 import logging
 
@@ -5,23 +11,17 @@ from celery import shared_task
 from django.db import transaction
 
 from file_transfer.models import FileReference
-from file_transfer.storage import FileTransferStorage
+from file_transfer.s3_utils import get_file_transfer_storage
 from management.settings import cradle_settings
 
 logger = logging.getLogger("django.request")
 
 
-def get_storage():
-    """Get the file transfer storage instance."""
-    return FileTransferStorage()
-
-
 @shared_task
 def reprocess_all_files_task():
-    """
-    Reprocess all files in the system to ensure they have the correct metadata.
-    This task is useful for fixing issues with file metadata that may have been
-    incorrectly set during initial processing.
+    """Reprocess all files to ensure correct metadata.
+
+    Useful for fixing metadata incorrectly set during initial processing.
     """
     for file_ref in FileReference.objects.all():
         try:
@@ -32,8 +32,8 @@ def reprocess_all_files_task():
 
 @shared_task
 def process_file_task(file_id):
-    """
-    Process a file to calculate hashes, mimetype, and file size.
+    """Process a file to calculate hashes, mimetype, and file size.
+
     Uses django-storages to access file content.
     """
     import magic
@@ -45,7 +45,7 @@ def process_file_task(file_id):
         logger.error(f"File reference {file_id} has no file attached")
         return
 
-    storage = get_storage()
+    storage = get_file_transfer_storage(ensure_bucket=False)
 
     # Fetch the file size if it is not set
     if file_ref.file_size is None:
@@ -106,33 +106,3 @@ def process_file_task(file_id):
         from notes.tasks import link_files_task
 
         transaction.on_commit(lambda: link_files_task.apply_async(args=(str(file_ref.note.id),)))
-
-
-@shared_task
-def cleanup_expired_upload(pending_upload_id: str):
-    """
-    Clean up an expired pending upload.
-
-    Deprecated: This task delegates to the generic cleanup task.
-    Use file_transfer.uploads.tasks.cleanup_expired_upload_generic instead.
-    """
-    from .uploads.tasks import cleanup_expired_upload_generic
-
-    cleanup_expired_upload_generic(
-        pending_upload_id,
-        "file_transfer.PendingUpload",
-        FileTransferStorage.bucket_name,
-    )
-
-
-@shared_task
-def cleanup_expired_uploads():
-    """
-    Periodic task to clean up all expired pending uploads.
-
-    Deprecated: This task delegates to the generic cleanup task.
-    Use file_transfer.uploads.tasks.cleanup_all_expired_uploads instead.
-    """
-    from .uploads.tasks import cleanup_all_expired_uploads
-
-    cleanup_all_expired_uploads()

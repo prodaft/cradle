@@ -23,6 +23,7 @@ import { Switch } from '@/components/ui/switch';
 import { SelectOption } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { fetchClient } from '@services/openapi/client';
+import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { startCase } from 'lodash';
 import { useEffect, useState } from 'react';
@@ -104,12 +105,9 @@ export default function EnrichmentSettingsForm({
 }: EnrichmentSettingsFormProps) {
     const fetchEntryClassesMutation = useMutation({
         mutationFn: async (q: string) => {
-            const { data, error, response } = await fetchClient.GET(
-                '/entries/entry_classes/',
-                { params: { query: { search: q || undefined } } },
-            );
-            if (error) throw { response, error };
-            const results = data?.results ?? [];
+            const results = await fetchAllEntryClasses({
+                search: q || undefined,
+            });
             return results.map((entry) => ({
                 value: entry.subtype,
                 label: entry.subtype,

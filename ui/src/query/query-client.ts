@@ -4,6 +4,7 @@
  */
 
 import { SessionExpiredException } from '@/components/domain/auth/auth-exceptions';
+import { getDisplayMessage, getSuccessMessage, parseAPIError } from '@/utils/api';
 import {
     MutationCache,
     QueryCache,
@@ -11,7 +12,6 @@ import {
     QueryKey,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getSuccessMessage, parseAPIError } from 'src/utils/api';
 
 export type InvalidateTarget = { queryKey: QueryKey };
 
@@ -49,17 +49,31 @@ function isAbortError(err: unknown) {
     return err instanceof DOMException && err.name === 'AbortError';
 }
 
+function isAuthError(err: unknown): boolean {
+    if (err instanceof SessionExpiredException) return true;
+    if (err && typeof err === 'object') {
+        const o = err as Record<string, unknown>;
+        return (
+            o.code === 'UNAUTHENTICATED' ||
+            o.code === 'SESSION_EXPIRED' ||
+            o.status === 401
+        );
+    }
+    return false;
+}
+
 async function handleErrorCommon(error: unknown) {
-    // your existing special-case
     if (error instanceof SessionExpiredException) {
         triggerSessionExpiredOnce();
         return { kind: 'sessionExpired' as const };
     }
 
     const parsed = await parseAPIError(error);
-    const ignore =
-        parsed.code === 'UNAUTHENTICATED' || parsed.code === 'SESSION_EXPIRED';
-    return { kind: 'parsed' as const, parsed, ignore };
+    if (parsed.code === 'UNAUTHENTICATED' || parsed.code === 'SESSION_EXPIRED') {
+        triggerSessionExpiredOnce();
+        return { kind: 'sessionExpired' as const };
+    }
+    return { kind: 'parsed' as const, parsed, ignore: false };
 }
 
 export const queryClient = new QueryClient({
@@ -67,7 +81,7 @@ export const queryClient = new QueryClient({
         queries: {
             staleTime: 30 * 1000,
             gcTime: 5 * 60 * 1000,
-            retry: 3,
+            retry: (failureCount, error) => !isAuthError(error) && failureCount < 3,
             retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
             refetchOnWindowFocus: true,
             refetchOnReconnect: true,
@@ -75,7 +89,7 @@ export const queryClient = new QueryClient({
             throwOnError: false,
         },
         mutations: {
-            retry: 1,
+            retry: 0,
             throwOnError: false,
         },
     },
@@ -94,9 +108,12 @@ export const queryClient = new QueryClient({
 
                     // Queries: opt-in toast (prevents refetch spam)
                     if (meta.showErrorToast) {
-                        toast.error(meta.errorMessage ?? res.parsed.detail, {
-                            duration: meta.duration ?? 5000,
-                        });
+                        toast.error(
+                            meta.errorMessage ?? getDisplayMessage(res.parsed),
+                            {
+                                duration: meta.duration ?? 5000,
+                            },
+                        );
                     }
                 } catch {
                     toast.error('An error occurred');
@@ -131,9 +148,12 @@ export const queryClient = new QueryClient({
                     if (res.ignore) return;
 
                     if (!meta.suppressNotification) {
-                        toast.error(meta.errorMessage ?? res.parsed.detail, {
-                            duration: meta.duration ?? 5000,
-                        });
+                        toast.error(
+                            meta.errorMessage ?? getDisplayMessage(res.parsed),
+                            {
+                                duration: meta.duration ?? 5000,
+                            },
+                        );
                     }
                 } catch {
                     if (!meta.suppressNotification) {

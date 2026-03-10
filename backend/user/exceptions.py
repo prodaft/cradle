@@ -1,10 +1,12 @@
-from typing import List
+"""User app exceptions and error codes."""
+
 from rest_framework import status
-from core.exceptions import ErrorCode, CradleAPIException
+
+from core.exceptions import CradleAPIException, ErrorCode
 
 
 class UserErrorCodes(ErrorCode):
-    """Error codes for user operations"""
+    """Error codes for user operations."""
 
     DUPLICATE_USER = (status.HTTP_409_CONFLICT, "Duplicate User", "duplicate-user")
     INVALID_PASSWORD = (
@@ -74,103 +76,114 @@ class UserErrorCodes(ErrorCode):
         "External Identity Conflict",
         "external-identity-conflict",
     )
+    SESSION_NOT_FOUND = (
+        status.HTTP_404_NOT_FOUND,
+        "Session Not Found",
+        "session-not-found",
+    )
 
 
 class DuplicateUserException(CradleAPIException):
-    """Exception raised when a user with the same username already exists"""
+    """Exception raised when a user with the same username already exists."""
 
     error_code = UserErrorCodes.DUPLICATE_USER
 
 
 class InvalidPasswordException(CradleAPIException):
-    """Exception raised when password validation fails"""
+    """Exception raised when password validation fails."""
 
     error_code = UserErrorCodes.INVALID_PASSWORD
 
-    def __init__(self, reason: List[str], *args, **kwargs) -> None:
-        detail = "The password is invalid:\n-" + "\n-".join(reason)
+    def __init__(self, reason: list[str], *args, **kwargs) -> None:
+        detail = "The password is invalid:\n- " + "\n- ".join(reason) if reason else "The password is invalid."
         super().__init__(detail=detail, *args, **kwargs)
 
 
 class DisallowedActionException(CradleAPIException):
-    """Exception raised when a user attempts a disallowed action"""
+    """Exception raised when a user attempts a disallowed action."""
 
     error_code = UserErrorCodes.DISALLOWED_ACTION
 
 
 class UserNotFoundException(CradleAPIException):
-    """Exception raised when a user is not found"""
+    """Exception raised when a user is not found."""
 
     error_code = UserErrorCodes.USER_NOT_FOUND
 
 
 class EmailNotConfirmedException(CradleAPIException):
-    """Exception raised when user's email is not confirmed"""
+    """Exception raised when user's email is not confirmed."""
 
     error_code = UserErrorCodes.EMAIL_NOT_CONFIRMED
 
 
 class AccountNotActivatedException(CradleAPIException):
-    """Exception raised when user's account is not activated"""
+    """Exception raised when user's account is not activated."""
 
     error_code = UserErrorCodes.ACCOUNT_NOT_ACTIVATED
 
 
 class TwoFactorRequiredException(CradleAPIException):
-    """Exception raised when 2FA token is required but not provided"""
+    """Exception raised when 2FA token is required but not provided."""
 
     error_code = UserErrorCodes.TWO_FACTOR_REQUIRED
 
 
 class InvalidTwoFactorTokenException(CradleAPIException):
-    """Exception raised when 2FA token is invalid"""
+    """Exception raised when 2FA token is invalid."""
 
     error_code = UserErrorCodes.INVALID_TWO_FACTOR_TOKEN
 
 
 class TwoFactorAlreadyEnabledException(CradleAPIException):
-    """Exception raised when 2FA is already enabled"""
+    """Exception raised when 2FA is already enabled."""
 
     error_code = UserErrorCodes.TWO_FACTOR_ALREADY_ENABLED
 
 
 class TwoFactorNotEnabledException(CradleAPIException):
-    """Exception raised when 2FA is not enabled"""
+    """Exception raised when 2FA is not enabled."""
 
     error_code = UserErrorCodes.TWO_FACTOR_NOT_ENABLED
 
 
 class RegistrationDisabledException(CradleAPIException):
-    """Exception raised when user registration is disabled"""
+    """Exception raised when user registration is disabled."""
 
     error_code = UserErrorCodes.REGISTRATION_DISABLED
 
 
 class UserAlreadyExistsException(CradleAPIException):
-    """Exception raised when a user with the same email already exists"""
+    """Exception raised when a user with the same email already exists."""
 
     error_code = UserErrorCodes.USER_ALREADY_EXISTS
 
 
 class IncorrectOldPasswordException(CradleAPIException):
-    """Exception raised when the old password is incorrect during password change"""
+    """Exception raised when the old password is incorrect during password change."""
 
     error_code = UserErrorCodes.INCORRECT_OLD_PASSWORD
 
 
 class UnknownActionException(CradleAPIException):
-    """Exception raised when an unknown action is requested"""
+    """Exception raised when an unknown action is requested."""
 
     error_code = UserErrorCodes.UNKNOWN_ACTION
 
 
 class EmailAlreadyConfirmedException(CradleAPIException):
-    """Exception raised when email is already confirmed"""
+    """Exception raised when email is already confirmed."""
 
     error_code = UserErrorCodes.EMAIL_ALREADY_CONFIRMED
 
 
 class ExternalIdentityConflictException(CradleAPIException):
-    """Exception raised when external identity is already linked elsewhere"""
+    """Exception raised when external identity is already linked elsewhere."""
 
     error_code = UserErrorCodes.EXTERNAL_IDENTITY_CONFLICT
+
+
+class SessionNotFoundException(CradleAPIException):
+    """Exception raised when a session is not found."""
+
+    error_code = UserErrorCodes.SESSION_NOT_FOUND

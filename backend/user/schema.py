@@ -1,8 +1,12 @@
+"""OpenAPI authentication scheme extensions for DRF Spectacular."""
+
 from django.conf import settings
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 
 
 class CookieJWTAuthenticationScheme(OpenApiAuthenticationExtension):
+    """OpenAPI scheme for JWT in HttpOnly cookie authentication."""
+
     target_class = "user.authentication.CookieJWTAuthentication"
     name = "CookieJWT"
 
@@ -15,11 +19,13 @@ class CookieJWTAuthenticationScheme(OpenApiAuthenticationExtension):
             "type": "apiKey",
             "in": "cookie",
             "name": cookie_name,
-            "description": "JWT access token in HttpOnly cookie. Obtain via /api/auth/login/.",
+            "description": "JWT access token in HttpOnly cookie. Obtain via POST /auth/login/.",
         }
 
 
 class APIKeyAuthenticationScheme(OpenApiAuthenticationExtension):
+    """OpenAPI scheme for Api-Key header authentication."""
+
     target_class = "user.authentication.APIKeyAuthentication"
     name = "ApiKey"
 
@@ -31,5 +37,5 @@ class APIKeyAuthenticationScheme(OpenApiAuthenticationExtension):
             "type": "apiKey",
             "in": "header",
             "name": "Api-Key",
-            "description": "API key authentication. The value must be prefixed with 'Api-Key '.",
+            "description": "API key in header. Obtain via POST /users/me/api-key/ when authenticated.",
         }

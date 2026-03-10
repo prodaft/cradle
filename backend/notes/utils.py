@@ -1,53 +1,29 @@
+"""Utilities for notes: link extraction and access vector calculation."""
+
 import re
 from collections.abc import Iterable
-from typing import Dict, NamedTuple
+from typing import Iterator, NamedTuple
 
-from django.db.models.query import QuerySet
-
-from entries.enums import EntryType
 from entries.models import Entry
 
-from .models import Note
-
-LINK_REGEX = r"\[\[(?P<cl_type>[^:\|\]]+?):(?P<cl_value>(?:\\[\[\]\|]|[^\[\]\|])+?)(?:\|(?P<cl_alias>(?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"  # noqa: E501 to avoid splitting the regex on two lines
+from .markdown.utils import LINK_REGEX
 
 
-class Link(NamedTuple):
+class CradleLinkRef(NamedTuple):
+    """Tuple of (entry_class subtype, entry name) from a cradle link."""
+
     class_subtype: str
     name: str
 
 
-class PublishUtils:
-    @staticmethod
-    def get_report(notes: QuerySet[Note]) -> Dict[str, QuerySet]:
-        """Given a QuerySet of notes, construct a dictionary, which
-        provides fields for related entities and artifacts.
-
-        Args:
-            notes (QuerySet[Note]): The list of notes.
-
-        Returns:
-            Dict[str, QuerySet]: The dictionary, which contains related
-            entities and artifacts.
-
-        """
-        entries = Note.objects.get_entries_from_notes(notes)
-
-        return {
-            "entities": entries.filter(entry_class__type=EntryType.ENTITY),
-            "artifacts": entries.filter(entry_class__type=EntryType.ARTIFACT),
-            "notes": notes,
-        }
-
-
-def extract_links(s: str) -> list[Link]:
-    references = re.findall(LINK_REGEX, s)
-
-    for r in references:
-        yield Link(r[0], r[1])
+def extract_links(s: str) -> Iterator[CradleLinkRef]:
+    """Extract cradle links [[type:value|alias]] from text. Yields (class_subtype, name) tuples."""
+    for match in re.finditer(LINK_REGEX, s):
+        yield CradleLinkRef(match.group("cl_type"), match.group("cl_value"))
 
 
 def calculate_acvec(entries: Iterable[Entry]):
+    """Compute access vector bitmask from entity entries."""
     acvec = 1
 
     for e in entries:

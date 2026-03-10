@@ -1,29 +1,23 @@
+"""Create initial admin user when no users exist."""
+
 import os
 import random
 import string
 
 from django.core.management.base import BaseCommand
-from user.models import CradleUser, DEFAULT_THEME
+
+from ...models import CradleUser
 
 
 class Command(BaseCommand):
+    """Create admin user from env vars (CRADLE_ADMIN_USER, CRADLE_ADMIN_PASSWORD, CRADLE_ADMIN_EMAIL)."""
+
     def handle(self, *args, **options):
-        """Creates an admin user if no users exist.
+        """Create an admin user if no users exist.
 
-        If there are no existing users in the CradleUser model, this method
-        creates an admin user with a username and password fetched from
-        environment variables or defaults. The default username for the
-        admin is 'admin' and the password is randomly generated.
-
-        It prints the credentials to the console.
-
-        To run this command use:
-
-        ```python manage.py initadmin```
-
-        Args:
-            *args: Variable length argument list.
-            **options: Arbitrary keyword arguments.
+        Uses CRADLE_ADMIN_USER, CRADLE_ADMIN_PASSWORD, CRADLE_ADMIN_EMAIL env vars
+        (defaults: admin, random 20-char password, admin@prodaft.com).
+        Run: python manage.py initadmin
         """
         if CradleUser.objects.count() == 0:
             username = os.environ.get("CRADLE_ADMIN_USER", "admin")
@@ -32,20 +26,14 @@ class Command(BaseCommand):
 
             password = os.environ.get("CRADLE_ADMIN_PASSWORD", "".join(random.choices(alphabet, k=20)))
             email = os.environ.get("CRADLE_ADMIN_EMAIL", "admin@prodaft.com")
-            print("Creating admin account: %s" % username)
-            print("With password %s" % password)
-            print("And email %s" % email)
-            admin = CradleUser.objects.create_superuser(
+            self.stdout.write(f"Creating admin account: {username}")
+            self.stdout.write(f"With password {password}")
+            self.stdout.write(f"And email {email}")
+            CradleUser.objects.create_superuser(
                 username=username,
                 password=password,
                 email=email,
                 email_confirmed=True,
-                role="admin",
-                is_active=True,
             )
-            admin.is_active = True
-            admin.is_admin = True
-            admin.theme = DEFAULT_THEME
-            admin.save()
         else:
-            print("Admin accounts can only be initialized if no Accounts exist")
+            self.stdout.write("Admin can only be initialized when no users exist")

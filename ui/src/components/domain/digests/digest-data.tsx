@@ -149,8 +149,8 @@ export default function DigestData() {
         },
     });
 
-    const digests = (digestsData as any)?.results ?? [];
-    const totalPages = (digestsData as any)?.total_pages ?? 1;
+    const digests = digestsData?.results ?? [];
+    const totalPages = digestsData?.total_pages ?? 1;
 
     // Initialize filters from URL parameters
     useEffect(() => {

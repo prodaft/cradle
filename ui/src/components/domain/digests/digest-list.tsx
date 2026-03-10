@@ -14,7 +14,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { StateSetter } from '@/types';
-import { parseAPIError } from '@/utils/api';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import { DateRangeFilter } from '@components/base/list-view/types';
@@ -454,10 +454,10 @@ function DigestList({
 
     const executeBulkDelete = async (selectedIds: string[]) => {
         try {
-            const deletePromises = selectedIds.map(async (id) => {
+            const deletePromises = selectedIds.map(async (digestId) => {
                 const { error, response } = await fetchClient.DELETE(
-                    '/intelio/digest/',
-                    { params: { query: { id } } },
+                    '/intelio/digest/{id}/',
+                    { params: { path: { id: digestId } } },
                 );
                 if (error) throw { response, error };
             });
@@ -476,7 +476,7 @@ function DigestList({
                     (r) => r.status === 'rejected',
                 ) as PromiseRejectedResult;
                 const parsed = await parseAPIError(firstRejected.reason);
-                toast.error(parsed.detail);
+                toast.error(getDisplayMessage(parsed));
             } else {
                 toast.warning(
                     `Deleted ${successes} digest${successes > 1 ? 's' : ''}, ${failures} failed`,
@@ -488,7 +488,7 @@ function DigestList({
             if (onDigestDelete) onDigestDelete();
         } catch (error) {
             const parsed = await parseAPIError(error);
-            toast.error(parsed.detail);
+            toast.error(getDisplayMessage(parsed));
         }
     };
 

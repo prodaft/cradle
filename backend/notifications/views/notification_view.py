@@ -1,5 +1,9 @@
-from typing import cast
+"""Notification API views: list, detail, and unread count."""
 
+from typing import cast
+from uuid import UUID
+
+from django.db import transaction
 from django.db.models import Case, Q, When
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -15,14 +19,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from core.exceptions import BadRequestException
-from core.openapi import get_common_error_responses
+from core.exceptions import CoreErrorCodes
+from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
-from notifications.exceptions import InvalidPageSizeException, NotificationNotFoundException
 from user.models import CradleUser
 
+from ..exceptions import NotificationNotFoundException, NotificationsErrorCodes
 from ..models import MessageNotification
 from ..serializers import (
+    AccessGrantedNotificationSerializer,
     AccessRequestNotificationSerializer,
     EnrichmentCompleteNotificationSerializer,
     EnrichmentErrorNotificationSerializer,
@@ -36,8 +41,17 @@ from ..serializers import (
 )
 
 
+def _get_notification_or_404(user: CradleUser, notification_id: UUID) -> MessageNotification:
+    """Fetch notification by id and user, or raise NotificationNotFoundException."""
+    try:
+        return MessageNotification.objects.get(id=notification_id, user=user)
+    except MessageNotification.DoesNotExist:
+        raise NotificationNotFoundException(detail="The notification does not exist.")
+
+
 @extend_schema_view(
     get=extend_schema(
+        operation_id="notifications_list",
         summary="Fetch Notifications",
         description="Retrieve paginated notifications for the authenticated user, sorted with unread notifications first, then by newest to oldest.",  # noqa: E501
         parameters=[
@@ -66,6 +80,7 @@ from ..serializers import (
                         component_name="Notification",
                         serializers=[
                             MessageNotificationSerializer,
+                            AccessGrantedNotificationSerializer,
                             NewUserNotificationSerializer,
                             AccessRequestNotificationSerializer,
                             ReportRenderNotificationSerializer,
@@ -78,26 +93,26 @@ from ..serializers import (
                     ),
                 },
             ),
+            **get_error_responses(
+                CoreErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
+            ),
             **get_common_error_responses(),
         },
     ),
 )
 class NotificationList(APIView):
+    """List paginated notifications for the authenticated user."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
 
     def get(self, request: Request) -> Response:
-        try:
-            page_size = int(request.query_params.get("page_size", 10))
-        except ValueError:
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
-
-        if page_size > 200:
-            raise InvalidPageSizeException(detail="page_size cannot be greater than 200.")
-
+        """Return paginated notifications, unread first, and mark them as read."""
+        user = cast(CradleUser, request.user)
         notifications = (
-            MessageNotification.objects.filter(user=cast(CradleUser, request.user))
+            MessageNotification.objects.filter(user=user)
             .select_subclasses()  # type: ignore
             .annotate(
                 is_unread_status=Case(
@@ -109,82 +124,66 @@ class NotificationList(APIView):
         )
 
         # Mark notifications as read (update only unread ones)
-        MessageNotification.objects.filter(user=cast(CradleUser, request.user), is_unread=True).update(is_unread=False)
+        MessageNotification.objects.filter(user=user, is_unread=True).update(is_unread=False)
 
-        has_pagination = "page" in request.query_params or "page_size" in request.query_params
-        if has_pagination:
-            paginator = TotalPagesPagination(page_size=page_size)
-            paginated_notifications = paginator.paginate_queryset(notifications, request)
-            if paginated_notifications is not None:
-                serializer = NotificationSerializer(paginated_notifications, many=True)
-                return paginator.get_paginated_response(serializer.data)
-
-        serializer = NotificationSerializer(notifications, many=True)
-        return Response(serializer.data)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(notifications, request)
+        serializer = NotificationSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class NotificationDetail(APIView):
+    """Update a single notification (e.g. mark as unread)."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
+        operation_id="notifications_update",
         summary="Update Notification",
         description="Update a notification's read/unread status by providing its ID.",  # noqa: E501
         request=UpdateNotificationSerializer,
         responses={
-            200: {
-                "type": "string",
-                "description": "Notification updated successfully",
-            },
-            400: {
-                "type": "string",
-                "description": "Invalid request body",
-            },
-            404: {
-                "type": "string",
-                "description": "Notification not found",
-            },
-            401: {
-                "description": "Unauthorized",
-            },
+            204: {"description": "Notification updated successfully"},
+            **get_error_responses(
+                NotificationsErrorCodes.NOTIFICATION_NOT_FOUND,
+                include_validation_error=True,
+            ),
+            **get_common_error_responses(),
         },
     )
-    def put(self, request: Request, notification_id: int) -> Response:
-        try:
-            notification: MessageNotification = MessageNotification.objects.get(id=notification_id, user=request.user)
-        except MessageNotification.DoesNotExist:
-            raise NotificationNotFoundException(detail="The notification does not exist.")
-
+    def put(self, request: Request, notification_id: UUID) -> Response:
+        """Update notification read/unread status."""
+        notification = _get_notification_or_404(cast(CradleUser, request.user), notification_id)
         serializer = UpdateNotificationSerializer(notification, data=request.data)
-        if serializer.is_valid():
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
             serializer.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        raise BadRequestException(detail="Request body is invalid.")
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="notifications_unread_count_retrieve",
         summary="Unread Notifications Count",
         description="Retrieve the number of unread notifications for the authenticated user.",
         responses={
             200: UnreadNotificationsSerializer,
-            401: {"description": "Unauthorized"},
+            **get_common_error_responses(),
         },
     )
 )
 class NotificationUnread(APIView):
+    """Return the count of unread notifications."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        response_data = {}
-        response_data["count"] = (
-            MessageNotification.objects.filter(user=request.user)
+        """Return the number of unread notifications for the user."""
+        count = (
+            MessageNotification.objects.filter(user=cast(CradleUser, request.user))
             .filter(Q(is_marked_unread=True) | Q(is_unread=True))
             .count()
         )
-
-        return Response(
-            UnreadNotificationsSerializer(response_data).data,
-        )
+        return Response(UnreadNotificationsSerializer({"count": count}).data)

@@ -1,6 +1,9 @@
+"""IntelIO Django app: threat intelligence ingestion, enrichment, and mappings."""
+
 from django.apps import AppConfig
 
 
 class IntelIOConfig(AppConfig):
-    default_auto_field = "django.db.models.BigAutoField"
+    """App config for intelio: digests, enrichers, and external type mappings."""
+
     name = "intelio"

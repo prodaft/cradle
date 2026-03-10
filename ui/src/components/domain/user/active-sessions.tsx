@@ -16,9 +16,10 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useAuthActions } from '@/hooks/auth/use-auth';
-import { parseAPIError } from '@/utils/api';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { TrashIcon } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
@@ -85,22 +86,28 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         );
     }, [sorting]);
 
-    // Query for sessions
+    // Query for sessions (paginated)
     const sessionsInit = {
         params: {
             path: { user_id: userId },
             query: {
                 search: searchQuery || undefined,
                 order_by: orderByParam,
+                page,
+                page_size: pageSize,
             } as any,
         },
     };
-    const { data: sessionsData, isPending } = $api.useQuery(
+    const { data: sessionsResponse, isPending } = $api.useQuery(
         'get',
         '/users/{user_id}/sessions/',
         sessionsInit,
     );
-    const sessions = sessionsData ?? [];
+    type UserSession = components['schemas']['UserSession'];
+    const sessionsResponseData = sessionsResponse as
+        | { results?: UserSession[]; total_pages?: number; count?: number }
+        | undefined;
+    const sessions: UserSession[] = sessionsResponseData?.results ?? [];
 
     const selectedSessionIds = useMemo(
         () =>
@@ -181,7 +188,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                         (r) => r.status === 'rejected',
                     ) as PromiseRejectedResult;
                     const parsed = await parseAPIError(firstRejected.reason);
-                    toast.error(parsed.detail);
+                    toast.error(getDisplayMessage(parsed));
                 } else {
                     toast.warning(
                         `Revoked ${successes} session${successes > 1 ? 's' : ''}, ${failures} failed`,
@@ -205,7 +212,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 }
             } catch (error) {
                 const parsed = await parseAPIError(error);
-                toast.error(parsed.detail);
+                toast.error(getDisplayMessage(parsed));
             }
         },
         [userId, fetchClient, sessions, queryClient, logOut, clearSelection],
@@ -232,17 +239,11 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             : deviceInfo;
     }, []);
 
-    // Calculate total pages
-    const totalPages = useMemo(() => {
-        return Math.max(1, Math.ceil(sessions.length / pageSize));
-    }, [sessions.length, pageSize]);
+    // Total pages from API (server-side pagination)
+    const totalPages = Math.max(1, sessionsResponseData?.total_pages ?? 1);
 
-    // Paginate sessions
-    const paginatedSessions = useMemo(() => {
-        const start = (page - 1) * pageSize;
-        const end = start + pageSize;
-        return sessions.slice(start, end);
-    }, [sessions, page, pageSize]);
+    // Sessions are already paginated by the API
+    const paginatedSessions = sessions;
 
     const handlePageChange = useCallback(
         (newPage: number) => {

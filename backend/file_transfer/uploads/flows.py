@@ -32,7 +32,14 @@ T = TypeVar("T", bound="BasePendingUpload")
 
 @dataclass
 class UploadConfig:
-    """Configuration for upload flow."""
+    """Configuration for presigned upload flow.
+
+    Attributes:
+        bucket_name: S3 bucket for uploads.
+        expiry_seconds: Presigned URL validity (default 5 min).
+        allow_concurrent_per_user: If False, one upload per user at a time.
+        object_key_generator: Callable(upload_id, file_name, user) -> object key.
+    """
 
     bucket_name: str
     expiry_seconds: int = 5 * 60  # 5 minutes
@@ -43,38 +50,35 @@ class UploadConfig:
 
 
 class UploadFlowCallbacks(Protocol):
-    """
-    Protocol defining callbacks for upload lifecycle events.
+    """Protocol defining callbacks for upload lifecycle events.
 
     Implementations should provide domain-specific logic for handling
     successful upload finalization.
     """
 
     def on_finalize_success(self, pending_upload: "BasePendingUpload", **kwargs) -> dict:
-        """
-        Called after upload is verified and before pending record is deleted.
+        """Called after upload is verified and before pending record is deleted.
 
         Args:
-            pending_upload: The pending upload record
-            **kwargs: Additional domain-specific parameters from finalize() call
+            pending_upload: The pending upload record.
+            **kwargs: Additional domain-specific parameters from finalize() call.
 
         Returns:
-            dict: Response data to return to client
+            dict: Response data to return to client.
         """
         ...
 
 
 class PresignedUploadFlow(Generic[T]):
-    """
-    Reusable two-phase presigned upload flow.
+    """Reusable two-phase presigned upload flow.
 
     This class encapsulates the common logic for handling S3 presigned URL uploads:
-    1. Initiate: Generate presigned URL and create pending upload record
-    2. Upload: Client uploads directly to S3 (external to this flow)
-    3. Finalize: Verify upload exists, call domain callback, cleanup
+    1. Initiate: Generate presigned URL and create pending upload record.
+    2. Upload: Client uploads directly to S3 (external to this flow).
+    3. Finalize: Verify upload exists, call domain callback, cleanup.
 
     Type Parameters:
-        T: The concrete BasePendingUpload subclass to use
+        T: The concrete BasePendingUpload subclass to use.
 
     Example:
         >>> config = UploadConfig(
@@ -97,13 +101,12 @@ class PresignedUploadFlow(Generic[T]):
         pending_model: Type[T],
         callbacks: UploadFlowCallbacks,
     ):
-        """
-        Initialize upload flow.
+        """Initialize upload flow.
 
         Args:
-            config: Upload configuration
-            pending_model: Concrete model class for pending uploads
-            callbacks: Domain-specific lifecycle callbacks
+            config: Upload configuration.
+            pending_model: Concrete model class for pending uploads.
+            callbacks: Domain-specific lifecycle callbacks.
         """
         self.config = config
         self.pending_model = pending_model
@@ -121,26 +124,25 @@ class PresignedUploadFlow(Generic[T]):
         return storage
 
     def initiate(self, user: "CradleUser", file_name: str, file_size: int) -> dict:
-        """
-        Phase 1: Generate presigned URL and create pending upload.
+        """Phase 1: Generate presigned URL and create pending upload.
 
         Args:
-            user: The user initiating the upload
-            file_name: Original filename
-            file_size: Size of file to be uploaded in bytes
+            user: The user initiating the upload.
+            file_name: Original filename.
+            file_size: Size of file to be uploaded in bytes.
 
         Returns:
             dict with keys:
-                - upload_id: UUID for this upload
-                - presigned_url: S3 presigned PUT URL
-                - object_key: S3 object key where file will be stored
-                - expires_in: Seconds until URL expires
+                - upload_id: UUID for this upload.
+                - presigned_url: S3 presigned PUT URL.
+                - object_key: S3 object key where file will be stored.
+                - expires_in: Seconds until URL expires.
 
         Raises:
             AlreadyUploadingException: If user has pending upload and
-                                        allow_concurrent_per_user is False
-            InvalidFileSizeException: If file_size is invalid (<=0 or too large)
-            QuotaExceededException: If upload would exceed user's quota
+                allow_concurrent_per_user is False.
+            InvalidFileSizeException: If file_size is invalid (<=0 or too large).
+            QuotaExceededException: If upload would exceed user's quota.
         """
         # Validate file size
         if file_size <= 0:
@@ -226,21 +228,20 @@ class PresignedUploadFlow(Generic[T]):
         }
 
     def finalize(self, upload_id: uuid.UUID, user: "CradleUser", **kwargs) -> dict:
-        """
-        Phase 2: Verify upload exists and finalize.
+        """Phase 2: Verify upload exists and finalize.
 
         Args:
-            upload_id: The upload ID from initiate()
-            user: The user finalizing the upload
-            **kwargs: Domain-specific parameters passed to callback
+            upload_id: The upload ID from initiate().
+            user: The user finalizing the upload.
+            **kwargs: Domain-specific parameters passed to callback.
 
         Returns:
-            dict: Response data from on_finalize_success callback
+            dict: Response data from on_finalize_success callback.
 
         Raises:
-            UploadNotFoundException: If pending upload not found
-            UploadExpiredException: If upload has expired
-            FileNotUploadedException: If file not found in storage
+            UploadNotFoundException: If pending upload not found.
+            UploadExpiredException: If upload has expired.
+            FileNotUploadedException: If file not found in storage.
         """
         # Get pending upload
         try:

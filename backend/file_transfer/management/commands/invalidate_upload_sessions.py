@@ -1,10 +1,10 @@
-"""
-Django management command to invalidate all open upload sessions.
+"""Django management command to invalidate all open upload sessions.
 
 This command finds all pending uploads (both file uploads and digest uploads)
 and cleans them up by deleting the S3 objects and database records.
 """
 
+from django.apps import apps
 from django.core.management.base import BaseCommand
 
 from file_transfer.models import PendingUpload
@@ -16,6 +16,7 @@ class Command(BaseCommand):
     help = "Invalidate all open upload sessions (PendingUpload and PendingDigestUpload)"
 
     def add_arguments(self, parser):
+        """Add --dry-run and --force flags."""
         parser.add_argument(
             "--dry-run",
             action="store_true",
@@ -28,6 +29,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """Invalidate all pending uploads and optionally delete their S3 objects."""
         dry_run = options["dry_run"]
         force = options["force"]
 
@@ -35,13 +37,11 @@ class Command(BaseCommand):
         file_uploads = PendingUpload.objects.all()
         file_upload_count = file_uploads.count()
 
-        # Try to import digest uploads (may not be available)
-        try:
-            from intelio.models.uploads import PendingDigestUpload
-
+        if apps.is_installed("intelio"):
+            PendingDigestUpload = apps.get_model("intelio", "PendingDigestUpload")
             digest_uploads = PendingDigestUpload.objects.all()
             digest_upload_count = digest_uploads.count()
-        except ImportError:
+        else:
             self.stdout.write(self.style.WARNING("intelio app not available - skipping digest uploads"))
             digest_uploads = []
             digest_upload_count = 0

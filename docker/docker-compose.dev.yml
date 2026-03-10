@@ -3,6 +3,8 @@ services:
     image: pgrouting/pgrouting:16-3.5-4.0
     container_name: cradle_postgres
     command: postgres -c log_statement=all
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_DB=cradle
       - POSTGRES_USER=cradle
@@ -45,6 +47,9 @@ services:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     command: server --console-address ":9001" /data
     container_name: cradle_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
     environment:
@@ -62,6 +67,8 @@ services:
   redis:
     image: redis:8-alpine
     container_name: cradle_redis
+    ports:
+      - "6379:6379"
     networks:
       default:
         ipv4_address: 192.168.31.42

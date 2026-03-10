@@ -1,3 +1,5 @@
+"""Seed entry classes, type mappings, and enrichment techniques from JSON."""
+
 import json
 from pathlib import Path
 
@@ -5,7 +7,6 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 
-from entries.models import EntryClass
 from intelio.models.base import EnricherSettings
 from intelio.models.mappings.catalyst import CatalystMapping
 from intelio.models.mappings.dns import DNSMapping
@@ -15,6 +16,7 @@ from intelio.models.mappings.mwdb import MWDBMapping
 from intelio.models.mappings.opencti import OpenCTIMapping
 from intelio.models.mappings.urlscan import URLScanMapping
 
+from ...models import EntryClass
 
 MAPPING_MODELS = {
     "catalyst": CatalystMapping,
@@ -31,6 +33,7 @@ class Command(BaseCommand):
     help = "Seed the database with entry classes and type mappings."
 
     def add_arguments(self, parser):
+        """Add --populate-existing, --overwrite, --data-file."""
         parser.add_argument(
             "--populate-existing",
             action="store_true",
@@ -63,6 +66,7 @@ class Command(BaseCommand):
             self._seed_enrichment_techniques(entry_classes, populate_existing, overwrite)
 
     def _load_seed_data(self, data_file):
+        """Load and parse JSON seed file."""
         data_path = Path(data_file)
         if not data_path.exists():
             raise CommandError(f"Seed data file not found: {data_path}")
@@ -71,13 +75,15 @@ class Command(BaseCommand):
         except json.JSONDecodeError as exc:
             raise CommandError(f"Invalid JSON in seed data file: {data_path}") from exc
 
-    def _should_populate_table(self, model, populate_existing, overwrite):
-        if populate_existing or overwrite:
+    def _should_populate_table(self, model, populate_existing):
+        """Return True if table should be populated (populate_existing or empty)."""
+        if populate_existing:
             return True
         return not model.objects.exists()
 
     def _seed_entry_classes(self, entry_classes, populate_existing, overwrite):
-        if not self._should_populate_table(EntryClass, populate_existing, overwrite):
+        """Create or update entry classes from seed data."""
+        if not self._should_populate_table(EntryClass, populate_existing):
             self.stdout.write("EntryClass table not empty; skipping entry class seed.")
             return
 
@@ -128,8 +134,9 @@ class Command(BaseCommand):
         self.stdout.write("EntryClass seed complete.")
 
     def _seed_type_mappings(self, entry_classes, populate_existing, overwrite):
+        """Seed type mappings (catalyst, dns, falcon, etc.) for entry classes."""
         for mapping_name, model in MAPPING_MODELS.items():
-            if not self._should_populate_table(model, populate_existing, overwrite):
+            if not self._should_populate_table(model, populate_existing):
                 self.stdout.write(f"{model.__name__} table not empty; skipping.")
                 continue
 
@@ -173,9 +180,11 @@ class Command(BaseCommand):
             self.stdout.write(f"{model.__name__} seed complete.")
 
     def _mapping_fields(self, model):
+        """Return mapping model field names excluding id and internal_class."""
         return [field.name for field in model._meta.fields if field.name not in {"id", "internal_class"}]
 
     def _unique_mapping_field(self, model, mapping_fields):
+        """Return the unique field name for mapping lookups."""
         for field in model._meta.fields:
             if field.name in {"id", "internal_class"}:
                 continue
@@ -186,6 +195,7 @@ class Command(BaseCommand):
         return None
 
     def _mapping_lookup(self, unique_field, mapping_fields, item_fields):
+        """Build lookup dict for mapping existence check."""
         if unique_field:
             value = item_fields.get(unique_field)
             if value is None or value == "":
@@ -194,6 +204,7 @@ class Command(BaseCommand):
         return {field: item_fields[field] for field in mapping_fields}
 
     def _normalize_mapping_item(self, model, mapping_name, mapping_fields, item, subtype):
+        """Convert mapping item (str or dict) to field dict with validation."""
         if isinstance(item, str):
             if len(mapping_fields) != 1:
                 raise CommandError(f"{mapping_name} mapping for {subtype} must be an object.")
@@ -216,9 +227,7 @@ class Command(BaseCommand):
         return item_fields
 
     def _seed_enrichment_techniques(self, entry_classes, populate_existing, overwrite):
-        """
-        Seeds EnricherSettings and associates them with EntryClasses.
-        """
+        """Seeds EnricherSettings and associates them with EntryClasses."""
         self.stdout.write("Seeding enrichment techniques...")
 
         for entry_data in entry_classes:
@@ -233,21 +242,23 @@ class Command(BaseCommand):
                 self.stdout.write(f"Skipping enrichment for {subtype}: EntryClass not found.")
                 continue
 
+            enrichers = []
             for tech_slug in techniques:
-                if populate_existing or overwrite:
+                if populate_existing:
                     enricher, _ = EnricherSettings.objects.get_or_create(
                         enricher_type=tech_slug, defaults={"enabled": False}
                     )
                 else:
                     enricher = EnricherSettings.objects.filter(enricher_type=tech_slug).first()
-
                     if not enricher:
                         continue
+                enrichers.append(enricher)
 
-                if overwrite:
-                    entry_class.enrichers.add(enricher)
-                else:
-                    if not entry_class.enrichers.filter(id=enricher.id).exists() or populate_existing:
+            if overwrite:
+                entry_class.enrichers.set(enrichers)
+            else:
+                for enricher in enrichers:
+                    if not entry_class.enrichers.filter(pk=enricher.pk).exists() or populate_existing:
                         entry_class.enrichers.add(enricher)
 
         self.stdout.write("Enrichment techniques seed complete.")

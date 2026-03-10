@@ -1,5 +1,6 @@
+"""Cradle digest tasks: file downloads for notes."""
+
 import logging
-import traceback
 
 import requests
 from celery import shared_task
@@ -7,20 +8,17 @@ from django.db import transaction
 
 from file_transfer.models import FileReference
 from file_transfer.s3_utils import put_bytes
-from file_transfer.storage import FileTransferStorage
-from intelio.models.base import BaseDigest
 from management.settings import cradle_settings
 from notes.models import Note
+
+from ..models.base import BaseDigest
 
 logger = logging.getLogger(__name__)
 
 
 @shared_task
 def download_file_for_note(note_id, file_identifier, file_url, bucket_name, digest_id):
-    """
-    Downloads a file from the given URL, stores it in Minio, and attaches
-    the resulting FileReference to the Note with the provided note_id.
-    """
+    """Download a file from the URL, store in MinIO, attach FileReference to Note."""
     try:
         digest = BaseDigest.objects.get(id=digest_id)
     except BaseDigest.DoesNotExist:
@@ -34,7 +32,6 @@ def download_file_for_note(note_id, file_identifier, file_url, bucket_name, dige
         return
 
     try:
-        print(file_url)
         r = requests.get(file_url, timeout=10)
         r.raise_for_status()  # Raise an HTTPError for bad responses
 
@@ -42,7 +39,6 @@ def download_file_for_note(note_id, file_identifier, file_url, bucket_name, dige
         content_type = r.headers.get("Content-Type", "application/octet-stream")
 
         # Store into the shared files bucket under a UUID-prefixed key.
-        bucket_name = FileTransferStorage.bucket_name
         fr = FileReference.objects.create(
             file_name=file_identifier,
             bucket_name=bucket_name,
@@ -73,7 +69,7 @@ def download_file_for_note(note_id, file_identifier, file_url, bucket_name, dige
 
     except Exception as e:
         digest._append_warning(f"Failed to download file for note {note_id}: {e}")
-        traceback.print_exc()
+        logger.exception("Failed to download file for note %s", note_id)
 
         with transaction.atomic():
             instance = BaseDigest.objects.select_for_update().get(pk=digest.pk)
@@ -81,6 +77,5 @@ def download_file_for_note(note_id, file_identifier, file_url, bucket_name, dige
             instance.save(update_fields=["summary"])
             digest = instance
 
-    print(digest.summary)
     if digest.summary["files_scheduled"] == digest.summary["files_downloaded"] + digest.summary["files_failed"]:
         digest.finalize()

@@ -93,9 +93,9 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
             },
             Step: ({ children, className, icon, ...props }) => {
                 const { variant, labelOrientation } = useStepperProvider();
-                const { current } = useStepper();
-
-                const utils = rest.utils;
+                const stepper = useStepper();
+                const current = stepper.state.current.data;
+                const utils = stepper.lookup;
                 const steps = rest.steps;
 
                 const stepIndex = utils.getIndex(props.of);
@@ -261,7 +261,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
                 );
             },
         },
-    };
+    } as Stepper.DefineProps<Steps>;
 };
 
 const Title = ({

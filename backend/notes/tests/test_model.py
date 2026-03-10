@@ -1,5 +1,6 @@
-from notes.models import Note
 from entries.models import Entry
+
+from ..models import Note
 from .utils import NotesTestCase
 
 
@@ -16,5 +17,5 @@ class DeleteNoteTest(NotesTestCase):
     def test_delete_note(self):
         self.note.delete()
 
-        with self.subTest("Note is deleted"):
-            self.assertEqual(Note.objects.count(), 0)
+        self.assertEqual(Note.objects.count(), 0)
+        self.assertEqual(Entry.objects.count(), 2)

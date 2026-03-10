@@ -176,7 +176,8 @@ export class CradleEditor {
                         .GET('/lsp/types/')
                         .then(({ data, error, response }) => {
                             if (error) throw { response, error };
-                            return data as any;
+                            const d = data as { types?: Record<string, unknown> };
+                            return (d?.types ?? d) as Record<string, unknown>;
                         });
                 }
                 const entryClasses = await CradleEditor.entryClassesPromise;

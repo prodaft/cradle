@@ -85,7 +85,7 @@ export default function EntryTypesPage() {
     const searchTerm = searchQuery.trim() || undefined;
     const { data: entryTypesData, isPending } = $api.useQuery(
         'get',
-        '/entries/entry_classes/',
+        '/entries/entry-classes/',
         {
             params: {
                 query: {
@@ -123,7 +123,7 @@ export default function EntryTypesPage() {
     const deleteMutation = useMutation({
         mutationFn: async (subtype: string) => {
             const { error, response } = await fetchClient.DELETE(
-                '/entries/entry_classes/{class_subtype}/',
+                '/entries/entry-classes/{class_subtype}/',
                 { params: { path: { class_subtype: subtype } } },
             );
             if (error) throw { response, error };

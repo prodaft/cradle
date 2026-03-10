@@ -1,3 +1,5 @@
+"""Test settings for Cradle. Relaxed throttling, Docker service hosts (postgres, minio, redis)."""
+
 from .settings_common import *  # noqa:F401,F403
 
 SECRET_KEY = "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&"
@@ -12,7 +14,16 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost", "http://127.0.0.1"]
+BASE_URL = ""
+STATIC_URL = "static/"
+FRONTEND_URL = "http://localhost:5173"
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost",
+    "http://127.0.0.1",
+    FRONTEND_URL,
+    "http://127.0.0.1:5173",
+]
 
 DATABASES = {
     "default": {
@@ -32,14 +43,21 @@ MINIO_CONFIG = {
     "secure": False,
 }
 
-BASE_URL = ""
-STATIC_URL = "static/"
-FRONTEND_URL = "http://localhost:5173"
+STORAGES = {
+    "default": {"BACKEND": "storages.backends.s3.S3Storage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+AWS_ACCESS_KEY_ID = "admin"
+AWS_SECRET_ACCESS_KEY = "minio_admin"
+AWS_S3_ENDPOINT_URL = "http://minio:9000"
+AWS_S3_USE_SSL = False
+AWS_S3_VERIFY = False
+AWS_S3_SIGNATURE_VERSION = "s3v4"
+AWS_S3_ADDRESSING_STYLE = "path"
 
-CORS_ALLOWED_ORIGINS = [FRONTEND_URL, "http://localhost:5173", "http://127.0.0.1:5173"]
+CORS_ALLOWED_ORIGINS = [FRONTEND_URL, "http://127.0.0.1:5173"]
 OAUTH_REDIRECT_URI_WHITELIST = CORS_ALLOWED_ORIGINS
 
-RESULT_BACKEND = "redis://redis:6379/0"
 REDIS_URL = "redis://redis:6379/0"
 BROKER = REDIS_URL
 RESULT_BACKEND = REDIS_URL
@@ -52,7 +70,6 @@ DEFAULT_FROM_EMAIL = ""
 EMAIL_HOST_PASSWORD = None
 EMAIL_USE_TLS = True
 USE_SILK = False
-
 
 DEFAULT_SETTINGS = {
     "users": {

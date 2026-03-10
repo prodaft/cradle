@@ -54,7 +54,9 @@ const EVENT_TYPE_OPTIONS = [
     { value: 'delete', label: 'Delete' },
     { value: 'fetch', label: 'Fetch' },
     { value: 'login', label: 'Login' },
-];
+] as const;
+
+type EventType = (typeof EVENT_TYPE_OPTIONS)[number]['value'];
 
 interface ActivityListProps {
     name?: string;
@@ -407,7 +409,9 @@ export default function ActivityList({
             username: filters.username || undefined,
             start_date: filters.dateRange.from || undefined,
             end_date: filters.dateRange.to || undefined,
-            type: filters.type || undefined,
+            type: (EVENT_TYPE_OPTIONS.some((o) => o.value === filters.type)
+                ? filters.type
+                : undefined) as EventType | undefined,
             content_type: filters.content_type || undefined,
             object_id: filters.object_id || undefined,
         }),

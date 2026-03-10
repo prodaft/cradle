@@ -1,28 +1,30 @@
 import logging
-import bleach
 from typing import List
 
+import bleach
 from django.core.files.base import ContentFile
 from django.template.loader import get_template
 
-from file_transfer.storage import FileTransferStorage
-from notes.models import Note
-from notes.markdown.to_html import markdown_to_html
 from entries.models import EntryClass
-from publish.models import PublishedReport, ReportStatus
-from .base import BasePublishStrategy
 from file_transfer.s3_utils import fetch_bytes
+from file_transfer.storage import FileTransferStorage
+from notes.markdown.to_html import markdown_to_html
+from notes.models import Note
+
+from ..models import PublishedReport, ReportStatus
+from .base import BasePublishStrategy
 
 
 class HTMLPublish(BasePublishStrategy):
-    """
-    HTML publishing strategy that renders a report using a Django template
-    and sanitizes user content to prevent harmful HTML from being introduced.
+    """HTML publishing strategy using Django templates.
+
+    Sanitizes user content to prevent XSS.
     """
 
     content_type = "text/html"
 
     def _sanitize_html(self, html: str) -> str:
+        """Sanitize HTML to prevent XSS; allow only safe tags and attributes."""
         allowed_tags = [
             "a",
             "abbr",
@@ -57,7 +59,8 @@ class HTMLPublish(BasePublishStrategy):
             strip=True,
         )
 
-    def _build_html(self, title: str, notes: List[Note], user) -> str:
+    def _build_html(self, title: str, notes: List[Note]) -> str:
+        """Render notes as HTML using the report template."""
         body = ""
 
         footnotes = {}
@@ -99,38 +102,27 @@ class HTMLPublish(BasePublishStrategy):
         }
         return template.render(context)
 
-    def create_report(self, report: PublishedReport) -> bool:
-        full_html = self._build_html(report.title, report.notes.all(), user=report.user)
-
+    def _upload_html(self, html: str, report: PublishedReport) -> bool:
+        """Save HTML to S3 via report.file; returns False on failure."""
         try:
-            # Save HTML content to FileField - Django handles S3 upload
-            report.file.save(f"{report.id}.html", ContentFile(full_html.encode("utf-8")), save=True)
-        except Exception as e:
-            logging.exception(e)
-            report.error_message = "Failed to upload HTML report."
-            report.status = ReportStatus.ERROR
-            report.save()
-            return False
-
-        return True
-
-    def edit_report(self, report: PublishedReport) -> bool:
-        full_html = self._build_html(report.title, report.notes.all(), user=report.user)
-
-        try:
-            # Delete old file if exists
             if report.file:
                 report.file.delete(save=False)
-
-            # Save new HTML content to FileField
-            report.file.save(f"{report.id}.html", ContentFile(full_html.encode("utf-8")), save=True)
+            report.file.save(f"{report.id}.html", ContentFile(html.encode("utf-8")), save=True)
         except Exception:
+            logging.exception("Failed to upload HTML report.")
             report.error_message = "Failed to upload HTML report."
             report.status = ReportStatus.ERROR
             report.save()
             return False
-
         return True
+
+    def create_report(self, report: PublishedReport) -> bool:
+        full_html = self._build_html(report.title, report.notes.all())
+        return self._upload_html(full_html, report)
+
+    def edit_report(self, report: PublishedReport) -> bool:
+        full_html = self._build_html(report.title, report.notes.all())
+        return self._upload_html(full_html, report)
 
     def delete_report(self, report: PublishedReport) -> bool:
         try:

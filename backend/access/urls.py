@@ -1,3 +1,12 @@
+"""URL routing for access management.
+
+Routes:
+- user/<uuid:user_id>/ - List entities and access types for a user (admin)
+- entity/<int:entity_id>/ - List users and access types for an entity (admin)
+- request/<int:entity_id>/ - Request access to an entity
+- user/<uuid:user_id>/<int:entity_id>/ - Update a user's access for an entity
+"""
+
 from django.urls import path
 
 from .views.access_view import EntityAccessList, UserAccessList
@@ -10,7 +19,7 @@ urlpatterns = [
         UpdateAccess.as_view(),
         name="update_access",
     ),
-    path("user/<uuid:user_id>/", UserAccessList.as_view(), name="access_list"),
+    path("user/<uuid:user_id>/", UserAccessList.as_view(), name="user_access_list"),
     path(
         "entity/<int:entity_id>/",
         EntityAccessList.as_view(),

@@ -13,7 +13,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
-import { parseAPIError } from '@/utils/api';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import PageHeader from '@components/base/page-header';
@@ -286,7 +286,7 @@ export default function Reports() {
             setRowSelection({});
         } catch (error) {
             const parsed = await parseAPIError(error);
-            toast.error(parsed.detail);
+            toast.error(getDisplayMessage(parsed));
         } finally {
             setDeleteDialogOpen(false);
             setDeletingReportIds([]);
@@ -335,7 +335,7 @@ export default function Reports() {
             setRowSelection({});
         } catch (error) {
             const parsed = await parseAPIError(error);
-            toast.error(parsed.detail);
+            toast.error(getDisplayMessage(parsed));
         }
     };
 
@@ -386,7 +386,7 @@ export default function Reports() {
             );
         } catch (error) {
             const parsed = await parseAPIError(error);
-            toast.error(parsed.detail);
+            toast.error(getDisplayMessage(parsed));
         }
     };
 
@@ -493,7 +493,7 @@ export default function Reports() {
         [handleSortingChange, sorting],
     );
 
-    const table = useReactTable({
+    const table = useReactTable<ReportList>({
         data: reports,
         columns,
         state: {

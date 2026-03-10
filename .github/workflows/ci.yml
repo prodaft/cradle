@@ -95,7 +95,7 @@ jobs:
       - name: Install system dependencies
         run: |
           apt update
-          apt install -y git python3-pip libmagic1
+          apt install -y python3-pip libmagic1
       - name: Install dependencies
         run: uv sync --extra dev
       - name: Settings Copy

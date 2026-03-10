@@ -1,39 +1,44 @@
 import json
+import logging
 from datetime import timedelta
 from typing import List
 
 from django.core.files.base import ContentFile
 
-from file_transfer.storage import FileTransferStorage
-from notes.models import Note
-from publish.models import PublishedReport, ReportStatus
-from publish.strategies.base import BasePublishStrategy
-
 from entries.serializers import EntryClassSerializer, EntryPublishSerializer
 from file_transfer.s3_utils import presign_get
+from file_transfer.storage import FileTransferStorage
+from notes.models import Note
+
+from ..models import PublishedReport, ReportStatus
+from .base import BasePublishStrategy
+
+logger = logging.getLogger(__name__)
 
 
 class JSONPublish(BasePublishStrategy):
-    """
-    A publishing strategy that generates a JSON report from a list of notes.
-    """
+    """A publishing strategy that generates a JSON report from a list of notes."""
 
     content_type = "application/json"
 
     def create_report(self, report: PublishedReport) -> bool:
+        """Build JSON report and upload to S3."""
         content = self._build_report(report.title, report.notes.all())
         return self._upload_report(content, report)
 
     def edit_report(self, report: PublishedReport) -> bool:
+        """Rebuild JSON report and re-upload to S3."""
         content = self._build_report(report.title, report.notes.all())
         return self._upload_report(content, report)
 
     def delete_report(self, report: PublishedReport) -> bool:
+        """Delete the JSON report file from S3."""
         try:
             # Delete file from S3 via FileField
             if report.file:
                 report.file.delete(save=False)
         except Exception:
+            logger.exception("Failed to delete JSON report.")
             report.error_message = "Failed to delete JSON report."
             report.status = ReportStatus.ERROR
             report.save()
@@ -42,6 +47,7 @@ class JSONPublish(BasePublishStrategy):
         return True
 
     def _build_report(self, title: str, notes: List[Note]) -> dict:
+        """Build JSON report structure with notes, entries, and entry classes."""
         report = {
             "title": title,
             "notes": [],
@@ -97,6 +103,7 @@ class JSONPublish(BasePublishStrategy):
         return report
 
     def _upload_report(self, content: dict, report: PublishedReport) -> bool:
+        """Save JSON to S3 via report.file; returns False on failure."""
         report_json = json.dumps(content)
 
         try:
@@ -107,6 +114,7 @@ class JSONPublish(BasePublishStrategy):
             # Save JSON content to FileField - Django handles S3 upload
             report.file.save(f"{report.id}.json", ContentFile(report_json.encode("utf-8")), save=True)
         except Exception:
+            logger.exception("Failed to upload JSON report.")
             report.error_message = "Failed to upload JSON report."
             report.status = ReportStatus.ERROR
             report.save()

@@ -1,14 +1,17 @@
-from django.core.exceptions import ValidationError
-from ..models import CradleUser
-from django.utils.translation import gettext as _
+"""Password validation: minimum length and character-type requirements."""
+
 from typing import Callable
+
 from django.contrib.auth.password_validation import MinimumLengthValidator
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext as _
+
+from ..models import CradleUser
 
 
 class MinimumWithConditionValidator:
     def __init__(self, min_number: int, condition: Callable[[str], bool], message: str):
-        """
-        Initializes the validator.
+        """Initializes the validator.
 
         Args:
             min_number (int): Minimum number of characters that must
@@ -22,9 +25,7 @@ class MinimumWithConditionValidator:
         self.error_message = message
 
     def validate(self, password: str, user: CradleUser | None = None) -> None:
-        """
-        Validates if the password meets the minimum number of characters
-        that satisfy the condition.
+        """Validate that the password meets the minimum count for the condition.
 
         Args:
             password (str): The password to validate.
@@ -35,13 +36,12 @@ class MinimumWithConditionValidator:
             ValidationError: If the password does not meet
             the minimum condition.
         """
-        no_condition = sum(1 for c in password if self.condition(c))
-        if self.min_number > no_condition:
+        count = sum(1 for c in password if self.condition(c))
+        if self.min_number > count:
             raise ValidationError(self.get_help_text())
 
     def get_help_text(self) -> str:
-        """
-        Provides the help text for the validation rule.
+        """Provides the help text for the validation rule.
 
         Returns:
             str: A string explaining the validation rule.
@@ -49,47 +49,44 @@ class MinimumWithConditionValidator:
         return self.error_message
 
 
-class MinimumUpperentityLettersValidator(MinimumWithConditionValidator):
+class MinimumUppercaseLettersValidator(MinimumWithConditionValidator):
     def __init__(self, min_upper: int):
-        """
-        Initializes the validator.
+        """Initializes the validator.
 
         Args:
-            min_upper (int): Minimum number of characters that must be upperentity.
+            min_upper (int): Minimum number of characters that must be uppercase.
         """
         super().__init__(
             min_upper,
-            lambda chr: chr.isupper(),
-            _(f"Your password must contain at least {min_upper} upperentity letters."),
+            lambda c: c.isupper(),
+            _(f"Your password must contain at least {min_upper} uppercase letters."),
         )
 
 
-class MinimumLowerentityLettersValidator(MinimumWithConditionValidator):
+class MinimumLowercaseLettersValidator(MinimumWithConditionValidator):
     def __init__(self, min_lower: int):
-        """
-        Initializes the validator.
+        """Initializes the validator.
 
         Args:
-            min_lower (int): Minimum number of characters that must be lowerentity.
+            min_lower (int): Minimum number of characters that must be lowercase.
         """
         super().__init__(
             min_lower,
-            lambda chr: chr.islower(),
-            _(f"Your password must contain at least {min_lower} lowerentity letters."),
+            lambda c: c.islower(),
+            _(f"Your password must contain at least {min_lower} lowercase letters."),
         )
 
 
 class MinimumDigitsValidator(MinimumWithConditionValidator):
     def __init__(self, min_digits: int):
-        """
-        Initializes the validator.
+        """Initializes the validator.
 
         Args:
             min_digits (int): Minimum number of characters that must be digits.
         """
         super().__init__(
             min_digits,
-            lambda chr: chr.isdigit(),
+            lambda c: c.isdigit(),
             _(f"Your password must contain at least {min_digits} digits."),
         )
 
@@ -98,8 +95,7 @@ class MinimumSpecialCharacterValidator(MinimumWithConditionValidator):
     SPECIAL_CHARACTERS: str = "!@#$%^&*"
 
     def __init__(self, min_special: int):
-        """
-        Initializes the validator.
+        """Initializes the validator.
 
         Args:
             min_special (int): Minimum number of characters that must be
@@ -107,16 +103,17 @@ class MinimumSpecialCharacterValidator(MinimumWithConditionValidator):
         """
         super().__init__(
             min_special,
-            lambda chr: chr in MinimumSpecialCharacterValidator.SPECIAL_CHARACTERS,
+            lambda c: c in MinimumSpecialCharacterValidator.SPECIAL_CHARACTERS,
             _(f"Your password must contain at least {min_special} special characters."),
         )
 
 
 def password_validator():
+    """Return tuple of validators: 1 lower, 1 digit, 1 special, 1 upper, min length 12."""
     return (
-        MinimumLowerentityLettersValidator(1),
+        MinimumLowercaseLettersValidator(1),
         MinimumDigitsValidator(1),
         MinimumSpecialCharacterValidator(1),
-        MinimumUpperentityLettersValidator(1),
+        MinimumUppercaseLettersValidator(1),
         MinimumLengthValidator(12),
     )

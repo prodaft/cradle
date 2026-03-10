@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => {
             tanstackStart({
                 spa: { enabled: true },
                 client: { entry: 'entry-client.tsx' },
+                prerender: { failOnError: false },
             }),
             tailwindcss(),
             react(),

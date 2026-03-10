@@ -20,7 +20,7 @@ import {
     FileUploadTrigger,
 } from '@/components/ui/file-upload';
 import { Spinner } from '@/components/ui/spinner';
-import { parseAPIError } from '@/utils/api';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
@@ -157,7 +157,7 @@ export default function FileUploadDialog({
                 } as FileReferenceWithNote);
             } catch (error) {
                 const parsed = await parseAPIError(error);
-                updateFileStatus(file, 'error', 0, parsed.detail);
+                updateFileStatus(file, 'error', 0, getDisplayMessage(parsed));
                 failedFiles.push(file);
             }
         }

@@ -17,7 +17,7 @@ export default function ConfirmEmail() {
     const { mutate: confirmEmail } = useMutation({
         mutationFn: async (token: string) => {
             const { data, error, response } = await fetchClient.POST(
-                '/auth/email_confirm/',
+                '/auth/email-confirm/',
                 { body: { token } },
             );
             if (error) throw { response, error };

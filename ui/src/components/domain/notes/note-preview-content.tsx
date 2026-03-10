@@ -5,10 +5,13 @@ import type { components } from '@services/openapi/schema';
 import { useQuery } from '@tanstack/react-query';
 import Preview from '../../base/preview/preview';
 
-type NoteRetrieve = components['schemas']['NoteRetrieve'];
+type NoteForPreview = Pick<
+    components['schemas']['NoteListResponse'],
+    'content' | 'files'
+> & { content?: string; files?: unknown[] };
 
 interface NotePreviewContentProps {
-    note: NoteRetrieve;
+    note: NoteForPreview;
 }
 
 /**
@@ -18,12 +21,16 @@ interface NotePreviewContentProps {
  * @returns {JSX.Element}
  */
 export const NotePreviewContent = ({ note }: NotePreviewContentProps) => {
-    const baseURL = import.meta.env.VITE_CRADLE_API_ENDPOINT || '';
+    const baseURL = import.meta.env.VITE_API_BASE_URL ?? '';
 
     const { data: parsedContent, isLoading } = useQuery({
         queryKey: ['parseNotePreview', note.content, note.files],
         queryFn: async () => {
-            const result = await parseContent(note.content, baseURL, note.files);
+            const result = await parseContent(
+                note.content ?? '',
+                baseURL,
+                note.files ?? [],
+            );
             return result.html;
         },
         meta: { showErrorToast: true },

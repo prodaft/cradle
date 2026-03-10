@@ -46,7 +46,9 @@ import {
 import { cn } from '@/lib/utils';
 import { createDashboardLink } from '@/utils/dashboard';
 import { CaretDownIcon, CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
-import { $api, fetchClient } from '@services/openapi/client';
+import { fetchClient } from '@services/openapi/client';
+import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
+import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import {
@@ -63,13 +65,11 @@ import { Check, PlusCircle, XCircle } from 'lucide-react';
 import React, { MouseEvent, useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-interface Result {
-    id?: number;
-    name: string;
-    subtype: string;
-    depth: number;
-    color?: string;
-}
+type RelationEntry = components['schemas']['EntryWithDepth'] & {
+    color?: string | null;
+    depth?: number;
+    type?: string;
+};
 
 interface RelationsProps {
     obj: {
@@ -79,7 +79,13 @@ interface RelationsProps {
 }
 
 // Expanded row detail — fetches path data and renders stepper
-function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }) {
+function ExpandedRowContent({
+    srcId,
+    result,
+}: {
+    srcId: number;
+    result: RelationEntry;
+}) {
     const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
 
     const canExpand = result.id !== undefined && result.id !== srcId;
@@ -92,7 +98,7 @@ function ExpandedRowContent({ srcId, result }: { srcId: number; result: Result }
                 {
                     params: {
                         query: {
-                            src: String(srcId),
+                            src: srcId,
                             dsts: [result.id!],
                         },
                     },
@@ -449,11 +455,12 @@ export default function Relations({ obj }: RelationsProps) {
         mutationFn: async (entities: string[]) => {
             await Promise.all(
                 entities.map(async (entity) => {
+                    const entityId = Number(entity);
                     const { error, response } = await fetchClient.POST(
                         '/access/request/{entity_id}/',
                         {
-                            params: { path: { entity_id: entity } },
-                            body: { entity_id: entity },
+                            params: { path: { entity_id: entityId } },
+                            body: { entity_id: entityId },
                         },
                     );
                     if (error) throw { response, error };
@@ -465,36 +472,33 @@ export default function Relations({ obj }: RelationsProps) {
         },
     });
 
-    // Query for entry subtypes
-    const { data: entrySubtypesData } = $api.useQuery(
-        'get',
-        '/entries/entry_classes/',
-        {},
-        {
-            meta: { showErrorToast: true },
-        },
-    );
+    // Query for entry subtypes (fetches all pages)
+    const { data: entrySubtypesData } = useQuery({
+        queryKey: ['entry_classes', 'relations'],
+        queryFn: () => fetchAllEntryClasses(),
+        meta: { showErrorToast: true },
+    });
 
     const entrySubtypes = useMemo(() => {
-        const results = entrySubtypesData?.results ?? [];
+        const results = entrySubtypesData ?? [];
         return results.map((c: any) => c.subtype);
-    }, [entrySubtypesData?.results]);
+    }, [entrySubtypesData]);
 
     const entryClassColors = useMemo(() => {
         const colors = new Map<string, string>();
-        const results = entrySubtypesData?.results ?? [];
+        const results = entrySubtypesData ?? [];
         results.forEach((c: any) => {
             if (c.color) colors.set(c.subtype, c.color);
         });
         return colors;
-    }, [entrySubtypesData?.results]);
+    }, [entrySubtypesData]);
 
     const { data: relationsData, isLoading } = useQuery({
         queryKey: [
             'graph',
             'neighbors',
             {
-                src: String(obj.id),
+                src: obj.id!,
                 depth,
                 page,
                 pageSize,
@@ -508,7 +512,7 @@ export default function Relations({ obj }: RelationsProps) {
                 {
                     params: {
                         query: {
-                            src: String(obj.id),
+                            src: obj.id!,
                             depth,
                             page,
                             page_size: pageSize,
@@ -532,7 +536,7 @@ export default function Relations({ obj }: RelationsProps) {
 
     const results = useMemo(() => {
         if (!relationsData) return [];
-        return relationsData.results as unknown as Result[];
+        return relationsData.results ?? [];
     }, [relationsData]);
 
     const { data: inaccessibleData } = useQuery({
@@ -540,7 +544,7 @@ export default function Relations({ obj }: RelationsProps) {
             'graph',
             'inaccessible',
             {
-                src: String(obj.id),
+                src: obj.id!,
                 depth,
             },
         ],
@@ -550,7 +554,7 @@ export default function Relations({ obj }: RelationsProps) {
                 {
                     params: {
                         query: {
-                            src: String(obj.id),
+                            src: obj.id!,
                             depth,
                         },
                     },
@@ -574,7 +578,7 @@ export default function Relations({ obj }: RelationsProps) {
     const calculatedTotalPages = hasNextPage ? page + 1 : page;
 
     // Column definitions
-    const columns = useMemo<ColumnDef<Result>[]>(
+    const columns = useMemo<ColumnDef<RelationEntry>[]>(
         () => [
             {
                 id: 'select',
@@ -750,7 +754,9 @@ export default function Relations({ obj }: RelationsProps) {
                         size='sm'
                         className='ml-auto'
                         onClick={() =>
-                            requestAccessMutation.mutate(inaccessibleEntities)
+                            requestAccessMutation.mutate(
+                                inaccessibleEntities.map(String),
+                            )
                         }
                     >
                         Request Access
@@ -837,8 +843,11 @@ export default function Relations({ obj }: RelationsProps) {
                                             result.id === obj.id;
                                         const canExpand =
                                             !isSameEntry && result.id !== undefined;
-                                        const dashboardLink =
-                                            createDashboardLink(result);
+                                        const dashboardLink = createDashboardLink({
+                                            name: result.name ?? '',
+                                            subtype: result.subtype,
+                                            type: result.entry_class?.type,
+                                        });
 
                                         const handleNavigate = (e: MouseEvent) => {
                                             e.stopPropagation();

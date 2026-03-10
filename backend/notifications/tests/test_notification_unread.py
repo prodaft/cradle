@@ -1,13 +1,19 @@
-from .utils import NotificationsTestCase
-from user.models import CradleUser
-from entries.models import Entry
-from notifications.models import MessageNotification, AccessRequestNotification
+"""Tests for unread notification count API."""
+
+from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
-from django.urls import reverse
+
+from entries.models import Entry
+from user.models import CradleUser
+
+from ..models import AccessRequestNotification, MessageNotification
+from .utils import NotificationsTestCase
 
 
-class NotificationListTest(NotificationsTestCase):
+class NotificationUnreadTest(NotificationsTestCase):
+    """Tests for GET /notifications/unread-count/."""
+
     def setUp(self):
         super().setUp()
         self.client = APIClient()

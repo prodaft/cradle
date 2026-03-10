@@ -1,3 +1,5 @@
+"""Task scheduler that runs the note processing pipeline (validate, populate, link, etc.)."""
+
 from typing import List, Optional
 
 from celery import chain
@@ -39,6 +41,8 @@ TASKS = [
 
 
 class TaskScheduler:
+    """Runs the note processing pipeline: validation, entry creation, linking, metadata, finalize."""
+
     def __init__(self, user: CradleUser, tasks: List[BaseTask] = TASKS, **kwargs):
         self.user = user
         self.kwargs = kwargs
@@ -51,23 +55,22 @@ class TaskScheduler:
         validate: bool = True,
         update_acvec: bool = True,
     ):
-        """Performs all of the checks that are necessary for creating a note.
-        First, it creates a dictionary mapping entry types to all of the referenced
-        entries in the note. Then, it performs the mentioned checks. Lastly, it
-        constructs a list of all referenced entries with the ids corresponding
-        to the persisted entries.
+        """Perform checks for creating a note and build referenced entries list.
+
+        Maps entry types to referenced entries, runs validation, returns entries
+        with persisted IDs.
 
         Returns:
             A list of all referenced entries. Their id fields are populated to
             correspond to the ids of persisted entries.
 
         Raises:
-            NotEnoughReferencesException: if the note does not reference at
-            least one entity and at least two entries.
-            EntriesDoNotExistException: if the note references entities that do
-            not exist.
-            NoAccessToEntriesException: if the user does not have access to the
-            referenced entities.
+            NotEnoughReferencesException: When the note does not reference at
+                least one entity and at least two entries.
+            EntriesDoNotExistException: When the note references entities that
+                do not exist.
+            NoAccessToEntriesException: When the user does not have access to
+                the referenced entities.
         """
         dmp = diff_match_patch()
         patches = None

@@ -1,5 +1,5 @@
-from ..serializers import TokenObtainSerializer
 from ..models import CradleUser, UserRoles
+from ..serializers import TokenObtainSerializer
 from .utils import UserTestCase
 
 

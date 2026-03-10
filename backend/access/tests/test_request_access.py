@@ -1,10 +1,11 @@
 from django.urls import reverse
-from entries.models import Entry
 from rest_framework_simplejwt.tokens import AccessToken
 
+from entries.models import Entry
 from user.models import CradleUser
-from ..models import Access
+
 from ..enums import AccessType
+from ..models import Access
 from .utils import AccessTestCase
 
 

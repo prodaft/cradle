@@ -2,19 +2,21 @@
 import logging
 import time
 from typing import Optional
+
+import requests
 from django.db import models
-from entries.models import Entry, Relation
+
 from entries.enums import RelationReason
+from entries.models import Entry, Relation
+
 from ..base import BaseEnricher
 from ..mappings.urlscan import URLScanMapping
-import requests
 
 logger = logging.getLogger(__name__)
 
 
 class URLScanEnricher(BaseEnricher):
-    """
-    Enriches URLs and domains with URLScan.io data.
+    """Enriches URLs and domains with URLScan.io data.
 
     URLScan.io is a service to scan and analyze websites. This enricher supports
     two modes: searching existing scans and submitting new scans with result polling.
@@ -238,8 +240,7 @@ class URLScanEnricher(BaseEnricher):
         return self._poll_for_result(api_url, headers, timeout)
 
     def _poll_for_result(self, api_url: str, headers: dict, timeout: int) -> dict:
-        """
-        Poll URLScan API for scan results.
+        """Poll URLScan API for scan results.
 
         URLScan recommends waiting 10 seconds before polling,
         then polling every 2 seconds with a max timeout.

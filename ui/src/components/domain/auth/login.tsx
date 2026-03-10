@@ -16,7 +16,7 @@ import {
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useTheme } from '@/contexts/ui';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
-import { parseAPIError } from '@/utils/api';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import Logo from '@components/base/logo/logo';
 import {
     ArrowUUpLeftIcon,
@@ -230,7 +230,7 @@ export default function Login() {
         } catch (error) {
             try {
                 const parsed = await parseAPIError(error);
-                toast.error(parsed.detail);
+                toast.error(getDisplayMessage(parsed));
             } catch {
                 toast.error('Login failed');
             }

@@ -1,7 +1,12 @@
+"""Knowledge graph API views: path finding, neighbors, and full graph."""
+
 import datetime
 
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -10,22 +15,37 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.enums import AccessType
 from access.models import Access
-from core.exceptions import BadRequestException
+from core.exceptions import BadRequestException, CoreErrorCodes
+from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import LazyPaginator, TotalPagesPagination
+from core.validators import validate_int_list_param, validate_int_param, validate_page_param, validate_page_size
 from entries.enums import EntryType
-from entries.exceptions import EntryNotFoundException
+from entries.exceptions import EntriesErrorCodes, EntryNotFoundException
 from entries.models import Entry, Relation
-from knowledge_graph.exceptions import InvalidDepthException, InvalidQuerySyntaxException
-from knowledge_graph.utils import filter_valid_edges, get_edges_for_paths, get_neighbors, get_neighbors_paginated
+from query.exceptions import InvalidQuerySyntaxException, QueryErrorCodes
 from query.filters import EntryFilter
 from query.utils import parse_query
 
+from .exceptions import InvalidDepthException, KnowledgeGraphErrorCodes
 from .serializers import (
     EntryWithDepthSerializer,
-    EntryWithDepthSerializerView,
     GraphInaccessibleResponseSerializer,
     SubGraphSerializer,
 )
+from .utils import filter_valid_edges, get_edges_for_paths, get_neighbors, get_neighbors_paginated
+
+
+def _get_accessible_entry(user, entry_id: int) -> Entry:
+    """Return entry by ID if it exists and user has access; raise EntryNotFoundException otherwise."""
+    try:
+        entry = Entry.objects.get(pk=entry_id)
+    except Entry.DoesNotExist:
+        raise EntryNotFoundException(detail=f"There is no entry with ID {entry_id}.")
+    if entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
+        user, {entry}, {AccessType.READ, AccessType.READ_WRITE}
+    ):
+        raise EntryNotFoundException(detail=f"There is no entry with ID {entry_id}.")
+    return entry
 
 
 @extend_schema(
@@ -34,7 +54,7 @@ from .serializers import (
     parameters=[
         OpenApiParameter(
             name="src",
-            type=str,
+            type=int,
             location=OpenApiParameter.QUERY,
             description="Source entry ID",
             required=True,
@@ -64,35 +84,40 @@ from .serializers import (
     ],
     responses={
         200: SubGraphSerializer,
-        400: {"description": "Invalid request data"},
-        401: {"description": "User is not authenticated"},
+        **get_error_responses(
+            CoreErrorCodes.BAD_REQUEST,
+            CoreErrorCodes.INVALID_REQUEST,
+            EntriesErrorCodes.ENTRY_NOT_FOUND,
+        ),
+        **get_common_error_responses(),
     },
 )
 class GraphPathFindView(APIView):
+    """Find shortest paths between a source entry and destination entries."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = SubGraphSerializer
 
     def get(self, request: Request) -> Response:
-        start = request.query_params.get("src")
-
-        if not start:
-            raise BadRequestException(detail="Missing src parameter.")
-
-        if not start.isdigit():
-            raise BadRequestException(detail="src must be an integer.")
-
-        ends = request.query_params.getlist("dsts")
+        start = validate_int_param(request.query_params.get("src"), param_name="src")
+        ends = validate_int_list_param(
+            request.query_params.getlist("dsts") or [],
+            param_name="dsts",
+        )
         if not ends:
             raise BadRequestException(detail="Missing dsts parameter.")
-        for end in ends:
-            if not end.isdigit():
-                raise BadRequestException(detail="dsts must be integers.")
 
-        ends = [int(end) for end in ends]
+        _get_accessible_entry(request.user, start)
+        for eid in ends:
+            _get_accessible_entry(request.user, eid)
 
-        min_date = request.query_params.get("min_date") or datetime.datetime.fromtimestamp(0)
-        max_date = request.query_params.get("max_date") or datetime.datetime.now()
+        min_date_raw = request.query_params.get("min_date")
+        max_date_raw = request.query_params.get("max_date")
+        min_date = parse_datetime(min_date_raw) if min_date_raw else datetime.datetime.fromtimestamp(0, tz=timezone.utc)
+        max_date = parse_datetime(max_date_raw) if max_date_raw else timezone.now()
+        if min_date is None or max_date is None:
+            raise BadRequestException(detail="min_date and max_date must be valid ISO 8601 datetime strings.")
 
         edges = filter_valid_edges(
             get_edges_for_paths(
@@ -104,24 +129,15 @@ class GraphPathFindView(APIView):
             )
         )
 
-        entry_ids = set()
-
-        for i in edges:
-            entry_ids.add(i.src)
-            entry_ids.add(i.dst)
+        entry_ids = {edge.src for edge in edges} | {edge.dst for edge in edges}
 
         entries = Entry.objects.filter(id__in=entry_ids)
 
-        colors = {}
+        colors = {e.entry_class.subtype: e.entry_class.color for e in entries if e.entry_class.subtype is not None}
 
-        for i in entries.all():
-            if i.entry_class_id not in colors:
-                colors[i.entry_class_id] = i.entry_class.color
-
-        print(edges, entries, colors)
         serializer = SubGraphSerializer({"relations": edges, "entries": entries, "colors": colors})
 
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(
@@ -130,7 +146,7 @@ class GraphPathFindView(APIView):
     parameters=[
         OpenApiParameter(
             name="src",
-            type=str,
+            type=int,
             location=OpenApiParameter.QUERY,
             description="Source entry ID",
             required=True,
@@ -188,52 +204,47 @@ class GraphPathFindView(APIView):
         ),
     ],
     responses={
-        200: LazyPaginator().get_paginated_response_serializer(EntryWithDepthSerializerView),
-        400: {"description": "Invalid parameters or query syntax"},
-        401: {"description": "User is not authenticated"},
-        404: {"description": "Source entry not found"},
+        200: LazyPaginator().get_paginated_response_serializer(EntryWithDepthSerializer),
+        **get_error_responses(
+            CoreErrorCodes.INVALID_REQUEST,
+            CoreErrorCodes.INVALID_PAGE,
+            QueryErrorCodes.INVALID_QUERY_SYNTAX,
+            KnowledgeGraphErrorCodes.INVALID_DEPTH,
+            CoreErrorCodes.INVALID_PAGE_SIZE,
+            CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
+            EntriesErrorCodes.ENTRY_NOT_FOUND,
+            include_validation_error=True,
+        ),
+        **get_common_error_responses(),
     },
 )
 class GraphNeighborsView(APIView):
+    """Get neighboring entries at a given depth with optional filters."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        source_id = request.query_params.get("src")
-        if not source_id:
-            raise BadRequestException(detail="Missing src parameter.")
-
-        try:
-            depth = int(request.query_params.get("depth", 1))
-            page_size = int(request.query_params.get("page_size", 200))
-        except ValueError:
-            raise BadRequestException(detail="depth, page and page_size must be integers.")
+        source_id = validate_int_param(request.query_params.get("src"), param_name="src")
+        page_size = validate_page_size(request.query_params.get("page_size", "200"), default=200, max_size=200)
+        depth = validate_int_param(request.query_params.get("depth"), param_name="depth", default=1)
+        page = validate_page_param(request.query_params.get("page"), param_name="page", default=1)
 
         if depth < 0 or depth > 5:
             raise InvalidDepthException(detail="depth must be between 0 and 5.")
 
-        # Retrieve the source entry (404 if not found)
-        source_entry = Entry.objects.filter(pk=source_id).first()
-
-        if not source_entry:
-            raise EntryNotFoundException(detail=f"Entry with ID {source_id} not found.")
-
-        if source_entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
-            request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
-        ):
-            raise EntryNotFoundException(detail=f"Entry with ID {source_id} not found.")
-
+        source_entry = _get_accessible_entry(request.user, source_id)
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
         query_str = request.query_params.get("query")
 
         if query_str:
             if request.query_params.get("wildcard") == "true":
-                query_str = "*" + query_str + "*"
+                query_str = query_str + "*"
 
             try:
-                query_filter = parse_query(request.query_params.get("query"))
-            except Exception as e:
+                query_filter = parse_query(query_str)
+            except ValueError as e:
                 raise InvalidQuerySyntaxException(detail=f"Invalid query syntax: {str(e)}")
 
             neighbors_qs = get_neighbors_paginated(
@@ -243,12 +254,12 @@ class GraphNeighborsView(APIView):
                 True,
                 True,
                 lambda qs: qs.filter(query_filter),
-                page_size=page_size,
-                page_number=int(request.query_params.get("page", 1)),
+                page_size=page_size + 1,
+                page_number=page,
                 order_by="-last_seen",
             )
         else:
-            filterset = EntryFilter(request.query_params)
+            filterset = EntryFilter(request.query_params, request=request)
 
             if filterset.is_valid():
                 neighbors_qs = get_neighbors_paginated(
@@ -257,22 +268,18 @@ class GraphNeighborsView(APIView):
                     request.user,
                     True,
                     True,
-                    lambda qs: EntryFilter(request.query_params, queryset=qs).qs,
-                    page_size=page_size,
-                    page_number=int(request.query_params.get("page", 1)),
+                    lambda qs: EntryFilter(request.query_params, queryset=qs, request=request).qs,
+                    page_size=page_size + 1,
+                    page_number=page,
                     order_by="-last_seen",
                 )
             else:
-                raise InvalidQuerySyntaxException(detail=f"Invalid query syntax: {filterset.errors}")
+                raise DRFValidationError(filterset.errors)
 
         serializer = EntryWithDepthSerializer(neighbors_qs, many=True)
-        return Response(
-            {
-                "page": int(request.query_params.get("page", 1)),
-                "has_next": len(serializer.data) == page_size,
-                "results": serializer.data,
-            }
-        )
+        results = serializer.data[:page_size]
+        has_next = len(serializer.data) > page_size
+        return LazyPaginator.format_response(page, has_next, results)
 
 
 @extend_schema(
@@ -281,7 +288,7 @@ class GraphNeighborsView(APIView):
     parameters=[
         OpenApiParameter(
             name="src",
-            type=str,
+            type=int,
             location=OpenApiParameter.QUERY,
             description="Source entry ID",
             required=True,
@@ -296,44 +303,36 @@ class GraphNeighborsView(APIView):
     ],
     responses={
         200: GraphInaccessibleResponseSerializer,
-        400: {"description": "Invalid parameters"},
-        401: {"description": "User is not authenticated"},
-        404: {"description": "Source entry not found"},
+        **get_error_responses(
+            CoreErrorCodes.INVALID_REQUEST,
+            CoreErrorCodes.PERMISSION_DENIED,
+            KnowledgeGraphErrorCodes.INVALID_DEPTH,
+            EntriesErrorCodes.ENTRY_NOT_FOUND,
+        ),
+        **get_common_error_responses(),
     },
 )
 class GraphInaccessibleView(APIView):
+    """List entity IDs that are reachable but inaccessible to the current user."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        source_id = request.query_params.get("src")
-        if not source_id:
-            raise BadRequestException(detail="Missing src parameter.")
-
-        try:
-            depth = int(request.query_params.get("depth", 0))
-        except ValueError:
-            raise BadRequestException(detail="depth must be an integer.")
+        source_id = validate_int_param(request.query_params.get("src"), param_name="src")
+        depth = validate_int_param(
+            request.query_params.get("depth"),
+            param_name="depth",
+            default=0,
+        )
 
         if depth < 0 or depth > 5:
             raise InvalidDepthException(detail="depth must be between 0 and 5.")
 
         if depth == 0:
-            return Response(
-                {"inaccessible": []},
-            )
+            return Response(GraphInaccessibleResponseSerializer({"inaccessible": []}).data, status=status.HTTP_200_OK)
 
-        # Retrieve the source entry (404 if not found)
-        source_entry = Entry.objects.filter(pk=source_id).first()
-
-        if not source_entry:
-            raise EntryNotFoundException(detail=f"Entry with ID {source_id} not found.")
-
-        if source_entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
-            request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
-        ):
-            raise EntryNotFoundException(detail=f"Entry with ID {source_id} not found.")
-
+        source_entry = _get_accessible_entry(request.user, source_id)
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
         entities = get_neighbors(
@@ -343,24 +342,26 @@ class GraphInaccessibleView(APIView):
             True,
             True,
             lambda qs: qs.filter(entry_class__type=EntryType.ENTITY),
-        )  # Queryset of all neighbors
+        )
 
         inaccessible = Access.objects.inaccessible_entries(
             request.user, entities, {AccessType.READ, AccessType.READ_WRITE}
         )
-
-        return Response({"inaccessible": [entry.id for entry in inaccessible]})
+        data = GraphInaccessibleResponseSerializer({"inaccessible": [e.id for e in inaccessible]}).data
+        return Response(data, status=status.HTTP_200_OK)
 
 
 @extend_schema(
     summary="Get knowledge graph",
     description="Returns the full knowledge graph accessible to the user.",
     responses={
-        200: TotalPagesPagination().get_paginated_response_serializer(SubGraphSerializer),
-        401: {"description": "User is not authenticated"},
+        200: TotalPagesPagination().get_paginated_response_serializer(SubGraphSerializer, many=False),
+        **get_common_error_responses(),
     },
 )
 class KnowledgeGraphView(APIView):
+    """Return the full knowledge graph accessible to the user."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -368,30 +369,15 @@ class KnowledgeGraphView(APIView):
         rels = Relation.objects.accessible(user=request.user)
 
         if not rels.exists():
-            return Response(
-                {
-                    "page": 1,
-                    "count": 0,
-                    "total_pages": 1,
-                    "results": {
-                        "entries": {},
-                        "relations": [],
-                        "colors": {},
-                        "detail": "No graph relations are accessible.",
-                    },
-                },
-                status=status.HTTP_200_OK,
+            return TotalPagesPagination.format_single_page_response(
+                0,
+                {"entries": {}, "relations": [], "colors": {}},
             )
 
         # Return full graph in one response (Cosmograph-style)
         rels_list = list(rels.all())
         serializer = SubGraphSerializer.from_relations(rels_list)
-        return Response(
-            {
-                "page": 1,
-                "count": len(rels_list),
-                "total_pages": 1,
-                "results": serializer.data,
-            },
-            status=status.HTTP_200_OK,
+        return TotalPagesPagination.format_single_page_response(
+            len(rels_list),
+            serializer.data,
         )

@@ -5,14 +5,17 @@ from django.db import transaction
 
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
-from intelio.enums import DigestStatus
-from intelio.tasks.cradle import download_file_for_note
+from file_transfer.storage import FileTransferStorage
 from notes.processor.task_scheduler import TaskScheduler
 
+from ...enums import DigestStatus
+from ...tasks.cradle import download_file_for_note
 from ..base import BaseDigest
 
 
 class CradleDigest(BaseDigest):
+    """Digest for CRADLE JSON reports: notes, entry classes, entries, and file URLs."""
+
     display_name = "CRADLE Report"
     infer_entities = True
 
@@ -20,6 +23,7 @@ class CradleDigest(BaseDigest):
         proxy = True
 
     def _digest(self):
+        """Parse CRADLE JSON report, create notes/entries, and schedule file downloads."""
         self.ensure_local_file()
         with open(self.path, "r") as report_file:
             try:
@@ -30,7 +34,7 @@ class CradleDigest(BaseDigest):
                 self.save()
                 return
 
-        valid_entryclass_fields = set([x.name for x in EntryClass._meta.fields])
+        valid_entryclass_fields = {f.name for f in EntryClass._meta.fields}
 
         try:
             # Import or create entry classes
@@ -50,15 +54,10 @@ class CradleDigest(BaseDigest):
                     Entry.objects.create(
                         name=entry["name"],
                         entry_class_id=entry["subtype"],
-                        description=entry["description"],
+                        description=entry.get("description", ""),
                     )
 
             created_notes = []
-            # Note files are stored in the shared files bucket.
-            from file_transfer.storage import FileTransferStorage
-
-            bucket_name = FileTransferStorage.bucket_name
-            files_scheduled = 0
             download_tasks = []
 
             for idx, note_data in enumerate(report_data.get("notes", [])):
@@ -72,7 +71,9 @@ class CradleDigest(BaseDigest):
                 file_urls = note_data.get("file_urls", {})
                 for file_identifier, url in file_urls.items():
                     download_tasks.append(
-                        download_file_for_note.si(created_note.id, file_identifier, url, bucket_name, self.id)
+                        download_file_for_note.si(
+                            created_note.id, file_identifier, url, FileTransferStorage.bucket_name, self.id
+                        )
                     )
                 created_note.save()
                 created_notes.append(created_note)
@@ -86,12 +87,10 @@ class CradleDigest(BaseDigest):
             }
             self.save(update_fields=["summary"])
 
-            if files_scheduled > 0:
-                self.finalize()
+            if download_tasks:
+                transaction.on_commit(lambda: group(*download_tasks).apply_async())
             else:
-                self.save()
-
-            transaction.on_commit(lambda: group(*download_tasks).apply_async())
+                self.finalize()
         except Exception as e:
             self.status = DigestStatus.ERROR
             self.errors = [str(e)]

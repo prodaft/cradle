@@ -1,29 +1,32 @@
-from celery import chain
+"""Management command to recreate all relations between entries in notes."""
+
+from celery import chain, group
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 
-from notes.models import Note
 from entries.models import Relation
-from notes.processor.entry_population_task import EntryPopulationTask
-from notes.processor.smart_linker_task import SmartLinkerTask
+
+from ...models import Note
+from ...tasks import entry_population_task, smart_linker_task
 
 
 class Command(BaseCommand):
+    help = "Recreate all relations between entries in notes."
+
     def handle(self, *args, **options):
-        """Recreates all of the relations between
-        entries.
+        """Recreates all relations between entries in notes.
 
-        To run this command use:
-
-        ```python manage.py link_entries```
-
-        Args:
-            *args: Variable length argument list.
-            **options: Arbitrary keyword arguments.
+        Run: manage.py link_entries
         """
         Relation.objects.filter(content_type=ContentType.objects.get_for_model(Note)).delete()
 
-        for i in Note.objects.all():
-            creation_task, _ = EntryPopulationTask(None).run(i, [])
-            linker_task, _ = SmartLinkerTask(None).run(i, [])
-            chain(creation_task, linker_task).apply_async()
+        chains = [
+            chain(
+                entry_population_task.si(note_id, user_id=None),
+                smart_linker_task.si(note_id, user_id=None),
+            )
+            for note_id in Note.objects.values_list("id", flat=True)
+        ]
+
+        if chains:
+            group(*chains).apply_async()

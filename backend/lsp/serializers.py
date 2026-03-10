@@ -1,16 +1,10 @@
-from rest_framework import serializers
+"""Serializers for LSP API responses."""
 
-from entries.models import EntryClass
+from entries.serializers import EntryClassSerializerNoChildren
 
 
-class LspEntryClassSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = EntryClass
-        fields = [
-            "type",
-            "subtype",
-            "description",
-            "format",
-            "regex",
-            "color",
-        ]
+class LspEntryClassSerializer(EntryClassSerializerNoChildren):
+    """EntryClass subset for LSP endpoints (types, completion trie). Excludes generative_regex, options, prefix."""
+
+    class Meta(EntryClassSerializerNoChildren.Meta):
+        fields = ["type", "subtype", "description", "format", "regex", "color"]

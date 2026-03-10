@@ -1,4 +1,7 @@
+"""URL routing for event log API."""
+
 from django.urls import path
+
 from .views import EventLogListView
 
 urlpatterns = [

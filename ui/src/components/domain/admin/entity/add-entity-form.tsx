@@ -23,9 +23,10 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { SelectOption } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { $api, fetchClient } from '@services/openapi/client';
+import { fetchClient } from '@services/openapi/client';
+import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -110,18 +111,15 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
         },
     });
 
-    const { data: entryClassesData } = $api.useQuery(
-        'get',
-        '/entries/entry_classes/',
-        { params: { query: { show_count: true } } },
-        {
-            refetchOnWindowFocus: false,
-            meta: {
-                showErrorToast: false,
-                suppressNotification: true,
-            },
+    const { data: entryClassesData } = useQuery({
+        queryKey: ['entry_classes', 'add-entity', 'show_count'],
+        queryFn: () => fetchAllEntryClasses({ show_count: true }),
+        refetchOnWindowFocus: false,
+        meta: {
+            showErrorToast: false,
+            suppressNotification: true,
         },
-    );
+    });
 
     const hasSetDefaultSubtype = useRef(false);
     const nextNameRequestId = useRef(0);
@@ -138,7 +136,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
 
             try {
                 const { data: result, error } = await fetchClient.GET(
-                    '/entries/next_name/{class_subtype}/',
+                    '/entries/next-name/{class_subtype}/',
                     { params: { path: { class_subtype: subtype.value } } },
                 );
 
@@ -158,12 +156,12 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
 
     useEffect(() => {
         if (entryClassesData == null || hasSetDefaultSubtype.current) return;
-        const results = entryClassesData.results ?? [];
+        const results = entryClassesData;
         const entityClasses = results.filter((entity) => entity.type === 'entity');
         const options = entityClasses.map((c) => ({
             value: c.subtype,
             label: c.subtype,
-            prefix: c.prefix || '',
+            prefix: (c.prefix as string) || '',
         }));
         setSubtypeOptions(options);
         if (options.length > 0) {

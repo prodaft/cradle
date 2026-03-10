@@ -23,7 +23,8 @@ import { SelectOption } from '@/types';
 import { getSuccessMessage } from '@/utils/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react';
-import { $api, fetchClient } from '@services/openapi/client';
+import { fetchClient } from '@services/openapi/client';
+import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import bytes from 'bytes';
 import { useEffect, useMemo } from 'react';
@@ -97,15 +98,12 @@ export default function FileSettingsForm() {
         },
     });
 
-    const { data: entryClassesData } = $api.useQuery(
-        'get',
-        '/entries/entry_classes/',
-        {},
-        {
-            refetchOnWindowFocus: false,
-            meta: { showErrorToast: false, suppressNotification: true },
-        },
-    );
+    const { data: entryClassesData } = useQuery({
+        queryKey: ['entry_classes', 'file-settings'],
+        queryFn: () => fetchAllEntryClasses(),
+        refetchOnWindowFocus: false,
+        meta: { showErrorToast: false, suppressNotification: true },
+    });
 
     const {
         data: settingsData,
@@ -158,7 +156,7 @@ export default function FileSettingsForm() {
     });
 
     const subtypes = useMemo<SubtypeOption[]>(() => {
-        const results = entryClassesData?.results ?? [];
+        const results = entryClassesData ?? [];
         return results
             .filter((entry) => entry.type === 'artifact')
             .map((entry) => ({ value: entry.subtype, label: entry.subtype }));

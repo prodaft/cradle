@@ -1,10 +1,13 @@
-from .views.note_view import NoteList, NoteDetail, NoteFiles, NoteGraph, NoteFinalize
+"""URL routing for notes app: notes, snippets, files, graph."""
+
+from django.urls import path
+
+from .views.note_view import NoteDetail, NoteFiles, NoteFinalize, NoteGraph, NoteList
 from .views.snippet_view import (
-    UserSnippetsListCreateView,
     AllAccessibleSnippetsListView,
     SnippetDetailView,
+    UserSnippetsListCreateView,
 )
-from django.urls import path
 
 urlpatterns = [
     path("", NoteList.as_view(), name="note_list"),
@@ -17,7 +20,7 @@ urlpatterns = [
         name="snippets_user_by_id",
     ),
     path(
-        "snippets/<str:snippet_id>/",
+        "snippets/<uuid:snippet_id>/",
         SnippetDetailView.as_view(),
         name="snippet_detail",
     ),

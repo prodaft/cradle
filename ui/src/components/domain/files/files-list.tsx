@@ -33,7 +33,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
-import { parseAPIError } from '@/utils/api';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import { useDroppable } from '@dnd-kit/core';
@@ -213,7 +213,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
         },
     );
 
-    const files = (filesData?.results ?? EMPTY_FILES) as FileReferenceWithNote[];
+    const files = filesData?.results ?? EMPTY_FILES;
     const totalPages = filesData?.total_pages || 1;
 
     const selectedFileIds = useMemo(() => {
@@ -307,7 +307,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
             setRowSelection({});
         } catch (error) {
             const parsed = await parseAPIError(error);
-            toast.error(parsed.detail);
+            toast.error(getDisplayMessage(parsed));
         }
     };
 

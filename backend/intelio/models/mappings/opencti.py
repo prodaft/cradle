@@ -1,11 +1,12 @@
-from django.db import models
 from collections import defaultdict
+
+from django.db import models
+
 from ..base import ClassMapping
 
 
 class OpenCTIMapping(ClassMapping):
-    """
-    Maps OpenCTI STIX Cyber Observable types to CRADLE entry classes.
+    """Maps OpenCTI STIX Cyber Observable types to CRADLE entry classes.
 
     OpenCTI uses STIX 2.1 Cyber Observable Objects (SCOs) to represent indicators.
     This mapping allows CRADLE to automatically convert OpenCTI observables
@@ -61,11 +62,10 @@ class OpenCTIMapping(ClassMapping):
 
     @classmethod
     def get_typemapping_rev(cls):
-        """
-        Returns a dictionary mapping OpenCTI observable types to EntryClass objects.
+        """Returns a dictionary mapping OpenCTI observable types to EntryClass objects.
 
         Returns:
-            dict: {observable_type: EntryClass}
+            dict: Mapping of observable_type to EntryClass.
         """
         typemapping = defaultdict(lambda: None)
 

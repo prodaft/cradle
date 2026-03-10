@@ -1,5 +1,5 @@
-from typing import Optional
 import logging
+from typing import Optional
 
 import dns.resolver
 from django.db import models
@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class DNSEnricher(BaseEnricher):
+    """Enriches domains with active DNS resolution (A and AAAA records)."""
+
     display_name = "DNS"
     settings_fields = {
         "dns_server": models.CharField(

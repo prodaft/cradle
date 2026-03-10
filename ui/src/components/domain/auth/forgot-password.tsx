@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { cn } from '@/lib/utils';
-import { parseAPIError } from '@/utils/api';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
@@ -43,7 +43,7 @@ export default function ForgotPassword() {
     const resetPasswordMutation = useMutation({
         mutationFn: async (email: string) => {
             const { error, response } = await fetchClient.POST(
-                '/auth/reset_password/',
+                '/auth/reset-password/',
                 { body: { email } },
             );
             if (error) throw { response, error };
@@ -55,7 +55,7 @@ export default function ForgotPassword() {
             const parsed = await parseAPIError(error);
             setAlert({
                 show: true,
-                message: parsed.detail,
+                message: getDisplayMessage(parsed),
                 color: 'red',
             });
         },

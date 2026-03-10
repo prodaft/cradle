@@ -1,5 +1,6 @@
-from django.test import TestCase
 from unittest.mock import patch
+
+from django.test import TestCase
 
 from entries.enums import EntryType
 from entries.models import EntryClass
@@ -8,14 +9,8 @@ from user.models import CradleUser
 
 class NotesTestCase(TestCase):
     def setUp(self):
-        self.patcher = patch("file_transfer.utils.MinioClient.create_user_bucket")
-        self.mocked_create_user_bucket = self.patcher.start()
-
-        self.success_logger_patcher = patch("logs.utils.success_logger")
-        self.error_logger_patcher = patch("logs.utils.error_logger")
-
-        self.mocked_success_logger = self.success_logger_patcher.start()
-        self.mocked_error_logger = self.error_logger_patcher.start()
+        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher.start()
 
         self.user = CradleUser.objects.create_user(username="user", password="user", email="alabala@gmail.com")
 
@@ -34,5 +29,3 @@ class NotesTestCase(TestCase):
 
     def tearDown(self):
         self.patcher.stop()
-        self.success_logger_patcher.stop()
-        self.error_logger_patcher.stop()

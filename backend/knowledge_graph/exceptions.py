@@ -1,16 +1,13 @@
+"""Knowledge graph API exceptions and error codes."""
+
 from rest_framework import status
 
 from core.exceptions import CradleAPIException, ErrorCode
 
 
 class KnowledgeGraphErrorCodes(ErrorCode):
-    """Error codes for knowledge graph operations"""
+    """Error codes for knowledge graph operations."""
 
-    INVALID_QUERY_SYNTAX = (
-        status.HTTP_400_BAD_REQUEST,
-        "Invalid Query Syntax",
-        "invalid-query-syntax",
-    )
     INVALID_DEPTH = (
         status.HTTP_400_BAD_REQUEST,
         "Invalid Depth",
@@ -18,13 +15,7 @@ class KnowledgeGraphErrorCodes(ErrorCode):
     )
 
 
-class InvalidQuerySyntaxException(CradleAPIException):
-    """Exception raised when a graph query has invalid syntax"""
-
-    error_code = KnowledgeGraphErrorCodes.INVALID_QUERY_SYNTAX
-
-
 class InvalidDepthException(CradleAPIException):
-    """Exception raised when depth parameter is out of range"""
+    """Exception raised when depth parameter is out of range."""
 
     error_code = KnowledgeGraphErrorCodes.INVALID_DEPTH

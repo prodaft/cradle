@@ -1,19 +1,18 @@
-from user.models import CradleUser
+"""Tests for entity detail view (get, update, delete)."""
+
 from django.urls import reverse
-from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
-import io
 from rest_framework_simplejwt.tokens import AccessToken
-from .utils import EntriesTestCase
+
+from user.models import CradleUser
 
 from ..models import Entry
-
-
-def bytes_to_json(data):
-    return JSONParser().parse(io.BytesIO(data))
+from .utils import EntriesTestCase
 
 
 class DeleteEntityDetailsTest(EntriesTestCase):
+    """Tests for DELETE /entities/<id>/."""
+
     def setUp(self):
         super().setUp()
 

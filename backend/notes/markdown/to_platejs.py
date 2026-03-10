@@ -1,15 +1,16 @@
-import base64
+"""Convert markdown to PlateJS JSON format for the editor."""
+
+import datetime
 from collections.abc import Callable, Iterable
 from io import BytesIO
 from typing import Any, Dict, List, Optional, Set, Tuple
+
+import frontmatter
 import mistune
 from mistune.core import BaseRenderer, BlockState
-import frontmatter
-import datetime
+from mistune.plugins.table import table
 
-
-from .common import cradle_link_plugin, footnote_plugin, ErrorBypassYAMLHandler
-from .table import table
+from .utils import ErrorBypassYAMLHandler, cradle_link_plugin, embed_image_as_data_url, footnote_plugin
 
 
 class PlateJSRenderer(BaseRenderer):
@@ -23,9 +24,11 @@ class PlateJSRenderer(BaseRenderer):
     ) -> None:
         self.entries = entries
         self.mentions: Set[Tuple[str, str]] = set()
-        super(PlateJSRenderer, self).__init__()
+        super().__init__()
 
-    def render_token(self, token: Dict[str, Any], state: BlockState) -> str:
+    def render_token(
+        self, token: Dict[str, Any], state: BlockState
+    ) -> Optional[Dict[str, Any]] | List[Dict[str, Any]] | None:
         func = self._get_method(token["type"])
         attrs = token.get("attrs")
 
@@ -50,13 +53,13 @@ class PlateJSRenderer(BaseRenderer):
             if i is None:
                 continue
             elif isinstance(i, list):
-                results.extend(filter(lambda x: x is not None, i))
+                results.extend(x for x in i if x is not None)
             elif isinstance(i, dict):
                 results.append(i)
 
         return results
 
-    def text(self, text: List) -> Dict[str, Any]:
+    def text(self, text: str) -> Dict[str, Any]:
         return {"text": text}
 
     def emphasis(self, text: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -73,22 +76,18 @@ class PlateJSRenderer(BaseRenderer):
             if "text" in i:
                 i["bold"] = True
             elif "children" in i:
-                i["children"] = self.emphasis(i["children"])
+                i["children"] = self.strong(i["children"])
 
         return text
 
     def link(self, text: List, url: str, title: Optional[str] = None) -> Dict[str, Any]:
-        return {
-            "type": "a",
-            "href": url,
-            "children": text,
-        }
+        return {"type": "a", "href": url, "title": title or "", "children": text}
 
     def image(self, text: List, url: str, title: Optional[str] = None) -> Dict[str, Any]:
         return {"type": "img", "url": url, "title": title or "", "alt": text}
 
-    def codespan(self, text: List) -> Dict[str, Any]:
-        return {"text": text, "italic": True}
+    def codespan(self, text: str) -> Dict[str, Any]:
+        return {"text": text, "code": True}
 
     def linebreak(self) -> None:
         return None
@@ -107,13 +106,14 @@ class PlateJSRenderer(BaseRenderer):
         key: str,
         value: str,
         alias: Optional[str],
-        date: Optional[datetime.datetime],
-        time: Optional[datetime.datetime],
+        date: Optional[datetime.datetime] = None,
+        time: Optional[datetime.datetime] = None,
+        hidden: bool = False,
     ) -> Dict[str, Any]:
         d = self.entries.get((key, value), {})
 
-        id = d.get("id")
-        type = d.get("type")
+        entry_id = d.get("id")
+        entity_type = d.get("type")
         alias2 = d.get("value")
 
         if alias is None:
@@ -124,31 +124,31 @@ class PlateJSRenderer(BaseRenderer):
         else:
             value = alias
 
-        if id is None:
+        if entry_id is None:
             return {"text": value}
 
-        if (id, type) in self.mentions:
+        if (entry_id, entity_type) in self.mentions:
             return {"text": value}
 
-        self.mentions.add((id, type))
+        self.mentions.add((entry_id, entity_type))
 
         return {
             "type": "mention",
-            "id": id,
-            "entityType": type,
+            "id": entry_id,
+            "entityType": entity_type,
             "value": value,
             "valueType": "",
             "children": [{"text": ""}],
         }
 
-    def footnote_ref(self, key: str, value: str) -> Dict[str, Any]:
+    def footnote_ref(self, key: str, value: str, ref: Any = None) -> Dict[str, Any]:
         return {"type": "p", "children": [{"text": value}]}
 
-    def img_footnote_ref(self, text: str, key: str, value: str, ref: Any) -> Dict[str, Any]:
+    def img_footnote_ref(self, _text: str, key: str, value: str, ref: Any) -> Dict[str, Any]:
         return {
             "type": "footnote_img_ref",
             "caption": [{"text": value}],
-            "key": key,
+            "ref": ref,
             "children": [{"text": ""}],
         }
 
@@ -170,16 +170,16 @@ class PlateJSRenderer(BaseRenderer):
     def block_html(self, html: str) -> None:
         return None
 
-    def block_error(self, text: List) -> Dict[str, Any]:
-        return {"type": "blockquote", "children": text}
+    def block_error(self, text: str) -> Dict[str, Any]:
+        return {"type": "blockquote", "children": [{"text": text}]}
 
-    def list(self, text: List, ordered: bool, **attrs: Any) -> Dict[str, Any]:
+    def list(self, text: List, ordered: bool, **attrs: Any) -> List[Dict[str, Any]]:
         depth = attrs.get("depth", 0)
         items = []
 
         i = 0
         for c in text:
-            c = c.get("children", {"text": ""})
+            c = c.get("children", [])
 
             children = []
             sublists = []
@@ -226,51 +226,44 @@ class PlateJSRenderer(BaseRenderer):
     def table_cell(
         self,
         text: List,
-        align: Optional[str] = None,
+        _align: Optional[str] = None,
         head: bool = False,
     ) -> Dict[str, Any]:
-        return {"type": "td", "children": text}
+        return {"type": "th" if head else "td", "children": text}
 
     def inline_html(self, html: str) -> None:
         return None
 
 
-def resolve_footnote_imgs(pjs: List, fetch_image: Callable[[str, str], Optional[BytesIO]], state: BlockState) -> None:
-    ref_footnotes = state.env["ref_footnotes"]
-
+def resolve_footnote_imgs(pjs: List, fetch_image: Callable[[str, str], Optional[BytesIO]]) -> None:
+    """In-place: replace footnote_img_ref nodes with embedded image data URLs."""
     for i in pjs:
         if "type" not in i:
             continue
 
         if i["type"] == "footnote_img_ref":
-            i["type"] = "img"
-
-            bucket, path = ref_footnotes[i["key"]]
-            i.pop("key")
-
+            bucket, path = i.pop("ref")
             img = fetch_image(bucket, path)
 
             if img is None:
                 i["type"] = "p"
                 i["children"] = i.pop("caption")
-
                 continue
 
-            b64 = base64.b64encode(img.read()).decode("utf-8")
-
-            i["url"] = f"data:image/png;base64,{b64}"
-            img.close()
+            i["type"] = "img"
+            i["url"] = embed_image_as_data_url(img, path)
 
         elif "children" in i:
-            resolve_footnote_imgs(i["children"], fetch_image, state)
+            resolve_footnote_imgs(i["children"], fetch_image)
 
 
 def markdown_to_pjs(
     md: str,
     entries: Dict[Tuple[str, str], Dict[str, Optional[str]]],
-    footnotes: Dict[str, str],
+    footnotes: Dict[str, Tuple[str, str]],
     fetch_image: Callable[[str, str], Optional[BytesIO]],
-) -> str:
+) -> List[Dict[str, Any]]:
+    """Convert markdown to PlateJS JSON with cradle links and embedded footnote images."""
     _, content = frontmatter.parse(md, handler=ErrorBypassYAMLHandler())
 
     renderer = PlateJSRenderer(entries)
@@ -282,6 +275,6 @@ def markdown_to_pjs(
 
     result, state = markdown.parse(content, state)
 
-    resolve_footnote_imgs(result, fetch_image, state)
+    resolve_footnote_imgs(result, fetch_image)
 
     return result

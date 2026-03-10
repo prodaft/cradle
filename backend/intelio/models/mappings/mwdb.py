@@ -1,11 +1,12 @@
-from django.db import models
 from collections import defaultdict
+
+from django.db import models
+
 from ..base import ClassMapping
 
 
 class MWDBMapping(ClassMapping):
-    """
-    Maps MWDB artifact types to CRADLE entry classes.
+    """Maps MWDB artifact types to CRADLE entry classes.
 
     MWDB stores various artifact types including files, configs, and blobs.
     This mapping allows CRADLE to automatically convert MWDB artifacts
@@ -43,11 +44,10 @@ class MWDBMapping(ClassMapping):
 
     @classmethod
     def get_typemapping_rev(cls):
-        """
-        Returns a dictionary mapping MWDB artifact types to EntryClass objects.
+        """Returns a dictionary mapping MWDB artifact types to EntryClass objects.
 
         Returns:
-            dict: {artifact_type: EntryClass}
+            dict: Mapping of artifact_type to EntryClass.
         """
         typemapping = defaultdict(lambda: None)
 

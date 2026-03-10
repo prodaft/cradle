@@ -1,14 +1,15 @@
+import uuid
+
 from django.urls import reverse
-from entries.models import Entry
 from rest_framework_simplejwt.tokens import AccessToken
 
-from user.models import CradleUser
-from ..models import Access
-from ..enums import AccessType
-from .utils import AccessTestCase
+from entries.models import Entry
 from notifications.models import MessageNotification
+from user.models import CradleUser
 
-import uuid
+from ..enums import AccessType
+from ..models import Access
+from .utils import AccessTestCase
 
 
 class UpdateAccessTest(AccessTestCase):

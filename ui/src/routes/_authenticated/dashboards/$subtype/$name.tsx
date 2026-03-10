@@ -1,11 +1,8 @@
 import { PageLoader } from '@/components/base/page-loader';
 import { fetchClient } from '@services/openapi/client';
-import type { components } from '@services/openapi/schema';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import Dashboard from 'src/components/domain/dashboard/dashboard';
 import * as z from 'zod';
-
-type EntryResponse = components['schemas']['EntryResponse'];
 
 export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name')({
     staticData: {
@@ -31,8 +28,8 @@ export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name'
             const { data, error } = await fetchClient.GET('/query/', {
                 params: {
                     query: {
-                        subtype: [subtype],
-                        name_exact: [name],
+                        subtype,
+                        name_exact: name,
                     },
                 },
             });
@@ -42,7 +39,7 @@ export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name'
             }
 
             return {
-                entry: data.results[0] as EntryResponse,
+                entry: data.results[0]!,
             };
         } catch (error) {
             if (

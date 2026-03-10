@@ -23,6 +23,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
 import { fetchClient } from '@services/openapi/client';
+import { fetchAllEntities } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
 
 type OptimizedEntryResponse = components['schemas']['OptimizedEntryResponse'];
@@ -189,15 +190,10 @@ export default function EnrichmentRequestDialog({
         }));
     }, [selectedNoteIds, notesList]);
 
-    // Load entities list
+    // Load entities list (fetches all pages)
     const { data: allEntitiesData } = useQuery({
         queryKey: queryKeys.entities.list(),
-        queryFn: async () => {
-            const { data, error, response } =
-                await fetchClient.GET('/entries/entities/');
-            if (error) throw { response, error };
-            return data;
-        },
+        queryFn: () => fetchAllEntities(),
         enabled: open && !!entitiesList,
         meta: {
             showErrorToast: true,
