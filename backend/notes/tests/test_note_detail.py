@@ -154,6 +154,7 @@ class DeleteNoteTest(NotesTestCase):
         self.notes[1].entries.add(entity1)
         note_id = self.notes[1].id
 
-        with self.subTest("Check response raises TypeError"):
-            with self.assertRaises(TypeError):
-                self.client.delete(reverse("note_detail", kwargs={"note_id": note_id}), **self.headers)
+        response = self.client.delete(
+            reverse("note_detail", kwargs={"note_id": note_id}), **self.headers
+        )
+        self.assertEqual(response.status_code, 404)

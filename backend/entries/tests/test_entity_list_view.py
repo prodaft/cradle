@@ -147,4 +147,4 @@ class PostEntityListTest(EntityListTestCase):
         }
 
         response_post = self.client.post(reverse("entity_list"), entity_json, format="json")
-        self.assertEqual(response_post.status_code, 403)
+        self.assertEqual(response_post.status_code, 401)

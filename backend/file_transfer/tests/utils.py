@@ -54,7 +54,7 @@ class FileTransferTestCase(TestCase):
         self.mocked_presigned_put.return_value = self.presigned_url
         self.mocked_uuid.return_value = self.uuid
 
-        def mocked_presigned_get_call(bucket_name, minio_file_name, _expires, **kwargs):
+        def mocked_presigned_get_call(bucket_name, minio_file_name, *args, **kwargs):
             if bucket_name == self.bucket_name and minio_file_name == self.minio_file_name:
                 return self.presigned_url
             else:

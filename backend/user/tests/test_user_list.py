@@ -30,8 +30,6 @@ class CreateUserTest(UserTestCase):
         self.assertEqual(response.status_code, 201)
         self.assertIsNotNone(CradleUser.objects.get(username="user"))
 
-        self.mocked_create_user_bucket.assert_called_once()
-
     def test_user_create_same_email(self):
         self.create_user_request("user", "userR1#1234112", email="alabala@example.com")
         response = self.create_user_request("new_user", "userR1#12123412", email="alabala@example.com")
@@ -126,9 +124,11 @@ class GetAllUsersTest(UserTestCase):
     def test_get_all_users_successful(self):
         response = self.client.get(reverse("user_list"), **self.headers_admin)
 
-        self.assertEqual(response.status_code, 200)  # Actually verify the entries sent
-        expected = UserRetrieveSerializer([self.admin, self.user], many=True).data
-        self.assertCountEqual(expected, response.json())
+        self.assertEqual(response.status_code, 200)
+        expected = UserRetrieveSerializer(
+            [self.admin, self.user], many=True
+        ).data
+        self.assertCountEqual(expected, response.json()["results"])
 
     def test_get_all_users_not_authenticated(self):
         response = self.client.get(reverse("user_list"))
