@@ -1,6 +1,15 @@
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import { ConfirmDeletionDialog } from '@/components/dialogs';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { FileReference } from '@/types';
@@ -243,18 +252,37 @@ export default function FileTable({
             ) : (
                 <DataTable table={table} showViewOptions />
             )}
-            <ConfirmDeletionDialog
+            <AlertDialog
                 open={Boolean(deletingFile)}
                 onOpenChange={(open) => {
                     if (!open) setDeletingFile(null);
                 }}
-                text='Remove this file from the list?'
-                onConfirm={() => {
-                    if (!deletingFile) return;
-                    handleDelete(deletingFile);
-                    setDeletingFile(null);
-                }}
-            />
+            >
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Remove this file from the list?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='destructive'
+                            size='sm'
+                            onClick={() => {
+                                if (!deletingFile) return;
+                                handleDelete(deletingFile);
+                                setDeletingFile(null);
+                            }}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -1,5 +1,14 @@
-import ConfirmDeletionDialog from '@/components/dialogs/base/confirm-deletion-dialog';
 import MarkdownEditorDialog from '@/components/dialogs/base/markdown-editor-dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
@@ -302,21 +311,47 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                     />
                 )}
                 {deletingSnippet && (
-                    <ConfirmDeletionDialog
+                    <AlertDialog
                         open={deleteDialogOpen}
                         onOpenChange={(open) => {
                             setDeleteDialogOpen(open);
                             if (!open) setDeletingSnippet(null);
                         }}
-                        text={`Are you sure you want to delete "${deletingSnippet.name}"? This action cannot be undone.`}
-                        onConfirm={async () => {
-                            try {
-                                await deleteMutation.mutateAsync(deletingSnippet.id);
-                            } catch (error) {
-                                logger.error('Error deleting snippet:', error);
-                            }
-                        }}
-                    />
+                    >
+                        <AlertDialogContent className='sm:max-w-md'>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Are you sure you want to delete &quot;
+                                    {deletingSnippet.name}
+                                    &quot;? This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel variant='outline' size='sm'>
+                                    Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    variant='destructive'
+                                    size='sm'
+                                    onClick={async () => {
+                                        try {
+                                            await deleteMutation.mutateAsync(
+                                                deletingSnippet.id,
+                                            );
+                                        } catch (error) {
+                                            logger.error(
+                                                'Error deleting snippet:',
+                                                error,
+                                            );
+                                        }
+                                    }}
+                                >
+                                    Delete
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 )}
             </div>
         );

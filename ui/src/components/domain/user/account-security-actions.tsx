@@ -1,7 +1,16 @@
-import ConfirmDeletionDialog from '@/components/dialogs/base/confirm-deletion-dialog';
 import ApiKeyGenerateDialog from '@/components/domain/user/dialogs/api-key-generate-dialog';
 import ChangePasswordDialog from '@/components/domain/user/dialogs/change-password-dialog';
 import TwoFactorSetupDialog from '@/components/domain/user/dialogs/two-factor-setup-dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -10,6 +19,7 @@ import {
     FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAuthActions } from '@/hooks/auth/use-auth';
 import { $api, fetchClient } from '@services/openapi/client';
@@ -34,6 +44,7 @@ export default function AccountSecurityActions({
     const [twoFactorDialogOpen, setTwoFactorDialogOpen] = useState(false);
     const [twoFactorDisabling, setTwoFactorDisabling] = useState(false);
     const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
+    const [deleteAccountConfirmInput, setDeleteAccountConfirmInput] = useState('');
 
     const { data: userData } = $api.useQuery(
         'get',
@@ -188,15 +199,56 @@ export default function AccountSecurityActions({
                     );
                 }}
             />
-            <ConfirmDeletionDialog
+            <AlertDialog
                 open={deleteAccountDialogOpen}
-                onOpenChange={setDeleteAccountDialogOpen}
-                onConfirm={() => {
-                    if (userData.id) deleteAccountMutation.mutate(userData.id);
+                onOpenChange={(open) => {
+                    setDeleteAccountDialogOpen(open);
+                    if (!open) setDeleteAccountConfirmInput('');
                 }}
-                confirmText='DELETE'
-                text='Deleting your account will permanently remove all your data, including notes, entries, and settings. This action cannot be undone.'
-            />
+            >
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Deleting your account will permanently remove all your data,
+                            including notes, entries, and settings. This action cannot
+                            be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <FieldGroup className='gap-4'>
+                        <Field>
+                            <FieldLabel htmlFor='confirm-delete-account'>
+                                Type below to confirm
+                            </FieldLabel>
+                            <Input
+                                id='confirm-delete-account'
+                                type='text'
+                                placeholder='Type "DELETE" to confirm'
+                                value={deleteAccountConfirmInput}
+                                onChange={(e) =>
+                                    setDeleteAccountConfirmInput(e.target.value)
+                                }
+                            />
+                        </Field>
+                    </FieldGroup>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='destructive'
+                            size='sm'
+                            onClick={() => {
+                                if (userData.id)
+                                    deleteAccountMutation.mutate(userData.id);
+                            }}
+                            disabled={deleteAccountConfirmInput !== 'DELETE'}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

@@ -2,7 +2,6 @@ import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { DateRangeFilterButton } from '@/components/data-table/data-table-date-range-filter';
-import ConfirmDeletionDialog from '@/components/dialogs/base/confirm-deletion-dialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -11,6 +10,16 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { StateSetter } from '@/types';
@@ -558,22 +567,41 @@ function DigestList({
                 <ActionBarSeparator />
                 <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
             </ActionBar>
-            <ConfirmDeletionDialog
+            <AlertDialog
                 open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
                     setBulkDeleteDialogOpen(open);
-                    if (!open) {
-                        setBulkDeleteDigestIds([]);
-                    }
+                    if (!open) setBulkDeleteDigestIds([]);
                 }}
-                text={`Are you sure you want to delete ${bulkDeleteDigestIds.length} digest${bulkDeleteDigestIds.length > 1 ? 's' : ''}?`}
-                onConfirm={() => {
-                    if (bulkDeleteDigestIds.length > 0) {
-                        executeBulkDelete(bulkDeleteDigestIds);
-                        setBulkDeleteDigestIds([]);
-                    }
-                }}
-            />
+            >
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete {bulkDeleteDigestIds.length}{' '}
+                            digest
+                            {bulkDeleteDigestIds.length > 1 ? 's' : ''}?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='destructive'
+                            size='sm'
+                            onClick={() => {
+                                if (bulkDeleteDigestIds.length > 0) {
+                                    executeBulkDelete(bulkDeleteDigestIds);
+                                    setBulkDeleteDigestIds([]);
+                                }
+                            }}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

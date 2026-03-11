@@ -11,6 +11,16 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,6 +31,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
@@ -42,7 +54,6 @@ import {
 } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import ConfirmDeletionDialog from '../../../dialogs/base/confirm-deletion-dialog';
 import AddEntryTypeForm from './add-entry-type-form';
 
 type EntryClass = components['schemas']['EntryClass'];
@@ -72,6 +83,7 @@ export default function EntryTypesPage() {
     const [bulkDeleteEntryTypeSubtypes, setBulkDeleteEntryTypeSubtypes] = useState<
         string[]
     >([]);
+    const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
 
     const selectedEntryTypeIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
@@ -421,25 +433,67 @@ export default function EntryTypesPage() {
                     </ScrollArea>
                 </DialogContent>
             </Dialog>
-            <ConfirmDeletionDialog
+            <AlertDialog
                 open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
                     setBulkDeleteDialogOpen(open);
                     if (!open) {
                         setBulkDeleteEntryTypeSubtypes([]);
+                        setDeleteConfirmInput('');
                     }
                 }}
-                onConfirm={() => {
-                    handleDeleteEntryTypes(bulkDeleteEntryTypeSubtypes);
-                    setBulkDeleteEntryTypeSubtypes([]);
-                }}
-                confirmText={
-                    bulkDeleteEntryTypeSubtypes.length === 1
-                        ? bulkDeleteEntryTypeSubtypes[0]
-                        : `DELETE ${bulkDeleteEntryTypeSubtypes.length}`
-                }
-                text={`Are you sure you want to delete ${bulkDeleteEntryTypeSubtypes.length} entry type${bulkDeleteEntryTypeSubtypes.length > 1 ? 's' : ''}? This action is irreversible.`}
-            />
+            >
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete{' '}
+                            {bulkDeleteEntryTypeSubtypes.length} entry type
+                            {bulkDeleteEntryTypeSubtypes.length > 1 ? 's' : ''}? This
+                            action is irreversible.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <FieldGroup className='gap-4'>
+                        <Field>
+                            <FieldLabel htmlFor='confirm-delete-entry-types'>
+                                Type below to confirm
+                            </FieldLabel>
+                            <Input
+                                id='confirm-delete-entry-types'
+                                type='text'
+                                placeholder={`Type "${
+                                    bulkDeleteEntryTypeSubtypes.length === 1
+                                        ? bulkDeleteEntryTypeSubtypes[0]
+                                        : `DELETE ${bulkDeleteEntryTypeSubtypes.length}`
+                                }" to confirm`}
+                                value={deleteConfirmInput}
+                                onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                            />
+                        </Field>
+                    </FieldGroup>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='destructive'
+                            size='sm'
+                            onClick={() => {
+                                handleDeleteEntryTypes(bulkDeleteEntryTypeSubtypes);
+                                setBulkDeleteEntryTypeSubtypes([]);
+                            }}
+                            disabled={
+                                deleteConfirmInput !==
+                                (bulkDeleteEntryTypeSubtypes.length === 1
+                                    ? bulkDeleteEntryTypeSubtypes[0]
+                                    : `DELETE ${bulkDeleteEntryTypeSubtypes.length}`)
+                            }
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

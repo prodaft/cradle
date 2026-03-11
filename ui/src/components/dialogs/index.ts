@@ -1,6 +1,3 @@
-export { default as ActionConfirmationDialog } from './base/action-confirmation-dialog';
-export { default as ConfirmDeletionDialog } from './base/confirm-deletion-dialog';
-
 export { default as ChangePasswordDialog } from '@/components/domain/user/dialogs/change-password-dialog';
 export { default as TwoFactorSetupDialog } from '@/components/domain/user/dialogs/two-factor-setup-dialog';
 

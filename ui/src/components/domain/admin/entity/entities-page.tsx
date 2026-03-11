@@ -11,6 +11,16 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,6 +31,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
@@ -41,7 +53,6 @@ import {
 } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import ConfirmDeletionDialog from '../../../dialogs/base/confirm-deletion-dialog';
 import AddEntityForm from './add-entity-form';
 
 type Entity = components['schemas']['Entity'];
@@ -67,6 +78,7 @@ export default function EntitiesPage() {
     const [addEntityDialogOpen, setAddEntityDialogOpen] = useState(false);
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteEntityIds, setBulkDeleteEntityIds] = useState<string[]>([]);
+    const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
 
     const selectedEntityIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
@@ -421,32 +433,85 @@ export default function EntitiesPage() {
                     />
                 </DialogContent>
             </Dialog>
-            <ConfirmDeletionDialog
+            <AlertDialog
                 open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
                     setBulkDeleteDialogOpen(open);
                     if (!open) {
                         setBulkDeleteEntityIds([]);
+                        setDeleteConfirmInput('');
                     }
                 }}
-                onConfirm={() => {
-                    handleDeleteEntities(bulkDeleteEntityIds);
-                    setBulkDeleteEntityIds([]);
-                }}
-                confirmText={
-                    bulkDeleteEntityIds.length === 1
-                        ? (() => {
-                              const entity = entities.find(
-                                  (e) => String(e.id) === bulkDeleteEntityIds[0],
-                              );
-                              return entity
-                                  ? `${entity.subtype}:${entity.name}`
-                                  : 'DELETE';
-                          })()
-                        : `DELETE ${bulkDeleteEntityIds.length}`
-                }
-                text={`Are you sure you want to delete ${bulkDeleteEntityIds.length} entit${bulkDeleteEntityIds.length > 1 ? 'ies' : 'y'}? This will keep their related notes but remove the links to them.`}
-            />
+            >
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete {bulkDeleteEntityIds.length}{' '}
+                            entit
+                            {bulkDeleteEntityIds.length > 1 ? 'ies' : 'y'}? This will
+                            keep their related notes but remove the links to them.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <FieldGroup className='gap-4'>
+                        <Field>
+                            <FieldLabel htmlFor='confirm-delete-entities'>
+                                Type below to confirm
+                            </FieldLabel>
+                            <Input
+                                id='confirm-delete-entities'
+                                type='text'
+                                placeholder={`Type "${
+                                    bulkDeleteEntityIds.length === 1
+                                        ? (() => {
+                                              const entity = entities.find(
+                                                  (e) =>
+                                                      String(e.id) ===
+                                                      bulkDeleteEntityIds[0],
+                                              );
+                                              return entity
+                                                  ? `${entity.subtype}:${entity.name}`
+                                                  : 'DELETE';
+                                          })()
+                                        : `DELETE ${bulkDeleteEntityIds.length}`
+                                }" to confirm`}
+                                value={deleteConfirmInput}
+                                onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                            />
+                        </Field>
+                    </FieldGroup>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='destructive'
+                            size='sm'
+                            onClick={() => {
+                                handleDeleteEntities(bulkDeleteEntityIds);
+                                setBulkDeleteEntityIds([]);
+                            }}
+                            disabled={
+                                deleteConfirmInput !==
+                                (bulkDeleteEntityIds.length === 1
+                                    ? (() => {
+                                          const entity = entities.find(
+                                              (e) =>
+                                                  String(e.id) ===
+                                                  bulkDeleteEntityIds[0],
+                                          );
+                                          return entity
+                                              ? `${entity.subtype}:${entity.name}`
+                                              : 'DELETE';
+                                      })()
+                                    : `DELETE ${bulkDeleteEntityIds.length}`)
+                            }
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

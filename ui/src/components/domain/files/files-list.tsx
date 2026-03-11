@@ -1,7 +1,6 @@
 import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import { ConfirmDeletionDialog } from '@/components/dialogs';
 import {
     ActionBar,
     ActionBarClose,
@@ -10,6 +9,16 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -892,34 +901,70 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                     Clear
                 </ActionBarClose>
             </ActionBar>
-            <ConfirmDeletionDialog
+            <AlertDialog
                 open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
                     setBulkDeleteDialogOpen(open);
-                    if (!open) {
-                        setBulkDeleteFileIds([]);
-                    }
+                    if (!open) setBulkDeleteFileIds([]);
                 }}
-                text={`Are you sure you want to delete ${bulkDeleteFileIds.length} file${bulkDeleteFileIds.length > 1 ? 's' : ''}?`}
-                onConfirm={() => {
-                    deleteFiles(bulkDeleteFileIds);
-                    setBulkDeleteFileIds([]);
-                }}
-            />
+            >
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete {bulkDeleteFileIds.length}{' '}
+                            file
+                            {bulkDeleteFileIds.length > 1 ? 's' : ''}?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='destructive'
+                            size='sm'
+                            onClick={() => {
+                                deleteFiles(bulkDeleteFileIds);
+                                setBulkDeleteFileIds([]);
+                            }}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             {deletingFileId && (
-                <ConfirmDeletionDialog
+                <AlertDialog
                     open={deleteDialogOpen}
                     onOpenChange={(open) => {
                         setDeleteDialogOpen(open);
                         if (!open) setDeletingFileId(null);
                     }}
-                    text='Are you sure you want to delete this file?'
-                    onConfirm={() => {
-                        if (deletingFileId) {
-                            deleteFiles([deletingFileId]);
-                        }
-                    }}
-                />
+                >
+                    <AlertDialogContent className='sm:max-w-md'>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to delete this file?
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel variant='outline' size='sm'>
+                                Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                variant='destructive'
+                                size='sm'
+                                onClick={() => {
+                                    if (deletingFileId) deleteFiles([deletingFileId]);
+                                }}
+                            >
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             )}
         </div>
     );

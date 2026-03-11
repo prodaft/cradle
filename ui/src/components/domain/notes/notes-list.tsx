@@ -2,8 +2,6 @@ import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { DateRangeFilterButton } from '@/components/data-table/data-table-date-range-filter';
-import ActionConfirmationDialog from '@/components/dialogs/base/action-confirmation-dialog';
-import ConfirmDeletionDialog from '@/components/dialogs/base/confirm-deletion-dialog';
 import EnrichmentRequestDialog from '@/components/domain/enrichment/dialogs/enrichment-request-dialog';
 import ReportGenerationDialog from '@/components/domain/reports/dialogs/report-generation-dialog';
 import {
@@ -14,6 +12,16 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -1049,42 +1057,84 @@ export default function NotesList({
                 <ActionBarSeparator />
                 <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
             </ActionBar>
-            <ConfirmDeletionDialog
+            <AlertDialog
                 open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
                     setBulkDeleteDialogOpen(open);
-                    if (!open) {
-                        setBulkDeleteNoteIds([]);
-                    }
+                    if (!open) setBulkDeleteNoteIds([]);
                 }}
-                onConfirm={async () => {
-                    if (bulkDeleteNoteIds.length > 0) {
-                        await executeBulkDelete(bulkDeleteNoteIds);
-                        setBulkDeleteNoteIds([]);
-                    }
-                }}
-                text={`Are you sure you want to delete ${bulkDeleteNoteIds.length} note${bulkDeleteNoteIds.length > 1 ? 's' : ''}? This action is irreversible.`}
-            />
+            >
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete {bulkDeleteNoteIds.length}{' '}
+                            note
+                            {bulkDeleteNoteIds.length > 1 ? 's' : ''}? This action is
+                            irreversible.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='destructive'
+                            size='sm'
+                            onClick={async () => {
+                                if (bulkDeleteNoteIds.length > 0) {
+                                    await executeBulkDelete(bulkDeleteNoteIds);
+                                    setBulkDeleteNoteIds([]);
+                                }
+                            }}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             {deletingNoteId && (
-                <ConfirmDeletionDialog
+                <AlertDialog
                     open={singleDeleteDialogOpen}
                     onOpenChange={(open) => {
                         setSingleDeleteDialogOpen(open);
                         if (!open) setDeletingNoteId(null);
                     }}
-                    text='Are you sure you want to delete this note? This action is irreversible.'
-                    onConfirm={async () => {
-                        if (deletingNoteId) {
-                            try {
-                                await deleteMutation.mutateAsync(deletingNoteId);
-                                toast.success('Note deleted successfully');
-                            } catch (_error) {
-                                const parsed = await parseAPIError(_error);
-                                toast.error(getDisplayMessage(parsed));
-                            }
-                        }
-                    }}
-                />
+                >
+                    <AlertDialogContent className='sm:max-w-md'>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to delete this note? This action
+                                is irreversible.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel variant='outline' size='sm'>
+                                Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                variant='destructive'
+                                size='sm'
+                                onClick={async () => {
+                                    if (deletingNoteId) {
+                                        try {
+                                            await deleteMutation.mutateAsync(
+                                                deletingNoteId,
+                                            );
+                                            toast.success('Note deleted successfully');
+                                        } catch (_error) {
+                                            const parsed = await parseAPIError(_error);
+                                            toast.error(getDisplayMessage(parsed));
+                                        }
+                                    }
+                                }}
+                            >
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             )}
             <ReportGenerationDialog
                 open={reportDialogOpen}
@@ -1096,22 +1146,41 @@ export default function NotesList({
                 onOpenChange={setEnrichmentDialogOpen}
                 notesList={enrichmentNotesList}
             />
-            <ActionConfirmationDialog
+            <AlertDialog
                 open={relinkDialogOpen}
                 onOpenChange={(open) => {
                     setRelinkDialogOpen(open);
                     if (!open) setRelinkNoteIds([]);
                 }}
-                title='Confirm Relinking'
-                text={`Are you sure you want to relink ${relinkNoteIds.length} ${relinkNoteIds.length > 1 ? 'notes' : 'note'}? This will reprocess the relationships between notes and entities.`}
-                confirmButtonText='Relink'
-                onConfirm={async () => {
-                    if (relinkNoteIds.length > 0) {
-                        await executeRelink(relinkNoteIds);
-                        setRelinkNoteIds([]);
-                    }
-                }}
-            />
+            >
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Relinking</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to relink {relinkNoteIds.length}{' '}
+                            {relinkNoteIds.length > 1 ? 'notes' : 'note'}? This will
+                            reprocess the relationships between notes and entities.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='default'
+                            size='sm'
+                            onClick={async () => {
+                                if (relinkNoteIds.length > 0) {
+                                    await executeRelink(relinkNoteIds);
+                                    setRelinkNoteIds([]);
+                                }
+                            }}
+                        >
+                            Relink
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </PreviewTipProvider>
     );
 }

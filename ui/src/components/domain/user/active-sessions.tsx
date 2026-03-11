@@ -3,7 +3,6 @@ import TableActionsButton from '@/components/base/table-actions-button';
 import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import ActionConfirmationDialog from '@/components/dialogs/base/action-confirmation-dialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -12,6 +11,16 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
@@ -520,31 +529,70 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     const session = sessions.find((s) => s.id === revokeSessionId);
                     const isCurrentSession = session?.is_current;
                     return (
-                        <ActionConfirmationDialog
+                        <AlertDialog
                             open={revokeDialogOpen}
                             onOpenChange={(open) => {
                                 setRevokeDialogOpen(open);
                                 if (!open) setRevokeSessionId(null);
                             }}
-                            onConfirm={() => {
-                                if (revokeSessionId) {
-                                    revokeSession(revokeSessionId);
-                                }
-                            }}
-                            text={
-                                isCurrentSession
-                                    ? 'Are you sure you want to revoke this session? This is your current session and you will be logged out immediately.'
-                                    : 'Are you sure you want to revoke this session? The device will be signed out and will need to sign in again.'
-                            }
-                        />
+                        >
+                            <AlertDialogContent className='sm:max-w-md'>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirm Action</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        {isCurrentSession
+                                            ? 'Are you sure you want to revoke this session? This is your current session and you will be logged out immediately.'
+                                            : 'Are you sure you want to revoke this session? The device will be signed out and will need to sign in again.'}
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel variant='outline' size='sm'>
+                                        Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                        variant='default'
+                                        size='sm'
+                                        onClick={() => {
+                                            if (revokeSessionId)
+                                                revokeSession(revokeSessionId);
+                                        }}
+                                    >
+                                        Confirm
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     );
                 })()}
-            <ActionConfirmationDialog
+            <AlertDialog
                 open={bulkRevokeDialogOpen}
                 onOpenChange={setBulkRevokeDialogOpen}
-                onConfirm={() => revokeSessions(selectedSessionIds)}
-                text={`Are you sure you want to revoke ${selectedSessionIds.length} session${selectedSessionIds.length > 1 ? 's' : ''}? The device${selectedSessionIds.length > 1 ? 's' : ''} will be signed out and will need to sign in again.`}
-            />
+            >
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Action</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to revoke {selectedSessionIds.length}{' '}
+                            session
+                            {selectedSessionIds.length > 1 ? 's' : ''}? The device
+                            {selectedSessionIds.length > 1 ? 's' : ''} will be signed
+                            out and will need to sign in again.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='default'
+                            size='sm'
+                            onClick={() => revokeSessions(selectedSessionIds)}
+                        >
+                            Confirm
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

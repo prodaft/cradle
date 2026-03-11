@@ -76,7 +76,7 @@ services:
       SECRET_KEY: "super-secret-key"
 
       ALLOWED_HOSTS: localhost
-      CRADLE_TRUSTED_ORIGINS: http://localhost
+      CSRF_TRUSTED_ORIGINS: http://localhost
       BASE_URL: api
       FRONTEND_URL: http://localhost:8000
 

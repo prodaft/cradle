@@ -1,5 +1,15 @@
 import FileUploadDialog from '@/components/domain/notes/dialogs/file-upload-dialog';
 import ReportGenerationDialog from '@/components/domain/reports/dialogs/report-generation-dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -36,7 +46,6 @@ import { debounce } from 'lodash';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
-import ConfirmDeletionDialog from '../../dialogs/base/confirm-deletion-dialog';
 import NotFound from '../../feedback/not-found';
 import ActivityList from '../activity/activity-list';
 import { EnrichmentRequestDialog } from '../enrichment';
@@ -912,12 +921,29 @@ export default function NoteViewer() {
                 noteId={noteId}
                 noteTitle={note?.title}
             />
-            <ConfirmDeletionDialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-                onConfirm={handleDelete}
-                text='Are you sure you want to delete this note? This action is irreversible.'
-            />
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this note? This action is
+                            irreversible.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='destructive'
+                            size='sm'
+                            onClick={handleDelete}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <FileUploadDialog
                 open={fileUploadDialogOpen}
                 onOpenChange={setFileUploadDialogOpen}

@@ -104,11 +104,11 @@ export function AppSidebar({
     return (
         <Sidebar collapsible='icon' {...props}>
             <SidebarHeader
-                className={`flex ${isCollapsed ? 'flex-row items-center justify-center gap-2 pt-4 px-2 pb-2' : 'flex-col items-center gap-2 pt-4 px-4 pb-0'}`}
+                className={`flex ${isCollapsed ? 'flex-row items-center justify-center gap-2 pt-4 px-2 pb-2' : 'flex-col items-start gap-2 pt-4 px-4 pb-0'}`}
             >
                 <Link
                     to='/notes'
-                    className={isCollapsed ? 'shrink-0' : 'flex w-full justify-center'}
+                    className={isCollapsed ? 'shrink-0' : 'flex w-full justify-start'}
                 >
                     <Logo text={!isCollapsed} height={isCollapsed ? '24px' : '36px'} />
                 </Link>

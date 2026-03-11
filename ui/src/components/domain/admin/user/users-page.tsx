@@ -11,6 +11,16 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,6 +31,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
@@ -38,7 +50,6 @@ import {
 } from '@tanstack/react-table';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import ConfirmDeletionDialog from '../../../dialogs/base/confirm-deletion-dialog';
 import AddUserForm from './add-user-form';
 
 type UserRetrieve = components['schemas']['UserRetrieve'];
@@ -74,6 +85,7 @@ export default function UsersPage() {
     const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteUserIds, setDeleteUserIds] = useState<string[]>([]);
+    const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
 
     const selectedUserIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
@@ -443,22 +455,57 @@ export default function UsersPage() {
                     </ScrollArea>
                 </DialogContent>
             </Dialog>
-            <ConfirmDeletionDialog
+            <AlertDialog
                 open={deleteDialogOpen}
                 onOpenChange={(open) => {
                     setDeleteDialogOpen(open);
                     if (!open) {
                         setDeleteUserIds([]);
+                        setDeleteConfirmInput('');
                     }
                 }}
-                onConfirm={() => {
-                    if (deleteUserIds.length > 0) handleDeleteUsers(deleteUserIds);
-                    setDeleteUserIds([]);
-                    setDeleteDialogOpen(false);
-                }}
-                confirmText={deleteConfirmText}
-                text={deleteDialogText}
-            />
+            >
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {deleteDialogText}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <FieldGroup className='gap-4'>
+                        <Field>
+                            <FieldLabel htmlFor='confirm-delete-users'>
+                                Type below to confirm
+                            </FieldLabel>
+                            <Input
+                                id='confirm-delete-users'
+                                type='text'
+                                placeholder={`Type "${deleteConfirmText}" to confirm`}
+                                value={deleteConfirmInput}
+                                onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                            />
+                        </Field>
+                    </FieldGroup>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='destructive'
+                            size='sm'
+                            onClick={() => {
+                                if (deleteUserIds.length > 0)
+                                    handleDeleteUsers(deleteUserIds);
+                                setDeleteUserIds([]);
+                                setDeleteDialogOpen(false);
+                            }}
+                            disabled={deleteConfirmInput !== deleteConfirmText}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
