@@ -13,6 +13,7 @@ from notes.tasks import propagate_acvec
 from notes.utils import calculate_acvec
 from user.models import CradleUser
 
+from .constants import SUBTYPE_NOTE
 from .enums import EntryType, RelationReason
 from .models import Edge, Entry, Relation
 
@@ -127,7 +128,7 @@ def refresh_edges_materialized_view():
     with connection.cursor() as cursor:
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY edges;")
 
-    entry_ids = list(Entry.objects.exclude(entry_class__subtype="note").values_list("id", flat=True))
+    entry_ids = list(Entry.objects.exclude(entry_class__subtype=SUBTYPE_NOTE).values_list("id", flat=True))
     degrees = [Edge.objects.filter(src=eid).count() for eid in entry_ids]
 
     Entry.objects.bulk_update(
@@ -135,7 +136,7 @@ def refresh_edges_materialized_view():
         ["degree"],
     )
 
-    Entry.objects.filter(entry_class__subtype="note").update(degree=0)
+    Entry.objects.filter(entry_class__subtype=SUBTYPE_NOTE).update(degree=0)
 
 
 @shared_task

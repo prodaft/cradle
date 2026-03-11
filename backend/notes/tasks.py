@@ -11,6 +11,12 @@ from django.db.models import Count
 from django.utils import timezone
 
 from core.decorators import distributed_lock
+from entries.constants import (
+    INTERNAL_ENTRY_CLASS_DEFAULTS,
+    SUBTYPE_ALIAS,
+    SUBTYPE_FILE,
+    SUBTYPE_NOTE,
+)
 from entries.enums import EntryType, RelationReason
 from entries.exceptions import InvalidEntryException
 from entries.models import Entry, EntryClass, Relation
@@ -200,14 +206,8 @@ def entry_class_creation_task(note_id, user_id=None):
     if user_id:
         user = CradleUser.objects.get(id=user_id)
 
-    EntryClass.objects.get_or_create(
-        subtype="note",
-        defaults={"type": EntryType.ARTIFACT, "color": "#7f8389"},
-    )
-    EntryClass.objects.get_or_create(
-        subtype="file",
-        defaults={"type": EntryType.ARTIFACT, "color": "#7f8389"},
-    )
+    EntryClass.objects.get_or_create(subtype=SUBTYPE_NOTE, defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_NOTE])
+    EntryClass.objects.get_or_create(subtype=SUBTYPE_FILE, defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_FILE])
 
     try:
         nonexistent_entries = set()
@@ -328,11 +328,7 @@ def connect_aliases(note_id, user_id=None):
     from entries.tasks import refresh_edges_materialized_view
 
     alias_class, _ = EntryClass.objects.get_or_create(
-        subtype="alias",
-        defaults={
-            "type": EntryType.ARTIFACT,
-            "color": "#7f8389",
-        },
+        subtype=SUBTYPE_ALIAS, defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_ALIAS]
     )
 
     note = Note.objects.get(id=note_id)

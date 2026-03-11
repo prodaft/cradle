@@ -5,7 +5,7 @@ import uuid
 
 from celery import group, shared_task
 
-from entries.enums import EntryType
+from entries.constants import INTERNAL_ENTRY_CLASS_DEFAULTS, SUBTYPE_DIGEST, SUBTYPE_ENRICHMENT
 from entries.models import EntryClass
 
 from ..enums import EnrichmentStatus
@@ -42,7 +42,7 @@ def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
 @shared_task
 def start_digest(digest_id):
     """Start digest processing for the given digest ID. Runs digest.digest()."""
-    EntryClass.objects.get_or_create(type=EntryType.ARTIFACT, subtype="digest")
+    EntryClass.objects.get_or_create(subtype=SUBTYPE_DIGEST, defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_DIGEST])
     logger.debug("Starting digest %s", digest_id)
     digest = BaseDigest.objects.get(id=digest_id)
     digest.digest()
@@ -51,7 +51,9 @@ def start_digest(digest_id):
 @shared_task
 def start_enrich(enrich_id):
     """Start enrichment: run all enrichers for the request in parallel."""
-    EntryClass.objects.get_or_create(type=EntryType.ARTIFACT, subtype="enrichment")
+    EntryClass.objects.get_or_create(
+        subtype=SUBTYPE_ENRICHMENT, defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_ENRICHMENT]
+    )
     request = EnrichmentRequest.objects.get(id=enrich_id)
     tasks = []
     for enricher in request.enrichers:

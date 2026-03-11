@@ -3,6 +3,7 @@
 from celery import group
 from django.core.management.base import BaseCommand
 
+from entries.constants import SUBTYPE_ALIAS
 from entries.models import Entry
 
 from ...models import Note
@@ -17,7 +18,7 @@ class Command(BaseCommand):
 
         Run: manage.py link_aliases
         """
-        Entry.objects.filter(entry_class__subtype="alias").delete()
+        Entry.objects.filter(entry_class__subtype=SUBTYPE_ALIAS).delete()
 
         tasks = [connect_aliases.si(note_id, None) for note_id in Note.objects.values_list("id", flat=True)]
 

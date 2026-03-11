@@ -7,6 +7,7 @@ from drf_spectacular.extensions import OpenApiSerializerExtension
 from rest_framework import serializers
 
 from core.utils import flatten
+from entries.constants import SUBTYPE_NOTE
 from entries.models import Edge, Entry, Relation
 from entries.serializers import (
     EntryClassSerializerNoChildren,
@@ -71,7 +72,7 @@ class SubGraphSerializer(serializers.Serializer):
             entry.degree = degree_map.get(int(entry.id), 0)
 
             # For note entries, replace the name with the note title and add note_id
-            if entry.entry_class.subtype == "note" and entry.name and len(entry.name) >= 36:
+            if entry.entry_class.subtype == SUBTYPE_NOTE and entry.name and len(entry.name) >= 36:
                 try:
                     note_uuid = str(uuid.UUID(entry.name[:36]))
                     entry.note_id = note_uuid

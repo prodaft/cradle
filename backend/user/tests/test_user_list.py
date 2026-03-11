@@ -125,9 +125,7 @@ class GetAllUsersTest(UserTestCase):
         response = self.client.get(reverse("user_list"), **self.headers_admin)
 
         self.assertEqual(response.status_code, 200)
-        expected = UserRetrieveSerializer(
-            [self.admin, self.user], many=True
-        ).data
+        expected = UserRetrieveSerializer([self.admin, self.user], many=True).data
         self.assertCountEqual(expected, response.json()["results"])
 
     def test_get_all_users_not_authenticated(self):

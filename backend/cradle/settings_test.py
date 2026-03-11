@@ -16,14 +16,9 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 BASE_URL = ""
 STATIC_URL = "static/"
-FRONTEND_URL = "http://localhost:5173"
+FRONTEND_URL = DEFAULT_FRONTEND_URL  # noqa: F405
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost",
-    "http://127.0.0.1",
-    FRONTEND_URL,
-    "http://127.0.0.1:5173",
-]
+CSRF_TRUSTED_ORIGINS = list(DEFAULT_CSRF_ORIGINS)  # noqa: F405
 
 DATABASES = {
     "default": {
@@ -52,7 +47,6 @@ AWS_SECRET_ACCESS_KEY = "minio_admin"
 AWS_S3_ENDPOINT_URL = "http://minio:9000"
 AWS_S3_USE_SSL = False
 AWS_S3_VERIFY = False
-AWS_S3_SIGNATURE_VERSION = "s3v4"
 AWS_S3_ADDRESSING_STYLE = "path"
 
 CORS_ALLOWED_ORIGINS = [FRONTEND_URL, "http://127.0.0.1:5173"]

@@ -4,20 +4,34 @@ import django_stubs_ext
 
 django_stubs_ext.monkeypatch()
 
+import tomllib
 import os  # noqa: E402
 from datetime import timedelta  # noqa: E402
 from pathlib import Path  # noqa: E402
 
-VERSION = "2.10.2-beta.9bd46310"
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+with open(BASE_DIR / "pyproject.toml", "rb") as f:
+    VERSION = tomllib.load(f).get("project", {}).get("version", "0.0.0")
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "../media")
 
 # CORS: restrict to allowed origins (set CORS_ALLOWED_ORIGINS in env or settings_docker)
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = []
+
+# Default frontend/CSRF origins (override in settings_docker/settings_test)
+DEFAULT_FRONTEND_URL = "http://localhost:5173"
+DEFAULT_CSRF_ORIGINS = [
+    DEFAULT_FRONTEND_URL,
+    "http://localhost",
+    "http://127.0.0.1",
+    "http://127.0.0.1:5173",
+]
+
+# S3/MinIO signature (shared by docker and test settings)
+AWS_S3_SIGNATURE_VERSION = "s3v4"
 
 
 # Application definition
@@ -289,4 +303,4 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024
 DEFAULT_SETTINGS = {}
 
 # Internal subtypes (excluded from user-managed entry classes)
-INTERNAL_SUBTYPES = {"alias", "note", "file", "digest", "enrichment"}
+from entries.constants import INTERNAL_SUBTYPES  # noqa: E402

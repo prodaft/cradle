@@ -37,11 +37,11 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", ["localhost", "127.0.0.1"])
 
 BASE_URL = env.str("BASE_URL", "")
 STATIC_URL = env.str("STATIC_URL", "static/")
-FRONTEND_URL = env.str("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = env.str("FRONTEND_URL", DEFAULT_FRONTEND_URL)  # noqa: F405
 
 _csrf_origins = list(
     dict.fromkeys(
-        [FRONTEND_URL, "http://localhost", "http://127.0.0.1", "http://localhost:5173", "http://127.0.0.1:5173"]
+        [FRONTEND_URL] + list(DEFAULT_CSRF_ORIGINS)  # noqa: F405
     )
 )
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", _csrf_origins)
@@ -88,7 +88,6 @@ AWS_S3_ENDPOINT_URL = env.str(
 )
 AWS_S3_USE_SSL = MINIO_CONFIG["secure"]
 AWS_S3_VERIFY = env.bool("AWS_S3_VERIFY", True)
-AWS_S3_SIGNATURE_VERSION = "s3v4"
 AWS_S3_ADDRESSING_STYLE = "path"
 
 # CORS: frontend origins (subset of CSRF)

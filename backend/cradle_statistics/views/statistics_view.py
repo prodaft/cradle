@@ -12,6 +12,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.models import Access
 from core.openapi import get_common_error_responses
+from entries.constants import SUBTYPE_FILE, SUBTYPE_NOTE
 from entries.models import Entry
 from notes.models import Note
 from user.models import CradleUser
@@ -60,7 +61,7 @@ class StatisticsList(APIView):
 
         artifacts_list = list(
             Entry.artifacts.filter(notes__in=accessible_notes)
-            .exclude(entry_class__subtype__in=("note", "file"))
+            .exclude(entry_class__subtype__in=(SUBTYPE_NOTE, SUBTYPE_FILE))
             .select_related("entry_class")
             .distinct()
             .order_by("-notes__timestamp")[:3]

@@ -18,6 +18,7 @@ from django_lifecycle import (
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
 
+from entries.constants import SUBTYPE_DIGEST, SUBTYPE_ENRICHMENT
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass, Relation
 from file_transfer.storage import DigestStorage
@@ -94,7 +95,7 @@ class BaseDigest(LifecycleModel):
     @property
     def entry(self) -> Entry:
         """Return the entry representing this digest."""
-        entry_class, _ = EntryClass.objects.get_or_create(subtype="digest", type=EntryType.ARTIFACT)
+        entry_class, _ = EntryClass.objects.get_or_create(subtype=SUBTYPE_DIGEST, defaults={"type": EntryType.ARTIFACT})
         entry, _ = Entry.objects.get_or_create(
             name=f"{self.digest_type} Digest {self.title} [{self.id}]",
             entry_class=entry_class,
@@ -460,7 +461,9 @@ class EnrichmentRequest(LifecycleModel):
     @property
     def entry(self):
         """Return the entry representing this enrichment request."""
-        entry_class, _ = EntryClass.objects.get_or_create(subtype="enrichment", type=EntryType.ARTIFACT)
+        entry_class, _ = EntryClass.objects.get_or_create(
+            subtype=SUBTYPE_ENRICHMENT, defaults={"type": EntryType.ARTIFACT}
+        )
         entry, _ = Entry.objects.get_or_create(
             name=f"Enrichment Request {self.title} [{self.id}]", entry_class=entry_class
         )

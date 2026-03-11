@@ -9,6 +9,7 @@ import uuid
 from django.db import models
 from django_lifecycle import AFTER_CREATE, LifecycleModelMixin, hook
 
+from entries.constants import INTERNAL_ENTRY_CLASS_DEFAULTS, SUBTYPE_FILE
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from management.settings import cradle_settings
@@ -118,7 +119,9 @@ class FileReference(models.Model, LifecycleModelMixin):
     @property
     def entry(self) -> Entry:
         """Artifact entry representing this file (for relations and linking)."""
-        file_class, _ = EntryClass.objects.get_or_create(type=EntryType.ARTIFACT, subtype="file")
+        file_class, _ = EntryClass.objects.get_or_create(
+            subtype=SUBTYPE_FILE, defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_FILE]
+        )
 
         entry, _ = Entry.objects.get_or_create(
             entry_class=file_class,
