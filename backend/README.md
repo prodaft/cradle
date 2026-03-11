@@ -38,7 +38,6 @@ Django-based backend providing core functionality for CRADLE including:
    ```bash
    git clone https://github.com/prodaft/cradle.git
    cd cradle/backend
-   git submodule update --init --recursive
    ```
 
 2. **Database Setup**
