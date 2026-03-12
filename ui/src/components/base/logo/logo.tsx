@@ -10,7 +10,7 @@ import text_logo_light from '@/assets/logos/light.svg';
 /**
  * Logo component props
  */
-export interface LogoProps {
+interface LogoProps {
     /** Width of the logo */
     width?: string | number;
     /** Height of the logo */

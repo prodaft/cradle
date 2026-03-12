@@ -42,7 +42,7 @@ interface FileWithStatus {
 /**
  * FileUploadDialog component props
  */
-export interface FileUploadDialogProps {
+interface FileUploadDialogProps {
     /** Array of files currently attached to the note */
     files: FileReferenceWithNote[];
     /** Callback to update the files list */

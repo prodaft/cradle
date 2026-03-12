@@ -64,5 +64,3 @@ export function parseMarkdownInline(mdContent: string | undefined): string | und
         throw error;
     }
 }
-
-export default parseMarkdown;

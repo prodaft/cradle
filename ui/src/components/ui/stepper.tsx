@@ -483,16 +483,16 @@ const getStepState = (currentIndex: number, stepIndex: number) => {
 };
 
 namespace Stepper {
-    export type StepperVariant = 'horizontal' | 'vertical' | 'circle';
-    export type StepperLabelOrientation = 'horizontal' | 'vertical';
+    type StepperVariant = 'horizontal' | 'vertical' | 'circle';
+    type StepperLabelOrientation = 'horizontal' | 'vertical';
 
-    export type ConfigProps = {
+    type ConfigProps = {
         variant?: StepperVariant;
         labelOrientation?: StepperLabelOrientation;
         tracking?: boolean;
     };
 
-    export type DefineProps<Steps extends Stepperize.Step[]> = Omit<
+    type DefineProps<Steps extends Stepperize.Step[]> = Omit<
         Stepperize.StepperReturn<Steps>,
         'Scoped'
     > & {
@@ -522,7 +522,7 @@ namespace Stepper {
         };
     };
 
-    export type CircleStepIndicatorProps = {
+    type CircleStepIndicatorProps = {
         currentStep: number;
         totalSteps: number;
         size?: number;

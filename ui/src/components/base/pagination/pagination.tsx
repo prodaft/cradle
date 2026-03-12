@@ -14,7 +14,7 @@ import React from 'react';
 /**
  * Pagination component props for standalone (non-table) use
  */
-export interface PaginationProps extends React.ComponentProps<'div'> {
+interface PaginationProps extends React.ComponentProps<'div'> {
     /** Current active page */
     currentPage: number;
     /** Total number of pages */

@@ -15,7 +15,7 @@ import { lightTheme } from './light';
 import { solarizedDark, solarizedLight } from './solarized';
 import { vscodeDark, vscodeLight } from './vscode';
 
-export interface PresetTheme {
+interface PresetTheme {
     id: string;
     label: string;
     theme: ThemeConfig;
@@ -128,33 +128,4 @@ export const PRESET_THEMES: PresetTheme[] = [
     },
 ];
 
-export {
-    // Ayu themes
-    ayuDark,
-    ayuLight,
-    ayuMirage,
-    // Catppuccin themes
-    catppuccinFrappe,
-    catppuccinLatte,
-    catppuccinMacchiato,
-    catppuccinMocha,
-    // Celestial
-    celestial,
-    // Cradle themes
-    cradleDark,
-    cradleLight,
-    // Default themes
-    darkTheme,
-    // Dracula
-    dracula,
-    // Gruvbox
-    gruvboxDark,
-    gruvboxLight,
-    lightTheme,
-    // Solarized
-    solarizedDark,
-    solarizedLight,
-    // VS Code themes
-    vscodeDark,
-    vscodeLight,
-};
+export { darkTheme, lightTheme };

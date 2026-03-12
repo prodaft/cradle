@@ -1,4 +1,4 @@
-export class TrieNode<T = any> {
+class TrieNode<T = any> {
     children: { [key: string]: TrieNode<T> };
     eow: boolean;
     data?: T; // Generic data type

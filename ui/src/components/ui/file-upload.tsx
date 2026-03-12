@@ -1399,5 +1399,4 @@ export {
     FileUploadList,
     FileUploadTrigger,
     useStore as useFileUpload,
-    type FileUploadProps,
 };

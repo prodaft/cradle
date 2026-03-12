@@ -21,7 +21,7 @@ import { useState } from 'react';
 /**
  * MarkdownEditorDialog component props
  */
-export interface MarkdownEditorDialogProps {
+interface MarkdownEditorDialogProps {
     /** Callback function when content is confirmed, receives content and title */
     onConfirm: (content: string, title: string) => Promise<void>;
     /** Title for the modal/note */

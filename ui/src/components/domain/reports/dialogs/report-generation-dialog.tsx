@@ -51,7 +51,7 @@ type ReportMode = 'anonymized' | 'transparent';
 /**
  * ReportGenerationDialog component props
  */
-export interface ReportGenerationDialogProps {
+interface ReportGenerationDialogProps {
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */

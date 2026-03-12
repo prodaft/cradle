@@ -7,14 +7,14 @@ import { EditorState } from '@codemirror/state';
 import { SyntaxNode } from '@lezer/common';
 import type { components } from '@services/openapi/schema';
 import DOMPurify from 'dompurify';
-import parseMarkdown from '../parser/parse';
+import { parseMarkdown } from '../parser/parse';
 
 type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 
 /**
  * Parse result from markdown parser
  */
-export interface ParseResult {
+interface ParseResult {
     html: string;
     metadata: Record<string, any>;
 }
@@ -23,7 +23,7 @@ export interface ParseResult {
  * Link structure for custom cradle syntax
  * The custom syntax used to reference links to dashboards in the editor: `[[type:name|alias]]`
  */
-export interface Link {
+interface Link {
     /** Starting position of the link */
     from: number;
     /** Ending position of the link */
@@ -105,7 +105,7 @@ const LINK_REGEX_DOUBLE =
 /**
  * Autocomplete context for the editor
  */
-export interface AutocompleteContext {
+interface AutocompleteContext {
     pos: number;
     state: EditorState;
 }
@@ -119,7 +119,7 @@ export interface AutocompleteContext {
  * @param context - The editor autocomplete context
  * @returns The link node or null
  */
-export const getLinkNode = (context: AutocompleteContext): SyntaxNode | null => {
+const getLinkNode = (context: AutocompleteContext): SyntaxNode | null => {
     const pos = context.pos;
     const tree = syntaxTree(context.state);
     let node: SyntaxNode | null = tree.resolve(pos, -1);
@@ -145,7 +145,7 @@ export const getLinkNode = (context: AutocompleteContext): SyntaxNode | null => 
  * @param text - The text to parse
  * @returns Parsed link or null
  */
-export const parseLink = (from: number, current: number, text: string): Link | null => {
+const parseLink = (from: number, current: number, text: string): Link | null => {
     const isDouble = text.startsWith('[[') && text.endsWith(']]');
     const match = (isDouble ? LINK_REGEX_DOUBLE : LINK_REGEX_SINGLE).exec(text);
 

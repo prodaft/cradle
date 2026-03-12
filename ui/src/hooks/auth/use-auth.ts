@@ -6,7 +6,6 @@ import {
     AuthActionsContext,
     AuthStateContext,
     type AuthActionsValue,
-    type AuthContextValue,
     type AuthStateValue,
 } from '@/components/domain/auth/auth-context';
 import { useContext, type Context } from 'react';
@@ -40,19 +39,3 @@ export const useAuthState = (): AuthStateValue => {
 export const useAuthActions = (): AuthActionsValue => {
     return useRequiredContext(AuthActionsContext, 'useAuthActions');
 };
-
-/**
- * Convenience hook that combines state and actions
- * Use this for most components (simple + correct)
- * For performance-sensitive components, use useAuthState() or useAuthActions() separately
- *
- * @returns Combined authentication state and actions
- */
-export const useAuth = (): AuthContextValue => {
-    return {
-        ...useAuthState(),
-        ...useAuthActions(),
-    };
-};
-
-export type { AuthContextValue } from '@/components/domain/auth/auth-context';

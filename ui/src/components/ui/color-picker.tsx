@@ -1630,6 +1630,4 @@ export {
     ColorPickerTrigger,
     //
     useStore as useColorPicker,
-    //
-    type ColorPickerProps,
 };

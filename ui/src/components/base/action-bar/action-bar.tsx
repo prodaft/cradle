@@ -6,7 +6,7 @@ import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 type ActionBarButtonVariant = 'circle' | 'pill';
 
-export interface ActionBarButtonProps {
+interface ActionBarButtonProps {
     tooltip: React.ReactNode;
     onClick?: () => void;
     disabled?: boolean;
@@ -57,7 +57,7 @@ export const ActionBarButton = memo(function ActionBarButton({
     );
 });
 
-export interface ActionBarSearchProps {
+interface ActionBarSearchProps {
     placeholder: string;
     /**
      * Controlled value (optional). If provided, the input will sync to it.

@@ -6,7 +6,7 @@ import { ReactNode } from 'react';
 // Base Component Props
 // ============================================================================
 
-export interface BaseComponentProps {
+interface BaseComponentProps {
     className?: string;
     children?: ReactNode;
 }
@@ -33,13 +33,13 @@ export interface ThemeContextValue {
 
 // Re-export the generated UserRetrieve type for domain data
 import type { components } from '@services/openapi/schema';
-export type UserRetrieve = components['schemas']['UserRetrieve'];
+type UserRetrieve = components['schemas']['UserRetrieve'];
 
 /**
  * Extended profile with UI-specific properties.
  * Uses UserRetrieve as the base and extends with app-specific fields.
  */
-export interface Profile {
+interface Profile {
     id: string;
     username: string;
     email: string;
@@ -53,16 +53,16 @@ export interface Profile {
 // Notification Types
 // ============================================================================
 
-export type NotificationType = 'success' | 'error' | 'warning' | 'info';
+type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
-export interface NotificationOptions {
+interface NotificationOptions {
     type: NotificationType;
     title?: string;
     text: string;
     duration?: number;
 }
 
-export interface NotificationContextValue {
+interface NotificationContextValue {
     notify: (options: NotificationOptions) => void;
 }
 
@@ -70,7 +70,7 @@ export interface NotificationContextValue {
 // Layout Types
 // ============================================================================
 
-export interface LayoutContextValue {
+interface LayoutContextValue {
     sidebarOpen: boolean;
     setSidebarOpen: (open: boolean) => void;
     toggleSidebar: () => void;
@@ -82,13 +82,13 @@ export interface LayoutContextValue {
 // API Response Types
 // ============================================================================
 
-export interface ApiResponse<T> {
+interface ApiResponse<T> {
     data: T;
     status: number;
     statusText: string;
 }
 
-export interface ApiError {
+interface ApiError {
     message: string;
     status?: number;
     errors?: Record<string, string[]>;
@@ -98,9 +98,9 @@ export interface ApiError {
 // Common Utility Types
 // ============================================================================
 
-export type SortOrder = 'asc' | 'desc';
+type SortOrder = 'asc' | 'desc';
 
-export interface SearchFilter {
+interface SearchFilter {
     search?: string;
     tags?: string[];
     dateFrom?: Date;
@@ -111,7 +111,7 @@ export interface SearchFilter {
 // File Types
 // ============================================================================
 
-export interface FileMetadata {
+interface FileMetadata {
     id: string;
     name: string;
     size: number;
@@ -126,7 +126,7 @@ export interface FileMetadata {
 // NOTE: For graph visualization with D3 force simulation properties,
 // use GraphNode and GraphLink from @/types instead.
 
-export interface SimpleGraphNode {
+interface SimpleGraphNode {
     id: string;
     label: string;
     type: string;
@@ -147,7 +147,7 @@ export interface GraphEdge {
     properties?: Record<string, any>;
 }
 
-export interface GraphData {
+interface GraphData {
     nodes: SimpleGraphNode[];
     edges: GraphEdge[];
 }
@@ -156,12 +156,12 @@ export interface GraphData {
 // Form Types
 // ============================================================================
 
-export interface FormValidationError {
+interface FormValidationError {
     field: string;
     message: string;
 }
 
-export interface FormState<T> {
+interface FormState<T> {
     values: T;
     errors: Record<keyof T, string>;
     touched: Record<keyof T, boolean>;
@@ -173,7 +173,7 @@ export interface FormState<T> {
 // Auth Types
 // ============================================================================
 
-export interface LoginCredentials {
+interface LoginCredentials {
     username: string;
     password: string;
     twoFactorToken?: string;

@@ -47,7 +47,7 @@ type FormData = z.infer<typeof changePasswordSchema>;
 /**
  * ChangePasswordDialog component props
  */
-export interface ChangePasswordDialogProps {
+interface ChangePasswordDialogProps {
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */

@@ -10,7 +10,7 @@ type EntryListCompressedTree = components['schemas']['EntryListCompressedTree'];
  * Dashboard entry structure
  * Matches OptimizedEntryResponse fields used for navigation
  */
-export interface DashboardEntry {
+interface DashboardEntry {
     name: string;
     subtype?: string; // Optional to match API response
     type?: string;
@@ -199,7 +199,7 @@ export const createDashboardLink = (entry: DashboardEntry | null): string => {
  * @param entry_transformer - Function to transform each entry
  * @returns Grouped entry cards
  */
-export const groupSubtypes = <T,>(
+const groupSubtypes = <T,>(
     entries: DashboardEntry[],
     entry_transformer: (entry: DashboardEntry) => T,
 ): T[][] => {
@@ -261,7 +261,7 @@ export const truncateText = (
  * @param b - Second string
  * @returns Comparison result
  */
-export function naturalSort(a: string, b: string): number {
+function naturalSort(a: string, b: string): number {
     // Regular expression to split strings into parts
     const regex = /([^0-9]+)([0-9]+)/;
 

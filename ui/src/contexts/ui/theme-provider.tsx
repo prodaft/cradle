@@ -63,7 +63,7 @@ const parseStoredTheme = (value: string | null): ThemeConfig | null => {
 /**
  * Props for ThemeProvider component
  */
-export interface ThemeProviderProps {
+interface ThemeProviderProps {
     children: ReactNode;
 }
 

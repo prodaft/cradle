@@ -40,7 +40,7 @@ type SearchResultEntry = components['schemas']['EntryResponse'];
 /**
  * SearchDialog component props
  */
-export interface SearchDialogProps {
+interface SearchDialogProps {
     /** Whether the dialog is open */
     isOpen: boolean;
     /** Function to close the dialog */

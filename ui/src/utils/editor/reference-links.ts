@@ -16,13 +16,13 @@ type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 type FileDownloadRequest = { fileId: string };
 
 // Type alias for compatibility - export it
-export type FileReference = FileReferenceWithNote;
+type FileReference = FileReferenceWithNote;
 
 /**
  * Widget to display the reference link.
  * It renders as a styled span element, hiding the underlying markdown syntax.
  */
-export class ReferenceLinkWidget extends WidgetType {
+class ReferenceLinkWidget extends WidgetType {
     text: string;
     file: FileReference;
     resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>;
@@ -84,7 +84,7 @@ export class ReferenceLinkWidget extends WidgetType {
  * It renders as a standard img tag, hiding the underlying markdown syntax.
  * Uses a static cache to preserve image URLs across widget recreations (e.g., when scrolling).
  */
-export class ReferenceImageWidget extends WidgetType {
+class ReferenceImageWidget extends WidgetType {
     // Static cache to store resolved presigned URLs by file ID
     // This prevents images from unloading when scrolling out of view and back
     private static urlCache = new Map<string, string>();

@@ -102,7 +102,7 @@ interface RichEditorProps {
     hasUnsavedChanges?: boolean;
 }
 
-export interface RichEditorRef {
+interface RichEditorRef {
     view: EditorView | null;
 }
 

@@ -45,7 +45,7 @@ export function isLoggedIn(): boolean {
  *
  * @returns user role string or empty string if not logged in
  */
-export function getRole(): string {
+function getRole(): string {
     if (typeof window === 'undefined') return '';
     try {
         return localStorage.getItem('role') || '';

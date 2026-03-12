@@ -59,4 +59,4 @@ function useComposedRefs<T>(...refs: PossibleRef<T>[]): React.RefCallback<T> {
     return React.useCallback(composeRefs(...refs), refs);
 }
 
-export { composeRefs, useComposedRefs };
+export { useComposedRefs };

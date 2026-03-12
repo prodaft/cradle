@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 /**
  * TwoFactorSetupDialog component props
  */
-export interface TwoFactorSetupDialogProps {
+interface TwoFactorSetupDialogProps {
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */

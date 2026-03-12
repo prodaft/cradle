@@ -11,7 +11,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 /**
  * Widget to render Cradle links as clickable elements in the editor
  */
-export class CradleLinkWidget extends WidgetType {
+class CradleLinkWidget extends WidgetType {
     type: string;
     name: string;
     alias: string;

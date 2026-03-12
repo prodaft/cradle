@@ -14,7 +14,7 @@ import { startCase } from 'lodash';
 import { Check, PlusCircle, XCircle } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
-export type StatusOption = StatusType;
+type StatusOption = StatusType;
 
 interface StatusHeaderDropdownProps {
     onStatusChange: (status: string) => void;

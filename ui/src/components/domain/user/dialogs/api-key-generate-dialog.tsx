@@ -30,7 +30,7 @@ import { toast } from 'sonner';
 /**
  * ApiKeyGenerateDialog component props
  */
-export interface ApiKeyGenerateDialogProps {
+interface ApiKeyGenerateDialogProps {
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */

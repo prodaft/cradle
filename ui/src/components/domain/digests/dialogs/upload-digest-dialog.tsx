@@ -49,7 +49,7 @@ interface DataTypeOption extends SelectOption<string> {
     inferEntities: boolean;
 }
 
-export interface UploadDigestDialogProps {
+interface UploadDigestDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     dataTypeOptions?: DataTypeOption[]; // Optional - modal fetches types internally

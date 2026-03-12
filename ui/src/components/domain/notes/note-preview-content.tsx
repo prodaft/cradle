@@ -51,5 +51,3 @@ export const NotePreviewContent = ({ note }: NotePreviewContentProps) => {
         </div>
     );
 };
-
-export default NotePreviewContent;

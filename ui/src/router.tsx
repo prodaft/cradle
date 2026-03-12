@@ -9,7 +9,7 @@ export function getRouter() {
     });
 }
 
-export const router = getRouter();
+const router = getRouter();
 
 declare module '@tanstack/react-router' {
     interface Register {

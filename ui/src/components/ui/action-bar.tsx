@@ -660,5 +660,4 @@ export {
     ActionBarItem,
     ActionBarSelection,
     ActionBarSeparator,
-    type ActionBarProps,
 };

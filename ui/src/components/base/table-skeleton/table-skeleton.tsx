@@ -10,7 +10,7 @@ import {
 import { cn } from '@/lib/utils';
 import React from 'react';
 
-export interface TableSkeletonProps {
+interface TableSkeletonProps {
     /** Number of skeleton rows */
     rows?: number;
     /** Number of columns (cell widths alternate) */

@@ -53,7 +53,7 @@ interface RequestArtifact {
 /**
  * EnrichmentRequestDialog component props
  */
-export interface EnrichmentRequestDialogProps {
+interface EnrichmentRequestDialogProps {
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */

@@ -22,10 +22,7 @@ export interface Edge {
  * @param disabledTypes - Set of disabled node types
  * @returns Filtered nodes
  */
-export function filterNodes<T extends Node>(
-    nodes: T[],
-    disabledTypes: Set<string>,
-): T[] {
+function filterNodes<T extends Node>(nodes: T[], disabledTypes: Set<string>): T[] {
     if (!disabledTypes || disabledTypes.size === 0) {
         return nodes;
     }
@@ -42,7 +39,7 @@ export function filterNodes<T extends Node>(
  * @param filteredNodes - Filtered nodes array
  * @returns Filtered edges
  */
-export function filterEdges<T extends Node, E extends EdgeRelation>(
+function filterEdges<T extends Node, E extends EdgeRelation>(
     edges: E[],
     filteredNodes: T[],
 ): E[] {

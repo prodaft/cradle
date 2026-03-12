@@ -63,7 +63,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ActionBarButton, ActionBarSearch } from '../../base/action-bar/action-bar';
 import { DateRangeFilter, type SortDirection } from '../../base/list-view/types';
-import PreviewTip, { PreviewTipProvider } from '../../base/preview/preview-tip';
+import PreviewTip from '../../base/preview/preview-tip';
 import StatusHeaderDropdown from '../../base/status-header-dropdown/status-header-dropdown';
 import OfflineIndicator from '../../feedback/offline-indicator';
 import { NotePreviewContent } from './note-preview-content';
@@ -605,6 +605,7 @@ export default function NotesList({
                         align='start'
                         sideOffset={32}
                         size='lg'
+                        openDelay={800}
                     >
                         <div
                             className='truncate w-64 cursor-pointer'
@@ -911,7 +912,7 @@ export default function NotesList({
     }, [noteById, selectedNoteIds]);
 
     return (
-        <PreviewTipProvider delayDuration={800}>
+        <>
             <div ref={containerRef} className='flex flex-col space-y-4'>
                 {isPaused && (
                     <div className='mb-4'>
@@ -1181,6 +1182,6 @@ export default function NotesList({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </PreviewTipProvider>
+        </>
     );
 }

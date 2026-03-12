@@ -50,7 +50,7 @@ function getCsrfToken(): string | null {
     return match ? decodeURIComponent(match[1]) : null;
 }
 
-export const AuthResult = {
+const AuthResult = {
     SUCCESS: 'success',
     INVALID_CREDENTIALS: 'invalid_credentials',
     REQUIRES_2FA: 'requires_2fa',
@@ -486,5 +486,3 @@ export function AuthProvider({ children }: AuthProviderProps) {
         </AuthStateContext.Provider>
     );
 }
-
-export { AuthActionsContext, AuthStateContext };

@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 /**
  * Parsed API error structure
  */
-export interface ParsedAPIError {
+interface ParsedAPIError {
     code: string;
     detail: string;
     status: number;
@@ -186,7 +186,7 @@ export function getSuccessMessage(data: any): string | undefined {
 /**
  * Options for handling API errors
  */
-export interface HandleAPIErrorOptions {
+interface HandleAPIErrorOptions {
     message?: string;
     duration?: number;
     notifyValidation?: boolean;
@@ -199,7 +199,7 @@ export interface HandleAPIErrorOptions {
  * @param options - Options (message, duration, notifyValidation)
  * @returns Parsed error object
  */
-export function handleAPIError(
+function handleAPIError(
     parsed: ParsedAPIError,
     options: HandleAPIErrorOptions = {},
 ): ParsedAPIError {

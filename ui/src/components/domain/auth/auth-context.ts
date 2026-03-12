@@ -42,8 +42,6 @@ export interface AuthActionsValue {
     setTokensDirectly: (data: TokenData) => void;
 }
 
-export interface AuthContextValue extends AuthStateValue, AuthActionsValue {}
-
 export const AuthStateContext = createContext<AuthStateValue | undefined>(undefined);
 export const AuthActionsContext = createContext<AuthActionsValue | undefined>(
     undefined,

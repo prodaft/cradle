@@ -101,7 +101,7 @@ interface MultipleSelectorProps {
     hideClearAllButton?: boolean;
 }
 
-export interface MultipleSelectorRef {
+interface MultipleSelectorRef {
     selectedValue: Option[];
     input: HTMLInputElement;
     focus: () => void;

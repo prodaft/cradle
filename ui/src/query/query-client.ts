@@ -13,7 +13,7 @@ import {
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-export type InvalidateTarget = { queryKey: QueryKey };
+type InvalidateTarget = { queryKey: QueryKey };
 
 type AppMeta = {
     // queries

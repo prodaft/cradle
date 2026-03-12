@@ -3,9 +3,9 @@
  * Hooks for managing authentication state
  *
  * Best practice recommendations:
- * - useAuth() - Convenience hook that combines state and actions (use for most components)
  * - useAuthState() - For state values only (role, userId, isLoading, basePath, isAdmin, isEntryManager, isInitializing)
  * - useAuthActions() - For actions only (logIn, logOut, getAccessToken, isLoggedIn, setTokensDirectly)
+ *   Import from '@/hooks/auth/use-auth' for useAuthActions
  *
  * For performance-sensitive components, use the split hooks to avoid unnecessary rerenders.
  *
@@ -13,14 +13,9 @@
  *
  * @example
  * ```typescript
- * // Most components - simple and correct
- * const { role, isAdmin, logOut } = useAuth();
- *
- * // Performance-sensitive - split hooks
  * const { role, isAdmin } = useAuthState();
- * const { logOut, getAccessToken } = useAuthActions();
+ * const { logOut, getAccessToken } = useAuthActions(); // from '@/hooks/auth/use-auth'
  * ```
  */
 
-export { useAuth, useAuthActions, useAuthState } from './use-auth';
-export type { AuthContextValue } from './use-auth';
+export { useAuthState } from './use-auth';

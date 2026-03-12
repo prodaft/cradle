@@ -18,7 +18,7 @@ import React, { Dispatch, SetStateAction, useMemo, useState } from 'react';
 /**
  * SearchFilterSection component props
  */
-export interface SearchFilterSectionProps {
+interface SearchFilterSectionProps {
     /** Available entry subtypes */
     entrySubtypes: string[];
     /** Current entry subtype filters */

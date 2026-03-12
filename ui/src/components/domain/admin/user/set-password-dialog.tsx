@@ -49,7 +49,7 @@ type FormData = z.infer<typeof adminSetPasswordSchema>;
 /**
  * SetUserPasswordDialog component props
  */
-export interface SetUserPasswordDialogProps {
+interface SetUserPasswordDialogProps {
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */
