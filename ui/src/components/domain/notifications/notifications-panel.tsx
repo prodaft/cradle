@@ -149,10 +149,7 @@ export default function NotificationsPanel({
                     <PageLoader fill='container' />
                 </div>
             ) : (
-                <ScrollArea
-                    viewportRef={viewportRef}
-                    className='flex-1 min-h-0'
-                >
+                <ScrollArea viewportRef={viewportRef} className='flex-1 min-h-0'>
                     <div
                         style={{
                             height: `${virtualizer.getTotalSize()}px`,

@@ -25,7 +25,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from core.exceptions import CoreErrorCodes, ValidationException
+from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from core.throttling import AuthRateThrottle
@@ -37,7 +37,9 @@ from ..authentication import APIKeyAuthentication
 from ..exceptions import (
     DisallowedActionException,
     EmailAlreadyConfirmedException,
+    EmailConfirmationFailedException,
     IncorrectOldPasswordException,
+    PasswordResetTokenInvalidException,
     RegistrationDisabledException,
     SessionNotFoundException,
     UnknownActionException,
@@ -722,7 +724,10 @@ class UserMeAPIKey(APIKey):
     request=EmailConfirmSerializer,
     responses={
         200: {"description": "Email confirmed successfully"},
-        **get_error_responses(include_validation_error=True),
+        **get_error_responses(
+            UserErrorCodes.EMAIL_CONFIRMATION_FAILED,
+            include_validation_error=True,
+        ),
         **get_common_error_responses(),
     },
     tags=["auth"],
@@ -741,7 +746,7 @@ class EmailConfirm(APIView):
         # Check if token expired
         if user.email_confirmation_token_expiry < timezone.now():
             user.send_email_confirmation()
-            raise ValidationException(detail="Email confirmation token has expired. A new one was sent.")
+            raise EmailConfirmationFailedException(detail="Email confirmation token has expired. A new one was sent.")
 
         user.email_confirmed = True
         user.email_confirmation_token = None
@@ -773,6 +778,7 @@ class EmailConfirm(APIView):
             200: {"description": "Password reset successfully"},
             **get_error_responses(
                 UserErrorCodes.INVALID_PASSWORD,
+                UserErrorCodes.PASSWORD_RESET_TOKEN_INVALID,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -810,10 +816,10 @@ class PasswordReset(APIView):
             try:
                 user = CradleUser.objects.active().select_for_update().get(password_reset_token=token)
             except CradleUser.DoesNotExist:
-                raise ValidationException(detail="Token not found!")
+                raise PasswordResetTokenInvalidException(detail="Token not found!")
 
             if user.password_reset_token_expiry < timezone.now():
-                raise ValidationException(detail="Password reset token has expired.")
+                raise PasswordResetTokenInvalidException(detail="Password reset token has expired.")
 
             user.password_reset_token = None
             user.set_password(password)

@@ -78,9 +78,7 @@ class TestFileDownload(FileTransferTestCase):
 
     def test_download_access_denied(self):
         """Download returns 403 when user does not have access to the file."""
-        other_user = CradleUser.objects.create_user(
-            username="other", password="other", email="other@gmail.com"
-        )
+        other_user = CradleUser.objects.create_user(username="other", password="other", email="other@gmail.com")
         file_ref = FileReference.objects.create(
             file_name="private.png",
             user=other_user,

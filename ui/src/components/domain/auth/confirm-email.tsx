@@ -37,6 +37,7 @@ export default function ConfirmEmail() {
     );
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [errorTitle, setErrorTitle] = useState<string | undefined>(undefined);
     const prevTokenRef = useRef<string | undefined>(undefined);
     const calledRef = useRef(false);
 
@@ -67,6 +68,9 @@ export default function ConfirmEmail() {
                 sessionStorage.getItem(`${STORAGE_KEY}-${token}-msg`) ||
                     'Something went wrong.',
             );
+            setErrorTitle(
+                sessionStorage.getItem(`${STORAGE_KEY}-${token}-title`) || undefined,
+            );
             return;
         }
 
@@ -96,8 +100,15 @@ export default function ConfirmEmail() {
                 const parsed = await parseAPIError(err);
                 const msg = getDisplayMessage(parsed);
                 sessionStorage.setItem(`${STORAGE_KEY}-${token}-msg`, msg);
+                if (parsed.title) {
+                    sessionStorage.setItem(
+                        `${STORAGE_KEY}-${token}-title`,
+                        parsed.title,
+                    );
+                }
                 setStatus('error');
                 setErrorMessage(msg);
+                setErrorTitle(parsed.title);
             });
     }, [token]);
 
@@ -168,7 +179,7 @@ export default function ConfirmEmail() {
                                             className='size-4'
                                             weight='bold'
                                         />
-                                        <AlertTitle>Error</AlertTitle>
+                                        <AlertTitle>{errorTitle || 'Error'}</AlertTitle>
                                         <AlertDescription>
                                             {errorMessage}
                                         </AlertDescription>

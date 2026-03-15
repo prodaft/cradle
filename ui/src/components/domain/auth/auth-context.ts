@@ -18,6 +18,7 @@ export interface TokenData {
 export interface LoginResult {
     result: string;
     message?: string;
+    title?: string;
 }
 
 export interface AuthStateValue {

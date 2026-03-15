@@ -68,6 +68,7 @@ export default function Login() {
     const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
+    const [formErrorTitle, setFormErrorTitle] = useState<string | undefined>(undefined);
     const [loginImage] = useState(
         () => LOGIN_IMAGES[Math.floor(Math.random() * LOGIN_IMAGES.length)],
     );
@@ -213,6 +214,7 @@ export default function Login() {
 
         setIsSubmitting(true);
         setFormError(null);
+        setFormErrorTitle(undefined);
 
         try {
             const result = await logIn(
@@ -233,11 +235,13 @@ export default function Login() {
                 setRequiresTwoFactor(true);
             } else {
                 setFormError(result.message || 'Login failed');
+                setFormErrorTitle(result.title);
             }
         } catch (error) {
             try {
                 const parsed = await parseAPIError(error);
                 setFormError(getDisplayMessage(parsed));
+                setFormErrorTitle(parsed.title);
             } catch {
                 setFormError('Login failed');
             }
@@ -351,7 +355,9 @@ export default function Login() {
                                                     className='size-4'
                                                     weight='bold'
                                                 />
-                                                <AlertTitle>Error</AlertTitle>
+                                                <AlertTitle>
+                                                    {formErrorTitle || 'Error'}
+                                                </AlertTitle>
                                                 <AlertDescription>
                                                     {formError}
                                                 </AlertDescription>
@@ -464,7 +470,9 @@ export default function Login() {
                                                     className='size-4'
                                                     weight='bold'
                                                 />
-                                                <AlertTitle>Error</AlertTitle>
+                                                <AlertTitle>
+                                                    {formErrorTitle || 'Error'}
+                                                </AlertTitle>
                                                 <AlertDescription>
                                                     {formError}
                                                 </AlertDescription>

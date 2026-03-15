@@ -14,6 +14,7 @@ from rest_framework_simplejwt.tokens import Token
 from .exceptions import (
     DisallowedActionException,
     DuplicateUserException,
+    EmailConfirmationFailedException,
     InvalidPasswordException,
     UserAlreadyExistsException,
 )
@@ -308,15 +309,15 @@ class EmailConfirmSerializer(serializers.Serializer):
         token = data["token"]
 
         if not token:
-            raise serializers.ValidationError("We had trouble confirming with this token.")
+            raise EmailConfirmationFailedException(detail="We had trouble confirming with this token.")
 
         try:
             self.user = CradleUser.objects.get(email_confirmation_token=token)
         except (CradleUser.DoesNotExist, CradleUser.MultipleObjectsReturned):
-            raise serializers.ValidationError("We had trouble confirming with this token.")
+            raise EmailConfirmationFailedException(detail="We had trouble confirming with this token.")
 
         if self.user.email_confirmed:
-            raise serializers.ValidationError("We had trouble confirming with this token.")
+            raise EmailConfirmationFailedException(detail="We had trouble confirming with this token.")
 
         return data
 

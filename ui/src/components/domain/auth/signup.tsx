@@ -88,6 +88,7 @@ export default function Signup() {
         show: boolean;
         message: string;
         color: string;
+        title?: string;
     }>({
         show: false,
         message: '',
@@ -130,6 +131,7 @@ export default function Signup() {
                 show: true,
                 message: getDisplayMessage(parsed),
                 color: 'red',
+                title: parsed.title,
             });
         },
         onSuccess: (user) => {
@@ -552,7 +554,7 @@ export default function Signup() {
                                         <AlertTitle>
                                             {alert.color === 'red' ||
                                             alert.color === 'error'
-                                                ? 'Error'
+                                                ? alert.title || 'Error'
                                                 : 'Success'}
                                         </AlertTitle>
                                         <AlertDescription className='whitespace-pre-line'>

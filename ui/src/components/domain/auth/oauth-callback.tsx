@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import Logo from '@components/base/logo/logo';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
@@ -39,6 +40,7 @@ export default function OAuthCallback() {
     const { isLoggedIn, setTokensDirectly } = useAuthActions();
     const router = useRouter();
     const hasExchangedRef = useRef(false);
+    const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
     const [callbackImage] = useState(
         () =>
             OAUTH_CALLBACK_IMAGES[
@@ -138,6 +140,18 @@ export default function OAuthCallback() {
             });
         },
         meta: { suppressNotification: true },
+        onError: async (error) => {
+            try {
+                const parsed = await parseAPIError(error);
+                setApiErrorMessage(
+                    parsed.title && parsed.title !== parsed.detail
+                        ? `${parsed.title}: ${parsed.detail}`
+                        : getDisplayMessage(parsed),
+                );
+            } catch {
+                setApiErrorMessage('OAuth flow failed. Please try again.');
+            }
+        },
     });
 
     useEffect(() => {
@@ -152,7 +166,7 @@ export default function OAuthCallback() {
         'error' in urlParams
             ? urlParams.error
             : oauthMutation.isError
-              ? oauthMutation.error?.message || 'OAuth flow failed. Please try again.'
+              ? (apiErrorMessage ?? 'OAuth flow failed. Please try again.')
               : null;
     const statusMessage = errorMessage
         ? 'Unable to continue.'

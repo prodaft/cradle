@@ -61,6 +61,7 @@ export default function ForgotPassword() {
                 show: true,
                 message: getDisplayMessage(parsed),
                 color: 'red',
+                title: parsed.title,
             });
         },
         onSuccess: (data) => {
@@ -81,6 +82,7 @@ export default function ForgotPassword() {
         show: boolean;
         message: string;
         color: string;
+        title?: string;
     }>({
         show: false,
         message: '',
@@ -191,7 +193,7 @@ export default function ForgotPassword() {
                                         <AlertTitle>
                                             {alert.color === 'red' ||
                                             alert.color === 'error'
-                                                ? 'Error'
+                                                ? alert.title || 'Error'
                                                 : 'Success'}
                                         </AlertTitle>
                                         <AlertDescription>

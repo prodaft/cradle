@@ -55,6 +55,7 @@ export default function ResetPassword() {
         show: boolean;
         message: string;
         color: 'red' | 'green';
+        title?: string;
     }>({ show: false, message: '', color: 'red' });
     const [resetPasswordImage] = useState(
         () =>
@@ -90,6 +91,7 @@ export default function ResetPassword() {
                 show: true,
                 message: getDisplayMessage(parsed),
                 color: 'red',
+                title: parsed.title,
             });
         },
         onSuccess: (data) => {
@@ -371,7 +373,7 @@ export default function ResetPassword() {
                                         />
                                         <AlertTitle>
                                             {formAlert.color === 'red'
-                                                ? 'Error'
+                                                ? formAlert.title || 'Error'
                                                 : 'Success'}
                                         </AlertTitle>
                                         <AlertDescription>

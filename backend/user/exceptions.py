@@ -40,6 +40,11 @@ class UserErrorCodes(ErrorCode):
         "Invalid Two Factor Token",
         "invalid-two-factor-token",
     )
+    INVALID_CREDENTIALS = (
+        status.HTTP_401_UNAUTHORIZED,
+        "Invalid Credentials",
+        "invalid-credentials",
+    )
     TWO_FACTOR_ALREADY_ENABLED = (
         status.HTTP_400_BAD_REQUEST,
         "Two Factor Already Enabled",
@@ -80,6 +85,31 @@ class UserErrorCodes(ErrorCode):
         status.HTTP_404_NOT_FOUND,
         "Session Not Found",
         "session-not-found",
+    )
+    PASSWORD_RESET_TOKEN_INVALID = (
+        status.HTTP_400_BAD_REQUEST,
+        "Invalid Reset Link",
+        "password-reset-token-invalid",
+    )
+    EMAIL_CONFIRMATION_FAILED = (
+        status.HTTP_400_BAD_REQUEST,
+        "Email Confirmation Failed",
+        "email-confirmation-failed",
+    )
+    INVALID_REFRESH_TOKEN = (
+        status.HTTP_401_UNAUTHORIZED,
+        "Invalid or Expired Token",
+        "invalid-refresh-token",
+    )
+    OAUTH_ERROR = (
+        status.HTTP_400_BAD_REQUEST,
+        "OAuth Error",
+        "oauth-error",
+    )
+    OAUTH_ACCOUNT_NOT_LINKED = (
+        status.HTTP_400_BAD_REQUEST,
+        "Account Not Linked",
+        "oauth-account-not-linked",
     )
 
 
@@ -135,6 +165,12 @@ class InvalidTwoFactorTokenException(CradleAPIException):
     error_code = UserErrorCodes.INVALID_TWO_FACTOR_TOKEN
 
 
+class InvalidCredentialsException(CradleAPIException):
+    """Exception raised when login credentials are invalid."""
+
+    error_code = UserErrorCodes.INVALID_CREDENTIALS
+
+
 class TwoFactorAlreadyEnabledException(CradleAPIException):
     """Exception raised when 2FA is already enabled."""
 
@@ -187,3 +223,33 @@ class SessionNotFoundException(CradleAPIException):
     """Exception raised when a session is not found."""
 
     error_code = UserErrorCodes.SESSION_NOT_FOUND
+
+
+class PasswordResetTokenInvalidException(CradleAPIException):
+    """Exception raised when password reset token is invalid or expired."""
+
+    error_code = UserErrorCodes.PASSWORD_RESET_TOKEN_INVALID
+
+
+class EmailConfirmationFailedException(CradleAPIException):
+    """Exception raised when email confirmation fails."""
+
+    error_code = UserErrorCodes.EMAIL_CONFIRMATION_FAILED
+
+
+class InvalidRefreshTokenException(CradleAPIException):
+    """Exception raised when refresh token is invalid or expired."""
+
+    error_code = UserErrorCodes.INVALID_REFRESH_TOKEN
+
+
+class OAuthErrorException(CradleAPIException):
+    """Exception raised when OAuth provider or flow fails."""
+
+    error_code = UserErrorCodes.OAUTH_ERROR
+
+
+class OAuthAccountNotLinkedException(CradleAPIException):
+    """Exception raised when OAuth account is not linked to any user."""
+
+    error_code = UserErrorCodes.OAUTH_ACCOUNT_NOT_LINKED

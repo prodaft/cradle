@@ -337,7 +337,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
                             : await parseAPIError(error);
                     if (
                         parsed.code === 'TWO_FACTOR_REQUIRED' ||
-                        parsed.code === 'two-factor-required' ||
                         parsed.detail?.toLowerCase?.().includes('2fa token required')
                     ) {
                         return {
@@ -348,34 +347,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
                     if (
                         parsed.code === 'INVALID_TWO_FACTOR_TOKEN' ||
-                        parsed.code === 'invalid-two-factor-token' ||
                         parsed.detail?.toLowerCase?.().includes('invalid 2fa')
                     ) {
                         return {
                             result: AuthResult.INVALID_CREDENTIALS,
                             message: parsed.detail || 'Invalid 2FA code',
+                            title: parsed.title,
                         };
                     }
 
                     const errorMessage = parsed.detail || '';
 
-                    if (errorMessage.includes('not confirmed')) {
+                    if (parsed.code === 'EMAIL_NOT_CONFIRMED') {
                         return {
                             result: AuthResult.UNCONFIRMED_EMAIL,
                             message: errorMessage,
+                            title: parsed.title,
                         };
                     }
 
-                    if (errorMessage.includes('not activated')) {
+                    if (parsed.code === 'ACCOUNT_NOT_ACTIVATED') {
                         return {
                             result: AuthResult.INACTIVE_ACCOUNT,
                             message: errorMessage,
+                            title: parsed.title,
                         };
                     }
 
                     return {
                         result: AuthResult.INVALID_CREDENTIALS,
                         message: errorMessage || 'Invalid credentials',
+                        title: parsed.title,
                     };
                 } catch {
                     if (error && typeof error === 'object' && !error.response) {

@@ -57,6 +57,7 @@ function isAuthError(err: unknown): boolean {
         const o = err as Record<string, unknown>;
         return (
             o.code === 'UNAUTHENTICATED' ||
+            o.code === 'INVALID_REFRESH_TOKEN' ||
             o.code === 'SESSION_EXPIRED' ||
             o.status === 401
         );
@@ -71,7 +72,11 @@ async function handleErrorCommon(error: unknown) {
     }
 
     const parsed = await parseAPIError(error);
-    if (parsed.code === 'UNAUTHENTICATED' || parsed.code === 'SESSION_EXPIRED') {
+    if (
+        parsed.code === 'UNAUTHENTICATED' ||
+        parsed.code === 'INVALID_REFRESH_TOKEN' ||
+        parsed.code === 'SESSION_EXPIRED'
+    ) {
         triggerSessionExpiredOnce();
         return { kind: 'sessionExpired' as const };
     }

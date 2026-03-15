@@ -8,6 +8,7 @@ from django.db import DatabaseError, IntegrityError
 from django.middleware.csrf import get_token
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -25,6 +26,8 @@ from core.throttling import AuthRateThrottle
 from ..exceptions import (
     AccountNotActivatedException,
     EmailNotConfirmedException,
+    InvalidCredentialsException,
+    InvalidRefreshTokenException,
     InvalidTwoFactorTokenException,
     TwoFactorRequiredException,
     UserErrorCodes,
@@ -104,6 +107,7 @@ def create_or_update_session(request: Request, user, refresh_token: RefreshToken
                 UserErrorCodes.ACCOUNT_NOT_ACTIVATED,
                 UserErrorCodes.TWO_FACTOR_REQUIRED,
                 UserErrorCodes.INVALID_TWO_FACTOR_TOKEN,
+                UserErrorCodes.INVALID_CREDENTIALS,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -123,6 +127,11 @@ class TokenObtainPairLogView(TokenObtainPairView):
             serializer.is_valid(raise_exception=True)
         except TokenError as e:
             raise InvalidToken(e.args[0])
+        except AuthenticationFailed as e:
+            detail = "No active account found with the given credentials"
+            if hasattr(e, "detail") and e.detail:
+                detail = str(e.detail[0]) if isinstance(e.detail, list) else str(e.detail)
+            raise InvalidCredentialsException(detail=detail)
 
         user = serializer.user
 
@@ -183,7 +192,10 @@ class TokenObtainPairLogView(TokenObtainPairView):
         request=TokenRefreshSerializer,
         responses={
             200: TokenPairRetrieveSerializer,
-            **get_error_responses(include_validation_error=True),
+            **get_error_responses(
+                UserErrorCodes.INVALID_REFRESH_TOKEN,
+                include_validation_error=True,
+            ),
             **get_common_error_responses(),
         },
         tags=["auth"],
@@ -207,13 +219,17 @@ class TokenRefreshLogView(TokenRefreshView):
             old_refresh_token = RefreshToken(refresh_token_str)
             jti = old_refresh_token.get("jti")
             if jti and BlacklistedToken.is_blacklisted(jti):
-                raise InvalidToken("Token has been revoked")
-        except (TokenError, InvalidToken):
-            raise
+                raise InvalidRefreshTokenException(detail="Token has been revoked")
+        except (TokenError, InvalidToken) as e:
+            raise InvalidRefreshTokenException(detail=str(e.args[0]) if e.args else "Invalid or expired refresh token")
         except (ValueError, TypeError, AttributeError) as e:
             logger.debug("Could not parse refresh token for blacklist check: %s", e)
 
-        response = super().post(request, *args, **kwargs)
+        try:
+            response = super().post(request, *args, **kwargs)
+        except (TokenError, InvalidToken) as e:
+            detail = str(e.args[0]) if e.args else "Invalid or expired refresh token"
+            raise InvalidRefreshTokenException(detail=detail)
 
         if response.status_code == 200:
             old_refresh_token = RefreshToken(refresh_token_str)

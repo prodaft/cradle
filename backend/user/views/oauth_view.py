@@ -17,7 +17,6 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from core.exceptions import ValidationException
 from core.openapi import get_common_error_responses, get_error_responses
 from core.throttling import AuthRateThrottle
 
@@ -25,6 +24,8 @@ from ..exceptions import (
     AccountNotActivatedException,
     EmailNotConfirmedException,
     ExternalIdentityConflictException,
+    OAuthAccountNotLinkedException,
+    OAuthErrorException,
     UserErrorCodes,
 )
 from ..models import ExternalIdentity
@@ -48,12 +49,12 @@ def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> 
     """Exchange OAuth code for tokens and fetch userinfo. Returns (token_data, userinfo)."""
     config = _get_provider_config(provider)
     if not config:
-        raise ValidationException(detail="OAuth provider is not configured.")
+        raise OAuthErrorException(detail="OAuth provider is not configured.")
 
     token_url = config.get("token_url")
     userinfo_url = config.get("userinfo_url")
     if not token_url or not userinfo_url:
-        raise ValidationException(detail="OAuth provider configuration is incomplete.")
+        raise OAuthErrorException(detail="OAuth provider configuration is incomplete.")
 
     sanitized_redirect_uri = urlunsplit(urlsplit(redirect_uri)._replace(fragment=""))
 
@@ -73,17 +74,17 @@ def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> 
     try:
         token_response = requests.post(token_url, data=token_payload, timeout=10)
     except requests.RequestException as exc:
-        raise ValidationException(detail="Failed to reach OAuth provider.") from exc
+        raise OAuthErrorException(detail="Failed to reach OAuth provider.") from exc
 
     if not token_response.ok:
-        raise ValidationException(
+        raise OAuthErrorException(
             detail=f"OAuth token exchange failed ({token_response.status_code}): {token_response.text}"
         )
 
     token_data = token_response.json()
     access_token = token_data.get("access_token")
     if not access_token:
-        raise ValidationException(detail="OAuth provider did not return access token.")
+        raise OAuthErrorException(detail="OAuth provider did not return access token.")
 
     try:
         userinfo_response = requests.get(
@@ -92,10 +93,10 @@ def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> 
             timeout=10,
         )
     except requests.RequestException as exc:
-        raise ValidationException(detail="Failed to fetch OAuth user info.") from exc
+        raise OAuthErrorException(detail="Failed to fetch OAuth user info.") from exc
 
     if not userinfo_response.ok:
-        raise ValidationException(
+        raise OAuthErrorException(
             detail=f"OAuth user info request failed ({userinfo_response.status_code}): {userinfo_response.text}"
         )
 
@@ -111,6 +112,7 @@ def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> 
             200: None,
             **get_error_responses(
                 UserErrorCodes.EXTERNAL_IDENTITY_CONFLICT,
+                UserErrorCodes.OAUTH_ERROR,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -130,7 +132,7 @@ class OAuthConnectView(APIView):
         _, userinfo = _exchange_code_for_userinfo(provider, data["code"], data["redirect_uri"])
         subject = userinfo.get("sub")
         if not subject:
-            raise ValidationException(detail="OAuth user info missing subject.")
+            raise OAuthErrorException(detail="OAuth user info missing subject.")
 
         issuer = userinfo.get("iss") or settings.OAUTH_PROVIDERS.get(provider, {}).get("issuer")
         email = userinfo.get("email")
@@ -176,6 +178,8 @@ class OAuthConnectView(APIView):
             **get_error_responses(
                 UserErrorCodes.EMAIL_NOT_CONFIRMED,
                 UserErrorCodes.ACCOUNT_NOT_ACTIVATED,
+                UserErrorCodes.OAUTH_ERROR,
+                UserErrorCodes.OAUTH_ACCOUNT_NOT_LINKED,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -198,7 +202,7 @@ class OAuthLoginView(APIView):
 
         subject = userinfo.get("sub")
         if not subject:
-            raise ValidationException(detail="OAuth user info missing subject.")
+            raise OAuthErrorException(detail="OAuth user info missing subject.")
 
         issuer = userinfo.get("iss") or settings.OAUTH_PROVIDERS.get(provider, {}).get("issuer")
 
@@ -209,7 +213,7 @@ class OAuthLoginView(APIView):
         )
 
         if not identity:
-            raise ValidationException(detail="External account is not linked to any user.")
+            raise OAuthAccountNotLinkedException(detail="External account is not linked to any user.")
 
         user = identity.user
 
