@@ -20,13 +20,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { PRESET_THEMES } from '@/utils/themes';
-import { $api, fetchClient } from '@services/openapi/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     ArrowCounterClockwiseIcon,
     ClockCounterClockwiseIcon,
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
+import { $api, fetchClient } from '@services/openapi/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -98,11 +98,7 @@ export default function AccountAppearanceForm({
             setSelectedThemeType('custom');
             const { name: _name, ...rest } = theme;
             setCustomThemeJSON(
-                JSON.stringify(
-                    Object.keys(rest).length > 0 ? rest : theme,
-                    null,
-                    2,
-                ),
+                JSON.stringify(Object.keys(rest).length > 0 ? rest : theme, null, 2),
             );
         }
     }, [userData]);
@@ -176,9 +172,14 @@ export default function AccountAppearanceForm({
 
     const handleDefault = () => {
         const preset = PRESET_THEMES[0];
-        const themeWithName = preset.theme && typeof preset.theme === 'object' && !Array.isArray(preset.theme)
-            ? 'name' in preset.theme ? preset.theme : { name: preset.id, ...preset.theme }
-            : { name: preset.id };
+        const themeWithName =
+            preset.theme &&
+            typeof preset.theme === 'object' &&
+            !Array.isArray(preset.theme)
+                ? 'name' in preset.theme
+                    ? preset.theme
+                    : { name: preset.id, ...preset.theme }
+                : { name: preset.id };
         setPendingTheme(themeWithName);
         setSelectedThemeType(preset.id);
         setCustomThemeJSON('');
@@ -238,56 +239,77 @@ export default function AccountAppearanceForm({
                     </div>,
                     headerContainer,
                 )}
-        <section id='appearance'>
-            <div className='flex flex-col gap-4'>
-                <FieldGroup className='gap-4'>
-                    <Field orientation='horizontal' className='gap-2'>
-                        <FieldContent className='flex-1'>
-                            <FieldLabel className='text-sm block mb-0.5'>
-                                Theme
-                            </FieldLabel>
-                            <FieldDescription>
-                                Select a color theme for the interface
-                            </FieldDescription>
-                        </FieldContent>
-                        <Popover
-                            open={themePopoverOpen}
-                            onOpenChange={setThemePopoverOpen}
-                        >
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant='outline'
-                                    role='combobox'
-                                    aria-expanded={themePopoverOpen}
-                                    className='w-full sm:w-64 justify-between self-center'
-                                >
-                                    <span className='truncate'>
-                                        {selectedThemeType === 'custom'
-                                            ? 'Custom'
-                                            : PRESET_THEMES.find(
-                                                  (p) => p.id === selectedThemeType,
-                                              )?.label || 'Select theme...'}
-                                    </span>
-                                    <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                                className='w-[var(--radix-popover-trigger-width)] p-0'
-                                align='start'
+            <section id='appearance'>
+                <div className='flex flex-col gap-4'>
+                    <FieldGroup className='gap-4'>
+                        <Field orientation='horizontal' className='gap-2'>
+                            <FieldContent className='flex-1'>
+                                <FieldLabel className='text-sm block mb-0.5'>
+                                    Theme
+                                </FieldLabel>
+                                <FieldDescription>
+                                    Select a color theme for the interface
+                                </FieldDescription>
+                            </FieldContent>
+                            <Popover
+                                open={themePopoverOpen}
+                                onOpenChange={setThemePopoverOpen}
                             >
-                                <Command>
-                                    <CommandInput placeholder='Search themes...' />
-                                    <CommandList>
-                                        <CommandEmpty>No themes found.</CommandEmpty>
-                                        <CommandGroup>
-                                            {PRESET_THEMES.map((preset) => (
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant='outline'
+                                        role='combobox'
+                                        aria-expanded={themePopoverOpen}
+                                        className='w-full sm:w-64 justify-between self-center'
+                                    >
+                                        <span className='truncate'>
+                                            {selectedThemeType === 'custom'
+                                                ? 'Custom'
+                                                : PRESET_THEMES.find(
+                                                      (p) => p.id === selectedThemeType,
+                                                  )?.label || 'Select theme...'}
+                                        </span>
+                                        <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    className='w-[var(--radix-popover-trigger-width)] p-0'
+                                    align='start'
+                                >
+                                    <Command>
+                                        <CommandInput placeholder='Search themes...' />
+                                        <CommandList>
+                                            <CommandEmpty>
+                                                No themes found.
+                                            </CommandEmpty>
+                                            <CommandGroup>
+                                                {PRESET_THEMES.map((preset) => (
+                                                    <CommandItem
+                                                        key={preset.id}
+                                                        value={preset.label}
+                                                        onSelect={() => {
+                                                            handleThemeTypeChange(
+                                                                preset.id,
+                                                            );
+                                                            setThemePopoverOpen(false);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                'mr-2 size-4',
+                                                                selectedThemeType ===
+                                                                    preset.id
+                                                                    ? 'opacity-100'
+                                                                    : 'opacity-0',
+                                                            )}
+                                                        />
+                                                        {preset.label}
+                                                    </CommandItem>
+                                                ))}
                                                 <CommandItem
-                                                    key={preset.id}
-                                                    value={preset.label}
+                                                    value='Custom'
                                                     onSelect={() => {
-                                                        handleThemeTypeChange(
-                                                            preset.id,
-                                                        );
+                                                        handleThemeTypeChange('custom');
                                                         setThemePopoverOpen(false);
                                                     }}
                                                 >
@@ -295,67 +317,52 @@ export default function AccountAppearanceForm({
                                                         className={cn(
                                                             'mr-2 size-4',
                                                             selectedThemeType ===
-                                                                preset.id
+                                                                'custom'
                                                                 ? 'opacity-100'
                                                                 : 'opacity-0',
                                                         )}
                                                     />
-                                                    {preset.label}
+                                                    Custom
                                                 </CommandItem>
-                                            ))}
-                                            <CommandItem
-                                                value='Custom'
-                                                onSelect={() => {
-                                                    handleThemeTypeChange('custom');
-                                                    setThemePopoverOpen(false);
-                                                }}
-                                            >
-                                                <Check
-                                                    className={cn(
-                                                        'mr-2 size-4',
-                                                        selectedThemeType === 'custom'
-                                                            ? 'opacity-100'
-                                                            : 'opacity-0',
-                                                    )}
-                                                />
-                                                Custom
-                                            </CommandItem>
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                    </Field>
-
-                    {selectedThemeType === 'custom' && (
-                        <Field className='space-y-2'>
-                            <FieldLabel
-                                htmlFor='custom-theme-json'
-                                className='text-sm block mb-0.5'
-                            >
-                                Custom Theme JSON
-                            </FieldLabel>
-                            <FieldDescription>
-                                Provide a JSON object with CSS variable values.
-                            </FieldDescription>
-                            <Textarea
-                                id='custom-theme-json'
-                                rows={10}
-                                className='font-mono text-xs'
-                                placeholder='{"--background":"oklch(0.145 0 0)","--foreground":"oklch(0.985 0 0)"}'
-                                value={customThemeJSON}
-                                onChange={(e) => setCustomThemeJSON(e.target.value)}
-                            />
-                            <div className='flex justify-end'>
-                                <Button type='button' onClick={handleApplyCustomTheme}>
-                                    Apply Custom Theme
-                                </Button>
-                            </div>
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         </Field>
-                    )}
-                </FieldGroup>
-            </div>
-        </section>
+
+                        {selectedThemeType === 'custom' && (
+                            <Field className='space-y-2'>
+                                <FieldLabel
+                                    htmlFor='custom-theme-json'
+                                    className='text-sm block mb-0.5'
+                                >
+                                    Custom Theme JSON
+                                </FieldLabel>
+                                <FieldDescription>
+                                    Provide a JSON object with CSS variable values.
+                                </FieldDescription>
+                                <Textarea
+                                    id='custom-theme-json'
+                                    rows={10}
+                                    className='font-mono text-xs'
+                                    placeholder='{"--background":"oklch(0.145 0 0)","--foreground":"oklch(0.985 0 0)"}'
+                                    value={customThemeJSON}
+                                    onChange={(e) => setCustomThemeJSON(e.target.value)}
+                                />
+                                <div className='flex justify-end'>
+                                    <Button
+                                        type='button'
+                                        onClick={handleApplyCustomTheme}
+                                    >
+                                        Apply Custom Theme
+                                    </Button>
+                                </div>
+                            </Field>
+                        )}
+                    </FieldGroup>
+                </div>
+            </section>
         </>
     );
 }

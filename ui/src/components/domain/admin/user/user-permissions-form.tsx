@@ -23,10 +23,10 @@ import {
     MagnifyingGlassIcon,
 } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
-import { createPortal } from 'react-dom';
 import { fetchAllUserAccess } from '@services/openapi/fetch-all-pages';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface UserPermissionsFormProps {
     id: string;
@@ -312,59 +312,61 @@ export default function UserPermissionsForm({
                     </div>,
                     headerContainer,
                 )}
-        <div className='space-y-4'>
-            {/* Search */}
-            <div className='relative'>
-                <MagnifyingGlassIcon
-                    className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground'
-                    weight='bold'
-                />
-                <Input
-                    type='text'
-                    placeholder='Search entities...'
-                    className='pl-9'
-                    onChange={(e) => setSearchVal(e.target.value)}
-                    value={searchVal}
-                />
-            </div>
+            <div className='space-y-4'>
+                {/* Search */}
+                <div className='relative'>
+                    <MagnifyingGlassIcon
+                        className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground'
+                        weight='bold'
+                    />
+                    <Input
+                        type='text'
+                        placeholder='Search entities...'
+                        className='pl-9'
+                        onChange={(e) => setSearchVal(e.target.value)}
+                        value={searchVal}
+                    />
+                </div>
 
-            {/* Permissions Table */}
-            <div className='overflow-hidden rounded-md border'>
-                {filteredEntities.length > 0 ? (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className='w-[60px]'>ID</TableHead>
-                                <TableHead className='w-[200px]'>Entity</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead className='w-[160px]'>Access</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredEntities.map((entity) => (
-                                <PermissionRow
-                                    key={entity.id}
-                                    entity={entity}
-                                    currentAccess={currentAccess[entity.id] || 'none'}
-                                    onAccessChange={handleAccessChange}
-                                    isSaving={
-                                        saveChangesMutation.isPending || !!readOnly
-                                    }
-                                />
-                            ))}
-                        </TableBody>
-                    </Table>
-                ) : (
-                    <div className='text-center py-8'>
-                        <p className='text-sm text-muted-foreground'>
-                            {searchVal
-                                ? 'No entities found matching your search'
-                                : 'No entities available'}
-                        </p>
-                    </div>
-                )}
+                {/* Permissions Table */}
+                <div className='overflow-hidden rounded-md border'>
+                    {filteredEntities.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className='w-[60px]'>ID</TableHead>
+                                    <TableHead className='w-[200px]'>Entity</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead className='w-[160px]'>Access</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredEntities.map((entity) => (
+                                    <PermissionRow
+                                        key={entity.id}
+                                        entity={entity}
+                                        currentAccess={
+                                            currentAccess[entity.id] || 'none'
+                                        }
+                                        onAccessChange={handleAccessChange}
+                                        isSaving={
+                                            saveChangesMutation.isPending || !!readOnly
+                                        }
+                                    />
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <div className='text-center py-8'>
+                            <p className='text-sm text-muted-foreground'>
+                                {searchVal
+                                    ? 'No entities found matching your search'
+                                    : 'No entities available'}
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
         </>
     );
 }

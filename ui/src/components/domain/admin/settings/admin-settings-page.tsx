@@ -65,9 +65,7 @@ export default function SettingsPage() {
 
     const rawTab = search?.tab;
     const tab =
-        rawTab && VALID_TAB_IDS.has(rawTab)
-            ? rawTab
-            : ADMIN_SETTINGS_ITEMS[0].id;
+        rawTab && VALID_TAB_IDS.has(rawTab) ? rawTab : ADMIN_SETTINGS_ITEMS[0].id;
 
     const handleTabChange = (tabId: string) => {
         router.navigate({

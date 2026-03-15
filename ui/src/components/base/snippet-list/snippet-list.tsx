@@ -11,8 +11,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import { logger } from '@/utils/logger';
 import { CradleEditor } from '@/utils/editor/enhancements';
+import { logger } from '@/utils/logger';
 import { PencilIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';

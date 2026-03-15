@@ -16,9 +16,9 @@ import {
     ClockCounterClockwiseIcon,
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
-import isEqual from 'lodash/isEqual';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import isEqual from 'lodash/isEqual';
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
@@ -50,7 +50,9 @@ interface UserSettingsApi {
     };
 }
 
-function getUserSettingsFromApi(settings: UserSettingsApi | null | undefined): UserSettingsFormData | null {
+function getUserSettingsFromApi(
+    settings: UserSettingsApi | null | undefined,
+): UserSettingsFormData | null {
     if (!settings?.users) return null;
     const u = settings.users;
     return {

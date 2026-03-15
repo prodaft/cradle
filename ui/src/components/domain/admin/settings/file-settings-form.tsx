@@ -28,11 +28,11 @@ import {
     ClockCounterClockwiseIcon,
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
-import isEqual from 'lodash/isEqual';
 import { fetchClient } from '@services/openapi/client';
 import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import bytes from 'bytes';
+import isEqual from 'lodash/isEqual';
 import { useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
@@ -102,7 +102,9 @@ interface FileSettingsApi {
     };
 }
 
-function getFileSettingsFromApi(settings: FileSettingsApi | null | undefined): FileSettingsFormValues | null {
+function getFileSettingsFromApi(
+    settings: FileSettingsApi | null | undefined,
+): FileSettingsFormValues | null {
     if (!settings?.files) return null;
     const f = settings.files;
     return {

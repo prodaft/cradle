@@ -88,11 +88,10 @@ export default function OAuthCallback() {
             const body = { provider, code, redirect_uri: redirectUri };
 
             if (action === 'oauth_connect') {
-                const {
-                    error: connectError,
-                    response: connectResponse,
-                } = await fetchClient.POST('/users/oauth/connect/', { body });
-                if (connectError) throw { response: connectResponse, error: connectError };
+                const { error: connectError, response: connectResponse } =
+                    await fetchClient.POST('/users/oauth/connect/', { body });
+                if (connectError)
+                    throw { response: connectResponse, error: connectError };
                 const returnPath =
                     sessionStorage.getItem('oauth_connect_return_path') || '/settings';
                 sessionStorage.removeItem('oauth_connect_return_path');

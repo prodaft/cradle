@@ -263,13 +263,16 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
             <ResizablePanelGroup orientation='horizontal' className='h-full'>
                 {activePanel && (
                     <>
-                        <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+                        <ResizablePanel defaultSize='30%' minSize='20%' maxSize='50%'>
                             <GraphQuery {...graphQueryProps} />
                         </ResizablePanel>
                         <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
                     </>
                 )}
-                <ResizablePanel defaultSize={activePanel ? 70 : 100} minSize={50}>
+                <ResizablePanel
+                    defaultSize={activePanel ? '70%' : '100%'}
+                    minSize='50%'
+                >
                     <div className='relative h-full'>
                         <Graph
                             selectedNodes={selectedNodes}

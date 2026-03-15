@@ -122,8 +122,7 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
     const handleRevert = () => {
         if (userData) reset({ vim_mode: userData.vim_mode || false });
     };
-    const handleDefault = () =>
-        reset(EDITOR_DEFAULTS, { keepDefaultValues: true });
+    const handleDefault = () => reset(EDITOR_DEFAULTS, { keepDefaultValues: true });
     const isAtDefault = watch('vim_mode') === EDITOR_DEFAULTS.vim_mode;
 
     const openNoteTemplateDialog = async () => {

@@ -45,10 +45,7 @@ export function DataTable<TData>({
         onRowClick?.(row);
     };
     return (
-        <div
-            className={cn('flex w-full flex-col gap-2.5', className)}
-            {...props}
-        >
+        <div className={cn('flex w-full flex-col gap-2.5', className)} {...props}>
             {(children || showViewOptions) && (
                 <div
                     role='toolbar'

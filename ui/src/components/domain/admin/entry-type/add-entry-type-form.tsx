@@ -187,7 +187,10 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
         | { error?: { detail?: string } }
         | undefined;
     const errorMessage =
-        apiError?.error?.detail ?? (createEntryMutation.isError ? 'Failed to create entry type. Please try again.' : null);
+        apiError?.error?.detail ??
+        (createEntryMutation.isError
+            ? 'Failed to create entry type. Please try again.'
+            : null);
 
     return (
         <form onSubmit={handleFormSubmit(onSubmit)} className='w-full'>

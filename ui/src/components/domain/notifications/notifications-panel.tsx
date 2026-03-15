@@ -30,7 +30,7 @@ export default function NotificationsPanel({
     setUnreadNotificationsCount,
 }: NotificationsPanelProps) {
     const [flaggedNotificationsCount, setFlaggedNotificationsCount] = useState(0);
-    const parentRef = useRef<HTMLDivElement>(null);
+    const viewportRef = useRef<HTMLDivElement>(null);
 
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch } =
         useInfiniteQuery({
@@ -98,8 +98,7 @@ export default function NotificationsPanel({
     // Setup virtualizer for the notifications list
     const virtualizer = useVirtualizer({
         count: hasNextPage ? notifications.length + 1 : notifications.length,
-        getScrollElement: () =>
-            parentRef.current?.parentElement as HTMLDivElement | null,
+        getScrollElement: () => viewportRef.current,
         estimateSize: () => ESTIMATED_NOTIFICATION_HEIGHT,
         overscan: OVERSCAN,
     });
@@ -150,14 +149,15 @@ export default function NotificationsPanel({
                     <PageLoader fill='container' />
                 </div>
             ) : (
-                <ScrollArea className='flex-1'>
+                <ScrollArea
+                    viewportRef={viewportRef}
+                    className='flex-1 min-h-0'
+                >
                     <div
-                        ref={parentRef}
                         style={{
                             height: `${virtualizer.getTotalSize()}px`,
                             width: '100%',
                             position: 'relative',
-                            contain: 'strict',
                         }}
                     >
                         {virtualItems.map((virtualItem) => {

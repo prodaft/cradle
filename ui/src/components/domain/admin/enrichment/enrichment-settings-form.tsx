@@ -31,8 +31,8 @@ import {
 import { fetchClient } from '@services/openapi/client';
 import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import isEqual from 'lodash/isEqual';
 import { startCase } from 'lodash';
+import isEqual from 'lodash/isEqual';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';

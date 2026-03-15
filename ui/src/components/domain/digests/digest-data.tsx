@@ -122,7 +122,9 @@ export default function DigestData() {
         }
 
         if (columnFilters.created_at.from) {
-            searchQueryParams.created_at_gte = toStartIso(columnFilters.created_at.from);
+            searchQueryParams.created_at_gte = toStartIso(
+                columnFilters.created_at.from,
+            );
         }
         if (columnFilters.created_at.to) {
             searchQueryParams.created_at_lte = toEndIso(columnFilters.created_at.to);

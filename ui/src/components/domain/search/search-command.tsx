@@ -211,8 +211,8 @@ export default function SearchDialog({
             >
                 <DialogTitle className='sr-only'>Search entries</DialogTitle>
                 <DialogDescription className='sr-only'>
-                    Search for entities and entries by name. Use filters to narrow
-                    by type. Press Enter to open, Esc to close.
+                    Search for entities and entries by name. Use filters to narrow by
+                    type. Press Enter to open, Esc to close.
                 </DialogDescription>
                 <Command shouldFilter={false}>
                     <CommandInput

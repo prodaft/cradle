@@ -41,10 +41,7 @@ interface GraphSettingsProps {
     setConfig: (config: GraphConfig | ((prev: GraphConfig) => GraphConfig)) => void;
 }
 
-export default function GraphSettings({
-    config,
-    setConfig,
-}: GraphSettingsProps) {
+export default function GraphSettings({ config, setConfig }: GraphSettingsProps) {
     const applyPreset = () => {
         setConfig((prev) => ({
             ...prev,

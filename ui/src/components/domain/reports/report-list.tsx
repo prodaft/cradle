@@ -551,33 +551,32 @@ export default function Reports() {
                                 window.open(details.report_url, '_blank');
                             } else {
                                 toast.error(
-                                    'Report URL not found for report ' +
-                                        details.title,
+                                    'Report URL not found for report ' + details.title,
                                 );
                             }
                         } catch (_error) {
                             // Error handled by mutation
                         }
                     }}
-                    >
-                        <div className='flex items-center gap-2'>
-                            <ActionBarSearch
-                                placeholder='Search reports...'
-                                debounceMs={300}
-                                onDebouncedChange={(v) => {
-                                    setSearchQuery(v);
-                                    resetToFirstPage();
-                                }}
-                                onSubmit={() => resetToFirstPage()}
-                                onClear={() => resetToFirstPage()}
-                            />
-                            <StatusHeaderDropdown
-                                onStatusChange={handleStatusChange}
-                                status={statusFilter}
-                                statusOptions={['all', 'done', 'working', 'error']}
-                            />
-                        </div>
-                    </DataTable>
+                >
+                    <div className='flex items-center gap-2'>
+                        <ActionBarSearch
+                            placeholder='Search reports...'
+                            debounceMs={300}
+                            onDebouncedChange={(v) => {
+                                setSearchQuery(v);
+                                resetToFirstPage();
+                            }}
+                            onSubmit={() => resetToFirstPage()}
+                            onClear={() => resetToFirstPage()}
+                        />
+                        <StatusHeaderDropdown
+                            onStatusChange={handleStatusChange}
+                            status={statusFilter}
+                            statusOptions={['all', 'done', 'working', 'error']}
+                        />
+                    </div>
+                </DataTable>
             </div>
             <ActionBar
                 open={selectedReportIds.length > 0}

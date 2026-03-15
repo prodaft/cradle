@@ -21,9 +21,9 @@ import {
     FloppyDiskIcon,
     PlusIcon,
 } from '@phosphor-icons/react';
-import isEqual from 'lodash/isEqual';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import isEqual from 'lodash/isEqual';
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
@@ -56,7 +56,9 @@ interface NoteSettingsApi {
     };
 }
 
-function getNoteSettingsFromApi(settings: NoteSettingsApi | null | undefined): NoteSettingsFormData | null {
+function getNoteSettingsFromApi(
+    settings: NoteSettingsApi | null | undefined,
+): NoteSettingsFormData | null {
     if (!settings?.notes) return null;
     const n = settings.notes;
     return {
@@ -125,10 +127,9 @@ export default function NoteSettingsForm() {
 
     const relinkNotesMutation = useMutation({
         mutationFn: async () => {
-            const { data, error, response } = await fetchClient.POST(
-                '/notes/relink/',
-                { body: undefined },
-            );
+            const { data, error, response } = await fetchClient.POST('/notes/relink/', {
+                body: undefined,
+            });
             if (error) throw { response, error };
             return data;
         },

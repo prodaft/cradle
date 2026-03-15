@@ -110,13 +110,14 @@ export default function UserAdministrativeForm({
     useEffect(() => {
         if (!userData) return;
         const fileUploadLimitBytes = (userData as any).file_upload_limit_override;
-        const data = {
+        const data: FormData = {
             id: userData.id,
             emailConfirmed: userData.email_confirmed || false,
             isActive: userData.is_active || false,
-            fileUploadLimitOverride: fileUploadLimitBytes
-                ? bytes.format(fileUploadLimitBytes, { unitSeparator: ' ' })
-                : '',
+            fileUploadLimitOverride:
+                (fileUploadLimitBytes
+                    ? bytes.format(fileUploadLimitBytes, { unitSeparator: ' ' })
+                    : null) ?? undefined,
         };
         reset(data);
         previousValuesRef.current = data;
@@ -163,17 +164,11 @@ export default function UserAdministrativeForm({
         if (previousValuesRef.current) reset(previousValuesRef.current);
     };
     const handleDefault = () => {
-        reset(
-            { ...ADMIN_DEFAULTS, id: userData?.id },
-            { keepDefaultValues: true },
-        );
+        reset({ ...ADMIN_DEFAULTS, id: userData?.id }, { keepDefaultValues: true });
     };
     const isAtDefault =
         !!userData &&
-        isEqual(
-            { ...watch(), id: undefined },
-            { ...ADMIN_DEFAULTS, id: undefined },
-        );
+        isEqual({ ...watch(), id: undefined }, { ...ADMIN_DEFAULTS, id: undefined });
 
     const headerContainer =
         typeof document !== 'undefined'

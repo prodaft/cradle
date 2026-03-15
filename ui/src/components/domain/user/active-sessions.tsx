@@ -482,20 +482,20 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     return (
         <div className='w-full space-y-4'>
             <DataTable table={table} showViewOptions isLoading={isPending}>
-                    <ActionBarSearch
-                        placeholder='Search sessions...'
-                        value={searchQuery}
-                        debounceMs={300}
-                        onDebouncedChange={(v) => {
-                            setSearchQuery(v);
-                            handlePageChange(1);
-                        }}
-                        onSubmit={(v) => {
-                            setSearchQuery(v);
-                            handlePageChange(1);
-                        }}
-                    />
-                </DataTable>
+                <ActionBarSearch
+                    placeholder='Search sessions...'
+                    value={searchQuery}
+                    debounceMs={300}
+                    onDebouncedChange={(v) => {
+                        setSearchQuery(v);
+                        handlePageChange(1);
+                    }}
+                    onSubmit={(v) => {
+                        setSearchQuery(v);
+                        handlePageChange(1);
+                    }}
+                />
+            </DataTable>
             <ActionBar
                 open={selectedSessionIds.length > 0}
                 onOpenChange={(open) => {

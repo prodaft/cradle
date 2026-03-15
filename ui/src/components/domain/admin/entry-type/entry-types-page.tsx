@@ -363,13 +363,13 @@ export default function EntryTypesPage() {
                                 `/manage/entry-types/${encodeURIComponent(entryType.subtype)}`
                             }
                         >
-                                <ActionBarSearch
-                                    placeholder='Search entry types...'
-                                    value={searchQuery}
-                                    onDebouncedChange={handleSearchChange}
-                                    onSubmit={handleSearchChange}
-                                />
-                            </DataTable>
+                            <ActionBarSearch
+                                placeholder='Search entry types...'
+                                value={searchQuery}
+                                onDebouncedChange={handleSearchChange}
+                                onSubmit={handleSearchChange}
+                            />
+                        </DataTable>
                     </div>
                 </div>
             </div>

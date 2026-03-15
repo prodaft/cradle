@@ -97,7 +97,9 @@ export default function EntriesSettingsForm() {
                             disabled={propagateAccessMutation.isPending}
                         >
                             <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
-                            {propagateAccessMutation.isPending ? 'Propagating…' : 'Propagate'}
+                            {propagateAccessMutation.isPending
+                                ? 'Propagating…'
+                                : 'Propagate'}
                         </Button>
                     </Field>
 
@@ -121,7 +123,9 @@ export default function EntriesSettingsForm() {
                             disabled={deleteHangingArtifactsMutation.isPending}
                         >
                             <TrashIcon className='w-3.5 h-3.5' weight='bold' />
-                            {deleteHangingArtifactsMutation.isPending ? 'Deleting…' : 'Delete'}
+                            {deleteHangingArtifactsMutation.isPending
+                                ? 'Deleting…'
+                                : 'Delete'}
                         </Button>
                     </Field>
                 </FieldGroup>

@@ -66,8 +66,8 @@ export default function MainLayout(): React.JSX.Element {
                             className='absolute inset-0 z-50'
                         >
                             <ResizablePanel
-                                defaultSize={75}
-                                minSize={50}
+                                defaultSize='75%'
+                                minSize='50%'
                                 className='cursor-pointer bg-black/50'
                                 onClick={() => setShowNotifications(false)}
                             />
@@ -76,9 +76,9 @@ export default function MainLayout(): React.JSX.Element {
                                 className='bg-muted hover:bg-primary transition-colors'
                             />
                             <ResizablePanel
-                                defaultSize={25}
-                                minSize={18}
-                                maxSize={40}
+                                defaultSize='25%'
+                                minSize='25%'
+                                maxSize='45%'
                                 className='bg-card overflow-hidden'
                             >
                                 <NotificationsPanel

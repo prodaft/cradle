@@ -368,13 +368,13 @@ export default function EntitiesPage() {
                             onRowClick={handleEditClick}
                             getRowHref={(entity) => `/manage/entities/${entity.id}`}
                         >
-                                <ActionBarSearch
-                                    placeholder='Search entities...'
-                                    value={searchQuery}
-                                    onDebouncedChange={handleSearchChange}
-                                    onSubmit={handleSearchChange}
-                                />
-                            </DataTable>
+                            <ActionBarSearch
+                                placeholder='Search entities...'
+                                value={searchQuery}
+                                onDebouncedChange={handleSearchChange}
+                                onSubmit={handleSearchChange}
+                            />
+                        </DataTable>
                     </div>
                 </div>
             </div>
@@ -485,9 +485,7 @@ export default function EntitiesPage() {
                         <AlertDialogAction
                             variant='destructive'
                             size='sm'
-                            onClick={() =>
-                                handleDeleteEntities(bulkDeleteEntityIds)
-                            }
+                            onClick={() => handleDeleteEntities(bulkDeleteEntityIds)}
                             disabled={
                                 deleteConfirmInput !==
                                 (bulkDeleteEntityIds.length === 1

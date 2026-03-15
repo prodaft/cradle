@@ -718,9 +718,9 @@ export default function NoteViewer() {
                                     >
                                         {/* Outline sidebar - rendered once */}
                                         <ResizablePanel
-                                            defaultSize={15}
-                                            minSize={10}
-                                            maxSize={30}
+                                            defaultSize='15%'
+                                            minSize='10%'
+                                            maxSize='30%'
                                         >
                                             <ScrollArea className='h-full pr-2'>
                                                 <NoteOutline
@@ -733,7 +733,7 @@ export default function NoteViewer() {
                                         </ResizablePanel>
                                         <ResizableHandle className='w-[2px] border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
                                         {/* Editor Panel - conditionally renders Rich or Normal editor */}
-                                        <ResizablePanel defaultSize={85} minSize={50}>
+                                        <ResizablePanel defaultSize='85%' minSize='50%'>
                                             <div
                                                 className={cn(
                                                     'h-full flex flex-col border-l border-border relative',
@@ -867,19 +867,11 @@ export default function NoteViewer() {
                                                             setMarkdownContent
                                                         }
                                                         fileData={fileData}
-                                                        setFileData={
-                                                            handleFilesChange
-                                                        }
+                                                        setFileData={handleFilesChange}
                                                         source={!richEditor}
-                                                        saveNote={
-                                                            handleSaveNote
-                                                        }
-                                                        enableEditing={
-                                                            enableEditing
-                                                        }
-                                                        setLineNumber={
-                                                            setLineNumber
-                                                        }
+                                                        saveNote={handleSaveNote}
+                                                        enableEditing={enableEditing}
+                                                        setLineNumber={setLineNumber}
                                                         saving={saving}
                                                         hasUnsavedChanges={
                                                             hasUnsavedChanges

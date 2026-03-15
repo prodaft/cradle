@@ -718,11 +718,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                 )}
 
                 <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
-                    <DataTable
-                        table={table}
-                        showViewOptions
-                        isLoading={isLoading}
-                    >
+                    <DataTable table={table} showViewOptions isLoading={isLoading}>
                         <ActionBarSearch
                             placeholder='Search files...'
                             debounceMs={300}
@@ -793,8 +789,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                                                     ] as const
                                                 ).map((option) => {
                                                     const isSelected =
-                                                        statusFilter ===
-                                                        option.value;
+                                                        statusFilter === option.value;
                                                     return (
                                                         <CommandItem
                                                             key={option.value}
@@ -845,7 +840,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                                 </Command>
                             </PopoverContent>
                         </Popover>
-                        </DataTable>
+                    </DataTable>
                 </div>
             </div>
             <ActionBar

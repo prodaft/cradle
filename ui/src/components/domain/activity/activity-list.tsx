@@ -773,9 +773,8 @@ export default function ActivityList({
                                     <TableRow>
                                         <TableCell
                                             colSpan={
-                                                table
-                                                    .getHeaderGroups()[0]
-                                                    ?.headers.length ?? columns.length
+                                                table.getHeaderGroups()[0]?.headers
+                                                    .length ?? columns.length
                                             }
                                             className='h-24 text-center'
                                         >

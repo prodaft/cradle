@@ -53,7 +53,9 @@ interface OAuthMethod {
 const signupSchema = z
     .object({
         username: z.string().min(1, { error: 'Username is required' }),
-        email: z.email({ error: 'Invalid email' }).min(1, { error: 'Email is required' }),
+        email: z
+            .email({ error: 'Invalid email' })
+            .min(1, { error: 'Email is required' }),
         password: z
             .string()
             .min(12, { error: 'Password must be at least 12 characters' })

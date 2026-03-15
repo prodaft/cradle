@@ -160,10 +160,9 @@ export default function NotesList({
 
     const relinkAllNotesMutation = useMutation({
         mutationFn: async () => {
-            const { error, response } = await fetchClient.POST(
-                '/notes/relink/',
-                { body: undefined },
-            );
+            const { error, response } = await fetchClient.POST('/notes/relink/', {
+                body: undefined,
+            });
             if (error) throw { response, error };
         },
         meta: {
@@ -302,7 +301,8 @@ export default function NotesList({
     const hasCompleteCreatedRange =
         Boolean(columnFilters.timestamp?.from) && Boolean(columnFilters.timestamp?.to);
     const hasCompleteUpdatedRange =
-        Boolean(columnFilters.edit_timestamp?.from) && Boolean(columnFilters.edit_timestamp?.to);
+        Boolean(columnFilters.edit_timestamp?.from) &&
+        Boolean(columnFilters.edit_timestamp?.to);
 
     const queryParams = useMemo(() => {
         if (!query) return null;
@@ -388,15 +388,12 @@ export default function NotesList({
         setRelinkDialogOpen(true);
     }, []);
 
-    const executeRelink = useCallback(
-        async () => {
-            await relinkAllNotesMutation.mutateAsync();
-            toast.success('Relinking all notes...');
-            setRowSelection({});
-            queryClient.invalidateQueries({ queryKey: queryKeys.notes.apiList() });
-        },
-        [relinkAllNotesMutation, queryClient],
-    );
+    const executeRelink = useCallback(async () => {
+        await relinkAllNotesMutation.mutateAsync();
+        toast.success('Relinking all notes...');
+        setRowSelection({});
+        queryClient.invalidateQueries({ queryKey: queryKeys.notes.apiList() });
+    }, [relinkAllNotesMutation, queryClient]);
 
     const handlePageChange = useCallback(
         (newPage: number) => {
@@ -749,9 +746,7 @@ export default function NotesList({
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align='end'>
                                         {isAdmin && (
-                                            <DropdownMenuItem
-                                                onClick={handleRelinkAll}
-                                            >
+                                            <DropdownMenuItem onClick={handleRelinkAll}>
                                                 <ArrowClockwiseIcon
                                                     size={16}
                                                     weight='bold'
@@ -1140,10 +1135,7 @@ export default function NotesList({
                 onOpenChange={setEnrichmentDialogOpen}
                 notesList={enrichmentNotesList}
             />
-            <AlertDialog
-                open={relinkDialogOpen}
-                onOpenChange={setRelinkDialogOpen}
-            >
+            <AlertDialog open={relinkDialogOpen} onOpenChange={setRelinkDialogOpen}>
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Relinking</AlertDialogTitle>

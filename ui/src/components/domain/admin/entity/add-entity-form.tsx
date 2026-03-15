@@ -106,7 +106,10 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
             if (error) throw { response, error };
             const results = (data as AdvancedQueryResponse)?.results ?? [];
             return results
-                .filter((alias): alias is typeof alias & { id: number } => alias.id !== undefined)
+                .filter(
+                    (alias): alias is typeof alias & { id: number } =>
+                        alias.id !== undefined,
+                )
                 .map((alias) => ({
                     value: alias.id,
                     label: `${alias.subtype}:${alias.name}`,

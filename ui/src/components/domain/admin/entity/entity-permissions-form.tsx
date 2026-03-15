@@ -22,11 +22,11 @@ import {
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
-import { createPortal } from 'react-dom';
 import { fetchAllEntityAccess } from '@services/openapi/fetch-all-pages';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 type AccessLevel = 'none' | 'read' | 'read-write';
 
@@ -168,8 +168,7 @@ export default function EntityPermissionsForm({
     const isAtDefault =
         allAccessData.length > 0 &&
         allAccessData.every(
-            (access) =>
-                (currentAccess[access.user.id ?? ''] ?? 'none') === 'none',
+            (access) => (currentAccess[access.user.id ?? ''] ?? 'none') === 'none',
         );
 
     const headerContainer =
@@ -220,9 +219,7 @@ export default function EntityPermissionsForm({
                             type='button'
                             variant='default'
                             size='icon'
-                            disabled={
-                                saveChangesMutation.isPending || !hasChanges()
-                            }
+                            disabled={saveChangesMutation.isPending || !hasChanges()}
                             onClick={handleSave}
                             title='Save Settings'
                         >
@@ -235,89 +232,100 @@ export default function EntityPermissionsForm({
                     </div>,
                     headerContainer,
                 )}
-        <form className='w-full h-full flex flex-col space-y-4'>
-            <div className='relative'>
-                <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
-                <Input
-                    placeholder='Search users...'
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className='pl-9'
-                />
-            </div>
+            <form className='w-full h-full flex flex-col space-y-4'>
+                <div className='relative'>
+                    <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
+                    <Input
+                        placeholder='Search users...'
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className='pl-9'
+                    />
+                </div>
 
-            <div className='overflow-hidden rounded-md border'>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className='w-[60px]'>ID</TableHead>
-                            <TableHead className='w-[200px]'>User</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead className='w-[160px]'>Access</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {accessData.length === 0 ? (
+                <div className='overflow-hidden rounded-md border'>
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell
-                                    colSpan={4}
-                                    className='text-center text-muted-foreground py-8'
-                                >
-                                    No users found
-                                </TableCell>
+                                <TableHead className='w-[60px]'>ID</TableHead>
+                                <TableHead className='w-[200px]'>User</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead className='w-[160px]'>Access</TableHead>
                             </TableRow>
-                        ) : (
-                            accessData
-                                .filter((access) => access.user.id)
-                                .map((access) => {
-                                const user = access.user;
-                                const userId = user.id as string;
-                                const accessValue =
-                                    currentAccess[userId] ||
-                                    (access.access_type as AccessLevel);
+                        </TableHeader>
+                        <TableBody>
+                            {accessData.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={4}
+                                        className='text-center text-muted-foreground py-8'
+                                    >
+                                        No users found
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                accessData
+                                    .filter((access) => access.user.id)
+                                    .map((access) => {
+                                        const user = access.user;
+                                        const userId = user.id as string;
+                                        const accessValue =
+                                            currentAccess[userId] ||
+                                            (access.access_type as AccessLevel);
 
-                                return (
-                                    <TableRow key={userId}>
-                                        <TableCell className='text-muted-foreground'>
-                                            {userId.slice(0, 8)}
-                                        </TableCell>
-                                        <TableCell className='font-medium'>
-                                            {user.username}
-                                        </TableCell>
-                                        <TableCell className='text-muted-foreground text-sm'>
-                                            -
-                                        </TableCell>
-                                        <TableCell>
-                                            <Select
-                                                value={accessValue}
-                                                onValueChange={(value) =>
-                                                    handleAccessChange(userId, value)
-                                                }
-                                                disabled={saveChangesMutation.isPending}
-                                            >
-                                                <SelectTrigger className='w-[140px]'>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {ACCESS_OPTIONS.map((option) => (
-                                                        <SelectItem
-                                                            key={option.value}
-                                                            value={option.value}
-                                                        >
-                                                            {option.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            })
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
-        </form>
+                                        return (
+                                            <TableRow key={userId}>
+                                                <TableCell className='text-muted-foreground'>
+                                                    {userId.slice(0, 8)}
+                                                </TableCell>
+                                                <TableCell className='font-medium'>
+                                                    {user.username}
+                                                </TableCell>
+                                                <TableCell className='text-muted-foreground text-sm'>
+                                                    -
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Select
+                                                        value={accessValue}
+                                                        onValueChange={(value) =>
+                                                            handleAccessChange(
+                                                                userId,
+                                                                value,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            saveChangesMutation.isPending
+                                                        }
+                                                    >
+                                                        <SelectTrigger className='w-[140px]'>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {ACCESS_OPTIONS.map(
+                                                                (option) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            option.value
+                                                                        }
+                                                                        value={
+                                                                            option.value
+                                                                        }
+                                                                    >
+                                                                        {option.label}
+                                                                    </SelectItem>
+                                                                ),
+                                                            )}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </form>
         </>
     );
 }

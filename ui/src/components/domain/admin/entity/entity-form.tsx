@@ -30,13 +30,13 @@ import { useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
 
-import isEqual from 'lodash/isEqual';
 import { SelectOption } from '@/types';
 import {
     ArrowCounterClockwiseIcon,
     ClockCounterClockwiseIcon,
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
+import isEqual from 'lodash/isEqual';
 import * as z from 'zod';
 import OfflineIndicator from '../../../feedback/offline-indicator';
 
@@ -85,14 +85,17 @@ const ENTITY_FORM_DEFAULTS: EntityFormData = {
     aliases: [],
 };
 
-function getEntityFormFromApi(entity: Entity | null | undefined): EntityFormData | null {
+function getEntityFormFromApi(
+    entity: Entity | null | undefined,
+): EntityFormData | null {
     if (!entity) return null;
-    const aliases = entity.aliases_detail
-        ?.filter((a): a is Entry & { id: number } => a.id !== undefined)
-        .map((a) => ({
-            value: a.id!,
-            label: `${a.subtype}:${a.name}`,
-        })) ?? [];
+    const aliases =
+        entity.aliases_detail
+            ?.filter((a): a is Entry & { id: number } => a.id !== undefined)
+            .map((a) => ({
+                value: a.id!,
+                label: `${a.subtype}:${a.name}`,
+            })) ?? [];
     return {
         name: entity.name,
         subtype: entity.subtype || '',
@@ -119,7 +122,10 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
             if (error) throw { response, error };
             const results = (data as AdvancedQueryResponse)?.results ?? [];
             return results
-                .filter((alias): alias is typeof alias & { id: number } => alias.id !== undefined)
+                .filter(
+                    (alias): alias is typeof alias & { id: number } =>
+                        alias.id !== undefined,
+                )
                 .map((alias) => ({
                     value: alias.id,
                     label: `${alias.subtype}:${alias.name}`,

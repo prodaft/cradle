@@ -35,8 +35,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { queryKeys } from '@/hooks/query';
 import { SelectOption } from '@/types';
-import isEqual from 'lodash/isEqual';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -44,11 +44,11 @@ import {
     ClockCounterClockwiseIcon,
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
-import { queryKeys } from '@/hooks/query';
 import { $api, fetchClient } from '@services/openapi/client';
 import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import isEqual from 'lodash/isEqual';
 import { useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
@@ -297,8 +297,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     const handleRevert = () => {
         if (loadedValuesRef.current) reset(loadedValuesRef.current);
     };
-    const handleDefault = () =>
-        reset(entryTypeDefaults, { keepDefaultValues: true });
+    const handleDefault = () => reset(entryTypeDefaults, { keepDefaultValues: true });
     const isAtDefault = isEqual(watch(), entryTypeDefaults);
 
     return (
