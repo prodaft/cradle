@@ -8,7 +8,12 @@ import {
     CommandList,
     CommandShortcut,
 } from '@/components/ui/command';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Kbd } from '@/components/ui/kbd';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -119,9 +124,9 @@ export default function SearchDialog({
                             query: {
                                 page: searchState.page,
                                 page_size: searchState.pageSize,
-                                query: trimmed || undefined,
+                                query: trimmed ? [trimmed] : undefined,
                                 wildcard: true,
-                            } as any,
+                            },
                         },
                     },
                 );
@@ -205,6 +210,10 @@ export default function SearchDialog({
                 showCloseButton={false}
             >
                 <DialogTitle className='sr-only'>Search entries</DialogTitle>
+                <DialogDescription className='sr-only'>
+                    Search for entities and entries by name. Use filters to narrow
+                    by type. Press Enter to open, Esc to close.
+                </DialogDescription>
                 <Command shouldFilter={false}>
                     <CommandInput
                         ref={inputRef}
@@ -236,7 +245,7 @@ export default function SearchDialog({
                                         return (
                                             <CommandItem
                                                 key={`${result.subtype}:${result.id ?? result.name}`}
-                                                value={`${result.subtype}:${result.id}`}
+                                                value={`${result.subtype}:${result.id ?? result.name}`}
                                                 onSelect={() =>
                                                     handleSelectResult(result)
                                                 }

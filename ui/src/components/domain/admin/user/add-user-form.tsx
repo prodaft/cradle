@@ -20,6 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
@@ -70,7 +71,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
         handleSubmit,
         control,
         reset,
-        formState: { errors, isSubmitting },
+        formState: { errors },
     } = useForm<FormData>({
         resolver: zodResolver(addUserSchema) as any,
         defaultValues: {
@@ -113,11 +114,11 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
             return newUser;
         },
         meta: {
-            successMessage: 'User created successfully',
+            suppressNotification: true, // Redirect is the feedback
         },
         onSuccess: (newUser) => {
             reset();
-            if (onAdd) onAdd(newUser);
+            if (newUser && onAdd) onAdd(newUser);
         },
     });
 
@@ -315,8 +316,19 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
             </FieldGroup>
 
             <div className='flex justify-end mt-5'>
-                <Button type='submit' variant='default' disabled={isSubmitting}>
-                    {isSubmitting ? 'Creating...' : 'Create User'}
+                <Button
+                    type='submit'
+                    variant='default'
+                    disabled={createUserMutation.isPending}
+                >
+                    {createUserMutation.isPending ? (
+                        <>
+                            <Spinner className='size-4' />
+                            Creating...
+                        </>
+                    ) : (
+                        'Create User'
+                    )}
                 </Button>
             </div>
         </form>

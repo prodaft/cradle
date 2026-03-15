@@ -4,7 +4,9 @@ import Logo from '@components/base/logo/logo';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+const OAUTH_CALLBACK_IMAGES = ['/1.png', '/2.png', '/3.png', '/4.png'];
 
 type OAuthAction = 'oauth_login' | 'oauth_connect';
 
@@ -37,6 +39,12 @@ export default function OAuthCallback() {
     const { isLoggedIn, setTokensDirectly } = useAuthActions();
     const router = useRouter();
     const hasExchangedRef = useRef(false);
+    const [callbackImage] = useState(
+        () =>
+            OAUTH_CALLBACK_IMAGES[
+                Math.floor(Math.random() * OAUTH_CALLBACK_IMAGES.length)
+            ],
+    );
 
     const urlParams = useMemo(() => {
         const url = new URL(window.location.href);
@@ -77,21 +85,14 @@ export default function OAuthCallback() {
                 }
             }
 
-            const {
-                error,
-                response,
-                data: resp,
-            } = await fetchClient.POST(
-                '/users/oauth/connect/' as any,
-                {
-                    body: { provider, code, redirect_uri: redirectUri } as any,
-                } as any,
-            );
-            if (error) throw { response, error };
-
-            const data = resp as any;
+            const body = { provider, code, redirect_uri: redirectUri };
 
             if (action === 'oauth_connect') {
+                const {
+                    error: connectError,
+                    response: connectResponse,
+                } = await fetchClient.POST('/users/oauth/connect/', { body });
+                if (connectError) throw { response: connectResponse, error: connectError };
                 const returnPath =
                     sessionStorage.getItem('oauth_connect_return_path') || '/settings';
                 sessionStorage.removeItem('oauth_connect_return_path');
@@ -99,6 +100,22 @@ export default function OAuthCallback() {
                 router.navigate({ to: normalizeTo(returnPath), replace: true });
                 return;
             }
+
+            const {
+                error: loginError,
+                response: loginResponse,
+                data: resp,
+            } = await fetchClient.POST('/auth/oauth/login/', { body });
+            if (loginError) throw { response: loginResponse, error: loginError };
+
+            const data = resp as {
+                access: string;
+                refresh: string;
+                role: string;
+                access_expires_at: string;
+                refresh_expires_at: string;
+                user_id?: string;
+            };
 
             setTokensDirectly({
                 access: data.access,
@@ -175,11 +192,15 @@ export default function OAuthCallback() {
                 </div>
             </div>
 
-            <div className='bg-muted relative hidden lg:block'>
+            <div
+                className='bg-muted relative hidden lg:block select-none'
+                onContextMenu={(e) => e.preventDefault()}
+            >
                 <img
-                    src='/auth-image.jpeg'
-                    alt='Image'
-                    className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale'
+                    src={callbackImage}
+                    alt=''
+                    className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale pointer-events-none'
+                    draggable={false}
                 />
             </div>
         </div>

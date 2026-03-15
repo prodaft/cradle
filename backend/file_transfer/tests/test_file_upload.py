@@ -28,7 +28,7 @@ class TestFileUpload(FileTransferTestCase):
         super().tearDown()
 
     def test_initiate_upload_successfully(self):
-        """Initiate upload returns presigned URL when fileName and fileSize provided."""
+        """Initiate upload returns presigned URL when file_name and file_size provided."""
         with patch("file_transfer.views.file_upload_flow") as mock_flow:
             mock_flow.initiate.return_value = {
                 "upload_id": "aad5cae6-5737-409d-8ce2-5f116ed5e2de",
@@ -38,7 +38,7 @@ class TestFileUpload(FileTransferTestCase):
             }
             response = self.client.get(
                 reverse("file_upload"),
-                {"fileName": self.file_name, "fileSize": self.file_size},
+                {"file_name": self.file_name, "file_size": self.file_size},
                 **self.headers,
             )
             self.assertEqual(response.status_code, 200)
@@ -49,33 +49,51 @@ class TestFileUpload(FileTransferTestCase):
         """Initiate upload returns 401 when not authenticated."""
         response = self.client.get(
             reverse("file_upload"),
-            {"fileName": self.file_name, "fileSize": self.file_size},
+            {"file_name": self.file_name, "file_size": self.file_size},
         )
         self.assertEqual(response.status_code, 401)
 
     def test_initiate_upload_no_file_name(self):
-        """Initiate upload returns 400 when fileName missing."""
+        """Initiate upload returns 400 when file_name missing."""
         response = self.client.get(
             reverse("file_upload"),
-            {"fileSize": self.file_size},
+            {"file_size": self.file_size},
             **self.headers,
         )
         self.assertEqual(response.status_code, 400)
 
     def test_initiate_upload_no_file_size(self):
-        """Initiate upload returns 400 when fileSize missing."""
+        """Initiate upload returns 400 when file_size missing."""
         response = self.client.get(
             reverse("file_upload"),
-            {"fileName": self.file_name},
+            {"file_name": self.file_name},
             **self.headers,
         )
         self.assertEqual(response.status_code, 400)
 
     def test_initiate_upload_file_name_empty(self):
-        """Initiate upload returns 400 when fileName is empty."""
+        """Initiate upload returns 400 when file_name is empty."""
         response = self.client.get(
             reverse("file_upload"),
-            {"fileName": "", "fileSize": self.file_size},
+            {"file_name": "", "file_size": self.file_size},
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_initiate_upload_invalid_file_size(self):
+        """Initiate upload returns 400 when file_size is not a valid integer."""
+        response = self.client.get(
+            reverse("file_upload"),
+            {"file_name": self.file_name, "file_size": "not-a-number"},
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_initiate_upload_file_size_zero(self):
+        """Initiate upload returns 400 when file_size is zero."""
+        response = self.client.get(
+            reverse("file_upload"),
+            {"file_name": self.file_name, "file_size": "0"},
             **self.headers,
         )
         self.assertEqual(response.status_code, 400)

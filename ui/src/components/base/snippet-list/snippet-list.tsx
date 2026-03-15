@@ -1,7 +1,6 @@
 import MarkdownEditorDialog from '@/components/dialogs/base/markdown-editor-dialog';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -13,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { logger } from '@/utils/logger';
+import { CradleEditor } from '@/utils/editor/enhancements';
 import { PencilIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
@@ -67,6 +67,10 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
             ? (snippetsData as Snippet[])
             : [];
 
+        const invalidateEditorSnippets = useCallback(() => {
+            CradleEditor.invalidateSnippetsCache();
+        }, []);
+
         // Mutation for creating snippets
         const createMutation = useMutation({
             mutationFn: async (data: { name: string; content: string }) => {
@@ -87,6 +91,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                 ],
                 successMessage: 'Snippet created successfully',
             },
+            onSuccess: invalidateEditorSnippets,
         });
 
         // Mutation for updating snippets
@@ -115,6 +120,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                 ],
                 successMessage: 'Snippet updated successfully',
             },
+            onSuccess: invalidateEditorSnippets,
         });
 
         // Mutation for deleting snippets
@@ -132,6 +138,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                 ],
                 successMessage: 'Snippet deleted successfully',
             },
+            onSuccess: invalidateEditorSnippets,
         });
 
         const stopEvent = useCallback((e?: MouseEvent) => {
@@ -160,6 +167,17 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
             stopEvent(e);
             setDeletingSnippet(snippet);
             setDeleteDialogOpen(true);
+        };
+
+        const handleConfirmDelete = async () => {
+            if (!deletingSnippet) return;
+            try {
+                await deleteMutation.mutateAsync(deletingSnippet.id);
+                setDeleteDialogOpen(false);
+                setDeletingSnippet(null);
+            } catch (error) {
+                logger.error('Error deleting snippet:', error);
+            }
         };
 
         return (
@@ -204,7 +222,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                             {snippets.map((snippet) => (
                                 <div
                                     key={snippet.id}
-                                    className='px-3 py-2 cursor-pointer flex items-center justify-between'
+                                    className='px-3 py-2 flex items-center justify-between'
                                 >
                                     <div className='font-medium text-sm truncate flex-1 mr-2'>
                                         {snippet.name}
@@ -248,6 +266,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                     open={addSnippetDialogOpen}
                     onOpenChange={setAddSnippetDialogOpen}
                     titleEditable={true}
+                    description='Edit the markdown content for this snippet.'
                     initialContent=''
                     helpText={
                         <div className='text-sm text-muted-foreground'>
@@ -262,22 +281,23 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                         </div>
                     }
                     onConfirm={async (content: string, title: string) => {
-                        if (title.trim() && content.trim()) {
-                            try {
-                                const snippetData = {
-                                    name: title.trim(),
-                                    content: content.trim(),
-                                };
-                                await createMutation.mutateAsync(snippetData);
-                            } catch (error) {
-                                logger.error('Error creating snippet:', error);
-                            }
-                        } else if (title.trim() === '') {
+                        if (title.trim() === '') {
                             toast.error('Title is required');
                             throw new Error('Title is required');
-                        } else if (content.trim() === '') {
+                        }
+                        if (content.trim() === '') {
                             toast.error('Content is required');
                             throw new Error('Content is required');
+                        }
+                        try {
+                            const snippetData = {
+                                name: title.trim(),
+                                content: content.trim(),
+                            };
+                            await createMutation.mutateAsync(snippetData);
+                        } catch (error) {
+                            logger.error('Error creating snippet:', error);
+                            throw error;
                         }
                     }}
                 />
@@ -290,22 +310,30 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                         }}
                         title={editingSnippet.name}
                         titleEditable={true}
+                        description='Edit the markdown content for this snippet.'
                         initialContent={editingSnippet.content}
                         helpText='You can use CodeMirror snippet format: https://codemirror.net/docs/ref/#autocomplete.snippet'
                         onConfirm={async (content: string, title: string) => {
-                            if (title.trim() && content.trim()) {
-                                try {
-                                    const snippetData = {
-                                        name: title.trim(),
-                                        content: content.trim(),
-                                    };
-                                    await updateMutation.mutateAsync({
-                                        snippetId: editingSnippet.id,
-                                        data: snippetData,
-                                    });
-                                } catch (error) {
-                                    logger.error('Error updating snippet:', error);
-                                }
+                            if (title.trim() === '') {
+                                toast.error('Title is required');
+                                throw new Error('Title is required');
+                            }
+                            if (content.trim() === '') {
+                                toast.error('Content is required');
+                                throw new Error('Content is required');
+                            }
+                            try {
+                                const snippetData = {
+                                    name: title.trim(),
+                                    content: content.trim(),
+                                };
+                                await updateMutation.mutateAsync({
+                                    snippetId: editingSnippet.id,
+                                    data: snippetData,
+                                });
+                            } catch (error) {
+                                logger.error('Error updating snippet:', error);
+                                throw error;
                             }
                         }}
                     />
@@ -328,27 +356,23 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel variant='outline' size='sm'>
+                                <AlertDialogCancel
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={deleteMutation.isPending}
+                                >
                                     Cancel
                                 </AlertDialogCancel>
-                                <AlertDialogAction
+                                <Button
                                     variant='destructive'
                                     size='sm'
-                                    onClick={async () => {
-                                        try {
-                                            await deleteMutation.mutateAsync(
-                                                deletingSnippet.id,
-                                            );
-                                        } catch (error) {
-                                            logger.error(
-                                                'Error deleting snippet:',
-                                                error,
-                                            );
-                                        }
-                                    }}
+                                    onClick={handleConfirmDelete}
+                                    disabled={deleteMutation.isPending}
                                 >
-                                    Delete
-                                </AlertDialogAction>
+                                    {deleteMutation.isPending
+                                        ? 'Deleting...'
+                                        : 'Delete'}
+                                </Button>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>

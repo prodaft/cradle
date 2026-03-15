@@ -95,7 +95,7 @@ export default function Dashboard() {
                     {contentObject.id && (
                         <div className='flex flex-1 flex-col space-y-4 overflow-hidden'>
                             <Tabs value={tab} onValueChange={handleTabChange}>
-                                <TabsList className='flex-wrap h-auto'>
+                                <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
                                     {tabs.map((item) => {
                                         const Icon = item.icon;
                                         return (

@@ -19,14 +19,22 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { SelectOption } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
+import {
+    ArrowCounterClockwiseIcon,
+    ClockCounterClockwiseIcon,
+    FloppyDiskIcon,
+} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import isEqual from 'lodash/isEqual';
 import { startCase } from 'lodash';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -38,7 +46,7 @@ interface EnrichmentSettingsFormProps {
 type EclassOption = SelectOption<string>;
 
 interface FormField {
-    type: 'string' | 'number' | 'choice' | 'boolean' | 'url';
+    type: 'string' | 'number' | 'choice' | 'options' | 'boolean' | 'url';
     required?: boolean;
     options?: string[];
     description?: string;
@@ -61,7 +69,7 @@ const createEnrichmentSchema = (form_fields: FormFields) => {
             } else if (field.type === 'url') {
                 const urlValidator = z
                     .string()
-                    .check(z.url({ error: `${key} must be a valid URL` }));
+                    .url({ message: `${key} must be a valid URL` });
                 validator = field.required
                     ? urlValidator
                     : z.union([z.literal(''), urlValidator]);
@@ -72,6 +80,7 @@ const createEnrichmentSchema = (form_fields: FormFields) => {
                 if (
                     field.type === 'string' ||
                     field.type === 'choice' ||
+                    field.type === 'options' ||
                     field.type === 'url'
                 ) {
                     validator = (validator as z.ZodString).min(1, {
@@ -138,7 +147,8 @@ export default function EnrichmentSettingsForm({
     );
 
     const form = useForm<z.infer<ReturnType<typeof createEnrichmentSchema>>>({
-        resolver: zodResolver(validationSchema) as any,
+        resolver: ((values, context, options) =>
+            zodResolver(validationSchema)(values, context, options)) as any,
         defaultValues: {
             for_eclasses: [],
             enabled: false,
@@ -149,8 +159,12 @@ export default function EnrichmentSettingsForm({
     const {
         control,
         reset,
-        formState: { isSubmitting },
+        formState: { isSubmitting, isDirty },
     } = form;
+
+    const loadedValuesRef = useRef<z.infer<
+        ReturnType<typeof createEnrichmentSchema>
+    > | null>(null);
 
     // Fetch all entry classes for the for_eclasses selector
     const fetchEntryClasses = async (q: string): Promise<EclassOption[]> => {
@@ -201,12 +215,14 @@ export default function EnrichmentSettingsForm({
                 label: eclass.subtype,
             }));
 
-            reset({
+            const values = {
                 for_eclasses: formattedEclasses,
                 enabled: sd.enabled || false,
                 settings: initialSettings,
                 id: sd.id,
-            });
+            };
+            loadedValuesRef.current = values;
+            reset(values);
         }
     }, [settingsData, reset]);
 
@@ -285,7 +301,7 @@ export default function EnrichmentSettingsForm({
                                 </Field>
                             )}
                         />
-                    ) : field.type === 'choice' ? (
+                    ) : field.type === 'choice' || field.type === 'options' ? (
                         <Controller
                             control={control}
                             name={`settings.${key}`}
@@ -467,16 +483,49 @@ export default function EnrichmentSettingsForm({
         );
     }
 
+    const headerContainer =
+        typeof document !== 'undefined'
+            ? document.getElementById('settings-header-actions')
+            : null;
+
+    const handleRevert = () => {
+        if (loadedValuesRef.current) reset(loadedValuesRef.current);
+    };
+
+    const getDefaultSettings = () => {
+        const initialSettings: Record<string, string | number | boolean> = {};
+        (Object.entries(formFields) as [string, FormField][]).forEach(
+            ([key, field]) => {
+                if (field.type === 'boolean') {
+                    initialSettings[key] = false;
+                } else {
+                    initialSettings[key] = field.type === 'number' ? 0 : '';
+                }
+            },
+        );
+        return {
+            for_eclasses: [],
+            enabled: false,
+            settings: initialSettings,
+        };
+    };
+    const handleDefault = () =>
+        reset(getDefaultSettings(), { keepDefaultValues: true });
+    const isAtDefault = isEqual(form.watch(), getDefaultSettings());
+
     return (
         <div className='w-full h-full'>
             {/* Header Section */}
-            <div className='px-4 py-4'>
-                <h2 className='text-2xl font-bold tracking-tight'>
-                    {displayName} Settings
-                </h2>
-                <p className='text-muted-foreground'>
-                    Manage configuration for {displayName}
-                </p>
+            <div className='px-4 py-4 flex flex-wrap items-end justify-between gap-2'>
+                <div>
+                    <h2 className='text-2xl font-bold tracking-tight'>
+                        {displayName} Settings
+                    </h2>
+                    <p className='text-muted-foreground'>
+                        Manage configuration for {displayName}
+                    </p>
+                </div>
+                <div id='settings-header-actions' className='flex items-center' />
             </div>
             <div className='px-4'>
                 <Separator
@@ -488,7 +537,53 @@ export default function EnrichmentSettingsForm({
 
             {/* Content Area */}
             <div className='px-4 pb-4'>
-                <form onSubmit={form.handleSubmit(onSubmit)}>
+                {headerContainer &&
+                    createPortal(
+                        <div className='flex items-center gap-2'>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='icon'
+                                disabled={!isDirty}
+                                onClick={handleRevert}
+                                title='Revert'
+                            >
+                                <ArrowCounterClockwiseIcon
+                                    className='size-4'
+                                    weight='bold'
+                                />
+                            </Button>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='icon'
+                                disabled={isAtDefault}
+                                onClick={handleDefault}
+                                title='Default'
+                            >
+                                <ClockCounterClockwiseIcon
+                                    className='size-4'
+                                    weight='bold'
+                                />
+                            </Button>
+                            <Button
+                                type='submit'
+                                form='enrichment-form'
+                                variant='default'
+                                size='icon'
+                                disabled={isSubmitting || !isDirty}
+                                title='Save Changes'
+                            >
+                                {isSubmitting ? (
+                                    <Spinner className='size-4' />
+                                ) : (
+                                    <FloppyDiskIcon className='size-4' weight='bold' />
+                                )}
+                            </Button>
+                        </div>,
+                        headerContainer,
+                    )}
+                <form id='enrichment-form' onSubmit={form.handleSubmit(onSubmit)}>
                     <div className='flex flex-col gap-6'>
                         {/* General Information */}
                         <FieldSet id='general' className='gap-4'>
@@ -617,13 +712,6 @@ export default function EnrichmentSettingsForm({
                                 </FieldGroup>
                             </FieldSet>
                         )}
-                    </div>
-
-                    {/* Save Button */}
-                    <div className='pt-2 flex justify-end'>
-                        <Button type='submit' variant='default' disabled={isSubmitting}>
-                            {isSubmitting ? 'Saving...' : 'Save Changes'}
-                        </Button>
                     </div>
                 </form>
             </div>

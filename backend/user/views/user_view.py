@@ -114,7 +114,7 @@ from .token_view import set_token_cookies
 class UserList(ListCreateAPIView):
     """List or create users. Admin only."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
     pagination_class = TotalPagesPagination
     serializer_class = UserRetrieveSerializer
@@ -198,16 +198,23 @@ class SignupView(APIView):
             raise UserAlreadyExistsException(detail="A user with this email or username already exists.")
         user.send_email_confirmation()
         serializer = UserRetrieveSerializer(user)
+        data = dict(serializer.data)
+        if not user.email_confirmed:
+            data["detail"] = "Please check your email for a confirmation link."
+        elif not user.is_active:
+            data["detail"] = "Your account must be activated by an administrator before you can login."
+        else:
+            data["detail"] = "Account created successfully."
 
         # Signup is at /api/auth/signup/ but user resource is at /api/users/<id>/
         location = request.build_absolute_uri(reverse("user_detail", kwargs={"user_id": user.id}))
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers={"Location": location})
+        return Response(data, status=status.HTTP_201_CREATED, headers={"Location": location})
 
 
 @extend_schema_view(
     get=extend_schema(
-        operation_id="users_config",
-        summary="Get user config",
+        operation_id="auth_config",
+        summary="Get auth config",
         description="Returns OAuth configuration metadata and signup status.",
         responses={
             200: UserConfigSerializer,
@@ -790,7 +797,7 @@ class PasswordReset(APIView):
             user = user_qs[0]
             user.send_password_reset()
 
-        return Response({"detail": "Password reset email sent."}, status=status.HTTP_200_OK)
+        return Response({"detail": "Password change email sent to your inbox!"}, status=status.HTTP_200_OK)
 
     def put(self, request: Request) -> Response:
         serializer = PasswordResetConfirmSerializer(data=request.data)
@@ -903,7 +910,7 @@ class DefaultNoteTemplateView(APIView):
 
         serializer = DefaultNoteTemplateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        edited.default_note_template = serializer.validated_data.get("template")
+        edited.default_note_template = serializer.validated_data["template"]
         edited.save(update_fields=["default_note_template"])
 
         return Response(

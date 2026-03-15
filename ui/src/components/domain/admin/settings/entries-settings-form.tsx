@@ -7,6 +7,7 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
+import { queryKeys } from '@/hooks/query';
 import { getSuccessMessage } from '@/utils/api';
 import { HardDrivesIcon, TrashIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
@@ -18,12 +19,16 @@ export default function EntriesSettingsForm() {
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}/',
-                { params: { path: { action_name: 'propagateAccessVectors' } } },
+                { params: { path: { action_name: 'propagate_access_vectors' } } },
             );
             if (error) throw { response, error };
             return data;
         },
         meta: {
+            invalidateQueries: [
+                { queryKey: queryKeys.notes.apiList() },
+                { queryKey: queryKeys.knowledgeGraph.all },
+            ],
             suppressNotification: true,
         },
         onSuccess: (response) => {
@@ -37,12 +42,17 @@ export default function EntriesSettingsForm() {
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}/',
-                { params: { path: { action_name: 'deleteHangingArtifacts' } } },
+                { params: { path: { action_name: 'delete_hanging_artifacts' } } },
             );
             if (error) throw { response, error };
             return data;
         },
         meta: {
+            invalidateQueries: [
+                { queryKey: queryKeys.notes.apiList() },
+                { queryKey: queryKeys.knowledgeGraph.all },
+                { queryKey: queryKeys.entities.all },
+            ],
             suppressNotification: true,
         },
         onSuccess: (response) => {
@@ -84,9 +94,10 @@ export default function EntriesSettingsForm() {
                             size='sm'
                             className='self-start md:self-center'
                             onClick={handlePropagateAccessVectors}
+                            disabled={propagateAccessMutation.isPending}
                         >
                             <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
-                            Propagate
+                            {propagateAccessMutation.isPending ? 'Propagating…' : 'Propagate'}
                         </Button>
                     </Field>
 
@@ -107,9 +118,10 @@ export default function EntriesSettingsForm() {
                             size='sm'
                             className='self-start md:self-center'
                             onClick={handleDeleteHangingArtifacts}
+                            disabled={deleteHangingArtifactsMutation.isPending}
                         >
                             <TrashIcon className='w-3.5 h-3.5' weight='bold' />
-                            Delete
+                            {deleteHangingArtifactsMutation.isPending ? 'Deleting…' : 'Delete'}
                         </Button>
                     </Field>
                 </FieldGroup>

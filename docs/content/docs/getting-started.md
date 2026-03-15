@@ -38,7 +38,7 @@ cd cradle
 ### Start the Demo Environment
 Launch the demo using Docker Compose with the pre-configured demo file:
 ```sh
-docker compose -f docker-compose.demo.yml up -d
+docker-compose -f docker-compose.demo.yml up -d
 ```
 This command downloads the necessary images, builds the containers, and starts
 all services in the background.
@@ -77,7 +77,7 @@ Now that you're logged in, take a few minutes to:
 You now have a fully functional demo of CRADLE running on your machine! When
 you’re finished exploring, you can stop the demo by executing:
 ```sh
-docker compose -f docker-compose.demo.yml down
+docker-compose -f docker-compose.demo.yml down
 ```
 
 For more detailed documentation and advanced configuration, please refer to the

@@ -34,7 +34,7 @@ DATABASES = {
 MINIO_CONFIG = {
     "endpoint": "minio:9000",
     "access_key": "admin",
-    "secret_key": "minio_admin",
+    "secret_key": "cradle_minio",
     "secure": False,
 }
 
@@ -43,7 +43,7 @@ STORAGES = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 AWS_ACCESS_KEY_ID = "admin"
-AWS_SECRET_ACCESS_KEY = "minio_admin"
+AWS_SECRET_ACCESS_KEY = "cradle_minio"
 AWS_S3_ENDPOINT_URL = "http://minio:9000"
 AWS_S3_USE_SSL = False
 AWS_S3_VERIFY = False
@@ -56,13 +56,7 @@ REDIS_URL = "redis://redis:6379/0"
 BROKER = REDIS_URL
 RESULT_BACKEND = REDIS_URL
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = ""
-EMAIL_PORT = 587
-EMAIL_HOST_USER = ""
-DEFAULT_FROM_EMAIL = ""
-EMAIL_HOST_PASSWORD = None
-EMAIL_USE_TLS = True
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 USE_SILK = False
 
 DEFAULT_SETTINGS = {

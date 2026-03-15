@@ -9,19 +9,23 @@ import {
 } from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import SnippetList, {
     SnippetListRef,
 } from '@components/base/snippet-list/snippet-list';
 import { zodResolver } from '@hookform/resolvers/zod';
+import {
+    ArrowCounterClockwiseIcon,
+    ClockCounterClockwiseIcon,
+    FloppyDiskIcon,
+} from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
-import type { components } from '@services/openapi/schema';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
-
-type UserRetrieve = components['schemas']['UserRetrieve'];
 
 interface AccountEditorFormProps {
     target?: string;
@@ -33,6 +37,8 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+const EDITOR_DEFAULTS: FormData = { vim_mode: false };
+
 export default function AccountEditorForm({ target = 'me' }: AccountEditorFormProps) {
     const queryClient = useQueryClient();
     const vimModeId = useId();
@@ -40,7 +46,6 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
 
     const [noteTemplateDialogOpen, setNoteTemplateDialogOpen] = useState(false);
     const [noteTemplateContent, setNoteTemplateContent] = useState('');
-    const [noteTemplateLoading, setNoteTemplateLoading] = useState(false);
 
     const { data: userData } = $api.useQuery(
         'get',
@@ -61,10 +66,12 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
         },
     });
 
-    const fetchNoteTemplateMutation = $api.useMutation(
+    const noteTemplateQuery = $api.useQuery(
         'get',
         '/users/{user_id}/default-note-template/',
+        { params: { path: { user_id: target } } },
         {
+            enabled: false,
             meta: { suppressNotification: true },
         },
     );
@@ -81,6 +88,7 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
         reset,
         control,
         handleSubmit,
+        watch,
         formState: { isDirty },
     } = useForm<FormData>({
         resolver: zodResolver(schema) as any,
@@ -106,29 +114,74 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
         });
     };
 
+    const headerContainer =
+        typeof document !== 'undefined'
+            ? document.getElementById('settings-header-actions')
+            : null;
+
+    const handleRevert = () => {
+        if (userData) reset({ vim_mode: userData.vim_mode || false });
+    };
+    const handleDefault = () =>
+        reset(EDITOR_DEFAULTS, { keepDefaultValues: true });
+    const isAtDefault = watch('vim_mode') === EDITOR_DEFAULTS.vim_mode;
+
     const openNoteTemplateDialog = async () => {
-        setNoteTemplateLoading(true);
-        try {
-            const res = await fetchNoteTemplateMutation.mutateAsync({
-                params: {
-                    path: {
-                        user_id: target,
-                    },
-                },
-            });
-            const template = (res as Record<string, unknown>).template as
-                | string
-                | undefined;
-            setNoteTemplateContent(template || '');
-            setNoteTemplateDialogOpen(true);
-        } finally {
-            setNoteTemplateLoading(false);
-        }
+        const { data, error } = await noteTemplateQuery.refetch();
+        if (error) return;
+        setNoteTemplateContent(data?.template ?? '');
+        setNoteTemplateDialogOpen(true);
     };
 
     return (
         <>
-            <form onSubmit={handleSubmit(handleSave)}>
+            {headerContainer &&
+                createPortal(
+                    <div className='flex items-center gap-2'>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='icon'
+                            disabled={!isDirty}
+                            onClick={handleRevert}
+                            title='Revert'
+                        >
+                            <ArrowCounterClockwiseIcon
+                                className='size-4'
+                                weight='bold'
+                            />
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='icon'
+                            disabled={isAtDefault}
+                            onClick={handleDefault}
+                            title='Default'
+                        >
+                            <ClockCounterClockwiseIcon
+                                className='size-4'
+                                weight='bold'
+                            />
+                        </Button>
+                        <Button
+                            type='submit'
+                            form='account-editor-form'
+                            variant='default'
+                            size='icon'
+                            disabled={saveMutation.isPending || !isDirty}
+                            title='Save Settings'
+                        >
+                            {saveMutation.isPending ? (
+                                <Spinner className='size-4' />
+                            ) : (
+                                <FloppyDiskIcon className='size-4' weight='bold' />
+                            )}
+                        </Button>
+                    </div>,
+                    headerContainer,
+                )}
+            <form id='account-editor-form' onSubmit={handleSubmit(handleSave)}>
                 <section id='editor'>
                     <div className='flex flex-col gap-4'>
                         <div className='flex items-center justify-between gap-4'>
@@ -176,9 +229,11 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
                                     size='sm'
                                     className='self-center'
                                     onClick={openNoteTemplateDialog}
-                                    disabled={noteTemplateLoading}
+                                    disabled={noteTemplateQuery.isFetching}
                                 >
-                                    {noteTemplateLoading ? 'Loading...' : 'Edit'}
+                                    {noteTemplateQuery.isFetching
+                                        ? 'Loading...'
+                                        : 'Edit'}
                                 </Button>
                             </Field>
 
@@ -212,14 +267,6 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
                             userId={target}
                             showTitle={false}
                         />
-                        <div className='flex justify-end pt-2'>
-                            <Button
-                                type='submit'
-                                disabled={saveMutation.isPending || !isDirty}
-                            >
-                                {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
-                            </Button>
-                        </div>
                     </div>
                 </section>
             </form>
@@ -227,8 +274,9 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
             <MarkdownEditorDialog
                 open={noteTemplateDialogOpen}
                 onOpenChange={setNoteTemplateDialogOpen}
-                title='Default Note Template'
+                title='Note Template'
                 titleEditable={false}
+                description='Edit the markdown template used for new notes.'
                 initialContent={noteTemplateContent}
                 helpText='This markdown template will be used as the starting content for new notes you create.'
                 onConfirm={async (content) => {

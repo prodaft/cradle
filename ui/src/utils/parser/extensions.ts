@@ -104,7 +104,7 @@ function fetchMinioDownloadLink(fileId: string): Promise<FileDownload> {
     if (!DownloadLinkPromiseCache[fileId]) {
         DownloadLinkPromiseCache[fileId] = fetchClient
             .GET('/file-transfer/download/', {
-                params: { query: { fileId } },
+                params: { query: { file_id: fileId } },
             })
             .then(({ data, error, response }) => {
                 if (error) throw { response, error };
@@ -133,7 +133,7 @@ async function resolveMinioLinks(token: Token): Promise<void> {
         }
 
         const params = new URLSearchParams(url.search);
-        const fileId = params.get('fileId');
+        const fileId = params.get('file_id');
         if (!fileId) return;
 
         const cached = MinioCache[fileId];

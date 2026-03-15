@@ -37,7 +37,7 @@ import {
 import { format } from 'date-fns';
 import { diff_match_patch } from 'diff-match-patch';
 import { Check, PlusCircle, XCircle } from 'lucide-react';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import OfflineIndicator from '../../feedback/offline-indicator';
 
 interface SearchFilters {
@@ -79,11 +79,11 @@ interface ActivityEvent {
     timestamp: string;
     type: string;
     username: string;
-    contentType: string;
-    objectId: string;
-    objectRepr: string;
+    content_type: string;
+    object_id: string;
+    object_repr: string;
     details?: string | null;
-    srcLog?: SrcLog | null;
+    src_log?: SrcLog | null;
 }
 
 const getTypeBadgeVariant = (type: string) => {
@@ -303,9 +303,9 @@ function ExpandedRowDetail({
     colSpan: number;
 }) {
     const hasDetails = !!event.details;
-    const hasSrcLog = !!event.srcLog;
-    const srcLogFormatted = event.srcLog
-        ? formatObjectRepr(event.srcLog.object_repr, event.srcLog.object_id)
+    const hasSrcLog = !!event.src_log;
+    const srcLogFormatted = event.src_log
+        ? formatObjectRepr(event.src_log.object_repr, event.src_log.object_id)
         : null;
 
     return (
@@ -335,11 +335,11 @@ function ExpandedRowDetail({
                                     <div className='flex flex-wrap items-baseline gap-2 mb-2'>
                                         <Badge
                                             variant={getTypeBadgeVariant(
-                                                event.srcLog!.type,
+                                                event.src_log!.type,
                                             )}
                                             className='capitalize text-xs'
                                         >
-                                            {event.srcLog!.type}
+                                            {event.src_log!.type}
                                         </Badge>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
@@ -356,7 +356,7 @@ function ExpandedRowDetail({
                                             </TooltipContent>
                                         </Tooltip>
                                     </div>
-                                    {event.srcLog!.details && (
+                                    {event.src_log!.details && (
                                         <>
                                             <div className='text-xs font-medium text-muted-foreground mt-2 mb-1'>
                                                 Changes
@@ -364,7 +364,7 @@ function ExpandedRowDetail({
                                             <div
                                                 dangerouslySetInnerHTML={{
                                                     __html: formatDiff(
-                                                        event.srcLog!.details,
+                                                        event.src_log!.details,
                                                     ),
                                                 }}
                                             />
@@ -401,6 +401,16 @@ export default function ActivityList({
     const [pageSize, setPageSize] = useState(20);
     const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
     const showUser = !effectiveUsername;
+
+    useEffect(() => {
+        setFilters((prev) => ({
+            ...prev,
+            username: effectiveUsername,
+            content_type: content_type,
+            object_id: objectId,
+        }));
+        setPage(1);
+    }, [effectiveUsername, content_type, objectId]);
 
     const queryParams = useMemo(
         () => ({
@@ -456,11 +466,11 @@ export default function ActivityList({
                             : new Date().toISOString(),
                     type: log.type,
                     username: log.user?.username || 'unknown',
-                    contentType: log.content_type || 'unknown',
-                    objectId: log.object_id || '',
-                    objectRepr: log.object_repr || '',
+                    content_type: log.content_type || 'unknown',
+                    object_id: log.object_id || '',
+                    object_repr: log.object_repr || '',
                     details: log.details || undefined,
-                    srcLog: log.src_log
+                    src_log: log.src_log
                         ? {
                               id: log.src_log.id,
                               type: log.src_log.type,
@@ -487,7 +497,7 @@ export default function ActivityList({
                 size: 80,
                 cell: ({ row }) => {
                     const event = row.original;
-                    const hasSrcLog = !!event.srcLog;
+                    const hasSrcLog = !!event.src_log;
                     return (
                         <div className='flex items-center gap-1.5'>
                             <Badge
@@ -533,30 +543,30 @@ export default function ActivityList({
                   ]
                 : []),
             {
-                accessorKey: 'contentType',
+                accessorKey: 'content_type',
                 id: 'type',
                 header: 'Type',
                 meta: { label: 'Type' },
                 size: 100,
                 cell: ({ row }) => (
                     <span className='text-muted-foreground capitalize'>
-                        {row.original.contentType}
+                        {row.original.content_type}
                     </span>
                 ),
                 enableSorting: false,
             },
             {
-                accessorKey: 'objectRepr',
+                accessorKey: 'object_repr',
                 id: 'object',
                 header: 'Object',
                 meta: { label: 'Object' },
                 cell: ({ row }) => {
                     const event = row.original;
                     const { text, fullId, isDeleted } = formatObjectRepr(
-                        event.objectRepr,
-                        event.objectId,
+                        event.object_repr,
+                        event.object_id,
                     );
-                    const isExpandable = !!event.details || !!event.srcLog;
+                    const isExpandable = !!event.details || !!event.src_log;
                     const isExpanded = expandedRows[event.id] ?? false;
                     return (
                         <div className='flex items-center gap-2'>
@@ -720,7 +730,7 @@ export default function ActivityList({
                                     table.getRowModel().rows.map((row) => {
                                         const event = row.original;
                                         const isExpandable =
-                                            !!event.details || !!event.srcLog;
+                                            !!event.details || !!event.src_log;
                                         const isExpanded =
                                             expandedRows[event.id] ?? false;
                                         return (
@@ -762,7 +772,11 @@ export default function ActivityList({
                                 ) : (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={columns.length}
+                                            colSpan={
+                                                table
+                                                    .getHeaderGroups()[0]
+                                                    ?.headers.length ?? columns.length
+                                            }
                                             className='h-24 text-center'
                                         >
                                             No event logs found.

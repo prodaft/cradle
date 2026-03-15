@@ -104,6 +104,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/config/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get auth config
+         * @description Returns OAuth configuration metadata and signup status.
+         */
+        get: operations["auth_config"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/email-confirm/": {
         parameters: {
             query?: never;
@@ -1032,7 +1052,7 @@ export interface paths {
         put?: never;
         /**
          * Execute management actions
-         * @description Executes various management actions for admin users. Available actions: deleteHangingArtifacts, propagateAccessVectors, recalculateNodePositions, refreshMaterializedGraph, relinkNotes, reprocessAllFiles
+         * @description Executes various management actions for admin users. Available actions: delete_hanging_artifacts, propagate_access_vectors, recalculate_node_positions, refresh_materialized_graph, reprocess_all_files
          */
         post: operations["management_actions_create"];
         delete?: never;
@@ -1157,6 +1177,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notes/{note_id}/relink/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Relink a single note
+         * @description Re-run the note processing pipeline (entry creation, linking, metadata) for this note. Admin only.
+         */
+        post: operations["notes_relink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notes/files/": {
         parameters: {
             query?: never;
@@ -1171,6 +1211,26 @@ export interface paths {
         get: operations["notes_files_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notes/relink/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Relink all notes
+         * @description Re-run the note processing pipeline for all non-fleeting notes. Admin only.
+         */
+        post: operations["notes_relink_all"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1675,26 +1735,6 @@ export interface paths {
          * @description Verifies the 2FA token and completes the setup
          */
         post: operations["users_2fa_verify_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/users/config/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get user config
-         * @description Returns OAuth configuration metadata and signup status.
-         */
-        get: operations["users_config"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5439,6 +5479,205 @@ export interface operations {
                             [key: string]: string[];
                         };
                     };
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "field_name": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description PERMISSION_DENIED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "field_name": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description INTERNAL_SERVER_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "field_name": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    auth_config: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserConfig"];
                 };
             };
             /** @description UNAUTHENTICATED */
@@ -12062,7 +12301,7 @@ export interface operations {
         parameters: {
             query: {
                 /** @description UUID of the file reference to delete */
-                fileId: string;
+                file_id: string;
             };
             header?: never;
             path?: never;
@@ -12384,7 +12623,7 @@ export interface operations {
         parameters: {
             query: {
                 /** @description UUID of the file reference */
-                fileId: string;
+                file_id: string;
             };
             header?: never;
             path?: never;
@@ -13029,9 +13268,9 @@ export interface operations {
         parameters: {
             query: {
                 /** @description Name of the file to be uploaded */
-                fileName: string;
+                file_name: string;
                 /** @description Size of the file to be uploaded in bytes */
-                fileSize: number;
+                file_size: number;
             };
             header?: never;
             path?: never;
@@ -15061,9 +15300,9 @@ export interface operations {
         parameters: {
             query: {
                 /** @description Name of the file to be uploaded */
-                fileName: string;
+                file_name: string;
                 /** @description Size of the file to be uploaded in bytes */
-                fileSize: number;
+                file_size: number;
             };
             header?: never;
             path?: never;
@@ -21726,7 +21965,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description Name of the action to execute */
-                action_name: "deleteHangingArtifacts" | "propagateAccessVectors" | "recalculateNodePositions" | "refreshMaterializedGraph" | "relinkNotes" | "reprocessAllFiles";
+                action_name: "delete_hanging_artifacts" | "propagate_access_vectors" | "recalculate_node_positions" | "refresh_materialized_graph" | "reprocess_all_files";
             };
             cookie?: never;
         };
@@ -22428,6 +22667,10 @@ export interface operations {
                 content?: string;
                 /** @description Filter by note date (YYYY-MM-DD format) */
                 date?: string;
+                /** @description Filter by edit_timestamp (last edited) greater than or equal to (ISO datetime format) */
+                edit_timestamp_gte?: string;
+                /** @description Filter by edit_timestamp (last edited) less than or equal to (ISO datetime format) */
+                edit_timestamp_lte?: string;
                 /** @description Filter notes by being linked to a specific entry */
                 linked_to?: string;
                 /** @description Order notes by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: timestamp, edit_timestamp, title, author__username, editor__username. Default: -timestamp */
@@ -24460,6 +24703,268 @@ export interface operations {
             };
         };
     };
+    notes_relink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID of the note to relink. */
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteRetrieve"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "field_name": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description PERMISSION_DENIED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "field_name": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description NOTE_DOES_NOT_EXIST */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "field_name": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description INTERNAL_SERVER_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "field_name": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+        };
+    };
     notes_files_retrieve: {
         parameters: {
             query?: {
@@ -24684,6 +25189,205 @@ export interface operations {
             };
             /** @description ENTRY_NOT_FOUND */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "field_name": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description INTERNAL_SERVER_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "field_name": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    notes_relink_all: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example One or more fields failed validation.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2025-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Field-level validation errors (only present for validation errors)
+                         * @example {
+                         *       "field_name": [
+                         *         "This field is required."
+                         *       ],
+                         *       "email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description PERMISSION_DENIED */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -34010,205 +34714,6 @@ export interface operations {
                             [key: string]: string[];
                         };
                     };
-                };
-            };
-            /** @description UNAUTHENTICATED */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description URI reference identifying the problem type
-                         * @example /errors/validation-error
-                         */
-                        type: string;
-                        /**
-                         * @description Short, human-readable summary of the problem type
-                         * @example Validation Error
-                         */
-                        title: string;
-                        /**
-                         * @description HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /**
-                         * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
-                         */
-                        detail: string;
-                        /**
-                         * @description URI reference identifying the specific occurrence
-                         * @example /api/users/create
-                         */
-                        instance?: string;
-                        /**
-                         * Format: date-time
-                         * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
-                         */
-                        timestamp: string;
-                        /**
-                         * @description Machine-readable error code
-                         * @example VALIDATION_ERROR
-                         */
-                        code: string;
-                        /**
-                         * @description Field-level validation errors (only present for validation errors)
-                         * @example {
-                         *       "field_name": [
-                         *         "This field is required."
-                         *       ],
-                         *       "email": [
-                         *         "Enter a valid email address."
-                         *       ]
-                         *     }
-                         */
-                        errors?: {
-                            [key: string]: string[];
-                        };
-                    };
-                };
-            };
-            /** @description PERMISSION_DENIED */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description URI reference identifying the problem type
-                         * @example /errors/validation-error
-                         */
-                        type: string;
-                        /**
-                         * @description Short, human-readable summary of the problem type
-                         * @example Validation Error
-                         */
-                        title: string;
-                        /**
-                         * @description HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /**
-                         * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
-                         */
-                        detail: string;
-                        /**
-                         * @description URI reference identifying the specific occurrence
-                         * @example /api/users/create
-                         */
-                        instance?: string;
-                        /**
-                         * Format: date-time
-                         * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
-                         */
-                        timestamp: string;
-                        /**
-                         * @description Machine-readable error code
-                         * @example VALIDATION_ERROR
-                         */
-                        code: string;
-                        /**
-                         * @description Field-level validation errors (only present for validation errors)
-                         * @example {
-                         *       "field_name": [
-                         *         "This field is required."
-                         *       ],
-                         *       "email": [
-                         *         "Enter a valid email address."
-                         *       ]
-                         *     }
-                         */
-                        errors?: {
-                            [key: string]: string[];
-                        };
-                    };
-                };
-            };
-            /** @description INTERNAL_SERVER_ERROR */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @description URI reference identifying the problem type
-                         * @example /errors/validation-error
-                         */
-                        type: string;
-                        /**
-                         * @description Short, human-readable summary of the problem type
-                         * @example Validation Error
-                         */
-                        title: string;
-                        /**
-                         * @description HTTP status code
-                         * @example 400
-                         */
-                        status: number;
-                        /**
-                         * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
-                         */
-                        detail: string;
-                        /**
-                         * @description URI reference identifying the specific occurrence
-                         * @example /api/users/create
-                         */
-                        instance?: string;
-                        /**
-                         * Format: date-time
-                         * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
-                         */
-                        timestamp: string;
-                        /**
-                         * @description Machine-readable error code
-                         * @example VALIDATION_ERROR
-                         */
-                        code: string;
-                        /**
-                         * @description Field-level validation errors (only present for validation errors)
-                         * @example {
-                         *       "field_name": [
-                         *         "This field is required."
-                         *       ],
-                         *       "email": [
-                         *         "Enter a valid email address."
-                         *       ]
-                         *     }
-                         */
-                        errors?: {
-                            [key: string]: string[];
-                        };
-                    };
-                };
-            };
-        };
-    };
-    users_config: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserConfig"];
                 };
             };
             /** @description UNAUTHENTICATED */

@@ -54,7 +54,7 @@ services:
       - minio_data:/data
     environment:
       MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: minio_admin
+      MINIO_ROOT_PASSWORD: cradle_minio
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 5s
@@ -85,7 +85,7 @@ services:
     ports:
       - "8081:8080"
     volumes:
-      - ./dev/keycloak-realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ./keycloak-realm.json:/opt/keycloak/data/import/realm.json:ro
     networks:
       default:
         ipv4_address: 192.168.31.45
@@ -95,7 +95,6 @@ volumes:
   minio_data:
 
 networks:
-  other:
   default:
     driver: bridge
     ipam:

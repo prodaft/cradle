@@ -1,4 +1,3 @@
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { DateRangeFilterButton } from '@/components/data-table/data-table-date-range-filter';
@@ -49,7 +48,7 @@ type BaseDigest = components['schemas']['BaseDigest'];
 const SORT_FIELD_MAPPING: Record<string, string> = {
     title: 'title',
     type: 'digest_type',
-    createdAt: 'created_at',
+    created_at: 'created_at',
     user: 'user__username',
 };
 
@@ -383,8 +382,8 @@ function DigestList({
                 enableSorting: false,
             },
             {
-                accessorKey: 'createdAt',
-                id: 'createdAt',
+                accessorKey: 'created_at',
+                id: 'created_at',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Created At' />
                 ),
@@ -503,42 +502,38 @@ function DigestList({
 
     return (
         <>
-            {loading ? (
-                <TableSkeleton />
-            ) : (
-                <DataTable table={table} showViewOptions>
-                    <div className='flex items-center gap-2'>
-                        <ActionBarSearch
-                            placeholder='Search by title...'
-                            initialValue={searchFilters.title || ''}
-                            debounceMs={300}
-                            onDebouncedChange={(value) => {
-                                onSearchChange(makeTitleSearchEvent(value));
-                            }}
-                            onSubmit={(value) => {
-                                onSearchSubmit(makeTitleSearchEvent(value));
-                            }}
-                        />
-                        <StatusHeaderDropdown
-                            onStatusChange={handleStatusChange}
-                            status={columnFilters.status || 'all'}
-                            statusOptions={['all', 'done', 'working', 'error']}
-                        />
-                        {onColumnFilterChange && (
-                            <DateRangeFilterButton
-                                title='Created At'
-                                value={
-                                    (columnFilters.createdAt as DateRangeFilter) || {
-                                        from: '',
-                                        to: '',
-                                    }
+            <DataTable table={table} showViewOptions isLoading={loading}>
+                <div className='flex items-center gap-2'>
+                    <ActionBarSearch
+                        placeholder='Search by title...'
+                        initialValue={searchFilters.title || ''}
+                        debounceMs={300}
+                        onDebouncedChange={(value) => {
+                            onSearchChange(makeTitleSearchEvent(value));
+                        }}
+                        onSubmit={(value) => {
+                            onSearchSubmit(makeTitleSearchEvent(value));
+                        }}
+                    />
+                    <StatusHeaderDropdown
+                        onStatusChange={handleStatusChange}
+                        status={columnFilters.status || 'all'}
+                        statusOptions={['all', 'done', 'working', 'error']}
+                    />
+                    {onColumnFilterChange && (
+                        <DateRangeFilterButton
+                            title='Created At'
+                            value={
+                                (columnFilters.created_at as DateRangeFilter) || {
+                                    from: '',
+                                    to: '',
                                 }
-                                onChange={(v) => onColumnFilterChange('createdAt', v)}
-                            />
-                        )}
-                    </div>
-                </DataTable>
-            )}
+                            }
+                            onChange={(v) => onColumnFilterChange('created_at', v)}
+                        />
+                    )}
+                </div>
+            </DataTable>
             <ActionBar
                 open={selectedDigestIds.length > 0}
                 onOpenChange={(open) => {

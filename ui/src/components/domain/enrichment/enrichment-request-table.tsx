@@ -1,4 +1,3 @@
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -50,7 +49,7 @@ type EnrichmentRequestList = components['schemas']['EnrichmentRequestList'];
 
 const SORT_FIELD_MAPPING: Record<string, string> = {
     title: 'title',
-    createdAt: 'created_at',
+    created_at: 'created_at',
     user: 'user__username',
 };
 
@@ -337,8 +336,8 @@ function EnrichmentRequestsList({
                 ),
             },
             {
-                accessorKey: 'createdAt',
-                id: 'createdAt',
+                accessorKey: 'created_at',
+                id: 'created_at',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Created At' />
                 ),
@@ -396,40 +395,36 @@ function EnrichmentRequestsList({
     return (
         <div className='flex flex-col space-y-4'>
             {/* Table */}
-            {loading ? (
-                <TableSkeleton />
-            ) : (
-                <DataTable table={table} showViewOptions>
-                    <div className='flex items-center gap-2'>
-                        <ActionBarSearch
-                            placeholder='Search requests...'
-                            initialValue={searchFilters?.title || ''}
-                            debounceMs={300}
-                            onDebouncedChange={(value) => {
-                                const event = {
-                                    preventDefault: () => {},
-                                    target: { name: 'title', value },
-                                } as ChangeEvent<HTMLInputElement>;
-                                onSearchChange(event);
-                                // Some parents only fetch on submit; trigger submit on debounce too.
-                                onSearchSubmit(event as any);
-                            }}
-                            onSubmit={(value) => {
-                                const event = {
-                                    preventDefault: () => {},
-                                    target: { name: 'title', value },
-                                } as any;
-                                onSearchSubmit(event);
-                            }}
-                        />
-                        <StatusHeaderDropdown
-                            onStatusChange={handleStatusChange}
-                            status={columnFilters.status}
-                            statusOptions={['all', 'done', 'waiting', 'error', 'info']}
-                        />
-                    </div>
-                </DataTable>
-            )}
+            <DataTable table={table} showViewOptions isLoading={loading}>
+                <div className='flex items-center gap-2'>
+                    <ActionBarSearch
+                        placeholder='Search requests...'
+                        initialValue={searchFilters?.title || ''}
+                        debounceMs={300}
+                        onDebouncedChange={(value) => {
+                            const event = {
+                                preventDefault: () => {},
+                                target: { name: 'title', value },
+                            } as ChangeEvent<HTMLInputElement>;
+                            onSearchChange(event);
+                            // Some parents only fetch on submit; trigger submit on debounce too.
+                            onSearchSubmit(event as any);
+                        }}
+                        onSubmit={(value) => {
+                            const event = {
+                                preventDefault: () => {},
+                                target: { name: 'title', value },
+                            } as any;
+                            onSearchSubmit(event);
+                        }}
+                    />
+                    <StatusHeaderDropdown
+                        onStatusChange={handleStatusChange}
+                        status={columnFilters.status}
+                        statusOptions={['all', 'done', 'waiting', 'error', 'info']}
+                    />
+                </div>
+            </DataTable>
             <ActionBar
                 open={selectedRequestIds.length > 0}
                 onOpenChange={(open) => {

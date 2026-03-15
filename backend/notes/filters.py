@@ -6,7 +6,7 @@ from .models import Note
 
 
 class NoteFilter(django_filters.FilterSet):
-    """Filter notes by content, timestamp, date, and author."""
+    """Filter notes by content, timestamp, edit_timestamp, date, and author."""
 
     content = django_filters.CharFilter(lookup_expr="icontains", help_text="Filter by content (case-insensitive).")
     timestamp = django_filters.DateTimeFilter(help_text="Filter by exact timestamp.")
@@ -19,6 +19,16 @@ class NoteFilter(django_filters.FilterSet):
         field_name="timestamp",
         lookup_expr="lte",
         help_text="Filter by timestamp less than or equal.",
+    )
+    edit_timestamp_gte = django_filters.DateTimeFilter(
+        field_name="edit_timestamp",
+        lookup_expr="gte",
+        help_text="Filter by edit_timestamp greater than or equal.",
+    )
+    edit_timestamp_lte = django_filters.DateTimeFilter(
+        field_name="edit_timestamp",
+        lookup_expr="lte",
+        help_text="Filter by edit_timestamp less than or equal.",
     )
     date = django_filters.DateFilter(
         field_name="timestamp",
@@ -37,6 +47,8 @@ class NoteFilter(django_filters.FilterSet):
             "timestamp",
             "timestamp_gte",
             "timestamp_lte",
+            "edit_timestamp_gte",
+            "edit_timestamp_lte",
             "date",
             "author",
             "editor",

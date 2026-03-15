@@ -16,8 +16,14 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { MagnifyingGlassIcon } from '@phosphor-icons/react';
+import {
+    ArrowCounterClockwiseIcon,
+    ClockCounterClockwiseIcon,
+    FloppyDiskIcon,
+    MagnifyingGlassIcon,
+} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
+import { createPortal } from 'react-dom';
 import { fetchAllUserAccess } from '@services/openapi/fetch-all-pages';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
@@ -200,8 +206,28 @@ export default function UserPermissionsForm({
     });
 
     const handleSave = () => {
+        if (!hasUnsavedChanges) return;
         saveChangesMutation.mutate();
     };
+
+    const handleRevert = () => {
+        setCurrentAccess({ ...originalAccess });
+    };
+
+    const handleDefault = () => {
+        const defaults: Record<number, AccessType> = {};
+        entities.forEach((e) => (defaults[e.id] = 'none'));
+        setCurrentAccess(defaults);
+    };
+
+    const isAtDefault = entities.every(
+        (e) => (currentAccess[e.id] ?? 'none') === 'none',
+    );
+
+    const headerContainer =
+        typeof document !== 'undefined'
+            ? document.getElementById('settings-header-actions')
+            : null;
 
     // Filter entities based on search
     const filteredEntities = useMemo(() => {
@@ -236,6 +262,56 @@ export default function UserPermissionsForm({
     }
 
     return (
+        <>
+            {!readOnly &&
+                headerContainer &&
+                createPortal(
+                    <div className='flex items-center gap-2'>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='icon'
+                            disabled={!hasUnsavedChanges}
+                            onClick={handleRevert}
+                            title='Revert'
+                        >
+                            <ArrowCounterClockwiseIcon
+                                className='size-4'
+                                weight='bold'
+                            />
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='icon'
+                            disabled={isAtDefault}
+                            onClick={handleDefault}
+                            title='Default'
+                        >
+                            <ClockCounterClockwiseIcon
+                                className='size-4'
+                                weight='bold'
+                            />
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='default'
+                            size='icon'
+                            disabled={
+                                saveChangesMutation.isPending || !hasUnsavedChanges
+                            }
+                            onClick={handleSave}
+                            title='Save Settings'
+                        >
+                            {saveChangesMutation.isPending ? (
+                                <Spinner className='size-4' />
+                            ) : (
+                                <FloppyDiskIcon className='size-4' weight='bold' />
+                            )}
+                        </Button>
+                    </div>,
+                    headerContainer,
+                )}
         <div className='space-y-4'>
             {/* Search */}
             <div className='relative'>
@@ -288,19 +364,7 @@ export default function UserPermissionsForm({
                     </div>
                 )}
             </div>
-
-            {/* Save Changes Button */}
-            {!readOnly && (
-                <div className='flex justify-end pt-4'>
-                    <Button
-                        type='button'
-                        onClick={handleSave}
-                        disabled={saveChangesMutation.isPending || !hasUnsavedChanges}
-                    >
-                        {saveChangesMutation.isPending ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                </div>
-            )}
         </div>
+        </>
     );
 }

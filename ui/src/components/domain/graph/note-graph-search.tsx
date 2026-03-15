@@ -9,7 +9,6 @@ import type { components } from '@services/openapi/schema';
 import { Node } from './graphFilterUtils';
 
 type EdgeRelation = components['schemas']['EdgeRelation'];
-type SubGraph = components['schemas']['SubGraph'];
 
 interface Alert {
     show: boolean;
@@ -21,6 +20,7 @@ interface NoteGraphSearchProps {
     addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
     addBoth?: (nodes: Node[], edges: EdgeRelation[]) => void;
+    onLoadingChange?: (isLoading: boolean) => void;
 }
 
 export default function NoteGraphSearch(
@@ -30,8 +30,8 @@ export default function NoteGraphSearch(
         addEdges,
         addNodes,
         addBoth,
+        onLoadingChange,
     }: NoteGraphSearchProps) {
-        const [isGraphFetching, setIsGraphFetching] = useState(false);
         const [alert, setAlert] = useState<Alert>({
             show: false,
             message: '',
@@ -40,30 +40,33 @@ export default function NoteGraphSearch(
         const hasFetchedRef = useRef(false);
 
         // Query for note graph data
-        const { data: graphData } = $api.useQuery(
+        const { data: graphData, isPending } = $api.useQuery(
             'get',
             '/notes/{note_id}/graph/',
             { params: { path: { note_id: noteId } } },
             {
-                enabled: !hasFetchedRef.current,
+                enabled: !!noteId,
                 meta: {
                     showErrorToast: true,
                 },
             },
         );
 
+        useEffect(() => {
+            onLoadingChange?.(isPending);
+        }, [isPending, onLoadingChange]);
+
         // Process graph data when it loads
         useEffect(() => {
             if (!graphData || hasFetchedRef.current) return;
 
             hasFetchedRef.current = true;
-            setIsGraphFetching(true);
 
             try {
                 const { entries, relations, colors } = graphData;
 
                 // Process nodes and edges together to avoid race conditions
-                let nodes: any[] = [];
+                let nodes: Node[] = [];
                 let hasData = false;
 
                 if (entries) {
@@ -71,28 +74,29 @@ export default function NoteGraphSearch(
                         const flattenedEntries = LinkTreeFlattener.flatten(entries);
 
                         if (flattenedEntries && flattenedEntries.length > 0) {
-                            nodes = flattenedEntries.map((e: any) => {
-                                let label = `${e.subtype}: ${e.name || e.id}`;
-
-                                // For note nodes, show "note: title"
-                                if (e.subtype === 'note') {
-                                    label = `note: ${e.name || 'untitled'}`;
-                                }
-
-                                const nodeColor =
-                                    colors?.[e.subtype] || 'var(--color-primary)';
-
-                                return {
-                                    id: String(e.id),
+                            const byId = new Map<string, Node>();
+                            for (const e of flattenedEntries) {
+                                const id = e.id != null ? String(e.id) : '';
+                                if (!id || byId.has(id)) continue;
+                                const label =
+                                    e.subtype === 'note'
+                                        ? `note: ${e.name || 'untitled'}`
+                                        : `${e.subtype}: ${e.name || e.id}`;
+                                byId.set(id, {
+                                    id,
                                     degree: e.degree,
                                     type: e.type || e.subtype,
                                     subtype: e.subtype,
                                     label,
-                                    color: nodeColor,
+                                    color:
+                                        typeof colors?.[e.subtype] === 'string'
+                                            ? (colors?.[e.subtype] as string)
+                                            : 'var(--color-primary)',
                                     location: e.location,
-                                };
-                            });
-                            hasData = true;
+                                });
+                            }
+                            nodes = Array.from(byId.values());
+                            if (nodes.length > 0) hasData = true;
                         }
                     } catch (e) {
                         logger.error('[NoteGraphSearch] Error processing entries:', e);
@@ -127,8 +131,8 @@ export default function NoteGraphSearch(
                 } else {
                     setAlert({ show: false, message: '', color: 'red' });
                 }
-            } finally {
-                setIsGraphFetching(false);
+            } catch (e) {
+                logger.error('[NoteGraphSearch] Error processing graph data:', e);
             }
         }, [graphData, addBoth, addNodes, addEdges]);
 

@@ -7,6 +7,13 @@ export const queryKeys = {
     // Notes
     notes: {
         all: ['notes'] as const,
+        apiList: () => ['get', '/notes/'] as const,
+        apiDetail: (id: string) =>
+            [
+                'get',
+                '/notes/{note_id}/',
+                { params: { path: { note_id: id } } },
+            ] as const,
         lists: () => [...queryKeys.notes.all, 'list'] as const,
         list: (filters?: {
             page?: number;
@@ -141,6 +148,13 @@ export const queryKeys = {
     // Entry Types
     entryTypes: {
         all: ['entryTypes'] as const,
+        apiList: () => ['get', '/entries/entry-classes/'] as const,
+        apiDetail: (subtype: string) =>
+            [
+                'get',
+                '/entries/entry-classes/{class_subtype}/',
+                { params: { path: { class_subtype: subtype } } },
+            ] as const,
         lists: () => [...queryKeys.entryTypes.all, 'list'] as const,
         list: (filters?: { page?: number; pageSize?: number; search?: string }) =>
             [...queryKeys.entryTypes.lists(), filters] as const,

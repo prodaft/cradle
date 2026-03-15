@@ -51,7 +51,7 @@ export default function FileTable({
         mutationFn: async (fileId: string) => {
             const { data, error, response } = await fetchClient.GET(
                 '/file-transfer/download/',
-                { params: { query: { fileId } } },
+                { params: { query: { file_id: fileId } } },
             );
             if (error) throw { response, error };
             return data.presigned_url;

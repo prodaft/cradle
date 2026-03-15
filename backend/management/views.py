@@ -1,6 +1,5 @@
 import inspect
 
-from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
 from drf_spectacular.utils import (
@@ -18,21 +17,12 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import BadRequestException, CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
-from entries.models import Entry, Relation
+from entries.models import Entry
 from entries.tasks import (
     refresh_edges_materialized_view,
     update_accesses,
 )
 from file_transfer.tasks import reprocess_all_files_task
-from notes.models import Note
-from notes.processor.connect_aliases_task import AliasConnectionTask
-from notes.processor.entry_class_creation_task import EntryClassCreationTask
-from notes.processor.entry_population_task import EntryPopulationTask
-from notes.processor.finalize_note_task import FinalizeNoteTask
-from notes.processor.link_files_task import LinkFilesTask
-from notes.processor.metadata_process_task import MetadataProcessTask
-from notes.processor.smart_linker_task import SmartLinkerTask
-from notes.processor.task_scheduler import TaskScheduler
 from user.permissions import HasAdminRole
 
 from .models import BaseSettingsSection, Setting
@@ -154,7 +144,7 @@ class SettingsView(APIView):
 
 
 class ActionView(APIView):
-    """Execute admin management actions (relink notes, refresh graph, reprocess files, etc.)."""
+    """Execute admin management actions (refresh graph, reprocess files, etc.)."""
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
@@ -173,44 +163,18 @@ class ActionView(APIView):
             return handler(request, *args, **kwargs)
         raise BadRequestException(detail=f"Unknown action: {action_name}")
 
-    def action_relinkNotes(self, request, *args, **kwargs):
-        """Re-run note processing pipeline (entry creation, linking, metadata)."""
-        notes = Note.objects.non_fleeting()
-        if request.data and "note_id" in request.data:
-            notes = notes.filter(id=request.data["note_id"])
-
-        Relation.objects.filter(content_type=ContentType.objects.get_for_model(Note)).delete()
-
-        scheduler = TaskScheduler(
-            request.user,
-            tasks=[
-                EntryClassCreationTask,
-                EntryPopulationTask,
-                SmartLinkerTask,
-                LinkFilesTask,
-                MetadataProcessTask,
-                AliasConnectionTask,
-                FinalizeNoteTask,
-            ],
-        )
-
-        for note in notes:
-            scheduler.run_pipeline(note, update_acvec=False)
-
-        return Response({"detail": "Started relinking notes."}, status=status.HTTP_202_ACCEPTED)
-
-    def action_refreshMaterializedGraph(self, request, *args, **kwargs):
+    def action_refresh_materialized_graph(self, request, *args, **kwargs):
         """Refresh the materialized graph view (edges)."""
         refresh_edges_materialized_view.apply_async(force=True)
         return Response({"detail": "Started graph materialization."}, status=status.HTTP_202_ACCEPTED)
 
-    def action_recalculateNodePositions(self, request, *args, **kwargs):
+    def action_recalculate_node_positions(self, request, *args, **kwargs):
         """No-op: positions are computed client-side on graph load. Kept for API/UI consistency."""
         return Response(
             {"detail": "Node positions will be recalculated on next graph load."}, status=status.HTTP_202_ACCEPTED
         )
 
-    def action_propagateAccessVectors(self, request, *args, **kwargs):
+    def action_propagate_access_vectors(self, request, *args, **kwargs):
         """Propagate access vectors for all entities."""
         entities = Entry.entities.all()
 
@@ -222,13 +186,13 @@ class ActionView(APIView):
             status=status.HTTP_202_ACCEPTED,
         )
 
-    def action_reprocessAllFiles(self, request, *args, **kwargs):
+    def action_reprocess_all_files(self, request, *args, **kwargs):
         """Re-run file processing for all uploaded files."""
         reprocess_all_files_task.apply_async()
 
         return Response({"detail": "Started reprocessing all files."}, status=status.HTTP_202_ACCEPTED)
 
-    def action_deleteHangingArtifacts(self, request, *args, **kwargs):
+    def action_delete_hanging_artifacts(self, request, *args, **kwargs):
         """Delete artifact entries that are not referenced by any note."""
         count, _ = Entry.artifacts.unreferenced().delete()
 
@@ -253,7 +217,7 @@ ActionView = extend_schema(
             "type": "object",
             "additionalProperties": True,
             "description": "Action-specific parameters",
-            "example": {"note_id": "550e8400-e29b-41d4-a716-446655440000", "any_param": "any_value"},
+            "example": {"any_param": "any_value"},
         }
     },
     responses={

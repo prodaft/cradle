@@ -1,6 +1,5 @@
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -9,6 +8,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { queryKeys } from '@/hooks/query/query-keys';
 import { TrashIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
@@ -27,17 +27,10 @@ interface DeleteNoteProps {
 }
 
 /**
- * Note component - This component is used to display a note on the dashboard.
- * @function Note
- * @param {Object} props - Component props
- * @param {string} props.id - The note ID
- * @param {Object} props.note - The note object
- * @param {boolean} props.publishMode - Whether the component is in publish mode
- * @param {Array} props.selectedNoteIds - Array of selected note IDs
- * @param {Function} props.setSelectedNoteIds - Function to set selected note IDs
- * @param {boolean} props.draggable - Whether the note is draggable
- * @param {React.ReactNode} props.customControls - Custom controls to display in the header
- * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
+ * DeleteNote - Trash button with confirmation dialog for deleting a note.
+ * @param note - The note to delete (must have id)
+ * @param setHidden - Callback to hide the note from the UI after deletion
+ * @param classNames - Optional class names for the icon
  */
 export default function DeleteNote({ note, setHidden, classNames }: DeleteNoteProps) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -45,17 +38,25 @@ export default function DeleteNote({ note, setHidden, classNames }: DeleteNotePr
     const deleteMutation = useMutation({
         mutationFn: async () => {
             const { error, response } = await fetchClient.DELETE('/notes/{note_id}/', {
-                params: { path: { note_id: note.id } },
+                params: { path: { note_id: String(note.id) } },
             });
             if (error) throw { response, error };
             setHidden(true);
         },
         meta: {
+            invalidateQueries: [{ queryKey: queryKeys.notes.apiList() }],
             successMessage: 'Note deleted successfully',
         },
     });
 
-    const handleDelete = () => deleteMutation.mutate();
+    const handleDelete = async () => {
+        try {
+            await deleteMutation.mutateAsync();
+            setDeleteDialogOpen(false);
+        } catch {
+            // Error toast handled by mutation cache
+        }
+    };
 
     return (
         <>
@@ -64,6 +65,7 @@ export default function DeleteNote({ note, setHidden, classNames }: DeleteNotePr
                     variant='ghost'
                     size='icon-sm'
                     className='text-destructive hover:text-destructive/80'
+                    aria-label='Delete note'
                     onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
@@ -83,16 +85,21 @@ export default function DeleteNote({ note, setHidden, classNames }: DeleteNotePr
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel variant='outline' size='sm'>
+                        <AlertDialogCancel
+                            variant='outline'
+                            size='sm'
+                            disabled={deleteMutation.isPending}
+                        >
                             Cancel
                         </AlertDialogCancel>
-                        <AlertDialogAction
+                        <Button
                             variant='destructive'
                             size='sm'
                             onClick={handleDelete}
+                            disabled={deleteMutation.isPending}
                         >
-                            Delete
-                        </AlertDialogAction>
+                            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                        </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

@@ -7,7 +7,6 @@ from .views.oauth_view import OAuthConnectView, OAuthDisconnectView
 from .views.two_factor_view import Disable2FAView, Enable2FAView, Verify2FASetupView
 
 urlpatterns = [
-    path("config/", user_view.UserConfigView.as_view(), name="user_config"),
     path("oauth/connect/", OAuthConnectView.as_view(), name="user_oauth_connect"),
     path(
         "oauth/disconnect/<str:provider>/",

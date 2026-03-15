@@ -24,7 +24,7 @@ import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedEnrichmentRouteImport } from './routes/_authenticated/enrichment'
 import { Route as AuthenticatedDigestDataRouteImport } from './routes/_authenticated/digest-data'
 import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
-import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
+import { Route as AuthSignupRouteImport } from './routes/_auth/signup'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
 import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes/index'
@@ -121,9 +121,9 @@ const AuthenticatedSplatRoute = AuthenticatedSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthRegisterRoute = AuthRegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
+const AuthSignupRoute = AuthSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
@@ -254,7 +254,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/forgot-password': typeof AuthForgotPasswordRoute
   '/login': typeof AuthLoginRoute
-  '/register': typeof AuthRegisterRoute
+  '/signup': typeof AuthSignupRoute
   '/$': typeof AuthenticatedSplatRoute
   '/digest-data': typeof AuthenticatedDigestDataRoute
   '/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren
@@ -290,7 +290,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/forgot-password': typeof AuthForgotPasswordRoute
   '/login': typeof AuthLoginRoute
-  '/register': typeof AuthRegisterRoute
+  '/signup': typeof AuthSignupRoute
   '/$': typeof AuthenticatedSplatRoute
   '/digest-data': typeof AuthenticatedDigestDataRoute
   '/files': typeof AuthenticatedFilesRoute
@@ -323,7 +323,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_auth/forgot-password': typeof AuthForgotPasswordRoute
   '/_auth/login': typeof AuthLoginRoute
-  '/_auth/register': typeof AuthRegisterRoute
+  '/_auth/signup': typeof AuthSignupRoute
   '/_authenticated/$': typeof AuthenticatedSplatRoute
   '/_authenticated/digest-data': typeof AuthenticatedDigestDataRoute
   '/_authenticated/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren
@@ -362,7 +362,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/forgot-password'
     | '/login'
-    | '/register'
+    | '/signup'
     | '/$'
     | '/digest-data'
     | '/enrichment'
@@ -398,7 +398,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/forgot-password'
     | '/login'
-    | '/register'
+    | '/signup'
     | '/$'
     | '/digest-data'
     | '/files'
@@ -430,7 +430,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_auth/forgot-password'
     | '/_auth/login'
-    | '/_auth/register'
+    | '/_auth/signup'
     | '/_authenticated/$'
     | '/_authenticated/digest-data'
     | '/_authenticated/enrichment'
@@ -578,11 +578,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSplatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_auth/register': {
-      id: '/_auth/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof AuthRegisterRouteImport
+    '/_auth/signup': {
+      id: '/_auth/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof AuthSignupRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/login': {
@@ -738,13 +738,13 @@ declare module '@tanstack/react-router' {
 interface AuthRouteChildren {
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
-  AuthRegisterRoute: typeof AuthRegisterRoute
+  AuthSignupRoute: typeof AuthSignupRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
-  AuthRegisterRoute: AuthRegisterRoute,
+  AuthSignupRoute: AuthSignupRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

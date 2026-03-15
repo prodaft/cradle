@@ -1,6 +1,5 @@
 import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import PageHeader from '@/components/base/page-header';
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -133,7 +132,10 @@ export default function EntitiesPage() {
             if (error) throw { response, error };
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.entities.lists() }],
+            invalidateQueries: [
+                { queryKey: queryKeys.entities.lists() },
+                { queryKey: queryKeys.notes.apiList() },
+            ],
             successMessage: 'Entity deleted successfully',
         },
     });
@@ -146,6 +148,9 @@ export default function EntitiesPage() {
                 ),
             );
             clearSelection();
+            setBulkDeleteDialogOpen(false);
+            setBulkDeleteEntityIds([]);
+            setDeleteConfirmInput('');
         } catch {
             // Error already handled by mutation meta/toasts
         }
@@ -278,8 +283,8 @@ export default function EntitiesPage() {
                 enableSorting: false,
             },
             {
-                accessorKey: 'isPublic',
-                id: 'isPublic',
+                accessorKey: 'is_public',
+                id: 'is_public',
                 size: 28,
                 minSize: 28,
                 maxSize: 28,
@@ -327,6 +332,7 @@ export default function EntitiesPage() {
     };
 
     const handleEntityAdded = (newEntity: Entity) => {
+        setAddEntityDialogOpen(false);
         queryClient.invalidateQueries({ queryKey: queryKeys.entities.lists() });
         if (newEntity.id) {
             router.navigate({ to: `/manage/entities/${newEntity.id}` as any });
@@ -355,15 +361,13 @@ export default function EntitiesPage() {
                 />
                 <div className='px-4 flex-1 flex flex-col'>
                     <div className='flex-1 space-y-4'>
-                        {isPending ? (
-                            <TableSkeleton />
-                        ) : (
-                            <DataTable
-                                table={table}
-                                showViewOptions
-                                onRowClick={handleEditClick}
-                                getRowHref={(entity) => `/manage/entities/${entity.id}`}
-                            >
+                        <DataTable
+                            table={table}
+                            showViewOptions
+                            isLoading={isPending}
+                            onRowClick={handleEditClick}
+                            getRowHref={(entity) => `/manage/entities/${entity.id}`}
+                        >
                                 <ActionBarSearch
                                     placeholder='Search entities...'
                                     value={searchQuery}
@@ -371,7 +375,6 @@ export default function EntitiesPage() {
                                     onSubmit={handleSearchChange}
                                 />
                             </DataTable>
-                        )}
                     </div>
                 </div>
             </div>
@@ -425,12 +428,7 @@ export default function EntitiesPage() {
                         <DialogTitle>New Entity</DialogTitle>
                         <DialogDescription>Create new entity</DialogDescription>
                     </DialogHeader>
-                    <AddEntityForm
-                        onAdd={(newEntity: Entity) => {
-                            handleEntityAdded(newEntity);
-                            setAddEntityDialogOpen(false);
-                        }}
-                    />
+                    <AddEntityForm onAdd={handleEntityAdded} />
                 </DialogContent>
             </Dialog>
             <AlertDialog
@@ -487,10 +485,9 @@ export default function EntitiesPage() {
                         <AlertDialogAction
                             variant='destructive'
                             size='sm'
-                            onClick={() => {
-                                handleDeleteEntities(bulkDeleteEntityIds);
-                                setBulkDeleteEntityIds([]);
-                            }}
+                            onClick={() =>
+                                handleDeleteEntities(bulkDeleteEntityIds)
+                            }
                             disabled={
                                 deleteConfirmInput !==
                                 (bulkDeleteEntityIds.length === 1

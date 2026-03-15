@@ -34,7 +34,16 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { defineStepper } from '@/components/ui/stepper';
+import {
+    Stepper,
+    StepperDescription,
+    StepperIndicator,
+    StepperItem,
+    StepperList,
+    StepperSeparator,
+    StepperTitle,
+    StepperTrigger,
+} from '@/components/ui/stepper';
 import {
     Table,
     TableBody,
@@ -256,39 +265,36 @@ function PathStepper({
     activeStepId: string;
     onStepClick: (id: string) => void;
 }) {
-    const { Stepper } = useMemo(() => defineStepper(...(steps as any)), [steps]);
-
     return (
-        <Stepper.Provider
-            variant='horizontal'
-            labelOrientation='vertical'
-            initialStep={activeStepId}
+        <Stepper
+            value={activeStepId}
+            onValueChange={onStepClick}
+            orientation='horizontal'
             key={activeStepId}
         >
-            <Stepper.Navigation>
+            <StepperList>
                 {steps.map((step) => (
-                    <Stepper.Step
-                        key={step.id}
-                        of={step.id}
-                        onClick={() => onStepClick(step.id)}
-                        className='p-0'
-                    >
-                        <Stepper.Title
-                            className='max-w-[120px] truncate'
-                            title={step.title}
-                        >
-                            {step.title}
-                        </Stepper.Title>
-                        <Stepper.Description
-                            className='max-w-[120px] truncate'
-                            title={step.description}
-                        >
-                            {step.description}
-                        </Stepper.Description>
-                    </Stepper.Step>
+                    <StepperItem key={step.id} value={step.id}>
+                        <StepperTrigger className='p-0'>
+                            <StepperIndicator />
+                            <StepperTitle
+                                className='max-w-[120px] truncate'
+                                title={step.title}
+                            >
+                                {step.title}
+                            </StepperTitle>
+                            <StepperDescription
+                                className='max-w-[120px] truncate'
+                                title={step.description}
+                            >
+                                {step.description}
+                            </StepperDescription>
+                        </StepperTrigger>
+                        <StepperSeparator />
+                    </StepperItem>
                 ))}
-            </Stepper.Navigation>
-        </Stepper.Provider>
+            </StepperList>
+        </Stepper>
     );
 }
 

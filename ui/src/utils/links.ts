@@ -13,7 +13,7 @@ import type { FileReference } from '@/types';
  * @returns Download link
  */
 export const createDownloadPath = (file: FileReference, apiBaseUrl: string): string => {
-    const params = new URLSearchParams({ fileId: file.id! });
+    const params = new URLSearchParams({ file_id: file.id! });
     return `${apiBaseUrl}/file-transfer/download/?${params.toString()}`;
 };
 

@@ -1,7 +1,6 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { XIcon } from 'lucide-react';
-import type React from 'react';
-import { ComponentType } from 'react';
+import { type RefObject, ComponentType } from 'react';
 import type Sigma from 'sigma';
 import GraphControl from './graph-control';
 import { type Edge, type EdgeRelation, type Node } from './graphFilterUtils';
@@ -49,7 +48,7 @@ interface GraphQueryProps {
     edges: Edge[];
     activePanel: 'explorer' | 'display' | 'filters';
     onClosePanel: () => void;
-    sigmaRef: React.RefObject<{ sigma: Sigma } | null>;
+    sigmaRef: RefObject<{ sigma: Sigma } | null>;
     onLoadingChange?: (isLoading: boolean) => void;
     onFetchProgressChange?: (progress: FetchProgress | null) => void;
     onFetchControlsReady?: (controls: {

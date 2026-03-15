@@ -136,7 +136,7 @@ export default function ChangePasswordDialog({
                                             type={showOldPassword ? 'text' : 'password'}
                                             placeholder='Enter current password'
                                             aria-invalid={fieldState.invalid}
-                                            disabled={form.formState.isSubmitting}
+                                            disabled={changePasswordMutation.isPending}
                                             required
                                         />
                                         <InputGroupAddon align='inline-end'>
@@ -193,7 +193,7 @@ export default function ChangePasswordDialog({
                                             type={showNewPassword ? 'text' : 'password'}
                                             placeholder='Enter new password'
                                             aria-invalid={fieldState.invalid}
-                                            disabled={form.formState.isSubmitting}
+                                            disabled={changePasswordMutation.isPending}
                                             required
                                         />
                                         <InputGroupAddon align='inline-end'>
@@ -259,7 +259,7 @@ export default function ChangePasswordDialog({
                                             }
                                             placeholder='Re-enter new password'
                                             aria-invalid={fieldState.invalid}
-                                            disabled={form.formState.isSubmitting}
+                                            disabled={changePasswordMutation.isPending}
                                             required
                                         />
                                         <InputGroupAddon align='inline-end'>
@@ -309,7 +309,7 @@ export default function ChangePasswordDialog({
                                 type='button'
                                 variant='outline'
                                 size='sm'
-                                disabled={form.formState.isSubmitting}
+                                disabled={changePasswordMutation.isPending}
                             >
                                 Cancel
                             </Button>
@@ -318,9 +318,11 @@ export default function ChangePasswordDialog({
                             type='submit'
                             variant='default'
                             size='sm'
-                            disabled={form.formState.isSubmitting}
+                            disabled={changePasswordMutation.isPending}
                         >
-                            {form.formState.isSubmitting ? 'Updating...' : 'Change'}
+                            {changePasswordMutation.isPending
+                                ? 'Updating...'
+                                : 'Change'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

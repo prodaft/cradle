@@ -5,7 +5,15 @@ import type { paths } from './schema';
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? '';
 
-const AUTH_PATHS = ['/auth/login', '/auth/refresh', '/auth/logout'];
+const AUTH_PATHS = [
+    '/auth/login',
+    '/auth/refresh',
+    '/auth/logout',
+    '/auth/reset-password',
+    '/auth/email-confirm',
+    '/auth/signup',
+    '/auth/config',
+];
 
 function getCsrfToken(): string | null {
     if (typeof document === 'undefined') return null;

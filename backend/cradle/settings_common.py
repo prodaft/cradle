@@ -9,6 +9,8 @@ import os  # noqa: E402
 from datetime import timedelta  # noqa: E402
 from pathlib import Path  # noqa: E402
 
+from corsheaders.defaults import default_headers
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,6 +22,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "../media")
 # CORS: restrict to allowed origins (set CORS_ALLOWED_ORIGINS in env or settings_docker)
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = []
+CORS_ALLOW_HEADERS = list(default_headers) + ["Api-Key"]
 
 # Default frontend/CSRF origins (override in settings_docker/settings_test)
 DEFAULT_FRONTEND_URL = "http://localhost:5173"
@@ -162,6 +165,7 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": r"/api",
     "SCHEMA_PATH_PREFIX_TRIM": True,
+    "SERVERS": [{"url": "/api", "description": "API"}],
     "COMPONENT_SPLIT_REQUEST": True,
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
     "POSTPROCESSING_HOOKS": [
@@ -198,7 +202,7 @@ OAUTH_REDIRECT_URI_WHITELIST = []
 
 
 def build_oauth_methods(oauth_providers: dict) -> list[dict]:
-    """Build OAuth method metadata for the users/config endpoint from provider config."""
+    """Build OAuth method metadata for the auth/config endpoint from provider config."""
     methods = []
     for provider, config in oauth_providers.items():
         if not isinstance(config, dict):
@@ -213,7 +217,7 @@ def build_oauth_methods(oauth_providers: dict) -> list[dict]:
     return methods
 
 
-# OAuth provider metadata exposed by the users/config endpoint.
+# OAuth provider metadata exposed by the auth/config endpoint.
 OAUTH_METHODS = build_oauth_methods(OAUTH_PROVIDERS)
 
 # Cache for rate limiting (throttling). Uses local memory by default.

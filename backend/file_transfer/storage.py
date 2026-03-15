@@ -28,9 +28,9 @@ class ReportStorage(S3Storage):
     """S3 storage for published report exports (HTML, JSON, etc.)."""
 
     bucket_name = "cradle-reports"
-    file_overwrite = False
+    file_overwrite = True
     querystring_auth = True
-    querystring_expire = 60 * 60 * 24 * 7
+    querystring_expire = 60 * 60 * 24 * 7  # 7 days
 
 
 class DigestStorage(S3Storage):
@@ -39,4 +39,4 @@ class DigestStorage(S3Storage):
     bucket_name = "cradle-digests"
     file_overwrite = False
     querystring_auth = True
-    querystring_expire = 60 * 60 * 24 * 7
+    querystring_expire = 60 * 60 * 24 * 7  # 7 days

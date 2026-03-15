@@ -16,7 +16,7 @@ import { languages } from '@codemirror/language-data';
 import { EditorView } from '@codemirror/view';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import CodeMirror from '@uiw/react-codemirror';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * MarkdownEditorDialog component props
@@ -36,6 +36,8 @@ interface MarkdownEditorDialogProps {
     initialContent?: string;
     /** Optional help text to display below the editor - can be a string or React node */
     helpText?: React.ReactNode;
+    /** Optional description shown below the dialog title */
+    description?: string;
 }
 
 /**
@@ -76,10 +78,21 @@ export default function MarkdownEditorDialog({
     onOpenChange,
     initialContent = '',
     helpText,
+    description = 'Edit markdown content below.',
 }: MarkdownEditorDialogProps): React.ReactElement {
     const [userInput, setUserInput] = useState(initialContent);
     const [noteTitle, setNoteTitle] = useState(title || '');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const { isDarkMode } = useTheme();
+
+    useEffect(() => {
+        if (open) {
+            setUserInput(initialContent ?? '');
+            setNoteTitle(title ?? '');
+        } else {
+            setIsSubmitting(false);
+        }
+    }, [open, initialContent, title]);
 
     const extensions = [
         markdown({ codeLanguages: languages }),
@@ -87,8 +100,13 @@ export default function MarkdownEditorDialog({
     ];
 
     const handleConfirm = async () => {
-        await onConfirm(userInput, noteTitle);
-        onOpenChange(false);
+        setIsSubmitting(true);
+        try {
+            await onConfirm(userInput, noteTitle);
+            onOpenChange(false);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,24 +121,22 @@ export default function MarkdownEditorDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>New snippet</DialogTitle>
-                    <DialogDescription>
-                        Edit markdown content for this note
-                    </DialogDescription>
+                    <DialogTitle>{title ?? 'Note Snippet'}</DialogTitle>
+                    <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
 
-                {/* Title Section */}
-                <Field>
-                    <FieldLabel htmlFor='note-title'>Title</FieldLabel>
-                    <Input
-                        id='note-title'
-                        type='text'
-                        value={noteTitle}
-                        onChange={handleTitleChange}
-                        placeholder='Enter title'
-                        disabled={!titleEditable}
-                    />
-                </Field>
+                {titleEditable && (
+                    <Field>
+                        <FieldLabel htmlFor='note-title'>Title</FieldLabel>
+                        <Input
+                            id='note-title'
+                            type='text'
+                            value={noteTitle}
+                            onChange={handleTitleChange}
+                            placeholder='Enter title'
+                        />
+                    </Field>
+                )}
 
                 {/* Editor Section */}
                 <Field>
@@ -144,16 +160,21 @@ export default function MarkdownEditorDialog({
                     <div className='p-4 border border-border bg-secondary/30 rounded-lg'>
                         <div className='flex items-start gap-3'>
                             <div className='w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0' />
-                            <span className='text-xs text-muted-foreground leading-relaxed'>
+                            <div className='text-xs text-muted-foreground leading-relaxed'>
                                 {helpText}
-                            </span>
+                            </div>
                         </div>
                     </div>
                 )}
 
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button type='button' variant='outline' size='sm'>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            disabled={isSubmitting}
+                        >
                             Cancel
                         </Button>
                     </DialogClose>
@@ -162,8 +183,9 @@ export default function MarkdownEditorDialog({
                         variant='default'
                         size='sm'
                         onClick={handleConfirm}
+                        disabled={isSubmitting}
                     >
-                        Save
+                        {isSubmitting ? 'Saving...' : 'Save'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

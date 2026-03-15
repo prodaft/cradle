@@ -1,4 +1,3 @@
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -538,30 +537,28 @@ export default function Reports() {
 
             {/* Content Area */}
             <div className='flex flex-col space-y-4 px-4 pb-4'>
-                {isLoading ? (
-                    <TableSkeleton />
-                ) : (
-                    <DataTable
-                        table={table}
-                        showViewOptions
-                        onRowClick={async (report) => {
-                            try {
-                                const details = await fetchReportMutation.mutateAsync({
-                                    id: report.id!,
-                                    downloadUrl: false,
-                                });
-                                if (details.report_url) {
-                                    window.open(details.report_url, '_blank');
-                                } else {
-                                    toast.error(
-                                        'Report URL not found for report ' +
-                                            details.title,
-                                    );
-                                }
-                            } catch (_error) {
-                                // Error handled by mutation
+                <DataTable
+                    table={table}
+                    showViewOptions
+                    isLoading={isLoading}
+                    onRowClick={async (report) => {
+                        try {
+                            const details = await fetchReportMutation.mutateAsync({
+                                id: report.id!,
+                                downloadUrl: false,
+                            });
+                            if (details.report_url) {
+                                window.open(details.report_url, '_blank');
+                            } else {
+                                toast.error(
+                                    'Report URL not found for report ' +
+                                        details.title,
+                                );
                             }
-                        }}
+                        } catch (_error) {
+                            // Error handled by mutation
+                        }
+                    }}
                     >
                         <div className='flex items-center gap-2'>
                             <ActionBarSearch
@@ -581,7 +578,6 @@ export default function Reports() {
                             />
                         </div>
                     </DataTable>
-                )}
             </div>
             <ActionBar
                 open={selectedReportIds.length > 0}

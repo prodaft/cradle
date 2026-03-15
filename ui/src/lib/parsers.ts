@@ -10,7 +10,7 @@ const sortingItemSchema = z.object({
     desc: z.boolean(),
 });
 
-const getSortingStateParser = <TData>(columnIds?: string[] | Set<string>) => {
+export const getSortingStateParser = <TData>(columnIds?: string[] | Set<string>) => {
     const validKeys = columnIds
         ? columnIds instanceof Set
             ? columnIds

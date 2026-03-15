@@ -16,11 +16,19 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
+import {
+    ArrowCounterClockwiseIcon,
+    ClockCounterClockwiseIcon,
+    FloppyDiskIcon,
+} from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import isEqual from 'lodash/isEqual';
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -72,6 +80,7 @@ export default function UserAccountForm({
     const {
         reset,
         getValues,
+        watch,
         control,
         formState: { isDirty },
     } = useForm<FormData>({
@@ -116,9 +125,82 @@ export default function UserAccountForm({
         );
     };
 
+    const handleRevert = () => {
+        if (previousValuesRef.current) reset(previousValuesRef.current);
+    };
+    const accountDefaultState = {
+        username: userData?.username ?? '',
+        email: userData?.email ?? '',
+        role: userData?.role || 'author',
+    };
+    const handleDefault = () => {
+        const defaultData = { ...accountDefaultState, id: userData?.id };
+        reset(defaultData, { keepDefaultValues: true });
+        previousValuesRef.current = defaultData;
+    };
+    const isAtDefault =
+        !!userData &&
+        isEqual(
+            { username: watch('username'), email: watch('email'), role: watch('role') },
+            accountDefaultState,
+        );
+
+    const headerContainer =
+        typeof document !== 'undefined'
+            ? document.getElementById('settings-header-actions')
+            : null;
+
     if (!userData) return null;
 
     return (
+        <>
+            {!isOtherAdmin &&
+                headerContainer &&
+                createPortal(
+                    <div className='flex items-center gap-2'>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='icon'
+                            disabled={!isDirty}
+                            onClick={handleRevert}
+                            title='Revert'
+                        >
+                            <ArrowCounterClockwiseIcon
+                                className='size-4'
+                                weight='bold'
+                            />
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='icon'
+                            disabled={isAtDefault}
+                            onClick={handleDefault}
+                            title='Default'
+                        >
+                            <ClockCounterClockwiseIcon
+                                className='size-4'
+                                weight='bold'
+                            />
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='default'
+                            size='icon'
+                            disabled={saveMutation.isPending || !isDirty}
+                            onClick={handleSave}
+                            title='Save Settings'
+                        >
+                            {saveMutation.isPending ? (
+                                <Spinner className='size-4' />
+                            ) : (
+                                <FloppyDiskIcon className='size-4' weight='bold' />
+                            )}
+                        </Button>
+                    </div>,
+                    headerContainer,
+                )}
         <section id='account'>
             <div className='flex flex-col gap-4'>
                 <FieldGroup className='gap-4'>
@@ -270,18 +352,8 @@ export default function UserAccountForm({
                         )}
                     />
                 </FieldGroup>
-                {!isOtherAdmin && (
-                    <div className='flex justify-end pt-4'>
-                        <Button
-                            type='button'
-                            onClick={handleSave}
-                            disabled={saveMutation.isPending || !isDirty}
-                        >
-                            {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
-                        </Button>
-                    </div>
-                )}
             </div>
         </section>
+        </>
     );
 }

@@ -137,8 +137,8 @@ export default function NotificationCard({
 
     const handleActivateUser = () => {
         const notif = notification as NewUserNotification;
-        if (!notif.new_user) return;
-        activateUserMutation.mutate(notif.new_user.id!);
+        if (!notif.new_user?.id) return;
+        activateUserMutation.mutate(notif.new_user.id);
     };
 
     const handleViewReport = () => {
@@ -155,7 +155,7 @@ export default function NotificationCard({
         <Card className='py-0 gap-0'>
             <CardContent className='p-3'>
                 {/* Content */}
-                <div className='flex-1 min-w-0'>
+                <div className='min-w-0'>
                     {/* Meta row: date + read/unread */}
                     <div className='flex items-center justify-between'>
                         <span className='text-muted-foreground text-xs'>
@@ -265,10 +265,11 @@ export default function NotificationCard({
                             onClick={() => {
                                 const notif =
                                     notification as EnrichmentCompleteNotification;
+                                if (!notif.enrichment_request_id) return;
                                 router.navigate({
                                     to: '/enrichment/$id',
                                     params: {
-                                        id: notif.enrichment_request_id.toString(),
+                                        id: notif.enrichment_request_id,
                                     },
                                 });
                             }}
@@ -286,10 +287,11 @@ export default function NotificationCard({
                             onClick={() => {
                                 const notif =
                                     notification as EnrichmentErrorNotification;
+                                if (!notif.enrichment_request_id) return;
                                 router.navigate({
                                     to: '/enrichment/$id',
                                     params: {
-                                        id: notif.enrichment_request_id.toString(),
+                                        id: notif.enrichment_request_id,
                                     },
                                 });
                             }}

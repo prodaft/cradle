@@ -1,6 +1,5 @@
 import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import TableActionsButton from '@/components/base/table-actions-button';
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -116,7 +115,10 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const sessionsResponseData = sessionsResponse as
         | { results?: UserSession[]; total_pages?: number; count?: number }
         | undefined;
-    const sessions: UserSession[] = sessionsResponseData?.results ?? [];
+    const sessions: UserSession[] = useMemo(
+        () => sessionsResponseData?.results ?? [],
+        [sessionsResponseData],
+    );
 
     const selectedSessionIds = useMemo(
         () =>
@@ -224,7 +226,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 toast.error(getDisplayMessage(parsed));
             }
         },
-        [userId, fetchClient, sessions, queryClient, logOut, clearSelection],
+        [userId, sessions, queryClient, logOut, clearSelection],
     );
 
     const openRevokeConfirmationDialog = useCallback((sessionId: string) => {
@@ -479,10 +481,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
 
     return (
         <div className='w-full space-y-4'>
-            {isPending ? (
-                <TableSkeleton />
-            ) : (
-                <DataTable table={table} showViewOptions>
+            <DataTable table={table} showViewOptions isLoading={isPending}>
                     <ActionBarSearch
                         placeholder='Search sessions...'
                         value={searchQuery}
@@ -497,7 +496,6 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                         }}
                     />
                 </DataTable>
-            )}
             <ActionBar
                 open={selectedSessionIds.length > 0}
                 onOpenChange={(open) => {

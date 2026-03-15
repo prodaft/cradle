@@ -21,6 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { fetchClient } from '@services/openapi/client';
@@ -154,7 +155,7 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
             return data;
         },
         meta: {
-            successMessage: 'Entry created successfully!',
+            suppressNotification: true, // Redirect is the feedback
         },
         onSuccess: (result) => {
             onAdd?.(result);
@@ -178,12 +179,23 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
         try {
             await createEntryMutation.mutateAsync(payload);
         } catch {
-            // toast/notification handled by mutation meta; prevent unhandled rejection
+            // Error displayed in form; prevent unhandled rejection
         }
     };
 
+    const apiError = createEntryMutation.error as
+        | { error?: { detail?: string } }
+        | undefined;
+    const errorMessage =
+        apiError?.error?.detail ?? (createEntryMutation.isError ? 'Failed to create entry type. Please try again.' : null);
+
     return (
         <form onSubmit={handleFormSubmit(onSubmit)} className='w-full'>
+            {errorMessage && (
+                <div className='rounded-md bg-destructive/10 text-destructive text-sm p-3 mb-4'>
+                    {errorMessage}
+                </div>
+            )}
             <FieldGroup className='gap-4'>
                 <Field data-invalid={Boolean(errors.type)}>
                     <FieldLabel htmlFor='type'>
@@ -573,7 +585,14 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
 
             <div className='flex justify-end mt-5 shrink-0'>
                 <Button type='submit' variant='default' disabled={isSubmitting}>
-                    {isSubmitting ? 'Creating...' : 'Create Entry'}
+                    {isSubmitting ? (
+                        <>
+                            <Spinner className='size-4' />
+                            Creating...
+                        </>
+                    ) : (
+                        'Create Entry'
+                    )}
                 </Button>
             </div>
         </form>

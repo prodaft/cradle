@@ -7,6 +7,7 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
+import { queryKeys } from '@/hooks/query';
 import { getSuccessMessage } from '@/utils/api';
 import { ArrowClockwiseIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
@@ -18,12 +19,16 @@ export default function GraphSettingsForm() {
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}/',
-                { params: { path: { action_name: 'refreshMaterializedGraph' } } },
+                { params: { path: { action_name: 'refresh_materialized_graph' } } },
             );
             if (error) throw { response, error };
             return data;
         },
         meta: {
+            invalidateQueries: [
+                { queryKey: queryKeys.notes.apiList() },
+                { queryKey: queryKeys.knowledgeGraph.all },
+            ],
             suppressNotification: true,
         },
         onSuccess: (response) => {
@@ -39,7 +44,7 @@ export default function GraphSettingsForm() {
                 '/management/actions/{action_name}/',
                 {
                     params: {
-                        path: { action_name: 'recalculateNodePositions' },
+                        path: { action_name: 'recalculate_node_positions' },
                     },
                 },
             );
@@ -88,9 +93,10 @@ export default function GraphSettingsForm() {
                             size='sm'
                             className='self-start md:self-center'
                             onClick={handleRefreshMaterializedGraph}
+                            disabled={refreshGraphMutation.isPending}
                         >
                             <ArrowClockwiseIcon className='w-3.5 h-3.5' weight='bold' />
-                            Refresh
+                            {refreshGraphMutation.isPending ? 'Refreshing…' : 'Refresh'}
                         </Button>
                     </Field>
 
@@ -111,9 +117,12 @@ export default function GraphSettingsForm() {
                             size='sm'
                             className='self-start md:self-center'
                             onClick={handleRecalculateNodePositions}
+                            disabled={recalculatePositionsMutation.isPending}
                         >
                             <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
-                            Recalculate
+                            {recalculatePositionsMutation.isPending
+                                ? 'Recalculating…'
+                                : 'Recalculate'}
                         </Button>
                     </Field>
                 </FieldGroup>

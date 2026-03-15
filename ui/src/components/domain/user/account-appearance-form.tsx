@@ -15,15 +15,21 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { useTheme } from '@/contexts/ui/theme-context';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { PRESET_THEMES } from '@/utils/themes';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+    ArrowCounterClockwiseIcon,
+    ClockCounterClockwiseIcon,
+    FloppyDiskIcon,
+} from '@phosphor-icons/react';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 
 interface AccountAppearanceFormProps {
@@ -34,12 +40,12 @@ export default function AccountAppearanceForm({
     target = 'me',
 }: AccountAppearanceFormProps) {
     const queryClient = useQueryClient();
-    const { setTheme } = useTheme();
 
     const [selectedThemeType, setSelectedThemeType] = useState<string>('dark');
     const [customThemeJSON, setCustomThemeJSON] = useState<string>('');
     const [themePopoverOpen, setThemePopoverOpen] = useState(false);
     const [pendingTheme, setPendingTheme] = useState<Record<string, any> | null>(null);
+    const loadedThemeRef = useRef<Record<string, any> | null>(null);
 
     const { data: userData } = $api.useQuery(
         'get',
@@ -63,13 +69,19 @@ export default function AccountAppearanceForm({
             queryClient.invalidateQueries({
                 queryKey: queryKeys.users.detail(target),
             });
+            queryClient.invalidateQueries({
+                queryKey: ['get', '/users/{user_id}/'],
+            });
         },
     });
 
     useEffect(() => {
         if (!userData?.theme) return;
 
-        const themeName = (userData.theme as any)?.name;
+        const theme = userData.theme as Record<string, any>;
+        loadedThemeRef.current = theme;
+
+        const themeName = theme?.name;
         if (themeName && themeName !== 'custom') {
             const matchedPreset = PRESET_THEMES.find(
                 (preset) => preset.id === themeName,
@@ -79,15 +91,15 @@ export default function AccountAppearanceForm({
                 setCustomThemeJSON('');
             } else {
                 setSelectedThemeType('custom');
-                const { name: _name, ...rest } = userData.theme as any;
+                const { name: _name, ...rest } = theme;
                 setCustomThemeJSON(JSON.stringify(rest, null, 2));
             }
         } else {
             setSelectedThemeType('custom');
-            const { name: _name, ...rest } = userData.theme as any;
+            const { name: _name, ...rest } = theme;
             setCustomThemeJSON(
                 JSON.stringify(
-                    Object.keys(rest).length > 0 ? rest : userData.theme,
+                    Object.keys(rest).length > 0 ? rest : theme,
                     null,
                     2,
                 ),
@@ -116,9 +128,7 @@ export default function AccountAppearanceForm({
                             : { name: preset.id, ...presetTheme }
                         : { name: preset.id };
 
-                setTheme(themeWithName);
                 setPendingTheme(themeWithName);
-                toast.success(`Applied ${preset.label} theme`);
             }
         }
     };
@@ -135,9 +145,7 @@ export default function AccountAppearanceForm({
                 return;
             }
             const themeWithName = { name: 'custom', ...parsed };
-            setTheme(themeWithName);
             setPendingTheme(themeWithName);
-            toast.success('Custom theme applied');
         } catch {
             toast.error('Invalid JSON format');
         }
@@ -151,7 +159,85 @@ export default function AccountAppearanceForm({
         saveMutation.mutate(pendingTheme);
     };
 
+    const handleRevert = () => {
+        if (loadedThemeRef.current) {
+            setPendingTheme(null);
+            const themeName = (loadedThemeRef.current as any)?.name;
+            if (themeName && themeName !== 'custom') {
+                setSelectedThemeType(themeName);
+                setCustomThemeJSON('');
+            } else {
+                setSelectedThemeType('custom');
+                const { name: _name, ...rest } = loadedThemeRef.current;
+                setCustomThemeJSON(JSON.stringify(rest, null, 2));
+            }
+        }
+    };
+
+    const handleDefault = () => {
+        const preset = PRESET_THEMES[0];
+        const themeWithName = preset.theme && typeof preset.theme === 'object' && !Array.isArray(preset.theme)
+            ? 'name' in preset.theme ? preset.theme : { name: preset.id, ...preset.theme }
+            : { name: preset.id };
+        setPendingTheme(themeWithName);
+        setSelectedThemeType(preset.id);
+        setCustomThemeJSON('');
+    };
+    const isAtDefault = selectedThemeType === PRESET_THEMES[0].id && !pendingTheme;
+
+    const headerContainer =
+        typeof document !== 'undefined'
+            ? document.getElementById('settings-header-actions')
+            : null;
+
     return (
+        <>
+            {headerContainer &&
+                createPortal(
+                    <div className='flex items-center gap-2'>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='icon'
+                            disabled={!pendingTheme}
+                            onClick={handleRevert}
+                            title='Revert'
+                        >
+                            <ArrowCounterClockwiseIcon
+                                className='size-4'
+                                weight='bold'
+                            />
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='icon'
+                            disabled={isAtDefault}
+                            onClick={handleDefault}
+                            title='Default'
+                        >
+                            <ClockCounterClockwiseIcon
+                                className='size-4'
+                                weight='bold'
+                            />
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='default'
+                            size='icon'
+                            disabled={saveMutation.isPending || !pendingTheme}
+                            onClick={handleSave}
+                            title='Save Settings'
+                        >
+                            {saveMutation.isPending ? (
+                                <Spinner className='size-4' />
+                            ) : (
+                                <FloppyDiskIcon className='size-4' weight='bold' />
+                            )}
+                        </Button>
+                    </div>,
+                    headerContainer,
+                )}
         <section id='appearance'>
             <div className='flex flex-col gap-4'>
                 <FieldGroup className='gap-4'>
@@ -268,16 +354,8 @@ export default function AccountAppearanceForm({
                         </Field>
                     )}
                 </FieldGroup>
-                <div className='flex justify-end pt-2'>
-                    <Button
-                        type='button'
-                        onClick={handleSave}
-                        disabled={saveMutation.isPending || !pendingTheme}
-                    >
-                        {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                </div>
             </div>
         </section>
+        </>
     );
 }

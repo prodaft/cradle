@@ -58,10 +58,10 @@ DATABASES = {
 }
 
 MINIO_CONFIG = {
-    "endpoint": env.str("MINIO_ENDPOINT", "localhost"),
+    "endpoint": env.str("MINIO_ENDPOINT", "localhost:9000"),
     "access_key": env.str("MINIO_ROOT_USER", "admin"),
-    "secret_key": env.str("MINIO_ROOT_PASSWORD", "admin"),
-    "secure": env.bool("MINIO_SECURE", True),
+    "secret_key": env.str("MINIO_ROOT_PASSWORD", "cradle_minio"),
+    "secure": env.bool("MINIO_SECURE", False),
 }
 
 MINIO_BACKEND_URL = env.str("MINIO_BACKEND_URL", MINIO_BACKEND_URL)  # noqa: F405
@@ -89,6 +89,8 @@ AWS_S3_ENDPOINT_URL = env.str(
 AWS_S3_USE_SSL = MINIO_CONFIG["secure"]
 AWS_S3_VERIFY = env.bool("AWS_S3_VERIFY", True)
 AWS_S3_ADDRESSING_STYLE = "path"
+AWS_S3_REGION_NAME = env.str("AWS_S3_REGION_NAME", "us-east-1")
+AWS_S3_SIGNATURE_VERSION = env.str("AWS_S3_SIGNATURE_VERSION", "s3v4")
 
 # CORS: frontend origins (subset of CSRF)
 CORS_ALLOWED_ORIGINS = env.list(

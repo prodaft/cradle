@@ -199,7 +199,7 @@ export const createDashboardLink = (entry: DashboardEntry | null): string => {
  * @param entry_transformer - Function to transform each entry
  * @returns Grouped entry cards
  */
-const groupSubtypes = <T,>(
+const _groupSubtypes = <T,>(
     entries: DashboardEntry[],
     entry_transformer: (entry: DashboardEntry) => T,
 ): T[][] => {
@@ -261,7 +261,7 @@ export const truncateText = (
  * @param b - Second string
  * @returns Comparison result
  */
-function naturalSort(a: string, b: string): number {
+function _naturalSort(a: string, b: string): number {
     // Regular expression to split strings into parts
     const regex = /([^0-9]+)([0-9]+)/;
 

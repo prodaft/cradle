@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -150,6 +151,10 @@ export default function NoteViewer() {
             return data;
         },
         meta: {
+            invalidateQueries: [
+                { queryKey: queryKeys.notes.apiDetail(noteId) },
+                { queryKey: queryKeys.notes.apiList() },
+            ],
             successMessage: 'Note finalized successfully.',
         },
         onSuccess: (response) => {
@@ -160,15 +165,16 @@ export default function NoteViewer() {
     const relinkNoteMutation = useMutation({
         mutationFn: async (noteId: string) => {
             const { error, response } = await fetchClient.POST(
-                '/management/actions/{action_name}/',
-                {
-                    params: { path: { action_name: 'relinkNotes' } },
-                    body: { note_id: noteId } as any,
-                },
+                '/notes/{note_id}/relink/',
+                { params: { path: { note_id: noteId } }, body: undefined },
             );
             if (error) throw { response, error };
         },
         meta: {
+            invalidateQueries: [
+                { queryKey: queryKeys.notes.apiDetail(noteId) },
+                { queryKey: queryKeys.notes.apiList() },
+            ],
             successMessage: 'Note relinked successfully.',
         },
     });
@@ -373,8 +379,8 @@ export default function NoteViewer() {
         },
         meta: {
             invalidateQueries: [
-                { queryKey: queryKeys.notes.detail(noteId) },
-                { queryKey: queryKeys.notes.lists() },
+                { queryKey: queryKeys.notes.apiDetail(noteId) },
+                { queryKey: queryKeys.notes.apiList() },
             ],
             successMessage: 'Note deleted successfully',
         },
@@ -403,6 +409,12 @@ export default function NoteViewer() {
             );
             if (error) throw { response, error };
             return data;
+        },
+        meta: {
+            invalidateQueries: [
+                { queryKey: queryKeys.notes.apiDetail(noteId || '') },
+                { queryKey: queryKeys.notes.apiList() },
+            ],
         },
     });
 
@@ -444,8 +456,8 @@ export default function NoteViewer() {
         try {
             await deleteMutation.mutateAsync();
 
-            // Invalidate related queries
-            queryClient.invalidateQueries({ queryKey: queryKeys.notes.all });
+            // Invalidate related queries (mutation meta also invalidates; this ensures list refetches)
+            queryClient.invalidateQueries({ queryKey: queryKeys.notes.apiList() });
 
             // Navigate back - TanStack Router doesn't support setting state via navigate
             router.navigate({ to: (from?.pathname || '/') as any, replace: true });
@@ -634,7 +646,7 @@ export default function NoteViewer() {
                                         variant='ghost'
                                         size='icon'
                                         onClick={() => setAboutDialogOpen(true)}
-                                        className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground border-border'
+                                        className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
                                         data-testid='about-note-btn'
                                     >
                                         <InfoIcon size={20} weight='bold' />
@@ -649,7 +661,7 @@ export default function NoteViewer() {
                                     variant='ghost'
                                     size='icon'
                                     onClick={() => toggleEditing()}
-                                    className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground border-border'
+                                    className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
                                     data-testid='actions-dropdown-btn'
                                 >
                                     {enableEditing ? (
@@ -692,7 +704,7 @@ export default function NoteViewer() {
                     navbarActionsEl,
                 )}
 
-            <div className='w-[100%] h-full flex flex-col'>
+            <div className='w-full h-full flex flex-col'>
                 {/* View content */}
                 <div className='flex-1'>
                     {/* Content View */}
@@ -841,6 +853,7 @@ export default function NoteViewer() {
                                             {enableEditing || !richEditor ? (
                                                 <>
                                                     <RichEditor
+                                                        editorUtils={editorUtils}
                                                         additionalExtensions={
                                                             customKeymap
                                                         }
@@ -854,12 +867,19 @@ export default function NoteViewer() {
                                                             setMarkdownContent
                                                         }
                                                         fileData={fileData}
-                                                        setFileData={handleFilesChange}
+                                                        setFileData={
+                                                            handleFilesChange
+                                                        }
                                                         source={!richEditor}
-                                                        saveNote={handleSaveNote}
-                                                        enableEditing={enableEditing}
-                                                        editorUtils={editorUtils}
-                                                        setLineNumber={setLineNumber}
+                                                        saveNote={
+                                                            handleSaveNote
+                                                        }
+                                                        enableEditing={
+                                                            enableEditing
+                                                        }
+                                                        setLineNumber={
+                                                            setLineNumber
+                                                        }
                                                         saving={saving}
                                                         hasUnsavedChanges={
                                                             hasUnsavedChanges
@@ -956,6 +976,10 @@ export default function NoteViewer() {
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>About</DialogTitle>
+                            <DialogDescription>
+                                Note metadata including creation date, author, and edit
+                                history.
+                            </DialogDescription>
                         </DialogHeader>
                         <FieldSet className='gap-3 pt-1'>
                             <FieldGroup>

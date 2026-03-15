@@ -215,14 +215,14 @@ file_upload_flow = PresignedUploadFlow(
         description="Generates a presigned URL for uploading a file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.",
         parameters=[
             OpenApiParameter(
-                name="fileName",
+                name="file_name",
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description="Name of the file to be uploaded",
                 required=True,
             ),
             OpenApiParameter(
-                name="fileSize",
+                name="file_size",
                 type=int,
                 location=OpenApiParameter.QUERY,
                 description="Size of the file to be uploaded in bytes",
@@ -252,25 +252,25 @@ class FileUpload(APIView):
         and then call the finalize endpoint.
 
         Args:
-            request: The request with query parameters `fileName` and `fileSize`.
+            request: The request with query parameters `file_name` and `file_size`.
 
         Returns:
             Response with upload_id, presigned_url, object_key, and expires_in.
         """
-        file_name = request.query_params.get("fileName")
+        file_name = request.query_params.get("file_name")
         if not file_name:
-            raise InvalidFileNameException(detail="The 'fileName' query parameter is required.")
+            raise InvalidFileNameException(detail="The 'file_name' query parameter is required.")
         file_name = _sanitize_filename(file_name)
 
         # Get and validate file size
-        file_size_str = request.query_params.get("fileSize")
+        file_size_str = request.query_params.get("file_size")
         if not file_size_str:
-            raise InvalidFileSizeException(detail="The 'fileSize' query parameter is required.")
+            raise InvalidFileSizeException(detail="The 'file_size' query parameter is required.")
 
         try:
             file_size = int(file_size_str)
         except ValueError:
-            raise InvalidFileSizeException(detail="The 'fileSize' parameter must be a valid integer.")
+            raise InvalidFileSizeException(detail="The 'file_size' parameter must be a valid integer.")
 
         response_data = file_upload_flow.initiate(request.user, file_name, file_size)
         return Response(FileUploadResponseSerializer(response_data).data, status=status.HTTP_200_OK)
@@ -328,7 +328,7 @@ class FileUploadFinalize(APIView):
 
         # Finalize upload via flow
         response_data = file_upload_flow.finalize(upload_id, request.user, **serializer.validated_data)
-        download_url = reverse("file_download") + f"?fileId={response_data['file_id']}"
+        download_url = reverse("file_download") + f"?file_id={response_data['file_id']}"
         location = request.build_absolute_uri(download_url)
         return Response(
             FileUploadFinalizeResponseSerializer(response_data).data,
@@ -344,7 +344,7 @@ class FileUploadFinalize(APIView):
         description="Generates a presigned URL for downloading a file.",
         parameters=[
             OpenApiParameter(
-                name="fileId",
+                name="file_id",
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description="UUID of the file reference",
@@ -372,21 +372,21 @@ class FileDownload(APIView):
         """Generate a presigned URL for file download.
 
         Args:
-            request: The request with query parameter `fileId`.
+            request: The request with query parameter `file_id`.
 
         Returns:
             Response with presigned_url and expires_in.
         """
-        file_id = request.query_params.get("fileId")
+        file_id = request.query_params.get("file_id")
         if not file_id:
-            raise FileIdRequiredException(detail="The 'fileId' query parameter is required.")
+            raise FileIdRequiredException(detail="The 'file_id' query parameter is required.")
 
         try:
             file_reference = FileReference.objects.get(id=file_id)
         except FileReference.DoesNotExist:
             raise FileReferenceNotFoundException(detail=f"File reference with ID {file_id} not found.")
         except (ValueError, TypeError, ValidationError):
-            raise InvalidFileIdException(detail="The 'fileId' parameter must be a valid UUID.")
+            raise InvalidFileIdException(detail="The 'file_id' parameter must be a valid UUID.")
 
         if not file_reference.file:
             raise MinioObjectNotFound(detail="File not found in storage.")
@@ -464,7 +464,7 @@ class FileProcess(APIView):
         description="Deletes a file reference and removes the associated file from storage.",
         parameters=[
             OpenApiParameter(
-                name="fileId",
+                name="file_id",
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description="UUID of the file reference to delete",
@@ -491,23 +491,28 @@ class FileDelete(APIView):
         """Delete a file reference and the associated file from storage.
 
         Args:
-            request: The request with query parameter `fileId`.
+            request: The request with query parameter `file_id`.
 
         Returns:
             Empty response with 204 No Content on success.
         """
-        file_id = request.query_params.get("fileId")
+        file_id = request.query_params.get("file_id")
         if not file_id:
-            raise FileIdRequiredException(detail="The 'fileId' query parameter is required.")
+            raise FileIdRequiredException(detail="The 'file_id' query parameter is required.")
 
         try:
             file_reference = FileReference.objects.get(id=file_id)
             if not _user_can_access_file(file_reference, request.user):
                 raise FileAccessDeniedException(detail="You do not have access to this file.")
+            if file_reference.file:
+                try:
+                    file_reference.file.delete(save=False)
+                except (OSError, ClientError):
+                    pass
             file_reference.delete()
 
             return Response(status=status.HTTP_204_NO_CONTENT)
         except FileReference.DoesNotExist:
             raise FileReferenceNotFoundException(detail=f"File reference with ID {file_id} not found.")
         except (ValueError, TypeError, ValidationError):
-            raise InvalidFileIdException(detail="The 'fileId' parameter must be a valid UUID.")
+            raise InvalidFileIdException(detail="The 'file_id' parameter must be a valid UUID.")

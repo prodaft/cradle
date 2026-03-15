@@ -47,7 +47,7 @@ more.
 |----------------------|---------|--------------------|-----------------------------------------------------|
 | `MINIO_ENDPOINT`     | String  | `"localhost"`      | MinIO server endpoint.                              |
 | `MINIO_ROOT_USER`    | String  | `"admin"`          | Access key for MinIO.                               |
-| `MINIO_ROOT_PASSWORD`| String  | `"admin"`          | Secret key for MinIO.                               |
+| `MINIO_ROOT_PASSWORD`| String  | `"cradle_minio"`   | Secret key for MinIO.                               |
 | `MINIO_SECURE`       | Boolean | `True`             | Use HTTPS when connecting to MinIO.               |
 | `MINIO_BACKEND_URL`  | String  | *(See settings)*   | URL to access the MinIO backend (inherited from settings). |
 

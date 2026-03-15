@@ -13,7 +13,7 @@ services:
       - minio_data:/data
     environment:
       MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: minioAdminPassword
+      MINIO_ROOT_PASSWORD: cradle_minio
       MINIO_SERVER_URL: http://localhost:8000
       MINIO_BROWSER_REDIRECT_URL: http://localhost:8000/minio/ui
     networks:
@@ -26,7 +26,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: cradle
-      POSTGRES_PASSWORD: cradlePostgresPassword
+      POSTGRES_PASSWORD: cradle
       POSTGRES_DB: cradle
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -58,13 +58,13 @@ services:
       INITIALIZE_ENTRYCLASSES: false
       DB_NAME: cradle
       DB_USER: cradle
-      DB_PASSWORD: cradlePostgresPassword
+      DB_PASSWORD: cradle
       DB_HOST: 192.168.42.6
       DB_PORT: 5432
 
       MINIO_ENDPOINT: localhost:8000
       MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: minioAdminPassword
+      MINIO_ROOT_PASSWORD: cradle_minio
       MINIO_SECURE: false
 
       MINIO_BACKEND_URL: http://192.168.42.5:9000

@@ -35,7 +35,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -136,15 +136,15 @@ export default function UploadDigestDialog({
                 error: initError,
                 response: initResponse,
             } = await fetchClient.GET('/intelio/digest/upload/', {
-                params: { query: { name: file.name } as any },
+                params: { query: { file_name: file.name, file_size: file.size } },
             });
             if (initError) throw { response: initResponse, error: initError };
 
             const initAny = initiateData as any;
-            await uploadFile(initAny.presigned_url ?? initAny.presignedUrl, file);
+            await uploadFile(initAny.presigned_url, file);
 
             const entities = (values.associatedEntry || []).map((e) => e.value);
-            const uploadId = initAny.upload_id ?? initAny.uploadId;
+            const uploadId = initAny.upload_id;
 
             const { data, error, response } = await fetchClient.POST(
                 '/intelio/digest/upload/{upload_id}/finalize/',
@@ -170,9 +170,7 @@ export default function UploadDigestDialog({
         try {
             await uploadMutation.mutateAsync(values);
             onUpload?.();
-            setTimeout(() => {
-                onOpenChange(false);
-            }, 1000);
+            onOpenChange(false);
         } catch {
             // error handling is expected to be handled by react-query meta/toast layer
         }
@@ -181,10 +179,30 @@ export default function UploadDigestDialog({
     const dataType = form.watch('dataType') as DataTypeOption | null;
     const isUploading = uploadMutation.isPending;
 
+    useEffect(() => {
+        if (!open) {
+            form.reset({
+                title: '',
+                dataType: null as any,
+                associatedEntry: [],
+                files: [],
+            });
+        }
+    }, [open, form]);
+
+    const canSubmit =
+        !isUploading &&
+        !!form.watch('title')?.trim() &&
+        !!form.watch('dataType') &&
+        (form.watch('files')?.length ?? 0) > 0;
+
     return (
-        <form onSubmit={form.handleSubmit(onSubmit as any)}>
-            <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <form
+                    onSubmit={form.handleSubmit(onSubmit as any)}
+                    className='contents'
+                >
                     <DialogHeader>
                         <DialogTitle>Upload Digest</DialogTitle>
                         <DialogDescription>
@@ -512,7 +530,7 @@ export default function UploadDigestDialog({
                         </DialogClose>
                         <Button
                             type='submit'
-                            disabled={isUploading}
+                            disabled={!canSubmit}
                             variant='default'
                             size='sm'
                             aria-label={isUploading ? 'Uploading file' : 'Upload file'}
@@ -530,8 +548,8 @@ export default function UploadDigestDialog({
                             )}
                         </Button>
                     </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </form>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

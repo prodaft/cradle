@@ -16,7 +16,13 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import {
+    ArrowCounterClockwiseIcon,
+    ClockCounterClockwiseIcon,
+    FloppyDiskIcon,
+} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
+import { createPortal } from 'react-dom';
 import { fetchAllEntityAccess } from '@services/openapi/fetch-all-pages';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
@@ -54,9 +60,9 @@ export default function EntityPermissionsForm({
         if (!searchQuery.trim()) return allAccessData;
         const query = searchQuery.toLowerCase();
         return allAccessData.filter(
-            (access: any) =>
-                access.user.username?.toLowerCase().includes(query) ||
-                access.user.id?.toLowerCase().includes(query),
+            (access) =>
+                (access.user.username?.toLowerCase() ?? '').includes(query) ||
+                (access.user.id?.toLowerCase() ?? '').includes(query),
         );
     }, [allAccessData, searchQuery]);
 
@@ -64,7 +70,7 @@ export default function EntityPermissionsForm({
         if (allAccessData.length > 0) {
             const original: Record<string, AccessLevel> = {};
             const current: Record<string, AccessLevel> = {};
-            allAccessData.forEach((access: any) => {
+            allAccessData.forEach((access) => {
                 if (access.user.id) {
                     const accessType = access.access_type as AccessLevel;
                     original[access.user.id] = accessType;
@@ -86,7 +92,7 @@ export default function EntityPermissionsForm({
 
     const hasChanges = () => {
         if (allAccessData.length === 0) return false;
-        return allAccessData.some((access: any) => {
+        return allAccessData.some((access) => {
             const userId = access.user.id;
             if (!userId) return false;
             const original = originalAccess[userId];
@@ -101,7 +107,7 @@ export default function EntityPermissionsForm({
 
             const updates: Array<{ userId: string; accessType: AccessLevel }> = [];
 
-            allAccessData.forEach((access: any) => {
+            allAccessData.forEach((access) => {
                 const userId = access.user.id;
                 if (!userId) return;
                 const original = originalAccess[userId];
@@ -137,13 +143,39 @@ export default function EntityPermissionsForm({
         },
         onSuccess: () => {
             setOriginalAccess({ ...currentAccess });
-            queryClient.invalidateQueries();
+            queryClient.invalidateQueries({
+                queryKey: ['get', '/access/entity/{entity_id}/', entityId],
+            });
         },
     });
 
     const handleSave = () => {
         saveChangesMutation.mutate();
     };
+
+    const handleRevert = () => {
+        setCurrentAccess({ ...originalAccess });
+    };
+
+    const handleDefault = () => {
+        const defaults: Record<string, AccessLevel> = {};
+        allAccessData.forEach((access) => {
+            if (access.user.id) defaults[access.user.id] = 'none';
+        });
+        setCurrentAccess(defaults);
+    };
+
+    const isAtDefault =
+        allAccessData.length > 0 &&
+        allAccessData.every(
+            (access) =>
+                (currentAccess[access.user.id ?? ''] ?? 'none') === 'none',
+        );
+
+    const headerContainer =
+        typeof document !== 'undefined'
+            ? document.getElementById('settings-header-actions')
+            : null;
 
     if (isLoading) {
         return (
@@ -154,6 +186,55 @@ export default function EntityPermissionsForm({
     }
 
     return (
+        <>
+            {headerContainer &&
+                createPortal(
+                    <div className='flex items-center gap-2'>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='icon'
+                            disabled={!hasChanges()}
+                            onClick={handleRevert}
+                            title='Revert'
+                        >
+                            <ArrowCounterClockwiseIcon
+                                className='size-4'
+                                weight='bold'
+                            />
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='icon'
+                            disabled={isAtDefault}
+                            onClick={handleDefault}
+                            title='Default'
+                        >
+                            <ClockCounterClockwiseIcon
+                                className='size-4'
+                                weight='bold'
+                            />
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='default'
+                            size='icon'
+                            disabled={
+                                saveChangesMutation.isPending || !hasChanges()
+                            }
+                            onClick={handleSave}
+                            title='Save Settings'
+                        >
+                            {saveChangesMutation.isPending ? (
+                                <Spinner className='size-4' />
+                            ) : (
+                                <FloppyDiskIcon className='size-4' weight='bold' />
+                            )}
+                        </Button>
+                    </div>,
+                    headerContainer,
+                )}
         <form className='w-full h-full flex flex-col space-y-4'>
             <div className='relative'>
                 <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
@@ -186,9 +267,11 @@ export default function EntityPermissionsForm({
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            accessData.map((access: any) => {
+                            accessData
+                                .filter((access) => access.user.id)
+                                .map((access) => {
                                 const user = access.user;
-                                const userId = user.id!;
+                                const userId = user.id as string;
                                 const accessValue =
                                     currentAccess[userId] ||
                                     (access.access_type as AccessLevel);
@@ -234,17 +317,7 @@ export default function EntityPermissionsForm({
                     </TableBody>
                 </Table>
             </div>
-
-            {/* Save Changes Button */}
-            <div className='flex justify-end'>
-                <Button
-                    type='button'
-                    onClick={handleSave}
-                    disabled={saveChangesMutation.isPending || !hasChanges()}
-                >
-                    {saveChangesMutation.isPending ? 'Saving...' : 'Save Changes'}
-                </Button>
-            </div>
         </form>
+        </>
     );
 }

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { queryKeys } from '@/hooks/query/query-keys';
 import { DateRangeFilter } from '@components/base/list-view/types';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
@@ -60,6 +61,9 @@ export default function NotesListPage() {
             if (error) throw { response, error };
             return data;
         },
+        meta: {
+            invalidateQueries: [{ queryKey: queryKeys.notes.apiList() }],
+        },
         onSuccess: (response) => {
             router.navigate({ to: `/notes/${response.id}` });
         },
@@ -110,10 +114,10 @@ export default function NotesListPage() {
     ) => {
         const updatedFilters = { ...searchFilters };
 
-        if (column === 'createdAt' && typeof value === 'object') {
+        if (column === 'timestamp' && typeof value === 'object') {
             updatedFilters.created_date_from = value.from || '';
             updatedFilters.created_date_to = value.to || '';
-        } else if (column === 'lastChanged' && typeof value === 'object') {
+        } else if (column === 'edit_timestamp' && typeof value === 'object') {
             updatedFilters.updated_date_from = value.from || '';
             updatedFilters.updated_date_to = value.to || '';
         } else if (typeof value === 'string') {

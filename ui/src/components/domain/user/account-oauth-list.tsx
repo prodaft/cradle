@@ -53,7 +53,7 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
         },
     );
 
-    const { data: userConfig } = $api.useQuery('get', '/users/config/', undefined, {
+    const { data: userConfig } = $api.useQuery('get', '/auth/config/', undefined, {
         enabled: !!basePath,
         meta: { suppressNotification: true },
         select: (raw) => {

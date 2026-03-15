@@ -1,3 +1,4 @@
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -14,6 +15,7 @@ import {
     InputGroupInput,
 } from '@/components/ui/input-group';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { Spinner } from '@/components/ui/spinner';
 import { useTheme } from '@/contexts/ui';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
@@ -24,13 +26,13 @@ import {
     EyeSlashIcon,
     MoonIcon,
     SunIcon,
+    WarningCircleIcon,
 } from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { useEffect, useState } from 'react';
 
-const GlobeVisualization = lazy(() => import('./globe-visualization'));
+const LOGIN_IMAGES = ['/1.png', '/2.png', '/3.png', '/4.png'];
 
 interface OAuthMethod {
     id?: string;
@@ -65,6 +67,10 @@ export default function Login() {
     const [twoFactorToken, setTwoFactorToken] = useState('');
     const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
+    const [loginImage] = useState(
+        () => LOGIN_IMAGES[Math.floor(Math.random() * LOGIN_IMAGES.length)],
+    );
     const location = useRouterState({
         select: (state) => state.location,
     });
@@ -82,7 +88,7 @@ export default function Login() {
     const router = useRouter();
 
     // Query for OAuth configuration
-    const { data: userConfig } = $api.useQuery('get', '/users/config/', undefined, {
+    const { data: userConfig } = $api.useQuery('get', '/auth/config/', undefined, {
         enabled: !!basePath && !loggedIn,
         meta: {
             suppressNotification: true,
@@ -206,6 +212,7 @@ export default function Login() {
         }
 
         setIsSubmitting(true);
+        setFormError(null);
 
         try {
             const result = await logIn(
@@ -225,14 +232,14 @@ export default function Login() {
             } else if (result.result === 'requires_2fa') {
                 setRequiresTwoFactor(true);
             } else {
-                toast.error(result.message || 'Login failed');
+                setFormError(result.message || 'Login failed');
             }
         } catch (error) {
             try {
                 const parsed = await parseAPIError(error);
-                toast.error(getDisplayMessage(parsed));
+                setFormError(getDisplayMessage(parsed));
             } catch {
-                toast.error('Login failed');
+                setFormError('Login failed');
             }
         } finally {
             setIsSubmitting(false);
@@ -251,9 +258,9 @@ export default function Login() {
             <div className='relative z-10 flex h-full min-h-svh flex-col gap-4 bg-background p-6 md:p-10 lg:w-1/2'>
                 {/* Branding */}
                 <div className='flex justify-between items-center gap-2'>
-                    <a href='#' className='flex items-center gap-2 font-medium'>
+                    <Link to='/' className='flex items-center gap-2 font-medium'>
                         <Logo text={true} width='120px' />
-                    </a>
+                    </Link>
                     {/* Theme Button */}
                     {requiresTwoFactor ? (
                         <Button
@@ -338,6 +345,18 @@ export default function Login() {
                                                 authenticator app
                                             </FieldDescription>
                                         </Field>
+                                        {formError && (
+                                            <Alert variant='destructive'>
+                                                <WarningCircleIcon
+                                                    className='size-4'
+                                                    weight='bold'
+                                                />
+                                                <AlertTitle>Error</AlertTitle>
+                                                <AlertDescription>
+                                                    {formError}
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
                                         <Field>
                                             <Button
                                                 type='submit'
@@ -347,9 +366,10 @@ export default function Login() {
                                                 disabled={isSubmitting}
                                                 data-testid='login-register-button'
                                             >
-                                                {isSubmitting
-                                                    ? 'Verifying...'
-                                                    : 'Verify'}
+                                                {isSubmitting && (
+                                                    <Spinner className='size-4' />
+                                                )}
+                                                Verify
                                             </Button>
                                         </Field>
                                     </>
@@ -438,6 +458,18 @@ export default function Login() {
                                                 </InputGroupAddon>
                                             </InputGroup>
                                         </Field>
+                                        {formError && (
+                                            <Alert variant='destructive'>
+                                                <WarningCircleIcon
+                                                    className='size-4'
+                                                    weight='bold'
+                                                />
+                                                <AlertTitle>Error</AlertTitle>
+                                                <AlertDescription>
+                                                    {formError}
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
                                         <Field>
                                             <Button
                                                 type='submit'
@@ -447,9 +479,10 @@ export default function Login() {
                                                 disabled={isSubmitting}
                                                 data-testid='login-register-button'
                                             >
-                                                {isSubmitting
-                                                    ? 'Logging in...'
-                                                    : 'Log in'}
+                                                {isSubmitting && (
+                                                    <Spinner className='size-4' />
+                                                )}
+                                                Log in
                                             </Button>
                                         </Field>
                                         {oauthOptions.length > 0 && (
@@ -493,7 +526,7 @@ export default function Login() {
                                                     <FieldDescription className='text-center'>
                                                         Don&apos;t have an account?{' '}
                                                         <Link
-                                                            to='/register'
+                                                            to='/signup'
                                                             className='underline underline-offset-4'
                                                             replace={true}
                                                             state={
@@ -528,20 +561,17 @@ export default function Login() {
                 </div>
             </div>
 
-            {/* Right Column - Globe */}
-            <div className='absolute bottom-0 right-0 top-0 hidden w-[65%] bg-muted dark:bg-black lg:block'>
-                <Suspense fallback={null}>
-                    <GlobeVisualization
-                        showSatellites={false}
-                        showArcs={true}
-                        showHexPolygons={true}
-                        showAtmosphere={true}
-                        autoRotate={true}
-                        autoRotateSpeed={0.5}
-                        initialView={{ lat: 20, lng: 0, altitude: 3.5 }}
-                        viewOffsetX={120}
-                    />
-                </Suspense>
+            {/* Right Column - Image */}
+            <div
+                className='absolute bottom-0 right-0 top-0 hidden w-[65%] overflow-hidden bg-muted dark:bg-black lg:block select-none'
+                onContextMenu={(e) => e.preventDefault()}
+            >
+                <img
+                    src={loginImage}
+                    alt=''
+                    className='block h-full w-full object-cover pointer-events-none'
+                    draggable={false}
+                />
             </div>
         </div>
     );

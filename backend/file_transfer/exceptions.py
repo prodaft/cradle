@@ -59,13 +59,13 @@ class FileReferenceNotFoundException(CradleAPIException):
 
 
 class FileIdRequiredException(CradleAPIException):
-    """Exception raised when fileId query parameter is required but missing."""
+    """Exception raised when file_id query parameter is required but missing."""
 
     error_code = FileTransferErrorCodes.FILE_ID_REQUIRED
 
 
 class InvalidFileIdException(CradleAPIException):
-    """Exception raised when fileId parameter has invalid format (e.g. not a valid UUID)."""
+    """Exception raised when file_id parameter has invalid format (e.g. not a valid UUID)."""
 
     error_code = FileTransferErrorCodes.INVALID_FILE_ID
 

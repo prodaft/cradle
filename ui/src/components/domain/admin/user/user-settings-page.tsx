@@ -145,10 +145,11 @@ export default function UserSettingsPage() {
                             Manage user account and administrative settings.
                         </p>
                     </div>
+                    <div id='settings-header-actions' className='flex items-center' />
                 </div>
                 <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
                     <Tabs value={tab} onValueChange={handleTabChange}>
-                        <TabsList className='flex-wrap h-auto'>
+                        <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
                             {visibleTabs.map((item) => {
                                 const Icon = item.icon;
                                 return (

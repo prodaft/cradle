@@ -1,4 +1,3 @@
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { DateRangeFilterButton } from '@/components/data-table/data-table-date-range-filter';
@@ -34,6 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
@@ -96,8 +96,8 @@ interface ColumnFilters {
     status: string;
     author: string;
     editor: string;
-    createdAt: DateRangeFilter;
-    lastChanged: DateRangeFilter;
+    timestamp: DateRangeFilter;
+    edit_timestamp: DateRangeFilter;
 }
 
 interface ContentSearch {
@@ -136,6 +136,7 @@ export default function NotesList({
         select: (state) => state.location,
     });
     const search = useSearch({ strict: false });
+    const { isAdmin } = useAuthState();
 
     const searchAny = search as any;
     const page = Number(searchAny?.notes_page ?? 1) || 1;
@@ -155,21 +156,18 @@ export default function NotesList({
         Array<{ id: string; title: string; entities: OptimizedEntryResponse[] }>
     >([]);
     const [relinkDialogOpen, setRelinkDialogOpen] = useState(false);
-    const [relinkNoteIds, setRelinkNoteIds] = useState<string[]>([]);
     const queryClient = useQueryClient();
 
-    const retryNotesMutation = useMutation({
-        mutationFn: async (noteId: string) => {
+    const relinkAllNotesMutation = useMutation({
+        mutationFn: async () => {
             const { error, response } = await fetchClient.POST(
-                '/management/actions/{action_name}/',
-                {
-                    params: { path: { action_name: 'relinkNotes' } },
-                    body: { note_id: noteId } as any,
-                },
+                '/notes/relink/',
+                { body: undefined },
             );
             if (error) throw { response, error };
         },
         meta: {
+            invalidateQueries: [{ queryKey: queryKeys.notes.apiList() }],
             suppressNotification: true,
         },
     });
@@ -180,7 +178,7 @@ export default function NotesList({
         any_field: query?.any_field || '',
         author: query?.author__username || '',
         editor: query?.editor__username || '',
-        createdAt: {
+        timestamp: {
             // Only treat date filters as active when the range is complete.
             from:
                 query?.created_date_from && query?.created_date_to
@@ -191,7 +189,7 @@ export default function NotesList({
                     ? query.created_date_to
                     : '',
         },
-        lastChanged: {
+        edit_timestamp: {
             from:
                 query?.updated_date_from && query?.updated_date_to
                     ? query.updated_date_from
@@ -211,8 +209,8 @@ export default function NotesList({
             description: 'timestamp',
             author: 'author__username',
             editor: 'editor__username',
-            createdAt: 'timestamp',
-            lastChanged: 'edit_timestamp',
+            timestamp: 'timestamp',
+            edit_timestamp: 'edit_timestamp',
         }),
         [],
     );
@@ -267,7 +265,7 @@ export default function NotesList({
             any_field: query?.any_field || '',
             author: query?.author__username || '',
             editor: query?.editor__username || '',
-            createdAt: {
+            timestamp: {
                 from:
                     query?.created_date_from && query?.created_date_to
                         ? query.created_date_from
@@ -277,7 +275,7 @@ export default function NotesList({
                         ? query.created_date_to
                         : '',
             },
-            lastChanged: {
+            edit_timestamp: {
                 from:
                     query?.updated_date_from && query?.updated_date_to
                         ? query.updated_date_from
@@ -302,7 +300,9 @@ export default function NotesList({
     // Prepare query parameters
     const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
     const hasCompleteCreatedRange =
-        Boolean(columnFilters.createdAt?.from) && Boolean(columnFilters.createdAt?.to);
+        Boolean(columnFilters.timestamp?.from) && Boolean(columnFilters.timestamp?.to);
+    const hasCompleteUpdatedRange =
+        Boolean(columnFilters.edit_timestamp?.from) && Boolean(columnFilters.edit_timestamp?.to);
 
     const queryParams = useMemo(() => {
         if (!query) return null;
@@ -324,10 +324,16 @@ export default function NotesList({
             date: query.date,
             references: query.references,
             timestamp_gte: hasCompleteCreatedRange
-                ? columnFilters.createdAt.from
+                ? columnFilters.timestamp.from
                 : undefined,
             timestamp_lte: hasCompleteCreatedRange
-                ? columnFilters.createdAt.to
+                ? columnFilters.timestamp.to
+                : undefined,
+            edit_timestamp_gte: hasCompleteUpdatedRange
+                ? columnFilters.edit_timestamp.from
+                : undefined,
+            edit_timestamp_lte: hasCompleteUpdatedRange
+                ? columnFilters.edit_timestamp.to
                 : undefined,
             truncate: query.truncate,
         };
@@ -343,8 +349,10 @@ export default function NotesList({
         query,
         columnFilters.status,
         hideFleetingNotes,
-        columnFilters.createdAt,
+        columnFilters.timestamp,
+        columnFilters.edit_timestamp,
         hasCompleteCreatedRange,
+        hasCompleteUpdatedRange,
         orderBy,
     ]);
 
@@ -376,29 +384,18 @@ export default function NotesList({
         }
     }, [notes.length, totalCount, onTotalCountChange]);
 
-    const handleRetrySelected = useCallback((selectedIds: string[]) => {
-        if (selectedIds.length === 0) return;
-        setRelinkNoteIds(selectedIds);
+    const handleRelinkAll = useCallback(() => {
         setRelinkDialogOpen(true);
     }, []);
 
     const executeRelink = useCallback(
-        async (selectedIds: string[]) => {
-            if (selectedIds.length === 0) return;
-
-            const promises = selectedIds.map((id) =>
-                retryNotesMutation.mutateAsync(id),
-            );
-
-            await Promise.all(promises);
-
-            toast.success(
-                `Relinking ${selectedIds.length} note${selectedIds.length > 1 ? 's' : ''}...`,
-            );
+        async () => {
+            await relinkAllNotesMutation.mutateAsync();
+            toast.success('Relinking all notes...');
             setRowSelection({});
-            queryClient.invalidateQueries({ queryKey: queryKeys.notes.lists() });
+            queryClient.invalidateQueries({ queryKey: queryKeys.notes.apiList() });
         },
-        [retryNotesMutation, queryClient],
+        [relinkAllNotesMutation, queryClient],
     );
 
     const handlePageChange = useCallback(
@@ -447,7 +444,7 @@ export default function NotesList({
             if (error) throw { response, error };
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.notes.lists() }],
+            invalidateQueries: [{ queryKey: queryKeys.notes.apiList() }],
             suppressNotification: true,
         },
     });
@@ -688,8 +685,8 @@ export default function NotesList({
                 ),
             },
             {
-                accessorKey: 'createdAt',
-                id: 'createdAt',
+                accessorKey: 'timestamp',
+                id: 'timestamp',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Created At' />
                 ),
@@ -705,8 +702,8 @@ export default function NotesList({
                 ),
             },
             {
-                accessorKey: 'lastChanged',
-                id: 'lastChanged',
+                accessorKey: 'edit_timestamp',
+                id: 'edit_timestamp',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Updated At' />
                 ),
@@ -751,17 +748,17 @@ export default function NotesList({
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align='end'>
-                                        <DropdownMenuItem
-                                            onClick={() =>
-                                                handleRetrySelected([String(note.id)])
-                                            }
-                                        >
-                                            <ArrowClockwiseIcon
-                                                size={16}
-                                                weight='bold'
-                                            />
-                                            Relink
-                                        </DropdownMenuItem>
+                                        {isAdmin && (
+                                            <DropdownMenuItem
+                                                onClick={handleRelinkAll}
+                                            >
+                                                <ArrowClockwiseIcon
+                                                    size={16}
+                                                    weight='bold'
+                                                />
+                                                Relink
+                                            </DropdownMenuItem>
+                                        )}
                                         <DropdownMenuItem
                                             onClick={() => {
                                                 setReportSelectedNotes([
@@ -824,7 +821,7 @@ export default function NotesList({
         [
             columnFilters,
             router,
-            handleRetrySelected,
+            handleRelinkAll,
             setReportSelectedNotes,
             setReportDialogOpen,
             setEnrichmentNotesList,
@@ -832,6 +829,7 @@ export default function NotesList({
             setDeletingNoteId,
             setSingleDeleteDialogOpen,
             renderNotePreview,
+            isAdmin,
         ],
     );
 
@@ -921,75 +919,72 @@ export default function NotesList({
                 )}
 
                 <div className='grid grid-cols-1 gap-2'>
-                    {isLoading ? (
-                        <TableSkeleton />
-                    ) : (
-                        <DataTable
-                            table={table}
-                            showViewOptions
-                            onRowClick={(note) =>
-                                router.navigate({ to: `/notes/${note.id}` as any })
-                            }
-                            getRowHref={(note) => `/notes/${note.id}`}
-                        >
-                            <div className='flex items-center gap-2'>
-                                {onCreateNote && hideActionBar && (
-                                    <ActionBarButton
-                                        tooltip={
-                                            <>
-                                                Create new note{' '}
-                                                <KbdGroup>
-                                                    <Kbd>Ctrl</Kbd>
-                                                    <Kbd>N</Kbd>
-                                                </KbdGroup>
-                                            </>
-                                        }
-                                        variant='circle'
-                                        icon={<PlusCircleIcon width={18} height={18} />}
-                                        iconActive={true}
-                                        onClick={onCreateNote}
-                                        disabled={isLoading}
-                                    />
-                                )}
-                                {contentSearch && (
-                                    <ActionBarSearch
-                                        placeholder='Search content...'
-                                        value={contentSearch.value || ''}
-                                        debounceMs={300}
-                                        onDebouncedChange={(v) => {
-                                            contentSearch.onChange?.(v);
-                                            contentSearch.onSubmit?.(v);
-                                        }}
-                                        onSubmit={(v) => contentSearch.onSubmit?.(v)}
-                                    />
-                                )}
-                                <StatusHeaderDropdown
-                                    onStatusChange={handleStatusChange}
-                                    status={columnFilters.status}
-                                    statusOptions={[
-                                        'all',
-                                        'fleeting',
-                                        'healthy',
-                                        'warning',
-                                        'invalid',
-                                        'processing',
-                                    ]}
-                                />
-                                <DateRangeFilterButton
-                                    title='Created At'
-                                    value={columnFilters.createdAt}
-                                    onChange={(v) => handleColumnFilter('createdAt', v)}
-                                />
-                                <DateRangeFilterButton
-                                    title='Updated At'
-                                    value={columnFilters.lastChanged}
-                                    onChange={(v) =>
-                                        handleColumnFilter('lastChanged', v)
+                    <DataTable
+                        table={table}
+                        showViewOptions
+                        isLoading={isLoading}
+                        onRowClick={(note) =>
+                            router.navigate({ to: `/notes/${note.id}` as any })
+                        }
+                        getRowHref={(note) => `/notes/${note.id}`}
+                    >
+                        <div className='flex items-center gap-2'>
+                            {onCreateNote && hideActionBar && (
+                                <ActionBarButton
+                                    tooltip={
+                                        <>
+                                            Create new note{' '}
+                                            <KbdGroup>
+                                                <Kbd>Ctrl</Kbd>
+                                                <Kbd>N</Kbd>
+                                            </KbdGroup>
+                                        </>
                                     }
+                                    variant='circle'
+                                    icon={<PlusCircleIcon width={18} height={18} />}
+                                    iconActive={true}
+                                    onClick={onCreateNote}
+                                    disabled={isLoading}
                                 />
-                            </div>
-                        </DataTable>
-                    )}
+                            )}
+                            {contentSearch && (
+                                <ActionBarSearch
+                                    placeholder='Search content...'
+                                    value={contentSearch.value || ''}
+                                    debounceMs={300}
+                                    onDebouncedChange={(v) => {
+                                        contentSearch.onChange?.(v);
+                                        contentSearch.onSubmit?.(v);
+                                    }}
+                                    onSubmit={(v) => contentSearch.onSubmit?.(v)}
+                                />
+                            )}
+                            <StatusHeaderDropdown
+                                onStatusChange={handleStatusChange}
+                                status={columnFilters.status}
+                                statusOptions={[
+                                    'all',
+                                    'fleeting',
+                                    'healthy',
+                                    'warning',
+                                    'invalid',
+                                    'processing',
+                                ]}
+                            />
+                            <DateRangeFilterButton
+                                title='Created At'
+                                value={columnFilters.timestamp}
+                                onChange={(v) => handleColumnFilter('timestamp', v)}
+                            />
+                            <DateRangeFilterButton
+                                title='Updated At'
+                                value={columnFilters.edit_timestamp}
+                                onChange={(v) =>
+                                    handleColumnFilter('edit_timestamp', v)
+                                }
+                            />
+                        </div>
+                    </DataTable>
                 </div>
             </div>
             <ActionBar
@@ -1004,17 +999,15 @@ export default function NotesList({
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
-                    <ActionBarItem
-                        onClick={() => handleRetrySelected(selectedNoteIds)}
-                        disabled={
-                            isLoading ||
-                            notes.length === 0 ||
-                            selectedNoteIds.length === 0
-                        }
-                    >
-                        <ArrowClockwiseIcon width={18} height={18} />
-                        Relink
-                    </ActionBarItem>
+                    {isAdmin && (
+                        <ActionBarItem
+                            onClick={handleRelinkAll}
+                            disabled={isLoading || notes.length === 0}
+                        >
+                            <ArrowClockwiseIcon width={18} height={18} />
+                            Relink
+                        </ActionBarItem>
+                    )}
                     <ActionBarItem
                         onClick={handleReportSelected}
                         disabled={
@@ -1149,17 +1142,13 @@ export default function NotesList({
             />
             <AlertDialog
                 open={relinkDialogOpen}
-                onOpenChange={(open) => {
-                    setRelinkDialogOpen(open);
-                    if (!open) setRelinkNoteIds([]);
-                }}
+                onOpenChange={setRelinkDialogOpen}
             >
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Relinking</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to relink {relinkNoteIds.length}{' '}
-                            {relinkNoteIds.length > 1 ? 'notes' : 'note'}? This will
+                            Are you sure you want to relink all notes? This will
                             reprocess the relationships between notes and entities.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -1171,9 +1160,12 @@ export default function NotesList({
                             variant='default'
                             size='sm'
                             onClick={async () => {
-                                if (relinkNoteIds.length > 0) {
-                                    await executeRelink(relinkNoteIds);
-                                    setRelinkNoteIds([]);
+                                try {
+                                    await executeRelink();
+                                    setRelinkDialogOpen(false);
+                                } catch (error) {
+                                    const parsed = await parseAPIError(error);
+                                    toast.error(getDisplayMessage(parsed));
                                 }
                             }}
                         >

@@ -122,14 +122,14 @@ digest_upload_flow = PresignedUploadFlow(
     description="Generates a presigned URL for uploading a digest file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.",
     parameters=[
         OpenApiParameter(
-            name="fileName",
+            name="file_name",
             type=str,
             location=OpenApiParameter.QUERY,
             description="Name of the file to be uploaded",
             required=True,
         ),
         OpenApiParameter(
-            name="fileSize",
+            name="file_size",
             type=int,
             location=OpenApiParameter.QUERY,
             description="Size of the file to be uploaded in bytes",
@@ -153,19 +153,19 @@ class DigestUploadAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        file_name = request.query_params.get("fileName")
+        file_name = request.query_params.get("file_name")
         if not file_name:
-            raise InvalidFileNameException(detail="The 'fileName' query parameter is required.")
+            raise InvalidFileNameException(detail="The 'file_name' query parameter is required.")
 
         # Get and validate file size
-        file_size_str = request.query_params.get("fileSize")
+        file_size_str = request.query_params.get("file_size")
         if not file_size_str:
-            raise InvalidFileSizeException(detail="The 'fileSize' query parameter is required.")
+            raise InvalidFileSizeException(detail="The 'file_size' query parameter is required.")
 
         try:
             file_size = int(file_size_str)
         except ValueError:
-            raise InvalidFileSizeException(detail="The 'fileSize' parameter must be a valid integer.")
+            raise InvalidFileSizeException(detail="The 'file_size' parameter must be a valid integer.")
 
         # Non-admin users cannot have concurrent uploads
         # (admins can have multiple pending uploads)

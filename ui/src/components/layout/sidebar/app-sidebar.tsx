@@ -44,8 +44,9 @@ export function AppSidebar({
 }: AppSidebarProps) {
     const matchRoute = useMatchRoute();
     const { isEntryManager, isAdmin } = useAuthState();
-    const { state } = useSidebar();
+    const { state, isMobile } = useSidebar();
     const isCollapsed = state === 'collapsed';
+    const useExpandedLogo = isMobile || !isCollapsed;
 
     const isActive = (to: string) => !!matchRoute({ to });
 
@@ -104,13 +105,18 @@ export function AppSidebar({
     return (
         <Sidebar collapsible='icon' {...props}>
             <SidebarHeader
-                className={`flex ${isCollapsed ? 'flex-row items-center justify-center gap-2 pt-4 px-2 pb-2' : 'flex-col items-start gap-2 pt-4 px-4 pb-0'}`}
+                className={`flex ${useExpandedLogo ? 'flex-col items-start gap-2 pt-4 px-4 pb-0' : 'flex-row items-center justify-center gap-2 pt-4 px-2 pb-2'}`}
             >
                 <Link
                     to='/notes'
-                    className={isCollapsed ? 'shrink-0' : 'flex w-full justify-start'}
+                    className={
+                        useExpandedLogo ? 'flex w-full justify-start' : 'shrink-0'
+                    }
                 >
-                    <Logo text={!isCollapsed} height={isCollapsed ? '24px' : '36px'} />
+                    <Logo
+                        text={useExpandedLogo}
+                        height={useExpandedLogo ? '36px' : '24px'}
+                    />
                 </Link>
             </SidebarHeader>
             <SidebarContent>

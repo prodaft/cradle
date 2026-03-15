@@ -60,9 +60,9 @@ class PlaintextPublish(BasePublishStrategy):
 
             # Save plaintext content to FileField - Django handles S3 upload
             report.file.save(f"{report.id}.txt", ContentFile(text.encode("utf-8")), save=True)
-        except Exception:
+        except Exception as e:
             logger.exception("Failed to upload plaintext report.")
-            report.error_message = "Failed to upload plaintext report."
+            report.error_message = f"Failed to upload plaintext report: {e}"
             report.status = ReportStatus.ERROR
             report.save()
             return False

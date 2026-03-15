@@ -1,3 +1,4 @@
+import { resetSessionExpiredGate } from '@/query/query-client';
 import { parseAPIError } from '@/utils/api';
 import { setClientAccessToken, setClientAuthCallbacks } from '@services/openapi/client';
 import type { paths } from '@services/openapi/schema';
@@ -125,6 +126,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const storeTokens = useCallback(
         (data: TokenData) => {
+            resetSessionExpiredGate();
             accessTokenRef.current = data.access;
             accessExpiresAtRef.current = data.accessExpiresAt.toISOString();
             refreshExpiresAtRef.current = data.refreshExpiresAt.toISOString();

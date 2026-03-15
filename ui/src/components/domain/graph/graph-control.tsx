@@ -1,7 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type React from 'react';
-import { ComponentType, useMemo, useState } from 'react';
+import { type RefObject, ComponentType, useMemo, useState } from 'react';
 import type Sigma from 'sigma';
 import ExplorerPanel from './explorer-panel';
 import GraphFilters from './graph-filters';
@@ -48,7 +47,7 @@ interface GraphControlProps {
     nodes: Node[];
     edges: Edge[];
     activePanel: 'explorer' | 'display' | 'filters';
-    sigmaRef: React.RefObject<{ sigma: Sigma } | null>;
+    sigmaRef: RefObject<{ sigma: Sigma } | null>;
     selectedEntries: Set<Entry>;
     setSelectedEntries: (entries: Set<Entry>) => void;
     onLoadingChange?: (isLoading: boolean) => void;
@@ -173,7 +172,7 @@ export default function GraphControl({
 
             {/* Display Panel Content */}
             <div className={activePanel === 'display' ? '' : 'hidden'}>
-                <GraphSettings {...settingsProps} nodes={nodes} edges={edges} />
+                <GraphSettings {...settingsProps} />
             </div>
 
             {/* Filters Panel Content */}

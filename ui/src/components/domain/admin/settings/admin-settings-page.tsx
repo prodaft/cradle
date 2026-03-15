@@ -46,11 +46,15 @@ const ADMIN_SETTINGS_ITEMS = [
     },
     {
         id: 'users',
-        label: 'New User',
+        label: 'User',
         icon: UserPlus,
-        description: 'Manage user creation and permissions',
+        description: 'Configure user registration and account settings',
     },
-];
+] as const;
+
+const VALID_TAB_IDS = new Set(
+    ADMIN_SETTINGS_ITEMS.map((item) => item.id),
+) as Set<string>;
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -59,12 +63,16 @@ export default function SettingsPage() {
     });
     const search = useSearch({ from: '/_authenticated/manage/_manage-auth/settings' });
 
-    const tab = (search as any)?.tab ?? ADMIN_SETTINGS_ITEMS[0].id;
+    const rawTab = search?.tab;
+    const tab =
+        rawTab && VALID_TAB_IDS.has(rawTab)
+            ? rawTab
+            : ADMIN_SETTINGS_ITEMS[0].id;
 
     const handleTabChange = (tabId: string) => {
         router.navigate({
             to: location.pathname as any,
-            search: { ...(search as any), tab: tabId },
+            search: { tab: tabId } as any,
             replace: true,
         });
     };
@@ -87,10 +95,11 @@ export default function SettingsPage() {
                             Manage system settings and configurations.
                         </p>
                     </div>
+                    <div id='settings-header-actions' className='flex items-center' />
                 </div>
                 <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
                     <Tabs value={tab} onValueChange={handleTabChange}>
-                        <TabsList className='flex-wrap h-auto'>
+                        <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
                             {ADMIN_SETTINGS_ITEMS.map((item) => {
                                 const Icon = item.icon;
                                 return (

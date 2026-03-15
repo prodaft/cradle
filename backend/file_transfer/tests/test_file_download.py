@@ -1,5 +1,6 @@
 """Tests for file download API (presigned GET URL)."""
 
+import uuid
 from unittest.mock import patch
 
 from django.urls import reverse
@@ -27,7 +28,7 @@ class TestFileDownload(FileTransferTestCase):
         super().tearDown()
 
     def test_download_successfully(self):
-        """Download returns presigned URL when fileId is valid and user has access."""
+        """Download returns presigned URL when file_id is valid and user has access."""
         file_ref = FileReference.objects.create(
             file_name="evidence.png",
             user=self.user,
@@ -38,7 +39,7 @@ class TestFileDownload(FileTransferTestCase):
         with patch("file_transfer.views.presign_get", return_value="https://example.com/download"):
             response = self.client.get(
                 reverse("file_download"),
-                {"fileId": str(file_ref.id)},
+                {"file_id": str(file_ref.id)},
                 **self.headers,
             )
             self.assertEqual(response.status_code, 200)
@@ -48,31 +49,62 @@ class TestFileDownload(FileTransferTestCase):
         """Download returns 401 when not authenticated."""
         response = self.client.get(
             reverse("file_download"),
-            {"fileId": "aad5cae6-5737-409d-8ce2-5f116ed5e2de"},
+            {"file_id": "aad5cae6-5737-409d-8ce2-5f116ed5e2de"},
         )
         self.assertEqual(response.status_code, 401)
 
     def test_download_no_file_id(self):
-        """Download returns 400 when fileId missing."""
+        """Download returns 400 when file_id missing."""
         response = self.client.get(reverse("file_download"), **self.headers)
         self.assertEqual(response.status_code, 400)
 
     def test_download_invalid_file_id(self):
-        """Download returns 400 when fileId is not a valid UUID."""
+        """Download returns 400 when file_id is not a valid UUID."""
         response = self.client.get(
             reverse("file_download"),
-            {"fileId": "not-a-uuid"},
+            {"file_id": "not-a-uuid"},
             **self.headers,
         )
         self.assertEqual(response.status_code, 400)
 
     def test_download_file_not_found(self):
         """Download returns 404 when FileReference does not exist."""
-        import uuid
+        response = self.client.get(
+            reverse("file_download"),
+            {"file_id": str(uuid.uuid4())},
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_download_access_denied(self):
+        """Download returns 403 when user does not have access to the file."""
+        other_user = CradleUser.objects.create_user(
+            username="other", password="other", email="other@gmail.com"
+        )
+        file_ref = FileReference.objects.create(
+            file_name="private.png",
+            user=other_user,
+        )
+        FileReference.objects.filter(pk=file_ref.pk).update(file=f"{file_ref.id}-private.png")
 
         response = self.client.get(
             reverse("file_download"),
-            {"fileId": str(uuid.uuid4())},
+            {"file_id": str(file_ref.id)},
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_download_file_not_in_storage(self):
+        """Download returns 404 when FileReference exists but file is not in storage."""
+        file_ref = FileReference.objects.create(
+            file_name="orphan.png",
+            user=self.user,
+        )
+        # file field left empty (no object in storage)
+
+        response = self.client.get(
+            reverse("file_download"),
+            {"file_id": str(file_ref.id)},
             **self.headers,
         )
         self.assertEqual(response.status_code, 404)

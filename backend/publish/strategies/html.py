@@ -14,6 +14,8 @@ from notes.models import Note
 from ..models import PublishedReport, ReportStatus
 from .base import BasePublishStrategy
 
+logger = logging.getLogger(__name__)
+
 
 class HTMLPublish(BasePublishStrategy):
     """HTML publishing strategy using Django templates.
@@ -108,9 +110,9 @@ class HTMLPublish(BasePublishStrategy):
             if report.file:
                 report.file.delete(save=False)
             report.file.save(f"{report.id}.html", ContentFile(html.encode("utf-8")), save=True)
-        except Exception:
-            logging.exception("Failed to upload HTML report.")
-            report.error_message = "Failed to upload HTML report."
+        except Exception as e:
+            logger.exception("Failed to upload HTML report.")
+            report.error_message = f"Failed to upload HTML report: {e}"
             report.status = ReportStatus.ERROR
             report.save()
             return False
@@ -130,6 +132,7 @@ class HTMLPublish(BasePublishStrategy):
             if report.file:
                 report.file.delete(save=False)
         except Exception:
+            logger.exception("Failed to delete HTML report.")
             report.error_message = "Failed to delete HTML report."
             report.status = ReportStatus.ERROR
             report.save()

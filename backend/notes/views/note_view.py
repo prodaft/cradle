@@ -4,6 +4,7 @@ import re
 from typing import cast
 from uuid import UUID
 
+from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Count, Prefetch, Q
 from django.urls import reverse
@@ -25,11 +26,12 @@ from core.utils import validate_order_by
 from core.validators import validate_choice_param, validate_int_list_param, validate_int_param
 from entries.enums import EntryType
 from entries.exceptions import EntriesErrorCodes, EntryNotFoundException
-from entries.models import Entry
+from entries.models import Entry, Relation
 from entries.tasks import refresh_edges_materialized_view
 from file_transfer.models import FileReference
 from knowledge_graph.serializers import SubGraphSerializer
 from user.models import CradleUser
+from user.permissions import HasAdminRole
 
 from ..enums import NoteStatus
 from ..exceptions import (
@@ -42,6 +44,13 @@ from ..exceptions import (
 )
 from ..filters import NoteFilter
 from ..models import Note
+from ..processor.connect_aliases_task import AliasConnectionTask
+from ..processor.entry_class_creation_task import EntryClassCreationTask
+from ..processor.entry_population_task import EntryPopulationTask
+from ..processor.finalize_note_task import FinalizeNoteTask
+from ..processor.link_files_task import LinkFilesTask
+from ..processor.metadata_process_task import MetadataProcessTask
+from ..processor.smart_linker_task import SmartLinkerTask
 from ..processor.task_scheduler import TaskScheduler
 from ..serializers import (
     FileReferenceListSerializer,
@@ -119,6 +128,20 @@ from ..serializers import (
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description="Filter by timestamp less than or equal to (ISO datetime format)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="edit_timestamp_gte",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by edit_timestamp (last edited) greater than or equal to (ISO datetime format)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="edit_timestamp_lte",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by edit_timestamp (last edited) less than or equal to (ISO datetime format)",
                 required=False,
             ),
             OpenApiParameter(
@@ -531,6 +554,108 @@ class NoteFinalize(APIView):
             note.fleeting = False
             finalized_note = TaskScheduler(request.user).run_pipeline(note)
         return Response(NoteRetrieveSerializer(finalized_note).data, status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="notes_relink",
+        summary="Relink a single note",
+        description="Re-run the note processing pipeline (entry creation, linking, metadata) for this note. Admin only.",
+        parameters=[
+            OpenApiParameter(
+                name="note_id",
+                type=UUID,
+                location=OpenApiParameter.PATH,
+                description="ID of the note to relink.",
+            ),
+        ],
+        request=None,
+        responses={
+            200: NoteRetrieveSerializer,
+            **get_error_responses(NotesErrorCodes.NOTE_DOES_NOT_EXIST),
+            **get_common_error_responses(),
+        },
+    )
+)
+class NoteRelink(APIView):
+    """Re-run note processing pipeline for a single note. Admin only."""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, HasAdminRole]
+    serializer_class = NoteRetrieveSerializer
+
+    def post(self, request: Request, note_id: UUID) -> Response:
+        try:
+            note = Note.objects.get(id=note_id)
+        except Note.DoesNotExist:
+            raise NoteDoesNotExistException(detail="Note was not found.")
+
+        if note.fleeting:
+            raise NoteDoesNotExistException(detail="Cannot relink a fleeting note.")
+
+        Relation.objects.filter(
+            content_type=ContentType.objects.get_for_model(Note),
+            object_id=note_id,
+        ).delete()
+
+        scheduler = TaskScheduler(
+            cast(CradleUser, request.user),
+            tasks=[
+                EntryClassCreationTask,
+                EntryPopulationTask,
+                SmartLinkerTask,
+                LinkFilesTask,
+                MetadataProcessTask,
+                AliasConnectionTask,
+                FinalizeNoteTask,
+            ],
+        )
+        relinked_note = scheduler.run_pipeline(note, update_acvec=False)
+
+        return Response(NoteRetrieveSerializer(relinked_note).data, status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="notes_relink_all",
+        summary="Relink all notes",
+        description="Re-run the note processing pipeline for all non-fleeting notes. Admin only.",
+        request=None,
+        responses={
+            200: {"description": "Relinking completed."},
+            **get_common_error_responses(),
+        },
+    )
+)
+class NoteRelinkAll(APIView):
+    """Re-run note processing pipeline for all non-fleeting notes. Admin only."""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, HasAdminRole]
+
+    def post(self, request: Request) -> Response:
+        notes = list(Note.objects.non_fleeting())
+        Relation.objects.filter(content_type=ContentType.objects.get_for_model(Note)).delete()
+
+        scheduler = TaskScheduler(
+            cast(CradleUser, request.user),
+            tasks=[
+                EntryClassCreationTask,
+                EntryPopulationTask,
+                SmartLinkerTask,
+                LinkFilesTask,
+                MetadataProcessTask,
+                AliasConnectionTask,
+                FinalizeNoteTask,
+            ],
+        )
+        for note in notes:
+            scheduler.run_pipeline(note, update_acvec=False)
+
+        return Response(
+            {"detail": f"Relinked {len(notes)} notes."},
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema_view(

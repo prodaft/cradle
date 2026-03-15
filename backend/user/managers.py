@@ -4,7 +4,6 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
-from file_transfer.s3_utils import ensure_cradle_buckets_exist
 from management.settings import cradle_settings
 
 
@@ -49,15 +48,10 @@ class CradleUserManager(BaseUserManager):
 
         with transaction.atomic():
             user.save(using=self._db)
-            try:
-                ensure_cradle_buckets_exist()
-            except Exception:
-                pass  # Bucket creation is best-effort; app works without it
-
         return user
 
     def create_superuser(self, username, password, email, **extra_fields):
-        """Create a user with given username, password and email.
+        """Create a superuser with given username, password and email.
 
         Args:
             username: The username of the user.
@@ -79,6 +73,7 @@ class CradleUserManager(BaseUserManager):
         extra_fields.setdefault("role", UserRoles.ADMIN)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
+        extra_fields.setdefault("email_confirmed", True)
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError(_("Superuser must have is_staff=True."))

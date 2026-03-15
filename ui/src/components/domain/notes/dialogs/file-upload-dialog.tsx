@@ -25,7 +25,7 @@ import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { uploadFile } from '@utils/files';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
@@ -78,6 +78,20 @@ export default function FileUploadDialog({
     const [filesWithStatus, setFilesWithStatus] = useState<FileWithStatus[]>([]);
     const [isUploading, setIsUploading] = useState(false);
 
+    useEffect(() => {
+        if (open) {
+            setPendingFiles(initialFiles);
+            setFilesWithStatus(
+                initialFiles.map((file) => ({
+                    file,
+                    status: 'pending' as FileUploadStatus,
+                    progress: 0,
+                })),
+            );
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
+
     const handleValueChange = useCallback((newFiles: File[]) => {
         setPendingFiles(newFiles);
         // Reset status for new files
@@ -111,7 +125,7 @@ export default function FileUploadDialog({
 
         setIsUploading(true);
         const newFiles: FileReferenceWithNote[] = [];
-        const failedFiles: File[] = [];
+        const failedWithError: Array<{ file: File; error: string }> = [];
 
         for (const file of pendingFiles) {
             try {
@@ -123,7 +137,7 @@ export default function FileUploadDialog({
                     error: uploadError,
                     response: uploadResp,
                 } = await fetchClient.GET('/file-transfer/upload/', {
-                    params: { query: { fileName: file.name, fileSize: file.size } },
+                    params: { query: { file_name: file.name, file_size: file.size } },
                 });
                 if (uploadError) throw { response: uploadResp, error: uploadError };
 
@@ -153,12 +167,13 @@ export default function FileUploadDialog({
 
                 newFiles.push({
                     id: finalizeData.file_id,
-                    fileName: finalizeData.file_name,
+                    file_name: finalizeData.file_name,
                 } as FileReferenceWithNote);
             } catch (error) {
                 const parsed = await parseAPIError(error);
-                updateFileStatus(file, 'error', 0, getDisplayMessage(parsed));
-                failedFiles.push(file);
+                const errMsg = getDisplayMessage(parsed);
+                updateFileStatus(file, 'error', 0, errMsg);
+                failedWithError.push({ file, error: errMsg });
             }
         }
 
@@ -168,17 +183,19 @@ export default function FileUploadDialog({
         }
 
         // Handle results
-        if (failedFiles.length > 0) {
+        if (failedWithError.length > 0) {
             toast.error(
-                `Failed to upload ${failedFiles.length} file(s): ${failedFiles.map((f) => f.name).join(', ')}`,
+                `Failed to upload ${failedWithError.length} file(s): ${failedWithError.map((f) => f.file.name).join(', ')}`,
             );
-            // Keep only failed files in the queue
-            setPendingFiles(failedFiles);
+            // Keep only failed files in the queue with their error messages
+            setPendingFiles(failedWithError.map((f) => f.file));
             setFilesWithStatus(
-                failedFiles.map((file) => {
-                    const existing = filesWithStatus.find((f) => f.file === file);
-                    return existing || { file, status: 'error', progress: 0 };
-                }),
+                failedWithError.map(({ file, error }) => ({
+                    file,
+                    status: 'error' as FileUploadStatus,
+                    progress: 0,
+                    error,
+                })),
             );
         } else {
             toast.success('All files uploaded successfully!');
@@ -188,7 +205,7 @@ export default function FileUploadDialog({
         }
 
         setIsUploading(false);
-    }, [pendingFiles, noteId, files, onFilesChange, filesWithStatus]);
+    }, [pendingFiles, noteId, files, onFilesChange]);
 
     const getFileStatus = (file: File): FileWithStatus | undefined => {
         return filesWithStatus.find((f) => f.file === file);
@@ -282,13 +299,16 @@ export default function FileUploadDialog({
                                         </span>
                                     )}
                                     {status === 'error' && (
-                                        <span className='text-xs text-destructive font-medium'>
-                                            Failed
+                                        <span
+                                            className='text-xs text-destructive font-medium'
+                                            title={fileStatus?.error}
+                                        >
+                                            {fileStatus?.error || 'Failed'}
                                         </span>
                                     )}
 
-                                    {/* Delete button - only show when not uploading */}
-                                    {status === 'pending' && (
+                                    {/* Delete button - show for pending and error (retry by removing and re-adding) */}
+                                    {(status === 'pending' || status === 'error') && (
                                         <FileUploadItemDelete asChild>
                                             <Button
                                                 type='button'

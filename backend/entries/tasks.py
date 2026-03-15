@@ -3,6 +3,7 @@
 from celery import group, shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection, transaction
+from django.db.models import Count
 
 from core.decorators import debounce_task, distributed_lock
 from intelio.tasks import propagate_acvec_digest, propagate_acvec_enrich
@@ -128,13 +129,12 @@ def refresh_edges_materialized_view():
     with connection.cursor() as cursor:
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY edges;")
 
+    degree_map = dict(Edge.objects.values("src").annotate(degree=Count("id")).values_list("src", "degree"))
     entry_ids = list(Entry.objects.exclude(entry_class__subtype=SUBTYPE_NOTE).values_list("id", flat=True))
-    degrees = [Edge.objects.filter(src=eid).count() for eid in entry_ids]
+    updates = [Entry(id=eid, degree=degree_map.get(eid, 0)) for eid in entry_ids]
 
-    Entry.objects.bulk_update(
-        [Entry(id=eid, degree=degree) for eid, degree in zip(entry_ids, degrees)],
-        ["degree"],
-    )
+    if updates:
+        Entry.objects.bulk_update(updates, ["degree"])
 
     Entry.objects.filter(entry_class__subtype=SUBTYPE_NOTE).update(degree=0)
 

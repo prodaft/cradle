@@ -1,4 +1,4 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -16,7 +16,9 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
-import { useAuthActions } from '@/hooks/auth/use-auth';
+import { Spinner } from '@/components/ui/spinner';
+import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
+import { getDisplayMessage, getSuccessMessage, parseAPIError } from '@/utils/api';
 import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -28,14 +30,13 @@ import {
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 import * as z from 'zod';
 
-const GlobeVisualization = lazy(() => import('./globe-visualization'));
+const SIGNUP_IMAGES = ['/1.png', '/2.png', '/3.png', '/4.png'];
 
-type FormData = z.infer<typeof registerSchema>;
+type FormData = z.infer<typeof signupSchema>;
 
 interface OAuthMethod {
     id?: string;
@@ -49,12 +50,10 @@ interface OAuthMethod {
     url?: string;
 }
 
-const registerSchema = z
+const signupSchema = z
     .object({
         username: z.string().min(1, { error: 'Username is required' }),
-        email: z
-            .email({ error: 'Invalid email' })
-            .min(1, { error: 'Email is required' }),
+        email: z.email({ error: 'Invalid email' }).min(1, { error: 'Email is required' }),
         password: z
             .string()
             .min(12, { error: 'Password must be at least 12 characters' })
@@ -73,23 +72,34 @@ const registerSchema = z
     });
 
 /**
- * Register component - renders the registration form.
- * Register new user in the system.
- * On successful registration, user is redirected to the login page.
- * On error, displays an error message.
+ * Signup component - renders the signup form.
+ * Creates new user in the system.
+ * On success, redirects to login. On error, displays an error message.
  */
-export default function Register() {
+export default function Signup() {
     const [showPassword, setShowPassword] = useState(false);
     const [showPasswordCheck, setShowPasswordCheck] = useState(false);
+    const [signupImage] = useState(
+        () => SIGNUP_IMAGES[Math.floor(Math.random() * SIGNUP_IMAGES.length)],
+    );
+    const [alert, setAlert] = useState<{
+        show: boolean;
+        message: string;
+        color: string;
+    }>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const basePath = import.meta.env.VITE_API_BASE_URL ?? '';
+    const { basePath } = useAuthState();
     const { isLoggedIn } = useAuthActions();
     const loggedIn = isLoggedIn();
 
-    const registerMutation = useMutation({
+    const signupMutation = useMutation({
         mutationFn: async (data: {
             username: string;
             email: string;
@@ -110,32 +120,36 @@ export default function Register() {
             return user;
         },
         meta: {
-            suppressNotification: true, // We handle toasts ourselves
+            suppressNotification: true, // We use Alert for form feedback
+        },
+        onError: async (error) => {
+            const parsed = await parseAPIError(error);
+            setAlert({
+                show: true,
+                message: getDisplayMessage(parsed),
+                color: 'red',
+            });
         },
         onSuccess: (user) => {
-            if (!user.email_confirmed) {
-                toast.success('Please check your email for a confirmation link.');
-            }
-
-            if (!user.is_active) {
-                toast.info(
-                    'Your account must be activated by an administrator before you can login.',
-                );
-            }
-
-            if (user.email_confirmed && user.is_active) {
-                toast.info('Account created successfully.');
-            }
-
-            router.navigate({
-                to: '/login',
-                state: location.state,
-                replace: true,
+            const msg = getSuccessMessage(user);
+            setAlert({
+                show: true,
+                message: msg ?? '',
+                color: 'green',
             });
+            setTimeout(
+                () =>
+                    router.navigate({
+                        to: '/login',
+                        state: location.state,
+                        replace: true,
+                    }),
+                2000,
+            );
         },
     });
     const form = useForm<FormData>({
-        resolver: zodResolver(registerSchema),
+        resolver: zodResolver(signupSchema),
         defaultValues: {
             username: '',
             email: '',
@@ -145,7 +159,7 @@ export default function Register() {
     });
 
     // Query for OAuth configuration
-    const { data: userConfig } = $api.useQuery('get', '/users/config/', undefined, {
+    const { data: userConfig } = $api.useQuery('get', '/auth/config/', undefined, {
         enabled: !!basePath && !loggedIn,
         meta: {
             suppressNotification: true,
@@ -262,18 +276,22 @@ export default function Register() {
 
     const onSubmit = async (data: FormData) => {
         if (isSignupDisabled) {
-            toast.error('Registration is disabled. Contact an administrator.');
+            setAlert({
+                show: true,
+                message: 'Registration is disabled. Contact an administrator.',
+                color: 'red',
+            });
             return;
         }
 
-        await registerMutation.mutateAsync({
+        await signupMutation.mutateAsync({
             username: data.username,
             email: data.email,
             password: data.password,
         });
     };
 
-    // If user is logged in, don't render the register form
+    // If user is logged in, don't render the signup form
     if (loggedIn) {
         return null;
     }
@@ -317,7 +335,11 @@ export default function Register() {
                                 </div>
                                 {isSignupDisabled && (
                                     <Alert>
-                                        <WarningCircleIcon size={18} weight='bold' />
+                                        <WarningCircleIcon
+                                            className='size-4'
+                                            weight='bold'
+                                        />
+                                        <AlertTitle>Notice</AlertTitle>
                                         <AlertDescription>
                                             Registration is disabled. Use single sign-on
                                             or contact an administrator.
@@ -512,6 +534,30 @@ export default function Register() {
                                         </Field>
                                     )}
                                 />
+                                {alert.show && (
+                                    <Alert
+                                        variant={
+                                            alert.color === 'red' ||
+                                            alert.color === 'error'
+                                                ? 'destructive'
+                                                : 'default'
+                                        }
+                                    >
+                                        <WarningCircleIcon
+                                            className='size-4'
+                                            weight='bold'
+                                        />
+                                        <AlertTitle>
+                                            {alert.color === 'red' ||
+                                            alert.color === 'error'
+                                                ? 'Error'
+                                                : 'Success'}
+                                        </AlertTitle>
+                                        <AlertDescription className='whitespace-pre-line'>
+                                            {alert.message}
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
                                 <Field>
                                     <Button
                                         type='submit'
@@ -524,11 +570,13 @@ export default function Register() {
                                         }
                                         data-testid='login-register-button'
                                     >
+                                        {!isSignupDisabled &&
+                                            form.formState.isSubmitting && (
+                                                <Spinner className='size-4' />
+                                            )}
                                         {isSignupDisabled
                                             ? 'Registration Disabled'
-                                            : form.formState.isSubmitting
-                                              ? 'Creating...'
-                                              : 'Create Account'}
+                                            : 'Sign Up'}
                                     </Button>
                                 </Field>
                                 {oauthOptions.length > 0 && (
@@ -624,20 +672,17 @@ export default function Register() {
                 </div>
             </div>
 
-            {/* Right Column - Globe */}
-            <div className='absolute bottom-0 right-0 top-0 hidden w-[65%] bg-muted dark:bg-black lg:block'>
-                <Suspense fallback={null}>
-                    <GlobeVisualization
-                        showSatellites={false}
-                        showArcs={true}
-                        showHexPolygons={true}
-                        showAtmosphere={true}
-                        autoRotate={true}
-                        autoRotateSpeed={0.5}
-                        initialView={{ lat: 20, lng: 0, altitude: 3 }}
-                        viewOffsetX={120}
-                    />
-                </Suspense>
+            {/* Right Column - Image */}
+            <div
+                className='absolute bottom-0 right-0 top-0 hidden w-[65%] overflow-hidden bg-muted dark:bg-black lg:block select-none'
+                onContextMenu={(e) => e.preventDefault()}
+            >
+                <img
+                    src={signupImage}
+                    alt=''
+                    className='block h-full w-full object-cover pointer-events-none'
+                    draggable={false}
+                />
             </div>
         </div>
     );

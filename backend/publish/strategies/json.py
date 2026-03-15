@@ -88,7 +88,8 @@ class JSONPublish(BasePublishStrategy):
                     )
                     for k in key_candidates:
                         note_data["file_urls"][k] = url
-                except Exception:
+                except Exception as e:
+                    logger.debug("Failed to presign file %s: %s", file_ref.file.name, e)
                     continue
 
             report["notes"].append(note_data)
@@ -113,9 +114,9 @@ class JSONPublish(BasePublishStrategy):
 
             # Save JSON content to FileField - Django handles S3 upload
             report.file.save(f"{report.id}.json", ContentFile(report_json.encode("utf-8")), save=True)
-        except Exception:
+        except Exception as e:
             logger.exception("Failed to upload JSON report.")
-            report.error_message = "Failed to upload JSON report."
+            report.error_message = f"Failed to upload JSON report: {e}"
             report.status = ReportStatus.ERROR
             report.save()
             return False

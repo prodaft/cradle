@@ -1,3 +1,4 @@
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -12,15 +13,25 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
+import { Spinner } from '@/components/ui/spinner';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
+import { getDisplayMessage, getSuccessMessage, parseAPIError } from '@/utils/api';
+import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
+import {
+    ArrowUUpLeftIcon,
+    EyeIcon,
+    EyeSlashIcon,
+    WarningCircleIcon,
+} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
+
+const RESET_PASSWORD_IMAGES = ['/1.png', '/2.png', '/3.png', '/4.png'];
 
 const resetPasswordSchema = z
     .object({
@@ -40,6 +51,17 @@ type FormData = z.infer<typeof resetPasswordSchema>;
 export default function ResetPassword() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [formAlert, setFormAlert] = useState<{
+        show: boolean;
+        message: string;
+        color: 'red' | 'green';
+    }>({ show: false, message: '', color: 'red' });
+    const [resetPasswordImage] = useState(
+        () =>
+            RESET_PASSWORD_IMAGES[
+                Math.floor(Math.random() * RESET_PASSWORD_IMAGES.length)
+            ],
+    );
     const search = useSearch({ from: '/reset-password' });
     const searchAny = search as any;
     const token = searchAny?.token as string | undefined;
@@ -49,18 +71,31 @@ export default function ResetPassword() {
 
     const resetPasswordMutation = useMutation({
         mutationFn: async (data: { token: string; password: string }) => {
-            const { error, response } = await fetchClient.PUT('/auth/reset-password/', {
+            const {
+                data: resData,
+                error,
+                response,
+            } = await fetchClient.PUT('/auth/reset-password/', {
                 body: { token: data.token, password: data.password },
             });
             if (error) throw { response, error };
+            return resData;
         },
         meta: {
-            successMessage: 'Password reset successfully',
+            suppressNotification: true,
         },
-        onSuccess: () => {
-            setTimeout(() => {
-                router.navigate({ to: '/login', replace: true });
-            }, 1500);
+        onError: async (error) => {
+            const parsed = await parseAPIError(error);
+            setFormAlert({
+                show: true,
+                message: getDisplayMessage(parsed),
+                color: 'red',
+            });
+        },
+        onSuccess: (data) => {
+            const msg = getSuccessMessage(data);
+            setFormAlert({ show: true, message: msg ?? '', color: 'green' });
+            setTimeout(() => router.navigate({ to: '/login', replace: true }), 2000);
         },
     });
 
@@ -82,28 +117,58 @@ export default function ResetPassword() {
     // Validate token exists
     if (!token) {
         return (
-            <div className='flex items-center justify-center h-screen overflow-y-auto'>
-                <div className='bg-card/20 p-8 rounded-xl w-full h-fit md:w-1/2 xl:w-1/3'>
-                    <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 text-muted-foreground'>
-                        <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
-                            <h3 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-destructive'>
+            <div className='grid min-h-svh lg:grid-cols-2'>
+                <div className='flex flex-col gap-4 p-6 md:p-10 relative'>
+                    <div className='flex justify-between items-center gap-2'>
+                        <a href='#' className='flex items-center gap-2 font-medium'>
+                            <Logo text={true} width='120px' />
+                        </a>
+                        <Button
+                            onClick={() =>
+                                router.navigate({ to: '/login', replace: true })
+                            }
+                            variant='ghost'
+                            size='icon-sm'
+                            className='p-2 rounded-lg'
+                            title='Back to Login'
+                        >
+                            <ArrowUUpLeftIcon size={18} weight='bold' />
+                        </Button>
+                    </div>
+                    <div className='flex flex-1 items-center justify-center'>
+                        <div className='w-full max-w-xs text-center'>
+                            <h1 className='text-2xl font-bold text-destructive'>
                                 Invalid Reset Link
-                            </h3>
-                            <p className='mt-4 text-center text-sm'>
+                            </h1>
+                            <p className='mt-4 text-sm text-muted-foreground'>
                                 The password reset link is invalid or has expired.
                                 Please request a new one.
                             </p>
-                            <p className='mt-10 text-center text-sm text-muted-foreground'>
-                                <Link
-                                    to='/forgot-password'
-                                    className='font-semibold leading-6 text-primary px-2 py-1 rounded hover:bg-secondary hover:text-foreground transition-colors'
-                                    replace={true}
-                                >
-                                    Request new reset link
-                                </Link>
-                            </p>
+                            <Link
+                                to='/forgot-password'
+                                className='mt-6 inline-block font-semibold text-primary underline underline-offset-4 hover:text-primary/90'
+                                replace={true}
+                            >
+                                Request new reset link
+                            </Link>
+                            <div className='mt-6 text-center'>
+                                <span className='text-xs text-muted-foreground font-mono tracking-wider'>
+                                    v2.10.2-beta.a070af1b
+                                </span>
+                            </div>
                         </div>
                     </div>
+                </div>
+                <div
+                    className='bg-muted relative hidden lg:block select-none'
+                    onContextMenu={(e) => e.preventDefault()}
+                >
+                    <img
+                        src={resetPasswordImage}
+                        alt=''
+                        className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale pointer-events-none'
+                        draggable={false}
+                    />
                 </div>
             </div>
         );
@@ -120,20 +185,42 @@ export default function ResetPassword() {
     }
 
     return (
-        <div className='flex items-center justify-center h-screen overflow-y-auto'>
-            <div className='bg-card/20 p-8 rounded-xl w-full h-fit md:w-1/2 xl:w-1/3'>
-                <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 text-muted-foreground'>
-                    <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
-                        <h3 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight'>
-                            Change Password
-                        </h3>
-                    </div>
-                    <div className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'>
+        <div className='grid min-h-svh lg:grid-cols-2'>
+            {/* Left Column - Form */}
+            <div className='flex flex-col gap-4 p-6 md:p-10 relative'>
+                {/* Branding */}
+                <div className='flex justify-between items-center gap-2'>
+                    <a href='#' className='flex items-center gap-2 font-medium'>
+                        <Logo text={true} width='120px' />
+                    </a>
+                    <Button
+                        onClick={() => router.navigate({ to: '/login', replace: true })}
+                        variant='ghost'
+                        size='icon-sm'
+                        className='p-2 rounded-lg'
+                        data-testid='back-button'
+                        title='Back to Login'
+                    >
+                        <ArrowUUpLeftIcon size={18} weight='bold' />
+                    </Button>
+                </div>
+
+                {/* Form Container */}
+                <div className='flex flex-1 items-center justify-center'>
+                    <div className='w-full max-w-xs'>
                         <form
                             onSubmit={form.handleSubmit(onSubmit)}
-                            className='flex flex-col gap-4'
+                            className='flex flex-col gap-6'
                         >
                             <FieldGroup className='gap-4'>
+                                <div className='flex flex-col items-center gap-1 text-center'>
+                                    <h1 className='text-2xl font-bold'>
+                                        Change Password
+                                    </h1>
+                                    <p className='text-muted-foreground text-sm text-balance'>
+                                        Enter your new password below
+                                    </p>
+                                </div>
                                 <Controller
                                     name='password'
                                     control={form.control}
@@ -157,7 +244,7 @@ export default function ResetPassword() {
                                                             fieldState.invalid
                                                         }
                                                         disabled={
-                                                            form.formState.isSubmitting
+                                                            resetPasswordMutation.isPending
                                                         }
                                                     />
                                                     <InputGroupAddon align='inline-end'>
@@ -225,7 +312,7 @@ export default function ResetPassword() {
                                                             fieldState.invalid
                                                         }
                                                         disabled={
-                                                            form.formState.isSubmitting
+                                                            resetPasswordMutation.isPending
                                                         }
                                                     />
                                                     <InputGroupAddon align='inline-end'>
@@ -270,31 +357,74 @@ export default function ResetPassword() {
                                         </Field>
                                     )}
                                 />
+                                {formAlert.show && (
+                                    <Alert
+                                        variant={
+                                            formAlert.color === 'red'
+                                                ? 'destructive'
+                                                : 'default'
+                                        }
+                                    >
+                                        <WarningCircleIcon
+                                            className='size-4'
+                                            weight='bold'
+                                        />
+                                        <AlertTitle>
+                                            {formAlert.color === 'red'
+                                                ? 'Error'
+                                                : 'Success'}
+                                        </AlertTitle>
+                                        <AlertDescription>
+                                            {formAlert.message}
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
                             </FieldGroup>
                             <Button
                                 type='submit'
                                 variant='default'
                                 size='default'
                                 className='w-full'
-                                disabled={form.formState.isSubmitting}
+                                disabled={resetPasswordMutation.isPending}
                                 data-testid='login-register-button'
                             >
-                                {form.formState.isSubmitting
-                                    ? 'Resetting Password...'
-                                    : 'Change Password'}
+                                {resetPasswordMutation.isPending && (
+                                    <Spinner className='size-4' />
+                                )}
+                                Change Password
                             </Button>
+                            <p className='text-center text-sm text-muted-foreground'>
+                                <Link
+                                    to='/login'
+                                    className='underline underline-offset-4'
+                                    replace={true}
+                                >
+                                    Back to login
+                                </Link>
+                            </p>
                         </form>
-                        <p className='mt-10 text-center text-sm text-muted-foreground'>
-                            <Link
-                                to='/login'
-                                className='font-semibold leading-6 text-primary px-2 py-1 rounded hover:bg-secondary hover:text-foreground transition-colors'
-                                replace={true}
-                            >
-                                Go back to login
-                            </Link>
-                        </p>
+
+                        {/* Version/Status Indicator */}
+                        <div className='mt-6 text-center'>
+                            <span className='text-xs text-muted-foreground font-mono tracking-wider'>
+                                v2.10.2-beta.a070af1b
+                            </span>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Right Column - Image */}
+            <div
+                className='bg-muted relative hidden lg:block select-none'
+                onContextMenu={(e) => e.preventDefault()}
+            >
+                <img
+                    src={resetPasswordImage}
+                    alt=''
+                    className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale pointer-events-none'
+                    draggable={false}
+                />
             </div>
         </div>
     );

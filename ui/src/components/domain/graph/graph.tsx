@@ -427,7 +427,7 @@ function GraphScene({
         return () => {
             if (timeout) clearTimeout(timeout);
         };
-    }, [sigma, faTime, layout.start, layout.stop]);
+    }, [sigma, faTime, layout]);
 
     return (
         <ForceAtlas2LayoutContext.Provider value={layoutContextValue}>
@@ -463,13 +463,13 @@ export default function GraphViewer({
     config = {},
     nodes = [],
     edges = [],
-    onClearGraph,
+    onClearGraph: _onClearGraph,
     activePanel = null,
     onTogglePanel,
     sigmaRef: externalSigmaRef,
     isLoading = false,
-    fetchProgress = null,
-    fetchControls = null,
+    fetchProgress: _fetchProgress = null,
+    fetchControls: _fetchControls = null,
 }: GraphViewerProps) {
     const internalSigmaRef = useRef<{ sigma: ReturnType<typeof useSigma> } | null>(
         null,
@@ -494,12 +494,6 @@ export default function GraphViewer({
     const nodeIdToIndex = useMemo(() => {
         const map = new Map<string, number>();
         validNodes.forEach((node, index) => map.set(node.id, index));
-        return map;
-    }, [validNodes]);
-
-    const indexToNode = useMemo(() => {
-        const map = new Map<number, Node>();
-        validNodes.forEach((node, index) => map.set(index, node));
         return map;
     }, [validNodes]);
 

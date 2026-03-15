@@ -61,7 +61,7 @@ export function getDefaultFilterOperator(filterVariant: FilterVariant) {
     return operators[0]?.value ?? (filterVariant === 'text' ? 'iLike' : 'eq');
 }
 
-function getValidFilters<TData>(
+function _getValidFilters<TData>(
     filters: ExtendedColumnFilter<TData>[],
 ): ExtendedColumnFilter<TData>[] {
     return filters.filter(

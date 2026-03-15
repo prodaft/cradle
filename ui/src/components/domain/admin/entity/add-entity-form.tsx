@@ -20,6 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { SelectOption } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,6 +33,8 @@ import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 type Entity = components['schemas']['Entity'];
+type EntityRequest = components['schemas']['EntityRequest'];
+type AdvancedQueryResponse = components['schemas']['AdvancedQueryPaginatedResponse'];
 
 interface AddEntityFormProps {
     onAdd?: (result: Entity) => void;
@@ -80,7 +83,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
         resolver: zodResolver(entitySchema) as any,
         defaultValues: {
             name: '',
-            subtype: null as any,
+            subtype: null as unknown as AddEntityFormData['subtype'],
             description: '',
             isPublic: false,
             aliases: [],
@@ -94,17 +97,20 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                 {
                     params: {
                         query: {
-                            query: q,
+                            query: [q],
                             wildcard: true,
-                        } as any,
+                        },
                     },
                 },
             );
             if (error) throw { response, error };
-            return ((data as any).results ?? []).map((alias: any) => ({
-                value: alias.id!,
-                label: `${alias.subtype}:${alias.name}`,
-            }));
+            const results = (data as AdvancedQueryResponse)?.results ?? [];
+            return results
+                .filter((alias): alias is typeof alias & { id: number } => alias.id !== undefined)
+                .map((alias) => ({
+                    value: alias.id,
+                    label: `${alias.subtype}:${alias.name}`,
+                }));
         },
         meta: {
             suppressNotification: true,
@@ -171,7 +177,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
     }, [entryClassesData, handleSubtypeChange]);
 
     const createEntityMutation = useMutation({
-        mutationFn: async (payload: any) => {
+        mutationFn: async (payload: EntityRequest) => {
             const { data, error, response } = await fetchClient.POST(
                 '/entries/entities/',
                 { body: payload },
@@ -180,7 +186,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
             return data;
         },
         meta: {
-            successMessage: 'Entity created successfully!',
+            suppressNotification: true, // Redirect is the feedback
         },
         onSuccess: (result) => {
             onAdd?.(result);
@@ -200,7 +206,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
     };
 
     return (
-        <form onSubmit={handleFormSubmit(onSubmit as any)} className='w-full'>
+        <form onSubmit={handleFormSubmit(onSubmit)} className='w-full'>
             <FieldGroup className='gap-4'>
                 <Controller
                     name='name'
@@ -387,7 +393,14 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
 
             <div className='flex justify-end mt-5'>
                 <Button type='submit' variant='default' disabled={isSubmitting}>
-                    {isSubmitting ? 'Creating...' : 'Create Entity'}
+                    {isSubmitting ? (
+                        <>
+                            <Spinner className='size-4' />
+                            Creating...
+                        </>
+                    ) : (
+                        'Create Entity'
+                    )}
                 </Button>
             </div>
         </form>

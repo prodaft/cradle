@@ -108,10 +108,11 @@ export default function EntryTypeSettingsPage() {
                             {currentDescription || 'Manage entry type'}
                         </p>
                     </div>
+                    <div id='settings-header-actions' className='flex items-center' />
                 </div>
                 <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
                     <Tabs value={tab} onValueChange={handleTabChange}>
-                        <TabsList className='flex-wrap h-auto'>
+                        <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
                             {ENTRY_TYPE_SETTINGS_ITEMS.map((item) => {
                                 const Icon = item.icon;
                                 return (
@@ -169,12 +170,24 @@ export default function EntryTypeSettingsPage() {
                                             onAdd={(newEntryType: EntryClass) => {
                                                 queryClient.invalidateQueries({
                                                     queryKey:
-                                                        queryKeys.entryTypes.lists(),
+                                                        queryKeys.entryTypes.apiList(),
+                                                });
+                                                queryClient.invalidateQueries({
+                                                    queryKey:
+                                                        queryKeys.entryTypes.apiDetail(
+                                                            subtype,
+                                                        ),
                                                 });
                                                 if (
                                                     newEntryType.subtype &&
                                                     newEntryType.subtype !== subtype
                                                 ) {
+                                                    queryClient.invalidateQueries({
+                                                        queryKey:
+                                                            queryKeys.entryTypes.apiDetail(
+                                                                newEntryType.subtype,
+                                                            ),
+                                                    });
                                                     router.navigate({
                                                         to: `/manage/entry-types/${encodeURIComponent(newEntryType.subtype)}` as any,
                                                     });

@@ -3,6 +3,7 @@ import type * as React from 'react';
 
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
 import { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
     Table,
     TableBody,
@@ -20,6 +21,8 @@ interface DataTableProps<TData> extends React.ComponentProps<'div'> {
     onRowClick?: (row: TData) => void;
     getRowHref?: (row: TData) => string;
     showViewOptions?: boolean;
+    /** When true, show skeleton rows instead of data (keeps toolbar mounted to preserve input focus) */
+    isLoading?: boolean;
 }
 
 export function DataTable<TData>({
@@ -28,6 +31,7 @@ export function DataTable<TData>({
     onRowClick,
     getRowHref,
     showViewOptions = false,
+    isLoading = false,
     children,
     className,
     ...props
@@ -42,16 +46,16 @@ export function DataTable<TData>({
     };
     return (
         <div
-            className={cn('flex w-full flex-col gap-2.5 overflow-auto', className)}
+            className={cn('flex w-full flex-col gap-2.5', className)}
             {...props}
         >
             {(children || showViewOptions) && (
                 <div
                     role='toolbar'
                     aria-orientation='horizontal'
-                    className='flex w-full items-start justify-between gap-2 py-1'
+                    className='flex w-full min-w-0 shrink-0 items-start justify-between gap-2 py-1'
                 >
-                    <div className='flex flex-1 flex-wrap items-center gap-2'>
+                    <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
                         {children}
                     </div>
                     <div className='flex items-center gap-2'>
@@ -59,7 +63,7 @@ export function DataTable<TData>({
                     </div>
                 </div>
             )}
-            <div className='overflow-hidden rounded-md border'>
+            <div className='overflow-x-auto overflow-y-hidden rounded-md border'>
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -86,7 +90,30 @@ export function DataTable<TData>({
                         ))}
                     </TableHeader>
                     <TableBody>
-                        {table.getRowModel().rows?.length ? (
+                        {isLoading ? (
+                            Array.from({ length: 8 }).map((_, rowIdx) => (
+                                <TableRow key={rowIdx} className='h-12'>
+                                    {table.getAllColumns().map((col, colIdx) => {
+                                        const widths = [
+                                            'w-full max-w-48',
+                                            'w-24',
+                                            'w-20',
+                                            'w-28',
+                                        ];
+                                        return (
+                                            <TableCell key={col.id}>
+                                                <Skeleton
+                                                    className={cn(
+                                                        'h-4',
+                                                        widths[colIdx % widths.length],
+                                                    )}
+                                                />
+                                            </TableCell>
+                                        );
+                                    })}
+                                </TableRow>
+                            ))
+                        ) : table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
                                 <TableRow
                                     key={row.id}

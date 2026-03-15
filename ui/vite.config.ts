@@ -1,11 +1,10 @@
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
-import react from '@vitejs/plugin-react-swc';
+import react from '@vitejs/plugin-react';
 import dns from 'dns';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
-import tsConfigPaths from 'vite-tsconfig-paths';
 
 dns.setDefaultResultOrder('verbatim');
 
@@ -16,7 +15,6 @@ export default defineConfig(({ mode }) => {
         base: '/',
         cacheDir: '.vite-cache',
         plugins: [
-            tsConfigPaths(),
             tanstackStart({
                 spa: { enabled: true },
                 client: { entry: 'entry-client.tsx' },
@@ -28,13 +26,13 @@ export default defineConfig(({ mode }) => {
         ],
         build: {
             sourcemap: isDev,
-            minify: 'esbuild',
         },
         server: { port: 5173 },
         optimizeDeps: {
             include: ['@radix-ui/react-slider'],
         },
         resolve: {
+            tsconfigPaths: true,
             alias: {
                 '@': path.resolve(__dirname, './src'),
                 '@components': path.resolve(__dirname, './src/components'),
@@ -47,7 +45,6 @@ export default defineConfig(({ mode }) => {
                 src: path.resolve(__dirname, './src'),
             },
             dedupe: [
-                'three',
                 '@codemirror/state',
                 '@codemirror/view',
                 '@codemirror/language',

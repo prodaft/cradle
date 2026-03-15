@@ -30,18 +30,20 @@ type AppMeta = {
 };
 
 let sessionExpiredHandler: null | (() => void) = null;
-let sessionExpiredGateUntil = 0;
+let sessionExpiredHandled = false;
 
 export function setSessionExpiredHandler(fn: () => void) {
     sessionExpiredHandler = fn;
 }
 
-function triggerSessionExpiredOnce() {
-    const now = Date.now();
-    if (now < sessionExpiredGateUntil) return;
-    sessionExpiredGateUntil = now + 5000; // 5s gate
+export function resetSessionExpiredGate() {
+    sessionExpiredHandled = false;
+}
 
-    toast.error('Authentication failed. Please log in again.', { duration: 3000 });
+function triggerSessionExpiredOnce() {
+    if (sessionExpiredHandled) return;
+    sessionExpiredHandled = true;
+
     sessionExpiredHandler?.();
 }
 

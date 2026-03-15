@@ -6,13 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { GraphEdge } from '@/types/index';
 import { InfoIcon } from '@phosphor-icons/react';
 import { ChangeEvent } from 'react';
-
-interface Node {
-    [key: string]: any;
-}
 
 interface GraphConfig {
     nodeRadiusCoefficient: number;
@@ -44,21 +39,11 @@ const PRESET: Partial<GraphConfig> = {
 interface GraphSettingsProps {
     config: GraphConfig;
     setConfig: (config: GraphConfig | ((prev: GraphConfig) => GraphConfig)) => void;
-    nodes: Node[];
-    edges: GraphEdge[];
-    entryGraphColors?: Record<string, string>;
-    disabledTypes?: Set<string>;
-    toggleDisabledType?: (type: string) => void;
-    setDisabledTypes?: (
-        types: Set<string> | ((prev: Set<string>) => Set<string>),
-    ) => void;
 }
 
 export default function GraphSettings({
     config,
     setConfig,
-    nodes,
-    edges,
 }: GraphSettingsProps) {
     const applyPreset = () => {
         setConfig((prev) => ({

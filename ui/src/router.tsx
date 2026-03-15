@@ -4,15 +4,13 @@ import { routeTree } from './routeTree.gen';
 export function getRouter() {
     return createRouter({
         routeTree,
-        defaultPreload: 'intent',
+        defaultPreload: false,
         scrollRestoration: true,
     });
 }
 
-const router = getRouter();
-
 declare module '@tanstack/react-router' {
     interface Register {
-        router: typeof router;
+        router: ReturnType<typeof getRouter>;
     }
 }

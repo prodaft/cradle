@@ -199,7 +199,7 @@ interface HandleAPIErrorOptions {
  * @param options - Options (message, duration, notifyValidation)
  * @returns Parsed error object
  */
-function handleAPIError(
+function _handleAPIError(
     parsed: ParsedAPIError,
     options: HandleAPIErrorOptions = {},
 ): ParsedAPIError {

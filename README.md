@@ -65,7 +65,7 @@
 ```sh
 git clone https://github.com/prodaft/cradle.git
 cd cradle
-docker compose -f docker-compose.demo.yml up -d
+docker-compose -f docker-compose.demo.yml up -d
 ```
 
 CRADLE should be accessible on `http://localhost:8000` with credentials `admin:admin`!
@@ -121,7 +121,7 @@ The monorepo is organized into three main components:
    ```
 2. Start the Docker containers
    ```sh
-   docker compose -f docker/docker-compose.demo.yml up -d --wait
+   docker-compose -f docker-compose.demo.yml up -d --wait
    ```
 3. Access the application at `http://localhost:8000`
 

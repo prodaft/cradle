@@ -4,8 +4,10 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
+    DropdownMenuShortcut,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
@@ -87,7 +89,7 @@ export default function ActionsDropdown({
                         <Button
                             variant='ghost'
                             size='icon'
-                            className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground border-border'
+                            className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
                             data-testid='actions-dropdown-btn'
                         >
                             <DotsThreeVerticalIcon size={20} weight='bold' />
@@ -175,14 +177,28 @@ export default function ActionsDropdown({
                         >
                             <MagnifyingGlassIcon size={16} weight='bold' />
                             <span className='flex-1'>Find</span>
+                            <DropdownMenuShortcut>
+                                <KbdGroup>
+                                    <Kbd>Ctrl</Kbd>
+                                    <Kbd>F</Kbd>
+                                </KbdGroup>
+                            </DropdownMenuShortcut>
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={handleReplace}
-                            data-testid='replace-menu-item'
-                        >
-                            <ArrowsLeftRightIcon size={16} weight='bold' />
-                            <span className='flex-1'>Replace...</span>
-                        </DropdownMenuItem>
+                        {enableEditing && (
+                            <DropdownMenuItem
+                                onClick={handleReplace}
+                                data-testid='replace-menu-item'
+                            >
+                                <ArrowsLeftRightIcon size={16} weight='bold' />
+                                <span className='flex-1'>Replace...</span>
+                                <DropdownMenuShortcut>
+                                    <KbdGroup>
+                                        <Kbd>Ctrl</Kbd>
+                                        <Kbd>H</Kbd>
+                                    </KbdGroup>
+                                </DropdownMenuShortcut>
+                            </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                     </>
                 )}
@@ -214,17 +230,14 @@ export default function ActionsDropdown({
                         <span className='flex-1'>Add Timestamps</span>
                     </DropdownMenuItem>
                 )}
-                {isAdmin && !isFleeting && activeView !== ViewMode.GRAPH && (
-                    <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            onClick={handleRelinkNote}
-                            data-testid='relink-note-menu-item'
-                        >
-                            <ArrowClockwiseIcon size={16} weight='bold' />
-                            <span className='flex-1'>Relink Note</span>
-                        </DropdownMenuItem>
-                    </>
+                {isAdmin && !isFleeting && activeView === ViewMode.CONTENT && (
+                    <DropdownMenuItem
+                        onClick={handleRelinkNote}
+                        data-testid='relink-note-menu-item'
+                    >
+                        <ArrowClockwiseIcon size={16} weight='bold' />
+                        <span className='flex-1'>Relink</span>
+                    </DropdownMenuItem>
                 )}
                 {activeView !== ViewMode.GRAPH && (
                     <>

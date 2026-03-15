@@ -1,6 +1,5 @@
 import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import PageHeader from '@/components/base/page-header';
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -122,7 +121,7 @@ export default function UsersPage() {
         },
     );
 
-    const users = usersData?.results ?? [];
+    const users = useMemo(() => usersData?.results ?? [], [usersData]);
 
     const selectedHasOtherAdmin = useMemo(
         () =>
@@ -168,11 +167,10 @@ export default function UsersPage() {
     };
 
     const handleUserAdded = (newUser: UserRetrieve) => {
+        setAddUserDialogOpen(false);
         queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
         if (newUser.id) {
-            router.navigate({
-                to: `/manage/users/${newUser.id}` as any,
-            });
+            router.navigate({ to: `/manage/users/${newUser.id}` as any });
         }
     };
 
@@ -382,23 +380,20 @@ export default function UsersPage() {
                 />
                 <div className='px-4 flex-1 flex flex-col'>
                     <div className='flex-1 space-y-4'>
-                        {isPending ? (
-                            <TableSkeleton />
-                        ) : (
-                            <DataTable
-                                table={table}
-                                showViewOptions
-                                onRowClick={handleUserClick}
-                                getRowHref={(user) => `/manage/users/${user.id}`}
-                            >
-                                <ActionBarSearch
-                                    placeholder='Search users...'
-                                    value={searchQuery}
-                                    onDebouncedChange={handleSearchChange}
-                                    onSubmit={handleSearchChange}
-                                />
-                            </DataTable>
-                        )}
+                        <DataTable
+                            table={table}
+                            showViewOptions
+                            isLoading={isPending}
+                            onRowClick={handleUserClick}
+                            getRowHref={(user) => `/manage/users/${user.id}`}
+                        >
+                            <ActionBarSearch
+                                placeholder='Search users...'
+                                value={searchQuery}
+                                onDebouncedChange={handleSearchChange}
+                                onSubmit={handleSearchChange}
+                            />
+                        </DataTable>
                     </div>
                 </div>
             </div>
@@ -446,12 +441,7 @@ export default function UsersPage() {
                         <DialogDescription>Create a new user account</DialogDescription>
                     </DialogHeader>
                     <ScrollArea className='no-scrollbar -mx-4 max-h-[50vh] px-4'>
-                        <AddUserForm
-                            onAdd={(newUser: UserRetrieve) => {
-                                handleUserAdded(newUser);
-                                setAddUserDialogOpen(false);
-                            }}
-                        />
+                        <AddUserForm onAdd={handleUserAdded} />
                     </ScrollArea>
                 </DialogContent>
             </Dialog>

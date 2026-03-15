@@ -68,7 +68,7 @@ jobs:
         image: bitnamilegacy/minio:2025.7.23-debian-12-r5
         env:
           MINIO_ROOT_USER: "admin"
-          MINIO_ROOT_PASSWORD: "minio_admin"
+          MINIO_ROOT_PASSWORD: "cradle_minio"
         options: >-
           --health-cmd "curl -fsS http://127.0.0.1:9000/minio/health/live || exit 1"
           --health-interval 5s

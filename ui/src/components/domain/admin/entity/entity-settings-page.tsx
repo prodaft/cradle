@@ -111,10 +111,11 @@ export default function EntitySettingsPage() {
                             {currentDescription || 'Manage entity'}
                         </p>
                     </div>
+                    <div id='settings-header-actions' className='flex items-center' />
                 </div>
                 <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
                     <Tabs value={tab} onValueChange={handleTabChange}>
-                        <TabsList className='flex-wrap h-auto'>
+                        <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
                             {ENTITY_SETTINGS_ITEMS.map((item) => {
                                 const Icon = item.icon;
                                 return (
@@ -129,12 +130,27 @@ export default function EntitySettingsPage() {
                     <div className='flex w-full overflow-y-hidden p-1'>
                         <div className='flex flex-1 flex-col'>
                             {tab === 'activity' ? (
-                                <ScrollArea className='h-full w-full'>
-                                    <ActivityList
-                                        content_type='entry'
-                                        objectId={entityId}
-                                        name={entityData?.name}
-                                    />
+                                <ScrollArea className='faded-bottom h-full w-full'>
+                                    <CardContent className='px-0'>
+                                        <div className='flex-none mb-4'>
+                                            <h3 className='text-lg font-medium'>
+                                                {currentTab?.label || 'Settings'}
+                                            </h3>
+                                            <p className='text-sm text-muted-foreground'>
+                                                {currentDescription}
+                                            </p>
+                                        </div>
+                                        <Separator
+                                            data-orientation='horizontal'
+                                            role='none'
+                                            className='bg-border mb-4 flex-none'
+                                        />
+                                        <ActivityList
+                                            content_type='entry'
+                                            objectId={entityId}
+                                            name={entityData?.name}
+                                        />
+                                    </CardContent>
                                 </ScrollArea>
                             ) : (
                                 <ScrollArea className='faded-bottom h-full w-full pb-12'>
@@ -169,6 +185,10 @@ export default function EntitySettingsPage() {
                                                             queryKeys.entities.detail(
                                                                 String(entityId),
                                                             ),
+                                                    });
+                                                    queryClient.invalidateQueries({
+                                                        queryKey:
+                                                            queryKeys.notes.apiList(),
                                                     });
                                                 }}
                                             />

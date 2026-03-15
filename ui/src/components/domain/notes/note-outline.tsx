@@ -35,7 +35,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
     return (
         <div className='ml-4'>
             <div
-                className='flex items-center py-1 rounded cursor-pointer hover:text-border-primary'
+                className='flex items-center py-1 rounded cursor-pointer hover:text-primary'
                 onClick={handleNodeClick}
             >
                 {hasChildren ? (
@@ -47,13 +47,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                         title={expanded ? 'Collapse' : 'Expand'}
                     >
                         {expanded ? (
-                            <CaretRightIcon
+                            <CaretDownIcon
                                 className='text-primary'
                                 size={14}
                                 weight='bold'
                             />
                         ) : (
-                            <CaretDownIcon
+                            <CaretRightIcon
                                 className='text-primary'
                                 size={14}
                                 weight='bold'
@@ -66,7 +66,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                     </span>
                 )}
                 <span
-                    className={`font-medium ${isCurrent ? 'underline decoration-border-primary' : ''}`}
+                    className={`font-medium ${isCurrent ? 'underline decoration-primary' : ''}`}
                 >
                     {nodeData.nodeName}
                 </span>
@@ -74,8 +74,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
             {expanded && hasChildren && (
                 <div className='border-l border-border pl-1 ml-2'>
-                    {children.map((child, index) => (
-                        <React.Fragment key={`${index}_${child.nodeName}`}>
+                    {children.map((child) => (
+                        <React.Fragment key={`${child.startLine}-${child.nodeName}`}>
                             {showSeparators && child.separatorBefore && (
                                 <Separator className='my-2 mx-2 opacity-70' />
                             )}
@@ -113,8 +113,8 @@ const NoteOutline: React.FC<NoteOutlineProps> = ({
                 </div>
             )}
             <div className='text-muted-foreground text-sm'>
-                {data.map((node, index) => (
-                    <React.Fragment key={`${index}_${node.nodeName}`}>
+                {data.map((node) => (
+                    <React.Fragment key={`${node.startLine}-${node.nodeName}`}>
                         {showSeparators && node.separatorBefore && (
                             <Separator className='my-2 mx-1 opacity-50' />
                         )}

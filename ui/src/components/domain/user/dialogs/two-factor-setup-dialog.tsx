@@ -107,7 +107,7 @@ export default function TwoFactorSetupDialog({
     }, [secret]);
 
     const handleSubmit = useCallback(
-        async (e: React.SubmitEvent) => {
+        async (e: React.FormEvent<HTMLFormElement>) => {
             e.preventDefault();
             setIsSubmitting(true);
             try {
@@ -137,13 +137,13 @@ export default function TwoFactorSetupDialog({
                 setIsSubmitting(false);
             }
         },
-        [verificationCode, isDisabling, fetchClient, onSuccess, onOpenChange],
+        [verificationCode, isDisabling, onSuccess, onOpenChange],
     );
 
     if (!isDisabling && isLoading) {
         return (
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className='sm:max-w-md'>
+                <DialogContent className='sm:max-w-sm'>
                     <DialogHeader>
                         <DialogTitle>Setting up Two-Factor Auth</DialogTitle>
                         <DialogDescription>
@@ -160,7 +160,7 @@ export default function TwoFactorSetupDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='sm:max-w-md'>
+            <DialogContent className='sm:max-w-sm'>
                 <form onSubmit={handleSubmit} className='grid gap-4'>
                     <DialogHeader>
                         <DialogTitle>

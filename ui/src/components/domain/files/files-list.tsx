@@ -1,4 +1,3 @@
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -93,10 +92,10 @@ interface FilesListProps {
 
 // Mapping of table columns to API field names - moved outside component to prevent recreation
 const SORT_FIELD_MAPPING: Record<string, string> = {
-    name: 'file_name',
-    uploadedAt: 'timestamp',
+    file_name: 'file_name',
+    timestamp: 'timestamp',
     mimetype: 'mimetype',
-    fileSize: 'file_size',
+    file_size: 'file_size',
 };
 
 // Empty defaults to prevent new object creation on each render
@@ -125,7 +124,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
         mutationFn: async (fileId: string) => {
             const { data, error, response } = await fetchClient.GET(
                 '/file-transfer/download/',
-                { params: { query: { fileId } } },
+                { params: { query: { file_id: fileId } } },
             );
             if (error) throw { response, error };
             return data.presigned_url;
@@ -295,7 +294,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
         mutationFn: async (fileId: string) => {
             const { error, response } = await fetchClient.DELETE(
                 '/file-transfer/delete/',
-                { params: { query: { fileId } } },
+                { params: { query: { file_id: fileId } } },
             );
             if (error) throw { response, error };
         },
@@ -427,8 +426,8 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                 enableHiding: false,
             },
             {
-                accessorKey: 'name',
-                id: 'name',
+                accessorKey: 'file_name',
+                id: 'file_name',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Name' />
                 ),
@@ -499,8 +498,8 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                 ),
             },
             {
-                accessorKey: 'fileSize',
-                id: 'fileSize',
+                accessorKey: 'file_size',
+                id: 'file_size',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Size' />
                 ),
@@ -543,8 +542,8 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                 enableSorting: false,
             },
             {
-                accessorKey: 'uploadedAt',
-                id: 'uploadedAt',
+                accessorKey: 'timestamp',
+                id: 'timestamp',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Uploaded At' />
                 ),
@@ -719,134 +718,134 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                 )}
 
                 <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
-                    {isLoading ? (
-                        <TableSkeleton />
-                    ) : (
-                        <DataTable table={table} showViewOptions>
-                            <ActionBarSearch
-                                placeholder='Search files...'
-                                debounceMs={300}
-                                onDebouncedChange={(v) => {
-                                    setSearchQuery(v);
-                                    resetToFirstPage();
-                                }}
-                                onSubmit={() => resetToFirstPage()}
-                                onClear={() => resetToFirstPage()}
-                            />
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant='outline'
-                                        size='sm'
-                                        className='border-dashed font-normal'
-                                    >
-                                        {statusFilter !== 'all' ? (
-                                            <div
-                                                role='button'
-                                                aria-label='Clear status filter'
-                                                tabIndex={0}
-                                                className='rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleStatusFilterChange('all');
-                                                }}
+                    <DataTable
+                        table={table}
+                        showViewOptions
+                        isLoading={isLoading}
+                    >
+                        <ActionBarSearch
+                            placeholder='Search files...'
+                            debounceMs={300}
+                            onDebouncedChange={(v) => {
+                                setSearchQuery(v);
+                                resetToFirstPage();
+                            }}
+                            onSubmit={() => resetToFirstPage()}
+                            onClear={() => resetToFirstPage()}
+                        />
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    className='border-dashed font-normal'
+                                >
+                                    {statusFilter !== 'all' ? (
+                                        <div
+                                            role='button'
+                                            aria-label='Clear status filter'
+                                            tabIndex={0}
+                                            className='rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleStatusFilterChange('all');
+                                            }}
+                                        >
+                                            <XCircle />
+                                        </div>
+                                    ) : (
+                                        <PlusCircle />
+                                    )}
+                                    Status
+                                    {statusFilter !== 'all' && (
+                                        <>
+                                            <Separator
+                                                orientation='vertical'
+                                                className='mx-0.5 data-[orientation=vertical]:h-4'
+                                            />
+                                            <Badge
+                                                variant='secondary'
+                                                className='rounded-sm px-1 font-normal'
                                             >
-                                                <XCircle />
-                                            </div>
-                                        ) : (
-                                            <PlusCircle />
-                                        )}
-                                        Status
-                                        {statusFilter !== 'all' && (
-                                            <>
-                                                <Separator
-                                                    orientation='vertical'
-                                                    className='mx-0.5 data-[orientation=vertical]:h-4'
-                                                />
-                                                <Badge
-                                                    variant='secondary'
-                                                    className='rounded-sm px-1 font-normal'
-                                                >
-                                                    {statusFilter === 'healthy'
-                                                        ? 'Healthy'
-                                                        : 'Warning'}
-                                                </Badge>
-                                            </>
-                                        )}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className='w-50 p-0' align='start'>
-                                    <Command>
-                                        <CommandList className='max-h-full'>
-                                            <ScrollArea className='max-h-[300px]'>
-                                                <CommandGroup className='scroll-py-1'>
-                                                    {(
-                                                        [
-                                                            {
-                                                                value: 'healthy',
-                                                                label: 'Healthy',
-                                                            },
-                                                            {
-                                                                value: 'warning',
-                                                                label: 'Warning',
-                                                            },
-                                                        ] as const
-                                                    ).map((option) => {
-                                                        const isSelected =
-                                                            statusFilter ===
-                                                            option.value;
-                                                        return (
-                                                            <CommandItem
-                                                                key={option.value}
-                                                                onSelect={() =>
-                                                                    handleStatusFilterChange(
-                                                                        isSelected
-                                                                            ? 'all'
-                                                                            : option.value,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <div
-                                                                    className={cn(
-                                                                        'flex size-4 items-center justify-center rounded-sm border border-primary',
-                                                                        isSelected
-                                                                            ? 'bg-primary'
-                                                                            : 'opacity-50 [&_svg]:invisible',
-                                                                    )}
-                                                                >
-                                                                    <Check />
-                                                                </div>
-                                                                <span className='truncate'>
-                                                                    {option.label}
-                                                                </span>
-                                                            </CommandItem>
-                                                        );
-                                                    })}
-                                                </CommandGroup>
-                                            </ScrollArea>
-                                            {statusFilter !== 'all' && (
-                                                <>
-                                                    <CommandSeparator />
-                                                    <CommandGroup>
+                                                {statusFilter === 'healthy'
+                                                    ? 'Healthy'
+                                                    : 'Warning'}
+                                            </Badge>
+                                        </>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className='w-50 p-0' align='start'>
+                                <Command>
+                                    <CommandList className='max-h-full'>
+                                        <ScrollArea className='max-h-[300px]'>
+                                            <CommandGroup className='scroll-py-1'>
+                                                {(
+                                                    [
+                                                        {
+                                                            value: 'healthy',
+                                                            label: 'Healthy',
+                                                        },
+                                                        {
+                                                            value: 'warning',
+                                                            label: 'Warning',
+                                                        },
+                                                    ] as const
+                                                ).map((option) => {
+                                                    const isSelected =
+                                                        statusFilter ===
+                                                        option.value;
+                                                    return (
                                                         <CommandItem
+                                                            key={option.value}
                                                             onSelect={() =>
                                                                 handleStatusFilterChange(
-                                                                    'all',
+                                                                    isSelected
+                                                                        ? 'all'
+                                                                        : option.value,
                                                                 )
                                                             }
-                                                            className='justify-center text-center'
                                                         >
-                                                            Clear filters
+                                                            <div
+                                                                className={cn(
+                                                                    'flex size-4 items-center justify-center rounded-sm border border-primary',
+                                                                    isSelected
+                                                                        ? 'bg-primary'
+                                                                        : 'opacity-50 [&_svg]:invisible',
+                                                                )}
+                                                            >
+                                                                <Check />
+                                                            </div>
+                                                            <span className='truncate'>
+                                                                {option.label}
+                                                            </span>
                                                         </CommandItem>
-                                                    </CommandGroup>
-                                                </>
-                                            )}
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                                                    );
+                                                })}
+                                            </CommandGroup>
+                                        </ScrollArea>
+                                        {statusFilter !== 'all' && (
+                                            <>
+                                                <CommandSeparator />
+                                                <CommandGroup>
+                                                    <CommandItem
+                                                        onSelect={() =>
+                                                            handleStatusFilterChange(
+                                                                'all',
+                                                            )
+                                                        }
+                                                        className='justify-center text-center'
+                                                    >
+                                                        Clear filters
+                                                    </CommandItem>
+                                                </CommandGroup>
+                                            </>
+                                        )}
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                         </DataTable>
-                    )}
                 </div>
             </div>
             <ActionBar

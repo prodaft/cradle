@@ -53,6 +53,7 @@ export const logger = {
      */
     debug: (message: string, meta?: LogMeta): void => {
         if (!isDebugEnabled()) return;
+        // eslint-disable-next-line no-console
         console.debug(formatMessage('debug', message, meta));
     },
 
@@ -61,6 +62,7 @@ export const logger = {
      */
     info: (message: string, meta?: LogMeta): void => {
         if (!isDevelopment) return; // Only log info in development
+        // eslint-disable-next-line no-console
         console.info(formatMessage('info', message, meta));
     },
 

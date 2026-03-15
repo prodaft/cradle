@@ -1,6 +1,5 @@
 import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import PageHeader from '@/components/base/page-header';
-import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -57,6 +56,7 @@ import { useCallback, useMemo, useState } from 'react';
 import AddEntryTypeForm from './add-entry-type-form';
 
 type EntryClass = components['schemas']['EntryClass'];
+type EntryClassSerializerCount = components['schemas']['EntryClassSerializerCount'];
 
 interface EntryTypeData {
     id: string;
@@ -118,8 +118,8 @@ export default function EntryTypesPage() {
     );
 
     const entryTypes = useMemo<EntryTypeData[]>(() => {
-        const results = entryTypesData?.results ?? [];
-        return results.map((c: any) => ({
+        const results = (entryTypesData?.results ?? []) as EntryClassSerializerCount[];
+        return results.map((c) => ({
             id: c.subtype,
             subtype: c.subtype,
             count: c.count,
@@ -141,7 +141,7 @@ export default function EntryTypesPage() {
             if (error) throw { response, error };
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.entryTypes.lists() }],
+            invalidateQueries: [{ queryKey: queryKeys.entryTypes.apiList() }],
             successMessage: 'Entry type deleted successfully',
         },
     });
@@ -152,6 +152,9 @@ export default function EntryTypesPage() {
                 entryTypeSubtypes.map((subtype) => deleteMutation.mutateAsync(subtype)),
             );
             clearSelection();
+            setBulkDeleteDialogOpen(false);
+            setBulkDeleteEntryTypeSubtypes([]);
+            setDeleteConfirmInput('');
         } catch (_error) {
             // Error already handled by mutation
         }
@@ -318,7 +321,10 @@ export default function EntryTypesPage() {
     };
 
     const handleEntryTypeAdded = (newEntryType: EntryClass) => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.entryTypes.lists() });
+        setAddEntryTypeDialogOpen(false);
+        queryClient.invalidateQueries({
+            queryKey: queryKeys.entryTypes.apiList(),
+        });
         if (newEntryType.subtype) {
             router.navigate({
                 to: `/manage/entry-types/${encodeURIComponent(newEntryType.subtype)}` as any,
@@ -348,17 +354,15 @@ export default function EntryTypesPage() {
                 />
                 <div className='px-4 flex-1 flex flex-col'>
                     <div className='flex-1 space-y-4'>
-                        {isPending ? (
-                            <TableSkeleton />
-                        ) : (
-                            <DataTable
-                                table={table}
-                                showViewOptions
-                                onRowClick={handleEditClick}
-                                getRowHref={(entryType) =>
-                                    `/manage/entry-types/${encodeURIComponent(entryType.subtype)}`
-                                }
-                            >
+                        <DataTable
+                            table={table}
+                            showViewOptions
+                            isLoading={isPending}
+                            onRowClick={handleEditClick}
+                            getRowHref={(entryType) =>
+                                `/manage/entry-types/${encodeURIComponent(entryType.subtype)}`
+                            }
+                        >
                                 <ActionBarSearch
                                     placeholder='Search entry types...'
                                     value={searchQuery}
@@ -366,7 +370,6 @@ export default function EntryTypesPage() {
                                     onSubmit={handleSearchChange}
                                 />
                             </DataTable>
-                        )}
                     </div>
                 </div>
             </div>
@@ -424,12 +427,7 @@ export default function EntryTypesPage() {
                         <DialogDescription>Create new entry class</DialogDescription>
                     </DialogHeader>
                     <ScrollArea className='no-scrollbar -mx-4 max-h-[50vh] px-4'>
-                        <AddEntryTypeForm
-                            onAdd={(newEntryType: EntryClass) => {
-                                handleEntryTypeAdded(newEntryType);
-                                setAddEntryTypeDialogOpen(false);
-                            }}
-                        />
+                        <AddEntryTypeForm onAdd={handleEntryTypeAdded} />
                     </ScrollArea>
                 </DialogContent>
             </Dialog>
@@ -480,7 +478,6 @@ export default function EntryTypesPage() {
                             size='sm'
                             onClick={() => {
                                 handleDeleteEntryTypes(bulkDeleteEntryTypeSubtypes);
-                                setBulkDeleteEntryTypeSubtypes([]);
                             }}
                             disabled={
                                 deleteConfirmInput !==

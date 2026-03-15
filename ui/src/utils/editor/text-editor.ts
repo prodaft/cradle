@@ -119,7 +119,7 @@ interface AutocompleteContext {
  * @param context - The editor autocomplete context
  * @returns The link node or null
  */
-const getLinkNode = (context: AutocompleteContext): SyntaxNode | null => {
+const _getLinkNode = (context: AutocompleteContext): SyntaxNode | null => {
     const pos = context.pos;
     const tree = syntaxTree(context.state);
     let node: SyntaxNode | null = tree.resolve(pos, -1);
@@ -145,7 +145,7 @@ const getLinkNode = (context: AutocompleteContext): SyntaxNode | null => {
  * @param text - The text to parse
  * @returns Parsed link or null
  */
-const parseLink = (from: number, current: number, text: string): Link | null => {
+const _parseLink = (from: number, current: number, text: string): Link | null => {
     const isDouble = text.startsWith('[[') && text.endsWith(']]');
     const match = (isDouble ? LINK_REGEX_DOUBLE : LINK_REGEX_SINGLE).exec(text);
 

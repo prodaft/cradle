@@ -40,7 +40,7 @@ interface DateRange {
 interface ColumnFilters {
     status: string;
     user: string;
-    createdAt: {
+    created_at: {
         from: string;
         to: string;
     };
@@ -90,7 +90,7 @@ export default function DigestData() {
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: (search as any)?.status || 'all',
         user: (search as any)?.author || '',
-        createdAt: {
+        created_at: {
             from: toYmd((search as any)?.created_at_gte),
             to: toYmd((search as any)?.created_at_lte),
         },
@@ -105,11 +105,11 @@ export default function DigestData() {
     const queryParams = useMemo(() => {
         const searchQueryParams: any = {
             page,
-            pageSize,
+            page_size: pageSize,
             title: submittedFilters.title || undefined,
             author: submittedFilters.author || undefined,
-            createdAtGte: submittedFilters.created_at_gte || undefined,
-            createdAtLte: submittedFilters.created_at_lte || undefined,
+            created_at_gte: submittedFilters.created_at_gte || undefined,
+            created_at_lte: submittedFilters.created_at_lte || undefined,
         };
 
         // Add column filter parameters
@@ -121,15 +121,15 @@ export default function DigestData() {
             searchQueryParams.status = columnFilters.status;
         }
 
-        if (columnFilters.createdAt.from) {
-            searchQueryParams.createdAtGte = toStartIso(columnFilters.createdAt.from);
+        if (columnFilters.created_at.from) {
+            searchQueryParams.created_at_gte = toStartIso(columnFilters.created_at.from);
         }
-        if (columnFilters.createdAt.to) {
-            searchQueryParams.createdAtLte = toEndIso(columnFilters.createdAt.to);
+        if (columnFilters.created_at.to) {
+            searchQueryParams.created_at_lte = toEndIso(columnFilters.created_at.to);
         }
 
-        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-        searchQueryParams.orderBy = orderBy;
+        const order_by = sortDirection === 'desc' ? `-${sortField}` : sortField;
+        searchQueryParams.order_by = order_by;
 
         return searchQueryParams;
     }, [page, pageSize, sortField, sortDirection, columnFilters, submittedFilters]);

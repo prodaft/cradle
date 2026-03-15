@@ -35,7 +35,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
         mutationFn: async ({ fileId }: DownloadVars) => {
             const { data, error, response } = await fetchClient.GET(
                 '/file-transfer/download/',
-                { params: { query: { fileId } } },
+                { params: { query: { file_id: fileId } } },
             );
             if (error) throw { response, error };
             return data.presigned_url;
@@ -170,8 +170,10 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                     variant='ghost'
                                     size='icon-sm'
                                     onClick={() => handleDownload(file)}
+                                    disabled={downloadMutation.isPending}
                                     className='text-primary hover:text-primary/80'
                                     title='Download'
+                                    aria-label='Download'
                                 >
                                     <DownloadSimpleIcon
                                         className='w-4 h-4'

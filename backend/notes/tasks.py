@@ -7,7 +7,7 @@ from celery import shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import close_old_connections, transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from core.decorators import distributed_lock
@@ -210,16 +210,18 @@ def entry_class_creation_task(note_id, user_id=None):
     EntryClass.objects.get_or_create(subtype=SUBTYPE_FILE, defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_FILE])
 
     try:
-        nonexistent_entries = set()
+        unique_subtypes = {r.key for r in note.reference_tree.all_links()}
+        existing = set(EntryClass.objects.filter(subtype__in=unique_subtypes).values_list("subtype", flat=True))
+        missing = unique_subtypes - existing
 
-        for r in note.reference_tree.all_links():
-            if not EntryClass.objects.filter(subtype=r.key).exists():
-                if not cradle_settings.notes.allow_dynamic_entry_class_creation:
-                    nonexistent_entries.add(r.key)
-                else:
-                    entry = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype=r.key)
-                    if user_id:
-                        entry.log_create(user)
+        nonexistent_entries = set()
+        for subtype in missing:
+            if not cradle_settings.notes.allow_dynamic_entry_class_creation:
+                nonexistent_entries.add(subtype)
+            else:
+                entry = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype=subtype)
+                if user_id:
+                    entry.log_create(user)
 
         if nonexistent_entries:
             raise EntryClassesDoNotExistException(nonexistent_entries)
@@ -248,48 +250,72 @@ def entry_population_task(note_id, user_id=None):
         with transaction.atomic():
             note.entries.clear()
 
+            links = list(note.reference_tree.all_links())
+            unique_keys = {(r.key, r.value) for r in links}
+
+            # Batch fetch existing entries
+            if unique_keys:
+                entry_conditions = Q()
+                for key, value in unique_keys:
+                    entry_conditions |= Q(entry_class__subtype=key, name=value)
+                existing = {
+                    (e.entry_class.subtype, e.name): e
+                    for e in Entry.objects.filter(entry_conditions).select_related("entry_class")
+                }
+                entry_classes = {
+                    ec.subtype: ec for ec in EntryClass.objects.filter(subtype__in={k for k, _ in unique_keys})
+                }
+            else:
+                existing = {}
+                entry_classes = {}
+
             entries = []
-            for r in note.reference_tree.all_links():
-                try:
-                    entry = Entry.objects.get(name=r.value, entry_class__subtype=r.key)
-                    note.entries.add(entry)
-                except Entry.DoesNotExist:
-                    try:
-                        entry_class = EntryClass.objects.get(subtype=r.key)
-                    except EntryClass.DoesNotExist:
-                        logger.warning(f"Entry class {r.key} does not exist. Skipping entry creation.")
+            entries_to_add = []
+            for r in links:
+                key = (r.key, r.value)
+                if key in existing:
+                    entries_to_add.append(existing[key])
+                    continue
+                ec = entry_classes.get(r.key)
+                if not ec:
+                    if cradle_settings.notes.allow_dynamic_entry_class_creation:
                         continue
+                    logger.warning(f"Entry class {r.key} does not exist. Skipping entry creation.")
+                    continue
+                if ec.type == EntryType.ENTITY:
+                    raise EntriesDoNotExistException([r])
+                if ec.type == EntryType.ARTIFACT:
+                    try:
+                        entries.append(Entry(name=r.value, entry_class=ec))
+                    except InvalidEntryException as e:
+                        note.set_status(
+                            NoteStatus.INVALID,
+                            (note.status_message or "") + e.detail.strip() + "\n",
+                        )
+                        note.save()
+                        logger.warning(e.detail)
 
-                    if entry_class.type == EntryType.ARTIFACT:
-                        try:
-                            entries.append(Entry(name=r.value, entry_class=entry_class))
-                        except InvalidEntryException as e:
-                            note.set_status(
-                                NoteStatus.INVALID,
-                                (note.status_message or "") + e.detail.strip() + "\n",
-                            )
-                            note.save()
-
-                            logger.warning(e.detail)
-                    else:
-                        raise EntriesDoNotExistException([r])
-
-            new_objs = Entry.objects.bulk_create(entries, ignore_conflicts=True)
-            created_lookup = {(e.name, e.entry_class_id): e for e in new_objs}
+            Entry.objects.bulk_create(entries, ignore_conflicts=True)
             objs = []
-            for entry in entries:
-                key = (entry.name, entry.entry_class_id)
-                if key in created_lookup:
-                    objs.append(created_lookup[key])
-                else:
-                    obj, _ = Entry.objects.get_or_create(
-                        name=entry.name,
-                        entry_class__subtype=entry.entry_class.subtype,
-                        defaults={"entry_class": entry.entry_class},
-                    )
-                    objs.append(obj)
+            if entries:
+                keys = [(e.name, e.entry_class_id) for e in entries]
+                conditions = Q()
+                for n, ec in keys:
+                    conditions |= Q(name=n, entry_class_id=ec)
+                fetched = {(e.name, e.entry_class_id): e for e in Entry.objects.filter(conditions)}
+                for entry in entries:
+                    key = (entry.name, entry.entry_class_id)
+                    if key in fetched:
+                        objs.append(fetched[key])
+                    else:
+                        obj, _ = Entry.objects.get_or_create(
+                            name=entry.name,
+                            entry_class__subtype=entry.entry_class.subtype,
+                            defaults={"entry_class": entry.entry_class},
+                        )
+                        objs.append(obj)
 
-            note.entries.add(*objs)
+            note.entries.add(*(entries_to_add + objs))
 
             content_type = ContentType.objects.get_for_model(note)
             entry_class_ids = [e.entry_class_id for e in objs]
@@ -343,6 +369,19 @@ def connect_aliases(note_id, user_id=None):
 
         aliases[r.alias].add((r.key, r.value))
 
+    # Batch fetch all entries needed for alias relations
+    all_subtype_name = [(s, n) for entries in aliases.values() for s, n in entries]
+    if all_subtype_name:
+        entry_conditions = Q()
+        for subtype, name in all_subtype_name:
+            entry_conditions |= Q(entry_class__subtype=subtype, name=name)
+        entry_map = {
+            (e.entry_class.subtype, e.name): e
+            for e in Entry.objects.filter(entry_conditions).select_related("entry_class")
+        }
+    else:
+        entry_map = {}
+
     for aname, entries in aliases.items():
         if not entries:
             continue
@@ -356,9 +395,8 @@ def connect_aliases(note_id, user_id=None):
 
         relations = []
         for subtype, name in entries:
-            try:
-                e = Entry.objects.get(name=name, entry_class__subtype=subtype)
-            except (Entry.DoesNotExist, Entry.MultipleObjectsReturned):
+            e = entry_map.get((subtype, name))
+            if e is None:
                 continue
             relations.append(
                 Relation(
@@ -371,7 +409,8 @@ def connect_aliases(note_id, user_id=None):
                 )
             )
 
-        Relation.objects.bulk_create(relations)
+        if relations:
+            Relation.objects.bulk_create(relations)
 
     refresh_edges_materialized_view.apply_async()
 

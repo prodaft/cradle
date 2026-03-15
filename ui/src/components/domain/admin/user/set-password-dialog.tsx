@@ -25,7 +25,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -33,8 +33,14 @@ const adminSetPasswordSchema = z
     .object({
         newPassword: z
             .string()
-            .min(8, { error: 'Password must be at least 8 characters' })
-            .min(1, { error: 'New password is required' }),
+            .min(12, { error: 'Password must be at least 12 characters' })
+            .regex(/[0-9]/, { error: 'Password must contain at least 1 digit' })
+            .regex(/[A-Z]/, {
+                error: 'Password must contain at least 1 uppercase letter',
+            })
+            .regex(/[^a-zA-Z0-9]/, {
+                error: 'Password must contain at least 1 special character',
+            }),
         confirmNewPassword: z
             .string()
             .min(1, { error: 'Please confirm your new password' }),
@@ -79,6 +85,14 @@ export default function SetUserPasswordDialog({
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+    const form = useForm<FormData>({
+        resolver: zodResolver(adminSetPasswordSchema),
+        defaultValues: {
+            newPassword: '',
+            confirmNewPassword: '',
+        },
+    });
+
     const setPasswordMutation = useMutation({
         mutationFn: async (password: string) => {
             const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
@@ -91,6 +105,7 @@ export default function SetUserPasswordDialog({
             successMessage: 'Password updated successfully',
         },
         onSuccess: () => {
+            form.reset();
             if (onSuccess) {
                 onSuccess();
             }
@@ -98,13 +113,9 @@ export default function SetUserPasswordDialog({
         },
     });
 
-    const form = useForm<FormData>({
-        resolver: zodResolver(adminSetPasswordSchema),
-        defaultValues: {
-            newPassword: '',
-            confirmNewPassword: '',
-        },
-    });
+    useEffect(() => {
+        if (!open) form.reset();
+    }, [open, form]);
 
     const onSubmit = async (data: FormData) => {
         setPasswordMutation.mutate(data.newPassword);
@@ -115,7 +126,7 @@ export default function SetUserPasswordDialog({
             <DialogContent className='sm:max-w-md'>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <DialogHeader>
-                        <DialogTitle>Confirm</DialogTitle>
+                        <DialogTitle>Set Password</DialogTitle>
                         <DialogDescription>
                             Set a new password for this user. The user will need to use
                             this password to log in.
@@ -248,7 +259,7 @@ export default function SetUserPasswordDialog({
                                 type='button'
                                 variant='outline'
                                 size='sm'
-                                disabled={form.formState.isSubmitting}
+                                disabled={setPasswordMutation.isPending}
                             >
                                 Cancel
                             </Button>
@@ -257,7 +268,7 @@ export default function SetUserPasswordDialog({
                             type='submit'
                             variant='default'
                             size='sm'
-                            disabled={form.formState.isSubmitting}
+                            disabled={setPasswordMutation.isPending}
                         >
                             {setPasswordMutation.isPending ? 'Setting...' : 'Confirm'}
                         </Button>

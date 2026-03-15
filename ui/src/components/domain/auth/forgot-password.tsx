@@ -1,4 +1,4 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -10,9 +10,10 @@ import {
     FieldSeparator,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { cn } from '@/lib/utils';
-import { getDisplayMessage, parseAPIError } from '@/utils/api';
+import { getDisplayMessage, getSuccessMessage, parseAPIError } from '@/utils/api';
 import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
@@ -22,6 +23,8 @@ import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
+
+const FORGOT_PASSWORD_IMAGES = ['/1.png', '/2.png', '/3.png', '/4.png'];
 
 const forgotPasswordSchema = z.object({
     email: z.email({ error: 'Invalid email' }).min(1, { error: 'Email is required' }),
@@ -42,11 +45,12 @@ export default function ForgotPassword() {
 
     const resetPasswordMutation = useMutation({
         mutationFn: async (email: string) => {
-            const { error, response } = await fetchClient.POST(
+            const { data, error, response } = await fetchClient.POST(
                 '/auth/reset-password/',
                 { body: { email } },
             );
             if (error) throw { response, error };
+            return data;
         },
         meta: {
             suppressNotification: true,
@@ -59,14 +63,20 @@ export default function ForgotPassword() {
                 color: 'red',
             });
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
             setAlert({
                 show: true,
-                message: 'Password change email sent to your inbox!',
+                message: getSuccessMessage(data) ?? '',
                 color: 'green',
             });
         },
     });
+    const [forgotPasswordImage] = useState(
+        () =>
+            FORGOT_PASSWORD_IMAGES[
+                Math.floor(Math.random() * FORGOT_PASSWORD_IMAGES.length)
+            ],
+    );
     const [alert, setAlert] = useState<{
         show: boolean;
         message: string;
@@ -174,7 +184,16 @@ export default function ForgotPassword() {
                                                 : 'default'
                                         }
                                     >
-                                        <WarningCircleIcon size={18} weight='bold' />
+                                        <WarningCircleIcon
+                                            className='size-4'
+                                            weight='bold'
+                                        />
+                                        <AlertTitle>
+                                            {alert.color === 'red' ||
+                                            alert.color === 'error'
+                                                ? 'Error'
+                                                : 'Success'}
+                                        </AlertTitle>
                                         <AlertDescription>
                                             {alert.message}
                                         </AlertDescription>
@@ -186,12 +205,13 @@ export default function ForgotPassword() {
                                         variant='default'
                                         size='default'
                                         className='w-full'
-                                        disabled={form.formState.isSubmitting}
-                                        data-testid='login-register-button'
+                                        disabled={resetPasswordMutation.isPending}
+                                        data-testid='send-reset-link-button'
                                     >
-                                        {form.formState.isSubmitting
-                                            ? 'Sending...'
-                                            : 'Send Reset Link'}
+                                        {resetPasswordMutation.isPending && (
+                                            <Spinner className='size-4' />
+                                        )}
+                                        Send Reset Link
                                     </Button>
                                 </Field>
                                 <FieldSeparator />
@@ -222,11 +242,15 @@ export default function ForgotPassword() {
             </div>
 
             {/* Right Column - Image */}
-            <div className='bg-muted relative hidden lg:block'>
+            <div
+                className='bg-muted relative hidden lg:block select-none'
+                onContextMenu={(e) => e.preventDefault()}
+            >
                 <img
-                    src='/auth-image.jpeg'
-                    alt='Image'
-                    className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale'
+                    src={forgotPasswordImage}
+                    alt=''
+                    className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale pointer-events-none'
+                    draggable={false}
                 />
             </div>
         </div>

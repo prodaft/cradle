@@ -26,14 +26,24 @@ import { $api, fetchClient } from '@services/openapi/client';
 import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
 
+import isEqual from 'lodash/isEqual';
 import { SelectOption } from '@/types';
+import {
+    ArrowCounterClockwiseIcon,
+    ClockCounterClockwiseIcon,
+    FloppyDiskIcon,
+} from '@phosphor-icons/react';
 import * as z from 'zod';
 import OfflineIndicator from '../../../feedback/offline-indicator';
 
 type Entity = components['schemas']['Entity'];
+type EntityRequest = components['schemas']['EntityRequest'];
+type Entry = components['schemas']['Entry'];
+type AdvancedQueryResponse = components['schemas']['AdvancedQueryPaginatedResponse'];
 
 interface EntityFormProps {
     id?: number | string | null;
@@ -67,6 +77,31 @@ const entitySchema = z.object({
 
 type EntityFormData = z.infer<typeof entitySchema>;
 
+const ENTITY_FORM_DEFAULTS: EntityFormData = {
+    name: '',
+    subtype: '',
+    description: '',
+    isPublic: false,
+    aliases: [],
+};
+
+function getEntityFormFromApi(entity: Entity | null | undefined): EntityFormData | null {
+    if (!entity) return null;
+    const aliases = entity.aliases_detail
+        ?.filter((a): a is Entry & { id: number } => a.id !== undefined)
+        .map((a) => ({
+            value: a.id!,
+            label: `${a.subtype}:${a.name}`,
+        })) ?? [];
+    return {
+        name: entity.name,
+        subtype: entity.subtype || '',
+        description: entity.description || '',
+        isPublic: entity.is_public ?? false,
+        aliases,
+    };
+}
+
 export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     const fetchAliasesMutation = useMutation({
         mutationFn: async (q: string) => {
@@ -75,17 +110,20 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                 {
                     params: {
                         query: {
-                            query: q,
+                            query: [q],
                             wildcard: true,
-                        } as any,
+                        },
                     },
                 },
             );
             if (error) throw { response, error };
-            return ((data as any).results ?? []).map((alias: any) => ({
-                value: alias.id!,
-                label: `${alias.subtype}:${alias.name}`,
-            }));
+            const results = (data as AdvancedQueryResponse)?.results ?? [];
+            return results
+                .filter((alias): alias is typeof alias & { id: number } => alias.id !== undefined)
+                .map((alias) => ({
+                    value: alias.id,
+                    label: `${alias.subtype}:${alias.name}`,
+                }));
         },
         meta: {
             suppressNotification: true,
@@ -93,7 +131,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     });
 
     const updateEntityMutation = useMutation({
-        mutationFn: async (payload: any) => {
+        mutationFn: async (payload: EntityRequest) => {
             const { data, error, response } = await fetchClient.PATCH(
                 '/entries/entities/{entity_id}/',
                 {
@@ -109,6 +147,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
             invalidateQueries: [
                 { queryKey: queryKeys.entities.lists() },
                 { queryKey: queryKeys.entities.detail(String(id)) },
+                { queryKey: queryKeys.notes.apiList() },
             ],
         },
         onSuccess: (result) => {
@@ -116,20 +155,17 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         },
     });
 
+    const loadedValuesRef = useRef<EntityFormData | null>(null);
+
     const {
         handleSubmit: handleFormSubmit,
         reset,
+        watch,
         control,
-        formState: { isSubmitting },
+        formState: { isSubmitting, isDirty },
     } = useForm<EntityFormData>({
         resolver: zodResolver(entitySchema) as any,
-        defaultValues: {
-            name: '',
-            subtype: '',
-            description: '',
-            isPublic: false,
-            aliases: [],
-        },
+        defaultValues: ENTITY_FORM_DEFAULTS,
     });
 
     // Fetch aliases for async select
@@ -154,10 +190,10 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     const subtypeOptions = useMemo<SubtypeOption[]>(() => {
         const results = entryClassesData ?? [];
         return results
-            .filter((entry: any) => entry.type === 'entity')
-            .map((c: any) => ({
-                value: c.subtype,
-                label: c.subtype,
+            .filter((entry) => entry.type === 'entity')
+            .map((entry) => ({
+                value: entry.subtype,
+                label: entry.subtype,
             }));
     }, [entryClassesData]);
 
@@ -191,21 +227,10 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
 
     // Update form when entity data loads
     useEffect(() => {
-        if (entityData) {
-            reset({
-                name: entityData.name,
-                subtype: entityData.subtype || '',
-                description: entityData.description || '',
-                isPublic: entityData.is_public || false,
-                aliases:
-                    entityData.aliases_detail
-                        ?.filter((alias) => alias.id !== undefined)
-                        .map((alias) => ({
-                            value: alias.id!,
-                            label: `${alias.subtype}:${alias.name}`,
-                        })) ?? [],
-            });
-        }
+        const values = getEntityFormFromApi(entityData);
+        if (!values) return;
+        loadedValuesRef.current = values;
+        reset(values);
     }, [entityData, reset]);
 
     // Handle form submission
@@ -241,283 +266,352 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         );
     }
 
+    const headerContainer =
+        typeof document !== 'undefined'
+            ? document.getElementById('settings-header-actions')
+            : null;
+
+    const handleRevert = () => {
+        if (loadedValuesRef.current) reset(loadedValuesRef.current);
+    };
+    const handleDefault = () =>
+        reset(ENTITY_FORM_DEFAULTS, { keepDefaultValues: true });
+    const isAtDefault = isEqual(watch(), ENTITY_FORM_DEFAULTS);
+
     return (
-        <form
-            className='flex flex-col gap-6'
-            onSubmit={handleFormSubmit(onSubmit as any)}
-        >
-            <section id='entity-settings'>
-                <div className='flex flex-col gap-4'>
-                    <FieldGroup className='gap-4'>
-                        <Controller
-                            name='name'
-                            control={control}
-                            render={({ field, fieldState }) => (
-                                <Field
-                                    orientation='responsive'
-                                    data-invalid={fieldState.invalid}
-                                >
-                                    <FieldContent className='flex-1'>
-                                        <FieldLabel
-                                            htmlFor='name'
-                                            className='text-sm block mb-0.5'
-                                        >
-                                            Name
-                                            <span className='text-destructive ml-1'>
-                                                *
-                                            </span>
-                                        </FieldLabel>
-                                        <FieldDescription>
-                                            Unique identifier for this entity
-                                        </FieldDescription>
-                                        {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
-                                                {fieldState.error?.message}
-                                            </FieldError>
-                                        )}
-                                    </FieldContent>
-                                    <Input
-                                        {...field}
-                                        id='name'
-                                        disabled={true}
-                                        className='w-64 shrink-0 self-start md:self-center'
-                                        aria-invalid={fieldState.invalid}
-                                        aria-describedby={
-                                            fieldState.invalid
-                                                ? 'name-error'
-                                                : undefined
-                                        }
-                                    />
-                                </Field>
+        <>
+            {headerContainer &&
+                createPortal(
+                    <div className='flex items-center gap-2'>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='icon'
+                            disabled={!isDirty}
+                            onClick={handleRevert}
+                            title='Revert'
+                        >
+                            <ArrowCounterClockwiseIcon
+                                className='size-4'
+                                weight='bold'
+                            />
+                        </Button>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='icon'
+                            disabled={isAtDefault}
+                            onClick={handleDefault}
+                            title='Default'
+                        >
+                            <ClockCounterClockwiseIcon
+                                className='size-4'
+                                weight='bold'
+                            />
+                        </Button>
+                        <Button
+                            type='submit'
+                            form='entity-form'
+                            variant='default'
+                            size='icon'
+                            disabled={isSubmitting || !isDirty}
+                            title='Save Changes'
+                        >
+                            {isSubmitting ? (
+                                <Spinner className='size-4' />
+                            ) : (
+                                <FloppyDiskIcon className='size-4' weight='bold' />
                             )}
-                        />
-
-                        <Separator />
-
-                        <Controller
-                            name='subtype'
-                            control={control}
-                            render={({ field, fieldState }) => {
-                                return (
+                        </Button>
+                    </div>,
+                    headerContainer,
+                )}
+            <form
+                id='entity-form'
+                className='flex flex-col gap-6'
+                onSubmit={handleFormSubmit(onSubmit)}
+            >
+                <section id='entity-settings'>
+                    <div className='flex flex-col gap-4'>
+                        <FieldGroup className='gap-4'>
+                            <Controller
+                                name='name'
+                                control={control}
+                                render={({ field, fieldState }) => (
                                     <Field
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
                                         <FieldContent className='flex-1'>
                                             <FieldLabel
-                                                htmlFor='entity-subtype'
+                                                htmlFor='name'
                                                 className='text-sm block mb-0.5'
                                             >
-                                                Subtype
+                                                Name
                                                 <span className='text-destructive ml-1'>
                                                     *
                                                 </span>
                                             </FieldLabel>
                                             <FieldDescription>
-                                                Entity class type
+                                                Unique identifier for this entity
                                             </FieldDescription>
                                             {fieldState.invalid && (
-                                                <FieldError className='text-sm mt-1'>
+                                                <FieldError
+                                                    id='name-error'
+                                                    className='text-sm mt-1'
+                                                >
                                                     {fieldState.error?.message}
                                                 </FieldError>
                                             )}
                                         </FieldContent>
-                                        <Select
-                                            value={field.value ?? ''}
-                                            onValueChange={field.onChange}
-                                        >
-                                            <SelectTrigger
-                                                id='entity-subtype'
-                                                className='self-start md:self-center'
-                                                aria-invalid={fieldState.invalid}
-                                                aria-describedby={
-                                                    fieldState.invalid
-                                                        ? 'subtype-error'
-                                                        : undefined
-                                                }
-                                            >
-                                                <SelectValue placeholder='Select subtype' />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {resolvedSubtypeOptions.map(
-                                                    (option) => (
-                                                        <SelectItem
-                                                            key={option.value}
-                                                            value={option.value}
-                                                        >
-                                                            {option.label}
-                                                        </SelectItem>
-                                                    ),
-                                                )}
-                                            </SelectContent>
-                                        </Select>
-                                    </Field>
-                                );
-                            }}
-                        />
-
-                        <Separator />
-
-                        <Controller
-                            name='isPublic'
-                            control={control}
-                            render={({ field, fieldState }) => (
-                                <Field
-                                    orientation='horizontal'
-                                    data-invalid={fieldState.invalid}
-                                >
-                                    <FieldContent className='flex-1'>
-                                        <FieldLabel
-                                            htmlFor='isPublic'
-                                            className='text-sm block mb-0.5'
-                                        >
-                                            Publicly Available
-                                        </FieldLabel>
-                                        <FieldDescription>
-                                            Allow public access to this entity
-                                        </FieldDescription>
-                                        {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
-                                                {fieldState.error?.message}
-                                            </FieldError>
-                                        )}
-                                    </FieldContent>
-                                    <Switch
-                                        id='isPublic'
-                                        name={field.name}
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                        className='self-center'
-                                        aria-invalid={fieldState.invalid}
-                                        aria-describedby={
-                                            fieldState.invalid
-                                                ? 'isPublic-error'
-                                                : undefined
-                                        }
-                                    />
-                                </Field>
-                            )}
-                        />
-
-                        <Separator />
-
-                        <Controller
-                            name='description'
-                            control={control}
-                            render={({ field, fieldState }) => (
-                                <Field
-                                    orientation='vertical'
-                                    className='w-full'
-                                    data-invalid={fieldState.invalid}
-                                >
-                                    <FieldContent>
-                                        <FieldLabel
-                                            htmlFor='description'
-                                            className='text-sm block mb-0.5'
-                                        >
-                                            Description
-                                        </FieldLabel>
-                                        <FieldDescription className='text-sm mb-2'>
-                                            Brief explanation of this entity
-                                        </FieldDescription>
-                                    </FieldContent>
-                                    <Textarea
-                                        {...field}
-                                        id='description'
-                                        placeholder='Description'
-                                        rows={4}
-                                        aria-invalid={fieldState.invalid}
-                                        aria-describedby={
-                                            fieldState.invalid
-                                                ? 'description-error'
-                                                : undefined
-                                        }
-                                    />
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </Field>
-                            )}
-                        />
-
-                        <Separator />
-
-                        <Controller
-                            name='aliases'
-                            control={control}
-                            render={({ field, fieldState }) => (
-                                <Field
-                                    orientation='responsive'
-                                    data-invalid={fieldState.invalid}
-                                >
-                                    <FieldContent className='flex-1'>
-                                        <FieldLabel
-                                            htmlFor='entity-aliases'
-                                            className='text-sm block mb-0.5'
-                                        >
-                                            Aliases
-                                        </FieldLabel>
-                                        <FieldDescription>
-                                            Alternate names or references for this
-                                            entity
-                                        </FieldDescription>
-                                        {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
-                                                {fieldState.error?.message}
-                                            </FieldError>
-                                        )}
-                                    </FieldContent>
-                                    <div
-                                        id='entity-aliases'
-                                        className='w-64 shrink-0 self-start md:self-center'
-                                    >
-                                        <MultipleSelector
-                                            value={
-                                                (field.value?.map((a) => ({
-                                                    value: String(a.value),
-                                                    label: a.label,
-                                                })) || []) as Option[]
-                                            }
-                                            defaultOptions={[]}
-                                            placeholder='Select aliases...'
-                                            onSearch={async (query) => {
-                                                const results =
-                                                    await fetchAliases(query);
-                                                return results.map((a) => ({
-                                                    value: String(a.value),
-                                                    label: a.label,
-                                                })) as unknown as Option[];
-                                            }}
-                                            onChange={(options) => {
-                                                field.onChange(
-                                                    options.map((o) => ({
-                                                        value: Number(o.value),
-                                                        label: o.label,
-                                                    })),
-                                                );
-                                            }}
-                                            emptyIndicator={
-                                                <p className='text-center text-sm'>
-                                                    No aliases found
-                                                </p>
+                                        <Input
+                                            {...field}
+                                            id='name'
+                                            disabled={true}
+                                            className='w-64 shrink-0 self-start md:self-center'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'name-error'
+                                                    : undefined
                                             }
                                         />
-                                    </div>
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </div>
-            </section>
+                                    </Field>
+                                )}
+                            />
 
-            {/* Save Button */}
-            <div className='pt-2 flex justify-end'>
-                <Button type='submit' variant='default' disabled={isSubmitting}>
-                    {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </Button>
-            </div>
-        </form>
+                            <Separator />
+
+                            <Controller
+                                name='subtype'
+                                control={control}
+                                render={({ field, fieldState }) => {
+                                    return (
+                                        <Field
+                                            orientation='responsive'
+                                            data-invalid={fieldState.invalid}
+                                        >
+                                            <FieldContent className='flex-1'>
+                                                <FieldLabel
+                                                    htmlFor='entity-subtype'
+                                                    className='text-sm block mb-0.5'
+                                                >
+                                                    Subtype
+                                                    <span className='text-destructive ml-1'>
+                                                        *
+                                                    </span>
+                                                </FieldLabel>
+                                                <FieldDescription>
+                                                    Entity class type
+                                                </FieldDescription>
+                                                {fieldState.invalid && (
+                                                    <FieldError
+                                                        id='subtype-error'
+                                                        className='text-sm mt-1'
+                                                    >
+                                                        {fieldState.error?.message}
+                                                    </FieldError>
+                                                )}
+                                            </FieldContent>
+                                            <Select
+                                                value={field.value ?? ''}
+                                                onValueChange={field.onChange}
+                                            >
+                                                <SelectTrigger
+                                                    id='entity-subtype'
+                                                    className='self-start md:self-center'
+                                                    aria-invalid={fieldState.invalid}
+                                                    aria-describedby={
+                                                        fieldState.invalid
+                                                            ? 'subtype-error'
+                                                            : undefined
+                                                    }
+                                                >
+                                                    <SelectValue placeholder='Select subtype' />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {resolvedSubtypeOptions.map(
+                                                        (option) => (
+                                                            <SelectItem
+                                                                key={option.value}
+                                                                value={option.value}
+                                                            >
+                                                                {option.label}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        </Field>
+                                    );
+                                }}
+                            />
+
+                            <Separator />
+
+                            <Controller
+                                name='isPublic'
+                                control={control}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='horizontal'
+                                        data-invalid={fieldState.invalid}
+                                    >
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel
+                                                htmlFor='isPublic'
+                                                className='text-sm block mb-0.5'
+                                            >
+                                                Publicly Available
+                                            </FieldLabel>
+                                            <FieldDescription>
+                                                Allow public access to this entity
+                                            </FieldDescription>
+                                            {fieldState.invalid && (
+                                                <FieldError
+                                                    id='isPublic-error'
+                                                    className='text-sm mt-1'
+                                                >
+                                                    {fieldState.error?.message}
+                                                </FieldError>
+                                            )}
+                                        </FieldContent>
+                                        <Switch
+                                            id='isPublic'
+                                            name={field.name}
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            className='self-center'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'isPublic-error'
+                                                    : undefined
+                                            }
+                                        />
+                                    </Field>
+                                )}
+                            />
+
+                            <Separator />
+
+                            <Controller
+                                name='description'
+                                control={control}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='vertical'
+                                        className='w-full'
+                                        data-invalid={fieldState.invalid}
+                                    >
+                                        <FieldContent>
+                                            <FieldLabel
+                                                htmlFor='description'
+                                                className='text-sm block mb-0.5'
+                                            >
+                                                Description
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm mb-2'>
+                                                Brief explanation of this entity
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Textarea
+                                            {...field}
+                                            id='description'
+                                            placeholder='Description'
+                                            rows={4}
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'description-error'
+                                                    : undefined
+                                            }
+                                        />
+                                        {fieldState.invalid && (
+                                            <FieldError
+                                                id='description-error'
+                                                className='text-sm mt-1'
+                                            >
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </Field>
+                                )}
+                            />
+
+                            <Separator />
+
+                            <Controller
+                                name='aliases'
+                                control={control}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='responsive'
+                                        data-invalid={fieldState.invalid}
+                                    >
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel
+                                                htmlFor='entity-aliases'
+                                                className='text-sm block mb-0.5'
+                                            >
+                                                Aliases
+                                            </FieldLabel>
+                                            <FieldDescription>
+                                                Alternate names or references for this
+                                                entity
+                                            </FieldDescription>
+                                            {fieldState.invalid && (
+                                                <FieldError
+                                                    id='aliases-error'
+                                                    className='text-sm mt-1'
+                                                >
+                                                    {fieldState.error?.message}
+                                                </FieldError>
+                                            )}
+                                        </FieldContent>
+                                        <div
+                                            id='entity-aliases'
+                                            className='w-64 shrink-0 self-start md:self-center'
+                                        >
+                                            <MultipleSelector
+                                                value={
+                                                    (field.value?.map((a) => ({
+                                                        value: String(a.value),
+                                                        label: a.label,
+                                                    })) || []) as Option[]
+                                                }
+                                                defaultOptions={[]}
+                                                placeholder='Select aliases...'
+                                                onSearch={async (query) => {
+                                                    const results =
+                                                        await fetchAliases(query);
+                                                    return results.map((a) => ({
+                                                        value: String(a.value),
+                                                        label: a.label,
+                                                    })) as unknown as Option[];
+                                                }}
+                                                onChange={(options) => {
+                                                    field.onChange(
+                                                        options.map((o) => ({
+                                                            value: Number(o.value),
+                                                            label: o.label,
+                                                        })),
+                                                    );
+                                                }}
+                                                emptyIndicator={
+                                                    <p className='text-center text-sm'>
+                                                        No aliases found
+                                                    </p>
+                                                }
+                                            />
+                                        </div>
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </div>
+                </section>
+            </form>
+        </>
     );
 }

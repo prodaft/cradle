@@ -11,7 +11,7 @@ from drf_spectacular.views import (
 
 from user.views.oauth_view import OAuthLoginView
 from user.views.token_view import LogoutView, TokenObtainPairLogView, TokenRefreshLogView
-from user.views.user_view import ChangePasswordView, EmailConfirm, PasswordReset, SignupView
+from user.views.user_view import ChangePasswordView, EmailConfirm, PasswordReset, SignupView, UserConfigView
 
 base_url = settings.BASE_URL.strip("/")
 admin_path = path(settings.ADMIN_PATH, admin.site.urls)
@@ -25,6 +25,7 @@ api_patterns = [
     path("auth/email-confirm/", EmailConfirm.as_view(), name="auth_email_confirm"),
     path("auth/change-password/", ChangePasswordView.as_view(), name="auth_change_password"),
     path("auth/oauth/login/", OAuthLoginView.as_view(), name="auth_oauth_login"),
+    path("auth/config/", UserConfigView.as_view(), name="auth_config"),
     path("reports/", include("publish.urls")),
     path("users/", include("user.urls")),
     path("logs/", include("logs.urls")),
