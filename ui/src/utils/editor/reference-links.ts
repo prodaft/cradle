@@ -1,5 +1,6 @@
+import { pluginReplaceSpansLineBreak } from '@/utils/editor/plugin-decoration-utils';
 import { syntaxTree } from '@codemirror/language';
-import { EditorState, Range } from '@codemirror/state';
+import { EditorState, Range, type Text } from '@codemirror/state';
 import {
     Decoration,
     DecorationSet,
@@ -73,9 +74,10 @@ class ReferenceLinkWidget extends WidgetType {
         return span;
     }
 
-    ignoreEvent(e: Event) {
-        // Ignore mousedown events so CodeMirror doesn't interfere with the link click
-        return e.type === 'mousedown';
+    // Same as prosemark replace widgets: let CodeMirror handle mousedown so
+    // selection updates work; opening the file still happens on click.
+    ignoreEvent() {
+        return false;
     }
 }
 
@@ -252,16 +254,11 @@ function parseExternalReference(
         isShortcut = true;
     }
 
-    let key = '';
-    if (!isShortcut) {
-        if (labelContent.trim() === '') {
-            key = textContent;
-        } else {
-            key = labelContent;
-        }
-    } else {
-        key = textContent;
-    }
+    const key = !isShortcut
+        ? labelContent.trim() === ''
+            ? textContent
+            : labelContent
+        : textContent;
 
     if (mappings[key] || mappings[key.toLowerCase()]) {
         const endPos = p;
@@ -382,6 +379,7 @@ export function referenceLinksPlugin(
                             node.type.name === 'ExternalReferenceImage'
                         ) {
                             const decoration = createReferenceDecoration(
+                                doc,
                                 node,
                                 doc.toString(),
                                 cursorPos,
@@ -406,6 +404,7 @@ export function referenceLinksPlugin(
 }
 
 function createReferenceDecoration(
+    doc: Text,
     node: { from: number; to: number; node: SyntaxNode },
     text: string,
     cursorPos: number,
@@ -420,6 +419,10 @@ function createReferenceDecoration(
     const to = node.to;
 
     if (to > text.length) {
+        return null;
+    }
+
+    if (pluginReplaceSpansLineBreak(doc, from, to)) {
         return null;
     }
 

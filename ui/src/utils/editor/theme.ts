@@ -47,13 +47,20 @@ export function createCradleTheme(isDarkMode: boolean) {
             '.cm-cursor, .cm-dropCursor, .cm-caret': {
                 borderLeftColor: 'var(--pm-cursor-color) !important',
             },
+            // drawSelection puts .cm-selectionLayer under .cm-scroller as a sibling of
+            // .cm-content — not inside it. Raising z-index made highlights sit above
+            // text so clicks hit .cm-selectionBackground; eventBelongsToEditor() then
+            // never reaches contentDOM and mousedown (e.g. clearing select-all) is ignored.
+            '.cm-selectionLayer': {
+                pointerEvents: 'none',
+            },
             '.cm-selectionBackground': {
                 backgroundColor:
                     'color-mix(in oklch, var(--ring) 20%, transparent) !important',
-                zIndex: 3,
+                pointerEvents: 'none',
             },
-            '.cm-selectionLayer': {
-                zIndex: '0 !important',
+            '.cm-selectionHandle': {
+                pointerEvents: 'auto',
             },
             '.cm-lineNumbers': {
                 backgroundColor: 'var(--background)',
@@ -72,6 +79,14 @@ export function createCradleTheme(isDarkMode: boolean) {
             '.cm-activeLine, .cm-activeLineGutter': {
                 backgroundColor: 'transparent !important',
             },
+            // Prosemark hides emphasis marks (**) via font-size:0px which produces
+            // zero-height DOM rects. Those confuse CodeMirror's InlineCoordsScan.scan()
+            // into an infinite loop when a Decoration.replace widget is on the same line
+            // (the scan oscillates between y±1 around the zero-height rect's baseline).
+            // display:none produces empty getClientRects(), so the element is skipped
+            // entirely in the scan. Prosemark still removes this class when the cursor
+            // is inside the node, so the marks become visible for editing as usual.
+            '.cm-hidden-token': { display: 'none' },
             // Search panel styling
             '.cm-panel': {
                 backgroundColor: 'var(--card)',

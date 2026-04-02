@@ -58,6 +58,11 @@ declare module '*.sass' {
 // ============================================================================
 
 interface ImportMetaEnv {
+    readonly BASE_URL: string;
+    readonly MODE: string;
+    readonly DEV: boolean;
+    readonly PROD: boolean;
+    readonly SSR: boolean;
     readonly VITE_API_BASE_URL: string;
     readonly VITE_ENV?: string;
     readonly VITE_SENTRY_DSN: string;
@@ -67,5 +72,4 @@ interface ImportMeta {
     readonly env: ImportMetaEnv;
 }
 
-declare module 'y-codemirror.next';
 declare module 'y-websocket';

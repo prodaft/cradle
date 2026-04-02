@@ -560,14 +560,14 @@ function useDataGrid<TData>({
                     const value = cell.getValue();
                     const cellVariant = cell.column.columnDef?.meta?.cell?.variant;
 
-                    let serializedValue = '';
-                    if (cellVariant === 'file' || cellVariant === 'multi-select') {
-                        serializedValue = value ? JSON.stringify(value) : '';
-                    } else if (value instanceof Date) {
-                        serializedValue = value.toISOString();
-                    } else {
-                        serializedValue = String(value ?? '');
-                    }
+                    const serializedValue =
+                        cellVariant === 'file' || cellVariant === 'multi-select'
+                            ? value
+                                ? JSON.stringify(value)
+                                : ''
+                            : value instanceof Date
+                              ? value.toISOString()
+                              : String(value ?? '');
 
                     cellData.set(cellKey, serializedValue);
                 }
@@ -663,14 +663,14 @@ function useDataGrid<TData>({
                     const value = cell.getValue();
                     const cellVariant = cell.column.columnDef?.meta?.cell?.variant;
 
-                    let serializedValue = '';
-                    if (cellVariant === 'file' || cellVariant === 'multi-select') {
-                        serializedValue = value ? JSON.stringify(value) : '';
-                    } else if (value instanceof Date) {
-                        serializedValue = value.toISOString();
-                    } else {
-                        serializedValue = String(value ?? '');
-                    }
+                    const serializedValue =
+                        cellVariant === 'file' || cellVariant === 'multi-select'
+                            ? value
+                                ? JSON.stringify(value)
+                                : ''
+                            : value instanceof Date
+                              ? value.toISOString()
+                              : String(value ?? '');
 
                     cellData.set(cellKey, serializedValue);
                 }

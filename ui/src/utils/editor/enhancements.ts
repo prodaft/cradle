@@ -575,7 +575,7 @@ export class CradleEditor {
         const tree = syntaxTree(context.state);
         const node = tree.resolve(pos, -1);
 
-        let options: Array<{ label: string; type: string; info?: string }> = [];
+        let options: Array<{ label: string; type: string; info?: string }>;
         const from = node.from;
         const to = node.to;
 
@@ -698,7 +698,6 @@ export class CradleEditor {
                     }));
                     break;
                 }
-                ratchet = false;
                 // falls through
             }
             // @ts-expect-error intentional fallthrough into CradleLinkAlias
@@ -722,7 +721,6 @@ export class CradleEditor {
                     );
                     break;
                 }
-                ratchetValue = false;
                 // falls through
             }
             case 'CradleLinkAlias': {
@@ -1244,14 +1242,14 @@ export class CradleEditor {
                         }
 
                         // Parse type, value, and alias
-                        let linkType = '';
                         let linkValue: string | null = null;
                         let linkAlias: string | null = null;
                         const colonIndex = content.indexOf(':');
-                        if (colonIndex === -1) {
-                            linkType = content.trim();
-                        } else {
-                            linkType = content.slice(0, colonIndex).trim();
+                        const linkType =
+                            colonIndex === -1
+                                ? content.trim()
+                                : content.slice(0, colonIndex).trim();
+                        if (colonIndex !== -1) {
                             const remainder = content.slice(colonIndex + 1);
 
                             // Find unescaped pipe character

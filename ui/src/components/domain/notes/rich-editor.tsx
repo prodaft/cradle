@@ -650,7 +650,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const insertTextToCodeMirror = useCallback((text: string) => {
         const view = editorViewRef.current;
         if (view) {
-            view.dispatch(view.state.update(view.state.replaceSelection(text)));
+            view.dispatch(view.state.replaceSelection(text));
         }
     }, []);
 

@@ -138,11 +138,10 @@ async function resolveMinioLinks(token: Token): Promise<void> {
 
         const cached = MinioCache[fileId];
         let presigned: string | undefined = cached?.presigned_url;
-        let expiry: number | undefined = cached?.expires_in;
-        if (!presigned || Date.now() > (expiry || 0)) {
+        const cachedExpiry = cached?.expires_in;
+        if (!presigned || Date.now() > (cachedExpiry || 0)) {
             const result = await fetchMinioDownloadLink(fileId);
             presigned = result.presigned_url;
-            expiry = result.expires_in;
             MinioCache[fileId] = result;
         }
         token.attrs![hrefIndex][1] = presigned!;
@@ -190,7 +189,7 @@ export async function parseWithExtensions(
         return `<img ${attrs}>`;
     };
 
-    let metadata = {};
+    let metadata: Record<string, any>;
     try {
         const note = matter(mdContent, {
             engines: {

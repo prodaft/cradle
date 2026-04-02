@@ -12,6 +12,7 @@ export default [
             'node_modules/*',
             'docs/*',
             'src/services/**',
+            'src/routeTree.gen.ts',
             'src/components/ui/**',
             'src/components/data-grid/**',
             'src/components/data-table/**',

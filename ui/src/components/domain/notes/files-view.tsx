@@ -188,7 +188,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                 enableSorting: false,
             },
         ],
-        [copyToClipboard, handleDownload],
+        [copyToClipboard, handleDownload, downloadMutation.isPending],
     );
 
     const table = useReactTable({

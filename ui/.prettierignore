@@ -7,5 +7,6 @@ node_modules
 dist
 src/assets
 src/services/openapi/schema.d.ts
+src/routeTree.gen.ts
 src/components/ui
 public/

@@ -1,6 +1,7 @@
+import { pluginReplaceSpansLineBreak } from '@/utils/editor/plugin-decoration-utils';
 import { syntaxTree } from '@codemirror/language';
 import { Diagnostic, forEachDiagnostic } from '@codemirror/lint';
-import { EditorState, Range } from '@codemirror/state';
+import { EditorState, Range, type Text } from '@codemirror/state';
 import { Decoration, EditorView, ViewPlugin, WidgetType } from '@codemirror/view';
 import { SyntaxNode } from '@lezer/common';
 import { WarningCircleIcon } from '@phosphor-icons/react';
@@ -141,8 +142,12 @@ class CradleLinkWidget extends WidgetType {
         return warningSpan;
     }
 
-    ignoreEvent(e: Event): boolean {
-        return e.type === 'mousedown';
+    // Must return false so CodeMirror handles pointer events (e.g. collapsing a
+    // full-document selection on click). If true, eventBelongsToEditor() bails
+    // and mousedown never runs — clicks on widgets would leave selection stuck.
+    // Navigation still runs from the click listener below.
+    ignoreEvent(): boolean {
+        return false;
     }
 }
 
@@ -200,6 +205,8 @@ export function cradleLinksPlugin(
                 const text = doc.toString();
                 const selection = view.state.selection.main;
                 const cursorPos = selection.head;
+                const selFrom = selection.from;
+                const selTo = selection.to;
                 const tree = syntaxTree(view.state);
                 const diagnostics = collectDiagnostics(view.state);
 
@@ -207,9 +214,12 @@ export function cradleLinksPlugin(
                     enter: (node) => {
                         if (node.type.name === 'CradleLink') {
                             const linkInfo = parseCradleLink(
+                                doc,
                                 node,
                                 text,
                                 cursorPos,
+                                selFrom,
+                                selTo,
                                 diagnostics,
                                 this.entryColors,
                                 this.navigate,
@@ -335,6 +345,8 @@ export function cradleLinkColorPlugin(
                 const text = doc.toString();
                 const selection = view.state.selection.main;
                 const cursorPos = selection.head;
+                const selFrom = selection.from;
+                const selTo = selection.to;
                 const tree = syntaxTree(view.state);
                 const diagnostics = collectDiagnostics(view.state);
 
@@ -345,6 +357,8 @@ export function cradleLinkColorPlugin(
                                 node,
                                 text,
                                 cursorPos,
+                                selFrom,
+                                selTo,
                                 diagnostics,
                                 this.entryColors,
                                 this.sourceMode,
@@ -392,9 +406,12 @@ function headingLevelFromNodeName(name: string): number | null {
 }
 
 function parseCradleLink(
+    doc: Text,
     node: { from: number; to: number; node: SyntaxNode },
     text: string,
     cursorPos: number,
+    selFrom: number,
+    selTo: number,
     diagnostics: Diagnostic[],
     entryColors: Map<string, string>,
     navigate: (url: string) => void,
@@ -414,8 +431,6 @@ function parseCradleLink(
     let alias = '';
     let timestamp = '';
     let widgetEnd = to;
-    let timestampFrom = to;
-    let timestampTo = to;
 
     let child = node.node.firstChild;
     while (child) {
@@ -430,17 +445,17 @@ function parseCradleLink(
             alias = childText;
         } else if (child.type.name === 'CradleLinkTimestamp') {
             timestamp = childText;
-            timestampFrom = child.from;
-            timestampTo = child.to;
             widgetEnd = child.to;
         }
         child = child.nextSibling;
     }
 
-    if (
-        (cursorPos >= from && cursorPos <= to) ||
-        (timestamp && cursorPos >= timestampFrom && cursorPos <= timestampTo)
-    ) {
+    // Half-open [from, widgetEnd) matches the replace decoration. Cursor-only
+    // check is needed: collapsed at `from` has selFrom === selTo === from, so
+    // range overlap (selFrom < W && selTo > from) is false.
+    const cursorInLink = cursorPos >= from && cursorPos < widgetEnd;
+    const selectionOverlapsLink = selFrom < widgetEnd && selTo > from;
+    if (cursorInLink || selectionOverlapsLink) {
         return null;
     }
 
@@ -451,6 +466,10 @@ function parseCradleLink(
     const lintIssues = diagnostics.filter(
         (diagnostic) => diagnostic.from < widgetEnd && diagnostic.to > from,
     );
+
+    if (pluginReplaceSpansLineBreak(doc, from, widgetEnd)) {
+        return null;
+    }
 
     const color = entryColors.get(type) || 'var(--pm-link-color)';
 
@@ -475,6 +494,8 @@ function createColorMarks(
     node: { from: number; to: number; node: SyntaxNode },
     text: string,
     cursorPos: number,
+    selFrom: number,
+    selTo: number,
     diagnostics: Diagnostic[],
     entryColors: Map<string, string>,
     sourceMode: boolean,
@@ -489,31 +510,25 @@ function createColorMarks(
 
     let type = '';
     let linkEnd = to;
-    let timestampFrom = to;
-    let timestampTo = to;
     let child = node.node.firstChild;
 
     while (child) {
         if (child.type.name === 'CradleLinkType') {
             type = text.slice(child.from, child.to);
         } else if (child.type.name === 'CradleLinkTimestamp') {
-            timestampFrom = child.from;
-            timestampTo = child.to;
             linkEnd = child.to;
         }
         child = child.nextSibling;
     }
 
-    const isInLink = cursorPos >= from && cursorPos <= to;
-    const hasTimestamp = timestampFrom !== timestampTo;
-    const isInTimestamp =
-        hasTimestamp && cursorPos >= timestampFrom && cursorPos <= timestampTo;
+    const cursorInLink = cursorPos >= from && cursorPos < linkEnd;
+    const selectionOverlapsLink = selFrom < linkEnd && selTo > from;
 
     const hasLintIssues = diagnostics.some(
         (diagnostic) => diagnostic.from < linkEnd && diagnostic.to > from,
     );
 
-    if (isInLink || isInTimestamp || hasLintIssues || sourceMode) {
+    if (cursorInLink || hasLintIssues || sourceMode || selectionOverlapsLink) {
         if (!type) {
             return marks;
         }

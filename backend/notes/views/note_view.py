@@ -502,7 +502,7 @@ class NoteDetail(APIView):
                 {AccessType.READ, AccessType.READ_WRITE},
             ):
                 raise NoAccessToEntriesException(
-                    links=list(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)),
+                    list(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)),
                 )
         with transaction.atomic():
             note_to_delete.delete()
