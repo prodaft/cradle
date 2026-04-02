@@ -8,6 +8,11 @@ from django.db import models
 from entries.enums import RelationReason
 from entries.models import Entry, Relation
 
+from ...constants import (
+    INTELIO_ENRICHMENT_MESSAGE_FINISH_FAILED,
+    INTELIO_ENRICHMENT_MESSAGE_INIT_FAILED,
+    INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED,
+)
 from ..base import BaseEnricher
 from ..mappings.mwdb import MWDBMapping
 
@@ -77,17 +82,16 @@ class MWDBEnricher(BaseEnricher):
     def pre_enrich(self, entries: list[Entry]) -> Optional[str]:
         """Validate configuration before enrichment."""
         if not self.settings.get("api_key"):
-            return "MWDB API key is required"
+            return "Add your MWDB API key before running this enrichment."
 
         if not entries:
-            return "No entries provided for enrichment"
+            return "Select at least one entry to enrich."
 
         # Warn if mappings are missing and hash extraction is enabled
         if self.settings.get("extract_hashes", True) and not MWDBMapping.objects.exists():
             self.request._append_warning(
-                "No MWDB type mappings configured. "
-                "Related hash extraction will be disabled. "
-                "Configure MWDBMapping in Django admin to enable hash extraction."
+                "No MWDB type mappings are configured. "
+                "Related hash extraction will be disabled until an administrator adds them in the admin site."
             )
 
         return None
@@ -101,8 +105,9 @@ class MWDBEnricher(BaseEnricher):
         # Initialize MWDB client
         try:
             mwdb = mwdblib.MWDB(api_url=mwdb_url, api_key=api_key)
-        except Exception as e:
-            self.request._append_warning(f"Failed to initialize MWDB client: {str(e)}")
+        except Exception:
+            logger.warning("Failed to initialize MWDB client", exc_info=True)
+            self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_INIT_FAILED)
             return
 
         enrichment_entry = self.request.entry
@@ -116,9 +121,9 @@ class MWDBEnricher(BaseEnricher):
                     file_info = mwdb.query_file(entry.name)
                 except mwdblib.exc.ObjectNotFoundError:
                     result["not_found"] = True
-                except Exception as exc:
-                    logger.exception(exc)
-                    self.request._append_warning(f"MWDB query failed for {entry.name}: {str(exc)}")
+                except Exception:
+                    logger.exception("MWDB query failed for entry %s", entry.pk)
+                    self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED)
                     result["not_found"] = True
                 else:
                     # File found - extract data
@@ -128,9 +133,9 @@ class MWDBEnricher(BaseEnricher):
                     # Try to get attributes (may not exist)
                     try:
                         result["attributes"] = file_info.attributes
-                    except Exception as e:
-                        logger.warning(f"Failed to get attributes: {e}", stack_info=True)
-                        self.request._append_warning(f"Could not retrieve attributes for {entry.name}: {str(e)}")
+                    except Exception:
+                        logger.warning("Failed to get MWDB attributes for entry %s", entry.pk, exc_info=True)
+                        self.request._append_warning("Some details from the malware database could not be retrieved.")
 
                     # Add permalink
                     result["permalink"] = f"{mwdb_url}/file/{entry.name}"
@@ -151,8 +156,9 @@ class MWDBEnricher(BaseEnricher):
                 if extract_hashes and not result.get("not_found"):
                     self._extract_related_hashes(entry, result.get("data", {}))
 
-            except Exception as e:
-                self.request._append_warning(f"Unexpected error enriching {entry.name}: {str(e)}")
+            except Exception:
+                logger.warning("MWDB enrichment failed for entry %s", entry.pk, exc_info=True)
+                self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_FINISH_FAILED)
 
     def _extract_related_hashes(self, entry: Entry, data: dict) -> None:
         """Extract related hashes from MWDB data using MWDBMapping."""
@@ -227,6 +233,7 @@ class MWDBEnricher(BaseEnricher):
         # Warn if unmapped types were encountered
         if unmapped_types:
             self.request._append_warning(
-                f"Skipped MWDB artifact type(s) without mappings: {', '.join(unmapped_types)}. "
-                f"Configure MWDBMapping in Django admin to extract these artifacts."
+                f"Some related artifact types were skipped because no mapping exists for them: "
+                f"{', '.join(unmapped_types)}. "
+                f"An administrator can add MWDB type mappings in the admin site."
             )

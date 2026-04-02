@@ -34,7 +34,7 @@ class PlaintextPublish(BasePublishStrategy):
                 report.file.delete(save=False)
         except Exception:
             logger.exception("Failed to delete plaintext report.")
-            report.error_message = "Failed to delete plaintext report."
+            report.error_message = "The published report file could not be removed."
             report.status = ReportStatus.ERROR
             report.save()
             return False
@@ -60,9 +60,9 @@ class PlaintextPublish(BasePublishStrategy):
 
             # Save plaintext content to FileField - Django handles S3 upload
             report.file.save(f"{report.id}.txt", ContentFile(text.encode("utf-8")), save=True)
-        except Exception as e:
+        except Exception:
             logger.exception("Failed to upload plaintext report.")
-            report.error_message = f"Failed to upload plaintext report: {e}"
+            report.error_message = "The report could not be saved. Please try again."
             report.status = ReportStatus.ERROR
             report.save()
             return False

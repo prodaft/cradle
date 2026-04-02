@@ -12,7 +12,7 @@ from minio import Minio
 
 from cradle.settings import MINIO_BACKEND_URL, MINIO_CONFIG
 
-from .exceptions import MinioObjectNotFound
+from .exceptions import StoredFileNotFoundException
 
 
 class MinioClient:
@@ -93,7 +93,7 @@ class MinioClient:
             Presigned GET URL string for downloading the object.
 
         Raises:
-            MinioObjectNotFound: No object exists at the specified path.
+            StoredFileNotFoundException: No object exists at the specified path.
         """
         assert self.client is not None  # required by mypy
 
@@ -110,7 +110,7 @@ class MinioClient:
                 response_headers=response_headers,
             )
         except Exception:
-            raise MinioObjectNotFound()
+            raise StoredFileNotFoundException()
 
     def file_exists_at_path(self, bucket_name: str, minio_file_name: str) -> bool:
         """Check whether the file exists in the bucket on the MinIO instance.

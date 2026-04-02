@@ -75,7 +75,7 @@ class RequestAccess(APIView):
             else:
                 entity = Entry.entities.get(id=entity_id)
         except Entry.DoesNotExist:
-            raise EntityNotFoundException(detail="There is no entity with the specified ID.")
+            raise EntityNotFoundException(detail="That entity could not be found.")
 
         if (
             user.is_cradle_admin

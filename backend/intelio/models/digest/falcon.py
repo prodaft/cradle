@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 
 from celery import chain
@@ -11,13 +12,13 @@ from entries.enums import EntryType, RelationReason
 from entries.exceptions import InvalidEntryException
 from entries.models import Entry, EntryClass, Relation
 
+from ...constants import INTELIO_FALCON_DIGEST_CHUNK_SIZE, INTELIO_FALCON_DIGEST_REL_CHUNK_SIZE
 from ...enums import DigestStatus
 from ...tasks.falcon import digest_chunk
 from ..base import BaseDigest
 from ..mappings.falcon import FalconMapping
 
-CHUNK_SIZE = 1000  # Number of objects to process in each chunk
-REL_CHUNK_SIZE = 4000  # Number of relations to save in each chunk
+logger = logging.getLogger(__name__)
 
 
 class FalconDigest(BaseDigest):
@@ -36,7 +37,7 @@ class FalconDigest(BaseDigest):
             report_data = json.load(report_file)
 
         if not isinstance(report_data, list):
-            raise ValueError("Expected a list of falcon objects")
+            raise ValueError("The file must contain a list of items.")
 
         return report_data
 
@@ -44,25 +45,25 @@ class FalconDigest(BaseDigest):
         """Split Falcon data into chunks and schedule Celery tasks for processing."""
         try:
             report_data = self.digest_data()
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             self.status = DigestStatus.ERROR
-            self.errors = ["Invalid JSON format: " + e.msg]
+            self.errors = ["The file contains invalid JSON."]
             self.save()
             return
         except ValueError:
             self.status = DigestStatus.ERROR
-            self.errors = ["Expected a list of falcon objects"]
+            self.errors = ["The file must contain a list of items."]
             self.save()
             return
 
         chunks = []
-        for k in range(0, len(report_data), CHUNK_SIZE):
+        for k in range(0, len(report_data), INTELIO_FALCON_DIGEST_CHUNK_SIZE):
             chunks.append(
                 digest_chunk.si(
                     self.id,
                     k,
-                    min(len(report_data), k + CHUNK_SIZE),
-                    k + CHUNK_SIZE >= len(report_data),
+                    min(len(report_data), k + INTELIO_FALCON_DIGEST_CHUNK_SIZE),
+                    k + INTELIO_FALCON_DIGEST_CHUNK_SIZE >= len(report_data),
                 )
             )
 
@@ -83,14 +84,18 @@ class FalconDigest(BaseDigest):
             entity_obj = obj.get("entity", None)
 
             if entity_obj is None:
-                self._append_warning("Entity fields missing")
+                self._append_warning("Required entity information is missing from this item.")
                 continue
 
             if f"{entity_obj.get('type')}:{entity_obj.get('value')}" not in entities:
                 eclass = typemapping.get(entity_obj.get("type"))
 
                 if eclass is None:
-                    self._append_warning(f"Unknown type {entity_obj.get('type')}")
+                    logger.warning(
+                        "Unknown Falcon digest entity type (not in mapping): %s",
+                        entity_obj.get("type"),
+                    )
+                    self._append_warning("This item uses a type that is not mapped in settings.")
                     continue
 
                 entity = Entry.entities.filter(
@@ -101,9 +106,12 @@ class FalconDigest(BaseDigest):
                 if entity is None or not Access.objects.has_access_to_entities(
                     self.user, {entity}, {AccessType.READ_WRITE}
                 ):
-                    self._append_warning(
-                        f"Entity {entity_obj.get('type')}:{entity_obj.get('value')} could not be found."
+                    logger.warning(
+                        "Falcon digest entity not found or inaccessible: %s:%s",
+                        entity_obj.get("type"),
+                        entity_obj.get("value"),
                     )
+                    self._append_warning("A referenced entity could not be found or is not accessible.")
                     continue
 
                 entities[f"{entity_obj.get('type')}:{entity_obj.get('value')}"] = entity
@@ -113,21 +121,27 @@ class FalconDigest(BaseDigest):
             eclass = typemapping.get(obj.get("type"), None)
 
             if eclass is None:
-                self._append_warning(f"Unknown type {obj.get('type')}")
+                logger.warning("Unknown Falcon digest object type (not in mapping): %s", obj.get("type"))
+                self._append_warning("This item uses a type that is not mapped in settings.")
                 continue
 
             if eclass.type != EntryType.ARTIFACT:
-                self._append_warning(f"You can't link to an entity ({eclass.subtype})!")
+                st = str(eclass.subtype)
+                label = st.replace("_", " ").strip() or st
+                self._append_warning(
+                    f'This digest can only link artifact entries. The type "{label}" is not an artifact.'
+                )
                 continue
 
             value = obj.get("value", None)
 
             if value is None:
-                self._append_warning("Entity value missing")
+                self._append_warning("A value is missing for this item.")
                 continue
 
             if len(value) > 1024:
-                self._append_warning(f"Entity value {value} is too long ({len(value)} characters, max 1024).")
+                logger.warning("Falcon digest entity value exceeds max length (%s chars)", len(value))
+                self._append_warning("A value in this item is too long (maximum 1024 characters).")
                 continue
 
             try:
@@ -145,8 +159,12 @@ class FalconDigest(BaseDigest):
                         name=value,
                     )
                 except Entry.DoesNotExist:
+                    logger.warning(
+                        "Falcon digest: duplicate entry exists but could not be loaded (%s)",
+                        eclass.subtype,
+                    )
                     self._append_warning(
-                        f"Entry {eclass.subtype} with name {value} already exists, but could not be retrieved."
+                        "This entry already exists but could not be loaded. Try re-running the import later."
                     )
                     continue
 
@@ -173,20 +191,29 @@ class FalconDigest(BaseDigest):
             for link in obj.get("links", []):
                 eclass = typemapping.get(link.get("type"), None)
                 if eclass is None:
-                    self._append_warning(f"Unknown type {link.get('type')}")
+                    logger.warning(
+                        "Unknown Falcon digest link type (not in mapping): %s",
+                        link.get("type"),
+                    )
+                    self._append_warning("This item uses a type that is not mapped in settings.")
                     continue
 
                 if eclass.type != EntryType.ARTIFACT:
-                    self._append_warning(f"You can't link to an entity ({eclass.subtype})!")
+                    st = str(eclass.subtype)
+                    label = st.replace("_", " ").strip() or st
+                    self._append_warning(
+                        f'This digest can only link artifact entries. The type "{label}" is not an artifact.'
+                    )
                     continue
 
                 value = link.get("value", None)
                 if value is None:
-                    self._append_warning("Link value missing")
+                    self._append_warning("A value is missing for this link.")
                     continue
 
                 if len(value) > 1024:
-                    self._append_warning(f"Link value {value} is too long ({len(value)} characters, max 1024).")
+                    logger.warning("Falcon digest link value exceeds max length (%s chars)", len(value))
+                    self._append_warning("A value in this item is too long (maximum 1024 characters).")
                     continue
 
                 try:
@@ -204,8 +231,12 @@ class FalconDigest(BaseDigest):
                             name=value,
                         )
                     except Entry.DoesNotExist:
+                        logger.warning(
+                            "Falcon digest: duplicate entry exists but could not be loaded (%s)",
+                            eclass.subtype,
+                        )
                         self._append_warning(
-                            f"Entry {eclass.subtype} with name {value} already exists, but could not be retrieved."
+                            "This entry already exists but could not be loaded. Try re-running the import later."
                         )
                         continue
 
@@ -221,11 +252,11 @@ class FalconDigest(BaseDigest):
                     )
                 )
 
-                if len(rels) >= REL_CHUNK_SIZE:
+                if len(rels) >= INTELIO_FALCON_DIGEST_REL_CHUNK_SIZE:
                     Relation.objects.bulk_create(rels)
                     rels = []
 
-            if len(rels) >= REL_CHUNK_SIZE:
+            if len(rels) >= INTELIO_FALCON_DIGEST_REL_CHUNK_SIZE:
                 Relation.objects.bulk_create(rels)
                 rels = []
 

@@ -24,16 +24,22 @@ from file_transfer.storage import DigestStorage
 from file_transfer.uploads import PresignedUploadFlow, UploadConfig
 from file_transfer.uploads.exceptions import (
     AlreadyUploadingException,
+    FileNotUploadedException,
     InvalidFileNameException,
     InvalidFileSizeException,
     UploadErrorCodes,
+    UploadExpiredException,
+    UploadNotFoundException,
 )
 from user.authentication import APIKeyAuthentication
 
 from ..enums import DigestStatus
 from ..exceptions import (
     DigestNotFoundException,
-    IntelioErrorCodes,
+    DigestUploadExpiredException,
+    DigestUploadIncompleteException,
+    DigestUploadNotFoundException,
+    IntelIOErrorCodes,
     MissingFileException,
 )
 from ..filters import BaseDigestFilter
@@ -56,7 +62,7 @@ def _get_digest_or_404(request: Request, pk: uuid.UUID) -> BaseDigest:
             return BaseDigest.objects.get(id=pk)
         return BaseDigest.objects.get(id=pk, user=request.user)
     except BaseDigest.DoesNotExist:
-        raise DigestNotFoundException(detail="Digest not found.")
+        raise DigestNotFoundException(detail="That digest could not be found.")
 
 
 # Digest upload flow configuration and callbacks
@@ -155,17 +161,17 @@ class DigestUploadAPIView(APIView):
     def get(self, request: Request) -> Response:
         file_name = request.query_params.get("file_name")
         if not file_name:
-            raise InvalidFileNameException(detail="The 'file_name' query parameter is required.")
+            raise InvalidFileNameException(detail="A file name is required.")
 
         # Get and validate file size
         file_size_str = request.query_params.get("file_size")
         if not file_size_str:
-            raise InvalidFileSizeException(detail="The 'file_size' query parameter is required.")
+            raise InvalidFileSizeException(detail="The file size is required.")
 
         try:
             file_size = int(file_size_str)
         except ValueError:
-            raise InvalidFileSizeException(detail="The 'file_size' parameter must be a valid integer.")
+            raise InvalidFileSizeException(detail="Use a whole number for the file size.")
 
         # Non-admin users cannot have concurrent uploads
         # (admins can have multiple pending uploads)
@@ -194,11 +200,11 @@ class DigestUploadAPIView(APIView):
     responses={
         201: BaseDigestSerializer,
         **get_error_responses(
-            CoreErrorCodes.INVALID_REQUEST_BODY,
+            CoreErrorCodes.INVALID_REQUEST_DATA,
             CoreErrorCodes.INVALID_REQUEST,
-            IntelioErrorCodes.DIGEST_UPLOAD_NOT_FOUND,
-            IntelioErrorCodes.DIGEST_UPLOAD_EXPIRED,
-            IntelioErrorCodes.DIGEST_FILE_NOT_UPLOADED,
+            IntelIOErrorCodes.DIGEST_UPLOAD_NOT_FOUND,
+            IntelIOErrorCodes.DIGEST_UPLOAD_EXPIRED,
+            IntelIOErrorCodes.DIGEST_UPLOAD_INCOMPLETE,
             include_validation_error=True,
         ),
         **get_common_error_responses(),
@@ -222,9 +228,16 @@ class DigestUploadFinalizeAPIView(APIView):
         try:
             upload_uuid = uuid.UUID(upload_id)
         except ValueError:
-            raise InvalidRequestException(detail="The 'upload_id' parameter must be a valid UUID.")
+            raise InvalidRequestException(detail="That upload session is not valid.")
 
-        response_data = digest_upload_flow.finalize(upload_uuid, request.user, **validated_data)
+        try:
+            response_data = digest_upload_flow.finalize(upload_uuid, request.user, **validated_data)
+        except UploadNotFoundException as exc:
+            raise DigestUploadNotFoundException(detail=exc.detail) from exc
+        except UploadExpiredException as exc:
+            raise DigestUploadExpiredException(detail=exc.detail) from exc
+        except FileNotUploadedException as exc:
+            raise DigestUploadIncompleteException(detail=exc.detail) from exc
 
         # Extract digest from response
         digest = response_data["digest"]
@@ -350,7 +363,7 @@ class DigestSubclassesAPIView(APIView):
         responses={
             201: BaseDigestSerializer,
             **get_error_responses(
-                IntelioErrorCodes.MISSING_FILE,
+                IntelIOErrorCodes.MISSING_FILE,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -423,7 +436,7 @@ class DigestAPIView(GenericAPIView):
         file = request.FILES.get("file")
 
         if not file:
-            raise MissingFileException(detail="Missing 'file' in request.")
+            raise MissingFileException(detail="Upload a file to create a digest.")
 
         # Assign file to FileField - Django handles storage automatically
         with transaction.atomic():
@@ -446,7 +459,7 @@ class DigestAPIView(GenericAPIView):
         description="Retrieve a specific digest by ID. Admins can access any digest; users can only access their own.",
         responses={
             200: BaseDigestSerializer,
-            **get_error_responses(IntelioErrorCodes.DIGEST_NOT_FOUND),
+            **get_error_responses(IntelIOErrorCodes.DIGEST_NOT_FOUND),
             **get_common_error_responses(),
         },
     ),
@@ -455,7 +468,7 @@ class DigestAPIView(GenericAPIView):
         description="Delete a specific digest by ID.",
         responses={
             204: {"description": "Digest deleted successfully"},
-            **get_error_responses(IntelioErrorCodes.DIGEST_NOT_FOUND),
+            **get_error_responses(IntelIOErrorCodes.DIGEST_NOT_FOUND),
             **get_common_error_responses(),
         },
     ),

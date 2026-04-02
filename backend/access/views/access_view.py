@@ -75,7 +75,7 @@ class UserAccessList(ListAPIView):
         try:
             self._access_user = CradleUser.objects.get(id=user_id)
         except CradleUser.DoesNotExist:
-            raise UserNotFoundException(detail="There is no user with the specified ID.")
+            raise UserNotFoundException(detail="That user could not be found.")
         return Access.objects.get_accesses(self._access_user.id)
 
     def get_serializer_context(self):
@@ -144,7 +144,7 @@ class EntityAccessList(ListAPIView):
         try:
             entity = Entry.entities.get(pk=entity_id)
         except Entry.DoesNotExist:
-            raise EntityNotFoundException(detail="There is no entity with the specified ID.")
+            raise EntityNotFoundException(detail="That entity could not be found.")
 
         accesses = Access.objects.filter(Q(entity=entity) & ~Q(user__role=UserRoles.ADMIN)).select_related("user")
 

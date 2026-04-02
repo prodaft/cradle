@@ -1,3 +1,4 @@
+import logging
 from typing import Iterable, Optional
 
 import requests
@@ -13,6 +14,8 @@ from user.models import CradleUser
 
 from ..models import PublishedReport, ReportStatus
 from .base import BasePublishStrategy
+
+logger = logging.getLogger(__name__)
 
 
 class CatalystPublish(BasePublishStrategy):
@@ -100,7 +103,12 @@ class CatalystPublish(BasePublishStrategy):
         )
         if response.status_code == 201:
             return None
-        return f"Failed to create references: {response.status_code} {response.text}"
+        logger.warning(
+            "Catalyst references bulk failed: status=%s body=%s",
+            response.status_code,
+            (response.text or "")[:2000],
+        )
+        return "References could not be linked in Catalyst. Please try again."
 
     def edit_report(self, report: PublishedReport) -> bool:
         """Delete existing Catalyst post and create a new one with updated content."""
@@ -109,7 +117,7 @@ class CatalystPublish(BasePublishStrategy):
     def create_report(self, report: PublishedReport) -> bool:
         """Upload report to Catalyst via API; set external_ref on success."""
         if not report.user or not report.user.catalyst_api_key:
-            report.error_message = "User has no Catalyst API key"
+            report.error_message = "Add a Catalyst API key in your account settings to use Catalyst publishing."
             report.status = ReportStatus.ERROR
             report.save()
             return False
@@ -133,12 +141,14 @@ class CatalystPublish(BasePublishStrategy):
             if entity:
                 entry_map[key] = entity
             else:
+                st = str(i.entry_class.subtype)
+                subtype_label = st.replace("_", " ").strip() or st
                 if anonymized_entry.name != i.name:
                     report.extra_data["warnings"].append(
-                        f"Failed to link entry {i.entry_class.subtype}:{i.name} ({anonymized_entry.name})"
+                        f'Could not link {subtype_label} entry "{i.name}" (published as "{anonymized_entry.name}").'
                     )
                 else:
-                    report.extra_data["warnings"].append(f"Failed to link entry {i.entry_class.subtype}:{i.name}")
+                    report.extra_data["warnings"].append(f'Could not link {subtype_label} entry "{i.name}".')
 
         footnotes = {}
         for note in notes:
@@ -184,7 +194,12 @@ class CatalystPublish(BasePublishStrategy):
             report.save()
 
             return True
-        report.error_message = response.text
+        logger.warning(
+            "Catalyst editor-contents create failed: status=%s body=%s",
+            response.status_code,
+            (response.text or "")[:2000],
+        )
+        report.error_message = "The report could not be published to Catalyst. Please try again."
         report.status = ReportStatus.ERROR
         report.save()
         return False
@@ -192,7 +207,7 @@ class CatalystPublish(BasePublishStrategy):
     def delete_report(self, report: PublishedReport) -> bool:
         """Delete the report from Catalyst via API."""
         if not report.user or not report.user.catalyst_api_key:
-            report.error_message = "User has no Catalyst API key"
+            report.error_message = "Add a Catalyst API key in your account settings to use Catalyst publishing."
             report.status = ReportStatus.ERROR
             report.save()
             return False
@@ -206,7 +221,12 @@ class CatalystPublish(BasePublishStrategy):
             return True
 
         if response.status_code != 204:
-            report.error_message = response.text
+            logger.warning(
+                "Catalyst editor-contents delete failed: status=%s body=%s",
+                response.status_code,
+                (response.text or "")[:2000],
+            )
+            report.error_message = "The report could not be removed from Catalyst. Please try again."
             report.status = ReportStatus.ERROR
             report.save()
             return False

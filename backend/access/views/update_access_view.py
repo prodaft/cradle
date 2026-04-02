@@ -21,7 +21,7 @@ from user.exceptions import UserErrorCodes, UserNotFoundException
 from user.models import CradleUser
 
 from ..enums import AccessType
-from ..exceptions import AccessErrorCodes, UpdateNotAllowedException
+from ..exceptions import AccessChangeNotAllowedException, AccessErrorCodes
 from ..models import Access
 from ..serializers import AccessSerializer
 
@@ -51,7 +51,7 @@ from ..serializers import AccessSerializer
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
                 EntriesErrorCodes.ENTITY_NOT_FOUND,
-                AccessErrorCodes.UPDATE_NOT_ALLOWED,
+                AccessErrorCodes.ACCESS_CHANGE_NOT_ALLOWED,
                 CoreErrorCodes.INVALID_REQUEST,
                 include_validation_error=True,
             ),
@@ -103,16 +103,18 @@ class UpdateAccess(APIView):
         try:
             updated_user = CradleUser.objects.get(id=user_id)
         except CradleUser.DoesNotExist:
-            raise UserNotFoundException(detail="There is no user with the specified ID.")
+            raise UserNotFoundException(detail="That user could not be found.")
 
         try:
             updated_entity = Entry.entities.get(id=entity_id)
         except Entry.DoesNotExist:
-            raise EntityNotFoundException(detail="There is no entity with the specified ID.")
+            raise EntityNotFoundException(detail="That entity could not be found.")
 
         user: CradleUser = cast(CradleUser, request.user)
         if not self.__can_update_access(user, updated_user, updated_entity):
-            raise UpdateNotAllowedException(detail="User is not allowed to perform this operation")
+            raise AccessChangeNotAllowedException(
+                detail="You do not have permission to change this user's access for this entity."
+            )
 
         updated_access, _ = Access.objects.get_or_create(user=updated_user, entity=updated_entity)
 
@@ -121,10 +123,11 @@ class UpdateAccess(APIView):
         with transaction.atomic():
             serializer.save()
             access_type = serializer.validated_data["access_type"]
+            access_label = str(AccessType(access_type).label)
             AccessGrantedNotification.objects.create(
                 user=updated_user,
                 entity=updated_entity,
-                message=f"Your access for entity {updated_entity.name} has been changed to {access_type}",
+                message=f'Your access to "{updated_entity.name}" was changed to {access_label}.',
             )
 
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -20,6 +20,7 @@ from core.pagination import TotalPagesPagination
 from user.permissions import EntityDetailPermission, EntityListPermission
 
 from ..exceptions import (
+    AdminOnlyEntityDeleteException,
     AdminOnlyEntityPublicStatusException,
     DuplicateEntityException,
     EntityNotFoundException,
@@ -35,7 +36,7 @@ def _get_entity_or_404(entity_id: int) -> Entry:
     try:
         return Entry.entities.get(pk=entity_id)
     except Entry.DoesNotExist:
-        raise EntityNotFoundException(detail="There is no entity with the specified ID.")
+        raise EntityNotFoundException(detail="That entity could not be found.")
 
 
 @extend_schema_view(
@@ -108,11 +109,11 @@ class EntityList(ListCreateAPIView):
         try:
             with transaction.atomic():
                 if Entry.entities.select_for_update().filter(name=name, entry_class=entry_class).exists():
-                    raise DuplicateEntityException(detail=f"Entity with name '{name}' already exists")
+                    raise DuplicateEntityException(detail="An entity with this name already exists.")
                 serializer.save()
                 serializer.instance.log_create(self.request.user)
         except IntegrityError:
-            raise DuplicateEntityException(detail=f"Entity with name '{name}' already exists")
+            raise DuplicateEntityException(detail="An entity with this name already exists.")
 
         refresh_edges_materialized_view.apply_async()
 
@@ -207,6 +208,10 @@ class EntityDetail(APIView):
     def delete(self, request: Request, entity_id: int) -> Response:
         """Delete entity and remap note links (admin only)."""
         entity = _get_entity_or_404(entity_id)
+        if not request.user.is_cradle_admin:
+            if not Access.objects.user_has_entity_access(request.user.id, entity_id):
+                raise PermissionDeniedException(detail="You do not have access to this entity.")
+            raise AdminOnlyEntityDeleteException(detail="Only administrators can delete entities.")
         entity.delete_renaming(request.user.id)
         refresh_edges_materialized_view.apply_async()
 
@@ -226,7 +231,9 @@ class EntityDetail(APIView):
             serializer.validated_data.get("is_public", entity.is_public) != entity.is_public
             and not request.user.is_cradle_admin
         ):
-            raise AdminOnlyEntityPublicStatusException(detail="Only admins can change the public status of entities!")
+            raise AdminOnlyEntityPublicStatusException(
+                detail="Only administrators can change the public status of entities."
+            )
 
         with transaction.atomic():
             serializer.save()

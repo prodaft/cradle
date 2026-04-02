@@ -9,10 +9,10 @@ class PublishErrorCodes(ErrorCode):
     """Error codes for publish operations."""
 
     NOTES_NOT_FOUND = (status.HTTP_404_NOT_FOUND, "Notes Not Found", "notes-not-found")
-    STRATEGY_NOT_FOUND = (
+    EXPORT_FORMAT_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
-        "Strategy Not Found",
-        "strategy-not-found",
+        "Export Format Not Found",
+        "export-format-not-found",
     )
     REPORT_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
@@ -29,10 +29,10 @@ class PublishErrorCodes(ErrorCode):
         "Report Already Completed",
         "report-already-completed",
     )
-    REPORT_DELETE_ERROR = (
+    REPORT_DELETE_FAILED = (
         status.HTTP_500_INTERNAL_SERVER_ERROR,
-        "Report Delete Error",
-        "report-delete-error",
+        "Report Delete Failed",
+        "report-delete-failed",
     )
 
 
@@ -42,10 +42,10 @@ class NotesNotFoundException(CradleAPIException):
     error_code = PublishErrorCodes.NOTES_NOT_FOUND
 
 
-class StrategyNotFoundException(CradleAPIException):
-    """Exception raised when a strategy is not found."""
+class ExportFormatNotFoundException(CradleAPIException):
+    """Exception raised when the requested export format is not found."""
 
-    error_code = PublishErrorCodes.STRATEGY_NOT_FOUND
+    error_code = PublishErrorCodes.EXPORT_FORMAT_NOT_FOUND
 
 
 class ReportNotFoundException(CradleAPIException):
@@ -66,18 +66,18 @@ class ReportAlreadyCompletedException(CradleAPIException):
     error_code = PublishErrorCodes.REPORT_ALREADY_COMPLETED
 
 
-class ReportDeleteErrorException(CradleAPIException):
-    """Exception raised when there's an error deleting a report."""
+class ReportDeleteFailedException(CradleAPIException):
+    """Exception raised when a report could not be deleted."""
 
-    error_code = PublishErrorCodes.REPORT_DELETE_ERROR
+    error_code = PublishErrorCodes.REPORT_DELETE_FAILED
 
 
 __all__ = [
+    "ExportFormatNotFoundException",
     "NotesNotFoundException",
     "PublishErrorCodes",
     "ReportAlreadyCompletedException",
     "ReportAlreadyGeneratingException",
-    "ReportDeleteErrorException",
+    "ReportDeleteFailedException",
     "ReportNotFoundException",
-    "StrategyNotFoundException",
 ]

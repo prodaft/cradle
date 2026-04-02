@@ -1,4 +1,4 @@
-"""Entry-related constants: internal subtypes and defaults."""
+"""Entries app constants: internal subtypes and defaults."""
 
 from entries.enums import EntryType
 

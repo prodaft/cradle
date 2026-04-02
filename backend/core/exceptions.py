@@ -16,7 +16,7 @@ Example:
         error_code = YourAppErrorCodes.DUPLICATE_RESOURCE
 
     # In your views:
-    raise DuplicateResourceException(detail="A resource with this name already exists")
+    raise DuplicateResourceException(detail="A resource with this name already exists.")
 """
 
 from enum import Enum
@@ -28,16 +28,38 @@ from rest_framework.exceptions import APIException
 class ErrorCode(Enum):
     """Base class for error code enums.
 
-    Each Django app should define their own ErrorCode enum that inherits from this class.
-    Each enum value should be a tuple of (http_status_code, error_title, error_type_suffix).
+    Each Django app defines ``YourAppErrorCodes(ErrorCode)`` with one member per distinct API
+    error. The response ``code`` field is the member name (UPPER_SNAKE_CASE); member names must
+    not collide across apps—use an app-specific prefix when two domains could both apply (e.g.
+    ``FILE_TRANSFER_NOTE_NOT_FOUND`` vs ``NOTE_NOT_FOUND``).
+
+    Each enum value is ``(http_status_code, error_title, type_suffix)``:
+
+    * ``type_suffix``: always the member name lowercased with ``_`` → ``-`` (URI path segment
+      under ``/errors/``).
+    * ``error_title``: short summary; normally title-case each word from the member name.
+      Use conventional spelling for acronyms (e.g. OAuth) or minor words (e.g. "of") when it
+      reads better. If ``title`` intentionally matches another member (e.g. indistinguishable
+      404s), document that on the enum member.
+
+    Exception classes should be ``PascalCase`` + ``Exception``, with words taken from the same
+    member name (e.g. ``USERNAME_UNAVAILABLE`` → ``UsernameUnavailableException``). Use
+    conventional acronym casing where needed (e.g. ``OAUTH_SIGN_IN_FAILED`` →
+    ``OAuthSignInFailedException``, not ``OauthSignInFailedException``).
 
     Example:
         class UserErrorCodes(ErrorCode):
-            DUPLICATE_USER = (409, "Duplicate User", "duplicate-user")
+            USERNAME_UNAVAILABLE = (409, "Username Unavailable", "username-unavailable")
             INVALID_PASSWORD = (400, "Invalid Password", "invalid-password")
     """
 
     def __init__(self, status_code: int, title: str, type_suffix: str):
+        expected_suffix = self.name.lower().replace("_", "-")
+        if type_suffix != expected_suffix:
+            raise ValueError(
+                f"{self.__class__.__name__}.{self.name}: type_suffix {type_suffix!r} must be "
+                f"{expected_suffix!r} (member name in kebab-case)."
+            )
         self.status_code = status_code
         self.title = title
         self.type_suffix = type_suffix
@@ -70,7 +92,7 @@ class CradleAPIException(APIException):
             error_code = MyErrorCodes.CUSTOM_ERROR
 
         # In views:
-        raise MyCustomException(detail="Specific details about this occurrence")
+        raise MyCustomException(detail="Specific details about this occurrence.")
     """
 
     error_code: ErrorCode | None = None
@@ -89,6 +111,8 @@ class CradleAPIException(APIException):
         if self.error_code:
             self.status_code = self.error_code.status_code
             if detail is None:
+                detail = self.error_code.title
+            elif isinstance(detail, str) and not detail.strip():
                 detail = self.error_code.title
 
         super().__init__(detail, code)
@@ -119,7 +143,7 @@ class CoreErrorCodes(ErrorCode):
     # Authentication & Authorization
     UNAUTHENTICATED = (
         status.HTTP_401_UNAUTHORIZED,
-        "Authentication Required",
+        "Unauthenticated",
         "unauthenticated",
     )
     PERMISSION_DENIED = (
@@ -148,10 +172,10 @@ class CoreErrorCodes(ErrorCode):
         "Invalid Request",
         "invalid-request",
     )
-    INVALID_REQUEST_BODY = (
+    INVALID_REQUEST_DATA = (
         status.HTTP_400_BAD_REQUEST,
-        "Invalid Request Body",
-        "invalid-request-body",
+        "Invalid Request Data",
+        "invalid-request-data",
     )
 
     # Pagination
@@ -173,7 +197,7 @@ class CoreErrorCodes(ErrorCode):
 
 
 # Convenience exception classes for common errors
-class ValidationException(CradleAPIException):
+class ValidationErrorException(CradleAPIException):
     """Exception for validation errors."""
 
     error_code = CoreErrorCodes.VALIDATION_ERROR
@@ -197,10 +221,28 @@ class BadRequestException(CradleAPIException):
     error_code = CoreErrorCodes.BAD_REQUEST
 
 
+class NotFoundException(CradleAPIException):
+    """Generic not-found error (e.g. deliberately non-specific 404 responses)."""
+
+    error_code = CoreErrorCodes.NOT_FOUND
+
+
+class InternalServerErrorException(CradleAPIException):
+    """Server error (matches handler mapping for unhandled 5xx)."""
+
+    error_code = CoreErrorCodes.INTERNAL_SERVER_ERROR
+
+
 class InvalidRequestException(CradleAPIException):
     """Exception for invalid request parameters."""
 
     error_code = CoreErrorCodes.INVALID_REQUEST
+
+
+class InvalidRequestDataException(CradleAPIException):
+    """Exception for malformed or unreadable request body (e.g. invalid JSON)."""
+
+    error_code = CoreErrorCodes.INVALID_REQUEST_DATA
 
 
 class InvalidPageSizeException(CradleAPIException):

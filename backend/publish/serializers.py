@@ -1,7 +1,6 @@
 """Serializers for published reports and publish strategy responses."""
 
 import uuid
-from datetime import timedelta
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -9,11 +8,9 @@ from rest_framework import serializers
 from file_transfer.s3_utils import presign_get
 from file_transfer.storage import ReportStorage
 
+from .constants import PUBLISH_REPORT_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS
 from .models import DownloadStrategies, PublishedReport, ReportStatus, UploadStrategies
 from .strategies import PUBLISH_STRATEGIES
-
-# Presigned URL expiry for report downloads (8 hours).
-_REPORT_DOWNLOAD_EXPIRY_SECONDS = int(timedelta(hours=8).total_seconds())
 
 
 class ReportDetailSerializer(serializers.ModelSerializer):
@@ -67,7 +64,7 @@ class ReportDetailSerializer(serializers.ModelSerializer):
             return presign_get(
                 ReportStorage.bucket_name,
                 obj.file.name,
-                expires_in=_REPORT_DOWNLOAD_EXPIRY_SECONDS,
+                expires_in=PUBLISH_REPORT_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS,
                 response_content_type=response_content_type,
                 response_content_disposition=response_disposition,
             )

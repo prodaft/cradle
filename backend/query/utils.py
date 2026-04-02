@@ -116,7 +116,7 @@ def parse_query(query_str: str) -> Q:
         # Colon found: parse normally
         field1, i, quoted1 = parse_field(query_str, 0)
         if i >= len(query_str) or query_str[i] != ":":
-            raise ValueError("Invalid query format: Missing colon separator")
+            raise ValueError("Use a colon between the entry type and name (for example, *:note or author:Smith).")
         i += 1  # Skip the colon
         field2, i, quoted2 = parse_field(query_str, i)
 

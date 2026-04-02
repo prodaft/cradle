@@ -1,5 +1,7 @@
 """JWT cookie and API key authentication backends."""
 
+import logging
+
 import bcrypt
 from django.conf import settings
 from django.middleware.csrf import CsrfViewMiddleware
@@ -8,6 +10,8 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import CradleUser
+
+logger = logging.getLogger(__name__)
 
 
 class CookieJWTAuthentication(JWTAuthentication):
@@ -36,7 +40,8 @@ class CookieJWTAuthentication(JWTAuthentication):
 
         reason = CSRFCheck(lambda req: None).process_view(request, None, (), {})
         if reason:
-            raise AuthenticationFailed(f"CSRF Failed: {reason}")
+            logger.warning("CSRF verification failed: %s", reason)
+            raise AuthenticationFailed(detail="Your session could not be verified. Refresh the page and try again.")
 
 
 class APIKeyAuthentication(BaseAuthentication):
@@ -57,4 +62,4 @@ class APIKeyAuthentication(BaseAuthentication):
             if bcrypt.checkpw(key, user.api_key.encode()):
                 return (user, None)
 
-        raise AuthenticationFailed("Invalid API Key")
+        raise AuthenticationFailed(detail="The API key is not valid.")

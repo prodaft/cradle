@@ -10,44 +10,25 @@ from django.utils import timezone
 from entries.enums import EntryType
 from user.models import CradleUser
 
+from ..constants import NOTES_TASK_SCHEDULER_DEFAULT_PIPELINE
 from ..enums import NoteStatus
 from ..exceptions import (
-    FieldTooLongException,
+    MaxLengthExceededException,
 )
 from ..models import Note
 from ..utils import calculate_acvec
-from .access_control_task import AccessControlTask
 from .base_task import BaseTask
-from .connect_aliases_task import AliasConnectionTask
-from .entry_class_creation_task import EntryClassCreationTask
-from .entry_population_task import EntryPopulationTask
-from .finalize_note_task import FinalizeNoteTask
-from .link_files_task import LinkFilesTask
-from .metadata_process_task import MetadataProcessTask
-from .smart_linker_task import SmartLinkerTask
-from .validate_note_task import ValidateNoteTask
-
-TASKS = [
-    ValidateNoteTask,
-    AccessControlTask,
-    EntryClassCreationTask,
-    EntryPopulationTask,
-    SmartLinkerTask,
-    LinkFilesTask,
-    MetadataProcessTask,
-    AliasConnectionTask,
-    FinalizeNoteTask,
-]
 
 
 class TaskScheduler:
     """Runs the note processing pipeline: validation, entry creation, linking, metadata, finalize."""
 
-    def __init__(self, user: CradleUser, tasks: List[BaseTask] = TASKS, **kwargs):
+    def __init__(self, user: CradleUser, tasks: List[type[BaseTask]] | None = None, **kwargs):
         self.user = user
         self.kwargs = kwargs
 
-        self.processing: List[BaseTask] = [task(user) for task in tasks]
+        pipeline = tasks if tasks is not None else NOTES_TASK_SCHEDULER_DEFAULT_PIPELINE
+        self.processing: List[BaseTask] = [task(user) for task in pipeline]
 
     def run_pipeline(
         self,
@@ -67,7 +48,7 @@ class TaskScheduler:
         Raises:
             NotEnoughReferencesException: When the note does not reference at
                 least one entity and at least two entries.
-            EntriesDoNotExistException: When the note references entities that
+            EntriesNotFoundException: When the note references entities that
                 do not exist.
             NoAccessToEntriesException: When the user does not have access to
                 the referenced entities.
@@ -106,10 +87,10 @@ class TaskScheduler:
                 note.access_vector = calculate_acvec([x for x in entries if x.entry_class.type == EntryType.ENTITY])
 
             if len(note.description) > Note.description.field.max_length:
-                raise FieldTooLongException("description", Note.description.field.max_length)
+                raise MaxLengthExceededException("description", Note.description.field.max_length)
 
             if len(note.title) > Note.title.field.max_length:
-                raise FieldTooLongException("title", Note.title.field.max_length)
+                raise MaxLengthExceededException("title", Note.title.field.max_length)
 
             note.set_status(NoteStatus.PROCESSING)
             note.metadata = None

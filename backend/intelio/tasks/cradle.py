@@ -67,8 +67,8 @@ def download_file_for_note(note_id, file_identifier, file_url, bucket_name, dige
             instance.save(update_fields=["summary"])
             digest = instance
 
-    except Exception as e:
-        digest._append_warning(f"Failed to download file for note {note_id}: {e}")
+    except Exception:
+        digest._append_warning("A file linked from a note could not be downloaded.")
         logger.exception("Failed to download file for note %s", note_id)
 
         with transaction.atomic():

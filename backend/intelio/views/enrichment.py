@@ -20,17 +20,21 @@ from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
 from core.validators import validate_choice_param, validate_optional_int_param
 from entries.models import Entry
-from query.exceptions import InvalidQuerySyntaxException, QueryErrorCodes
+from query.exceptions import InvalidSearchSyntaxException, QueryErrorCodes
 from query.utils import parse_query
 from user.authentication import APIKeyAuthentication
 from user.permissions import HasAdminRole
 
+from ..constants import (
+    INTELIO_ENRICHMENT_MESSAGE_ACTION_DENIED,
+    INTELIO_ENRICHMENT_MESSAGE_ACTION_DENIED_DEFAULT,
+)
 from ..enums import EnrichmentStatus
 from ..exceptions import (
-    EnricherNotFoundException,
-    EnricherTypeNotFoundException,
-    EnrichmentRequestNotFoundException,
-    IntelioErrorCodes,
+    EnrichmentNotFoundException,
+    EnrichmentOptionNotFoundException,
+    IntelIOErrorCodes,
+    UnknownEnrichmentOptionException,
 )
 from ..models.base import BaseEnricher, EnricherSettings, EnrichmentRequest
 from ..serializers import (
@@ -64,15 +68,17 @@ class EnrichmentRequestObjectMixin:
     def _check_owner_or_admin(self, enrichment_request, user, action: str):
         """Raise PermissionDeniedException if user is not owner or admin."""
         if enrichment_request.user != user and not user.is_cradle_admin:
-            raise PermissionDeniedException(detail=f"You don't have permission to {action} this enrichment request.")
+            detail = INTELIO_ENRICHMENT_MESSAGE_ACTION_DENIED.get(
+                action,
+                INTELIO_ENRICHMENT_MESSAGE_ACTION_DENIED_DEFAULT,
+            )
+            raise PermissionDeniedException(detail=detail)
 
     def _verify_enricher_type(self, enrichment_request, enricher_type: str):
-        """Raise EnricherTypeNotFoundException if enricher_type is not in this request."""
+        """Raise EnrichmentOptionNotFoundException if enricher_type is not in this request."""
         enricher_types = [s.enricher_type for s in enrichment_request.enrichers_settings.all()]
         if enricher_type not in enricher_types:
-            raise EnricherTypeNotFoundException(
-                detail=f"Enricher type '{enricher_type}' not found in this enrichment request."
-            )
+            raise EnrichmentOptionNotFoundException(detail="That option is not part of this enrichment.")
 
 
 @extend_schema_view(
@@ -134,7 +140,7 @@ class EnrichmentSubclassesAPIView(APIView):
         description="Get enrichment settings for a specific enricher type.",
         responses={
             200: EnrichmentSettingsSerializer,
-            **get_error_responses(IntelioErrorCodes.ENRICHER_NOT_FOUND),
+            **get_error_responses(IntelIOErrorCodes.UNKNOWN_ENRICHMENT_OPTION),
             **get_common_error_responses(),
         },
     ),
@@ -146,7 +152,7 @@ class EnrichmentSubclassesAPIView(APIView):
         responses={
             200: EnrichmentSettingsSerializer,
             **get_error_responses(
-                IntelioErrorCodes.ENRICHER_NOT_FOUND,
+                IntelIOErrorCodes.UNKNOWN_ENRICHMENT_OPTION,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -164,14 +170,14 @@ class EnrichmentSettingsAPIView(GenericAPIView):
         enricher = get_or_default_enricher(enricher_type)
 
         if enricher is None:
-            raise EnricherNotFoundException(detail="Enricher type not found.")
+            raise UnknownEnrichmentOptionException(detail="That enrichment option could not be found.")
 
         return Response(self.get_serializer(enricher).data, status=status.HTTP_200_OK)
 
     def post(self, request: Request, enricher_type: str) -> Response:
         enricher = get_or_default_enricher(enricher_type)
         if enricher is None:
-            raise EnricherNotFoundException(detail="Enricher type not found.")
+            raise UnknownEnrichmentOptionException(detail="That enrichment option could not be found.")
 
         serializer = self.get_serializer(enricher, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -363,7 +369,7 @@ class EnrichmentAPIView(APIView):
         responses={
             200: EnrichmentRequestDetailSerializer,
             **get_error_responses(
-                IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
+                IntelIOErrorCodes.ENRICHMENT_NOT_FOUND,
                 CoreErrorCodes.PERMISSION_DENIED,
             ),
             **get_common_error_responses(),
@@ -376,7 +382,7 @@ class EnrichmentAPIView(APIView):
         responses={
             204: None,
             **get_error_responses(
-                IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
+                IntelIOErrorCodes.ENRICHMENT_NOT_FOUND,
                 CoreErrorCodes.PERMISSION_DENIED,
             ),
             **get_common_error_responses(),
@@ -398,7 +404,7 @@ class EnrichmentDetailAPIView(EnrichmentRequestObjectMixin, APIView):
         enrichment_request = self.get_enrichment_request(pk, request.user)
 
         if enrichment_request is None:
-            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
+            raise EnrichmentNotFoundException(detail="That enrichment could not be found.")
 
         self._check_owner_or_admin(enrichment_request, request.user, "view")
         serializer = EnrichmentRequestDetailSerializer(enrichment_request)
@@ -409,7 +415,7 @@ class EnrichmentDetailAPIView(EnrichmentRequestObjectMixin, APIView):
         enrichment_request = self.get_enrichment_request(pk, request.user)
 
         if enrichment_request is None:
-            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
+            raise EnrichmentNotFoundException(detail="That enrichment could not be found.")
 
         self._check_owner_or_admin(enrichment_request, request.user, "delete")
         with transaction.atomic():
@@ -425,7 +431,7 @@ class EnrichmentDetailAPIView(EnrichmentRequestObjectMixin, APIView):
         responses={
             200: EnrichmentRequestDetailSerializer,
             **get_error_responses(
-                IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
+                IntelIOErrorCodes.ENRICHMENT_NOT_FOUND,
                 CoreErrorCodes.PERMISSION_DENIED,
             ),
             **get_common_error_responses(),
@@ -447,7 +453,7 @@ class EnrichmentRestartAPIView(EnrichmentRequestObjectMixin, APIView):
         enrichment_request = self.get_enrichment_request(pk, request.user)
 
         if enrichment_request is None:
-            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
+            raise EnrichmentNotFoundException(detail="That enrichment could not be found.")
 
         self._check_owner_or_admin(enrichment_request, request.user, "restart")
         with transaction.atomic():
@@ -482,8 +488,8 @@ class EnrichmentRestartAPIView(EnrichmentRequestObjectMixin, APIView):
         responses={
             200: EnrichmentRequestEnricherSerializer,
             **get_error_responses(
-                IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
-                IntelioErrorCodes.ENRICHER_TYPE_NOT_FOUND,
+                IntelIOErrorCodes.ENRICHMENT_NOT_FOUND,
+                IntelIOErrorCodes.ENRICHMENT_OPTION_NOT_FOUND,
                 CoreErrorCodes.PERMISSION_DENIED,
             ),
             **get_common_error_responses(),
@@ -506,7 +512,7 @@ class EnrichmentRequestEnricherAPIView(EnrichmentRequestObjectMixin, APIView):
         enrichment_request = self.get_enrichment_request(pk, request.user)
 
         if enrichment_request is None:
-            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
+            raise EnrichmentNotFoundException(detail="That enrichment could not be found.")
 
         self._check_owner_or_admin(enrichment_request, request.user, "view")
         self._verify_enricher_type(enrichment_request, enricher_type)
@@ -560,13 +566,13 @@ class EnrichmentRequestEnricherAPIView(EnrichmentRequestObjectMixin, APIView):
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(EnrichmentRelationSerializer),
             **get_error_responses(
-                IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
-                IntelioErrorCodes.ENRICHER_TYPE_NOT_FOUND,
+                IntelIOErrorCodes.ENRICHMENT_NOT_FOUND,
+                IntelIOErrorCodes.ENRICHMENT_OPTION_NOT_FOUND,
                 CoreErrorCodes.PERMISSION_DENIED,
                 CoreErrorCodes.INVALID_PAGE_SIZE,
                 CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
                 CoreErrorCodes.INVALID_REQUEST,
-                QueryErrorCodes.INVALID_QUERY_SYNTAX,
+                QueryErrorCodes.INVALID_SEARCH_SYNTAX,
             ),
             **get_common_error_responses(),
         },
@@ -588,7 +594,7 @@ class EnrichmentRelationsAPIView(EnrichmentRequestObjectMixin, APIView):
         enrichment_request = self.get_enrichment_request(pk, request.user)
 
         if enrichment_request is None:
-            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
+            raise EnrichmentNotFoundException(detail="That enrichment could not be found.")
 
         self._check_owner_or_admin(enrichment_request, request.user, "view")
         self._verify_enricher_type(enrichment_request, enricher_type)
@@ -605,7 +611,9 @@ class EnrichmentRelationsAPIView(EnrichmentRequestObjectMixin, APIView):
             try:
                 query_filter = parse_query(query_str + "*")
             except ValueError as e:
-                raise InvalidQuerySyntaxException(detail=f"Invalid query syntax: {str(e)}")
+                raise InvalidSearchSyntaxException(
+                    detail="Use a colon between the entry type and name (for example, *:note or author:Smith)."
+                ) from e
 
             entries_qs = Entry.objects.filter(query_filter)
             relations = relations.filter(Q(e1__in=entries_qs) | Q(e2__in=entries_qs))

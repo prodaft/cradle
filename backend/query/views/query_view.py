@@ -21,7 +21,7 @@ from entries.models import Entry
 from entries.serializers import EntryResponseSerializer
 from user.authentication import APIKeyAuthentication
 
-from ..exceptions import InvalidQuerySyntaxException, QueryErrorCodes
+from ..exceptions import InvalidSearchSyntaxException, QueryErrorCodes
 from ..filters import EntryFilter
 from ..utils import parse_query
 
@@ -77,7 +77,7 @@ class EntryListQuery(ListAPIView):
 
 
 class AdvancedQueryView(APIView):
-    """Advanced query with subtype:name syntax and wildcards."""
+    """Advanced query: entry type and name separated by a colon, with wildcards."""
 
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
@@ -88,12 +88,12 @@ class AdvancedQueryView(APIView):
 
     @extend_schema(
         summary="Advanced Query Entries",
-        description="Allow a user to query entries they have access to using advanced syntax: "
-        "<subtype>:<name> with wildcards (*). Multiple query params are OR'd.",
+        description="Query entries you can access. Use an entry type, a colon, then a name; "
+        "asterisks are wildcards. Repeat the query parameter to OR several filters together.",
         parameters=[
             OpenApiParameter(
                 name="query",
-                description="Advanced query string (e.g., 'type:name', '*:name', 'type:*')",
+                description="Filter: entry type, colon, then name (examples: *:note, author:Smith, mytype:*).",
                 required=False,
                 many=True,
                 type=str,
@@ -126,7 +126,7 @@ class AdvancedQueryView(APIView):
                 CoreErrorCodes.INVALID_PAGE_SIZE,
                 CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
                 CoreErrorCodes.INVALID_REQUEST,
-                QueryErrorCodes.INVALID_QUERY_SYNTAX,
+                QueryErrorCodes.INVALID_SEARCH_SYNTAX,
             ),
             **get_common_error_responses(),
         },
@@ -153,7 +153,9 @@ class AdvancedQueryView(APIView):
             try:
                 query_filter |= parse_query(query_str.strip())
             except ValueError as e:
-                raise InvalidQuerySyntaxException(detail=f"Invalid query syntax: {str(e)}")
+                raise InvalidSearchSyntaxException(
+                    detail="Use a colon between the entry type and name (for example, *:note or author:Smith)."
+                ) from e
 
         accessible_entries = _get_accessible_entries(request.user)
 

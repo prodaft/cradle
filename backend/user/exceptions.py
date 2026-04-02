@@ -8,16 +8,20 @@ from core.exceptions import CradleAPIException, ErrorCode
 class UserErrorCodes(ErrorCode):
     """Error codes for user operations."""
 
-    DUPLICATE_USER = (status.HTTP_409_CONFLICT, "Duplicate User", "duplicate-user")
+    USERNAME_UNAVAILABLE = (
+        status.HTTP_409_CONFLICT,
+        "Username Unavailable",
+        "username-unavailable",
+    )
     INVALID_PASSWORD = (
         status.HTTP_400_BAD_REQUEST,
         "Invalid Password",
         "invalid-password",
     )
-    DISALLOWED_ACTION = (
+    ACTION_NOT_ALLOWED = (
         status.HTTP_403_FORBIDDEN,
-        "Disallowed Action",
-        "disallowed-action",
+        "Action Not Allowed",
+        "action-not-allowed",
     )
     USER_NOT_FOUND = (status.HTTP_404_NOT_FOUND, "User Not Found", "user-not-found")
     EMAIL_NOT_CONFIRMED = (
@@ -32,18 +36,18 @@ class UserErrorCodes(ErrorCode):
     )
     TWO_FACTOR_REQUIRED = (
         status.HTTP_401_UNAUTHORIZED,
-        "Two Factor Authentication Required",
+        "Two Factor Required",
         "two-factor-required",
     )
-    INVALID_TWO_FACTOR_TOKEN = (
+    INVALID_TWO_FACTOR_CODE = (
         status.HTTP_401_UNAUTHORIZED,
-        "Invalid Two Factor Token",
-        "invalid-two-factor-token",
+        "Invalid Two Factor Code",
+        "invalid-two-factor-code",
     )
-    INVALID_CREDENTIALS = (
+    SIGN_IN_FAILED = (
         status.HTTP_401_UNAUTHORIZED,
-        "Invalid Credentials",
-        "invalid-credentials",
+        "Sign In Failed",
+        "sign-in-failed",
     )
     TWO_FACTOR_ALREADY_ENABLED = (
         status.HTTP_400_BAD_REQUEST,
@@ -55,68 +59,72 @@ class UserErrorCodes(ErrorCode):
         "Two Factor Not Enabled",
         "two-factor-not-enabled",
     )
-    REGISTRATION_DISABLED = (
+    REGISTRATION_UNAVAILABLE = (
         status.HTTP_403_FORBIDDEN,
-        "Registration Disabled",
-        "registration-disabled",
+        "Registration Unavailable",
+        "registration-unavailable",
     )
     USER_ALREADY_EXISTS = (
         status.HTTP_409_CONFLICT,
         "User Already Exists",
         "user-already-exists",
     )
-    INCORRECT_OLD_PASSWORD = (
+    CURRENT_PASSWORD_INCORRECT = (
         status.HTTP_400_BAD_REQUEST,
-        "Incorrect Old Password",
-        "incorrect-old-password",
+        "Current Password Incorrect",
+        "current-password-incorrect",
     )
-    UNKNOWN_ACTION = (status.HTTP_400_BAD_REQUEST, "Unknown Action", "unknown-action")
+    UNSUPPORTED_OPERATION = (
+        status.HTTP_400_BAD_REQUEST,
+        "Unsupported Operation",
+        "unsupported-operation",
+    )
     EMAIL_ALREADY_CONFIRMED = (
         status.HTTP_400_BAD_REQUEST,
         "Email Already Confirmed",
         "email-already-confirmed",
     )
-    EXTERNAL_IDENTITY_CONFLICT = (
+    EXTERNAL_ACCOUNT_IN_USE = (
         status.HTTP_409_CONFLICT,
-        "External Identity Conflict",
-        "external-identity-conflict",
+        "External Account In Use",
+        "external-account-in-use",
     )
     SESSION_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
         "Session Not Found",
         "session-not-found",
     )
-    PASSWORD_RESET_TOKEN_INVALID = (
+    INVALID_PASSWORD_RESET_LINK = (
         status.HTTP_400_BAD_REQUEST,
-        "Invalid Reset Link",
-        "password-reset-token-invalid",
+        "Invalid Password Reset Link",
+        "invalid-password-reset-link",
     )
     EMAIL_CONFIRMATION_FAILED = (
         status.HTTP_400_BAD_REQUEST,
         "Email Confirmation Failed",
         "email-confirmation-failed",
     )
-    INVALID_REFRESH_TOKEN = (
+    SESSION_RENEWAL_FAILED = (
         status.HTTP_401_UNAUTHORIZED,
-        "Invalid or Expired Token",
-        "invalid-refresh-token",
+        "Session Renewal Failed",
+        "session-renewal-failed",
     )
-    OAUTH_ERROR = (
+    OAUTH_SIGN_IN_FAILED = (
         status.HTTP_400_BAD_REQUEST,
-        "OAuth Error",
-        "oauth-error",
+        "OAuth Sign In Failed",
+        "oauth-sign-in-failed",
     )
-    OAUTH_ACCOUNT_NOT_LINKED = (
+    ACCOUNT_NOT_LINKED = (
         status.HTTP_400_BAD_REQUEST,
         "Account Not Linked",
-        "oauth-account-not-linked",
+        "account-not-linked",
     )
 
 
-class DuplicateUserException(CradleAPIException):
+class UsernameUnavailableException(CradleAPIException):
     """Exception raised when a user with the same username already exists."""
 
-    error_code = UserErrorCodes.DUPLICATE_USER
+    error_code = UserErrorCodes.USERNAME_UNAVAILABLE
 
 
 class InvalidPasswordException(CradleAPIException):
@@ -129,10 +137,10 @@ class InvalidPasswordException(CradleAPIException):
         super().__init__(detail=detail, *args, **kwargs)
 
 
-class DisallowedActionException(CradleAPIException):
+class ActionNotAllowedException(CradleAPIException):
     """Exception raised when a user attempts a disallowed action."""
 
-    error_code = UserErrorCodes.DISALLOWED_ACTION
+    error_code = UserErrorCodes.ACTION_NOT_ALLOWED
 
 
 class UserNotFoundException(CradleAPIException):
@@ -159,16 +167,16 @@ class TwoFactorRequiredException(CradleAPIException):
     error_code = UserErrorCodes.TWO_FACTOR_REQUIRED
 
 
-class InvalidTwoFactorTokenException(CradleAPIException):
-    """Exception raised when 2FA token is invalid."""
+class InvalidTwoFactorCodeException(CradleAPIException):
+    """Exception raised when the two-factor authentication code is invalid."""
 
-    error_code = UserErrorCodes.INVALID_TWO_FACTOR_TOKEN
+    error_code = UserErrorCodes.INVALID_TWO_FACTOR_CODE
 
 
-class InvalidCredentialsException(CradleAPIException):
-    """Exception raised when login credentials are invalid."""
+class SignInFailedException(CradleAPIException):
+    """Exception raised when sign-in fails (e.g. invalid credentials)."""
 
-    error_code = UserErrorCodes.INVALID_CREDENTIALS
+    error_code = UserErrorCodes.SIGN_IN_FAILED
 
 
 class TwoFactorAlreadyEnabledException(CradleAPIException):
@@ -183,10 +191,10 @@ class TwoFactorNotEnabledException(CradleAPIException):
     error_code = UserErrorCodes.TWO_FACTOR_NOT_ENABLED
 
 
-class RegistrationDisabledException(CradleAPIException):
+class RegistrationUnavailableException(CradleAPIException):
     """Exception raised when user registration is disabled."""
 
-    error_code = UserErrorCodes.REGISTRATION_DISABLED
+    error_code = UserErrorCodes.REGISTRATION_UNAVAILABLE
 
 
 class UserAlreadyExistsException(CradleAPIException):
@@ -195,16 +203,16 @@ class UserAlreadyExistsException(CradleAPIException):
     error_code = UserErrorCodes.USER_ALREADY_EXISTS
 
 
-class IncorrectOldPasswordException(CradleAPIException):
-    """Exception raised when the old password is incorrect during password change."""
+class CurrentPasswordIncorrectException(CradleAPIException):
+    """Exception raised when the current password is wrong during a password change."""
 
-    error_code = UserErrorCodes.INCORRECT_OLD_PASSWORD
+    error_code = UserErrorCodes.CURRENT_PASSWORD_INCORRECT
 
 
-class UnknownActionException(CradleAPIException):
+class UnsupportedOperationException(CradleAPIException):
     """Exception raised when an unknown action is requested."""
 
-    error_code = UserErrorCodes.UNKNOWN_ACTION
+    error_code = UserErrorCodes.UNSUPPORTED_OPERATION
 
 
 class EmailAlreadyConfirmedException(CradleAPIException):
@@ -213,10 +221,10 @@ class EmailAlreadyConfirmedException(CradleAPIException):
     error_code = UserErrorCodes.EMAIL_ALREADY_CONFIRMED
 
 
-class ExternalIdentityConflictException(CradleAPIException):
+class ExternalAccountInUseException(CradleAPIException):
     """Exception raised when external identity is already linked elsewhere."""
 
-    error_code = UserErrorCodes.EXTERNAL_IDENTITY_CONFLICT
+    error_code = UserErrorCodes.EXTERNAL_ACCOUNT_IN_USE
 
 
 class SessionNotFoundException(CradleAPIException):
@@ -225,10 +233,10 @@ class SessionNotFoundException(CradleAPIException):
     error_code = UserErrorCodes.SESSION_NOT_FOUND
 
 
-class PasswordResetTokenInvalidException(CradleAPIException):
+class InvalidPasswordResetLinkException(CradleAPIException):
     """Exception raised when password reset token is invalid or expired."""
 
-    error_code = UserErrorCodes.PASSWORD_RESET_TOKEN_INVALID
+    error_code = UserErrorCodes.INVALID_PASSWORD_RESET_LINK
 
 
 class EmailConfirmationFailedException(CradleAPIException):
@@ -237,19 +245,19 @@ class EmailConfirmationFailedException(CradleAPIException):
     error_code = UserErrorCodes.EMAIL_CONFIRMATION_FAILED
 
 
-class InvalidRefreshTokenException(CradleAPIException):
-    """Exception raised when refresh token is invalid or expired."""
+class SessionRenewalFailedException(CradleAPIException):
+    """Exception raised when the session could not be renewed (e.g. invalid refresh token)."""
 
-    error_code = UserErrorCodes.INVALID_REFRESH_TOKEN
-
-
-class OAuthErrorException(CradleAPIException):
-    """Exception raised when OAuth provider or flow fails."""
-
-    error_code = UserErrorCodes.OAUTH_ERROR
+    error_code = UserErrorCodes.SESSION_RENEWAL_FAILED
 
 
-class OAuthAccountNotLinkedException(CradleAPIException):
+class OAuthSignInFailedException(CradleAPIException):
+    """Exception raised when the sign-in flow fails (e.g. OAuth provider error)."""
+
+    error_code = UserErrorCodes.OAUTH_SIGN_IN_FAILED
+
+
+class AccountNotLinkedException(CradleAPIException):
     """Exception raised when OAuth account is not linked to any user."""
 
-    error_code = UserErrorCodes.OAUTH_ACCOUNT_NOT_LINKED
+    error_code = UserErrorCodes.ACCOUNT_NOT_LINKED

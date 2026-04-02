@@ -9,6 +9,10 @@ from django.db import models
 from entries.enums import RelationReason
 from entries.models import Entry, Relation
 
+from ...constants import (
+    INTELIO_ENRICHMENT_MESSAGE_FINISH_FAILED,
+    INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED,
+)
 from ..base import BaseEnricher
 from ..mappings.urlscan import URLScanMapping
 
@@ -124,19 +128,18 @@ class URLScanEnricher(BaseEnricher):
         """Validate configuration before enrichment."""
         analysis_mode = self.settings.get("analysis_mode", "search")
 
-        # API key is required for submit_result mode
+        # API key is required when submitting a URL for a new scan
         if analysis_mode == "submit_result" and not self.settings.get("api_key"):
-            return "API key is required for submit_result mode"
+            return "Add your URLScan API key before submitting a URL for scanning."
 
         if not entries:
-            return "No entries provided for enrichment"
+            return "Select at least one entry to enrich."
 
         # Warn if mappings are missing and artifact extraction is enabled
         if self.settings.get("extract_artifacts", True) and not URLScanMapping.objects.exists():
             self.request._append_warning(
-                "No URLScan type mappings configured. "
-                "Artifact extraction will be disabled. "
-                "Configure URLScanMapping in Django admin to enable artifact extraction."
+                "No URLScan type mappings are configured. "
+                "Artifact extraction will be disabled until an administrator adds them in the admin site."
             )
 
         return None
@@ -162,7 +165,7 @@ class URLScanEnricher(BaseEnricher):
                 elif analysis_mode == "submit_result":
                     result = self._urlscan_submit_and_poll(entry, headers, timeout)
                 else:
-                    self.request._append_warning(f"Unknown analysis mode: {analysis_mode}")
+                    self.request._append_warning("This analysis mode is not supported. Use search or submit result.")
                     continue
 
                 if result:
@@ -182,10 +185,12 @@ class URLScanEnricher(BaseEnricher):
                     if extract_artifacts:
                         self._extract_artifacts(entry, result)
 
-            except requests.RequestException as e:
-                self.request._append_warning(f"URLScan API failed for {entry.name}: {str(e)}")
-            except Exception as e:
-                self.request._append_warning(f"Unexpected error enriching {entry.name}: {str(e)}")
+            except requests.RequestException:
+                logger.warning("URLScan API request failed for entry %s", entry.pk, exc_info=True)
+                self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED)
+            except Exception:
+                logger.warning("URLScan enrichment failed for entry %s", entry.pk, exc_info=True)
+                self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_FINISH_FAILED)
 
     def _urlscan_search(self, entry: Entry, headers: dict, timeout: int) -> dict:
         """Search for existing scans of the URL/domain."""
@@ -272,7 +277,10 @@ class URLScanEnricher(BaseEnricher):
                 continue
 
         if not result:
-            self.request._append_warning(f"URLScan polling timed out for {api_url}")
+            logger.warning("URLScan polling timed out for %s", api_url)
+            self.request._append_warning(
+                "Waiting for scan results took too long. Try again later or use search mode instead."
+            )
 
         return result
 
@@ -342,6 +350,7 @@ class URLScanEnricher(BaseEnricher):
         # Warn if unmapped types were encountered
         if unmapped_types:
             self.request._append_warning(
-                f"Skipped URLScan observable type(s) without mappings: {', '.join(unmapped_types)}. "
-                f"Configure URLScanMapping in Django admin to extract these artifacts."
+                f"Some observable types were skipped because no mapping exists for them: "
+                f"{', '.join(unmapped_types)}. "
+                f"An administrator can add URLScan type mappings in the admin site."
             )

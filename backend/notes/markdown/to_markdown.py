@@ -151,7 +151,9 @@ class AnonymizedMarkdownRenderer(MarkdownRenderer):
         hidden = token["attrs"].get("hidden", False)
         eclass = self.entry_classes.get(key)
         if eclass is None:
-            raise ValueError(f"Entry class not found: {key}")
+            ks = str(key)
+            label = (ks.replace("_", " ").strip() or ks) if key else "Unknown"
+            raise ValueError(f'The entry type "{label}" could not be found.')
 
         anonymized_value = self.anonymizer.anonymize(eclass, value)
         prefix = "~" if hidden else ""

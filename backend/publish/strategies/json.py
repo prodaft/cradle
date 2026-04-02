@@ -39,7 +39,7 @@ class JSONPublish(BasePublishStrategy):
                 report.file.delete(save=False)
         except Exception:
             logger.exception("Failed to delete JSON report.")
-            report.error_message = "Failed to delete JSON report."
+            report.error_message = "The published report file could not be removed."
             report.status = ReportStatus.ERROR
             report.save()
             return False
@@ -114,9 +114,9 @@ class JSONPublish(BasePublishStrategy):
 
             # Save JSON content to FileField - Django handles S3 upload
             report.file.save(f"{report.id}.json", ContentFile(report_json.encode("utf-8")), save=True)
-        except Exception as e:
+        except Exception:
             logger.exception("Failed to upload JSON report.")
-            report.error_message = f"Failed to upload JSON report: {e}"
+            report.error_message = "The report could not be saved. Please try again."
             report.status = ReportStatus.ERROR
             report.save()
             return False

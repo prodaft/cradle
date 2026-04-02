@@ -67,7 +67,9 @@ def generate_report(report_id):
     except Exception:
         logger.exception("Report generation failed for report %s.", report_id)
         report.status = ReportStatus.ERROR
-        report.error_message = "An unknown error occurred when generating report, please contact your admin."
+        report.error_message = (
+            "An unknown error occurred while generating the report. Please contact your administrator."
+        )
         report.save()
 
         if user:
@@ -119,7 +121,7 @@ def edit_report(report_id):
     except Exception:
         logger.exception("Report edit failed for report %s.", report_id)
         report.status = ReportStatus.ERROR
-        report.error_message = "An unknown error occurred when editing report, please contact your admin."
+        report.error_message = "Something went wrong while updating the report. Please try again or contact support."
         report.save()
 
         if user:

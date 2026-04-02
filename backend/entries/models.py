@@ -24,11 +24,11 @@ from logs.models import LoggableModelMixin
 
 from .enums import EntryType, EntryTypeFormat, RelationReason
 from .exceptions import (
-    ClassBreaksHierarchyException,
-    InvalidClassFormatException,
+    EntityLimitExceededException,
     InvalidEntryException,
-    InvalidRegexException,
-    OutOfEntitySlotsException,
+    InvalidEntryHierarchyException,
+    InvalidEntryTypeSettingsException,
+    InvalidPatternException,
 )
 from .managers import (
     ArtifactManager,
@@ -191,11 +191,13 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         self.subtype = self.subtype.strip().strip("/")
 
         if conflict := self.does_entryclass_violate_hierarchy():
-            raise ClassBreaksHierarchyException(conflict.subtype)
+            raise InvalidEntryHierarchyException(conflict.subtype)
 
         if self.type == EntryType.ARTIFACT:
             if self.regex and self.options:
-                raise InvalidClassFormatException()
+                raise InvalidEntryTypeSettingsException(
+                    detail="You cannot use a pattern and a fixed list of options at the same time. Choose one."
+                )
 
             self.options = self.options.strip()
 
@@ -209,7 +211,7 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
                 if self.generative_regex:
                     re.compile(self.generative_regex)
             except re.error:
-                raise InvalidRegexException()
+                raise InvalidPatternException(detail="The pattern could not be read. Check the syntax and try again.")
         else:
             self.generative_regex = ""
 
@@ -342,7 +344,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
                 self.acvec_offset = offset
 
         if self.acvec_offset > 2047:
-            raise OutOfEntitySlotsException()
+            raise EntityLimitExceededException()
 
     def delete_renaming(self, user_id: str, *args, **kwargs):
         from django.db import transaction

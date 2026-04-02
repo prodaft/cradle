@@ -22,11 +22,11 @@ from core.validators import validate_int_list_param, validate_int_param, validat
 from entries.enums import EntryType
 from entries.exceptions import EntriesErrorCodes, EntryNotFoundException
 from entries.models import Entry, Relation
-from query.exceptions import InvalidQuerySyntaxException, QueryErrorCodes
+from query.exceptions import InvalidSearchSyntaxException, QueryErrorCodes
 from query.filters import EntryFilter
 from query.utils import parse_query
 
-from .exceptions import InvalidDepthException, KnowledgeGraphErrorCodes
+from .exceptions import DepthOutOfRangeException, KnowledgeGraphErrorCodes
 from .serializers import (
     EntryWithDepthSerializer,
     GraphInaccessibleResponseSerializer,
@@ -40,11 +40,11 @@ def _get_accessible_entry(user, entry_id: int) -> Entry:
     try:
         entry = Entry.objects.get(pk=entry_id)
     except Entry.DoesNotExist:
-        raise EntryNotFoundException(detail=f"There is no entry with ID {entry_id}.")
+        raise EntryNotFoundException(detail="That entry could not be found.")
     if entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
         user, {entry}, {AccessType.READ, AccessType.READ_WRITE}
     ):
-        raise EntryNotFoundException(detail=f"There is no entry with ID {entry_id}.")
+        raise EntryNotFoundException(detail="That entry could not be found.")
     return entry
 
 
@@ -106,7 +106,7 @@ class GraphPathFindView(APIView):
             param_name="dsts",
         )
         if not ends:
-            raise BadRequestException(detail="Missing dsts parameter.")
+            raise BadRequestException(detail="Select at least one destination.")
 
         _get_accessible_entry(request.user, start)
         for eid in ends:
@@ -117,7 +117,7 @@ class GraphPathFindView(APIView):
         min_date = parse_datetime(min_date_raw) if min_date_raw else datetime.datetime.fromtimestamp(0, tz=timezone.utc)
         max_date = parse_datetime(max_date_raw) if max_date_raw else timezone.now()
         if min_date is None or max_date is None:
-            raise BadRequestException(detail="min_date and max_date must be valid ISO 8601 datetime strings.")
+            raise BadRequestException(detail="Enter valid start and end values for the date range.")
 
         edges = filter_valid_edges(
             get_edges_for_paths(
@@ -208,8 +208,8 @@ class GraphPathFindView(APIView):
         **get_error_responses(
             CoreErrorCodes.INVALID_REQUEST,
             CoreErrorCodes.INVALID_PAGE,
-            QueryErrorCodes.INVALID_QUERY_SYNTAX,
-            KnowledgeGraphErrorCodes.INVALID_DEPTH,
+            QueryErrorCodes.INVALID_SEARCH_SYNTAX,
+            KnowledgeGraphErrorCodes.DEPTH_OUT_OF_RANGE,
             CoreErrorCodes.INVALID_PAGE_SIZE,
             CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
             EntriesErrorCodes.ENTRY_NOT_FOUND,
@@ -231,7 +231,7 @@ class GraphNeighborsView(APIView):
         page = validate_page_param(request.query_params.get("page"), param_name="page", default=1)
 
         if depth < 0 or depth > 5:
-            raise InvalidDepthException(detail="depth must be between 0 and 5.")
+            raise DepthOutOfRangeException()
 
         source_entry = _get_accessible_entry(request.user, source_id)
         sourceset = source_entry.aliasqs(request.user).non_virtual()
@@ -245,7 +245,9 @@ class GraphNeighborsView(APIView):
             try:
                 query_filter = parse_query(query_str)
             except ValueError as e:
-                raise InvalidQuerySyntaxException(detail=f"Invalid query syntax: {str(e)}")
+                raise InvalidSearchSyntaxException(
+                    detail="Use a colon between the entry type and name (for example, *:note or author:Smith)."
+                ) from e
 
             neighbors_qs = get_neighbors_paginated(
                 sourceset,
@@ -306,7 +308,7 @@ class GraphNeighborsView(APIView):
         **get_error_responses(
             CoreErrorCodes.INVALID_REQUEST,
             CoreErrorCodes.PERMISSION_DENIED,
-            KnowledgeGraphErrorCodes.INVALID_DEPTH,
+            KnowledgeGraphErrorCodes.DEPTH_OUT_OF_RANGE,
             EntriesErrorCodes.ENTRY_NOT_FOUND,
         ),
         **get_common_error_responses(),
@@ -327,7 +329,7 @@ class GraphInaccessibleView(APIView):
         )
 
         if depth < 0 or depth > 5:
-            raise InvalidDepthException(detail="depth must be between 0 and 5.")
+            raise DepthOutOfRangeException()
 
         if depth == 0:
             return Response(GraphInaccessibleResponseSerializer({"inaccessible": []}).data, status=status.HTTP_200_OK)

@@ -94,7 +94,7 @@ def validate_order_by(order_by: str | None, valid_fields: list[str]) -> list[str
             order_fields.append(field)
         else:
             raise InvalidRequestException(
-                detail=f"Invalid order_by field: {base_field}. Valid fields are: {', '.join(valid_fields)}"
+                detail=f"That sort order is not recognized. Use one of: {', '.join(valid_fields)}."
             )
 
     return order_fields

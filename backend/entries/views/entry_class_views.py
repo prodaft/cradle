@@ -24,13 +24,13 @@ from user.models import CradleUser
 from user.permissions import EntryClassDetailPermission, EntryClassListPermission, HasAdminRole
 
 from ..exceptions import (
-    AdminOnlyEntryClassDeleteException,
-    AdminOnlyEntryClassTypeChangeException,
+    AdminOnlyEntryTypeChangeException,
+    AdminOnlyEntryTypeDeleteException,
     AdminOnlyViewCountException,
-    CannotDeleteAliasClassException,
-    CannotEditAliasClassException,
+    CannotDeleteAliasEntryTypeException,
+    CannotEditAliasEntryTypeException,
     EntriesErrorCodes,
-    EntryClassNotFoundException,
+    EntryTypeNotFoundException,
 )
 from ..filters import EntryClassFilter
 from ..models import Entry, EntryClass
@@ -42,11 +42,11 @@ from ..serializers import (
 
 
 def _get_entry_class_or_404(subtype: str) -> EntryClass:
-    """Fetch entry class by subtype or raise EntryClassNotFoundException."""
+    """Fetch entry class by subtype or raise EntryTypeNotFoundException."""
     try:
         return EntryClass.objects.get(subtype=subtype)
     except EntryClass.DoesNotExist:
-        raise EntryClassNotFoundException(detail="There is no entry class with specified subtype.")
+        raise EntryTypeNotFoundException(detail="That entry type could not be found.")
 
 
 @extend_schema_view(
@@ -112,9 +112,7 @@ class EntryClassList(ListCreateAPIView):
 
         if self.request.query_params.get("show_count") == "true":
             if not self.request.user.is_cradle_admin:
-                raise AdminOnlyViewCountException(
-                    detail="User must be an admin to see the count of entries in each class."
-                )
+                raise AdminOnlyViewCountException(detail="Only administrators can view the entry type count.")
             qs = qs.annotate(entry_count=Count("entries"))
         return qs
 
@@ -153,7 +151,7 @@ class EntryClassList(ListCreateAPIView):
         responses={
             200: EntryClassSerializer,
             **get_error_responses(
-                EntriesErrorCodes.ENTRY_CLASS_NOT_FOUND,
+                EntriesErrorCodes.ENTRY_TYPE_NOT_FOUND,
             ),
             **get_common_error_responses(),
         },
@@ -173,9 +171,9 @@ class EntryClassList(ListCreateAPIView):
         responses={
             204: {"description": "Entry class successfully deleted"},
             **get_error_responses(
-                EntriesErrorCodes.CANNOT_DELETE_ALIAS_CLASS,
-                EntriesErrorCodes.ADMIN_ONLY_ENTRY_CLASS_DELETE,
-                EntriesErrorCodes.ENTRY_CLASS_NOT_FOUND,
+                EntriesErrorCodes.CANNOT_DELETE_ALIAS_ENTRY_TYPE,
+                EntriesErrorCodes.ADMIN_ONLY_ENTRY_TYPE_DELETE,
+                EntriesErrorCodes.ENTRY_TYPE_NOT_FOUND,
             ),
             **get_common_error_responses(),
         },
@@ -196,9 +194,9 @@ class EntryClassList(ListCreateAPIView):
         responses={
             200: EntryClassSerializer,
             **get_error_responses(
-                EntriesErrorCodes.CANNOT_EDIT_ALIAS_CLASS,
-                EntriesErrorCodes.ENTRY_CLASS_NOT_FOUND,
-                EntriesErrorCodes.ADMIN_ONLY_ENTRY_CLASS_TYPE_CHANGE,
+                EntriesErrorCodes.CANNOT_EDIT_ALIAS_ENTRY_TYPE,
+                EntriesErrorCodes.ENTRY_TYPE_NOT_FOUND,
+                EntriesErrorCodes.ADMIN_ONLY_ENTRY_TYPE_CHANGE,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -218,10 +216,10 @@ class EntryClassDetail(APIView):
 
     def delete(self, request: Request, class_subtype: str) -> Response:
         if class_subtype in settings.INTERNAL_SUBTYPES:
-            raise CannotDeleteAliasClassException(detail="Cannot delete the alias entry class.")
+            raise CannotDeleteAliasEntryTypeException(detail="This entry type is an alias and cannot be deleted.")
 
         if not request.user.is_cradle_admin:
-            raise AdminOnlyEntryClassDeleteException(detail="User must be an admin to delete entry classes.")
+            raise AdminOnlyEntryTypeDeleteException(detail="Only administrators can delete entry types.")
 
         entry_class = _get_entry_class_or_404(class_subtype)
         entry_class.rename(None, request.user.id)
@@ -231,13 +229,13 @@ class EntryClassDetail(APIView):
     def post(self, request: Request, class_subtype: str) -> Response:
         """Update entry class; cannot edit alias class."""
         if class_subtype in settings.INTERNAL_SUBTYPES:
-            raise CannotEditAliasClassException(detail="Cannot edit the alias entry class.")
+            raise CannotEditAliasEntryTypeException(detail="This entry type is an alias and cannot be edited.")
 
         user = cast(CradleUser, request.user)
         entry_class = _get_entry_class_or_404(class_subtype)
 
         if not user.is_cradle_admin and "type" in request.data and request.data["type"] != entry_class.type:
-            raise AdminOnlyEntryClassTypeChangeException(detail="User must be an admin to change entry class type!")
+            raise AdminOnlyEntryTypeChangeException(detail="Only administrators can change the entry type.")
 
         new_subtype = request.data.get("subtype")
 
@@ -270,7 +268,7 @@ class EntryClassDetail(APIView):
         responses={
             200: NextNameResponseSerializer,
             **get_error_responses(
-                EntriesErrorCodes.ENTRY_CLASS_NOT_FOUND,
+                EntriesErrorCodes.ENTRY_TYPE_NOT_FOUND,
             ),
             **get_common_error_responses(),
         },

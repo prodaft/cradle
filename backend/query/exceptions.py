@@ -8,20 +8,20 @@ from core.exceptions import CradleAPIException, ErrorCode
 class QueryErrorCodes(ErrorCode):
     """Error codes for query operations."""
 
-    INVALID_QUERY_SYNTAX = (
+    INVALID_SEARCH_SYNTAX = (
         status.HTTP_400_BAD_REQUEST,
-        "Invalid Query Syntax",
-        "invalid-query-syntax",
+        "Invalid Search Syntax",
+        "invalid-search-syntax",
     )
 
 
-class InvalidQuerySyntaxException(CradleAPIException):
-    """Exception raised when query syntax is invalid."""
+class InvalidSearchSyntaxException(CradleAPIException):
+    """Exception raised when search/query syntax is invalid."""
 
-    error_code = QueryErrorCodes.INVALID_QUERY_SYNTAX
+    error_code = QueryErrorCodes.INVALID_SEARCH_SYNTAX
 
 
 __all__ = [
-    "InvalidQuerySyntaxException",
+    "InvalidSearchSyntaxException",
     "QueryErrorCodes",
 ]

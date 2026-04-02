@@ -10,6 +10,11 @@ from django.utils import timezone
 from entries.enums import RelationReason
 from entries.models import Entry, Relation
 
+from ...constants import (
+    INTELIO_ENRICHMENT_MESSAGE_INIT_FAILED,
+    INTELIO_ENRICHMENT_MESSAGE_REMOTE_SEARCH_FAILED,
+    INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED,
+)
 from ..base import BaseEnricher
 from ..mappings.misp import MISPMapping
 
@@ -112,20 +117,19 @@ class MISPEnricher(BaseEnricher):
     def pre_enrich(self, entries: list[Entry]) -> Optional[str]:
         """Validate configuration before enrichment."""
         if not self.settings.get("api_key"):
-            return "MISP API key is required"
+            return "Add your MISP API key before running this enrichment."
 
         if not self.settings.get("instance_url"):
-            return "MISP instance URL is required"
+            return "Add your MISP server URL before running this enrichment."
 
         if not entries:
-            return "No entries provided for enrichment"
+            return "Select at least one entry to enrich."
 
         # Warn if mappings are missing
         if not MISPMapping.objects.exists():
             self.request._append_warning(
-                "No MISP type mappings configured. "
-                "Type filtering and artifact extraction will be disabled. "
-                "Configure MISPMapping in Django admin to enable these features.",
+                "No MISP type mappings are configured. "
+                "Type filtering and artifact extraction will be disabled until an administrator adds them in the admin site.",
                 self.name,
             )
 
@@ -149,8 +153,9 @@ class MISPEnricher(BaseEnricher):
                 debug=debug,
                 timeout=timeout,
             )
-        except Exception as e:
-            self.request._append_warning(f"Failed to initialize MISP client: {str(e)}", self.name)
+        except Exception:
+            logger.warning("Failed to initialize MISP client", exc_info=True)
+            self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_INIT_FAILED, self.name)
             return
 
         enrichment_entry = self.request.entry
@@ -167,7 +172,8 @@ class MISPEnricher(BaseEnricher):
                 if isinstance(result_search, dict):
                     errors = result_search.get("errors", [])
                     if errors:
-                        self.request._append_warning(f"MISP search errors for {entry.name}: {errors}", self.name)
+                        logger.warning("MISP search returned errors for entry %s: %s", entry.pk, errors)
+                        self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_REMOTE_SEARCH_FAILED, self.name)
                         continue
 
                 # Create relation with results
@@ -192,8 +198,9 @@ class MISPEnricher(BaseEnricher):
                 if extract_artifacts and isinstance(result_search, list):
                     self._extract_artifacts_from_events(entry, result_search)
 
-            except Exception as e:
-                self.request._append_warning(f"MISP query failed for {entry.name}: {str(e)}", self.name)
+            except Exception:
+                logger.warning("MISP query failed for entry %s", entry.pk, exc_info=True)
+                self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED, self.name)
 
     def _build_search_params(self, entry: Entry) -> dict:
         """Build MISP search parameters based on settings and entry."""
@@ -289,8 +296,8 @@ class MISPEnricher(BaseEnricher):
         # Warn user if unmapped types were encountered
         if unmapped_types:
             self.request._append_warning(
-                f"Skipped {len(unmapped_types)} MISP attribute type(s) without mappings: "
+                f"Some MISP attribute types were skipped because no mapping exists for them: "
                 f"{', '.join(sorted(unmapped_types))}. "
-                f"Configure MISPMapping in Django admin to extract these artifacts.",
+                f"An administrator can add MISP type mappings in the admin site.",
                 self.name,
             )

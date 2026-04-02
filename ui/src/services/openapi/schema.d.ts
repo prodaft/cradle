@@ -328,7 +328,7 @@ export interface paths {
         put?: never;
         /**
          * Create a new entry
-         * @description Creates a new entry (artifact or entity). Only admins can create entities.
+         * @description Creates a new entry (artifact or entity). Only administrators can create entities.
          */
         post: operations["entries_entries_create"];
         delete?: never;
@@ -1402,7 +1402,7 @@ export interface paths {
         };
         /**
          * Advanced Query Entries
-         * @description Allow a user to query entries they have access to using advanced syntax: <subtype>:<name> with wildcards (*). Multiple query params are OR'd.
+         * @description Query entries you can access. Use an entry type, a colon, then a name; asterisks are wildcards. Repeat the query parameter to OR several filters together.
          */
         get: operations["query_advanced_retrieve"];
         put?: never;
@@ -2310,8 +2310,10 @@ export interface components {
              * @default []
              */
             request: unknown[];
-            /** @description Per-enricher error messages */
-            readonly errors?: unknown;
+            /** @description Error messages grouped by enrichment name (not internal identifiers) */
+            readonly errors?: {
+                [key: string]: string[];
+            };
         };
         /** @description Serializer for full enrichment request detail including ignored items. */
         EnrichmentRequestDetail: {
@@ -2346,30 +2348,30 @@ export interface components {
         };
         /** @description Serializer for enrichment request enricher information including artifacts. */
         EnrichmentRequestEnricher: {
-            /** @description Enricher class name */
+            /** @description Stable identifier for this enrichment implementation */
             readonly enricher_type?: string;
-            /** @description Human-readable enricher name */
+            /** @description Display name for this enrichment */
             readonly display_name?: string;
-            /** @description Whether enricher is enabled */
+            /** @description Whether this enrichment is enabled */
             readonly enabled?: boolean;
-            /** @description Enricher status for this request */
+            /** @description Status for this enrichment on the request */
             readonly status?: string;
-            /** @description Errors from this enricher */
+            /** @description Errors from this enrichment */
             readonly errors?: unknown[];
-            /** @description Warnings from this enricher */
+            /** @description Warnings from this enrichment */
             readonly warnings?: unknown[];
-            /** @description Artifacts enriched by this enricher */
+            /** @description Artifacts produced by this enrichment */
             readonly artifacts?: unknown[];
         };
         /** @description Serializer for minimal enrichment request enricher information. */
         EnrichmentRequestEnricherMinimal: {
-            /** @description Enricher class name */
+            /** @description Stable identifier for this enrichment implementation */
             readonly enricher_type?: string;
-            /** @description Human-readable enricher name */
+            /** @description Display name for this enrichment */
             readonly display_name?: string;
-            /** @description Whether enricher is enabled */
+            /** @description Whether this enrichment is enabled */
             readonly enabled?: boolean;
-            /** @description Enricher status for this request */
+            /** @description Status for this enrichment on the request */
             readonly status?: string;
         };
         /** @description Serializer for enrichment request list items (summary view). */
@@ -2425,7 +2427,7 @@ export interface components {
             /** @description Whether this enricher is enabled */
             enabled?: boolean;
             readonly for_eclasses_detail?: components["schemas"]["EntryClass"][];
-            /** @description Enricher class name */
+            /** @description Stable identifier for this enrichment implementation */
             readonly enricher_type?: string;
             /** @description Enricher-specific configuration */
             settings?: unknown;
@@ -2496,26 +2498,26 @@ export interface components {
         /** @description Full entry class with children relation and children_detail. */
         EntryClass: {
             /**
-             * @description Entry type (entity or artifact)
+             * @description Entity or artifact
              *
              *     * `entity` - Entity
              *     * `artifact` - Artifact
              * @enum {string}
              */
             type: "entity" | "artifact";
-            /** @description Entry class subtype identifier */
+            /** @description Unique identifier (e.g. ip/address) */
             subtype: string;
-            /** @description Human-readable description */
+            /** @description Human-readable description of this entry class */
             description?: string | null;
-            /** @description Regex for generating names */
+            /** @description Regex for generating child entries from parent text */
             generative_regex?: string;
-            /** @description Validation regex for entry names */
+            /** @description Regex pattern for artifact validation */
             regex?: string;
-            /** @description JSON options for the entry class */
+            /** @description Newline-separated allowed values (alternative to regex) */
             options?: string;
-            /** @description Name prefix for auto-generated entries */
+            /** @description Prefix for entity names (e.g. E- for cases) */
             prefix?: string;
-            /** @description Display color (hex or name) */
+            /** @description Hex color for UI display */
             color?: string;
             /** @description Display format for the entry class */
             format: string | null;
@@ -2526,26 +2528,26 @@ export interface components {
         /** @description Full entry class with children relation and children_detail. */
         EntryClassRequest: {
             /**
-             * @description Entry type (entity or artifact)
+             * @description Entity or artifact
              *
              *     * `entity` - Entity
              *     * `artifact` - Artifact
              * @enum {string}
              */
             type: "entity" | "artifact";
-            /** @description Entry class subtype identifier */
+            /** @description Unique identifier (e.g. ip/address) */
             subtype: string;
-            /** @description Human-readable description */
+            /** @description Human-readable description of this entry class */
             description?: string | null;
-            /** @description Regex for generating names */
+            /** @description Regex for generating child entries from parent text */
             generative_regex?: string;
-            /** @description Validation regex for entry names */
+            /** @description Regex pattern for artifact validation */
             regex?: string;
-            /** @description JSON options for the entry class */
+            /** @description Newline-separated allowed values (alternative to regex) */
             options?: string;
-            /** @description Name prefix for auto-generated entries */
+            /** @description Prefix for entity names (e.g. E- for cases) */
             prefix?: string;
-            /** @description Display color (hex or name) */
+            /** @description Hex color for UI display */
             color?: string;
             /** @description Child entry class IDs */
             children?: string[];
@@ -2599,26 +2601,26 @@ export interface components {
         /** @description Entry class without children relation (for nesting in entry serializers). */
         EntryClassSerializerNoChildren: {
             /**
-             * @description Entry type (entity or artifact)
+             * @description Entity or artifact
              *
              *     * `entity` - Entity
              *     * `artifact` - Artifact
              * @enum {string}
              */
             type: "entity" | "artifact";
-            /** @description Entry class subtype identifier */
+            /** @description Unique identifier (e.g. ip/address) */
             subtype: string;
-            /** @description Human-readable description */
+            /** @description Human-readable description of this entry class */
             description?: string | null;
-            /** @description Regex for generating names */
+            /** @description Regex for generating child entries from parent text */
             generative_regex?: string;
-            /** @description Validation regex for entry names */
+            /** @description Regex pattern for artifact validation */
             regex?: string;
-            /** @description JSON options for the entry class */
+            /** @description Newline-separated allowed values (alternative to regex) */
             options?: string;
-            /** @description Name prefix for auto-generated entries */
+            /** @description Prefix for entity names (e.g. E- for cases) */
             prefix?: string;
-            /** @description Display color (hex or name) */
+            /** @description Hex color for UI display */
             color?: string;
             /** @description Display format for the entry class */
             format: string | null;
@@ -2626,26 +2628,26 @@ export interface components {
         /** @description Entry class without children relation (for nesting in entry serializers). */
         EntryClassSerializerNoChildrenRequest: {
             /**
-             * @description Entry type (entity or artifact)
+             * @description Entity or artifact
              *
              *     * `entity` - Entity
              *     * `artifact` - Artifact
              * @enum {string}
              */
             type: "entity" | "artifact";
-            /** @description Entry class subtype identifier */
+            /** @description Unique identifier (e.g. ip/address) */
             subtype: string;
-            /** @description Human-readable description */
+            /** @description Human-readable description of this entry class */
             description?: string | null;
-            /** @description Regex for generating names */
+            /** @description Regex for generating child entries from parent text */
             generative_regex?: string;
-            /** @description Validation regex for entry names */
+            /** @description Regex pattern for artifact validation */
             regex?: string;
-            /** @description JSON options for the entry class */
+            /** @description Newline-separated allowed values (alternative to regex) */
             options?: string;
-            /** @description Name prefix for auto-generated entries */
+            /** @description Prefix for entity names (e.g. E- for cases) */
             prefix?: string;
-            /** @description Display color (hex or name) */
+            /** @description Hex color for UI display */
             color?: string;
             /** @description Display format for the entry class */
             format: string | null;
@@ -2940,22 +2942,22 @@ export interface components {
         /** @description EntryClass subset for LSP endpoints (types, completion trie). Excludes generative_regex, options, prefix. */
         LspEntryClass: {
             /**
-             * @description Entry type (entity or artifact)
+             * @description Entity or artifact
              *
              *     * `entity` - Entity
              *     * `artifact` - Artifact
              * @enum {string}
              */
             type: "entity" | "artifact";
-            /** @description Entry class subtype identifier */
+            /** @description Unique identifier (e.g. ip/address) */
             subtype: string;
-            /** @description Human-readable description */
+            /** @description Human-readable description of this entry class */
             description?: string | null;
             /** @description Display format for the entry class */
             format: string | null;
-            /** @description Validation regex for entry names */
+            /** @description Regex pattern for artifact validation */
             regex?: string;
-            /** @description Display color (hex or name) */
+            /** @description Hex color for UI display */
             color?: string;
         };
         LspTypesResponse: {
@@ -4138,7 +4140,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4149,7 +4151,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4158,12 +4160,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4198,7 +4200,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4209,7 +4211,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4218,12 +4220,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4258,7 +4260,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4269,7 +4271,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4278,12 +4280,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4318,7 +4320,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4329,7 +4331,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4338,12 +4340,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4378,7 +4380,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4389,7 +4391,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4398,12 +4400,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4467,7 +4469,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4478,7 +4480,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4487,12 +4489,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4527,7 +4529,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4538,7 +4540,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4547,12 +4549,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4587,7 +4589,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4598,7 +4600,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4607,12 +4609,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4647,7 +4649,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4658,7 +4660,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4667,12 +4669,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4707,7 +4709,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4718,7 +4720,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4727,12 +4729,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4794,7 +4796,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4805,7 +4807,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4814,12 +4816,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4854,7 +4856,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4865,7 +4867,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4874,12 +4876,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4914,7 +4916,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4925,7 +4927,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4934,12 +4936,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -4974,7 +4976,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -4985,7 +4987,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -4994,12 +4996,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5034,7 +5036,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5045,7 +5047,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5054,12 +5056,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5122,7 +5124,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5133,7 +5135,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5142,12 +5144,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5182,7 +5184,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5193,7 +5195,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5202,12 +5204,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5242,7 +5244,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5253,7 +5255,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5262,12 +5264,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5302,7 +5304,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5313,7 +5315,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5322,12 +5324,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5362,7 +5364,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5373,7 +5375,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5382,12 +5384,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5421,7 +5423,7 @@ export interface operations {
                     "application/json": components["schemas"]["ChangePasswordResponse"];
                 };
             };
-            /** @description INCORRECT_OLD_PASSWORD; VALIDATION_ERROR */
+            /** @description CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -5445,7 +5447,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5456,7 +5458,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5465,12 +5467,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5505,7 +5507,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5516,7 +5518,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5525,12 +5527,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5565,7 +5567,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5576,7 +5578,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5585,12 +5587,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5625,7 +5627,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5636,7 +5638,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5645,12 +5647,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5704,7 +5706,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5715,7 +5717,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5724,12 +5726,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5764,7 +5766,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5775,7 +5777,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5784,12 +5786,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5824,7 +5826,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5835,7 +5837,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5844,12 +5846,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5883,7 +5885,7 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
-            /** @description VALIDATION_ERROR */
+            /** @description EMAIL_CONFIRMATION_FAILED; VALIDATION_ERROR */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -5907,7 +5909,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5918,7 +5920,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5927,12 +5929,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -5967,7 +5969,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -5978,7 +5980,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -5987,12 +5989,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6027,7 +6029,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6038,7 +6040,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6047,12 +6049,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6087,7 +6089,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6098,7 +6100,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6107,12 +6109,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6170,7 +6172,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6181,7 +6183,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6190,12 +6192,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6230,7 +6232,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6241,7 +6243,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6250,12 +6252,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6290,7 +6292,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6301,7 +6303,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6310,12 +6312,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6350,7 +6352,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6361,7 +6363,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6370,12 +6372,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6429,7 +6431,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6440,7 +6442,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6449,12 +6451,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6489,7 +6491,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6500,7 +6502,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6509,12 +6511,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6549,7 +6551,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6560,7 +6562,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6569,12 +6571,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6608,7 +6610,7 @@ export interface operations {
                     "application/json": components["schemas"]["TokenPairRetrieve"];
                 };
             };
-            /** @description VALIDATION_ERROR */
+            /** @description OAUTH_SIGN_IN_FAILED; ACCOUNT_NOT_LINKED; VALIDATION_ERROR */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -6632,7 +6634,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6643,7 +6645,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6652,12 +6654,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6692,7 +6694,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6703,7 +6705,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6712,12 +6714,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6752,7 +6754,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6763,7 +6765,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6772,12 +6774,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6812,7 +6814,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6823,7 +6825,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6832,12 +6834,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6895,7 +6897,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6906,7 +6908,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6915,12 +6917,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -6955,7 +6957,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -6966,7 +6968,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -6975,12 +6977,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7015,7 +7017,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7026,7 +7028,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7035,12 +7037,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7075,7 +7077,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7086,7 +7088,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7095,12 +7097,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7134,7 +7136,7 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
-            /** @description INVALID_PASSWORD; VALIDATION_ERROR */
+            /** @description INVALID_PASSWORD; INVALID_PASSWORD_RESET_LINK; VALIDATION_ERROR */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7158,7 +7160,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7169,7 +7171,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7178,12 +7180,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7218,7 +7220,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7229,7 +7231,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7238,12 +7240,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7278,7 +7280,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7289,7 +7291,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7298,12 +7300,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7338,7 +7340,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7349,7 +7351,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7358,12 +7360,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7421,7 +7423,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7432,7 +7434,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7441,12 +7443,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7481,7 +7483,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7492,7 +7494,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7501,12 +7503,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7541,7 +7543,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7552,7 +7554,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7561,12 +7563,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7601,7 +7603,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7612,7 +7614,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7621,12 +7623,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7684,7 +7686,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7695,7 +7697,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7704,12 +7706,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7720,7 +7722,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description REGISTRATION_DISABLED */
+            /** @description REGISTRATION_UNAVAILABLE */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -7744,7 +7746,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7755,7 +7757,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7764,12 +7766,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7804,7 +7806,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7815,7 +7817,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7824,12 +7826,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7888,7 +7890,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7899,7 +7901,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7908,12 +7910,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -7948,7 +7950,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -7959,7 +7961,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -7968,12 +7970,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8008,7 +8010,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8019,7 +8021,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8028,12 +8030,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8068,7 +8070,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8079,7 +8081,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8088,12 +8090,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8151,7 +8153,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8162,7 +8164,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8171,12 +8173,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8211,7 +8213,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8222,7 +8224,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8231,12 +8233,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8271,7 +8273,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8282,7 +8284,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8291,12 +8293,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8331,7 +8333,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8342,7 +8344,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8351,12 +8353,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8391,7 +8393,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8402,7 +8404,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8411,12 +8413,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8473,7 +8475,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8484,7 +8486,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8493,12 +8495,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8533,7 +8535,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8544,7 +8546,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8553,12 +8555,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8593,7 +8595,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8604,7 +8606,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8613,12 +8615,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8653,7 +8655,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8664,7 +8666,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8673,12 +8675,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8735,7 +8737,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8746,7 +8748,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8755,12 +8757,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8795,7 +8797,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8806,7 +8808,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8815,12 +8817,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8855,7 +8857,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8866,7 +8868,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8875,12 +8877,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -8915,7 +8917,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -8926,7 +8928,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -8935,12 +8937,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9001,7 +9003,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9012,7 +9014,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9021,12 +9023,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9061,7 +9063,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9072,7 +9074,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9081,12 +9083,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9121,7 +9123,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9132,7 +9134,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9141,12 +9143,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9181,7 +9183,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9192,7 +9194,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9201,12 +9203,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9241,7 +9243,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9252,7 +9254,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9261,12 +9263,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9324,7 +9326,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9335,7 +9337,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9344,12 +9346,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9384,7 +9386,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9395,7 +9397,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9404,12 +9406,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9444,7 +9446,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9455,7 +9457,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9464,12 +9466,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9504,7 +9506,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9515,7 +9517,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9524,12 +9526,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9564,7 +9566,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9575,7 +9577,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9584,12 +9586,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9646,7 +9648,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9657,7 +9659,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9666,12 +9668,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9706,7 +9708,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9717,7 +9719,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9726,12 +9728,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9766,7 +9768,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9777,7 +9779,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9786,12 +9788,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9826,7 +9828,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9837,7 +9839,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9846,12 +9848,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9914,7 +9916,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9925,7 +9927,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9934,12 +9936,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -9974,7 +9976,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -9985,7 +9987,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -9994,12 +9996,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10034,7 +10036,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10045,7 +10047,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10054,12 +10056,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10094,7 +10096,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10105,7 +10107,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10114,12 +10116,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10177,7 +10179,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10188,7 +10190,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10197,12 +10199,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10237,7 +10239,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10248,7 +10250,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10257,12 +10259,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10297,7 +10299,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10308,7 +10310,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10317,12 +10319,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10357,7 +10359,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10368,7 +10370,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10377,12 +10379,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10439,7 +10441,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10450,7 +10452,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10459,12 +10461,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10499,7 +10501,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10510,7 +10512,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10519,12 +10521,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10535,7 +10537,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description ENTRY_CLASS_NOT_FOUND */
+            /** @description ENTRY_TYPE_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -10559,7 +10561,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10570,7 +10572,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10579,12 +10581,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10619,7 +10621,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10630,7 +10632,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10639,12 +10641,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10705,7 +10707,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10716,7 +10718,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10725,12 +10727,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10765,7 +10767,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10776,7 +10778,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10785,12 +10787,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10825,7 +10827,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10836,7 +10838,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10845,12 +10847,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10861,7 +10863,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description ENTRY_CLASS_NOT_FOUND */
+            /** @description ENTRY_TYPE_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -10885,7 +10887,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10896,7 +10898,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10905,12 +10907,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -10945,7 +10947,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -10956,7 +10958,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -10965,12 +10967,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11027,7 +11029,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11038,7 +11040,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11047,12 +11049,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11087,7 +11089,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11098,7 +11100,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11107,12 +11109,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11123,7 +11125,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description ENTRY_CLASS_NOT_FOUND */
+            /** @description ENTRY_TYPE_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -11147,7 +11149,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11158,7 +11160,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11167,12 +11169,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11207,7 +11209,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11218,7 +11220,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11227,12 +11229,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11289,7 +11291,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11300,7 +11302,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11309,12 +11311,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11349,7 +11351,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11360,7 +11362,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11369,12 +11371,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11385,7 +11387,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description ENTRY_CLASS_NOT_FOUND */
+            /** @description ENTRY_TYPE_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -11409,7 +11411,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11420,7 +11422,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11429,12 +11431,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11469,7 +11471,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11480,7 +11482,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11489,12 +11491,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11531,7 +11533,7 @@ export interface operations {
                     "application/json": components["schemas"]["PaginatedRelationSerializerResponse"];
                 };
             };
-            /** @description RELATES_PARAMETER_REQUIRED; INVALID_RELATES_PARAMETER; INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE */
+            /** @description RELATED_ENTRIES_REQUIRED; INVALID_RELATED_ENTRIES; INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -11555,7 +11557,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11566,7 +11568,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11575,12 +11577,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11615,7 +11617,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11626,7 +11628,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11635,12 +11637,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11675,7 +11677,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11686,7 +11688,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11695,12 +11697,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11735,7 +11737,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11746,7 +11748,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11755,12 +11757,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11817,7 +11819,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11828,7 +11830,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11837,12 +11839,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11877,7 +11879,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11888,7 +11890,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11897,12 +11899,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11937,7 +11939,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -11948,7 +11950,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -11957,12 +11959,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -11997,7 +11999,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12008,7 +12010,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12017,12 +12019,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12079,7 +12081,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12090,7 +12092,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12099,12 +12101,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12139,7 +12141,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12150,7 +12152,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12159,12 +12161,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12199,7 +12201,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12210,7 +12212,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12219,12 +12221,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12259,7 +12261,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12270,7 +12272,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12279,12 +12281,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12317,7 +12319,7 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
-            /** @description FILE_ID_REQUIRED; INVALID_FILE_ID */
+            /** @description NO_FILE_SPECIFIED; INVALID_FILE_REFERENCE */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -12341,7 +12343,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12352,7 +12354,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12361,12 +12363,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12401,7 +12403,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12412,7 +12414,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12421,12 +12423,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12461,7 +12463,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12472,7 +12474,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12481,12 +12483,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12521,7 +12523,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12532,7 +12534,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12541,12 +12543,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12581,7 +12583,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12592,7 +12594,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12601,12 +12603,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12639,7 +12641,7 @@ export interface operations {
                     "application/json": components["schemas"]["FileDownload"];
                 };
             };
-            /** @description FILE_ID_REQUIRED; INVALID_FILE_ID */
+            /** @description NO_FILE_SPECIFIED; INVALID_FILE_REFERENCE */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -12663,7 +12665,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12674,7 +12676,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12683,12 +12685,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12723,7 +12725,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12734,7 +12736,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12743,12 +12745,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12783,7 +12785,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12794,7 +12796,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12803,12 +12805,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12819,7 +12821,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description FILE_REFERENCE_NOT_FOUND; MINIO_OBJECT_NOT_FOUND */
+            /** @description FILE_REFERENCE_NOT_FOUND; STORED_FILE_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -12843,7 +12845,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12854,7 +12856,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12863,12 +12865,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12903,7 +12905,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12914,7 +12916,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -12923,12 +12925,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -12986,7 +12988,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -12997,7 +12999,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13006,12 +13008,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13046,7 +13048,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13057,7 +13059,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13066,12 +13068,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13106,7 +13108,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13117,7 +13119,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13126,12 +13128,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13166,7 +13168,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13177,7 +13179,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13186,12 +13188,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13226,7 +13228,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13237,7 +13239,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13246,12 +13248,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13310,7 +13312,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13321,7 +13323,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13330,12 +13332,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13370,7 +13372,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13381,7 +13383,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13390,12 +13392,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13430,7 +13432,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13441,7 +13443,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13450,12 +13452,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13490,7 +13492,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13501,7 +13503,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13510,12 +13512,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13550,7 +13552,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13561,7 +13563,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13570,12 +13572,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13612,7 +13614,7 @@ export interface operations {
                     "application/json": components["schemas"]["FileUploadFinalizeResponse"];
                 };
             };
-            /** @description FILE_NOT_UPLOADED; VALIDATION_ERROR */
+            /** @description FILE_NOT_UPLOADED; INVALID_FILE_SIZE; VALIDATION_ERROR */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -13636,7 +13638,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13647,7 +13649,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13656,12 +13658,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13696,7 +13698,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13707,7 +13709,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13716,12 +13718,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13756,7 +13758,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13767,7 +13769,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13776,12 +13778,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13792,7 +13794,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description UPLOAD_NOT_FOUND; NOTE_NOT_FOUND */
+            /** @description UPLOAD_NOT_FOUND; FILE_TRANSFER_NOTE_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -13816,7 +13818,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13827,7 +13829,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13836,12 +13838,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13876,7 +13878,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13887,7 +13889,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13896,12 +13898,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13936,7 +13938,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -13947,7 +13949,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -13956,12 +13958,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -13996,7 +13998,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14007,7 +14009,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14016,12 +14018,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14094,7 +14096,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14105,7 +14107,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14114,12 +14116,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14154,7 +14156,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14165,7 +14167,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14174,12 +14176,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14214,7 +14216,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14225,7 +14227,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14234,12 +14236,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14274,7 +14276,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14285,7 +14287,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14294,12 +14296,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14357,7 +14359,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14368,7 +14370,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14377,12 +14379,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14417,7 +14419,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14428,7 +14430,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14437,12 +14439,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14477,7 +14479,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14488,7 +14490,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14497,12 +14499,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14537,7 +14539,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14548,7 +14550,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14557,12 +14559,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14618,7 +14620,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14629,7 +14631,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14638,12 +14640,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14678,7 +14680,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14689,7 +14691,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14698,12 +14700,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14738,7 +14740,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14749,7 +14751,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14758,12 +14760,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14798,7 +14800,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14809,7 +14811,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14818,12 +14820,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14879,7 +14881,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14890,7 +14892,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14899,12 +14901,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14939,7 +14941,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -14950,7 +14952,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -14959,12 +14961,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -14999,7 +15001,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15010,7 +15012,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15019,12 +15021,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15059,7 +15061,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15070,7 +15072,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15079,12 +15081,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15138,7 +15140,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15149,7 +15151,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15158,12 +15160,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15198,7 +15200,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15209,7 +15211,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15218,12 +15220,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15258,7 +15260,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15269,7 +15271,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15278,12 +15280,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15342,7 +15344,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15353,7 +15355,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15362,12 +15364,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15402,7 +15404,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15413,7 +15415,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15422,12 +15424,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15462,7 +15464,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15473,7 +15475,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15482,12 +15484,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15522,7 +15524,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15533,7 +15535,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15542,12 +15544,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15582,7 +15584,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15593,7 +15595,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15602,12 +15604,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15644,7 +15646,7 @@ export interface operations {
                     "application/json": components["schemas"]["BaseDigest"];
                 };
             };
-            /** @description INVALID_REQUEST_BODY; INVALID_REQUEST; DIGEST_FILE_NOT_UPLOADED; VALIDATION_ERROR */
+            /** @description INVALID_REQUEST_DATA; INVALID_REQUEST; DIGEST_UPLOAD_INCOMPLETE; VALIDATION_ERROR */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -15668,7 +15670,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15679,7 +15681,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15688,12 +15690,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15728,7 +15730,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15739,7 +15741,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15748,12 +15750,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15788,7 +15790,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15799,7 +15801,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15808,12 +15810,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15848,7 +15850,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15859,7 +15861,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15868,12 +15870,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15908,7 +15910,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15919,7 +15921,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15928,12 +15930,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -15968,7 +15970,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -15979,7 +15981,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -15988,12 +15990,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16064,7 +16066,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16075,7 +16077,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16084,12 +16086,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16124,7 +16126,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16135,7 +16137,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16144,12 +16146,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16184,7 +16186,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16195,7 +16197,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16204,12 +16206,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16244,7 +16246,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16255,7 +16257,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16264,12 +16266,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16327,7 +16329,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16338,7 +16340,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16347,12 +16349,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16387,7 +16389,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16398,7 +16400,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16407,12 +16409,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16447,7 +16449,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16458,7 +16460,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16467,12 +16469,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16507,7 +16509,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16518,7 +16520,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16527,12 +16529,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16588,7 +16590,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16599,7 +16601,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16608,12 +16610,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16648,7 +16650,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16659,7 +16661,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16668,12 +16670,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16684,7 +16686,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description ENRICHMENT_REQUEST_NOT_FOUND */
+            /** @description ENRICHMENT_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -16708,7 +16710,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16719,7 +16721,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16728,12 +16730,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16768,7 +16770,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16779,7 +16781,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16788,12 +16790,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16848,7 +16850,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16859,7 +16861,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16868,12 +16870,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16908,7 +16910,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16919,7 +16921,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16928,12 +16930,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -16944,7 +16946,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description ENRICHMENT_REQUEST_NOT_FOUND */
+            /** @description ENRICHMENT_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -16968,7 +16970,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -16979,7 +16981,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -16988,12 +16990,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17028,7 +17030,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17039,7 +17041,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17048,12 +17050,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17110,7 +17112,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17121,7 +17123,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17130,12 +17132,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17170,7 +17172,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17181,7 +17183,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17190,12 +17192,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17206,7 +17208,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description ENRICHMENT_REQUEST_NOT_FOUND; ENRICHER_TYPE_NOT_FOUND */
+            /** @description ENRICHMENT_NOT_FOUND; ENRICHMENT_OPTION_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -17230,7 +17232,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17241,7 +17243,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17250,12 +17252,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17290,7 +17292,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17301,7 +17303,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17310,12 +17312,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17359,7 +17361,7 @@ export interface operations {
                     "application/json": components["schemas"]["PaginatedEnrichmentRelationSerializerResponse"];
                 };
             };
-            /** @description INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE; INVALID_REQUEST; INVALID_QUERY_SYNTAX */
+            /** @description INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE; INVALID_REQUEST; INVALID_SEARCH_SYNTAX */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -17383,7 +17385,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17394,7 +17396,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17403,12 +17405,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17443,7 +17445,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17454,7 +17456,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17463,12 +17465,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17503,7 +17505,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17514,7 +17516,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17523,12 +17525,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17539,7 +17541,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description ENRICHMENT_REQUEST_NOT_FOUND; ENRICHER_TYPE_NOT_FOUND */
+            /** @description ENRICHMENT_NOT_FOUND; ENRICHMENT_OPTION_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -17563,7 +17565,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17574,7 +17576,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17583,12 +17585,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17623,7 +17625,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17634,7 +17636,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17643,12 +17645,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17704,7 +17706,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17715,7 +17717,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17724,12 +17726,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17764,7 +17766,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17775,7 +17777,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17784,12 +17786,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17800,7 +17802,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description ENRICHMENT_REQUEST_NOT_FOUND */
+            /** @description ENRICHMENT_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -17824,7 +17826,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17835,7 +17837,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17844,12 +17846,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17884,7 +17886,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17895,7 +17897,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17904,12 +17906,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -17966,7 +17968,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -17977,7 +17979,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -17986,12 +17988,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18026,7 +18028,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18037,7 +18039,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18046,12 +18048,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18086,7 +18088,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18097,7 +18099,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18106,12 +18108,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18167,7 +18169,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18178,7 +18180,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18187,12 +18189,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18227,7 +18229,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18238,7 +18240,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18247,12 +18249,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18263,7 +18265,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description ENRICHER_NOT_FOUND */
+            /** @description UNKNOWN_ENRICHMENT_OPTION */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -18287,7 +18289,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18298,7 +18300,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18307,12 +18309,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18347,7 +18349,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18358,7 +18360,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18367,12 +18369,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18432,7 +18434,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18443,7 +18445,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18452,12 +18454,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18492,7 +18494,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18503,7 +18505,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18512,12 +18514,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18552,7 +18554,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18563,7 +18565,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18572,12 +18574,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18588,7 +18590,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description ENRICHER_NOT_FOUND */
+            /** @description UNKNOWN_ENRICHMENT_OPTION */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -18612,7 +18614,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18623,7 +18625,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18632,12 +18634,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18672,7 +18674,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18683,7 +18685,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18692,12 +18694,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18754,7 +18756,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18765,7 +18767,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18774,12 +18776,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18814,7 +18816,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18825,7 +18827,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18834,12 +18836,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18874,7 +18876,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18885,7 +18887,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18894,12 +18896,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -18931,7 +18933,7 @@ export interface operations {
                     "application/json": Record<string, never>[];
                 };
             };
-            /** @description INVALID_CLASS_NAME; NOT_MAPPING_CLASS */
+            /** @description UNKNOWN_MAPPING; INVALID_MAPPING_SELECTION */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -18955,7 +18957,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -18966,7 +18968,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -18975,12 +18977,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19015,7 +19017,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19026,7 +19028,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19035,12 +19037,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19075,7 +19077,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19086,7 +19088,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19095,12 +19097,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19135,7 +19137,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19146,7 +19148,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19155,12 +19157,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19198,7 +19200,7 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
-            /** @description INVALID_CLASS_NAME; NOT_MAPPING_CLASS; INTERNAL_CLASS_REQUIRED; INVALID_MAPPING_ID; INTEGRITY_ERROR; VALIDATION_ERROR */
+            /** @description UNKNOWN_MAPPING; INVALID_MAPPING_SELECTION; TARGET_TYPE_REQUIRED; INVALID_MAPPING; DATA_CONFLICT; VALIDATION_ERROR */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -19222,7 +19224,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19233,7 +19235,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19242,12 +19244,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19282,7 +19284,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19293,7 +19295,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19302,12 +19304,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19342,7 +19344,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19353,7 +19355,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19362,12 +19364,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19402,7 +19404,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19413,7 +19415,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19422,12 +19424,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19462,7 +19464,7 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
-            /** @description INVALID_CLASS_NAME; NOT_MAPPING_CLASS; MAPPING_ID_REQUIRED; INVALID_MAPPING_ID */
+            /** @description UNKNOWN_MAPPING; INVALID_MAPPING_SELECTION; MAPPING_REQUIRED; INVALID_MAPPING */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -19486,7 +19488,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19497,7 +19499,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19506,12 +19508,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19546,7 +19548,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19557,7 +19559,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19566,12 +19568,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19606,7 +19608,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19617,7 +19619,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19626,12 +19628,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19666,7 +19668,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19677,7 +19679,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19686,12 +19688,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19726,7 +19728,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19737,7 +19739,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19746,12 +19748,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19783,7 +19785,7 @@ export interface operations {
                     "application/json": Record<string, never>;
                 };
             };
-            /** @description INVALID_CLASS_NAME; NOT_MAPPING_CLASS */
+            /** @description UNKNOWN_MAPPING; INVALID_MAPPING_SELECTION */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -19807,7 +19809,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19818,7 +19820,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19827,12 +19829,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19867,7 +19869,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19878,7 +19880,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19887,12 +19889,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19927,7 +19929,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19938,7 +19940,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -19947,12 +19949,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -19987,7 +19989,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -19998,7 +20000,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20007,12 +20009,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20066,7 +20068,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20077,7 +20079,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20086,12 +20088,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20126,7 +20128,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20137,7 +20139,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20146,12 +20148,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20186,7 +20188,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20197,7 +20199,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20206,12 +20208,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20246,7 +20248,7 @@ export interface operations {
                     "application/json": components["schemas"]["GraphInaccessibleResponse"];
                 };
             };
-            /** @description INVALID_REQUEST; INVALID_DEPTH */
+            /** @description INVALID_REQUEST; DEPTH_OUT_OF_RANGE */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -20270,7 +20272,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20281,7 +20283,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20290,12 +20292,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20330,7 +20332,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20341,7 +20343,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20350,12 +20352,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20390,7 +20392,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20401,7 +20403,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20410,12 +20412,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20450,7 +20452,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20461,7 +20463,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20470,12 +20472,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20510,7 +20512,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20521,7 +20523,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20530,12 +20532,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20582,7 +20584,7 @@ export interface operations {
                     "application/json": components["schemas"]["LazyPaginatedEntryWithDepthSerializerResponse"];
                 };
             };
-            /** @description INVALID_REQUEST; INVALID_PAGE; INVALID_QUERY_SYNTAX; INVALID_DEPTH; INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE; VALIDATION_ERROR */
+            /** @description INVALID_REQUEST; INVALID_PAGE; INVALID_SEARCH_SYNTAX; DEPTH_OUT_OF_RANGE; INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE; VALIDATION_ERROR */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -20606,7 +20608,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20617,7 +20619,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20626,12 +20628,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20666,7 +20668,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20677,7 +20679,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20686,12 +20688,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20726,7 +20728,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20737,7 +20739,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20746,12 +20748,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20786,7 +20788,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20797,7 +20799,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20806,12 +20808,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20846,7 +20848,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20857,7 +20859,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20866,12 +20868,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20934,7 +20936,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -20945,7 +20947,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -20954,12 +20956,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -20994,7 +20996,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21005,7 +21007,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21014,12 +21016,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21054,7 +21056,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21065,7 +21067,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21074,12 +21076,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21114,7 +21116,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21125,7 +21127,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21134,12 +21136,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21174,7 +21176,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21185,7 +21187,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21194,12 +21196,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21278,7 +21280,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21289,7 +21291,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21298,12 +21300,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21338,7 +21340,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21349,7 +21351,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21358,12 +21360,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21398,7 +21400,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21409,7 +21411,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21418,12 +21420,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21458,7 +21460,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21469,7 +21471,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21478,12 +21480,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21542,7 +21544,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21553,7 +21555,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21562,12 +21564,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21602,7 +21604,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21613,7 +21615,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21622,12 +21624,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21662,7 +21664,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21673,7 +21675,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21682,12 +21684,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21722,7 +21724,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21733,7 +21735,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21742,12 +21744,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21801,7 +21803,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21812,7 +21814,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21821,12 +21823,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21861,7 +21863,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21872,7 +21874,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21881,12 +21883,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -21921,7 +21923,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -21932,7 +21934,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -21941,12 +21943,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22017,7 +22019,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22028,7 +22030,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22037,12 +22039,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22077,7 +22079,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22088,7 +22090,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22097,12 +22099,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22137,7 +22139,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22148,7 +22150,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22157,12 +22159,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22197,7 +22199,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22208,7 +22210,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22217,12 +22219,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22279,7 +22281,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22290,7 +22292,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22299,12 +22301,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22339,7 +22341,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22350,7 +22352,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22359,12 +22361,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22399,7 +22401,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22410,7 +22412,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22419,12 +22421,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22498,7 +22500,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22509,7 +22511,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22518,12 +22520,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22558,7 +22560,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22569,7 +22571,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22578,12 +22580,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22618,7 +22620,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22629,7 +22631,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22638,12 +22640,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22704,7 +22706,7 @@ export interface operations {
                     "application/json": components["schemas"]["PaginatedNoteListResponseSerializerResponse"];
                 };
             };
-            /** @description INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE; INVALID_REFERENCES_AT_LEAST; INVALID_REQUEST */
+            /** @description INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE; INVALID_REFERENCE_COUNT; INVALID_REQUEST */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -22728,7 +22730,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22739,7 +22741,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22748,12 +22750,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22788,7 +22790,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22799,7 +22801,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22808,12 +22810,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22848,7 +22850,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22859,7 +22861,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22868,12 +22870,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22908,7 +22910,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22919,7 +22921,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22928,12 +22930,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -22968,7 +22970,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -22979,7 +22981,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -22988,12 +22990,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23051,7 +23053,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23062,7 +23064,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23071,12 +23073,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23111,7 +23113,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23122,7 +23124,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23131,12 +23133,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23171,7 +23173,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23182,7 +23184,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23191,12 +23193,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23231,7 +23233,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23242,7 +23244,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23251,12 +23253,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23313,7 +23315,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23324,7 +23326,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23333,12 +23335,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23373,7 +23375,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23384,7 +23386,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23393,12 +23395,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23409,7 +23411,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description NOTE_DOES_NOT_EXIST */
+            /** @description NOTE_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -23433,7 +23435,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23444,7 +23446,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23453,12 +23455,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23493,7 +23495,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23504,7 +23506,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23513,12 +23515,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23575,7 +23577,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23586,7 +23588,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23595,12 +23597,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23635,7 +23637,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23646,7 +23648,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23655,12 +23657,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23671,7 +23673,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description NOTE_DOES_NOT_EXIST; ENTRIES_DO_NOT_EXIST */
+            /** @description NOTE_NOT_FOUND; NO_ACCESS_TO_ENTRIES */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -23695,7 +23697,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23706,7 +23708,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23715,12 +23717,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23755,7 +23757,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23766,7 +23768,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23775,12 +23777,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23841,7 +23843,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23852,7 +23854,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23861,12 +23863,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23901,7 +23903,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23912,7 +23914,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23921,12 +23923,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23961,7 +23963,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -23972,7 +23974,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -23981,12 +23983,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -23997,7 +23999,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description NOTE_DOES_NOT_EXIST; NOTE_DOES_NOT_EXIST */
+            /** @description NOTE_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -24021,7 +24023,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24032,7 +24034,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24041,12 +24043,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24081,7 +24083,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24092,7 +24094,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24101,12 +24103,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24163,7 +24165,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24174,7 +24176,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24183,12 +24185,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24223,7 +24225,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24234,7 +24236,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24243,12 +24245,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24283,7 +24285,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24294,7 +24296,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24303,12 +24305,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24319,7 +24321,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description NOTE_DOES_NOT_EXIST */
+            /** @description NOTE_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -24343,7 +24345,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24354,7 +24356,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24363,12 +24365,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24403,7 +24405,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24414,7 +24416,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24423,12 +24425,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24485,7 +24487,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24496,7 +24498,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24505,12 +24507,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24545,7 +24547,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24556,7 +24558,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24565,12 +24567,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24581,7 +24583,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description NOTE_DOES_NOT_EXIST */
+            /** @description NOTE_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -24605,7 +24607,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24616,7 +24618,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24625,12 +24627,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24665,7 +24667,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24676,7 +24678,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24685,12 +24687,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24747,7 +24749,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24758,7 +24760,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24767,12 +24769,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24807,7 +24809,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24818,7 +24820,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24827,12 +24829,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24843,7 +24845,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description NOTE_DOES_NOT_EXIST */
+            /** @description NOTE_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -24867,7 +24869,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24878,7 +24880,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24887,12 +24889,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -24927,7 +24929,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -24938,7 +24940,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -24947,12 +24949,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25007,7 +25009,7 @@ export interface operations {
                     "application/json": components["schemas"]["PaginatedFileReferenceWithNoteSerializerResponse"];
                 };
             };
-            /** @description INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE; INVALID_REQUEST; INVALID_REFERENCES_AT_LEAST */
+            /** @description INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE; INVALID_REQUEST; INVALID_REFERENCE_COUNT */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -25031,7 +25033,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25042,7 +25044,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25051,12 +25053,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25091,7 +25093,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25102,7 +25104,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25111,12 +25113,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25151,7 +25153,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25162,7 +25164,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25171,12 +25173,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25211,7 +25213,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25222,7 +25224,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25231,12 +25233,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25271,7 +25273,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25282,7 +25284,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25291,12 +25293,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25318,7 +25320,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            202: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -25350,7 +25352,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25361,7 +25363,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25370,12 +25372,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25410,7 +25412,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25421,7 +25423,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25430,12 +25432,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25470,7 +25472,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25481,7 +25483,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25490,12 +25492,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25549,7 +25551,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25560,7 +25562,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25569,12 +25571,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25609,7 +25611,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25620,7 +25622,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25629,12 +25631,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25669,7 +25671,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25680,7 +25682,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25689,12 +25691,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25751,7 +25753,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25762,7 +25764,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25771,12 +25773,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25811,7 +25813,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25822,7 +25824,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25831,12 +25833,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25871,7 +25873,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25882,7 +25884,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25891,12 +25893,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -25931,7 +25933,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -25942,7 +25944,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -25951,12 +25953,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26017,7 +26019,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26028,7 +26030,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26037,12 +26039,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26077,7 +26079,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26088,7 +26090,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26097,12 +26099,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26137,7 +26139,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26148,7 +26150,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26157,12 +26159,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26197,7 +26199,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26208,7 +26210,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26217,12 +26219,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26257,7 +26259,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26268,7 +26270,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26277,12 +26279,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26338,7 +26340,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26349,7 +26351,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26358,12 +26360,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26398,7 +26400,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26409,7 +26411,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26418,12 +26420,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26458,7 +26460,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26469,7 +26471,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26478,12 +26480,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26518,7 +26520,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26529,7 +26531,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26538,12 +26540,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26604,7 +26606,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26615,7 +26617,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26624,12 +26626,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26664,7 +26666,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26675,7 +26677,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26684,12 +26686,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26724,7 +26726,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26735,7 +26737,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26744,12 +26746,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26784,7 +26786,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26795,7 +26797,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26804,12 +26806,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26844,7 +26846,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26855,7 +26857,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26864,12 +26866,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26926,7 +26928,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26937,7 +26939,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -26946,12 +26948,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -26986,7 +26988,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -26997,7 +26999,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27006,12 +27008,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27046,7 +27048,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27057,7 +27059,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27066,12 +27068,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27106,7 +27108,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27117,7 +27119,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27126,12 +27128,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27192,7 +27194,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27203,7 +27205,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27212,12 +27214,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27252,7 +27254,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27263,7 +27265,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27272,12 +27274,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27312,7 +27314,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27323,7 +27325,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27332,12 +27334,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27372,7 +27374,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27383,7 +27385,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27392,12 +27394,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27432,7 +27434,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27443,7 +27445,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27452,12 +27454,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27516,7 +27518,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27527,7 +27529,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27536,12 +27538,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27576,7 +27578,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27587,7 +27589,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27596,12 +27598,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27636,7 +27638,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27647,7 +27649,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27656,12 +27658,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27696,7 +27698,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27707,7 +27709,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27716,12 +27718,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27781,7 +27783,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27792,7 +27794,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27801,12 +27803,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27841,7 +27843,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27852,7 +27854,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27861,12 +27863,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27901,7 +27903,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27912,7 +27914,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27921,12 +27923,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -27961,7 +27963,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -27972,7 +27974,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -27981,12 +27983,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28021,7 +28023,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28032,7 +28034,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28041,12 +28043,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28100,7 +28102,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28111,7 +28113,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28120,12 +28122,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28160,7 +28162,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28171,7 +28173,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28180,12 +28182,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28220,7 +28222,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28231,7 +28233,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28240,12 +28242,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28316,7 +28318,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28327,7 +28329,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28336,12 +28338,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28376,7 +28378,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28387,7 +28389,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28396,12 +28398,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28436,7 +28438,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28447,7 +28449,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28456,12 +28458,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28496,7 +28498,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28507,7 +28509,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28516,12 +28518,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28541,7 +28543,7 @@ export interface operations {
                 page?: number;
                 /** @description Number of results per page */
                 page_size?: number;
-                /** @description Advanced query string (e.g., 'type:name', '*:name', 'type:*') */
+                /** @description Filter: entry type, colon, then name (examples: *:note, author:Smith, mytype:*). */
                 query?: string[];
                 /** @description Run the query as if there is a * at the end of it. */
                 wildcard?: boolean;
@@ -28560,7 +28562,7 @@ export interface operations {
                     "application/json": components["schemas"]["AdvancedQueryPaginatedResponse"];
                 };
             };
-            /** @description INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE; INVALID_REQUEST; INVALID_QUERY_SYNTAX */
+            /** @description INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE; INVALID_REQUEST; INVALID_SEARCH_SYNTAX */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -28584,7 +28586,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28595,7 +28597,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28604,12 +28606,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28644,7 +28646,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28655,7 +28657,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28664,12 +28666,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28704,7 +28706,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28715,7 +28717,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28724,12 +28726,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28764,7 +28766,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28775,7 +28777,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28784,12 +28786,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28854,7 +28856,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28865,7 +28867,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28874,12 +28876,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28914,7 +28916,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28925,7 +28927,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28934,12 +28936,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -28974,7 +28976,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -28985,7 +28987,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -28994,12 +28996,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29034,7 +29036,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29045,7 +29047,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29054,12 +29056,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29118,7 +29120,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29129,7 +29131,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29138,12 +29140,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29178,7 +29180,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29189,7 +29191,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29198,12 +29200,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29238,7 +29240,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29249,7 +29251,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29258,12 +29260,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29298,7 +29300,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29309,7 +29311,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29318,12 +29320,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29379,7 +29381,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29390,7 +29392,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29399,12 +29401,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29439,7 +29441,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29450,7 +29452,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29459,12 +29461,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29499,7 +29501,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29510,7 +29512,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29519,12 +29521,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29559,7 +29561,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29570,7 +29572,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29579,12 +29581,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29640,7 +29642,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29651,7 +29653,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29660,12 +29662,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29700,7 +29702,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29711,7 +29713,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29720,12 +29722,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29760,7 +29762,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29771,7 +29773,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29780,12 +29782,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29820,7 +29822,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29831,7 +29833,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29840,12 +29842,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29880,7 +29882,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29891,7 +29893,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29900,12 +29902,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -29959,7 +29961,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -29970,7 +29972,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -29979,12 +29981,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30019,7 +30021,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30030,7 +30032,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30039,12 +30041,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30079,7 +30081,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30090,7 +30092,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30099,12 +30101,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30162,7 +30164,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30173,7 +30175,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30182,12 +30184,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30222,7 +30224,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30233,7 +30235,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30242,12 +30244,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30282,7 +30284,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30293,7 +30295,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30302,12 +30304,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30318,7 +30320,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description NOTES_NOT_FOUND; STRATEGY_NOT_FOUND */
+            /** @description NOTES_NOT_FOUND; EXPORT_FORMAT_NOT_FOUND */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -30342,7 +30344,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30353,7 +30355,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30362,12 +30364,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30402,7 +30404,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30413,7 +30415,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30422,12 +30424,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30481,7 +30483,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30492,7 +30494,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30501,12 +30503,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30541,7 +30543,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30552,7 +30554,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30561,12 +30563,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30601,7 +30603,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30612,7 +30614,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30621,12 +30623,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30687,7 +30689,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30698,7 +30700,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30707,12 +30709,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30747,7 +30749,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30758,7 +30760,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30767,12 +30769,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30807,7 +30809,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30818,7 +30820,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30827,12 +30829,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30867,7 +30869,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30878,7 +30880,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30887,12 +30889,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -30950,7 +30952,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -30961,7 +30963,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -30970,12 +30972,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31010,7 +31012,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31021,7 +31023,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31030,12 +31032,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31070,7 +31072,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31081,7 +31083,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31090,12 +31092,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31130,7 +31132,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31141,7 +31143,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31150,12 +31152,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31190,7 +31192,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31201,7 +31203,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31210,12 +31212,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31272,7 +31274,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31283,7 +31285,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31292,12 +31294,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31332,7 +31334,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31343,7 +31345,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31352,12 +31354,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31392,7 +31394,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31403,7 +31405,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31412,12 +31414,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31452,7 +31454,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31463,7 +31465,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31472,12 +31474,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31534,7 +31536,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31545,7 +31547,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31554,12 +31556,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31594,7 +31596,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31605,7 +31607,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31614,12 +31616,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31654,7 +31656,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31665,7 +31667,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31674,12 +31676,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31714,7 +31716,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31725,7 +31727,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31734,12 +31736,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31800,7 +31802,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31811,7 +31813,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31820,12 +31822,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31860,7 +31862,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31871,7 +31873,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31880,12 +31882,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31920,7 +31922,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31931,7 +31933,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -31940,12 +31942,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -31980,7 +31982,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -31991,7 +31993,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32000,12 +32002,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32040,7 +32042,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32051,7 +32053,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32060,12 +32062,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32126,7 +32128,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32137,7 +32139,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32146,12 +32148,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32186,7 +32188,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32197,7 +32199,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32206,12 +32208,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32246,7 +32248,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32257,7 +32259,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32266,12 +32268,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32306,7 +32308,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32317,7 +32319,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32326,12 +32328,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32388,7 +32390,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32399,7 +32401,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32408,12 +32410,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32448,7 +32450,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32459,7 +32461,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32468,12 +32470,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32508,7 +32510,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32519,7 +32521,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32528,12 +32530,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32568,7 +32570,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32579,7 +32581,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32588,12 +32590,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32650,7 +32652,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32661,7 +32663,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32670,12 +32672,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32710,7 +32712,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32721,7 +32723,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32730,12 +32732,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32770,7 +32772,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32781,7 +32783,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32790,12 +32792,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32830,7 +32832,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32841,7 +32843,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32850,12 +32852,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32916,7 +32918,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32927,7 +32929,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32936,12 +32938,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -32976,7 +32978,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -32987,7 +32989,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -32996,12 +32998,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33036,7 +33038,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33047,7 +33049,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33056,12 +33058,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33096,7 +33098,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33107,7 +33109,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33116,12 +33118,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33156,7 +33158,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33167,7 +33169,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33176,12 +33178,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33216,7 +33218,7 @@ export interface operations {
                     "application/json": components["schemas"]["UserManageResponse"];
                 };
             };
-            /** @description UNKNOWN_ACTION; EMAIL_ALREADY_CONFIRMED */
+            /** @description UNSUPPORTED_OPERATION; EMAIL_ALREADY_CONFIRMED */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -33240,7 +33242,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33251,7 +33253,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33260,12 +33262,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33300,7 +33302,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33311,7 +33313,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33320,12 +33322,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33360,7 +33362,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33371,7 +33373,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33380,12 +33382,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33420,7 +33422,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33431,7 +33433,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33440,12 +33442,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33480,7 +33482,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33491,7 +33493,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33500,12 +33502,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33571,7 +33573,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33582,7 +33584,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33591,12 +33593,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33631,7 +33633,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33642,7 +33644,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33651,12 +33653,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33691,7 +33693,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33702,7 +33704,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33711,12 +33713,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33751,7 +33753,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33762,7 +33764,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33771,12 +33773,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33811,7 +33813,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33822,7 +33824,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33831,12 +33833,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33895,7 +33897,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33906,7 +33908,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33915,12 +33917,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -33955,7 +33957,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -33966,7 +33968,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -33975,12 +33977,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34015,7 +34017,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34026,7 +34028,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34035,12 +34037,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34075,7 +34077,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34086,7 +34088,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34095,12 +34097,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34158,7 +34160,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34169,7 +34171,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34178,12 +34180,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34218,7 +34220,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34229,7 +34231,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34238,12 +34240,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34278,7 +34280,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34289,7 +34291,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34298,12 +34300,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34338,7 +34340,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34349,7 +34351,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34358,12 +34360,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34417,7 +34419,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34428,7 +34430,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34437,12 +34439,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34477,7 +34479,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34488,7 +34490,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34497,12 +34499,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34537,7 +34539,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34548,7 +34550,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34557,12 +34559,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34597,7 +34599,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34608,7 +34610,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34617,12 +34619,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34680,7 +34682,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34691,7 +34693,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34700,12 +34702,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34740,7 +34742,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34751,7 +34753,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34760,12 +34762,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34800,7 +34802,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34811,7 +34813,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34820,12 +34822,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34860,7 +34862,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34871,7 +34873,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34880,12 +34882,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -34942,7 +34944,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -34953,7 +34955,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -34962,12 +34964,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35002,7 +35004,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35013,7 +35015,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35022,12 +35024,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35062,7 +35064,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35073,7 +35075,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35082,12 +35084,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35122,7 +35124,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35133,7 +35135,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35142,12 +35144,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35204,7 +35206,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35215,7 +35217,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35224,12 +35226,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35264,7 +35266,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35275,7 +35277,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35284,12 +35286,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35324,7 +35326,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35335,7 +35337,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35344,12 +35346,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35384,7 +35386,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35395,7 +35397,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35404,12 +35406,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35470,7 +35472,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35481,7 +35483,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35490,12 +35492,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35530,7 +35532,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35541,7 +35543,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35550,12 +35552,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35590,7 +35592,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35601,7 +35603,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35610,12 +35612,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35650,7 +35652,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35661,7 +35663,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35670,12 +35672,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35710,7 +35712,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35721,7 +35723,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35730,12 +35732,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35796,7 +35798,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35807,7 +35809,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35816,12 +35818,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35856,7 +35858,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35867,7 +35869,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35876,12 +35878,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35916,7 +35918,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35927,7 +35929,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35936,12 +35938,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -35976,7 +35978,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -35987,7 +35989,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -35996,12 +35998,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36058,7 +36060,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36069,7 +36071,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36078,12 +36080,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36118,7 +36120,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36129,7 +36131,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36138,12 +36140,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36178,7 +36180,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36189,7 +36191,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36198,12 +36200,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36238,7 +36240,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36249,7 +36251,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36258,12 +36260,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36320,7 +36322,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36331,7 +36333,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36340,12 +36342,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36380,7 +36382,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36391,7 +36393,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36400,12 +36402,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36440,7 +36442,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36451,7 +36453,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36460,12 +36462,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36500,7 +36502,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36511,7 +36513,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36520,12 +36522,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36586,7 +36588,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36597,7 +36599,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36606,12 +36608,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36646,7 +36648,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36657,7 +36659,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36666,12 +36668,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36706,7 +36708,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36717,7 +36719,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36726,12 +36728,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36766,7 +36768,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36777,7 +36779,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36786,12 +36788,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36826,7 +36828,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36837,7 +36839,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36846,12 +36848,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36886,7 +36888,7 @@ export interface operations {
                     "application/json": components["schemas"]["UserManageResponse"];
                 };
             };
-            /** @description UNKNOWN_ACTION; EMAIL_ALREADY_CONFIRMED */
+            /** @description UNSUPPORTED_OPERATION; EMAIL_ALREADY_CONFIRMED */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -36910,7 +36912,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36921,7 +36923,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36930,12 +36932,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -36970,7 +36972,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -36981,7 +36983,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -36990,12 +36992,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37030,7 +37032,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37041,7 +37043,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37050,12 +37052,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37090,7 +37092,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37101,7 +37103,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37110,12 +37112,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37150,7 +37152,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37161,7 +37163,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37170,12 +37172,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37237,7 +37239,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37248,7 +37250,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37257,12 +37259,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37297,7 +37299,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37308,7 +37310,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37317,12 +37319,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37357,7 +37359,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37368,7 +37370,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37377,12 +37379,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37417,7 +37419,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37428,7 +37430,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37437,12 +37439,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37477,7 +37479,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37488,7 +37490,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37497,12 +37499,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37561,7 +37563,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37572,7 +37574,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37581,12 +37583,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37621,7 +37623,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37632,7 +37634,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37641,12 +37643,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37681,7 +37683,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37692,7 +37694,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37701,12 +37703,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37741,7 +37743,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37752,7 +37754,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37761,12 +37763,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37799,7 +37801,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description VALIDATION_ERROR */
+            /** @description OAUTH_SIGN_IN_FAILED; VALIDATION_ERROR */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -37823,7 +37825,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37834,7 +37836,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37843,12 +37845,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37883,7 +37885,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37894,7 +37896,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37903,12 +37905,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37943,7 +37945,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -37954,7 +37956,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -37963,12 +37965,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -37979,7 +37981,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description EXTERNAL_IDENTITY_CONFLICT */
+            /** @description EXTERNAL_ACCOUNT_IN_USE */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -38003,7 +38005,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -38014,7 +38016,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -38023,12 +38025,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -38063,7 +38065,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -38074,7 +38076,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -38083,12 +38085,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -38143,7 +38145,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -38154,7 +38156,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -38163,12 +38165,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -38203,7 +38205,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -38214,7 +38216,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -38223,12 +38225,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }
@@ -38263,7 +38265,7 @@ export interface operations {
                         status: number;
                         /**
                          * @description Human-readable explanation specific to this occurrence
-                         * @example One or more fields failed validation.
+                         * @example Some values could not be accepted.
                          */
                         detail: string;
                         /**
@@ -38274,7 +38276,7 @@ export interface operations {
                         /**
                          * Format: date-time
                          * @description ISO 8601 timestamp when the error occurred
-                         * @example 2025-11-08T14:32:10.123456Z
+                         * @example 2026-11-08T14:32:10.123456Z
                          */
                         timestamp: string;
                         /**
@@ -38283,12 +38285,12 @@ export interface operations {
                          */
                         code: string;
                         /**
-                         * @description Field-level validation errors (only present for validation errors)
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
                          * @example {
-                         *       "field_name": [
-                         *         "This field is required."
+                         *       "Page number": [
+                         *         "This may not be less than 1."
                          *       ],
-                         *       "email": [
+                         *       "Email": [
                          *         "Enter a valid email address."
                          *       ]
                          *     }

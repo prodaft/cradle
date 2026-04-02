@@ -14,12 +14,12 @@ from core.exceptions import PermissionDeniedException
 
 from .enums import EntryType
 from .exceptions import (
-    CannotAliasToEntityException,
     DuplicateEntityException,
     DuplicateEntryException,
-    EntryMustHaveSubtypeException,
     EntryTypeMismatchException,
     EntryTypeNotFoundException,
+    EntryTypeRequiredException,
+    InvalidAliasTargetException,
 )
 from .models import Attachment, Entry, EntryClass, Relation
 
@@ -240,19 +240,6 @@ class EntrySerializerMinimal(serializers.ModelSerializer):
         return representation
 
 
-# Shared help_text for EntryClass model fields (used by EntryClassSerializerNoChildren and EntryClassSerializer)
-ENTRY_CLASS_FIELD_HELP = {
-    "type": {"help_text": "Entry type (entity or artifact)"},
-    "subtype": {"help_text": "Entry class subtype identifier"},
-    "description": {"help_text": "Human-readable description"},
-    "generative_regex": {"help_text": "Regex for generating names"},
-    "regex": {"help_text": "Validation regex for entry names"},
-    "options": {"help_text": "JSON options for the entry class"},
-    "prefix": {"help_text": "Name prefix for auto-generated entries"},
-    "color": {"help_text": "Display color (hex or name)"},
-}
-
-
 class EntryClassSerializerNoChildren(serializers.ModelSerializer):
     """Entry class without children relation (for nesting in entry serializers)."""
 
@@ -271,7 +258,6 @@ class EntryClassSerializerNoChildren(serializers.ModelSerializer):
             "color",
             "format",
         ]
-        extra_kwargs = ENTRY_CLASS_FIELD_HELP
 
 
 class EntryClassSerializer(serializers.ModelSerializer):
@@ -302,7 +288,6 @@ class EntryClassSerializer(serializers.ModelSerializer):
             "format",
             "children_detail",
         ]
-        extra_kwargs = {**ENTRY_CLASS_FIELD_HELP}
 
     def create(self, validated_data):
         children_data = validated_data.pop("children", [])
@@ -532,7 +517,7 @@ class EntitySerializer(serializers.ModelSerializer):
         data["type"] = EntryType.ENTITY
 
         if "subtype" not in data or not data["subtype"]:
-            raise EntryMustHaveSubtypeException()
+            raise EntryTypeRequiredException()
 
         internal = super().to_internal_value(data)
         try:
@@ -554,22 +539,24 @@ class EntitySerializer(serializers.ModelSerializer):
             DuplicateEntityException: If another entity has the same name (409).
         """
         if data["entry_class"].type != EntryType.ENTITY:
-            raise EntryTypeMismatchException()
+            raise EntryTypeMismatchException(detail="This entry is not an entity.")
 
         if not data.get("name"):
-            raise serializers.ValidationError("Name is required.")
+            raise serializers.ValidationError({"name": "Enter a name."})
 
         aliases = data.get("aliases", [])
         for alias in aliases:
             if alias.entry_class.type != EntryType.ARTIFACT:
-                raise CannotAliasToEntityException()
+                raise InvalidAliasTargetException()
         if aliases:
             request = self.context.get("request")
             if request and not request.user.is_cradle_admin:
                 if not Access.objects.has_access_to_entities(
                     request.user, set(aliases), {AccessType.READ, AccessType.READ_WRITE}
                 ):
-                    raise PermissionDeniedException(detail="You do not have access to all alias entries.")
+                    raise PermissionDeniedException(
+                        detail="You do not have access to one or more of the linked entries."
+                    )
 
         # Check for duplicate entity (same name + subtype)
         qs = Entry.objects.filter(entry_class=data["entry_class"], name=data["name"])
@@ -690,7 +677,7 @@ class ArtifactSerializer(serializers.ModelSerializer):
             pass
         else:
             if entry_class.type != EntryType.ARTIFACT:
-                raise EntryTypeMismatchException()
+                raise EntryTypeMismatchException(detail="That entry type is not an artifact.")
             data["entry_class"] = entry_class
 
         entry_exists = Entry.objects.filter(

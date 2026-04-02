@@ -2,7 +2,7 @@ from uuid import UUID
 
 from core.exceptions import InvalidRequestException
 
-from ..exceptions import NoteDoesNotExistException
+from ..exceptions import NoteNotFoundException
 from ..models import Note
 from ..serializers import ReportQuerySerializer
 from .utils import NotesTestCase
@@ -46,7 +46,7 @@ class ReportQuerySerializerTest(NotesTestCase):
         serializer = ReportQuerySerializer()
         for test_entity in note_ids:
             with self.subTest(f"{test_entity}"):
-                with self.assertRaises(NoteDoesNotExistException):
+                with self.assertRaises(NoteNotFoundException):
                     serializer.validate_note_ids(test_entity)
 
     def test_validate_notes_successful(self):

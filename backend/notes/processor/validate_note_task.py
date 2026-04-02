@@ -7,13 +7,13 @@ from django.conf import settings
 from django.db.models import Q
 
 from entries.enums import EntryType
-from entries.exceptions import AliasCannotBeLinkedException, InvalidEntryException
+from entries.exceptions import InvalidEntryException, NoteReferenceNotAllowedException
 from entries.models import Entry, EntryClass
 from management.settings import cradle_settings
 
 from ..exceptions import (
-    EntriesDoNotExistException,
-    EntryClassesDoNotExistException,
+    EntriesNotFoundException,
+    EntryTypesNotFoundException,
     NotEnoughReferencesException,
 )
 from ..models import Note
@@ -36,9 +36,9 @@ class ValidateNoteTask(BaseTask):
             Tuple of (None, validated entries).
 
         Raises:
-            AliasCannotBeLinkedException: If note links to internal subtype.
-            EntryClassesDoNotExistException: If referenced entry classes do not exist.
-            EntriesDoNotExistException: If referenced entities do not exist.
+            NoteReferenceNotAllowedException: If note links to internal subtype.
+            EntryTypesNotFoundException: If referenced entry types do not exist.
+            EntriesNotFoundException: If referenced entities do not exist.
             InvalidEntryException: If entry value fails validation.
             NotEnoughReferencesException: If minimum entity/entry counts not met.
         """
@@ -47,7 +47,7 @@ class ValidateNoteTask(BaseTask):
 
         # Check if the note tries to link to an internal subtype (e.g. alias)
         if unique_subtypes & settings.INTERNAL_SUBTYPES:
-            raise AliasCannotBeLinkedException()
+            raise NoteReferenceNotAllowedException()
 
         # Prefetch all relevant EntryClass objects in one query
         eclasses = EntryClass.objects.filter(subtype__in=unique_subtypes)
@@ -91,7 +91,7 @@ class ValidateNoteTask(BaseTask):
                 entry_key = (eclass.subtype, r.value)
                 if entry_key not in entries_dict:
                     if eclass.type == EntryType.ENTITY:
-                        raise EntriesDoNotExistException([r])
+                        raise EntriesNotFoundException([r])
 
                     if not eclass.validate_text(r.value):
                         raise InvalidEntryException(eclass.subtype, r.value)
@@ -101,7 +101,7 @@ class ValidateNoteTask(BaseTask):
             elif cradle_settings.notes.allow_dynamic_entry_class_creation:
                 total_count += 1
             else:
-                raise EntryClassesDoNotExistException([r.key])
+                raise EntryTypesNotFoundException([r.key])
 
         if entity_count < cradle_settings.notes.min_entities or total_count < cradle_settings.notes.min_entries:
             raise NotEnoughReferencesException()

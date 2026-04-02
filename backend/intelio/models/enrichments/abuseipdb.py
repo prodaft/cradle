@@ -1,4 +1,5 @@
 # Ported from IntelOwl: https://github.com/intelowlproject/IntelOwl
+import logging
 from typing import Optional
 
 import requests
@@ -7,7 +8,10 @@ from django.db import models
 from entries.enums import RelationReason
 from entries.models import Entry, Relation
 
+from ...constants import INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED
 from ..base import BaseEnricher
+
+logger = logging.getLogger(__name__)
 
 
 class AbuseIPDBEnricher(BaseEnricher):
@@ -60,10 +64,10 @@ class AbuseIPDBEnricher(BaseEnricher):
     def pre_enrich(self, entries: list[Entry]) -> Optional[str]:
         """Validate configuration before enrichment."""
         if not self.settings.get("api_key"):
-            return "AbuseIPDB API key is required"
+            return "Add your AbuseIPDB API key before running this enrichment."
 
         if not entries:
-            return "No entries provided for enrichment"
+            return "Select at least one entry to enrich."
 
         return None
 
@@ -115,8 +119,9 @@ class AbuseIPDBEnricher(BaseEnricher):
                 )
                 relations.append(relation)
 
-            except requests.RequestException as e:
-                self.request._append_warning(f"AbuseIPDB API failed for {entry.name}: {str(e)}")
+            except requests.RequestException:
+                logger.warning("AbuseIPDB API request failed for entry %s", entry.pk, exc_info=True)
+                self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED)
 
         # Bulk create relations
         if relations:

@@ -9,7 +9,7 @@ from entries.constants import INTERNAL_ENTRY_CLASS_DEFAULTS, SUBTYPE_DIGEST, SUB
 from entries.models import EntryClass
 
 from ..enums import EnrichmentStatus
-from ..models.base import BaseDigest, EnricherSettings, EnrichmentRequest
+from ..models.base import BaseDigest, BaseEnricher, EnricherSettings, EnrichmentRequest
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +27,10 @@ def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
     try:
         enricher.pre_enrich(entries)
         enricher.enrich(entries)
-    except Exception as e:
-        error_message = f"Enricher {settings.enricher_type} failed: {str(e)}"
+    except Exception:
+        label = BaseEnricher.display_label_for_type(settings.enricher_type)
+        logger.exception("Enrichment run failed (%s)", settings.enricher_type)
+        error_message = f"{label} could not finish. Please try again."
         request._append_error(error_message, settings.enricher_type)
         request._set_enricher_status(settings.enricher_type, EnrichmentStatus.ERROR)
         return

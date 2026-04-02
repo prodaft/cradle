@@ -110,9 +110,9 @@ class HTMLPublish(BasePublishStrategy):
             if report.file:
                 report.file.delete(save=False)
             report.file.save(f"{report.id}.html", ContentFile(html.encode("utf-8")), save=True)
-        except Exception as e:
+        except Exception:
             logger.exception("Failed to upload HTML report.")
-            report.error_message = f"Failed to upload HTML report: {e}"
+            report.error_message = "The report could not be saved. Please try again."
             report.status = ReportStatus.ERROR
             report.save()
             return False
@@ -133,7 +133,7 @@ class HTMLPublish(BasePublishStrategy):
                 report.file.delete(save=False)
         except Exception:
             logger.exception("Failed to delete HTML report.")
-            report.error_message = "Failed to delete HTML report."
+            report.error_message = "The published report file could not be removed."
             report.status = ReportStatus.ERROR
             report.save()
             return False

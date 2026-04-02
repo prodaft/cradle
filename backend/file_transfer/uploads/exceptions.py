@@ -35,7 +35,7 @@ class UploadErrorCodes(ErrorCode):
     )
     QUOTA_EXCEEDED = (
         status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-        "Upload Quota Exceeded",
+        "Quota Exceeded",
         "quota-exceeded",
     )
     INVALID_FILE_SIZE = (

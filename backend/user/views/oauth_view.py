@@ -22,10 +22,10 @@ from core.throttling import AuthRateThrottle
 
 from ..exceptions import (
     AccountNotActivatedException,
+    AccountNotLinkedException,
     EmailNotConfirmedException,
-    ExternalIdentityConflictException,
-    OAuthAccountNotLinkedException,
-    OAuthErrorException,
+    ExternalAccountInUseException,
+    OAuthSignInFailedException,
     UserErrorCodes,
 )
 from ..models import ExternalIdentity
@@ -49,12 +49,12 @@ def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> 
     """Exchange OAuth code for tokens and fetch userinfo. Returns (token_data, userinfo)."""
     config = _get_provider_config(provider)
     if not config:
-        raise OAuthErrorException(detail="OAuth provider is not configured.")
+        raise OAuthSignInFailedException(detail="This sign-in method is not available.")
 
     token_url = config.get("token_url")
     userinfo_url = config.get("userinfo_url")
     if not token_url or not userinfo_url:
-        raise OAuthErrorException(detail="OAuth provider configuration is incomplete.")
+        raise OAuthSignInFailedException(detail="This sign-in method is not set up correctly.")
 
     sanitized_redirect_uri = urlunsplit(urlsplit(redirect_uri)._replace(fragment=""))
 
@@ -74,17 +74,15 @@ def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> 
     try:
         token_response = requests.post(token_url, data=token_payload, timeout=10)
     except requests.RequestException as exc:
-        raise OAuthErrorException(detail="Failed to reach OAuth provider.") from exc
+        raise OAuthSignInFailedException(detail="Could not reach the sign-in service.") from exc
 
     if not token_response.ok:
-        raise OAuthErrorException(
-            detail=f"OAuth token exchange failed ({token_response.status_code}): {token_response.text}"
-        )
+        raise OAuthSignInFailedException(detail="Sign-in could not be completed. Please try again.")
 
     token_data = token_response.json()
     access_token = token_data.get("access_token")
     if not access_token:
-        raise OAuthErrorException(detail="OAuth provider did not return access token.")
+        raise OAuthSignInFailedException(detail="The sign-in service did not respond as expected.")
 
     try:
         userinfo_response = requests.get(
@@ -93,12 +91,10 @@ def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> 
             timeout=10,
         )
     except requests.RequestException as exc:
-        raise OAuthErrorException(detail="Failed to fetch OAuth user info.") from exc
+        raise OAuthSignInFailedException(detail="Could not load your profile from the sign-in service.") from exc
 
     if not userinfo_response.ok:
-        raise OAuthErrorException(
-            detail=f"OAuth user info request failed ({userinfo_response.status_code}): {userinfo_response.text}"
-        )
+        raise OAuthSignInFailedException(detail="Could not load your profile from the sign-in service.")
 
     return token_data, userinfo_response.json()
 
@@ -111,8 +107,8 @@ def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> 
         responses={
             200: None,
             **get_error_responses(
-                UserErrorCodes.EXTERNAL_IDENTITY_CONFLICT,
-                UserErrorCodes.OAUTH_ERROR,
+                UserErrorCodes.EXTERNAL_ACCOUNT_IN_USE,
+                UserErrorCodes.OAUTH_SIGN_IN_FAILED,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -132,7 +128,7 @@ class OAuthConnectView(APIView):
         _, userinfo = _exchange_code_for_userinfo(provider, data["code"], data["redirect_uri"])
         subject = userinfo.get("sub")
         if not subject:
-            raise OAuthErrorException(detail="OAuth user info missing subject.")
+            raise OAuthSignInFailedException(detail="Your profile from the sign-in service is incomplete.")
 
         issuer = userinfo.get("iss") or settings.OAUTH_PROVIDERS.get(provider, {}).get("issuer")
         email = userinfo.get("email")
@@ -142,7 +138,7 @@ class OAuthConnectView(APIView):
         existing = ExternalIdentity.objects.filter(provider=provider, subject=subject, issuer=issuer).first()
 
         if existing and existing.user_id != request.user.id:
-            raise ExternalIdentityConflictException(detail="This external account is already linked to another user.")
+            raise ExternalAccountInUseException(detail="This external account is already linked to another user.")
 
         if not existing:
             existing = ExternalIdentity(
@@ -178,8 +174,8 @@ class OAuthConnectView(APIView):
             **get_error_responses(
                 UserErrorCodes.EMAIL_NOT_CONFIRMED,
                 UserErrorCodes.ACCOUNT_NOT_ACTIVATED,
-                UserErrorCodes.OAUTH_ERROR,
-                UserErrorCodes.OAUTH_ACCOUNT_NOT_LINKED,
+                UserErrorCodes.OAUTH_SIGN_IN_FAILED,
+                UserErrorCodes.ACCOUNT_NOT_LINKED,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -202,7 +198,7 @@ class OAuthLoginView(APIView):
 
         subject = userinfo.get("sub")
         if not subject:
-            raise OAuthErrorException(detail="OAuth user info missing subject.")
+            raise OAuthSignInFailedException(detail="Your profile from the sign-in service is incomplete.")
 
         issuer = userinfo.get("iss") or settings.OAUTH_PROVIDERS.get(provider, {}).get("issuer")
 
@@ -213,15 +209,15 @@ class OAuthLoginView(APIView):
         )
 
         if not identity:
-            raise OAuthAccountNotLinkedException(detail="External account is not linked to any user.")
+            raise AccountNotLinkedException(detail="This external account is not linked to any user.")
 
         user = identity.user
 
         if not user.email_confirmed:
-            raise EmailNotConfirmedException(detail="Your email is not confirmed")
+            raise EmailNotConfirmedException(detail="Your email is not confirmed.")
 
         if not user.is_active:
-            raise AccountNotActivatedException(detail="Your account is not activated")
+            raise AccountNotActivatedException(detail="Your account is not activated.")
 
         identity.last_login_at = timezone.now()
         identity.save(update_fields=["last_login_at"])

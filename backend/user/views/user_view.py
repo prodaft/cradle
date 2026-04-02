@@ -35,14 +35,14 @@ from notifications.models import NewUserNotification
 
 from ..authentication import APIKeyAuthentication
 from ..exceptions import (
-    DisallowedActionException,
+    ActionNotAllowedException,
+    CurrentPasswordIncorrectException,
     EmailAlreadyConfirmedException,
     EmailConfirmationFailedException,
-    IncorrectOldPasswordException,
-    PasswordResetTokenInvalidException,
-    RegistrationDisabledException,
+    InvalidPasswordResetLinkException,
+    RegistrationUnavailableException,
     SessionNotFoundException,
-    UnknownActionException,
+    UnsupportedOperationException,
     UserAlreadyExistsException,
     UserErrorCodes,
     UserNotFoundException,
@@ -137,7 +137,7 @@ class UserList(ListCreateAPIView):
         try:
             with transaction.atomic():
                 if CradleUser.objects.filter(email=serializer.validated_data["email"]).exists():
-                    raise UserAlreadyExistsException(detail="User with this email already exists.")
+                    raise UserAlreadyExistsException(detail="A user with this email already exists.")
                 serializer.save()
         except IntegrityError:
             raise UserAlreadyExistsException(detail="A user with this email or username already exists.")
@@ -166,7 +166,7 @@ class UserList(ListCreateAPIView):
         responses={
             201: UserRetrieveSerializer,
             **get_error_responses(
-                UserErrorCodes.REGISTRATION_DISABLED,
+                UserErrorCodes.REGISTRATION_UNAVAILABLE,
                 UserErrorCodes.USER_ALREADY_EXISTS,
                 include_validation_error=True,
             ),
@@ -181,7 +181,7 @@ class SignupView(APIView):
 
     def post(self, request: Request) -> Response:
         if not cradle_settings.users.allow_registration:
-            raise RegistrationDisabledException(detail="User registration is disabled.")
+            raise RegistrationUnavailableException(detail="New account registration is not available.")
 
         serializer = UserCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -204,7 +204,7 @@ class SignupView(APIView):
         if not user.email_confirmed:
             data["detail"] = "Please check your email for a confirmation link."
         elif not user.is_active:
-            data["detail"] = "Your account must be activated by an administrator before you can login."
+            data["detail"] = "Your account must be activated by an administrator before you can log in."
         else:
             data["detail"] = "Account created successfully."
 
@@ -255,7 +255,7 @@ class UserConfigView(APIView):
             200: UserRetrieveSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -277,7 +277,7 @@ class UserConfigView(APIView):
             200: UserRetrieveSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -299,7 +299,7 @@ class UserConfigView(APIView):
             204: {"description": "User successfully deleted"},
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -318,10 +318,10 @@ class UserDetail(APIView):
             try:
                 user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
         if not (initiator.pk == user.pk or initiator.is_cradle_admin):
-            raise DisallowedActionException(detail="You are not allowed to view this user.")
+            raise ActionNotAllowedException(detail="You do not have permission to view this user.")
 
         json_user = UserRetrieveSerializer(user).data
         return Response(json_user, status=status.HTTP_200_OK)
@@ -336,10 +336,10 @@ class UserDetail(APIView):
             try:
                 edited = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
         if not (editor.pk == edited.pk or (editor.is_cradle_admin and not edited.is_cradle_admin)):
-            raise DisallowedActionException(detail="You are not allowed to edit this user.")
+            raise ActionNotAllowedException(detail="You do not have permission to edit this user.")
 
         data = dict(request.data)
         if data.get("username") == edited.username:
@@ -366,10 +366,10 @@ class UserDetail(APIView):
             try:
                 removed_user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
         if not (deleter.pk == removed_user.pk or (deleter.is_cradle_admin and not removed_user.is_cradle_admin)):
-            raise DisallowedActionException(detail="You are not allowed to delete this user.")
+            raise ActionNotAllowedException(detail="You do not have permission to delete this user.")
 
         with transaction.atomic():
             removed_user.delete()
@@ -385,7 +385,7 @@ class UserDetail(APIView):
             200: UserRetrieveSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -399,7 +399,7 @@ class UserDetail(APIView):
             200: UserRetrieveSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -413,7 +413,7 @@ class UserDetail(APIView):
             204: {"description": "User successfully deleted"},
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -431,7 +431,7 @@ class UserMeDetail(UserDetail):
         responses={
             200: ChangePasswordResponseSerializer,
             **get_error_responses(
-                UserErrorCodes.INCORRECT_OLD_PASSWORD,
+                UserErrorCodes.CURRENT_PASSWORD_INCORRECT,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -455,7 +455,7 @@ class ChangePasswordView(APIView):
 
         # Check if old_password is correct
         if not user.check_password(old_password):
-            raise IncorrectOldPasswordException(detail="The old password is incorrect.")
+            raise CurrentPasswordIncorrectException(detail="The current password is incorrect.")
 
         # Everything is valid, update the password
         user.set_password(new_password)
@@ -487,10 +487,10 @@ class ChangePasswordView(APIView):
         responses={
             200: UserManageResponseSerializer,
             **get_error_responses(
-                UserErrorCodes.UNKNOWN_ACTION,
+                UserErrorCodes.UNSUPPORTED_OPERATION,
                 UserErrorCodes.USER_NOT_FOUND,
                 UserErrorCodes.EMAIL_ALREADY_CONFIRMED,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -522,7 +522,7 @@ class ManageUser(APIView):
             "send_email_confirmation",
             "password_reset_email",
         ]:
-            raise UnknownActionException(detail="Unknown action")
+            raise UnsupportedOperationException(detail="That operation is not supported.")
         return getattr(self, action_name)(request, user_id, *args, **kwargs)
 
     def password_reset_email(self, request: Request, user_id: str | UUID, *args, **kwargs) -> Response:
@@ -531,7 +531,7 @@ class ManageUser(APIView):
             try:
                 user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
         user.send_password_reset()
 
@@ -546,10 +546,10 @@ class ManageUser(APIView):
             try:
                 user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
         if user.email_confirmed:
-            raise EmailAlreadyConfirmedException(detail="User's email is already confirmed.")
+            raise EmailAlreadyConfirmedException(detail="This email address is already confirmed.")
 
         user.send_email_confirmation()
         return Response(
@@ -563,9 +563,9 @@ class ManageUser(APIView):
             try:
                 user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
         if user.is_cradle_admin:
-            raise DisallowedActionException(detail="You are not allowed to simulate an admin.")
+            raise ActionNotAllowedException(detail="You do not have permission to impersonate an administrator.")
 
         token_data = self.get_tokens_for_user(user)
         response = Response(token_data, status=status.HTTP_200_OK)
@@ -594,10 +594,10 @@ class ManageUser(APIView):
         responses={
             200: UserManageResponseSerializer,
             **get_error_responses(
-                UserErrorCodes.UNKNOWN_ACTION,
+                UserErrorCodes.UNSUPPORTED_OPERATION,
                 UserErrorCodes.USER_NOT_FOUND,
                 UserErrorCodes.EMAIL_ALREADY_CONFIRMED,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -626,7 +626,7 @@ class UserMeManage(ManageUser):
             201: APIKeyResponseSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -647,7 +647,7 @@ class UserMeManage(ManageUser):
             204: {"description": "API key revoked successfully"},
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -665,10 +665,10 @@ class APIKey(APIView):
             try:
                 user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
         if not (requesting_user.pk == user.pk or (requesting_user.is_cradle_admin and not user.is_cradle_admin)):
-            raise DisallowedActionException(detail="You are not allowed to manage API key for this user.")
+            raise ActionNotAllowedException(detail="You do not have permission to manage access keys for this user.")
         return user
 
     def post(self, request: Request, user_id: str | UUID) -> Response:
@@ -695,7 +695,7 @@ class APIKey(APIView):
             201: APIKeyResponseSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -708,7 +708,7 @@ class APIKey(APIView):
             204: {"description": "API key revoked successfully"},
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -746,7 +746,9 @@ class EmailConfirm(APIView):
         # Check if token expired
         if user.email_confirmation_token_expiry < timezone.now():
             user.send_email_confirmation()
-            raise EmailConfirmationFailedException(detail="Email confirmation token has expired. A new one was sent.")
+            raise EmailConfirmationFailedException(
+                detail="Your confirmation link has expired. A new one was sent to your email."
+            )
 
         user.email_confirmed = True
         user.email_confirmation_token = None
@@ -778,7 +780,7 @@ class EmailConfirm(APIView):
             200: {"description": "Password reset successfully"},
             **get_error_responses(
                 UserErrorCodes.INVALID_PASSWORD,
-                UserErrorCodes.PASSWORD_RESET_TOKEN_INVALID,
+                UserErrorCodes.INVALID_PASSWORD_RESET_LINK,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -816,10 +818,10 @@ class PasswordReset(APIView):
             try:
                 user = CradleUser.objects.active().select_for_update().get(password_reset_token=token)
             except CradleUser.DoesNotExist:
-                raise PasswordResetTokenInvalidException(detail="Token not found!")
+                raise InvalidPasswordResetLinkException(detail="The password reset link is invalid or has expired.")
 
             if user.password_reset_token_expiry < timezone.now():
-                raise PasswordResetTokenInvalidException(detail="Password reset token has expired.")
+                raise InvalidPasswordResetLinkException(detail="The password reset link is invalid or has expired.")
 
             user.password_reset_token = None
             user.set_password(password)
@@ -845,7 +847,7 @@ class PasswordReset(APIView):
             200: DefaultNoteTemplateResponseSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -867,7 +869,7 @@ class PasswordReset(APIView):
             200: DefaultNoteTemplateResponseSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -887,11 +889,11 @@ class DefaultNoteTemplateView(APIView):
             try:
                 user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
         # Check permissions - users can only see their own template or admins can see non-admin templates
         if not (initiator.pk == user.pk or (initiator.is_cradle_admin and not user.is_cradle_admin)):
-            raise DisallowedActionException(detail="You are not allowed to view this template.")
+            raise ActionNotAllowedException(detail="You do not have permission to view this template.")
 
         return Response(
             {"template": user.default_note_template},
@@ -908,11 +910,11 @@ class DefaultNoteTemplateView(APIView):
             try:
                 edited = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
         # Check permissions - users can only edit their own template or admins can edit non-admin templates
         if not (editor.pk == edited.pk or (editor.is_cradle_admin and not edited.is_cradle_admin)):
-            raise DisallowedActionException(detail="You are not allowed to edit this template.")
+            raise ActionNotAllowedException(detail="You do not have permission to edit this template.")
 
         serializer = DefaultNoteTemplateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -934,7 +936,7 @@ class DefaultNoteTemplateView(APIView):
             200: DefaultNoteTemplateResponseSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -948,7 +950,7 @@ class DefaultNoteTemplateView(APIView):
             200: DefaultNoteTemplateResponseSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -1004,7 +1006,7 @@ class UserMeDefaultNoteTemplateView(DefaultNoteTemplateView):
             200: TotalPagesPagination().get_paginated_response_serializer(UserSessionSerializer),
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
                 CoreErrorCodes.INVALID_PAGE_SIZE,
                 CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
             ),
@@ -1027,10 +1029,10 @@ class UserSessionsListView(APIView):
             try:
                 user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
         if not (initiator.pk == user.pk or initiator.is_cradle_admin):
-            raise DisallowedActionException(detail="You are not allowed to view sessions for this user.")
+            raise ActionNotAllowedException(detail="You do not have permission to view sessions for this user.")
 
         # Get all non-expired sessions, ordered by last activity
         sessions = UserSession.objects.filter(user=user, expires_at__gt=timezone.now()).order_by("-last_activity")
@@ -1091,7 +1093,7 @@ class UserSessionsListView(APIView):
             ),
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
                 CoreErrorCodes.INVALID_PAGE_SIZE,
                 CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
             ),
@@ -1127,7 +1129,7 @@ class UserMeSessionsListView(UserSessionsListView):
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
                 UserErrorCodes.SESSION_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -1147,11 +1149,11 @@ class UserSessionRevokeView(APIView):
             try:
                 user = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
         # Users can revoke their own sessions; admins can revoke non-admin users' sessions
         if not (initiator.pk == user.pk or (initiator.is_cradle_admin and not user.is_cradle_admin)):
-            raise DisallowedActionException(detail="You are not allowed to revoke sessions for this user.")
+            raise ActionNotAllowedException(detail="You do not have permission to revoke sessions for this user.")
 
         try:
             session = UserSession.objects.get(id=session_id, user=user)
@@ -1166,7 +1168,7 @@ class UserSessionRevokeView(APIView):
             session.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except UserSession.DoesNotExist:
-            raise SessionNotFoundException(detail="Session not found.")
+            raise SessionNotFoundException(detail="That session could not be found.")
 
 
 @extend_schema_view(
@@ -1187,7 +1189,7 @@ class UserSessionRevokeView(APIView):
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
                 UserErrorCodes.SESSION_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
+                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },

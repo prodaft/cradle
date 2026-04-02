@@ -5,7 +5,7 @@ from rest_framework import status
 from core.exceptions import CradleAPIException, ErrorCode
 
 
-class NotificationsErrorCodes(ErrorCode):
+class NotificationErrorCodes(ErrorCode):
     """Error codes for notification operations."""
 
     NOTIFICATION_NOT_FOUND = (
@@ -18,10 +18,10 @@ class NotificationsErrorCodes(ErrorCode):
 class NotificationNotFoundException(CradleAPIException):
     """Exception raised when a notification does not exist."""
 
-    error_code = NotificationsErrorCodes.NOTIFICATION_NOT_FOUND
+    error_code = NotificationErrorCodes.NOTIFICATION_NOT_FOUND
 
 
 __all__ = [
+    "NotificationErrorCodes",
     "NotificationNotFoundException",
-    "NotificationsErrorCodes",
 ]

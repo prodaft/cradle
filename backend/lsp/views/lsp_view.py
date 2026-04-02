@@ -98,17 +98,17 @@ class CompletionTrie(APIView):
 
         if prefix:
             if len(prefix) < 3:
-                raise BadRequestException(detail="prefix parameter must be at least 3 characters long")
+                raise BadRequestException(detail="Enter at least 3 characters to search.")
 
         if entry_type:
             try:
                 entry_class = EntryClass.objects.get(subtype=entry_type)
             except EntryClass.DoesNotExist:
-                raise BadRequestException(detail="Invalid entry type")
+                raise BadRequestException(detail="That entry type could not be found.")
             if entry_type in settings.INTERNAL_SUBTYPES:
-                raise BadRequestException(detail="Invalid entry type")
+                raise BadRequestException(detail="That entry type could not be found.")
             if entry_class.format is not None:
-                raise BadRequestException(detail="Invalid entry type")
+                raise BadRequestException(detail="That entry type could not be found.")
             return Response(
                 get_lsp_pack(user, [entry_class], prefix or ""),
                 status=status.HTTP_200_OK,

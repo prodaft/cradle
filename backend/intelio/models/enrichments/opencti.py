@@ -9,30 +9,15 @@ from pycti.api.opencti_api_client import File
 from entries.enums import RelationReason
 from entries.models import Entry, Relation
 
+from ...constants import (
+    INTELIO_ENRICHMENT_MESSAGE_INIT_FAILED,
+    INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED,
+    INTELIO_OPENCTI_RESULT_TRIM_MAP,
+)
 from ..base import BaseEnricher
 from ..mappings.opencti import OpenCTIMapping
 
 logger = logging.getLogger(__name__)
-
-# Fields to trim from results for lighter output (credits: Cortex-Analyzers/opencti)
-RESULT_TRIM_MAP = {
-    "observable": [
-        "objectMarkingIds",
-        "objectLabelIds",
-        "externalReferencesIds",
-        "indicatorsIds",
-        "parent_types",
-    ],
-    "report": {
-        "objects",
-        "objectMarkingIds",
-        "externalReferencesIds",
-        "objectLabelIds",
-        "parent_types",
-        "objectsIds",
-        "x_opencti_graph_data",
-    },
-}
 
 
 class OpenCTIEnricher(BaseEnricher):
@@ -109,20 +94,19 @@ class OpenCTIEnricher(BaseEnricher):
     def pre_enrich(self, entries: list[Entry]) -> Optional[str]:
         """Validate configuration before enrichment."""
         if not self.settings.get("api_key"):
-            return "OpenCTI API key is required"
+            return "Add your OpenCTI API key before running this enrichment."
 
         if not self.settings.get("instance_url"):
-            return "OpenCTI instance URL is required"
+            return "Add your OpenCTI server URL before running this enrichment."
 
         if not entries:
-            return "No entries provided for enrichment"
+            return "Select at least one entry to enrich."
 
         # Warn if mappings are missing and observable extraction is enabled
         if self.settings.get("extract_observables", False) and not OpenCTIMapping.objects.exists():
             self.request._append_warning(
-                "No OpenCTI type mappings configured. "
-                "Observable extraction will be disabled. "
-                "Configure OpenCTIMapping in Django admin to enable observable extraction."
+                "No OpenCTI type mappings are configured. "
+                "Observable extraction will be disabled until an administrator adds them in the admin site."
             )
 
         return None
@@ -145,8 +129,9 @@ class OpenCTIEnricher(BaseEnricher):
                 ssl_verify=ssl_verify,
                 proxies=proxies,
             )
-        except Exception as e:
-            self.request._append_warning(f"Failed to initialize OpenCTI client: {str(e)}")
+        except Exception:
+            logger.warning("Failed to initialize OpenCTI client", exc_info=True)
+            self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_INIT_FAILED)
             return
 
         enrichment_entry = self.request.entry
@@ -174,20 +159,24 @@ class OpenCTIEnricher(BaseEnricher):
                         )
 
                         # Trim observable data for lighter output
-                        for key in RESULT_TRIM_MAP["observable"]:
+                        for key in INTELIO_OPENCTI_RESULT_TRIM_MAP["observable"]:
                             observable.pop(key, None)
 
                         # Trim report data
                         for report in reports:
-                            for key in RESULT_TRIM_MAP["report"]:
+                            for key in INTELIO_OPENCTI_RESULT_TRIM_MAP["report"]:
                                 report.pop(key, None)
 
                         observable["reports"] = reports
 
-                    except Exception as e:
-                        logger.warning(f"Failed to get reports for observable {observable.get('id')}: {e}")
+                    except Exception:
+                        logger.warning(
+                            "Failed to get reports for observable %s",
+                            observable.get("id"),
+                            exc_info=True,
+                        )
                         observable["reports"] = []
-                        observable["error"] = str(e)
+                        observable["error"] = "Related reports could not be loaded."
 
                 # Create relation with results
                 result = {
@@ -207,5 +196,6 @@ class OpenCTIEnricher(BaseEnricher):
                     details=result,
                 )
 
-            except Exception as e:
-                self.request._append_warning(f"OpenCTI query failed for {entry.name}: {str(e)}")
+            except Exception:
+                logger.warning("OpenCTI query failed for entry %s", entry.pk, exc_info=True)
+                self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED)

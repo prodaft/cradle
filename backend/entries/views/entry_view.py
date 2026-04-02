@@ -30,7 +30,7 @@ from ..serializers import ArtifactSerializer, EntitySerializer, EntrySerializer
     post=extend_schema(
         operation_id="entries_entries_create",
         summary="Create a new entry",
-        description="Creates a new entry (artifact or entity). Only admins can create entities.",
+        description="Creates a new entry (artifact or entity). Only administrators can create entities.",
         request=EntrySerializer,
         responses={
             201: EntrySerializer,
@@ -53,7 +53,7 @@ class EntryView(generics.CreateAPIView):
         """Create artifact or entity based on type; entities require admin."""
         entry_type_raw = request.data.get("type")
         if not entry_type_raw:
-            raise InvalidEntryTypeException(detail="Entry type is required. Must be 'artifact' or 'entity'.")
+            raise InvalidEntryTypeException(detail="Choose whether this entry is an Artifact or an Entity.")
         entry_type = str(entry_type_raw).lower()
 
         if entry_type == EntryType.ARTIFACT.value:
@@ -61,10 +61,10 @@ class EntryView(generics.CreateAPIView):
 
         elif entry_type == EntryType.ENTITY.value:
             if not request.user.is_cradle_admin:
-                raise AdminOnlyEntityCreateException(detail="Only admins can create entities!")
+                raise AdminOnlyEntityCreateException(detail="Only administrators can create entities.")
             serializer_class = EntitySerializer
         else:
-            raise InvalidEntryTypeException(detail="Invalid entry type. Must be 'artifact' or 'entity'.")
+            raise InvalidEntryTypeException(detail="That value is not recognized. Choose Artifact or Entity.")
 
         serializer = serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -114,7 +114,7 @@ class EntryDetailView(APIView):
         try:
             entry = Entry.objects.accessible(request.user).select_related("entry_class").get(pk=entry_id)
         except Entry.DoesNotExist:
-            raise EntryNotFoundException(detail="There is no entry with the specified ID.")
+            raise EntryNotFoundException(detail="That entry could not be found.")
 
         # Access control for entities
         if entry.entry_class.type == EntryType.ENTITY:

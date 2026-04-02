@@ -20,28 +20,28 @@ from user.authentication import APIKeyAuthentication
 from user.permissions import HasEntryManagerRole
 
 from ..exceptions import (
-    IntegrityErrorException,
-    IntelioErrorCodes,
-    InternalClassRequiredException,
-    InvalidClassNameException,
-    InvalidMappingIdException,
-    MappingIdRequiredException,
+    DataConflictException,
+    IntelIOErrorCodes,
+    InvalidMappingException,
+    InvalidMappingSelectionException,
     MappingNotFoundException,
-    NotMappingClassException,
+    MappingRequiredException,
+    TargetTypeRequiredException,
+    UnknownMappingException,
 )
 from ..models.base import ClassMapping
 from ..serializers import ClassMappingSerializer, MappingSubclassSerializer
 
 
 def _get_mapping_class(class_name: str):
-    """Resolve mapping class by name; raise InvalidClassNameException or NotMappingClassException on failure."""
+    """Resolve mapping class by name; raise UnknownMappingException or InvalidMappingSelectionException on failure."""
     try:
         mapping_class = apps.get_model(app_label="intelio", model_name=class_name)
     except LookupError:
-        raise InvalidClassNameException(detail="Invalid class name.")
+        raise UnknownMappingException(detail="That mapping is not recognized.")
 
     if not issubclass(mapping_class, ClassMapping) or mapping_class._meta.abstract:
-        raise NotMappingClassException(detail="Not a valid mapping class.")
+        raise InvalidMappingSelectionException(detail="That selection is not a valid mapping.")
 
     return mapping_class
 
@@ -103,8 +103,8 @@ class ClassMappingSubclassesAPIView(APIView):
                 "description": "Field mapping schema",
             },
             **get_error_responses(
-                IntelioErrorCodes.INVALID_CLASS_NAME,
-                IntelioErrorCodes.NOT_MAPPING_CLASS,
+                IntelIOErrorCodes.UNKNOWN_MAPPING,
+                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
             ),
             **get_common_error_responses(),
         },
@@ -137,8 +137,8 @@ class MappingKeysSchemaView(APIView):
                 },
             },
             **get_error_responses(
-                IntelioErrorCodes.INVALID_CLASS_NAME,
-                IntelioErrorCodes.NOT_MAPPING_CLASS,
+                IntelIOErrorCodes.UNKNOWN_MAPPING,
+                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
             ),
             **get_common_error_responses(),
         },
@@ -154,11 +154,11 @@ class MappingKeysSchemaView(APIView):
                 "description": "Mapping instance data",
             },
             **get_error_responses(
-                IntelioErrorCodes.INVALID_CLASS_NAME,
-                IntelioErrorCodes.NOT_MAPPING_CLASS,
-                IntelioErrorCodes.INTERNAL_CLASS_REQUIRED,
-                IntelioErrorCodes.INVALID_MAPPING_ID,
-                IntelioErrorCodes.INTEGRITY_ERROR,
+                IntelIOErrorCodes.UNKNOWN_MAPPING,
+                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
+                IntelIOErrorCodes.TARGET_TYPE_REQUIRED,
+                IntelIOErrorCodes.INVALID_MAPPING,
+                IntelIOErrorCodes.DATA_CONFLICT,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -179,11 +179,11 @@ class MappingKeysSchemaView(APIView):
         responses={
             204: {"description": "Mapping successfully deleted"},
             **get_error_responses(
-                IntelioErrorCodes.INVALID_CLASS_NAME,
-                IntelioErrorCodes.NOT_MAPPING_CLASS,
-                IntelioErrorCodes.MAPPING_ID_REQUIRED,
-                IntelioErrorCodes.INVALID_MAPPING_ID,
-                IntelioErrorCodes.MAPPING_NOT_FOUND,
+                IntelIOErrorCodes.UNKNOWN_MAPPING,
+                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
+                IntelIOErrorCodes.MAPPING_REQUIRED,
+                IntelIOErrorCodes.INVALID_MAPPING,
+                IntelIOErrorCodes.MAPPING_NOT_FOUND,
             ),
             **get_common_error_responses(),
         },
@@ -213,10 +213,10 @@ class MappingSchemaView(APIView):
             try:
                 uuid.UUID(str(mapping_id))
             except (ValueError, TypeError, AttributeError):
-                raise InvalidMappingIdException(detail="Invalid mapping ID format. Must be a valid UUID.")
+                raise InvalidMappingException(detail="That mapping is not valid.")
 
         if mapping_id is None and "internal_class" not in validated_data:
-            raise InternalClassRequiredException(detail="internal_class is required.")
+            raise TargetTypeRequiredException(detail="Select which entry type this mapping applies to.")
 
         if "internal_class" in validated_data:
             validated_data["internal_class_id"] = validated_data.pop("internal_class").pk
@@ -231,7 +231,7 @@ class MappingSchemaView(APIView):
                     updated = mapping_class.objects.get(id=mapping_id)
                     return Response(response_serializer(updated).data, status=status.HTTP_200_OK)
                 elif mapping_id is not None:
-                    raise MappingNotFoundException(detail="Mapping not found.")
+                    raise MappingNotFoundException(detail="That mapping could not be found.")
                 else:
                     mapping = mapping_class.objects.create(**validated_data)
                     mapping_url = reverse(
@@ -245,26 +245,28 @@ class MappingSchemaView(APIView):
                         headers={"Location": location},
                     )
         except mapping_class.DoesNotExist:
-            raise MappingNotFoundException(detail="Mapping not found.")
+            raise MappingNotFoundException(detail="That mapping could not be found.")
         except IntegrityError:
-            raise IntegrityErrorException(detail="A database constraint was violated.")
+            raise DataConflictException(
+                detail="This could not be saved because it conflicts with existing information."
+            )
 
     def delete(self, request: Request, class_name: str) -> Response:
         mapping_class = _get_mapping_class(class_name)
         mapping_id = request.query_params.get("mapping_id")
 
         if not mapping_id:
-            raise MappingIdRequiredException(detail="mapping_id is required.")
+            raise MappingRequiredException(detail="A mapping is required.")
 
         try:
             uuid.UUID(str(mapping_id))
         except (ValueError, TypeError, AttributeError):
-            raise InvalidMappingIdException(detail="Invalid mapping ID format. Must be a valid UUID.")
+            raise InvalidMappingException(detail="That mapping is not valid.")
 
         try:
             mapping = mapping_class.objects.get(id=mapping_id)
         except mapping_class.DoesNotExist:
-            raise MappingNotFoundException(detail="Mapping not found.")
+            raise MappingNotFoundException(detail="That mapping could not be found.")
 
         mapping.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

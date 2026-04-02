@@ -1,5 +1,6 @@
 # Ported from IntelOwl: https://github.com/intelowlproject/IntelOwl
 
+import logging
 from typing import Optional
 
 import requests
@@ -8,7 +9,13 @@ from django.db import models
 from entries.enums import RelationReason
 from entries.models import Entry, Relation
 
+from ...constants import (
+    INTELIO_ENRICHMENT_MESSAGE_FINISH_FAILED,
+    INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED,
+)
 from ..base import BaseEnricher
+
+logger = logging.getLogger(__name__)
 
 
 class VirusTotalEnricher(BaseEnricher):
@@ -60,15 +67,15 @@ class VirusTotalEnricher(BaseEnricher):
         # Check API key
         api_key = self.settings.get("api_key")
         if not api_key:
-            return "VirusTotal API key is required"
+            return "Add your VirusTotal API key before running this enrichment."
 
         # Test API connectivity
         if not self._test_api_connection(api_key):
-            return "Cannot connect to VirusTotal API. Check API key and network."
+            return "Could not reach VirusTotal. Check your API key and network connection."
 
         # Validate entries
         if not entries:
-            return "No entries provided for enrichment"
+            return "Select at least one entry to enrich."
 
         return None
 
@@ -88,14 +95,14 @@ class VirusTotalEnricher(BaseEnricher):
                 # Determine hash type
                 hash_type = self._detect_hash_type(entry.name)
                 if not hash_type:
-                    self.request._append_warning(f"Could not determine hash type for {entry.name}")
+                    self.request._append_warning("Could not determine the hash type for this entry.")
                     continue
 
                 # Query VirusTotal
                 result = self._query_virustotal(entry.name, api_key, timeout)
 
                 if result is None:
-                    self.request._append_warning(f"No VirusTotal data found for {entry.name}")
+                    self.request._append_warning("No VirusTotal data was found for this entry.")
                     continue
 
                 # Check minimum detections threshold
@@ -126,10 +133,12 @@ class VirusTotalEnricher(BaseEnricher):
                 )
                 relations_to_create.append(relation)
 
-            except requests.RequestException as e:
-                self.request._append_warning(f"API request failed for {entry.name}: {str(e)}")
-            except Exception as e:
-                self.request._append_warning(f"Unexpected error enriching {entry.name}: {str(e)}")
+            except requests.RequestException:
+                logger.warning("VirusTotal API request failed for entry %s", entry.pk, exc_info=True)
+                self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED)
+            except Exception:
+                logger.warning("VirusTotal enrichment failed for entry %s", entry.pk, exc_info=True)
+                self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_FINISH_FAILED)
 
         # Bulk create all relations
         if relations_to_create:

@@ -8,17 +8,17 @@ from core.exceptions import CradleAPIException, ErrorCode
 class AccessErrorCodes(ErrorCode):
     """Error codes for access operations."""
 
-    UPDATE_NOT_ALLOWED = (
+    ACCESS_CHANGE_NOT_ALLOWED = (
         status.HTTP_403_FORBIDDEN,
-        "Update Not Allowed",
-        "update-not-allowed",
+        "Access Change Not Allowed",
+        "access-change-not-allowed",
     )
 
 
-class UpdateNotAllowedException(CradleAPIException):
+class AccessChangeNotAllowedException(CradleAPIException):
     """Raised when the requester lacks permission to change another user's access."""
 
-    error_code = AccessErrorCodes.UPDATE_NOT_ALLOWED
+    error_code = AccessErrorCodes.ACCESS_CHANGE_NOT_ALLOWED
 
 
-__all__ = ["AccessErrorCodes", "UpdateNotAllowedException"]
+__all__ = ["AccessErrorCodes", "AccessChangeNotAllowedException"]

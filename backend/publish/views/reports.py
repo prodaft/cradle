@@ -25,7 +25,7 @@ from ..exceptions import (
     PublishErrorCodes,
     ReportAlreadyCompletedException,
     ReportAlreadyGeneratingException,
-    ReportDeleteErrorException,
+    ReportDeleteFailedException,
     ReportNotFoundException,
 )
 from ..models import PublishedReport, ReportStatus
@@ -178,13 +178,13 @@ class ReportRetryAPIView(APIView):
         try:
             report = PublishedReport.objects.for_user(request.user).get(id=pk)
         except PublishedReport.DoesNotExist:
-            raise ReportNotFoundException(detail="Report not found.")
+            raise ReportNotFoundException(detail="That report could not be found.")
 
         if report.status == ReportStatus.WORKING:
-            raise ReportAlreadyGeneratingException(detail="Report is already being generated.")
+            raise ReportAlreadyGeneratingException(detail="Report generation is already in progress.")
 
         if report.status == ReportStatus.DONE:
-            raise ReportAlreadyCompletedException(detail="Report already generated successfully.")
+            raise ReportAlreadyCompletedException(detail="This report has already been generated.")
 
         with transaction.atomic():
             report.status = ReportStatus.WORKING
@@ -225,7 +225,7 @@ class ReportRetryAPIView(APIView):
             204: {"description": "Report deleted successfully"},
             **get_error_responses(
                 PublishErrorCodes.REPORT_NOT_FOUND,
-                PublishErrorCodes.REPORT_DELETE_ERROR,
+                PublishErrorCodes.REPORT_DELETE_FAILED,
             ),
             **get_common_error_responses(),
         },
@@ -255,7 +255,7 @@ class ReportDetailAPIView(generics.RetrieveDestroyAPIView):
         try:
             return super().get_object()
         except Http404:
-            raise ReportNotFoundException(detail="Report not found.")
+            raise ReportNotFoundException(detail="That report could not be found.")
 
     def destroy(self, request: Request, *args, **kwargs) -> Response:
         """Delete the report and any associated external resources."""
@@ -267,6 +267,6 @@ class ReportDetailAPIView(generics.RetrieveDestroyAPIView):
                 try:
                     publisher.delete_report(report)
                 except (OSError, IOError):
-                    raise ReportDeleteErrorException(detail="Error deleting report.")
+                    raise ReportDeleteFailedException(detail="The report could not be deleted. Please try again later.")
             report.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

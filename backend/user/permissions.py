@@ -24,7 +24,7 @@ class HasEntryManagerRole(BasePermission):
 class EntryClassListPermission(BasePermission):
     """GET: any authenticated user. POST: requires HasEntryManagerRole."""
 
-    message = "Insufficient permissions."
+    message = "You do not have permission to perform this action."
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -37,7 +37,7 @@ class EntryClassListPermission(BasePermission):
 class EntityListPermission(BasePermission):
     """GET: HasEntryManagerRole. POST: HasAdminRole only."""
 
-    message = "Insufficient permissions."
+    message = "You do not have permission to perform this action."
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -50,22 +50,20 @@ class EntityListPermission(BasePermission):
 
 
 class EntityDetailPermission(BasePermission):
-    """GET/PATCH: HasEntryManagerRole. DELETE: HasAdminRole only."""
+    """GET/PATCH/DELETE: HasEntryManagerRole; DELETE admin check is enforced in the view."""
 
-    message = "Insufficient permissions."
+    message = "You do not have permission to perform this action."
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.method == "DELETE":
-            return HasAdminRole().has_permission(request, view)
         return HasEntryManagerRole().has_permission(request, view)
 
 
 class EntryClassDetailPermission(BasePermission):
     """GET: any authenticated. DELETE: HasAdminRole. POST/PATCH: HasEntryManagerRole."""
 
-    message = "Insufficient permissions."
+    message = "You do not have permission to perform this action."
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:

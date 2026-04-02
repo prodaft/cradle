@@ -13,9 +13,9 @@ from notes.models import Note
 from user.authentication import APIKeyAuthentication
 
 from ..exceptions import (
+    ExportFormatNotFoundException,
     NotesNotFoundException,
     PublishErrorCodes,
-    StrategyNotFoundException,
 )
 from ..models import DownloadStrategies, PublishedReport, UploadStrategies
 from ..serializers import (
@@ -46,7 +46,7 @@ from ..tasks import generate_report
             201: ReportListSerializer,
             **get_error_responses(
                 PublishErrorCodes.NOTES_NOT_FOUND,
-                PublishErrorCodes.STRATEGY_NOT_FOUND,
+                PublishErrorCodes.EXPORT_FORMAT_NOT_FOUND,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -80,10 +80,10 @@ class PublishReportAPIView(APIView):
 
         notes = Note.objects.get_accessible_notes(user).filter(id__in=note_ids)
         if notes.count() != len(note_ids):
-            raise NotesNotFoundException(detail="One or more notes not found.")
+            raise NotesNotFoundException(detail="Some of the selected notes could not be found.")
 
         if (strategy_key or "").lower() not in PUBLISH_STRATEGIES:
-            raise StrategyNotFoundException(detail="Strategy not found.")
+            raise ExportFormatNotFoundException(detail="That export format could not be found.")
 
         with transaction.atomic():
             report = PublishedReport.objects.create(

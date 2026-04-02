@@ -21,13 +21,13 @@ def custom_exception_handler(exc, context):
 
     This handler processes all exceptions and returns a standardized error response format:
     {
-        "type": "/errors/error-type",
-        "title": "Error Title",
+        "type": "/errors/<kebab-case-type-suffix>",
+        "title": "<ErrorCode.title>",
         "status": 400,
         "detail": "Detailed error message",
         "instance": "/api/endpoint",
         "timestamp": "<ISO 8601 datetime>",
-        "code": "ERROR_CODE",
+        "code": "<ErrorCode.name>",  # UPPER_SNAKE_CASE, e.g. VALIDATION_ERROR
         "errors": {...}  # Only for validation errors
     }
 
@@ -79,7 +79,7 @@ def custom_exception_handler(exc, context):
                 "type": CoreErrorCodes.VALIDATION_ERROR.type_uri,
                 "title": CoreErrorCodes.VALIDATION_ERROR.title,
                 "code": CoreErrorCodes.VALIDATION_ERROR.code,
-                "detail": "One or more fields failed validation.",
+                "detail": "Some values could not be accepted.",
                 "errors": response.data,
             }
         )

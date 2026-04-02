@@ -488,23 +488,19 @@ def cradle_connections(
                 if isinstance(item, str):
                     entries.add(Link(key=subtype, value=item))
                 else:
-                    raise ValueError(
-                        f"Unsupported item type in entries.{subtype}. Expected str, got {type(item).__name__}."
-                    )
+                    raise ValueError("Each list item must be an entry name.")
         elif isinstance(value, dict):
             for k, v in value.items():
                 if isinstance(v, str):
                     date = parse_entry_date(v)
                     entries.add(Link(key=subtype, value=k, date=date))
                 else:
-                    raise ValueError(f"Unsupported value type for {subtype}:{k}. Expected str, got {type(v).__name__}.")
+                    raise ValueError("Each date must be given as text.")
 
         elif isinstance(value, str):
             entries.add(Link(key=subtype, value=value))
         else:
-            raise ValueError(
-                f"Unsupported type for entries.{subtype}. Expected str, list, or dict, got {type(value).__name__}."
-            )
+            raise ValueError("Use a single entry name, a list of names, or names paired with dates.")
 
     renderer = LinksRenderer(base_id=base_id, root_links=entries)
 

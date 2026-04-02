@@ -24,7 +24,7 @@ from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from user.models import CradleUser
 
-from ..exceptions import NotificationNotFoundException, NotificationsErrorCodes
+from ..exceptions import NotificationErrorCodes, NotificationNotFoundException
 from ..models import MessageNotification
 from ..serializers import (
     AccessGrantedNotificationSerializer,
@@ -46,7 +46,7 @@ def _get_notification_or_404(user: CradleUser, notification_id: UUID) -> Message
     try:
         return MessageNotification.objects.get(id=notification_id, user=user)
     except MessageNotification.DoesNotExist:
-        raise NotificationNotFoundException(detail="The notification does not exist.")
+        raise NotificationNotFoundException(detail="That notification could not be found.")
 
 
 @extend_schema_view(
@@ -146,7 +146,7 @@ class NotificationDetail(APIView):
         responses={
             204: {"description": "Notification updated successfully"},
             **get_error_responses(
-                NotificationsErrorCodes.NOTIFICATION_NOT_FOUND,
+                NotificationErrorCodes.NOTIFICATION_NOT_FOUND,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),

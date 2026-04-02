@@ -32,7 +32,7 @@ def validate_page_param(
     """
     page = validate_int_param(value, param_name=param_name, default=default)
     if page < 1:
-        raise InvalidPageException(detail=f"{param_name} must be at least 1.")
+        raise InvalidPageException(detail=f'Query parameter "{param_name}" must be at least 1.')
     return page
 
 
@@ -61,12 +61,12 @@ def validate_page_size(
         try:
             page_size = int(str(page_size_str).strip())
         except (ValueError, TypeError):
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be a positive integer.")
+            raise InvalidPageSizeException(detail="Page size must be a positive whole number.")
 
     if page_size < 1:
-        raise InvalidPageSizeException(detail="page_size must be at least 1.")
+        raise InvalidPageSizeException(detail="Page size must be at least 1.")
     if page_size > max_size:
-        raise PageSizeTooLargeException(detail=f"page_size cannot be greater than {max_size}.")
+        raise PageSizeTooLargeException(detail=f"Page size cannot exceed {max_size}.")
     return page_size
 
 
@@ -94,13 +94,13 @@ def validate_int_param(
     if value is None or not str(value).strip():
         if default is not None:
             return default
-        raise InvalidRequestException(detail=f"Missing {param_name}.")
+        raise InvalidRequestException(detail=f'Query parameter "{param_name}" is required.')
     try:
         parsed = int(str(value).strip())
     except (ValueError, TypeError):
-        raise InvalidRequestException(detail=f"{param_name} must be an integer.")
+        raise InvalidRequestException(detail=f'Query parameter "{param_name}" must be a whole number.')
     if not allow_negative and parsed < 0:
-        raise InvalidRequestException(detail=f"{param_name} must be a non-negative integer.")
+        raise InvalidRequestException(detail=f'Query parameter "{param_name}" must be zero or greater.')
     return parsed
 
 
@@ -146,15 +146,19 @@ def validate_int_list_param(
             or any value is negative when allow_negative=False.
     """
     if len(values) > max_length:
-        raise InvalidRequestException(detail=f"{param_name} cannot have more than {max_length} values.")
+        raise InvalidRequestException(
+            detail=f'Query parameter "{param_name}" cannot have more than {max_length} values.'
+        )
     result = []
     for v in values:
         try:
             parsed = int(str(v).strip())
         except (ValueError, TypeError):
-            raise InvalidRequestException(detail=f"{param_name} must be integers.")
+            raise InvalidRequestException(detail=f'Query parameter "{param_name}" must contain only whole numbers.')
         if not allow_negative and parsed < 0:
-            raise InvalidRequestException(detail=f"{param_name} must be non-negative integers.")
+            raise InvalidRequestException(
+                detail=f'Query parameter "{param_name}" must contain only non-negative whole numbers.'
+            )
         result.append(parsed)
     return result
 
@@ -182,13 +186,14 @@ def validate_choice_param(
     if value is None or not str(value).strip():
         if allow_none:
             return None
-        raise InvalidRequestException(detail=f"Missing {param_name}.")
+        raise InvalidRequestException(detail=f'Query parameter "{param_name}" is required.')
     val = str(value).strip()
     val_lower = val.lower()
     for c in choices:
-        if c.lower() == val_lower:
+        if str(c).lower() == val_lower:
             return c
-    raise InvalidRequestException(detail=f"Invalid {param_name}. Must be one of: {', '.join(choices)}.")
+    allowed = ", ".join(str(c) for c in choices)
+    raise InvalidRequestException(detail=f'Query parameter "{param_name}" must be one of: {allowed}.')
 
 
 def validate_str_list_param(
@@ -210,5 +215,7 @@ def validate_str_list_param(
         InvalidRequestException: When list exceeds max_length.
     """
     if len(values) > max_length:
-        raise InvalidRequestException(detail=f"{param_name} cannot have more than {max_length} values.")
+        raise InvalidRequestException(
+            detail=f'Query parameter "{param_name}" cannot have more than {max_length} values.'
+        )
     return [str(v).strip() for v in values if str(v).strip()]

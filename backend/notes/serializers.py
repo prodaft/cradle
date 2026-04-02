@@ -18,7 +18,7 @@ from management.settings import cradle_settings
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer, UserRetrieveSerializer
 
-from .exceptions import NoteDoesNotExistException
+from .exceptions import NoteNotFoundException
 from .markdown.to_metadata import infer_metadata
 from .models import Note, Snippet
 from .processor.task_scheduler import TaskScheduler
@@ -348,11 +348,11 @@ class ReportQuerySerializer(serializers.Serializer):
 
     def __check_unique(self, value) -> None:
         if len(set(value)) != len(value):
-            raise InvalidRequestException(detail="The note ids should be unique.")
+            raise InvalidRequestException(detail="Each note may only appear once.")
 
     def __check_exists(self, notes, value) -> None:
         if notes.count() != len(value):
-            raise NoteDoesNotExistException(detail="One of the provided notes does not exist.")
+            raise NoteNotFoundException(detail="Some of the selected notes could not be found.")
 
     def validate_note_ids(self, value: Any) -> Any:
         """Validates a list of note IDs.
@@ -369,7 +369,7 @@ class ReportQuerySerializer(serializers.Serializer):
 
         Raises:
             InvalidRequestException: If the note IDs are not unique.
-            NoteDoesNotExistException: If one of the requested notes does not exist.
+            NoteNotFoundException: If one of the requested notes does not exist.
         """
         required_notes = Note.objects.filter(id__in=value)
         self.__check_unique(value)
@@ -392,7 +392,7 @@ class ReportQuerySerializer(serializers.Serializer):
             InvalidRequestException: If the `note_ids` field is None.
         """
         if data["note_ids"] is None:
-            raise InvalidRequestException(detail="note_ids field is required.")
+            raise InvalidRequestException(detail="At least one note is required.")
 
         return super().validate(data)
 

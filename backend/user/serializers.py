@@ -12,11 +12,11 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import Token
 
 from .exceptions import (
-    DisallowedActionException,
-    DuplicateUserException,
+    ActionNotAllowedException,
     EmailConfirmationFailedException,
     InvalidPasswordException,
     UserAlreadyExistsException,
+    UsernameUnavailableException,
 )
 from .models import CradleUser, UserSession
 from .utils.validators import password_validator
@@ -53,7 +53,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             The validated data.
 
         Raises:
-            DuplicateUserException: If username already exists (409).
+            UsernameUnavailableException: If username already exists (409).
             UserAlreadyExistsException: If email already exists (409).
             InvalidPasswordException: If password fails validation (400).
         """
@@ -61,11 +61,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
             user_exists: bool = CradleUser.objects.filter(username=data["username"]).exists()
 
             if user_exists:
-                raise DuplicateUserException()
+                raise UsernameUnavailableException(detail="That username is already taken.")
 
         if "email" in data:
             if CradleUser.objects.filter(email=data["email"]).exists():
-                raise UserAlreadyExistsException(detail="User with this email already exists.")
+                raise UserAlreadyExistsException(detail="A user with this email already exists.")
 
         if "password" in data and not nocheck_pw:
             try:
@@ -76,11 +76,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return super().validate(data)
 
     def validate_theme(self, value: Any) -> Any:
-        """Ensure theme is a JSON object or None."""
+        """Ensure theme is a dict of named settings or None."""
         if value is None:
             return value
         if not isinstance(value, dict):
-            raise serializers.ValidationError("Theme must be a JSON object.")
+            raise serializers.ValidationError("Use a single object of named options, not a list or plain value.")
         return value
 
     def create(self, validated_data: Any):
@@ -99,10 +99,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
     def update(self, instance: CradleUser, validated_data: dict[str, Any]):
         """Update catalyst_api_key, vim_mode, theme only. Username and email cannot be changed."""
         if validated_data.get("username", instance.username) != instance.username:
-            raise DisallowedActionException(detail="You cannot change your username!")
+            raise ActionNotAllowedException(detail="You cannot change your username.")
 
         if validated_data.get("email", instance.email) != instance.email:
-            raise DisallowedActionException(detail="You cannot change your email")
+            raise ActionNotAllowedException(detail="You cannot change your email.")
 
         instance.catalyst_api_key = validated_data.get("catalyst_api_key", instance.catalyst_api_key)
         instance.vim_mode = validated_data.get("vim_mode", instance.vim_mode)
@@ -250,7 +250,7 @@ class OAuthConnectSerializer(serializers.Serializer):
         parsed = urlsplit(value)
         origin = f"{parsed.scheme}://{parsed.netloc}"
         if origin.rstrip("/") not in [o.rstrip("/") for o in whitelist]:
-            raise serializers.ValidationError("redirect_uri is not allowed.")
+            raise serializers.ValidationError("That redirect address is not allowed.")
         return value
 
 
@@ -309,15 +309,15 @@ class EmailConfirmSerializer(serializers.Serializer):
         token = data["token"]
 
         if not token:
-            raise EmailConfirmationFailedException(detail="We had trouble confirming with this token.")
+            raise EmailConfirmationFailedException(detail="This confirmation link is invalid or has expired.")
 
         try:
             self.user = CradleUser.objects.get(email_confirmation_token=token)
         except (CradleUser.DoesNotExist, CradleUser.MultipleObjectsReturned):
-            raise EmailConfirmationFailedException(detail="We had trouble confirming with this token.")
+            raise EmailConfirmationFailedException(detail="This confirmation link is invalid or has expired.")
 
         if self.user.email_confirmed:
-            raise EmailConfirmationFailedException(detail="We had trouble confirming with this token.")
+            raise EmailConfirmationFailedException(detail="This confirmation link is invalid or has expired.")
 
         return data
 

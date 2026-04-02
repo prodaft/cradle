@@ -17,10 +17,10 @@ from logs.models import LoggableModelMixin
 from mail.models import ConfirmationMail, ResetPasswordMail
 from management.settings import cradle_settings
 
+from .constants import USER_ACCESS_VECTOR_LENGTH, USER_DEFAULT_THEME
 from .managers import CradleUserManager
 
-ACCESS_VECTOR_LENGTH = 2048
-_ACCESS_VECTOR_FIELD = BitStringField(max_length=ACCESS_VECTOR_LENGTH, null=False, default=1, varying=False)
+_ACCESS_VECTOR_FIELD = BitStringField(max_length=USER_ACCESS_VECTOR_LENGTH, null=False, default=1, varying=False)
 
 
 class UserRoles(models.TextChoices):
@@ -32,49 +32,9 @@ class UserRoles(models.TextChoices):
     USER = "author"  # Writer of notes
 
 
-# Default UI theme CSS variables.
-DEFAULT_THEME = {
-    "name": "cradle-dark",
-    "--background": "#1a1a1a",
-    "--foreground": "#ffffff",
-    "--card": "#1f1f1f",
-    "--card-foreground": "#bfbfbf",
-    "--popover": "#1f1f1f",
-    "--popover-foreground": "#bfbfbf",
-    "--primary": "#c7772a",
-    "--primary-foreground": "#ffffff",
-    "--secondary": "#2a2a2a",
-    "--secondary-foreground": "#bfbfbf",
-    "--muted": "#2a2a2a",
-    "--muted-foreground": "#999999",
-    "--accent": "#2a2a2a",
-    "--accent-foreground": "#ffffff",
-    "--destructive": "#b85d30",
-    "--destructive-foreground": "#ffffff",
-    "--border": "#2a2a2a",
-    "--input": "#2a2a2a",
-    "--ring": "#c7772a",
-    "--sidebar": "#1a1a1a",
-    "--sidebar-foreground": "#999999",
-    "--sidebar-primary": "#c7772a",
-    "--sidebar-primary-foreground": "#ffffff",
-    "--sidebar-accent": "#2a2a2a",
-    "--sidebar-accent-foreground": "#ffffff",
-    "--sidebar-border": "#2a2a2a",
-    "--pm-header-mark-color": "#c7772a",
-    "--pm-link-color": "#c7772a",
-    "--pm-muted-color": "#999999",
-    "--pm-code-background-color": "#1a1a1a",
-    "--pm-code-btn-background-color": "#2a2a2a",
-    "--pm-code-btn-hover-background-color": "#404040",
-    "--pm-blockquote-vertical-line-background-color": "#2a2a2a",
-    "--pm-cursor-color": "#ffffff",
-}
-
-
 def default_theme():
     """Return a mutable copy of the default theme."""
-    return deepcopy(DEFAULT_THEME)
+    return deepcopy(USER_DEFAULT_THEME)
 
 
 class CradleUser(AbstractUser, LoggableModelMixin):
@@ -211,15 +171,15 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     def access_vector(self) -> str:
         """Bitstring of entity access permissions (all 1s for admin)."""
         if self.is_cradle_admin:
-            return "1" * ACCESS_VECTOR_LENGTH
+            return "1" * USER_ACCESS_VECTOR_LENGTH
         return _ACCESS_VECTOR_FIELD.get_prep_value(self._compute_access_bitmask())
 
     @property
     def access_vector_inv(self) -> str:
         """Inverted access vector for exclusion queries."""
         if self.is_cradle_admin:
-            return "0" * ACCESS_VECTOR_LENGTH
-        inverter = (1 << ACCESS_VECTOR_LENGTH) - 1
+            return "0" * USER_ACCESS_VECTOR_LENGTH
+            inverter = (1 << USER_ACCESS_VECTOR_LENGTH) - 1
         return _ACCESS_VECTOR_FIELD.get_prep_value(self._compute_access_bitmask() ^ inverter)
 
     def enable_2fa(self) -> str | None:

@@ -23,14 +23,15 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.openapi import get_common_error_responses, get_error_responses
 from notes.models import Note
 
+from .constants import FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS
 from .exceptions import (
     FileAccessDeniedException,
-    FileIdRequiredException,
     FileReferenceNotFoundException,
     FileTransferErrorCodes,
-    InvalidFileIdException,
-    MinioObjectNotFound,
-    NoteNotFoundException,
+    FileTransferNoteNotFoundException,
+    InvalidFileReferenceException,
+    NoFileSpecifiedException,
+    StoredFileNotFoundException,
 )
 from .models import FileReference, PendingUpload
 from .s3_utils import get_file_transfer_storage, presign_get
@@ -44,15 +45,11 @@ from .serializers import (
 from .storage import FileTransferStorage
 from .uploads import PresignedUploadFlow, UploadConfig
 from .uploads.exceptions import (
-    FileNotUploadedException,
     InvalidFileNameException,
     InvalidFileSizeException,
     QuotaExceededException,
     UploadErrorCodes,
 )
-
-# Download URL expiration time
-DOWNLOAD_EXPIRY_SECONDS = 7 * 24 * 60 * 60  # 7 days
 
 
 def _sanitize_filename(name: str | None, *, default: str | None = None) -> str:
@@ -63,18 +60,18 @@ def _sanitize_filename(name: str | None, *, default: str | None = None) -> str:
     if not name or not name.strip():
         if default is not None:
             return default
-        raise InvalidFileNameException(detail="Invalid file name.")
+        raise InvalidFileNameException(detail="The file name is invalid or missing.")
 
     base = os.path.basename(name.strip())
     if not base:
         if default is not None:
             return default
-        raise InvalidFileNameException(detail="Invalid file name.")
+        raise InvalidFileNameException(detail="The file name is invalid or missing.")
 
     def _on_empty(_):
         if default is not None:
             return default
-        raise InvalidFileNameException(detail="Invalid file name.")
+        raise InvalidFileNameException(detail="The file name is invalid or missing.")
 
     try:
         safe = sanitize_filename(
@@ -90,7 +87,7 @@ def _sanitize_filename(name: str | None, *, default: str | None = None) -> str:
     except (ValueError, TypeError, OSError):
         if default is not None:
             return default
-        raise InvalidFileNameException(detail="Invalid file name.")
+        raise InvalidFileNameException(detail="The file name contains invalid characters.")
 
 
 def _user_can_access_file(file_reference, user) -> bool:
@@ -133,8 +130,8 @@ class FileUploadCallbacks:
             dict with file_id, file_name, object_key.
 
         Raises:
-            NoteNotFoundException: If note_id provided but note not found.
-            FileNotUploadedException: If file size cannot be determined.
+            FileTransferNoteNotFoundException: If note_id provided but note not found.
+            InvalidFileSizeException: If file size cannot be determined.
             QuotaExceededException: If file size or total quota is exceeded.
         """
         storage = get_storage()
@@ -148,7 +145,7 @@ class FileUploadCallbacks:
                 storage.delete(pending_upload.object_key)
             except (OSError, ClientError):
                 pass
-            raise FileNotUploadedException(detail="File size could not be determined.")
+            raise InvalidFileSizeException(detail="The file size could not be determined.")
 
         # Re-validate quota against actual size (client could upload larger than declared)
         if file_size > pending_upload.user.file_upload_limit:
@@ -180,7 +177,7 @@ class FileUploadCallbacks:
             try:
                 note = Note.objects.get_accessible_notes(pending_upload.user).get(id=note_id)
             except Note.DoesNotExist:
-                raise NoteNotFoundException(detail=f"Note with ID {note_id} not found.")
+                raise FileTransferNoteNotFoundException(detail="That note could not be found.")
 
         # Create FileReference
         file_reference = FileReference(
@@ -259,18 +256,18 @@ class FileUpload(APIView):
         """
         file_name = request.query_params.get("file_name")
         if not file_name:
-            raise InvalidFileNameException(detail="The 'file_name' query parameter is required.")
+            raise InvalidFileNameException(detail="A file name is required.")
         file_name = _sanitize_filename(file_name)
 
         # Get and validate file size
         file_size_str = request.query_params.get("file_size")
         if not file_size_str:
-            raise InvalidFileSizeException(detail="The 'file_size' query parameter is required.")
+            raise InvalidFileSizeException(detail="The file size is required.")
 
         try:
             file_size = int(file_size_str)
         except ValueError:
-            raise InvalidFileSizeException(detail="The 'file_size' parameter must be a valid integer.")
+            raise InvalidFileSizeException(detail="Use a whole number for the file size.")
 
         response_data = file_upload_flow.initiate(request.user, file_name, file_size)
         return Response(FileUploadResponseSerializer(response_data).data, status=status.HTTP_200_OK)
@@ -297,8 +294,9 @@ class FileUpload(APIView):
                 UploadErrorCodes.UPLOAD_NOT_FOUND,
                 UploadErrorCodes.UPLOAD_EXPIRED,
                 UploadErrorCodes.FILE_NOT_UPLOADED,
+                UploadErrorCodes.INVALID_FILE_SIZE,
                 UploadErrorCodes.QUOTA_EXCEEDED,
-                FileTransferErrorCodes.NOTE_NOT_FOUND,
+                FileTransferErrorCodes.FILE_TRANSFER_NOTE_NOT_FOUND,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -354,11 +352,11 @@ class FileUploadFinalize(APIView):
         responses={
             200: FileDownloadSerializer,
             **get_error_responses(
-                FileTransferErrorCodes.FILE_ID_REQUIRED,
-                FileTransferErrorCodes.INVALID_FILE_ID,
+                FileTransferErrorCodes.NO_FILE_SPECIFIED,
+                FileTransferErrorCodes.INVALID_FILE_REFERENCE,
                 FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND,
                 FileTransferErrorCodes.FILE_ACCESS_DENIED,
-                FileTransferErrorCodes.MINIO_OBJECT_NOT_FOUND,
+                FileTransferErrorCodes.STORED_FILE_NOT_FOUND,
             ),
             **get_common_error_responses(),
         },
@@ -379,17 +377,17 @@ class FileDownload(APIView):
         """
         file_id = request.query_params.get("file_id")
         if not file_id:
-            raise FileIdRequiredException(detail="The 'file_id' query parameter is required.")
+            raise NoFileSpecifiedException(detail="Specify which file to use.")
 
         try:
             file_reference = FileReference.objects.get(id=file_id)
         except FileReference.DoesNotExist:
-            raise FileReferenceNotFoundException(detail=f"File reference with ID {file_id} not found.")
+            raise FileReferenceNotFoundException(detail="That file could not be found.")
         except (ValueError, TypeError, ValidationError):
-            raise InvalidFileIdException(detail="The 'file_id' parameter must be a valid UUID.")
+            raise InvalidFileReferenceException(detail="That is not a valid file.")
 
         if not file_reference.file:
-            raise MinioObjectNotFound(detail="File not found in storage.")
+            raise StoredFileNotFoundException(detail="The file could not be found.")
 
         if not _user_can_access_file(file_reference, request.user):
             raise FileAccessDeniedException(detail="You do not have access to this file.")
@@ -399,13 +397,13 @@ class FileDownload(APIView):
         presigned_url = presign_get(
             FileTransferStorage.bucket_name,
             file_reference.file.name,
-            expires_in=DOWNLOAD_EXPIRY_SECONDS,
+            expires_in=FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS,
             response_content_disposition=f'attachment; filename="{safe_filename}"',
         )
 
         response_data = {
             "presigned_url": presigned_url,
-            "expires_in": DOWNLOAD_EXPIRY_SECONDS,
+            "expires_in": FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS,
         }
 
         return Response(FileDownloadSerializer(response_data).data, status=status.HTTP_200_OK)
@@ -452,9 +450,7 @@ class FileProcess(APIView):
 
             return Response({"detail": "File processing started"}, status=status.HTTP_202_ACCEPTED)
         except FileReference.DoesNotExist:
-            raise FileReferenceNotFoundException(
-                detail=f"File reference with ID {serializer.validated_data['file_id']} not found."
-            )
+            raise FileReferenceNotFoundException(detail="That file could not be found.")
 
 
 @extend_schema_view(
@@ -474,8 +470,8 @@ class FileProcess(APIView):
         responses={
             204: {"description": "File reference deleted successfully"},
             **get_error_responses(
-                FileTransferErrorCodes.FILE_ID_REQUIRED,
-                FileTransferErrorCodes.INVALID_FILE_ID,
+                FileTransferErrorCodes.NO_FILE_SPECIFIED,
+                FileTransferErrorCodes.INVALID_FILE_REFERENCE,
                 FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND,
                 FileTransferErrorCodes.FILE_ACCESS_DENIED,
             ),
@@ -498,7 +494,7 @@ class FileDelete(APIView):
         """
         file_id = request.query_params.get("file_id")
         if not file_id:
-            raise FileIdRequiredException(detail="The 'file_id' query parameter is required.")
+            raise NoFileSpecifiedException(detail="Specify which file to use.")
 
         try:
             file_reference = FileReference.objects.get(id=file_id)
@@ -513,6 +509,6 @@ class FileDelete(APIView):
 
             return Response(status=status.HTTP_204_NO_CONTENT)
         except FileReference.DoesNotExist:
-            raise FileReferenceNotFoundException(detail=f"File reference with ID {file_id} not found.")
+            raise FileReferenceNotFoundException(detail="That file could not be found.")
         except (ValueError, TypeError, ValidationError):
-            raise InvalidFileIdException(detail="The 'file_id' parameter must be a valid UUID.")
+            raise InvalidFileReferenceException(detail="That is not a valid file.")

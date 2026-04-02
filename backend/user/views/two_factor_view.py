@@ -13,7 +13,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.openapi import get_common_error_responses, get_error_responses
 
 from ..exceptions import (
-    InvalidTwoFactorTokenException,
+    InvalidTwoFactorCodeException,
     TwoFactorAlreadyEnabledException,
     TwoFactorNotEnabledException,
     UserErrorCodes,
@@ -40,7 +40,7 @@ class Enable2FAView(APIView):
 
     def post(self, request: Request) -> Response:
         if request.user.two_factor_enabled:
-            raise TwoFactorAlreadyEnabledException(detail="2FA is already enabled")
+            raise TwoFactorAlreadyEnabledException(detail="Two-factor authentication is already enabled.")
 
         config_url = request.user.enable_2fa()
         serializer = Enable2FASerializer(data={"config_url": config_url})
@@ -55,9 +55,9 @@ class Enable2FAView(APIView):
         description="Verifies the 2FA token and completes the setup",
         request=Verify2FASerializer,
         responses={
-            200: {"description": "2FA setup completed successfully"},
+            200: {"description": "Two-factor authentication setup completed successfully"},
             **get_error_responses(
-                UserErrorCodes.INVALID_TWO_FACTOR_TOKEN,
+                UserErrorCodes.INVALID_TWO_FACTOR_CODE,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -75,7 +75,7 @@ class Verify2FASetupView(APIView):
         token = serializer.validated_data["token"]
 
         if not request.user.verify_2fa_token(token):
-            raise InvalidTwoFactorTokenException(detail="Invalid token")
+            raise InvalidTwoFactorCodeException(detail="The two-factor authentication code is invalid.")
 
         with transaction.atomic():
             confirmed_devices = TOTPDevice.objects.select_for_update().filter(user=request.user, confirmed=True)
@@ -88,7 +88,10 @@ class Verify2FASetupView(APIView):
             request.user.two_factor_enabled = True
             request.user.save(update_fields=["two_factor_enabled"])
 
-        return Response({"detail": "2FA enabled successfully"}, status=status.HTTP_200_OK)
+        return Response(
+            {"detail": "Two-factor authentication has been enabled."},
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema_view(
@@ -98,10 +101,10 @@ class Verify2FASetupView(APIView):
         description="Disables 2FA for the user",
         request=Verify2FASerializer,
         responses={
-            200: {"description": "2FA disabled successfully"},
+            200: {"description": "Two-factor authentication disabled successfully"},
             **get_error_responses(
                 UserErrorCodes.TWO_FACTOR_NOT_ENABLED,
-                UserErrorCodes.INVALID_TWO_FACTOR_TOKEN,
+                UserErrorCodes.INVALID_TWO_FACTOR_CODE,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -114,7 +117,7 @@ class Disable2FAView(APIView):
 
     def post(self, request: Request) -> Response:
         if not request.user.two_factor_enabled:
-            raise TwoFactorNotEnabledException(detail="2FA is not enabled")
+            raise TwoFactorNotEnabledException(detail="Two-factor authentication is not enabled.")
 
         serializer = Verify2FASerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -122,6 +125,9 @@ class Disable2FAView(APIView):
         # The verify_2fa_token and disable_2fa methods now handle transactions internally
         if request.user.verify_2fa_token(serializer.validated_data["token"]):
             request.user.disable_2fa()
-            return Response({"detail": "2FA disabled successfully"}, status=status.HTTP_200_OK)
+            return Response(
+                {"detail": "Two-factor authentication has been disabled."},
+                status=status.HTTP_200_OK,
+            )
 
-        raise InvalidTwoFactorTokenException(detail="Invalid token")
+        raise InvalidTwoFactorCodeException(detail="The two-factor authentication code is invalid.")

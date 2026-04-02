@@ -6,7 +6,7 @@ from typing import Iterator, NamedTuple
 
 from entries.models import Entry
 
-from .markdown.utils import LINK_REGEX
+from .markdown.constants import LINK_REGEX
 
 
 class CradleLinkRef(NamedTuple):

@@ -10,6 +10,10 @@ from django.db import models
 from entries.enums import RelationReason
 from entries.models import Entry, Relation
 
+from ...constants import (
+    INTELIO_ENRICHMENT_MESSAGE_INIT_FAILED,
+    INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED,
+)
 from ..base import BaseEnricher
 from ..mappings.dns import DNSMapping
 
@@ -51,20 +55,19 @@ class CIRCLPDNSEnricher(BaseEnricher):
     def pre_enrich(self, entries: list[Entry]) -> Optional[str]:
         """Validate configuration before enrichment."""
         if not self.settings.get("username"):
-            return "CIRCL PDNS username is required"
+            return "Add your CIRCL PDNS username before running this enrichment."
 
         if not self.settings.get("password"):
-            return "CIRCL PDNS password is required"
+            return "Add your CIRCL PDNS password before running this enrichment."
 
         if not entries:
-            return "No entries provided for enrichment"
+            return "Select at least one entry to enrich."
 
         # Warn if mappings are missing
         if not DNSMapping.objects.exists():
             self.request._append_warning(
-                "No DNS type mappings configured. "
-                "IP address extraction will be disabled. "
-                "Configure DNSMapping in Django admin to enable IP extraction."
+                "No DNS type mappings are configured. "
+                "IP address extraction will be disabled until an administrator adds them in the admin site."
             )
 
         return None
@@ -78,8 +81,9 @@ class CIRCLPDNSEnricher(BaseEnricher):
         # Initialize PDNS client
         try:
             pdns = pypdns.PyPDNS(url=self.PDNS_URL, basic_auth=(username, password))
-        except Exception as e:
-            self.request._append_warning(f"Failed to initialize PDNS client: {e}")
+        except Exception:
+            logger.warning("Failed to initialize CIRCL PDNS client", exc_info=True)
+            self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_INIT_FAILED)
             return
 
         # Get DNS type mapping
@@ -93,7 +97,7 @@ class CIRCLPDNSEnricher(BaseEnricher):
                 # Extract domain from entry
                 domain = self._extract_domain(entry)
                 if not domain:
-                    self.request._append_warning(f"Could not extract domain from {entry.name}")
+                    self.request._append_warning("Could not extract a domain from this entry.")
                     continue
 
                 # Query PDNS
@@ -143,14 +147,16 @@ class CIRCLPDNSEnricher(BaseEnricher):
             except pypdns.errors.UnauthorizedError:
                 self.request._append_warning("CIRCL PDNS authentication failed. Check credentials.")
                 break  # Stop processing if auth fails
-            except Exception as e:
-                self.request._append_warning(f"PDNS lookup failed for {entry.name}: {str(e)}")
+            except Exception:
+                logger.warning("CIRCL PDNS lookup failed for entry %s", entry.pk, exc_info=True)
+                self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED)
 
         # Warn if unmapped types were encountered
         if unmapped_types:
             self.request._append_warning(
-                f"Skipped DNS record type(s) without mappings: {', '.join(sorted(unmapped_types))}. "
-                f"Configure DNSMapping in Django admin to extract these records."
+                f"Some DNS record types were skipped because no mapping exists for them: "
+                f"{', '.join(sorted(unmapped_types))}. "
+                f"An administrator can add DNS type mappings in the admin site."
             )
 
     def _extract_domain(self, entry: Entry) -> Optional[str]:

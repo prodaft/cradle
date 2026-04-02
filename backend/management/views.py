@@ -1,4 +1,5 @@
 import inspect
+import logging
 
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
@@ -28,6 +29,8 @@ from user.permissions import HasAdminRole
 from .models import BaseSettingsSection, Setting
 from .serializers import ManagementActionResponseSerializer
 from .settings import cradle_settings
+
+logger = logging.getLogger(__name__)
 
 
 class SettingsView(APIView):
@@ -65,8 +68,14 @@ class SettingsView(APIView):
                 try:
                     value = getattr(section, name)
                     result[section.prefix][name] = value
-                except (AttributeError, TypeError, ValueError) as e:
-                    result[section.prefix][name] = f"<error: {str(e)}>"
+                except (AttributeError, TypeError, ValueError):
+                    logger.warning(
+                        "Could not read setting %s.%s",
+                        section.prefix,
+                        name,
+                        exc_info=True,
+                    )
+                    result[section.prefix][name] = "This value could not be loaded."
 
         return Response(result, status=status.HTTP_200_OK)
 
@@ -102,14 +111,16 @@ class SettingsView(APIView):
 
         with transaction.atomic():
             for full_key, value in flat_settings.items():
+                label = " › ".join(p.replace("_", " ").strip().title() for p in full_key.split(".") if p) or full_key
                 try:
                     Setting.objects.update_or_create(key=full_key, defaults={"value": value})
                     cache.set(f"setting:{full_key}", value, timeout=300)
                     updated.append(full_key)
                 except IntegrityError:
-                    errors.append({full_key: "A database constraint was violated."})
-                except (ValueError, TypeError) as e:
-                    errors.append({full_key: str(e)})
+                    errors.append({label: "This value could not be saved; it may conflict with another setting."})
+                except (ValueError, TypeError):
+                    logger.warning("Could not save setting %s", full_key, exc_info=True)
+                    errors.append({label: "This value could not be saved."})
 
         successful_updates = {k: flat_settings[k] for k in updated}
         response_data = self._nest_settings(successful_updates)
@@ -161,7 +172,7 @@ class ActionView(APIView):
         handler = getattr(self, "action_" + action_name, None) if action_name else None
         if handler and callable(handler):
             return handler(request, *args, **kwargs)
-        raise BadRequestException(detail=f"Unknown action: {action_name}")
+        raise BadRequestException(detail="That operation is not supported.")
 
     def action_refresh_materialized_graph(self, request, *args, **kwargs):
         """Refresh the materialized graph view (edges)."""

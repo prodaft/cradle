@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from core.exceptions import CoreErrorCodes, CradleAPIException
+from core.exceptions import CoreErrorCodes, NotFoundException
 from core.openapi import get_common_error_responses, get_error_responses
 from user.exceptions import UserErrorCodes, UserNotFoundException
 from user.models import CradleUser, UserRoles
@@ -72,11 +72,11 @@ class UserSnippetsListCreateView(APIView):
             try:
                 target_user = CradleUser.objects.get(id=user_id)
             except (CradleUser.DoesNotExist, ValueError, TypeError):
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
             # Check permissions (404 to avoid revealing user exists)
             if not (current_user.pk == target_user.pk or _is_admin(current_user)):
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
             snippets = Snippet.objects.filter(owner=target_user)
 
@@ -114,7 +114,7 @@ class UserSnippetsListCreateView(APIView):
         if user_id == "null":
             # Create system snippet - requires admin privileges (404 to avoid revealing)
             if not _is_admin(current_user):
-                raise CradleAPIException(detail="Not found.", error_code=CoreErrorCodes.NOT_FOUND)
+                raise NotFoundException(detail="That resource could not be found.")
             target_owner = None
         elif user_id == "me":
             target_owner = current_user
@@ -122,11 +122,11 @@ class UserSnippetsListCreateView(APIView):
             try:
                 target_owner = CradleUser.objects.get(id=user_id)
             except (CradleUser.DoesNotExist, ValueError, TypeError):
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
             # Check permissions (404 to avoid revealing user exists)
             if current_user.pk != target_owner.pk and not _is_admin(current_user):
-                raise UserNotFoundException(detail="There is no user with the specified ID.")
+                raise UserNotFoundException(detail="That user could not be found.")
 
         serializer = SnippetSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -180,7 +180,7 @@ class SnippetDetailView(APIView):
         try:
             snippet = Snippet.objects.get(id=snippet_id)
         except Snippet.DoesNotExist:
-            raise SnippetNotFoundException(detail="Snippet not found.")
+            raise SnippetNotFoundException(detail="That snippet could not be found.")
 
         current_user = cast(CradleUser, request.user)
 
@@ -188,7 +188,7 @@ class SnippetDetailView(APIView):
         # Users can access their own snippets and system snippets (owner=null)
         # Admins can access any snippet
         if not (snippet.owner == current_user or snippet.owner is None or _is_admin(current_user)):
-            raise SnippetNotFoundException(detail="Snippet not found.")
+            raise SnippetNotFoundException(detail="That snippet could not be found.")
 
         return snippet
 
@@ -198,9 +198,9 @@ class SnippetDetailView(APIView):
         if _is_admin(current_user):
             return
         if snippet.owner is None:
-            raise SnippetNotFoundException(detail="Snippet not found.")
+            raise SnippetNotFoundException(detail="That snippet could not be found.")
         if snippet.owner != current_user:
-            raise SnippetNotFoundException(detail="Snippet not found.")
+            raise SnippetNotFoundException(detail="That snippet could not be found.")
 
     @extend_schema(
         operation_id="notes_snippets_retrieve",

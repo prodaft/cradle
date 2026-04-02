@@ -36,10 +36,10 @@ from user.permissions import HasAdminRole
 from ..enums import NoteStatus
 from ..exceptions import (
     CannotEditNoteException,
-    InvalidReferencesAtLeastException,
+    InvalidReferenceCountException,
     NoAccessToEntriesException,
-    NoteDoesNotExistException,
     NoteIsEmptyException,
+    NoteNotFoundException,
     NotesErrorCodes,
 )
 from ..filters import NoteFilter
@@ -179,7 +179,7 @@ from ..serializers import (
             **get_error_responses(
                 CoreErrorCodes.INVALID_PAGE_SIZE,
                 CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
-                NotesErrorCodes.INVALID_REFERENCES_AT_LEAST,
+                NotesErrorCodes.INVALID_REFERENCE_COUNT,
                 EntriesErrorCodes.ENTRY_NOT_FOUND,
                 CoreErrorCodes.INVALID_REQUEST,
             ),
@@ -222,14 +222,14 @@ class NoteList(APIView):
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
-            entry_ids = validate_int_list_param(entrylist, param_name="Reference IDs")
+            entry_ids = validate_int_list_param(entrylist, param_name="references")
             references_at_least = validate_int_param(
                 request.query_params.get("references_at_least"),
                 param_name="references_at_least",
                 default=len(entry_ids),
             )
             if references_at_least < 1 or references_at_least > len(entry_ids):
-                raise InvalidReferencesAtLeastException(detail="Invalid references_at_least value.")
+                raise InvalidReferenceCountException()
 
             queryset = queryset.annotate(matching_entries=Count("entries", filter=Q(entries__in=entry_ids))).filter(
                 matching_entries=references_at_least
@@ -243,12 +243,12 @@ class NoteList(APIView):
             try:
                 entry = Entry.objects.get(id=entryid)
             except Entry.DoesNotExist:
-                raise EntryNotFoundException(detail="There is no entry with the specified ID.")
+                raise EntryNotFoundException(detail="That entry could not be found.")
             if entry.entry_class.type == EntryType.ENTITY and not (
                 user.is_cradle_admin
                 or Access.objects.has_access_to_entities(user, {entry}, {AccessType.READ, AccessType.READ_WRITE})
             ):
-                raise EntryNotFoundException(detail="There is no entry with the specified ID.")
+                raise EntryNotFoundException(detail="That entry could not be found.")
 
             linked_to_exact_match = request.query_params.get("linked_to_exact_match", "false") == "true"
 
@@ -381,7 +381,7 @@ class NoteList(APIView):
         responses={
             200: NoteRetrieveSerializer,
             **get_error_responses(
-                NotesErrorCodes.NOTE_DOES_NOT_EXIST,
+                NotesErrorCodes.NOTE_NOT_FOUND,
             ),
             **get_common_error_responses(),
         },
@@ -402,7 +402,7 @@ class NoteList(APIView):
         responses={
             200: NoteRetrieveSerializer,
             **get_error_responses(
-                NotesErrorCodes.NOTE_DOES_NOT_EXIST,
+                NotesErrorCodes.NOTE_NOT_FOUND,
                 NotesErrorCodes.CANNOT_EDIT_NOTE,
                 include_validation_error=True,
             ),
@@ -424,7 +424,7 @@ class NoteList(APIView):
         responses={
             204: {"description": "Note was deleted successfully"},
             **get_error_responses(
-                NotesErrorCodes.NOTE_DOES_NOT_EXIST,
+                NotesErrorCodes.NOTE_NOT_FOUND,
                 NotesErrorCodes.NO_ACCESS_TO_ENTRIES,
             ),
             **get_common_error_responses(),
@@ -446,17 +446,17 @@ class NoteDetail(APIView):
             try:
                 note = Note.objects.get(id=note_id)
             except Note.DoesNotExist:
-                raise NoteDoesNotExistException(detail="Note was not found.")
+                raise NoteNotFoundException(detail="That note could not be found.")
             if note.fleeting:
                 if note.author_id != user.id:
-                    raise NoteDoesNotExistException(detail="Note was not found.")
+                    raise NoteNotFoundException(detail="That note could not be found.")
             else:
                 if not Access.objects.has_access_to_entities(
                     user,
                     set(note.entries.filter(entry_class__type=EntryType.ENTITY)),
                     {AccessType.READ, AccessType.READ_WRITE},
                 ):
-                    raise NoteDoesNotExistException(detail="Note was not found.")
+                    raise NoteNotFoundException(detail="That note could not be found.")
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
@@ -464,7 +464,7 @@ class NoteDetail(APIView):
         try:
             note: Note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
-            raise NoteDoesNotExistException(detail="Note was not found.")
+            raise NoteNotFoundException(detail="That note could not be found.")
 
         user = cast(CradleUser, request.user)
 
@@ -473,10 +473,10 @@ class NoteDetail(APIView):
             set(note.entries.filter(entry_class__type=EntryType.ENTITY)),
             {AccessType.READ, AccessType.READ_WRITE},
         ):
-            raise NoteDoesNotExistException(detail="Note was not found.")
+            raise NoteNotFoundException(detail="That note could not be found.")
 
         if not user.is_cradle_admin and note.author != user:
-            raise CannotEditNoteException(detail="Note was not found.")
+            raise CannotEditNoteException(detail="You do not have permission to edit this note.")
 
         serializer = NoteEditSerializer(note, data=request.data, context={"request": request})
 
@@ -490,11 +490,11 @@ class NoteDetail(APIView):
         try:
             note_to_delete = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
-            raise NoteDoesNotExistException(detail="Note was not found.")
+            raise NoteNotFoundException(detail="That note could not be found.")
 
         if note_to_delete.fleeting:
             if note_to_delete.author_id != request.user.id:
-                raise NoteDoesNotExistException(detail="Note was not found.")
+                raise NoteNotFoundException(detail="That note could not be found.")
         else:
             if not Access.objects.has_access_to_entities(
                 cast(CradleUser, request.user),
@@ -528,7 +528,7 @@ class NoteDetail(APIView):
         responses={
             200: NoteRetrieveSerializer,
             **get_error_responses(
-                NotesErrorCodes.NOTE_DOES_NOT_EXIST,
+                NotesErrorCodes.NOTE_NOT_FOUND,
                 NotesErrorCodes.NOTE_IS_EMPTY,
             ),
             **get_common_error_responses(),
@@ -545,7 +545,7 @@ class NoteFinalize(APIView):
         try:
             note = Note.objects.get(id=note_id, author=request.user, fleeting=True)
         except Note.DoesNotExist:
-            raise NoteDoesNotExistException(detail="Note was not found.")
+            raise NoteNotFoundException(detail="That note could not be found.")
 
         if not note.content:
             raise NoteIsEmptyException()
@@ -572,7 +572,7 @@ class NoteFinalize(APIView):
         request=None,
         responses={
             200: NoteRetrieveSerializer,
-            **get_error_responses(NotesErrorCodes.NOTE_DOES_NOT_EXIST),
+            **get_error_responses(NotesErrorCodes.NOTE_NOT_FOUND),
             **get_common_error_responses(),
         },
     )
@@ -588,10 +588,10 @@ class NoteRelink(APIView):
         try:
             note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
-            raise NoteDoesNotExistException(detail="Note was not found.")
+            raise NoteNotFoundException(detail="That note could not be found.")
 
         if note.fleeting:
-            raise NoteDoesNotExistException(detail="Cannot relink a fleeting note.")
+            raise CannotEditNoteException(detail="Quick notes cannot be relinked.")
 
         Relation.objects.filter(
             content_type=ContentType.objects.get_for_model(Note),
@@ -751,7 +751,7 @@ class NoteRelinkAll(APIView):
                 CoreErrorCodes.INVALID_PAGE_SIZE,
                 CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
                 CoreErrorCodes.INVALID_REQUEST,
-                NotesErrorCodes.INVALID_REFERENCES_AT_LEAST,
+                NotesErrorCodes.INVALID_REFERENCE_COUNT,
                 EntriesErrorCodes.ENTRY_NOT_FOUND,
             ),
             **get_common_error_responses(),
@@ -771,14 +771,14 @@ class NoteFiles(APIView):
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
-            entry_ids = validate_int_list_param(entrylist, param_name="Reference IDs")
+            entry_ids = validate_int_list_param(entrylist, param_name="references")
             references_at_least = validate_int_param(
                 request.query_params.get("references_at_least"),
                 param_name="references_at_least",
                 default=len(entry_ids),
             )
             if references_at_least < 1 or references_at_least > len(entry_ids):
-                raise InvalidReferencesAtLeastException(detail="Invalid references_at_least value.")
+                raise InvalidReferenceCountException()
             queryset = queryset.annotate(matching_entries=Count("entries", filter=Q(entries__in=entry_ids))).filter(
                 matching_entries=references_at_least
             )
@@ -791,12 +791,12 @@ class NoteFiles(APIView):
             try:
                 entry = Entry.objects.get(id=entryid)
             except Entry.DoesNotExist:
-                raise EntryNotFoundException(detail="There is no entry with the specified ID.")
+                raise EntryNotFoundException(detail="That entry could not be found.")
             if entry.entry_class.type == EntryType.ENTITY and not (
                 user.is_cradle_admin
                 or Access.objects.has_access_to_entities(user, {entry}, {AccessType.READ, AccessType.READ_WRITE})
             ):
-                raise EntryNotFoundException(detail="There is no entry with the specified ID.")
+                raise EntryNotFoundException(detail="That entry could not be found.")
             linked_to_exact_match = request.query_params.get("linked_to_exact_match", "false") == "true"
             if linked_to_exact_match:
                 queryset = queryset.annotate(
@@ -895,7 +895,7 @@ class NoteFiles(APIView):
         ],
         responses={
             200: SubGraphSerializer,
-            **get_error_responses(NotesErrorCodes.NOTE_DOES_NOT_EXIST),
+            **get_error_responses(NotesErrorCodes.NOTE_NOT_FOUND),
             **get_common_error_responses(),
         },
     ),
@@ -910,7 +910,7 @@ class NoteGraph(APIView):
         try:
             note: Note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
         except Note.DoesNotExist:
-            raise NoteDoesNotExistException(detail="Note was not found.")
+            raise NoteNotFoundException(detail="That note could not be found.")
 
         # Get all relations for this note, filtered by user access
         rels = note.relations.accessible(user=cast(CradleUser, request.user))

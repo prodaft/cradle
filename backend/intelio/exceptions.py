@@ -5,23 +5,23 @@ from rest_framework import status
 from core.exceptions import CradleAPIException, ErrorCode
 
 
-class IntelioErrorCodes(ErrorCode):
-    """Error codes for intelio operations."""
+class IntelIOErrorCodes(ErrorCode):
+    """Error codes for IntelIO operations."""
 
-    ENRICHER_NOT_FOUND = (
+    UNKNOWN_ENRICHMENT_OPTION = (
         status.HTTP_404_NOT_FOUND,
-        "Enricher Not Found",
-        "enricher-not-found",
+        "Unknown Enrichment Option",
+        "unknown-enrichment-option",
     )
-    ENRICHMENT_REQUEST_NOT_FOUND = (
+    ENRICHMENT_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
-        "Enrichment Request Not Found",
-        "enrichment-request-not-found",
+        "Enrichment Not Found",
+        "enrichment-not-found",
     )
-    ENRICHER_TYPE_NOT_FOUND = (
+    ENRICHMENT_OPTION_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
-        "Enricher Type Not Found",
-        "enricher-type-not-found",
+        "Enrichment Option Not Found",
+        "enrichment-option-not-found",
     )
     DIGEST_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
@@ -29,35 +29,35 @@ class IntelioErrorCodes(ErrorCode):
         "digest-not-found",
     )
     MISSING_FILE = (status.HTTP_400_BAD_REQUEST, "Missing File", "missing-file")
-    INVALID_CLASS_NAME = (
+    UNKNOWN_MAPPING = (
         status.HTTP_400_BAD_REQUEST,
-        "Invalid Class Name",
-        "invalid-class-name",
+        "Unknown Mapping",
+        "unknown-mapping",
     )
-    NOT_MAPPING_CLASS = (
+    INVALID_MAPPING_SELECTION = (
         status.HTTP_400_BAD_REQUEST,
-        "Not a Valid Mapping Class",
-        "not-mapping-class",
+        "Invalid Mapping Selection",
+        "invalid-mapping-selection",
     )
-    INTERNAL_CLASS_REQUIRED = (
+    TARGET_TYPE_REQUIRED = (
         status.HTTP_400_BAD_REQUEST,
-        "Internal Class Required",
-        "internal-class-required",
+        "Target Type Required",
+        "target-type-required",
     )
-    INTEGRITY_ERROR = (
+    DATA_CONFLICT = (
         status.HTTP_400_BAD_REQUEST,
-        "Integrity Error",
-        "integrity-error",
+        "Data Conflict",
+        "data-conflict",
     )
-    MAPPING_ID_REQUIRED = (
+    MAPPING_REQUIRED = (
         status.HTTP_400_BAD_REQUEST,
-        "Mapping ID Required",
-        "mapping-id-required",
+        "Mapping Required",
+        "mapping-required",
     )
-    INVALID_MAPPING_ID = (
+    INVALID_MAPPING = (
         status.HTTP_400_BAD_REQUEST,
-        "Invalid Mapping ID",
-        "invalid-mapping-id",
+        "Invalid Mapping",
+        "invalid-mapping",
     )
     MAPPING_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
@@ -74,80 +74,98 @@ class IntelioErrorCodes(ErrorCode):
         "Digest Upload Expired",
         "digest-upload-expired",
     )
-    DIGEST_FILE_NOT_UPLOADED = (
+    DIGEST_UPLOAD_INCOMPLETE = (
         status.HTTP_400_BAD_REQUEST,
-        "Digest File Not Uploaded",
-        "digest-file-not-uploaded",
+        "Digest Upload Incomplete",
+        "digest-upload-incomplete",
     )
 
 
-class EnricherNotFoundException(CradleAPIException):
-    """Exception raised when enricher is not found."""
+class UnknownEnrichmentOptionException(CradleAPIException):
+    """Exception raised when the requested enrichment option is not in the catalog."""
 
-    error_code = IntelioErrorCodes.ENRICHER_NOT_FOUND
+    error_code = IntelIOErrorCodes.UNKNOWN_ENRICHMENT_OPTION
 
 
-class EnrichmentRequestNotFoundException(CradleAPIException):
+class EnrichmentNotFoundException(CradleAPIException):
     """Exception raised when enrichment request is not found."""
 
-    error_code = IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND
+    error_code = IntelIOErrorCodes.ENRICHMENT_NOT_FOUND
 
 
-class EnricherTypeNotFoundException(CradleAPIException):
+class EnrichmentOptionNotFoundException(CradleAPIException):
     """Exception raised when enricher type is not found in enrichment request."""
 
-    error_code = IntelioErrorCodes.ENRICHER_TYPE_NOT_FOUND
+    error_code = IntelIOErrorCodes.ENRICHMENT_OPTION_NOT_FOUND
 
 
 class DigestNotFoundException(CradleAPIException):
     """Exception raised when digest is not found."""
 
-    error_code = IntelioErrorCodes.DIGEST_NOT_FOUND
+    error_code = IntelIOErrorCodes.DIGEST_NOT_FOUND
 
 
 class MissingFileException(CradleAPIException):
     """Exception raised when file is missing from request."""
 
-    error_code = IntelioErrorCodes.MISSING_FILE
+    error_code = IntelIOErrorCodes.MISSING_FILE
 
 
-class InvalidClassNameException(CradleAPIException):
-    """Exception raised when class name is invalid."""
+class UnknownMappingException(CradleAPIException):
+    """Exception raised when mapping class name is not recognized."""
 
-    error_code = IntelioErrorCodes.INVALID_CLASS_NAME
+    error_code = IntelIOErrorCodes.UNKNOWN_MAPPING
 
 
-class NotMappingClassException(CradleAPIException):
+class InvalidMappingSelectionException(CradleAPIException):
     """Exception raised when class is not a valid mapping class."""
 
-    error_code = IntelioErrorCodes.NOT_MAPPING_CLASS
+    error_code = IntelIOErrorCodes.INVALID_MAPPING_SELECTION
 
 
-class InternalClassRequiredException(CradleAPIException):
-    """Exception raised when internal_class field is required but missing."""
+class TargetTypeRequiredException(CradleAPIException):
+    """Exception raised when the mapping target type is required but missing."""
 
-    error_code = IntelioErrorCodes.INTERNAL_CLASS_REQUIRED
-
-
-class IntegrityErrorException(CradleAPIException):
-    """Exception raised when database integrity constraint is violated."""
-
-    error_code = IntelioErrorCodes.INTEGRITY_ERROR
+    error_code = IntelIOErrorCodes.TARGET_TYPE_REQUIRED
 
 
-class MappingIdRequiredException(CradleAPIException):
+class DataConflictException(CradleAPIException):
+    """Exception raised when a mapping or related data conflicts with existing state."""
+
+    error_code = IntelIOErrorCodes.DATA_CONFLICT
+
+
+class MappingRequiredException(CradleAPIException):
     """Exception raised when mapping_id is required but missing."""
 
-    error_code = IntelioErrorCodes.MAPPING_ID_REQUIRED
+    error_code = IntelIOErrorCodes.MAPPING_REQUIRED
 
 
-class InvalidMappingIdException(CradleAPIException):
+class InvalidMappingException(CradleAPIException):
     """Exception raised when mapping ID has invalid format (not a valid UUID)."""
 
-    error_code = IntelioErrorCodes.INVALID_MAPPING_ID
+    error_code = IntelIOErrorCodes.INVALID_MAPPING
 
 
 class MappingNotFoundException(CradleAPIException):
     """Exception raised when mapping is not found."""
 
-    error_code = IntelioErrorCodes.MAPPING_NOT_FOUND
+    error_code = IntelIOErrorCodes.MAPPING_NOT_FOUND
+
+
+class DigestUploadNotFoundException(CradleAPIException):
+    """Exception raised when a digest upload session is not found."""
+
+    error_code = IntelIOErrorCodes.DIGEST_UPLOAD_NOT_FOUND
+
+
+class DigestUploadExpiredException(CradleAPIException):
+    """Exception raised when a digest upload session has expired."""
+
+    error_code = IntelIOErrorCodes.DIGEST_UPLOAD_EXPIRED
+
+
+class DigestUploadIncompleteException(CradleAPIException):
+    """Exception raised when the digest file was not fully uploaded."""
+
+    error_code = IntelIOErrorCodes.DIGEST_UPLOAD_INCOMPLETE

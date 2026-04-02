@@ -11,9 +11,9 @@ import yaml
 from django.utils.timezone import make_aware
 from mistune import InlineParser, Markdown
 from mistune.core import InlineState
-from mistune.helpers import LINK_LABEL
 
 from ..exceptions import InvalidDateFormatException
+from .constants import INLINE_FOOTNOTE, INLINE_FOOTNOTE_IMG, LINK_REGEX
 
 
 def parse_entry_date(v: str) -> datetime.datetime:
@@ -24,21 +24,11 @@ def parse_entry_date(v: str) -> datetime.datetime:
             try:
                 return make_aware(datetime.datetime.strptime(v, "%H:%M %d-%m-%Y"))
             except ValueError:
-                raise InvalidDateFormatException(v)
+                raise InvalidDateFormatException("")
     try:
         return make_aware(datetime.datetime.strptime(v, "%d-%m-%Y"))
     except ValueError:
-        raise InvalidDateFormatException(v)
-
-
-# Common regex patterns
-LINK_REGEX = (
-    r"(?P<cl_hidden>~)?\[\[(?P<cl_type>[^:\|\]]+?):(?P<cl_value>(?:\\[\[\]\|]|[^\[\]\|])+?)"
-    + r"(?:\|(?P<cl_alias>(?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"
-    + r"(?:\((?:(?P<cl_time>\d{2}:\d{2}\s+)?(?P<cl_date>\d{2}-\d{2}-\d{4}))\))?"
-)
-INLINE_FOOTNOTE = r"\[(?P<footnote_value>" + LINK_LABEL + r")\]\[(?P<footnote_key>" + LINK_LABEL + r")\]"
-INLINE_FOOTNOTE_IMG = r"!\[(?P<img_footnote_value>" + LINK_LABEL + r")\]\[(?P<img_footnote_key>" + LINK_LABEL + r")\]"
+        raise InvalidDateFormatException("")
 
 
 def embed_image_as_data_url(img: BytesIO, path: str) -> str:
@@ -83,7 +73,7 @@ def parse_cradle_link(inline: InlineParser, m: Match[str], state: InlineState) -
             }
         )
     except ValueError:
-        raise InvalidDateFormatException(f"{time} {date}" if time else date)
+        raise InvalidDateFormatException("")
     return m.end()
 
 

@@ -18,7 +18,7 @@ from entries.serializers import (
     EntrySerializer,
     EntrySerializerMinimal,
 )
-from notes.exceptions import NoteDoesNotExistException
+from notes.exceptions import NoteNotFoundException
 from notes.models import Note
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer
@@ -100,7 +100,9 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
         help_text="Entry class IDs this enricher applies to",
     )
     for_eclasses_detail = EntryClassSerializer(source="for_eclasses", many=True, read_only=True)
-    enricher_type = serializers.CharField(read_only=True, help_text="Enricher class name")
+    enricher_type = serializers.CharField(
+        read_only=True, help_text="Stable identifier for this enrichment implementation"
+    )
     form_fields = SerializerMethodField()
 
     class Meta:
@@ -118,8 +120,7 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.CharField())
     def get_display_name(self, obj):
-        config = BaseEnricher.get_subclass(obj.enricher_type)
-        return config.display_name if config else obj.enricher_type
+        return BaseEnricher.display_label_for_type(obj.enricher_type)
 
     @extend_schema_field(serializers.DictField())
     def get_form_fields(self, obj):
@@ -184,7 +185,7 @@ class BaseDigestSerializer(serializers.ModelSerializer):
         self.Meta.model = BaseDigest.get_subclass(data["digest_type"])
 
         if self.Meta.model is None:
-            raise serializers.ValidationError("Invalid digest type")
+            raise serializers.ValidationError({"digest_type": "That digest format is not supported."})
 
         return super().to_internal_value(data)
 
@@ -218,7 +219,7 @@ class BaseDigestCreateSerializer(serializers.ModelSerializer):
         self.Meta.model = BaseDigest.get_subclass(data["digest_type"])
 
         if self.Meta.model is None:
-            raise serializers.ValidationError("Invalid digest type")
+            raise serializers.ValidationError({"digest_type": "That digest format is not supported."})
 
         return super().to_internal_value(data)
 
@@ -264,7 +265,7 @@ class DigestUploadFinalizeCreateSerializer(serializers.ModelSerializer):
         self.Meta.model = BaseDigest.get_subclass(data["digest_type"])
 
         if self.Meta.model is None:
-            raise serializers.ValidationError("Invalid digest type")
+            raise serializers.ValidationError({"digest_type": "That digest format is not supported."})
 
         return super().to_internal_value(data)
 
@@ -272,22 +273,23 @@ class DigestUploadFinalizeCreateSerializer(serializers.ModelSerializer):
 class EnrichmentRequestEnricherMinimal(serializers.Serializer):
     """Serializer for minimal enrichment request enricher information."""
 
-    enricher_type = serializers.CharField(read_only=True, help_text="Enricher class name")
-    display_name = serializers.CharField(read_only=True, help_text="Human-readable enricher name")
-    enabled = serializers.BooleanField(read_only=True, help_text="Whether enricher is enabled")
-    status = serializers.CharField(read_only=True, help_text="Enricher status for this request")
+    enricher_type = serializers.CharField(
+        read_only=True, help_text="Stable identifier for this enrichment implementation"
+    )
+    display_name = serializers.CharField(read_only=True, help_text="Display name for this enrichment")
+    enabled = serializers.BooleanField(read_only=True, help_text="Whether this enrichment is enabled")
+    status = serializers.CharField(read_only=True, help_text="Status for this enrichment on the request")
 
     @classmethod
     def for_enrichment(cls, request: EnrichmentRequest, enricher_type: str):
-        enricher_cls = BaseEnricher.get_subclass(enricher_type)
         enricher_settings = request.enrichers_settings.get(enricher_type=enricher_type)
         if enricher_settings is None:
-            raise serializers.ValidationError(f"Enricher type {enricher_type} not found")
+            raise serializers.ValidationError("That enrichment is not available.")
 
         return cls(
             {
                 "enricher_type": enricher_type,
-                "display_name": enricher_cls.display_name if enricher_cls else enricher_type,
+                "display_name": BaseEnricher.display_label_for_type(enricher_type),
                 "enabled": enricher_settings.enabled,
                 "status": request.enricher_status.get(enricher_type, EnrichmentStatus.WAITING),
             }
@@ -297,23 +299,24 @@ class EnrichmentRequestEnricherMinimal(serializers.Serializer):
 class EnrichmentRequestEnricherSerializer(serializers.Serializer):
     """Serializer for enrichment request enricher information including artifacts."""
 
-    enricher_type = serializers.CharField(read_only=True, help_text="Enricher class name")
-    display_name = serializers.CharField(read_only=True, help_text="Human-readable enricher name")
-    enabled = serializers.BooleanField(read_only=True, help_text="Whether enricher is enabled")
-    status = serializers.CharField(read_only=True, help_text="Enricher status for this request")
-    errors = serializers.ListField(read_only=True, help_text="Errors from this enricher")
-    warnings = serializers.ListField(read_only=True, help_text="Warnings from this enricher")
-    artifacts = serializers.ListField(read_only=True, help_text="Artifacts enriched by this enricher")
+    enricher_type = serializers.CharField(
+        read_only=True, help_text="Stable identifier for this enrichment implementation"
+    )
+    display_name = serializers.CharField(read_only=True, help_text="Display name for this enrichment")
+    enabled = serializers.BooleanField(read_only=True, help_text="Whether this enrichment is enabled")
+    status = serializers.CharField(read_only=True, help_text="Status for this enrichment on the request")
+    errors = serializers.ListField(read_only=True, help_text="Errors from this enrichment")
+    warnings = serializers.ListField(read_only=True, help_text="Warnings from this enrichment")
+    artifacts = serializers.ListField(read_only=True, help_text="Artifacts produced by this enrichment")
 
     @classmethod
     def for_enrichment(cls, request: EnrichmentRequest, enricher_type: str):
-        enricher_cls = BaseEnricher.get_subclass(enricher_type)
         enricher_settings = request.enrichers_settings.get(enricher_type=enricher_type)
         errors = []
         warnings = []
 
         if enricher_settings is None:
-            raise serializers.ValidationError(f"Enricher type {enricher_type} not found")
+            raise serializers.ValidationError("That enrichment is not available.")
 
         enabled_eclasses = set(enricher_settings.for_eclasses.values_list("subtype", flat=True))
 
@@ -356,7 +359,7 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
         return cls(
             {
                 "enricher_type": enricher_type,
-                "display_name": enricher_cls.display_name if enricher_cls else enricher_type,
+                "display_name": BaseEnricher.display_label_for_type(enricher_type),
                 "enabled": enricher_settings.enabled,
                 "status": request.enricher_status.get(enricher_type, EnrichmentStatus.WAITING),
                 "errors": errors,
@@ -469,6 +472,10 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         child=serializers.PrimaryKeyRelatedField(queryset=Note.objects.none()),
         help_text="Note IDs to extract artifacts from (alternative to request)",
     )
+    errors = serializers.SerializerMethodField(
+        read_only=True,
+        help_text="Error messages grouped by enrichment name (not internal identifiers)",
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -525,14 +532,15 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         """Return the class names of all enrichers."""
         return list(obj.enrichers_settings.values_list("enricher_type", flat=True))
 
+    @extend_schema_field(serializers.DictField(child=serializers.ListField(child=serializers.CharField())))
+    def get_errors(self, obj: EnrichmentRequest):
+        """Expose errors with display labels instead of Python class names as keys."""
+        return BaseEnricher.enricher_messages_for_ui(obj.errors)
+
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_enricher_names_display(self, obj):
-        """Return the display names of all enrichers."""
-        names = []
-        for setting in obj.enrichers_settings.all():
-            config = BaseEnricher.get_subclass(setting.enricher_type)
-            names.append(config.display_name if config else setting.enricher_type)
-        return names
+        """Return the display names of all enrichers (never raw Python class names)."""
+        return [BaseEnricher.display_label_for_type(s.enricher_type) for s in obj.enrichers_settings.all()]
 
     def validate_enricher_names(self, values):
         """Validate multiple enricher names."""
@@ -541,18 +549,18 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
 
         for value in values:
             if value in validated_names:
-                raise serializers.ValidationError(f"Duplicate enricher name: {value}")
+                raise serializers.ValidationError("That enrichment is already selected.")
 
             try:
                 enricher = EnricherSettings.objects.get(enricher_type=value, enabled=True)
             except EnricherSettings.DoesNotExist:
-                raise serializers.ValidationError(f"Unknown or disabled enricher: {value}")
+                raise serializers.ValidationError("That enrichment is not available.")
 
             validated.add(enricher)
             validated_names.add(value)
 
         if not validated:
-            raise serializers.ValidationError("At least one enricher must be selected")
+            raise serializers.ValidationError("Select at least one enrichment.")
 
         return list(validated)
 
@@ -562,7 +570,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         values = set(values)
 
         if not Access.objects.has_access_to_entities(user, values, {AccessType.READ_WRITE}):
-            raise PermissionDeniedException(detail="You don't have access to all the entities")
+            raise PermissionDeniedException(detail="You do not have access to one or more of the selected entities.")
 
         return list(values)
 
@@ -572,7 +580,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
 
         for note in values:
             if not note.has_access(user):
-                raise NoteDoesNotExistException(detail="One or more of the notes you selected could not be found.")
+                raise NoteNotFoundException(detail="Some of the selected notes could not be found.")
 
         return list(values)
 
@@ -581,7 +589,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         data = super().validate(data)
 
         if not data.get("request") and not data.get("notes"):
-            raise serializers.ValidationError({"request": "Request or notes must be provided"})
+            raise serializers.ValidationError("Add at least one item to enrich, or choose at least one note.")
 
         additional_request = []
         entities = set(data.get("entities") or [])

@@ -20,8 +20,8 @@ from user.permissions import HasAdminRole
 from ..enums import RelationReason
 from ..exceptions import (
     EntriesErrorCodes,
-    InvalidRelatesParameterException,
-    RelatesParameterRequiredException,
+    InvalidRelatedEntriesException,
+    RelatedEntriesRequiredException,
     RelationNotFoundException,
 )
 from ..models import Relation
@@ -66,8 +66,8 @@ class RelationListView(APIView):
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(RelationSerializer),
             **get_error_responses(
-                EntriesErrorCodes.RELATES_PARAMETER_REQUIRED,
-                EntriesErrorCodes.INVALID_RELATES_PARAMETER,
+                EntriesErrorCodes.RELATED_ENTRIES_REQUIRED,
+                EntriesErrorCodes.INVALID_RELATED_ENTRIES,
                 CoreErrorCodes.INVALID_PAGE_SIZE,
                 CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
             ),
@@ -78,7 +78,7 @@ class RelationListView(APIView):
         """Return paginated relations where both e1 and e2 are in relates."""
         raw_ids = request.query_params.getlist("relates")
         if not raw_ids:
-            raise RelatesParameterRequiredException(detail="`relates` query parameter is required.")
+            raise RelatedEntriesRequiredException(detail="Select at least one related entry.")
 
         try:
             entry_ids = validate_int_list_param(raw_ids, param_name="relates", max_length=100)
@@ -88,7 +88,7 @@ class RelationListView(APIView):
                 if isinstance(e.detail, list) and e.detail
                 else (str(e.detail) if e.detail else "Invalid relates parameter.")
             )
-            raise InvalidRelatesParameterException(detail=detail)
+            raise InvalidRelatedEntriesException(detail=detail)
 
         # Get relations where both e1 and e2 are in the provided list
         relations = (
@@ -157,7 +157,7 @@ class RelationDetailView(APIView):
         try:
             relation = Relation.objects.accessible(request.user).prefetch_related("attachments").get(id=relation_id)
         except Relation.DoesNotExist:
-            raise RelationNotFoundException(detail="Relation not found.")
+            raise RelationNotFoundException(detail="That relation could not be found.")
         serializer = RelationDetailSerializer(relation)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -166,6 +166,6 @@ class RelationDetailView(APIView):
         try:
             relation = Relation.objects.accessible(request.user).get(id=relation_id)
         except Relation.DoesNotExist:
-            raise RelationNotFoundException(detail="Relation not found.")
+            raise RelationNotFoundException(detail="That relation could not be found.")
         relation.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

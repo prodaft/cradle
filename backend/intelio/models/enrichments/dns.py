@@ -7,6 +7,7 @@ from django.db import models
 from entries.enums import RelationReason
 from entries.models import Entry, Relation
 
+from ...constants import INTELIO_ENRICHMENT_MESSAGE_DNS_LOOKUP_FAILED
 from ..base import BaseEnricher
 from ..mappings.dns import DNSMapping
 
@@ -36,9 +37,8 @@ class DNSEnricher(BaseEnricher):
         # Warn if mappings are missing
         if not DNSMapping.objects.exists():
             self.request._append_warning(
-                "No DNS type mappings configured. "
-                "IP address extraction will be disabled. "
-                "Configure DNSMapping in Django admin to enable IP extraction."
+                "No DNS type mappings are configured. "
+                "IP address extraction will be disabled until an administrator adds them in the admin site."
             )
 
         return None
@@ -95,8 +95,9 @@ class DNSEnricher(BaseEnricher):
                         logger.debug(f"Domain not found: {hostname}")
                     except dns.resolver.NoAnswer:
                         logger.debug(f"No A record for {hostname}")
-                    except Exception as e:
-                        self.request._append_warning(f"DNS A record lookup failed for {hostname}: {str(e)}")
+                    except Exception:
+                        logger.warning("DNS A lookup failed for %s", hostname, exc_info=True)
+                        self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_DNS_LOOKUP_FAILED)
                 elif "A" not in unmapped_types:
                     unmapped_types.add("A")
                     logger.debug("Skipping DNS A records - no mapping configured")
@@ -128,8 +129,9 @@ class DNSEnricher(BaseEnricher):
                         logger.debug(f"Domain not found: {hostname}")
                     except dns.resolver.NoAnswer:
                         logger.debug(f"No AAAA record for {hostname}")
-                    except Exception as e:
-                        self.request._append_warning(f"DNS AAAA record lookup failed for {hostname}: {str(e)}")
+                    except Exception:
+                        logger.warning("DNS AAAA lookup failed for %s", hostname, exc_info=True)
+                        self.request._append_warning(INTELIO_ENRICHMENT_MESSAGE_DNS_LOOKUP_FAILED)
                 elif "AAAA" not in unmapped_types:
                     unmapped_types.add("AAAA")
                     logger.debug("Skipping DNS AAAA records - no mapping configured")
@@ -141,6 +143,7 @@ class DNSEnricher(BaseEnricher):
         # Warn if unmapped types were encountered
         if unmapped_types:
             self.request._append_warning(
-                f"Skipped DNS record type(s) without mappings: {', '.join(sorted(unmapped_types))}. "
-                f"Configure DNSMapping in Django admin to extract these records."
+                f"Some DNS record types were skipped because no mapping exists for them: "
+                f"{', '.join(sorted(unmapped_types))}. "
+                f"An administrator can add DNS type mappings in the admin site."
             )

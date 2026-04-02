@@ -13,10 +13,10 @@ class EntriesErrorCodes(ErrorCode):
         "Entry Type Mismatch",
         "entry-type-mismatch",
     )
-    CANNOT_ALIAS_TO_ENTITY = (
+    INVALID_ALIAS_TARGET = (
         status.HTTP_409_CONFLICT,
-        "Cannot Alias to Entity",
-        "cannot-alias-to-entity",
+        "Invalid Alias Target",
+        "invalid-alias-target",
     )
     ENTRY_TYPE_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
@@ -29,43 +29,42 @@ class EntriesErrorCodes(ErrorCode):
         "Duplicate Entity",
         "duplicate-entity",
     )
-    INVALID_REGEX = (status.HTTP_409_CONFLICT, "Invalid Regex", "invalid-regex")
+    INVALID_PATTERN = (
+        status.HTTP_409_CONFLICT,
+        "Invalid Pattern",
+        "invalid-pattern",
+    )
     INVALID_ENTRY = (status.HTTP_409_CONFLICT, "Invalid Entry", "invalid-entry")
-    ALIAS_CANNOT_BE_LINKED = (
+    NOTE_REFERENCE_NOT_ALLOWED = (
         status.HTTP_409_CONFLICT,
-        "Alias Cannot Be Linked",
-        "alias-cannot-be-linked",
+        "Note Reference Not Allowed",
+        "note-reference-not-allowed",
     )
-    INVALID_CLASS_FORMAT = (
+    INVALID_ENTRY_TYPE_SETTINGS = (
         status.HTTP_409_CONFLICT,
-        "Invalid Class Format",
-        "invalid-class-format",
+        "Invalid Entry Type Settings",
+        "invalid-entry-type-settings",
     )
-    ENTRY_MUST_HAVE_SUBTYPE = (
+    ENTRY_TYPE_REQUIRED = (
         status.HTTP_400_BAD_REQUEST,
-        "Entry Must Have Subtype",
-        "entry-must-have-subtype",
+        "Entry Type Required",
+        "entry-type-required",
     )
-    CLASS_BREAKS_HIERARCHY = (
+    INVALID_ENTRY_HIERARCHY = (
         status.HTTP_400_BAD_REQUEST,
-        "Class Breaks Hierarchy",
-        "class-breaks-hierarchy",
+        "Invalid Entry Hierarchy",
+        "invalid-entry-hierarchy",
     )
-    OUT_OF_ENTITY_SLOTS = (
+    ENTITY_LIMIT_EXCEEDED = (
         status.HTTP_400_BAD_REQUEST,
-        "Out of Entity Slots",
-        "out-of-entity-slots",
+        "Entity Limit Exceeded",
+        "entity-limit-exceeded",
     )
     ENTRY_NOT_FOUND = (status.HTTP_404_NOT_FOUND, "Entry Not Found", "entry-not-found")
     ENTITY_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
         "Entity Not Found",
         "entity-not-found",
-    )
-    ENTRY_CLASS_NOT_FOUND = (
-        status.HTTP_404_NOT_FOUND,
-        "Entry Class Not Found",
-        "entry-class-not-found",
     )
     INVALID_ENTRY_TYPE = (
         status.HTTP_400_BAD_REQUEST,
@@ -74,53 +73,53 @@ class EntriesErrorCodes(ErrorCode):
     )
     ADMIN_ONLY_ENTITY_CREATE = (
         status.HTTP_403_FORBIDDEN,
-        "Only Admins Can Create Entities",
+        "Admin Only Entity Create",
         "admin-only-entity-create",
     )
     ADMIN_ONLY_ENTITY_DELETE = (
         status.HTTP_403_FORBIDDEN,
-        "Only Admins Can Delete Entities",
+        "Admin Only Entity Delete",
         "admin-only-entity-delete",
     )
     ADMIN_ONLY_ENTITY_PUBLIC_STATUS = (
         status.HTTP_403_FORBIDDEN,
-        "Only Admins Can Change Entity Public Status",
+        "Admin Only Entity Public Status",
         "admin-only-entity-public-status",
     )
-    ADMIN_ONLY_ENTRY_CLASS_DELETE = (
+    ADMIN_ONLY_ENTRY_TYPE_DELETE = (
         status.HTTP_403_FORBIDDEN,
-        "Only Admins Can Delete Entry Classes",
-        "admin-only-entry-class-delete",
+        "Admin Only Entry Type Delete",
+        "admin-only-entry-type-delete",
     )
-    ADMIN_ONLY_ENTRY_CLASS_TYPE_CHANGE = (
+    ADMIN_ONLY_ENTRY_TYPE_CHANGE = (
         status.HTTP_403_FORBIDDEN,
-        "Only Admins Can Change Entry Class Type",
-        "admin-only-entry-class-type-change",
+        "Admin Only Entry Type Change",
+        "admin-only-entry-type-change",
     )
-    CANNOT_DELETE_ALIAS_CLASS = (
+    CANNOT_DELETE_ALIAS_ENTRY_TYPE = (
         status.HTTP_403_FORBIDDEN,
-        "Cannot Delete Alias Entry Class",
-        "cannot-delete-alias-class",
+        "Cannot Delete Alias Entry Type",
+        "cannot-delete-alias-entry-type",
     )
-    CANNOT_EDIT_ALIAS_CLASS = (
+    CANNOT_EDIT_ALIAS_ENTRY_TYPE = (
         status.HTTP_403_FORBIDDEN,
-        "Cannot Edit Alias Entry Class",
-        "cannot-edit-alias-class",
+        "Cannot Edit Alias Entry Type",
+        "cannot-edit-alias-entry-type",
     )
     ADMIN_ONLY_VIEW_COUNT = (
         status.HTTP_403_FORBIDDEN,
-        "Only Admins Can View Entry Class Count",
+        "Admin Only View Count",
         "admin-only-view-count",
     )
-    INVALID_RELATES_PARAMETER = (
+    INVALID_RELATED_ENTRIES = (
         status.HTTP_400_BAD_REQUEST,
-        "Invalid Relates Parameter",
-        "invalid-relates-parameter",
+        "Invalid Related Entries",
+        "invalid-related-entries",
     )
-    RELATES_PARAMETER_REQUIRED = (
+    RELATED_ENTRIES_REQUIRED = (
         status.HTTP_400_BAD_REQUEST,
-        "Relates Parameter Required",
-        "relates-parameter-required",
+        "Related Entries Required",
+        "related-entries-required",
     )
     RELATION_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
@@ -134,17 +133,32 @@ class EntryTypeMismatchException(CradleAPIException):
 
     error_code = EntriesErrorCodes.ENTRY_TYPE_MISMATCH
 
+    def __init__(self, detail=None, error_code=None, code=None):
+        if detail is None:
+            detail = "The entry type does not match the selection."
+        super().__init__(detail=detail, error_code=error_code, code=code)
 
-class CannotAliasToEntityException(CradleAPIException):
+
+class InvalidAliasTargetException(CradleAPIException):
     """Exception raised when trying to alias from entity to another entity."""
 
-    error_code = EntriesErrorCodes.CANNOT_ALIAS_TO_ENTITY
+    error_code = EntriesErrorCodes.INVALID_ALIAS_TARGET
+
+    def __init__(self, detail=None, error_code=None, code=None):
+        if detail is None:
+            detail = "Only artifact entries can be used as aliases."
+        super().__init__(detail=detail, error_code=error_code, code=code)
 
 
 class EntryTypeNotFoundException(CradleAPIException):
     """Exception raised when entry type is not found."""
 
     error_code = EntriesErrorCodes.ENTRY_TYPE_NOT_FOUND
+
+    def __init__(self, detail=None, error_code=None, code=None):
+        if detail is None:
+            detail = "That entry type could not be found."
+        super().__init__(detail=detail, error_code=error_code, code=code)
 
 
 class DuplicateEntryException(CradleAPIException):
@@ -159,54 +173,73 @@ class DuplicateEntityException(CradleAPIException):
     error_code = EntriesErrorCodes.DUPLICATE_ENTITY
 
 
-class InvalidRegexException(CradleAPIException):
+class InvalidPatternException(CradleAPIException):
     """Exception raised when regex is invalid."""
 
-    error_code = EntriesErrorCodes.INVALID_REGEX
+    error_code = EntriesErrorCodes.INVALID_PATTERN
 
 
 class InvalidEntryException(CradleAPIException):
-    """Exception raised when entry does not obey specified format."""
+    """Exception raised when entry does not match the specified format."""
 
     error_code = EntriesErrorCodes.INVALID_ENTRY
 
-    def __init__(self, entry_class: str, data: str, *args, **kwargs) -> None:
-        detail = f"Entry ({entry_class}: {data}) does not obey the specified format for the entry type!"
+    def __init__(self, entry_class: str, _data: str, *args, **kwargs) -> None:
+        s = str(entry_class)
+        label = s.replace("_", " ").strip() or s
+        detail = f'The value does not match the format required for the entry type "{label}".'
         super().__init__(detail=detail, *args, **kwargs)
 
 
-class AliasCannotBeLinkedException(CradleAPIException):
+class NoteReferenceNotAllowedException(CradleAPIException):
     """Exception raised when trying to link to an alias directly."""
 
-    error_code = EntriesErrorCodes.ALIAS_CANNOT_BE_LINKED
+    error_code = EntriesErrorCodes.NOTE_REFERENCE_NOT_ALLOWED
+
+    def __init__(self, detail=None, error_code=None, code=None):
+        if detail is None:
+            detail = "That entry type cannot be referenced from a note."
+        super().__init__(detail=detail, error_code=error_code, code=code)
 
 
-class InvalidClassFormatException(CradleAPIException):
+class InvalidEntryTypeSettingsException(CradleAPIException):
     """Exception raised when entry class has invalid format specification."""
 
-    error_code = EntriesErrorCodes.INVALID_CLASS_FORMAT
+    error_code = EntriesErrorCodes.INVALID_ENTRY_TYPE_SETTINGS
 
 
-class EntryMustHaveSubtypeException(CradleAPIException):
+class EntryTypeRequiredException(CradleAPIException):
     """Exception raised when entry is missing subtype."""
 
-    error_code = EntriesErrorCodes.ENTRY_MUST_HAVE_SUBTYPE
+    error_code = EntriesErrorCodes.ENTRY_TYPE_REQUIRED
+
+    def __init__(self, detail=None, error_code=None, code=None):
+        if detail is None:
+            detail = "An entry type is required."
+        super().__init__(detail=detail, error_code=error_code, code=code)
 
 
-class ClassBreaksHierarchyException(CradleAPIException):
+class InvalidEntryHierarchyException(CradleAPIException):
     """Exception raised when class conflicts with existing hierarchy."""
 
-    error_code = EntriesErrorCodes.CLASS_BREAKS_HIERARCHY
+    error_code = EntriesErrorCodes.INVALID_ENTRY_HIERARCHY
 
     def __init__(self, entry_class: str, *args, **kwargs) -> None:
-        detail = f"The class conflicts with existing class '{entry_class}'"
+        s = str(entry_class)
+        label = s.replace("_", " ").strip() or s
+        detail = f'The entry type "{label}" cannot be placed here because it conflicts with the existing hierarchy.'
         super().__init__(detail=detail, *args, **kwargs)
 
 
-class OutOfEntitySlotsException(CradleAPIException):
+class EntityLimitExceededException(CradleAPIException):
     """Exception raised when user has run out of entity slots."""
 
-    error_code = EntriesErrorCodes.OUT_OF_ENTITY_SLOTS
+    error_code = EntriesErrorCodes.ENTITY_LIMIT_EXCEEDED
+
+    def __init__(self, detail=None, error_code=None, code=None):
+        if detail is None:
+            detail = "The maximum number of entities has been reached."
+        super().__init__(detail=detail, error_code=error_code, code=code)
 
 
 class EntryNotFoundException(CradleAPIException):
@@ -221,12 +254,6 @@ class EntityNotFoundException(CradleAPIException):
     error_code = EntriesErrorCodes.ENTITY_NOT_FOUND
 
 
-class EntryClassNotFoundException(CradleAPIException):
-    """Exception raised when entry class is not found."""
-
-    error_code = EntriesErrorCodes.ENTRY_CLASS_NOT_FOUND
-
-
 class InvalidEntryTypeException(CradleAPIException):
     """Exception raised when entry type is invalid."""
 
@@ -239,34 +266,40 @@ class AdminOnlyEntityCreateException(CradleAPIException):
     error_code = EntriesErrorCodes.ADMIN_ONLY_ENTITY_CREATE
 
 
+class AdminOnlyEntityDeleteException(CradleAPIException):
+    """Exception raised when non-admin tries to delete an entity."""
+
+    error_code = EntriesErrorCodes.ADMIN_ONLY_ENTITY_DELETE
+
+
 class AdminOnlyEntityPublicStatusException(CradleAPIException):
     """Exception raised when non-admin tries to change entity public status."""
 
     error_code = EntriesErrorCodes.ADMIN_ONLY_ENTITY_PUBLIC_STATUS
 
 
-class AdminOnlyEntryClassDeleteException(CradleAPIException):
+class AdminOnlyEntryTypeDeleteException(CradleAPIException):
     """Exception raised when non-admin tries to delete entry class."""
 
-    error_code = EntriesErrorCodes.ADMIN_ONLY_ENTRY_CLASS_DELETE
+    error_code = EntriesErrorCodes.ADMIN_ONLY_ENTRY_TYPE_DELETE
 
 
-class AdminOnlyEntryClassTypeChangeException(CradleAPIException):
+class AdminOnlyEntryTypeChangeException(CradleAPIException):
     """Exception raised when non-admin tries to change entry class type."""
 
-    error_code = EntriesErrorCodes.ADMIN_ONLY_ENTRY_CLASS_TYPE_CHANGE
+    error_code = EntriesErrorCodes.ADMIN_ONLY_ENTRY_TYPE_CHANGE
 
 
-class CannotDeleteAliasClassException(CradleAPIException):
+class CannotDeleteAliasEntryTypeException(CradleAPIException):
     """Exception raised when trying to delete alias entry class."""
 
-    error_code = EntriesErrorCodes.CANNOT_DELETE_ALIAS_CLASS
+    error_code = EntriesErrorCodes.CANNOT_DELETE_ALIAS_ENTRY_TYPE
 
 
-class CannotEditAliasClassException(CradleAPIException):
+class CannotEditAliasEntryTypeException(CradleAPIException):
     """Exception raised when trying to edit alias entry class."""
 
-    error_code = EntriesErrorCodes.CANNOT_EDIT_ALIAS_CLASS
+    error_code = EntriesErrorCodes.CANNOT_EDIT_ALIAS_ENTRY_TYPE
 
 
 class AdminOnlyViewCountException(CradleAPIException):
@@ -275,16 +308,26 @@ class AdminOnlyViewCountException(CradleAPIException):
     error_code = EntriesErrorCodes.ADMIN_ONLY_VIEW_COUNT
 
 
-class InvalidRelatesParameterException(CradleAPIException):
+class InvalidRelatedEntriesException(CradleAPIException):
     """Exception raised when relates parameter has invalid values."""
 
-    error_code = EntriesErrorCodes.INVALID_RELATES_PARAMETER
+    error_code = EntriesErrorCodes.INVALID_RELATED_ENTRIES
+
+    def __init__(self, detail=None, error_code=None, code=None):
+        if detail is None:
+            detail = "One or more related entries are invalid or could not be read."
+        super().__init__(detail=detail, error_code=error_code, code=code)
 
 
-class RelatesParameterRequiredException(CradleAPIException):
+class RelatedEntriesRequiredException(CradleAPIException):
     """Exception raised when relates parameter is missing."""
 
-    error_code = EntriesErrorCodes.RELATES_PARAMETER_REQUIRED
+    error_code = EntriesErrorCodes.RELATED_ENTRIES_REQUIRED
+
+    def __init__(self, detail=None, error_code=None, code=None):
+        if detail is None:
+            detail = "Select at least one related entry."
+        super().__init__(detail=detail, error_code=error_code, code=code)
 
 
 class RelationNotFoundException(CradleAPIException):

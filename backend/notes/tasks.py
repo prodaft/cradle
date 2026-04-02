@@ -24,7 +24,7 @@ from management.settings import cradle_settings
 from user.models import CradleUser
 
 from .enums import NoteStatus
-from .exceptions import EntriesDoNotExistException, EntryClassesDoNotExistException
+from .exceptions import EntriesNotFoundException, EntryTypesNotFoundException
 from .markdown.to_links import Link
 from .markdown.to_metadata import infer_metadata
 from .models import Note
@@ -214,18 +214,18 @@ def entry_class_creation_task(note_id, user_id=None):
         existing = set(EntryClass.objects.filter(subtype__in=unique_subtypes).values_list("subtype", flat=True))
         missing = unique_subtypes - existing
 
-        nonexistent_entries = set()
+        nonexistent_subtypes = set()
         for subtype in missing:
             if not cradle_settings.notes.allow_dynamic_entry_class_creation:
-                nonexistent_entries.add(subtype)
+                nonexistent_subtypes.add(subtype)
             else:
                 entry = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype=subtype)
                 if user_id:
                     entry.log_create(user)
 
-        if nonexistent_entries:
-            raise EntryClassesDoNotExistException(nonexistent_entries)
-    except EntryClassesDoNotExistException as e:
+        if nonexistent_subtypes:
+            raise EntryTypesNotFoundException(nonexistent_subtypes)
+    except EntryTypesNotFoundException as e:
         note.set_status(NoteStatus.INVALID, e.detail)
         note.save()
 
@@ -283,7 +283,7 @@ def entry_population_task(note_id, user_id=None):
                     logger.warning(f"Entry class {r.key} does not exist. Skipping entry creation.")
                     continue
                 if ec.type == EntryType.ENTITY:
-                    raise EntriesDoNotExistException([r])
+                    raise EntriesNotFoundException([r])
                 if ec.type == EntryType.ARTIFACT:
                     try:
                         entries.append(Entry(name=r.value, entry_class=ec))
@@ -336,7 +336,7 @@ def entry_population_task(note_id, user_id=None):
                 scan_for_children.delay(childscan, content_type.id, note.id)
 
             note.save()
-    except EntriesDoNotExistException as e:
+    except EntriesNotFoundException as e:
         note.set_status(NoteStatus.INVALID, e.detail)
         note.save()
 

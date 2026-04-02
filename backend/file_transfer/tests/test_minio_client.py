@@ -1,4 +1,4 @@
-from ..exceptions import MinioObjectNotFound
+from ..exceptions import StoredFileNotFoundException
 from ..utils import MinioClient
 from .utils import FileTransferTestCase
 
@@ -35,7 +35,7 @@ class TestMinioClient(FileTransferTestCase):
         self.assertEqual(presigned, self.presigned_url)
 
     def test_create_presigned_get_exception(self):
-        with self.assertRaises(MinioObjectNotFound):
+        with self.assertRaises(StoredFileNotFoundException):
             MinioClient().create_presigned_get("wrong bucket", self.minio_file_name, self.expiry_time)
 
     def test_file_exists_at_path_true(self):

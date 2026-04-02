@@ -26,9 +26,9 @@ from core.throttling import AuthRateThrottle
 from ..exceptions import (
     AccountNotActivatedException,
     EmailNotConfirmedException,
-    InvalidCredentialsException,
-    InvalidRefreshTokenException,
-    InvalidTwoFactorTokenException,
+    InvalidTwoFactorCodeException,
+    SessionRenewalFailedException,
+    SignInFailedException,
     TwoFactorRequiredException,
     UserErrorCodes,
 )
@@ -106,8 +106,8 @@ def create_or_update_session(request: Request, user, refresh_token: RefreshToken
                 UserErrorCodes.EMAIL_NOT_CONFIRMED,
                 UserErrorCodes.ACCOUNT_NOT_ACTIVATED,
                 UserErrorCodes.TWO_FACTOR_REQUIRED,
-                UserErrorCodes.INVALID_TWO_FACTOR_TOKEN,
-                UserErrorCodes.INVALID_CREDENTIALS,
+                UserErrorCodes.INVALID_TWO_FACTOR_CODE,
+                UserErrorCodes.SIGN_IN_FAILED,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -126,30 +126,28 @@ class TokenObtainPairLogView(TokenObtainPairView):
         try:
             serializer.is_valid(raise_exception=True)
         except TokenError as e:
-            raise InvalidToken(e.args[0])
-        except AuthenticationFailed as e:
-            detail = "No active account found with the given credentials"
-            if hasattr(e, "detail") and e.detail:
-                detail = str(e.detail[0]) if isinstance(e.detail, list) else str(e.detail)
-            raise InvalidCredentialsException(detail=detail)
+            logger.debug("Token validation failed during sign-in: %s", e)
+            raise SignInFailedException(detail="Email or password is incorrect.")
+        except AuthenticationFailed:
+            raise SignInFailedException(detail="Email or password is incorrect.")
 
         user = serializer.user
 
         if not user.email_confirmed:
-            raise EmailNotConfirmedException(detail="Your email is not confirmed")
+            raise EmailNotConfirmedException(detail="Your email is not confirmed.")
 
         if not user.is_active:
-            raise AccountNotActivatedException(detail="Your account is not activated")
+            raise AccountNotActivatedException(detail="Your account is not activated.")
 
         # Check if 2FA is enabled
         if user.two_factor_enabled:
             # If no 2FA token provided, return a special response
             if "two_factor_token" not in request.data:
-                raise TwoFactorRequiredException(detail="2FA token required")
+                raise TwoFactorRequiredException(detail="A two-factor authentication code is required.")
 
             # Verify 2FA token
             if not user.verify_2fa_token(request.data["two_factor_token"]):
-                raise InvalidTwoFactorTokenException(detail="Invalid 2FA token")
+                raise InvalidTwoFactorCodeException(detail="The two-factor authentication code is invalid.")
 
         # Add role and token expiry times to response
         response_data = serializer.validated_data.copy()
@@ -193,7 +191,7 @@ class TokenObtainPairLogView(TokenObtainPairView):
         responses={
             200: TokenPairRetrieveSerializer,
             **get_error_responses(
-                UserErrorCodes.INVALID_REFRESH_TOKEN,
+                UserErrorCodes.SESSION_RENEWAL_FAILED,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -209,7 +207,7 @@ class TokenRefreshLogView(TokenRefreshView):
         refresh_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
         refresh_token_str = request.data.get("refresh") or request.COOKIES.get(refresh_name)
         if not refresh_token_str:
-            raise UnauthenticatedException(detail="No refresh token provided")
+            raise UnauthenticatedException(detail="Your session could not be renewed. Please sign in again.")
 
         # Inject into request data so the parent serializer sees it
         request._full_data = {**request.data, "refresh": refresh_token_str}
@@ -219,17 +217,16 @@ class TokenRefreshLogView(TokenRefreshView):
             old_refresh_token = RefreshToken(refresh_token_str)
             jti = old_refresh_token.get("jti")
             if jti and BlacklistedToken.is_blacklisted(jti):
-                raise InvalidRefreshTokenException(detail="Token has been revoked")
-        except (TokenError, InvalidToken) as e:
-            raise InvalidRefreshTokenException(detail=str(e.args[0]) if e.args else "Invalid or expired refresh token")
+                raise SessionRenewalFailedException(detail="This session has ended. Please sign in again.")
+        except (TokenError, InvalidToken):
+            raise SessionRenewalFailedException(detail="Your session could not be renewed. Please sign in again.")
         except (ValueError, TypeError, AttributeError) as e:
             logger.debug("Could not parse refresh token for blacklist check: %s", e)
 
         try:
             response = super().post(request, *args, **kwargs)
-        except (TokenError, InvalidToken) as e:
-            detail = str(e.args[0]) if e.args else "Invalid or expired refresh token"
-            raise InvalidRefreshTokenException(detail=detail)
+        except (TokenError, InvalidToken):
+            raise SessionRenewalFailedException(detail="Your session could not be renewed. Please sign in again.")
 
         if response.status_code == 200:
             old_refresh_token = RefreshToken(refresh_token_str)
@@ -259,14 +256,19 @@ class TokenRefreshLogView(TokenRefreshView):
 
             try:
                 jwt_auth = JWTAuthentication()
-                validated_token = jwt_auth.get_validated_token(old_refresh_token)
-                user = jwt_auth.get_user(validated_token)
+                user = jwt_auth.get_user(old_refresh_token)
 
                 old_jti = old_refresh_token.get("jti")
                 if old_jti and new_refresh_token_str != refresh_token_str:
                     UserSession.objects.filter(refresh_token_jti=old_jti).delete()
                 create_or_update_session(request, user, new_refresh_token, refresh_expires_at)
-            except (TokenError, InvalidToken, IntegrityError, DatabaseError) as e:
+            except (
+                TokenError,
+                InvalidToken,
+                AuthenticationFailed,
+                IntegrityError,
+                DatabaseError,
+            ) as e:
                 logger.warning("Session update failed during token refresh: %s", e)
 
         return response

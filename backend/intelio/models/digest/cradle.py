@@ -28,9 +28,9 @@ class CradleDigest(BaseDigest):
         with open(self.path, "r") as report_file:
             try:
                 report_data = json.load(report_file)
-            except json.JSONDecodeError as e:
+            except json.JSONDecodeError:
                 self.status = DigestStatus.ERROR
-                self.errors = ["Invalid JSON format: " + e.msg]
+                self.errors = ["The file contains invalid JSON."]
                 self.save()
                 return
 
@@ -60,12 +60,12 @@ class CradleDigest(BaseDigest):
             created_notes = []
             download_tasks = []
 
-            for idx, note_data in enumerate(report_data.get("notes", [])):
+            for note_data in report_data.get("notes", []):
                 scheduler = TaskScheduler(self.user, content=note_data["content"], digest=self)
                 try:
                     created_note = scheduler.run_pipeline(validate=True)
                 except Exception:
-                    self._append_error(f"Failed to create note {idx}")
+                    self._append_error("A note could not be created from this report.")
                     continue
 
                 file_urls = note_data.get("file_urls", {})
@@ -93,6 +93,6 @@ class CradleDigest(BaseDigest):
                 self.finalize()
         except Exception as e:
             self.status = DigestStatus.ERROR
-            self.errors = [str(e)]
+            self.errors = ["The file could not be processed."]
             self.save()
             raise e

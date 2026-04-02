@@ -288,6 +288,31 @@ class BaseEnricher:
         return None
 
     @classmethod
+    def display_label_for_type(cls, enricher_type: str) -> str:
+        """Human-readable label for an enricher implementation (not a Python class name)."""
+        config_cls = cls.get_subclass(enricher_type)
+        if config_cls and getattr(config_cls, "display_name", None):
+            return config_cls.display_name
+        base = enricher_type[:-8] if enricher_type.endswith("Enricher") else enricher_type
+        b = str(base)
+        return (b.replace("_", " ").strip() or b) or enricher_type
+
+    @classmethod
+    def enricher_messages_for_ui(cls, raw: dict | None) -> dict[str, list]:
+        """Map per-enricher keys from internal class names to display labels (errors, warnings, etc.)."""
+        if not raw:
+            return {}
+        out: dict[str, list] = {}
+        for enricher_type, msgs in raw.items():
+            label = cls.display_label_for_type(enricher_type)
+            msg_list = list(msgs) if msgs is not None else []
+            if label in out:
+                out[label] = out[label] + msg_list
+            else:
+                out[label] = msg_list
+        return out
+
+    @classmethod
     def get_default_settings(cls):
         """Build a dictionary of default settings values based on the defined model fields."""
         defaults = {}
@@ -305,8 +330,21 @@ class BaseEnricher:
         for field_name, field in cls.settings_fields.items():
             try:
                 field.clean(settings_data.get(field_name), None)
-            except Exception as e:
-                errors[field_name] = str(e)
+            except ValidationError as e:
+                msgs = getattr(e, "messages", None)
+                if msgs:
+                    errors[field_name] = msgs[0]
+                elif getattr(e, "message", None):
+                    errors[field_name] = e.message
+                else:
+                    errors[field_name] = "This value is not valid."
+            except Exception:
+                logger.warning(
+                    "Unexpected error validating enricher setting %s",
+                    field_name,
+                    exc_info=True,
+                )
+                errors[field_name] = "This value is not valid."
         return errors
 
 
@@ -331,16 +369,16 @@ class EnricherSettings(models.Model):
     def clean(self):
         config = BaseEnricher.get_subclass(self.enricher_type)
         if config is None:
-            raise ValidationError(f"Unknown enricher type: {self.enricher_type}")
+            raise ValidationError("That enrichment is not available.")
         errors = config.validate_settings(self.settings)
         if errors:
-            raise ValidationError(errors)
+            raise ValidationError({str(k): v for k, v in errors.items()})
 
     def enricher(self, request: "EnrichmentRequest"):
         """Return the enricher class based on the enricher_type."""
         config = BaseEnricher.get_subclass(self.enricher_type)
         if config is None:
-            raise ValidationError(f"Unknown enricher type: {self.enricher_type}")
+            raise ValidationError("That enrichment is not available.")
         return config(settings=self.settings, request=request)
 
 
@@ -431,20 +469,20 @@ class EnrichmentRequest(LifecycleModel):
         # (not during initial creation when M2M fields haven't been set yet)
         if not self._state.adding:
             if not self.enrichers_settings.count():
-                raise ValidationError("At least one enricher must be selected")
+                raise ValidationError("Select at least one enrichment.")
 
             if not self.entities.count():
-                raise ValidationError("At least one entity must be selected")
+                raise ValidationError("Select at least one entity.")
 
         if not isinstance(self.request, list):
-            raise ValidationError({"request": "Must be a list"})
+            raise ValidationError({"request": "Provide a list of items to enrich, not a single value."})
 
         classes = set()
         try:
             for req in self.request:
                 classes.add(EnrichmentRequestSchema(**req).entry_class)
-        except PydanticValidationError as e:
-            raise ValidationError({"request": str(e)})
+        except PydanticValidationError:
+            raise ValidationError({"request": "Each item must include an entry type and a name for that type."})
 
         if EntryClass.objects.filter(subtype__in=classes, type=EntryType.ARTIFACT).count() != len(classes):
             invalid_classes = classes - set(
@@ -452,7 +490,13 @@ class EnrichmentRequest(LifecycleModel):
                     "subtype", flat=True
                 )
             )
-            raise ValidationError({"request": f"Invalid entry classes: {invalid_classes}"})
+            labels = [(str(c).replace("_", " ").strip() or str(c)) for c in sorted(invalid_classes)]
+            names = ", ".join(labels)
+            if len(labels) == 1:
+                msg = f'This entry type cannot be used for enrichment: "{names}".'
+            else:
+                msg = f'These entry types cannot be used for enrichment: "{names}".'
+            raise ValidationError({"request": msg})
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -478,7 +522,7 @@ class EnrichmentRequest(LifecycleModel):
             subclass = BaseEnricher.get_subclass(enricher_settings.enricher_type)
 
             if subclass is None:
-                raise ValidationError(f"Unknown enricher type: {enricher_settings.enricher_type}")
+                raise ValidationError("That enrichment is not available.")
             config = subclass(settings=enricher_settings.settings, request=self)
             config.id = enricher_settings.id
             enrichers.append(config)
@@ -620,11 +664,15 @@ class EnrichmentRequest(LifecycleModel):
 
         if instance.status == EnrichmentStatus.ERROR:
             # All enrichers failed
+            labeled = BaseEnricher.enricher_messages_for_ui(instance.errors)
+            lines = [f"{label}: {msg}" for label, msgs in labeled.items() for msg in msgs]
+            error_body = "\n".join(lines) if lines else "An error occurred while processing your enrichment."
+
             EnrichmentErrorNotification.objects.create(
                 user=instance.user,
                 message=f"There was an error processing your enrichment: {instance.title}",
                 enrichment_request=instance,
-                error_message=str(instance.errors),
+                error_message=error_body,
             )
         elif instance.status in [EnrichmentStatus.DONE, EnrichmentStatus.WARNING]:
             # At least some enrichers succeeded
