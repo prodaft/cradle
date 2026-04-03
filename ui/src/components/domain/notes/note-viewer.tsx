@@ -34,7 +34,6 @@ import { cn } from '@/lib/utils';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import extractHeaderHierarchy, { HeaderNode } from '@/utils/editor/outline';
-import { logger } from '@/utils/logger';
 import { Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
 import { BookOpenIcon, InfoIcon, PencilSimpleIcon } from '@phosphor-icons/react';
@@ -313,7 +312,6 @@ export default function NoteViewer() {
         setEnrichmentDialogOpen(true);
     }, [editorUtils]);
 
-    // Query for note metadata
     const {
         data: noteData,
         isLoading,
@@ -340,7 +338,11 @@ export default function NoteViewer() {
         enableEditingRef.current = { enableEditing, router, location, search };
     }, [enableEditing, router, location, search]);
 
-    // Update state when note data is loaded
+    const editorDraftRef = useRef({ markdownContent: '', initialMarkdown: '' });
+    editorDraftRef.current = { markdownContent, initialMarkdown };
+
+    const prevNoteIdForDetailRef = useRef<string | null>(null);
+
     useEffect(() => {
         if (!noteData) {
             setNote(null);
@@ -348,10 +350,10 @@ export default function NoteViewer() {
             setFileData([]);
             setMarkdownContent('');
             setInitialMarkdown('');
+            prevNoteIdForDetailRef.current = null;
             return;
         }
 
-        logger.info('NoteViewer - Note loaded successfully', { noteData });
         setNote(noteData);
         const nextIsFleeting = Boolean(noteData.fleeting);
         setIsFleeting(nextIsFleeting);
@@ -363,13 +365,24 @@ export default function NoteViewer() {
                 replace: true,
             });
         }
-        setMarkdownContent(noteData.content);
-        setInitialMarkdown(noteData.content);
-        setFileData(noteData.files || EMPTY_FILES);
-        setHasUnsavedChanges(false);
-    }, [noteData]);
 
-    // Mutation for deleting note
+        const switchedNote = prevNoteIdForDetailRef.current !== noteId;
+        prevNoteIdForDetailRef.current = noteId;
+
+        const { markdownContent: md, initialMarkdown: init } = editorDraftRef.current;
+        const applyServerBody =
+            switchedNote ||
+            (md === init && noteData.content !== md);
+
+        if (applyServerBody) {
+            setMarkdownContent(noteData.content);
+            setInitialMarkdown(noteData.content);
+            setHasUnsavedChanges(false);
+        }
+
+        setFileData(noteData.files || EMPTY_FILES);
+    }, [noteData, noteId]);
+
     const deleteMutation = useMutation({
         mutationFn: async () => {
             const { error, response } = await fetchClient.DELETE('/notes/{note_id}/', {
@@ -386,13 +399,7 @@ export default function NoteViewer() {
         },
     });
 
-    // Use a ref to store the latest values for the save function
-    const saveDataRef = useRef({ markdownContent });
     const lastSaveFailedRef = useRef(false);
-
-    useEffect(() => {
-        saveDataRef.current = { markdownContent };
-    }, [markdownContent]);
 
     useEffect(() => {
         lastSaveFailedRef.current = false;
@@ -422,7 +429,7 @@ export default function NoteViewer() {
         async (showAlert = false) => {
             if (!noteId) return;
 
-            const { markdownContent: content } = saveDataRef.current;
+            const content = editorDraftRef.current.markdownContent;
 
             if (!content || content.trim().length === 0) {
                 toast.error('Cannot save empty note.');

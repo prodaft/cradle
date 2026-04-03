@@ -519,7 +519,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     saveNoteRef.current(true);
                 } catch (error) {
                     toast.error('Failed to save note. Please try again with Ctrl-S.');
-                    logger.error('Failed to save note:', error);
+                    logger.error('Save via Vim :w failed', error);
                 }
                 return true;
             });
@@ -550,7 +550,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     useEffect(() => {
         if (!editorViewRef.current && editorRef.current && extensions.length > 0) {
             try {
-                logger.debug('[RichEditor] initializing editor', {
+                logger.debug('Editor init', {
                     noteId: noteid,
                     initialDocLength: markdownContent.length,
                     extensionsCount: extensions.length,
@@ -568,7 +568,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 editorViewRef.current = view;
                 setEditorReady(true);
             } catch (error) {
-                logger.error('Failed to initialize RichEditor:', error);
+                logger.error('Editor init failed', error);
                 toast.error(
                     `Failed to initialize editor: ${error instanceof Error ? error.message : 'Unknown error'}. Please refresh the page.`,
                 );

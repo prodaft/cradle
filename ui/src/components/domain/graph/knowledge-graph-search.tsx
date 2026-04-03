@@ -83,7 +83,7 @@ export default function KnowledgeGraphSearch({
                     nodes = Array.from(byId.values());
                 }
             } catch (e) {
-                logger.error('[KnowledgeGraphSearch] Error processing entries:', e);
+                logger.error('Knowledge graph: parse search entries failed', e);
             }
 
             const edges: EdgeRelation[] =

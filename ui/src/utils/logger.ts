@@ -2,11 +2,11 @@
  * Logger utility for consistent logging across the application
  *
  * Provides structured logging with different levels and optional metadata.
- * In production, debug logs are automatically filtered out.
- * Errors are automatically sent to Sentry when configured.
+ * Debug and info only run in development; warn/error always hit the console.
+ * In production with a DSN, errors (and warnings with meta.important) are forwarded to Sentry.
  */
 
-import * as Sentry from '@sentry/react';
+import * as Sentry from '@sentry/tanstackstart-react';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -14,25 +14,20 @@ interface LogMeta {
     [key: string]: unknown;
 }
 
-const isDevelopment = Boolean(
-    import.meta.env.DEV || import.meta.env.MODE === 'development',
-);
-const isProduction = Boolean(
-    import.meta.env.PROD || import.meta.env.MODE === 'production',
-);
+const isDevelopment = import.meta.env.DEV;
+const sentryLoggerTags = { logger: 'utils/logger' } as const;
+const sentryLoggerError = {
+    level: 'error' as const,
+    tags: sentryLoggerTags,
+};
+const sentryLoggerWarning = {
+    level: 'warning' as const,
+    tags: sentryLoggerTags,
+};
 
-/**
- * Check if Sentry is configured and available
- */
-function isSentryAvailable(): boolean {
-    return typeof window !== 'undefined' && !!import.meta.env.VITE_SENTRY_DSN;
-}
-
-/**
- * Check if debug logging is enabled
- */
-function isDebugEnabled(): boolean {
-    return Boolean(isDevelopment);
+function shouldForwardLoggerToSentry(): boolean {
+    if (typeof window === 'undefined' || !import.meta.env.VITE_SENTRY_DSN) return false;
+    return import.meta.env.PROD;
 }
 
 /**
@@ -44,6 +39,22 @@ function formatMessage(level: LogLevel, message: string, meta?: LogMeta): string
     return `${prefix} ${message}${metaStr}`;
 }
 
+function logInDevelopment(
+    level: 'debug' | 'info',
+    message: string,
+    meta?: LogMeta,
+): void {
+    if (!isDevelopment) return;
+    const out = formatMessage(level, message, meta);
+    if (level === 'debug') {
+        // eslint-disable-next-line no-console
+        console.debug(out);
+        return;
+    }
+    // eslint-disable-next-line no-console
+    console.info(out);
+}
+
 /**
  * Logger utility with different log levels
  */
@@ -51,20 +62,14 @@ export const logger = {
     /**
      * Debug logs - only shown in development
      */
-    debug: (message: string, meta?: LogMeta): void => {
-        if (!isDebugEnabled()) return;
-        // eslint-disable-next-line no-console
-        console.debug(formatMessage('debug', message, meta));
-    },
+    debug: (message: string, meta?: LogMeta): void =>
+        logInDevelopment('debug', message, meta),
 
     /**
      * Info logs - general information
      */
-    info: (message: string, meta?: LogMeta): void => {
-        if (!isDevelopment) return; // Only log info in development
-        // eslint-disable-next-line no-console
-        console.info(formatMessage('info', message, meta));
-    },
+    info: (message: string, meta?: LogMeta): void =>
+        logInDevelopment('info', message, meta),
 
     /**
      * Warning logs - non-critical issues
@@ -73,14 +78,9 @@ export const logger = {
     warn: (message: string, meta?: LogMeta): void => {
         console.warn(formatMessage('warn', message, meta));
 
-        // Optionally send important warnings to Sentry in production
-        // Only if meta indicates it's important (e.g., meta.important === true)
-        if (isProduction && isSentryAvailable() && meta?.important === true) {
+        if (shouldForwardLoggerToSentry() && meta?.important === true) {
             Sentry.captureMessage(message, {
-                level: 'warning',
-                tags: {
-                    logger: 'utils/logger',
-                },
+                ...sentryLoggerWarning,
                 extra: meta,
             });
         }
@@ -91,9 +91,10 @@ export const logger = {
      * Automatically sends to Sentry in production when configured
      */
     error: (message: string, error?: Error | unknown, meta?: LogMeta): void => {
+        const asError = error instanceof Error ? error : undefined;
         const errorInfo =
-            error instanceof Error
-                ? { error: error.message, stack: error.stack }
+            asError !== undefined
+                ? { error: asError.message, stack: asError.stack }
                 : error
                   ? { error: String(error) }
                   : {};
@@ -101,42 +102,25 @@ export const logger = {
         const fullMeta = { ...errorInfo, ...meta };
         console.error(formatMessage('error', message, fullMeta));
 
-        // Send to Sentry in production when configured
-        if (isProduction && isSentryAvailable()) {
-            if (error instanceof Error) {
-                // Capture exception with context
-                Sentry.captureException(error, {
-                    level: 'error',
-                    tags: {
-                        logger: 'utils/logger',
-                    },
-                    extra: {
-                        message,
-                        ...meta,
-                    },
-                });
-            } else if (error) {
-                // Capture message for non-Error objects
-                Sentry.captureMessage(message, {
-                    level: 'error',
-                    tags: {
-                        logger: 'utils/logger',
-                    },
-                    extra: {
-                        error: String(error),
-                        ...meta,
-                    },
-                });
-            } else {
-                // Capture message only
-                Sentry.captureMessage(message, {
-                    level: 'error',
-                    tags: {
-                        logger: 'utils/logger',
-                    },
-                    extra: meta,
-                });
-            }
+        if (!shouldForwardLoggerToSentry()) return;
+
+        if (asError !== undefined) {
+            Sentry.captureException(asError, {
+                ...sentryLoggerError,
+                extra: { message, ...meta },
+            });
+            return;
         }
+        if (error) {
+            Sentry.captureMessage(message, {
+                ...sentryLoggerError,
+                extra: { error: String(error), ...meta },
+            });
+            return;
+        }
+        Sentry.captureMessage(message, {
+            ...sentryLoggerError,
+            extra: meta,
+        });
     },
 };

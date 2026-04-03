@@ -112,7 +112,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         // Filter valid nodes
         const nodesToAdd = nodesToProcess.filter((node) => {
             if (!node.id) {
-                logger.warn('[GraphExplorer] Node missing id', { node });
+                logger.warn('Skipping graph node without id', { node });
                 return false;
             }
             return !nodeIds.has(node.id);
@@ -125,7 +125,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         const edgesToAdd = edgesToProcess.filter((edge) => {
             // Validate required properties
             if (!edge.id || edge.src == null || edge.dst == null) {
-                logger.warn('[GraphExplorer] Edge missing required properties', {
+                logger.warn('Skipping graph edge with missing id, src, or dst', {
                     edge,
                 });
                 return false;
@@ -145,7 +145,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
             const dstExists = allNodeIds.has(dstStr);
 
             if (!srcExists || !dstExists) {
-                logger.warn('[GraphExplorer] Edge references non-existent node(s)', {
+                logger.warn('Skipping graph edge with unknown endpoint', {
                     edgeId: edge.id,
                     src: edge.src,
                     dst: edge.dst,

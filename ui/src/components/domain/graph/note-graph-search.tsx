@@ -99,7 +99,7 @@ export default function NoteGraphSearch(
                             if (nodes.length > 0) hasData = true;
                         }
                     } catch (e) {
-                        logger.error('[NoteGraphSearch] Error processing entries:', e);
+                        logger.error('Note graph: parse search entries failed', e);
                     }
                 }
 
@@ -132,7 +132,7 @@ export default function NoteGraphSearch(
                     setAlert({ show: false, message: '', color: 'red' });
                 }
             } catch (e) {
-                logger.error('[NoteGraphSearch] Error processing graph data:', e);
+                logger.error('Note graph: apply graph data failed', e);
             }
         }, [graphData, addBoth, addNodes, addEdges]);
 

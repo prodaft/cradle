@@ -1,15 +1,19 @@
+import { sentryTanstackStart } from '@sentry/tanstackstart-react/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import dns from 'dns';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
 dns.setDefaultResultOrder('verbatim');
 
 export default defineConfig(({ mode }) => {
-    const isDev = mode === 'development';
+    const env = loadEnv(mode, process.cwd(), '');
+    const sentryAuthToken = env.SENTRY_AUTH_TOKEN || process.env.SENTRY_AUTH_TOKEN;
+    const sentryOrg = env.SENTRY_ORG || process.env.SENTRY_ORG;
+    const sentryProject = env.SENTRY_PROJECT || process.env.SENTRY_PROJECT;
 
     return {
         base: '/',
@@ -18,14 +22,25 @@ export default defineConfig(({ mode }) => {
             tanstackStart({
                 spa: { enabled: true },
                 client: { entry: 'entry-client.tsx' },
+                server: { entry: 'server.ts' },
+                start: { entry: 'start.ts' },
                 prerender: { failOnError: false },
             }),
             tailwindcss(),
             react(),
             visualizer(),
+            ...(sentryAuthToken && sentryOrg && sentryProject
+                ? [
+                      sentryTanstackStart({
+                          org: sentryOrg,
+                          project: sentryProject,
+                          authToken: sentryAuthToken,
+                      }),
+                  ]
+                : []),
         ],
         build: {
-            sourcemap: isDev,
+            sourcemap: true,
         },
         server: { port: 5173 },
         optimizeDeps: {

@@ -235,8 +235,8 @@ function GraphContent({
                             neighborNodes.unshift(node);
                             newNodes = new Set(neighborNodes);
                         } catch (e) {
-                            logger.warn('[Graph] Error getting neighbors:', {
-                                error: e,
+                            logger.warn('Sigma neighbors lookup failed', {
+                                cause: e,
                             });
                         }
                     }
@@ -245,7 +245,7 @@ function GraphContent({
                         onTogglePanel('explorer');
                     }
                 } catch (error) {
-                    logger.error('[Graph] Error in clickNode:', error);
+                    logger.error('Graph node click failed', error);
                 }
             },
             clickStage: () => {
@@ -265,7 +265,7 @@ function GraphContent({
                         onTogglePanel('explorer');
                     }
                 } catch (error) {
-                    logger.error('[Graph] Error in clickEdge:', error);
+                    logger.error('Graph edge click failed', error);
                 }
             },
             downNode: (event) => {
@@ -486,7 +486,7 @@ export default function GraphViewer({
     const validNodes = useMemo(() => {
         return nodes.filter((node) => {
             const isValid = node.id != null && node.id !== '';
-            if (!isValid) logger.warn('[Graph] Filtered out invalid node:', { node });
+            if (!isValid) logger.warn('Skipping graph node without id', { node });
             return isValid;
         });
     }, [nodes]);

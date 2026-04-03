@@ -1,16 +1,35 @@
 import { PageLoader } from '@/components/base/page-loader';
 import { QueryProvider } from '@/contexts/query/query-provider';
 import { ThemeProvider } from '@/contexts/ui';
-import * as Sentry from '@sentry/react';
 import '@styles/main.css';
-import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
+import * as Sentry from '@sentry/tanstackstart-react';
+import {
+    createRootRoute,
+    HeadContent,
+    Outlet,
+    Scripts,
+    type ErrorComponentProps,
+} from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { Suspense, useEffect, type ReactNode } from 'react';
 import { AuthProvider } from 'src/components/domain/auth/auth-provider';
 import { Toaster } from 'src/components/ui/sonner';
 import { TooltipProvider } from 'src/components/ui/tooltip';
 
+function RootErrorComponent({ error }: ErrorComponentProps) {
+    useEffect(() => {
+        if (!import.meta.env.VITE_SENTRY_DSN) return;
+        Sentry.captureException(error);
+    }, [error]);
+    return (
+        <div className='flex h-full w-full items-center justify-center p-6 text-sm text-destructive' role='alert'>
+            Something went wrong. Please refresh the page or try again later.
+        </div>
+    );
+}
+
 export const Route = createRootRoute({
+    errorComponent: RootErrorComponent,
     head: () => ({
         meta: [
             { charSet: 'utf-8' },
@@ -44,11 +63,6 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
-    useEffect(() => {
-        const dsn = import.meta.env.VITE_SENTRY_DSN;
-        if (dsn) Sentry.init({ dsn });
-    }, []);
-
     return (
         <RootDocument>
             <AuthProvider>

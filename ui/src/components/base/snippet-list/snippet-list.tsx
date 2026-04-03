@@ -176,7 +176,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                 setDeleteDialogOpen(false);
                 setDeletingSnippet(null);
             } catch (error) {
-                logger.error('Error deleting snippet:', error);
+                logger.error('Delete snippet failed', error);
             }
         };
 
@@ -296,7 +296,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                             };
                             await createMutation.mutateAsync(snippetData);
                         } catch (error) {
-                            logger.error('Error creating snippet:', error);
+                            logger.error('Create snippet failed', error);
                             throw error;
                         }
                     }}
@@ -332,7 +332,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                                     data: snippetData,
                                 });
                             } catch (error) {
-                                logger.error('Error updating snippet:', error);
+                                logger.error('Update snippet failed', error);
                                 throw error;
                             }
                         }}
