@@ -1,7 +1,7 @@
 import { PageLoader } from '@/components/base/page-loader';
+import Dashboard from '@/components/domain/dashboard/dashboard';
 import { fetchClient } from '@services/openapi/client';
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import Dashboard from 'src/components/domain/dashboard/dashboard';
 import * as z from 'zod';
 
 export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name')({

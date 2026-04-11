@@ -16,26 +16,37 @@ logger = logging.getLogger(__name__)
 
 @shared_task
 def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
-    """Run a single enricher for an enrichment request. Appends errors on failure."""
+    """Run a single enricher for an enrichment request inside an isolated container.
+
+    Each enricher executes in a short-lived Docker container with no database
+    connection, no filesystem mounts, and no access to internal Cradle services.
+    Errors are recorded on the ``EnrichmentRequest`` rather than propagated.
+    """
     from entries.tasks import refresh_edges_materialized_view
 
-    request = EnrichmentRequest.objects.get(id=request_id)
-    settings = EnricherSettings.objects.get(id=enricher_id)
-    enricher = settings.enricher(request)
+    from ..runner.docker_runner import run_enricher_container
 
-    entries = request.entries(set(settings.for_eclasses.all().values_list("subtype", flat=True)))
+    request = EnrichmentRequest.objects.get(id=request_id)
+    enricher_settings = EnricherSettings.objects.get(id=enricher_id)
+
+    entries = request.entries(set(enricher_settings.for_eclasses.all().values_list("subtype", flat=True)))
+
     try:
-        enricher.pre_enrich(entries)
-        enricher.enrich(entries)
+        run_enricher_container(
+            enricher_type=enricher_settings.enricher_type,
+            enricher_settings=enricher_settings.settings,
+            entries=entries,
+            request=request,
+        )
     except Exception:
-        label = BaseEnricher.display_label_for_type(settings.enricher_type)
-        logger.exception("Enrichment run failed (%s)", settings.enricher_type)
+        label = BaseEnricher.display_label_for_type(enricher_settings.enricher_type)
+        logger.exception("Enrichment run failed (%s)", enricher_settings.enricher_type)
         error_message = f"{label} could not finish. Please try again."
-        request._append_error(error_message, settings.enricher_type)
-        request._set_enricher_status(settings.enricher_type, EnrichmentStatus.ERROR)
+        request._append_error(error_message, enricher_settings.enricher_type)
+        request._set_enricher_status(enricher_settings.enricher_type, EnrichmentStatus.ERROR)
         return
 
-    request._set_enricher_status(settings.enricher_type, EnrichmentStatus.DONE)
+    request._set_enricher_status(enricher_settings.enricher_type, EnrichmentStatus.DONE)
 
     refresh_edges_materialized_view.apply_async()
     return

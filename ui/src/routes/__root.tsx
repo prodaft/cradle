@@ -1,8 +1,11 @@
 import { PageLoader } from '@/components/base/page-loader';
+import { AuthProvider } from '@/components/domain/auth/auth-provider';
+import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryProvider } from '@/contexts/query/query-provider';
 import { ThemeProvider } from '@/contexts/ui';
-import '@styles/main.css';
 import * as Sentry from '@sentry/tanstackstart-react';
+import '@styles/main.css';
 import {
     createRootRoute,
     HeadContent,
@@ -12,9 +15,6 @@ import {
 } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { Suspense, useEffect, type ReactNode } from 'react';
-import { AuthProvider } from 'src/components/domain/auth/auth-provider';
-import { Toaster } from 'src/components/ui/sonner';
-import { TooltipProvider } from 'src/components/ui/tooltip';
 
 function RootErrorComponent({ error }: ErrorComponentProps) {
     useEffect(() => {
@@ -22,7 +22,10 @@ function RootErrorComponent({ error }: ErrorComponentProps) {
         Sentry.captureException(error);
     }, [error]);
     return (
-        <div className='flex h-full w-full items-center justify-center p-6 text-sm text-destructive' role='alert'>
+        <div
+            className='flex h-full w-full items-center justify-center p-6 text-sm text-destructive'
+            role='alert'
+        >
             Something went wrong. Please refresh the page or try again later.
         </div>
     );

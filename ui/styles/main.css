@@ -3,11 +3,8 @@
    Font imports, Tailwind, and app-specific overrides
    ============================================ */
 
-@import 'tailwindcss';
+@import 'tailwindcss' source('../src');
 @import 'tw-animate-css';
-
-/* Source directive for content scanning */
-@source "../../**/*.{ts,tsx,html}";
 
 /* Custom variant for dark mode */
 @custom-variant dark (&:is([data-theme='dark'] *));

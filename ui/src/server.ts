@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/tanstackstart-react';
 import type { Register } from '@tanstack/react-router';
-import handler, { createServerEntry } from '@tanstack/react-start/server-entry';
 import type { RequestHandler } from '@tanstack/react-start/server';
+import handler, { createServerEntry } from '@tanstack/react-start/server-entry';
 
 const serverDsn = process.env.SENTRY_DSN ?? process.env.VITE_SENTRY_DSN;
 if (serverDsn) {

@@ -308,3 +308,14 @@ DEFAULT_SETTINGS = {}
 
 # Internal subtypes (excluded from user-managed entry classes)
 from entries.constants import INTERNAL_SUBTYPES  # noqa: E402
+
+# Enricher container isolation settings
+# Requires the 'docker' Python SDK (docker>=7) to be installed.
+ENRICHER_DOCKER_IMAGE_PREFIX = "cradle/enricher"
+ENRICHER_MEM_LIMIT = "256m"
+# CPU quota in microseconds per 100ms period (50000 = 50% of one core)
+ENRICHER_CPU_QUOTA = 50000
+# Seconds before the container is killed (should match Celery task_time_limit)
+ENRICHER_TIMEOUT = 120
+# Docker network for enrichers that need outbound internet access
+ENRICHER_EXTERNAL_NETWORK = "enricher_external"

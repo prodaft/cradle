@@ -137,6 +137,13 @@ JWT_COOKIE_PATH = env.str("JWT_COOKIE_PATH", "/")
 
 USE_SILK = env.bool("USE_SILK", False)
 
+# Enricher container isolation
+ENRICHER_DOCKER_IMAGE_PREFIX = env.str("ENRICHER_DOCKER_IMAGE_PREFIX", "cradle/enricher")
+ENRICHER_MEM_LIMIT = env.str("ENRICHER_MEM_LIMIT", "256m")
+ENRICHER_CPU_QUOTA = env.int("ENRICHER_CPU_QUOTA", 50000)
+ENRICHER_TIMEOUT = env.int("ENRICHER_TIMEOUT", 120)
+ENRICHER_EXTERNAL_NETWORK = env.str("ENRICHER_EXTERNAL_NETWORK", "enricher_external")
+
 if USE_SILK:
     MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE  # noqa: F405
     INSTALLED_APPS.append("silk")  # noqa: F405

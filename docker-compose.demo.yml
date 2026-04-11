@@ -54,6 +54,8 @@ services:
     container_name: celery
     restart: unless-stopped
     command: /app/entrypoint_celery.sh
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     environment: &cradle_env
       INITIALIZE_ENTRYCLASSES: false
       DB_NAME: cradle

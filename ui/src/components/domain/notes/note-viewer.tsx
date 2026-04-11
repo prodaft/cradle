@@ -371,8 +371,7 @@ export default function NoteViewer() {
 
         const { markdownContent: md, initialMarkdown: init } = editorDraftRef.current;
         const applyServerBody =
-            switchedNote ||
-            (md === init && noteData.content !== md);
+            switchedNote || (md === init && noteData.content !== md);
 
         if (applyServerBody) {
             setMarkdownContent(noteData.content);

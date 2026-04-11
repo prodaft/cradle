@@ -194,7 +194,7 @@ export default function EnrichmentRequestDialog({
     const { data: allEntitiesData } = useQuery({
         queryKey: queryKeys.entities.list(),
         queryFn: () => fetchAllEntities(),
-        enabled: open && !!entitiesList,
+        enabled: open,
         meta: {
             showErrorToast: true,
         },

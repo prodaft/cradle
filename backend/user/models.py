@@ -179,7 +179,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         """Inverted access vector for exclusion queries."""
         if self.is_cradle_admin:
             return "0" * USER_ACCESS_VECTOR_LENGTH
-            inverter = (1 << USER_ACCESS_VECTOR_LENGTH) - 1
+        inverter = (1 << USER_ACCESS_VECTOR_LENGTH) - 1
         return _ACCESS_VECTOR_FIELD.get_prep_value(self._compute_access_bitmask() ^ inverter)
 
     def enable_2fa(self) -> str | None:
