@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
@@ -6,8 +6,8 @@ WORKDIR /app
 COPY _base/ ./_base/
 
 # Copy enricher
-COPY dns/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+COPY dns/pyproject.toml ./pyproject.toml
+RUN pip install --no-cache-dir .
 
 COPY dns/enricher.py ./enricher.py
 

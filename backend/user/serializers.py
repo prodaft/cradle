@@ -313,7 +313,7 @@ class EmailConfirmSerializer(serializers.Serializer):
 
         try:
             self.user = CradleUser.objects.get(email_confirmation_token=token)
-        except (CradleUser.DoesNotExist, CradleUser.MultipleObjectsReturned):
+        except CradleUser.DoesNotExist, CradleUser.MultipleObjectsReturned:
             raise EmailConfirmationFailedException(detail="This confirmation link is invalid or has expired.")
 
         if self.user.email_confirmed:

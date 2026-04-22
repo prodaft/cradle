@@ -1064,7 +1064,7 @@ class UserSessionsListView(APIView):
             try:
                 rt = RefreshToken(refresh_cookie)
                 current_jti = rt.get("jti")
-            except (TokenError, InvalidToken):
+            except TokenError, InvalidToken:
                 pass
         sessions.update(is_current=False)
         if current_jti:

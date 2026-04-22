@@ -14,7 +14,7 @@ enrichers/
     enricher_base.py   # Shared job load (/job.json or stdin) + stdout harness
   dns/
     enricher.py        # Pure Python enrichment logic
-    requirements.txt
+    pyproject.toml     # Dependencies for the container image
     Dockerfile
   virustotal/
     ...

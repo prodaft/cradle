@@ -31,6 +31,7 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     onNotificationsClick?: () => void;
@@ -46,6 +47,9 @@ export function AppSidebar({
     const { isEntryManager, isAdmin } = useAuthState();
     const { state, isMobile } = useSidebar();
     const isCollapsed = state === 'collapsed';
+    const hasUnreadNotifications = unreadNotificationsCount > 0;
+    const unreadCountLabel =
+        unreadNotificationsCount > 9 ? '9+' : String(unreadNotificationsCount);
     const useExpandedLogo = isMobile || !isCollapsed;
 
     const isActive = (to: string) => !!matchRoute({ to });
@@ -192,16 +196,31 @@ export function AppSidebar({
                         <SidebarMenuButton
                             tooltip='Notifications'
                             onClick={onNotificationsClick}
-                        >
-                            <Bell />
-                            <span>Notifications</span>
-                            {unreadNotificationsCount > 0 && (
-                                <span className='ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground'>
-                                    {unreadNotificationsCount > 9
-                                        ? '9+'
-                                        : unreadNotificationsCount}
-                                </span>
+                            className={cn(
+                                hasUnreadNotifications &&
+                                    isCollapsed &&
+                                    'overflow-visible',
                             )}
+                        >
+                            <span className='relative inline-flex size-4 shrink-0 items-center justify-center'>
+                                <Bell className='size-4' aria-hidden />
+                                {hasUnreadNotifications && isCollapsed ? (
+                                    <span
+                                        className={cn(
+                                            'pointer-events-none absolute right-0 top-0 z-10 flex h-4 min-w-4 translate-x-[58%] -translate-y-[58%] items-center justify-center rounded-full border-2 border-sidebar bg-primary px-0.5 text-[10px] font-semibold leading-none text-primary-foreground tabular-nums',
+                                        )}
+                                        aria-label={`${unreadNotificationsCount} unread notifications`}
+                                    >
+                                        {unreadCountLabel}
+                                    </span>
+                                ) : null}
+                            </span>
+                            <span>Notifications</span>
+                            {hasUnreadNotifications && !isCollapsed ? (
+                                <span className='ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground tabular-nums'>
+                                    {unreadCountLabel}
+                                </span>
+                            ) : null}
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

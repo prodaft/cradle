@@ -1,5 +1,7 @@
 """Tests for entity list view (list and create)."""
 
+import json
+
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
@@ -45,6 +47,18 @@ class GetEntityListTest(EntityListTestCase):
         response = self.client.get(reverse("entity_list"))
 
         self.assertEqual(response.status_code, 401)
+
+    def test_get_entities_stream_matches_paginated_list(self):
+        response_list = self.client.get(
+            reverse("entity_list"),
+            {"page": "1", "page_size": "200"},
+            **self.headers_admin,
+        )
+        response_stream = self.client.get(reverse("entity_list_stream"), **self.headers_admin)
+        self.assertEqual(response_stream.status_code, 200)
+        self.assertEqual(response_stream.headers["Content-Type"], "application/x-ndjson")
+        rows = [json.loads(line) for line in response_stream.content.decode().splitlines() if line.strip()]
+        self.assertEqual(rows, response_list.json()["results"])
 
 
 class PostEntityListTest(EntityListTestCase):

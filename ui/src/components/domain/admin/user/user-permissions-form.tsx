@@ -16,6 +16,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useNdjsonQuery } from '@/hooks/query';
 import {
     ArrowCounterClockwiseIcon,
     ClockCounterClockwiseIcon,
@@ -23,8 +24,7 @@ import {
     MagnifyingGlassIcon,
 } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
-import { fetchAllUserAccess } from '@services/openapi/fetch-all-pages';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -102,9 +102,10 @@ export default function UserPermissionsForm({
     const [searchVal, setSearchVal] = useState('');
     const queryClient = useQueryClient();
 
-    const permissionsQuery = useQuery({
+    const permissionsQuery = useNdjsonQuery({
+        path: '/access/user/{user_id}/stream/',
+        params: { path: { user_id: id } },
         queryKey: ['get', '/access/user/{user_id}/', id],
-        queryFn: () => fetchAllUserAccess(id),
         enabled: !!id,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,

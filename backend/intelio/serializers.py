@@ -323,12 +323,13 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
         q = Q()
         artifacts_full = set()
         class_colors = {}
-        for req in request.request:
-            if req["entry_class"] in enabled_eclasses:
-                artifacts_full.add((req["entry_class"], req["name"]))
-                q = q | (Q(name=req["name"]) & Q(entry_class__subtype=req["entry_class"]))
-                if req["entry_class"] not in class_colors:
-                    class_colors[req["entry_class"]] = EntryClass.objects.get(subtype=req["entry_class"]).color
+        art = request.artifact if isinstance(request.artifact, dict) else {}
+        subtype, name = art.get("entry_class"), art.get("name")
+        if subtype and name is not None and name != "" and subtype in enabled_eclasses:
+            artifacts_full.add((subtype, name))
+            q = Q(name=name) & Q(entry_class__subtype=subtype)
+            if subtype not in class_colors:
+                class_colors[subtype] = EntryClass.objects.get(subtype=subtype).color
 
         entries = Entry.objects.filter(q)
 
@@ -387,7 +388,7 @@ class EnrichmentRequestListSerializer(serializers.ModelSerializer):
             "status",
             "user_detail",
             "enrichers",
-            "request",
+            "artifact",
         ]
         read_only_fields = fields
 
@@ -422,7 +423,7 @@ class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
             "status",
             "user_detail",
             "enrichers",
-            "request",
+            "artifact",
         ]
         read_only_fields = fields
 
@@ -450,9 +451,13 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         read_only=True, help_text="The enrichment settings used for this request"
     )
 
-    # ManyToMany entities
+    # ManyToMany entities (optional; scopes who can see the request when set)
     entities = serializers.PrimaryKeyRelatedField(
-        queryset=Entry.objects.none(), many=True, help_text="The entities to enrich"
+        queryset=Entry.objects.none(),
+        many=True,
+        required=False,
+        allow_empty=True,
+        help_text="Optional entity IDs for access control",
     )
 
     user = serializers.PrimaryKeyRelatedField(read_only=True, help_text="The user who created the request")
@@ -464,13 +469,16 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
     # Return classes and display names for all enrichers
     enricher_classes = serializers.SerializerMethodField(read_only=True)
     enricher_names_display = serializers.SerializerMethodField(read_only=True)
-    request = serializers.ListField(
-        default=[], required=False, help_text="List of {entry_class, name} artifacts to enrich"
+    artifact = serializers.JSONField(
+        required=False,
+        help_text='Single artifact {"entry_class": subtype, "name": value}',
     )
     notes = serializers.ListSerializer(
         write_only=True,
         child=serializers.PrimaryKeyRelatedField(queryset=Note.objects.none()),
-        help_text="Note IDs to extract artifacts from (alternative to request)",
+        required=False,
+        default=list,
+        help_text="Note IDs; entries from selected notes must yield exactly one enrichable artifact combined with `artifact`",
     )
     errors = serializers.SerializerMethodField(
         read_only=True,
@@ -507,7 +515,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
             "enrichment_settings",
             "enricher_classes",
             "enricher_names_display",
-            "request",
+            "artifact",
             "errors",
         ]
         read_only_fields = [
@@ -567,7 +575,9 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
     def validate_entities(self, values):
         """Validate multiple entity IDs."""
         user = self.context["request"].user
-        values = set(values)
+        values = set(values or [])
+        if not values:
+            return []
 
         if not Access.objects.has_access_to_entities(user, values, {AccessType.READ_WRITE}):
             raise PermissionDeniedException(detail="You do not have access to one or more of the selected entities.")
@@ -588,18 +598,30 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         """Validate the request."""
         data = super().validate(data)
 
-        if not data.get("request") and not data.get("notes"):
-            raise serializers.ValidationError("Add at least one item to enrich, or choose at least one note.")
+        if not data.get("artifact") and not data.get("notes"):
+            raise serializers.ValidationError(
+                "Provide one artifact, or choose notes that contribute exactly one enrichable artifact."
+            )
 
-        additional_request = []
+        combined: list[dict] = []
+        raw_artifact = data.get("artifact")
+        if raw_artifact is not None:
+            if isinstance(raw_artifact, list):
+                raise serializers.ValidationError(
+                    {"artifact": 'Use a single object with "entry_class" and "name", not a list.'}
+                )
+            if not isinstance(raw_artifact, dict):
+                raise serializers.ValidationError({"artifact": "Artifact must be a JSON object."})
+            combined.append(raw_artifact)
+
         entities = set(data.get("entities") or [])
 
-        for note in data.get("notes", []):
+        for note in data.get("notes") or []:
             for e in note.entries.all():
                 if e.entry_class.type == EntryType.ENTITY:
                     entities.add(e.id)
                 elif e.entry_class.subtype not in INTERNAL_SUBTYPES:
-                    additional_request.append(
+                    combined.append(
                         {
                             "entry_class": e.entry_class.subtype,
                             "name": e.name,
@@ -607,7 +629,14 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
                     )
 
         data["entities"] = list(entities)
-        data["request"] = data.get("request", []) + additional_request
+
+        if len(combined) != 1:
+            raise serializers.ValidationError(
+                "Exactly one artifact is allowed per enrichment request. "
+                "Specify one `artifact` object and/or notes that add up to a single enrichable entry."
+            )
+
+        data["artifact"] = combined[0]
         data["enrichers_settings"] = data.pop("enricher_names", [])
         data.pop("notes", None)
 

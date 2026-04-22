@@ -38,7 +38,7 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type MouseEvent } from 'react';
 import { toast } from 'sonner';
 
 interface ActiveSessionsProps {
@@ -473,11 +473,15 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         pageCount: totalPages,
     });
 
-    const handleBulkRevoke = useCallback(() => {
-        if (selectedSessionIds.length > 0) {
-            setBulkRevokeDialogOpen(true);
-        }
-    }, [selectedSessionIds.length]);
+    const handleBulkRevoke = useCallback(
+        (event: MouseEvent<HTMLButtonElement>) => {
+            event.preventDefault();
+            if (selectedSessionIds.length > 0) {
+                setBulkRevokeDialogOpen(true);
+            }
+        },
+        [selectedSessionIds],
+    );
 
     return (
         <div className='w-full space-y-4'>

@@ -212,7 +212,7 @@ class MappingSchemaView(APIView):
         if mapping_id is not None:
             try:
                 uuid.UUID(str(mapping_id))
-            except (ValueError, TypeError, AttributeError):
+            except ValueError, TypeError, AttributeError:
                 raise InvalidMappingException(detail="That mapping is not valid.")
 
         if mapping_id is None and "internal_class" not in validated_data:
@@ -260,7 +260,7 @@ class MappingSchemaView(APIView):
 
         try:
             uuid.UUID(str(mapping_id))
-        except (ValueError, TypeError, AttributeError):
+        except ValueError, TypeError, AttributeError:
             raise InvalidMappingException(detail="That mapping is not valid.")
 
         try:

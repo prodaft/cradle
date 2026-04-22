@@ -16,14 +16,14 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useNdjsonQuery } from '@/hooks/query';
 import {
     ArrowCounterClockwiseIcon,
     ClockCounterClockwiseIcon,
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
-import { fetchAllEntityAccess } from '@services/openapi/fetch-all-pages';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -50,9 +50,10 @@ export default function EntityPermissionsForm({
     );
     const [currentAccess, setCurrentAccess] = useState<Record<string, AccessLevel>>({});
 
-    const { data: allAccessData = [], isLoading } = useQuery({
+    const { data: allAccessData = [], isLoading } = useNdjsonQuery({
+        path: '/access/entity/{entity_id}/stream/',
+        params: { path: { entity_id: entityId } },
         queryKey: ['get', '/access/entity/{entity_id}/', entityId],
-        queryFn: () => fetchAllEntityAccess(entityId),
         enabled: !!entityId,
     });
 

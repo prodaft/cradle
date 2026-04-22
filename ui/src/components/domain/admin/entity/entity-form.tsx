@@ -20,12 +20,11 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { queryKeys } from '@/hooks/query';
+import { queryKeys, useNdjsonQuery } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { $api, fetchClient } from '@services/openapi/client';
-import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
@@ -183,9 +182,10 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         }
     };
 
-    const { data: entryClassesData } = useQuery({
+    const { data: entryClassesData } = useNdjsonQuery({
+        path: '/entries/entry-classes/stream/',
+        params: { query: { show_count: true } },
         queryKey: ['entry_classes', 'entity-form', 'show_count'],
-        queryFn: () => fetchAllEntryClasses({ show_count: true }),
         refetchOnWindowFocus: false,
         meta: {
             showErrorToast: false,

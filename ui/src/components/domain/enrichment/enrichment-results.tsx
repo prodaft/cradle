@@ -1,4 +1,5 @@
 import Pagination from '@/components/base/pagination/pagination';
+import { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,19 +9,8 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-} from '@/components/ui/input-group';
+import { Input } from '@/components/ui/input';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import {
     Table,
@@ -41,7 +31,6 @@ import {
     DownloadSimpleIcon,
     EyeSlashIcon,
     InfoIcon,
-    MagnifyingGlassIcon,
     UserIcon,
     WarningCircleIcon,
     WarningIcon,
@@ -54,9 +43,15 @@ type EntrySerializerMinimal = components['schemas']['EntrySerializerMinimal'];
 import NotFound from '@/components/feedback/not-found';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
+import {
+    type ColumnDef,
+    type VisibilityState,
+    getCoreRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
 import JsonView from '@uiw/react-json-view';
 import { format } from 'date-fns';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 interface EntryLabel {
     subtype: string;
@@ -196,6 +191,8 @@ interface ArtifactRowProps {
     isLoading: boolean;
     isChecked: boolean;
     onCheckChange: (checked: boolean) => void;
+    showEnricherColumn: boolean;
+    showArtifactColumn: boolean;
 }
 
 function ArtifactRow({
@@ -208,9 +205,12 @@ function ArtifactRow({
     isLoading,
     isChecked,
     onCheckChange,
+    showEnricherColumn,
+    showArtifactColumn,
 }: ArtifactRowProps) {
     const relationCount = artifact.count ?? (isOpen ? relations.length : undefined);
     const artifactName = artifact.name || 'Untitled';
+    const colSpan = 1 + (showEnricherColumn ? 1 : 0) + (showArtifactColumn ? 1 : 0);
 
     const rowContent = (
         <TableRow>
@@ -221,21 +221,23 @@ function ArtifactRow({
                     aria-label={`Select ${artifactName}`}
                 />
             </TableCell>
-            <TableCell>{enricherName}</TableCell>
-            <TableCell>
-                <div className='flex items-center gap-2'>
-                    {artifactBadge}
-                    <span className='text-foreground truncate'>{artifactName}</span>
-                    {relationCount !== undefined && (
-                        <span className='text-muted-foreground text-xs ml-auto'>
-                            {relationCount} result{relationCount !== 1 ? 's' : ''}
-                        </span>
-                    )}
-                    <CaretDownIcon
-                        className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
-                    />
-                </div>
-            </TableCell>
+            {showEnricherColumn && <TableCell>{enricherName}</TableCell>}
+            {showArtifactColumn && (
+                <TableCell>
+                    <div className='flex items-center gap-2'>
+                        {artifactBadge}
+                        <span className='text-foreground truncate'>{artifactName}</span>
+                        {relationCount !== undefined && (
+                            <span className='text-muted-foreground text-xs ml-auto'>
+                                {relationCount} result{relationCount !== 1 ? 's' : ''}
+                            </span>
+                        )}
+                        <CaretDownIcon
+                            className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
+                        />
+                    </div>
+                </TableCell>
+            )}
         </TableRow>
     );
 
@@ -245,7 +247,7 @@ function ArtifactRow({
                 <CollapsibleTrigger asChild>{rowContent}</CollapsibleTrigger>
                 <CollapsibleContent asChild>
                     <tr>
-                        <td colSpan={3} className='p-0'>
+                        <td colSpan={colSpan} className='p-0'>
                             <div className='bg-muted/30 border-t'>
                                 {isLoading ? (
                                     <div className='flex items-center justify-center py-6'>
@@ -274,10 +276,9 @@ function ArtifactRow({
 }
 
 /**
- * EnrichmentResults component - displays enrichment results in a split-pane view
+ * EnrichmentResults component - displays enrichment results for a request
  *
- * Left pane shows list of enrichment techniques used in the request.
- * Right pane shows tabs for artifacts, relations, warnings, and errors.
+ * Technique selector and main area show artifacts, relations, warnings, and errors.
  *
  * @example
  * ```tsx
@@ -293,9 +294,33 @@ export default function EnrichmentResults() {
     const [showIgnored, setShowIgnored] = useState(false);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
-    const [searchParams, setSearchParams] = useState({ query: '', details: '' });
-    const [searchInput, setSearchInput] = useState({ query: '', details: '' });
+    const [searchParams, setSearchParams] = useState('');
+    const [searchInput, setSearchInput] = useState('');
     const [selectedArtifacts, setSelectedArtifacts] = useState<Set<number>>(new Set());
+    const [artifactColumnVisibility, setArtifactColumnVisibility] =
+        useState<VisibilityState>({});
+    const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    /** Debounced server-side search via relations `search` query param. */
+    useEffect(() => {
+        if (searchDebounceRef.current) {
+            clearTimeout(searchDebounceRef.current);
+        }
+        searchDebounceRef.current = setTimeout(() => {
+            searchDebounceRef.current = null;
+            setSearchParams((prev) => (prev === searchInput ? prev : searchInput));
+        }, 350);
+        return () => {
+            if (searchDebounceRef.current) {
+                clearTimeout(searchDebounceRef.current);
+                searchDebounceRef.current = null;
+            }
+        };
+    }, [searchInput]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [searchParams]);
 
     const {
         data: enrichmentDetails,
@@ -357,8 +382,7 @@ export default function EnrichmentResults() {
             entryId: selectedArtifactId ?? undefined,
             page,
             pageSize,
-            query: searchParams.query || undefined,
-            details: searchParams.details || undefined,
+            search: searchParams.trim() || undefined,
         }),
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
@@ -373,9 +397,8 @@ export default function EnrichmentResults() {
                             entry_id: selectedArtifactId!,
                             page,
                             page_size: pageSize,
-                            query: searchParams.query || undefined,
-                            details: searchParams.details || undefined,
-                        } as any,
+                            search: searchParams.trim() || undefined,
+                        },
                     },
                 },
             );
@@ -400,16 +423,52 @@ export default function EnrichmentResults() {
         [results, selectedArtifactId],
     );
 
-    // Reset to page 1 when search query changes
-    const handleSearch = () => {
+    const artifactViewColumns = useMemo<ColumnDef<EnricherArtifact>[]>(
+        () => [
+            {
+                id: 'enricher',
+                meta: { label: 'Enricher' },
+                accessorFn: (row) => row.subtype ?? row.name ?? '',
+                header: 'Enricher',
+            },
+            {
+                id: 'artifact',
+                meta: { label: 'Artifact' },
+                accessorFn: (row) => row.name ?? '',
+                header: 'Artifact',
+                enableHiding: false,
+            },
+        ],
+        [],
+    );
+
+    const artifactsViewTable = useReactTable({
+        data: artifacts,
+        columns: artifactViewColumns,
+        state: { columnVisibility: artifactColumnVisibility },
+        onColumnVisibilityChange: setArtifactColumnVisibility,
+        getCoreRowModel: getCoreRowModel(),
+    });
+
+    const showEnricherCol =
+        artifactsViewTable.getColumn('enricher')?.getIsVisible() ?? true;
+    const showArtifactCol =
+        artifactsViewTable.getColumn('artifact')?.getIsVisible() ?? true;
+
+    /** Apply search immediately (Enter) and cancel pending debounce. */
+    const flushSearchToServer = () => {
+        if (searchDebounceRef.current) {
+            clearTimeout(searchDebounceRef.current);
+            searchDebounceRef.current = null;
+        }
         setSearchParams(searchInput);
         setPage(1);
     };
 
-    // Handle search input key press
     const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-            handleSearch();
+            e.preventDefault();
+            flushSearchToServer();
         }
     };
 
@@ -438,47 +497,6 @@ export default function EnrichmentResults() {
                         className='text-destructive'
                         size={18}
                         weight='fill'
-                    />
-                );
-            default:
-                return null;
-        }
-    };
-
-    // Get status icon for enricher
-    const getEnricherStatusIcon = (status: string) => {
-        switch (status) {
-            case 'done':
-                return (
-                    <CheckCircleIcon
-                        className='text-primary flex-shrink-0'
-                        width='16'
-                        height='16'
-                    />
-                );
-            case 'working':
-            case 'waiting':
-                return (
-                    <InfoIcon
-                        className='text-primary flex-shrink-0'
-                        width='16'
-                        height='16'
-                    />
-                );
-            case 'warning':
-                return (
-                    <WarningIcon
-                        className='text-muted-foreground flex-shrink-0'
-                        width='16'
-                        height='16'
-                    />
-                );
-            case 'error':
-                return (
-                    <WarningCircleIcon
-                        className='text-destructive flex-shrink-0'
-                        width='16'
-                        height='16'
                     />
                 );
             default:
@@ -534,8 +552,8 @@ export default function EnrichmentResults() {
         setSelectedArtifactId(null);
         setShowIgnored(false);
         setPage(1);
-        setSearchParams({ query: '', details: '' });
-        setSearchInput({ query: '', details: '' });
+        setSearchParams('');
+        setSearchInput('');
     };
 
     // Handle ignored artifacts selection
@@ -671,438 +689,442 @@ export default function EnrichmentResults() {
                                 </span>
                             </div>
                         )}
+                        {ignoredArtifacts.length > 0 && (
+                            <>
+                                {showIgnored ? (
+                                    <Button
+                                        variant='ghost'
+                                        size='sm'
+                                        className='h-auto gap-1 px-2 py-1 text-xs text-muted-foreground'
+                                        onClick={() => {
+                                            const first = detailsAny.enrichers?.[0];
+                                            if (first) {
+                                                handleEnricherSelect(
+                                                    String(
+                                                        first.enricher_type ??
+                                                            first.enricherType,
+                                                    ),
+                                                );
+                                            }
+                                        }}
+                                    >
+                                        View enrichment results
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        variant='ghost'
+                                        size='sm'
+                                        className='h-auto gap-1 px-2 py-1 text-xs text-muted-foreground'
+                                        onClick={handleIgnoredSelect}
+                                    >
+                                        <EyeSlashIcon
+                                            className='size-3.5'
+                                            weight='bold'
+                                        />
+                                        Ignored ({ignoredArtifacts.length})
+                                    </Button>
+                                )}
+                            </>
+                        )}
                     </div>
                 </div>
             )}
 
             {/* Main Content */}
-            <div className='flex-1 overflow-hidden flex flex-col p-4'>
+            <div className='flex min-h-0 flex-1 flex-col overflow-hidden'>
                 {isLoadingDetails ? (
-                    <div className='flex items-center justify-center min-h-[200px] text-foreground'>
+                    <div className='flex flex-1 items-center justify-center text-foreground'>
                         <Spinner className='size-10' />
                     </div>
                 ) : (
-                    <>
-                        {/* Filters */}
-                        <div className='flex gap-2 items-center pb-4'>
-                            {/* Enricher selector */}
-                            <div className='min-w-[180px]'>
-                                <Select
-                                    value={
-                                        showIgnored ? 'ignored' : selectedEnricher || ''
-                                    }
-                                    onValueChange={(value) => {
-                                        if (value === 'ignored') {
-                                            handleIgnoredSelect();
-                                        } else {
-                                            handleEnricherSelect(value);
-                                        }
-                                    }}
+                    <div className='flex min-h-0 flex-1 flex-col overflow-hidden'>
+                        <div className='flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden p-4'>
+                            {!showIgnored && selectedEnricher && (
+                                <div
+                                    role='toolbar'
+                                    aria-orientation='horizontal'
+                                    className='flex w-full shrink-0 items-start justify-between gap-2 py-1'
                                 >
-                                    <SelectTrigger className='w-full'>
-                                        <SelectValue placeholder='Select enricher' />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {detailsAny?.enrichers?.map((enricher: any) => {
-                                            const eType =
-                                                enricher.enricher_type ??
-                                                enricher.enricherType;
-                                            const eName =
-                                                enricher.display_name ??
-                                                enricher.displayName;
-                                            return (
-                                                <SelectItem key={eType} value={eType!}>
-                                                    <div className='flex items-center gap-2'>
-                                                        {getEnricherStatusIcon(
-                                                            enricher.status!,
-                                                        )}
-                                                        <span>{eName}</span>
-                                                    </div>
-                                                </SelectItem>
-                                            );
-                                        })}
-                                        {ignoredArtifacts.length > 0 && (
-                                            <SelectItem value='ignored'>
-                                                <div className='flex items-center gap-2'>
-                                                    <EyeSlashIcon
-                                                        className='text-muted-foreground flex-shrink-0'
-                                                        width='16'
-                                                        height='16'
-                                                    />
-                                                    <span>
-                                                        Ignored (
-                                                        {ignoredArtifacts.length})
-                                                    </span>
-                                                </div>
-                                            </SelectItem>
+                                    <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
+                                        <Input
+                                            placeholder='Search relations...'
+                                            value={searchInput}
+                                            onChange={(e) =>
+                                                setSearchInput(e.target.value)
+                                            }
+                                            onKeyDown={handleSearchKeyPress}
+                                            className='h-8 w-40 lg:w-56'
+                                        />
+                                    </div>
+                                    <div className='flex shrink-0 items-center gap-2'>
+                                        <Button
+                                            variant='outline'
+                                            size='icon'
+                                            className='size-8'
+                                            onClick={handleDownloadResults}
+                                            disabled={
+                                                !selectedArtifactId ||
+                                                !results ||
+                                                results.length === 0
+                                            }
+                                            title='Download results as JSON'
+                                        >
+                                            <DownloadSimpleIcon
+                                                size={18}
+                                                weight='bold'
+                                            />
+                                        </Button>
+                                        {artifacts.length > 0 && (
+                                            <DataTableViewOptions
+                                                table={artifactsViewTable}
+                                                align='end'
+                                            />
                                         )}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* Search Entries */}
-                            <InputGroup className='flex-1 min-w-[200px]'>
-                                <InputGroupInput
-                                    placeholder='Search entries...'
-                                    value={searchInput.query}
-                                    onChange={(e) =>
-                                        setSearchInput({
-                                            ...searchInput,
-                                            query: e.target.value,
-                                        })
-                                    }
-                                    onKeyDown={handleSearchKeyPress}
-                                    disabled={showIgnored}
-                                />
-                                <InputGroupAddon align='inline-start'>
-                                    <MagnifyingGlassIcon />
-                                </InputGroupAddon>
-                            </InputGroup>
-
-                            {/* Search Details */}
-                            <InputGroup className='flex-1 min-w-[200px]'>
-                                <InputGroupInput
-                                    placeholder='Search details...'
-                                    value={searchInput.details}
-                                    onChange={(e) =>
-                                        setSearchInput({
-                                            ...searchInput,
-                                            details: e.target.value,
-                                        })
-                                    }
-                                    onKeyDown={handleSearchKeyPress}
-                                    disabled={showIgnored}
-                                />
-                                <InputGroupAddon align='inline-start'>
-                                    <MagnifyingGlassIcon />
-                                </InputGroupAddon>
-                            </InputGroup>
-                            <Button
-                                variant='outline'
-                                size='icon'
-                                onClick={handleDownloadResults}
-                                disabled={
-                                    showIgnored ||
-                                    !selectedArtifactId ||
-                                    !results ||
-                                    results.length === 0
-                                }
-                                title='Download results as JSON'
-                            >
-                                <DownloadSimpleIcon size={18} weight='bold' />
-                            </Button>
-                        </div>
-
-                        {/* Content */}
-                        {showIgnored ? (
-                            /* Ignored Artifacts View */
-                            <ScrollArea className='overflow-hidden rounded-md border flex-1'>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Artifact</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {ignoredArtifacts.map(
-                                            (artifact: any, index: number) => (
-                                                <TableRow key={index}>
-                                                    <TableCell>
-                                                        <div className='flex items-center gap-2'>
-                                                            {artifact.subtype && (
-                                                                <Badge
-                                                                    variant='secondary'
-                                                                    className='flex-shrink-0'
-                                                                >
-                                                                    {artifact.subtype}
-                                                                </Badge>
-                                                            )}
-                                                            <span className='text-foreground truncate'>
-                                                                {typeof artifact ===
-                                                                'string'
-                                                                    ? artifact
-                                                                    : artifact.name ||
-                                                                      JSON.stringify(
-                                                                          artifact,
-                                                                      )}
-                                                            </span>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ),
-                                        )}
-                                    </TableBody>
-                                </Table>
-                                <ScrollBar orientation='horizontal' />
-                            </ScrollArea>
-                        ) : selectedEnricher ? (
-                            /* Relations View */
-                            isLoadingEnricher ? (
-                                <div className='flex items-center justify-center min-h-[200px] text-foreground'>
-                                    <Spinner className='size-10' />
+                                    </div>
                                 </div>
-                            ) : artifacts.length === 0 ? (
-                                <div className='text-center py-8'>
-                                    <p className='text-sm text-muted-foreground'>
-                                        No artifacts found.
-                                    </p>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className='overflow-hidden rounded-md border flex-1 flex flex-col'>
-                                        <ScrollArea className='flex-1'>
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableHead className='w-10'>
-                                                            <Checkbox
-                                                                checked={
-                                                                    artifacts.length >
-                                                                        0 &&
-                                                                    artifacts.every(
-                                                                        (a) => {
-                                                                            const id =
-                                                                                normalizeId(
-                                                                                    a.id,
-                                                                                );
-                                                                            return (
-                                                                                id !==
-                                                                                    null &&
-                                                                                selectedArtifacts.has(
-                                                                                    id,
-                                                                                )
-                                                                            );
-                                                                        },
-                                                                    )
-                                                                }
-                                                                onCheckedChange={(
-                                                                    checked,
-                                                                ) => {
-                                                                    if (
-                                                                        checked === true
-                                                                    ) {
-                                                                        const allIds =
-                                                                            artifacts
-                                                                                .map(
-                                                                                    (
-                                                                                        a,
-                                                                                    ) =>
-                                                                                        normalizeId(
-                                                                                            a.id,
-                                                                                        ),
-                                                                                )
-                                                                                .filter(
-                                                                                    (
-                                                                                        id,
-                                                                                    ): id is number =>
-                                                                                        id !==
-                                                                                        null,
-                                                                                );
-                                                                        setSelectedArtifacts(
-                                                                            new Set(
-                                                                                allIds,
-                                                                            ),
-                                                                        );
-                                                                    } else {
-                                                                        setSelectedArtifacts(
-                                                                            new Set(),
-                                                                        );
-                                                                    }
-                                                                }}
-                                                                aria-label='Select all'
-                                                            />
-                                                        </TableHead>
-                                                        <TableHead>Enricher</TableHead>
-                                                        <TableHead>Artifact</TableHead>
+                            )}
+
+                            {showIgnored ? (
+                                <ScrollArea className='min-h-0 flex-1 overflow-hidden rounded-md border'>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Artifact</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {ignoredArtifacts.map(
+                                                (artifact: any, index: number) => (
+                                                    <TableRow key={index}>
+                                                        <TableCell>
+                                                            <div className='flex items-center gap-2'>
+                                                                {artifact.subtype && (
+                                                                    <Badge
+                                                                        variant='secondary'
+                                                                        className='flex-shrink-0'
+                                                                    >
+                                                                        {
+                                                                            artifact.subtype
+                                                                        }
+                                                                    </Badge>
+                                                                )}
+                                                                <span className='text-foreground truncate'>
+                                                                    {typeof artifact ===
+                                                                    'string'
+                                                                        ? artifact
+                                                                        : artifact.name ||
+                                                                          JSON.stringify(
+                                                                              artifact,
+                                                                          )}
+                                                                </span>
+                                                            </div>
+                                                        </TableCell>
                                                     </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {artifacts.map(
-                                                        (artifact, index) => {
-                                                            const artifactId =
-                                                                normalizeId(
-                                                                    artifact.id,
-                                                                );
-                                                            const artifactBadge =
-                                                                renderEntryBadge(
-                                                                    artifact,
-                                                                );
-
-                                                            const isSelected =
-                                                                artifactId !== null &&
-                                                                artifactId ===
-                                                                    selectedArtifactId;
-
-                                                            return (
-                                                                <ArtifactRow
-                                                                    key={
-                                                                        artifact.id ??
-                                                                        index
-                                                                    }
-                                                                    artifact={artifact}
-                                                                    artifactBadge={
-                                                                        artifactBadge
-                                                                    }
-                                                                    enricherName={
-                                                                        selectedEnricherName ||
-                                                                        ''
-                                                                    }
-                                                                    isOpen={isSelected}
-                                                                    onToggle={(open) =>
-                                                                        handleArtifactToggle(
-                                                                            artifactId,
-                                                                            open,
+                                                ),
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                    <ScrollBar orientation='horizontal' />
+                                </ScrollArea>
+                            ) : selectedEnricher ? (
+                                /* Relations View */
+                                isLoadingEnricher ? (
+                                    <div className='flex items-center justify-center min-h-[200px] text-foreground'>
+                                        <Spinner className='size-10' />
+                                    </div>
+                                ) : artifacts.length === 0 ? (
+                                    <div className='text-center py-8'>
+                                        <p className='text-sm text-muted-foreground'>
+                                            No artifacts found.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className='flex min-h-0 flex-1 flex-col gap-2.5'>
+                                        <div className='flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border'>
+                                            <ScrollArea className='min-h-0 flex-1'>
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead className='w-10'>
+                                                                <Checkbox
+                                                                    checked={
+                                                                        artifacts.length >
+                                                                            0 &&
+                                                                        artifacts.every(
+                                                                            (a) => {
+                                                                                const id =
+                                                                                    normalizeId(
+                                                                                        a.id,
+                                                                                    );
+                                                                                return (
+                                                                                    id !==
+                                                                                        null &&
+                                                                                    selectedArtifacts.has(
+                                                                                        id,
+                                                                                    )
+                                                                                );
+                                                                            },
                                                                         )
                                                                     }
-                                                                    relations={
-                                                                        isSelected
-                                                                            ? relations
-                                                                            : []
-                                                                    }
-                                                                    isLoading={
-                                                                        isSelected &&
-                                                                        isLoadingResults
-                                                                    }
-                                                                    isChecked={
-                                                                        artifactId !==
-                                                                            null &&
-                                                                        selectedArtifacts.has(
-                                                                            artifactId,
-                                                                        )
-                                                                    }
-                                                                    onCheckChange={(
+                                                                    onCheckedChange={(
                                                                         checked,
                                                                     ) => {
                                                                         if (
-                                                                            artifactId ===
-                                                                            null
-                                                                        )
-                                                                            return;
-                                                                        setSelectedArtifacts(
-                                                                            (prev) => {
-                                                                                const next =
-                                                                                    new Set(
-                                                                                        prev,
+                                                                            checked ===
+                                                                            true
+                                                                        ) {
+                                                                            const allIds =
+                                                                                artifacts
+                                                                                    .map(
+                                                                                        (
+                                                                                            a,
+                                                                                        ) =>
+                                                                                            normalizeId(
+                                                                                                a.id,
+                                                                                            ),
+                                                                                    )
+                                                                                    .filter(
+                                                                                        (
+                                                                                            id,
+                                                                                        ): id is number =>
+                                                                                            id !==
+                                                                                            null,
                                                                                     );
-                                                                                if (
-                                                                                    checked
-                                                                                ) {
-                                                                                    next.add(
-                                                                                        artifactId,
-                                                                                    );
-                                                                                } else {
-                                                                                    next.delete(
-                                                                                        artifactId,
-                                                                                    );
-                                                                                }
-                                                                                return next;
-                                                                            },
-                                                                        );
+                                                                            setSelectedArtifacts(
+                                                                                new Set(
+                                                                                    allIds,
+                                                                                ),
+                                                                            );
+                                                                        } else {
+                                                                            setSelectedArtifacts(
+                                                                                new Set(),
+                                                                            );
+                                                                        }
                                                                     }}
+                                                                    aria-label='Select all'
                                                                 />
-                                                            );
-                                                        },
-                                                    )}
-                                                </TableBody>
-                                            </Table>
-                                            <ScrollBar orientation='horizontal' />
-                                        </ScrollArea>
+                                                            </TableHead>
+                                                            {showEnricherCol && (
+                                                                <TableHead>
+                                                                    Enricher
+                                                                </TableHead>
+                                                            )}
+                                                            {showArtifactCol && (
+                                                                <TableHead>
+                                                                    Artifact
+                                                                </TableHead>
+                                                            )}
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {artifacts.map(
+                                                            (artifact, index) => {
+                                                                const artifactId =
+                                                                    normalizeId(
+                                                                        artifact.id,
+                                                                    );
+                                                                const artifactBadge =
+                                                                    renderEntryBadge(
+                                                                        artifact,
+                                                                    );
+
+                                                                const isSelected =
+                                                                    artifactId !==
+                                                                        null &&
+                                                                    artifactId ===
+                                                                        selectedArtifactId;
+
+                                                                return (
+                                                                    <ArtifactRow
+                                                                        key={
+                                                                            artifact.id ??
+                                                                            index
+                                                                        }
+                                                                        artifact={
+                                                                            artifact
+                                                                        }
+                                                                        artifactBadge={
+                                                                            artifactBadge
+                                                                        }
+                                                                        enricherName={
+                                                                            selectedEnricherName ||
+                                                                            ''
+                                                                        }
+                                                                        isOpen={
+                                                                            isSelected
+                                                                        }
+                                                                        onToggle={(
+                                                                            open,
+                                                                        ) =>
+                                                                            handleArtifactToggle(
+                                                                                artifactId,
+                                                                                open,
+                                                                            )
+                                                                        }
+                                                                        relations={
+                                                                            isSelected
+                                                                                ? relations
+                                                                                : []
+                                                                        }
+                                                                        isLoading={
+                                                                            isSelected &&
+                                                                            isLoadingResults
+                                                                        }
+                                                                        isChecked={
+                                                                            artifactId !==
+                                                                                null &&
+                                                                            selectedArtifacts.has(
+                                                                                artifactId,
+                                                                            )
+                                                                        }
+                                                                        onCheckChange={(
+                                                                            checked,
+                                                                        ) => {
+                                                                            if (
+                                                                                artifactId ===
+                                                                                null
+                                                                            )
+                                                                                return;
+                                                                            setSelectedArtifacts(
+                                                                                (
+                                                                                    prev,
+                                                                                ) => {
+                                                                                    const next =
+                                                                                        new Set(
+                                                                                            prev,
+                                                                                        );
+                                                                                    if (
+                                                                                        checked
+                                                                                    ) {
+                                                                                        next.add(
+                                                                                            artifactId,
+                                                                                        );
+                                                                                    } else {
+                                                                                        next.delete(
+                                                                                            artifactId,
+                                                                                        );
+                                                                                    }
+                                                                                    return next;
+                                                                                },
+                                                                            );
+                                                                        }}
+                                                                        showEnricherColumn={
+                                                                            showEnricherCol
+                                                                        }
+                                                                        showArtifactColumn={
+                                                                            showArtifactCol
+                                                                        }
+                                                                    />
+                                                                );
+                                                            },
+                                                        )}
+                                                    </TableBody>
+                                                </Table>
+                                                <ScrollBar orientation='horizontal' />
+                                            </ScrollArea>
+                                        </div>
+                                        {selectedArtifactId && (
+                                            <div className='flex flex-col gap-2.5'>
+                                                <Pagination
+                                                    currentPage={page}
+                                                    totalPages={totalPages}
+                                                    onPageChange={(newPage) =>
+                                                        setPage(newPage)
+                                                    }
+                                                    pageSize={pageSize}
+                                                    onPageSizeChange={(newSize) => {
+                                                        setPageSize(newSize);
+                                                        setPage(1);
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
-                                    {/* Pagination */}
-                                    {selectedArtifactId && (
-                                        <div className='pt-3'>
-                                            <Pagination
-                                                currentPage={page}
-                                                totalPages={totalPages}
-                                                onPageChange={(newPage) =>
-                                                    setPage(newPage)
-                                                }
-                                                pageSize={pageSize}
-                                                onPageSizeChange={(newSize) => {
-                                                    setPageSize(newSize);
-                                                    setPage(1);
-                                                }}
-                                            />
-                                        </div>
-                                    )}
-                                </>
-                            )
-                        ) : (
-                            <Card className='border-border bg-muted/5'>
-                                <CardContent className='py-8'>
-                                    <p className='text-center text-sm text-muted-foreground'>
-                                        Select an enrichment technique to view results
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {/* Warnings Section - shown below table when an enricher is selected */}
-                        {hasWarnings && (
-                            <div className='mt-4'>
-                                <h3 className='text-sm font-semibold mb-2'>Warnings</h3>
+                                )
+                            ) : (
                                 <Card className='border-border bg-muted/5'>
-                                    <CardContent className='p-0'>
-                                        <div className='divide-y divide-border'>
-                                            {enricherAny!.warnings!.map(
-                                                (warning: any, index: number) => (
-                                                    <div
-                                                        key={index}
-                                                        className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-muted-foreground'
-                                                    >
-                                                        <WarningIcon
-                                                            className='text-muted-foreground flex-shrink-0'
-                                                            width='16'
-                                                            height='16'
-                                                        />
-                                                        <span className='flex-1 text-sm text-foreground'>
-                                                            {typeof warning === 'string'
-                                                                ? warning
-                                                                : JSON.stringify(
-                                                                      warning,
-                                                                  )}
-                                                        </span>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
+                                    <CardContent className='py-8'>
+                                        <p className='text-center text-sm text-muted-foreground'>
+                                            Select an enrichment technique to view
+                                            results
+                                        </p>
                                     </CardContent>
                                 </Card>
-                            </div>
-                        )}
+                            )}
 
-                        {/* Errors Section - shown below warnings when an enricher is selected */}
-                        {hasErrors && (
-                            <div className='mt-4'>
-                                <h3 className='text-sm font-semibold mb-2'>Errors</h3>
-                                <Card className='border-border bg-muted/5'>
-                                    <CardContent className='p-0'>
-                                        <div className='divide-y divide-border'>
-                                            {enricherAny!.errors!.map(
-                                                (error: any, index: number) => (
-                                                    <div
-                                                        key={index}
-                                                        className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-red-500'
-                                                    >
-                                                        <WarningCircleIcon
-                                                            className='text-destructive flex-shrink-0'
-                                                            width='16'
-                                                            height='16'
-                                                        />
-                                                        <span className='flex-1 text-sm text-foreground'>
-                                                            {typeof error === 'string'
-                                                                ? error
-                                                                : JSON.stringify(error)}
-                                                        </span>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        )}
-                    </>
+                            {!showIgnored && selectedEnricher && hasWarnings && (
+                                <div className='mt-4'>
+                                    <h3 className='text-sm font-semibold mb-2'>
+                                        Warnings
+                                    </h3>
+                                    <Card className='border-border bg-muted/5'>
+                                        <CardContent className='p-0'>
+                                            <div className='divide-y divide-border'>
+                                                {enricherAny!.warnings!.map(
+                                                    (warning: any, index: number) => (
+                                                        <div
+                                                            key={index}
+                                                            className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-muted-foreground'
+                                                        >
+                                                            <WarningIcon
+                                                                className='text-muted-foreground flex-shrink-0'
+                                                                width='16'
+                                                                height='16'
+                                                            />
+                                                            <span className='flex-1 text-sm text-foreground'>
+                                                                {typeof warning ===
+                                                                'string'
+                                                                    ? warning
+                                                                    : JSON.stringify(
+                                                                          warning,
+                                                                      )}
+                                                            </span>
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            )}
+
+                            {!showIgnored && selectedEnricher && hasErrors && (
+                                <div className='mt-4'>
+                                    <h3 className='text-sm font-semibold mb-2'>
+                                        Errors
+                                    </h3>
+                                    <Card className='border-border bg-muted/5'>
+                                        <CardContent className='p-0'>
+                                            <div className='divide-y divide-border'>
+                                                {enricherAny!.errors!.map(
+                                                    (error: any, index: number) => (
+                                                        <div
+                                                            key={index}
+                                                            className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-red-500'
+                                                        >
+                                                            <WarningCircleIcon
+                                                                className='text-destructive flex-shrink-0'
+                                                                width='16'
+                                                                height='16'
+                                                            />
+                                                            <span className='flex-1 text-sm text-foreground'>
+                                                                {typeof error ===
+                                                                'string'
+                                                                    ? error
+                                                                    : JSON.stringify(
+                                                                          error,
+                                                                      )}
+                                                            </span>
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 )}
             </div>
         </div>

@@ -424,37 +424,30 @@ export default function NoteViewer() {
         },
     });
 
-    const handleSaveNote = useCallback(
-        async (showAlert = false) => {
-            if (!noteId) return;
+    const handleSaveNote = useCallback(async () => {
+        if (!noteId) return;
 
-            const content = editorDraftRef.current.markdownContent;
+        const content = editorDraftRef.current.markdownContent;
 
-            if (!content || content.trim().length === 0) {
-                toast.error('Cannot save empty note.');
-                return;
-            }
+        if (!content || content.trim().length === 0) {
+            toast.error('Cannot save empty note.');
+            return;
+        }
 
-            setSaving(true);
-            const successMessage = showAlert ? 'Note saved successfully.' : undefined;
+        setSaving(true);
 
-            try {
-                await saveNoteMutation.mutateAsync({ content });
-                lastSaveFailedRef.current = false;
-                setInitialMarkdown(content);
-                setHasUnsavedChanges(false);
-                if (successMessage) {
-                    toast.success(successMessage);
-                }
-            } catch {
-                lastSaveFailedRef.current = true;
-                // Error toast handled by global mutation handler
-            } finally {
-                setSaving(false);
-            }
-        },
-        [noteId, saveNoteMutation],
-    );
+        try {
+            await saveNoteMutation.mutateAsync({ content });
+            lastSaveFailedRef.current = false;
+            setInitialMarkdown(content);
+            setHasUnsavedChanges(false);
+        } catch {
+            lastSaveFailedRef.current = true;
+            // Error toast handled by global mutation handler
+        } finally {
+            setSaving(false);
+        }
+    }, [noteId, saveNoteMutation]);
 
     const handleDelete = useCallback(async () => {
         if (!noteId) return;
@@ -529,7 +522,7 @@ export default function NoteViewer() {
                     {
                         key: 'Mod-s',
                         run: () => {
-                            handleSaveNote(true);
+                            handleSaveNote();
                             return true;
                         },
                     },

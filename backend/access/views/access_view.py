@@ -1,8 +1,5 @@
 """Views for listing user and entity access privileges (admin only)."""
 
-from uuid import UUID
-
-from django.db.models import Q
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -11,13 +8,13 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
-from entries.exceptions import EntityNotFoundException, EntriesErrorCodes
+from entries.exceptions import EntriesErrorCodes
 from entries.models import Entry
 from user.exceptions import UserErrorCodes, UserNotFoundException
-from user.models import CradleUser, UserRoles
+from user.models import CradleUser
 from user.permissions import HasAdminRole
 
-from ..enums import AccessType
+from ..entity_access_rows import build_entity_access_user_rows
 from ..models import Access
 from ..serializers import AccessEntitySerializer, AccessUserSerializer
 
@@ -141,33 +138,5 @@ class EntityAccessList(ListAPIView):
         if getattr(self, "swagger_fake_view", False):
             return []
         entity_id = self.kwargs["entity_id"]
-        try:
-            entity = Entry.entities.get(pk=entity_id)
-        except Entry.DoesNotExist:
-            raise EntityNotFoundException(detail="That entity could not be found.")
-
-        accesses = Access.objects.filter(Q(entity=entity) & ~Q(user__role=UserRoles.ADMIN)).select_related("user")
-
-        none_users = CradleUser.objects.filter(
-            ~Q(id__in=accesses.values_list("user_id", flat=True)) & ~Q(role=UserRoles.ADMIN)
-        )
-
         search = self.request.query_params.get("search")
-        if search:
-            try:
-                search_uuid = UUID(search)
-            except (ValueError, TypeError):
-                search_uuid = None
-            search_filter = Q(user__username__icontains=search)
-            if search_uuid is not None:
-                search_filter |= Q(user__id=search_uuid)
-            accesses = accesses.filter(search_filter)
-            none_search_filter = Q(username__icontains=search)
-            if search_uuid is not None:
-                none_search_filter |= Q(id=search_uuid)
-            none_users = none_users.filter(none_search_filter)
-
-        combined = [{"user": access.user, "access_type": access.access_type} for access in accesses] + [
-            {"user": user, "access_type": AccessType.NONE} for user in none_users
-        ]
-        return sorted(combined, key=lambda row: (row["user"].username or "").lower())
+        return build_entity_access_user_rows(entity_id, search)

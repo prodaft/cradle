@@ -24,8 +24,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useNdjsonQuery } from '@/hooks/query';
 import { fetchClient } from '@services/openapi/client';
-import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -86,9 +86,9 @@ export default function SearchDialog({
 
     const router = useRouter();
 
-    const entryClassesQuery = useQuery({
+    const entryClassesQuery = useNdjsonQuery({
+        path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'search-command'],
-        queryFn: () => fetchAllEntryClasses(),
         enabled: isOpen,
         staleTime: 5 * 60_000,
     });

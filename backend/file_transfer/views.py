@@ -84,7 +84,7 @@ def _sanitize_filename(name: str | None, *, default: str | None = None) -> str:
         return safe if safe else (default or "")
     except InvalidFileNameException:
         raise
-    except (ValueError, TypeError, OSError):
+    except ValueError, TypeError, OSError:
         if default is not None:
             return default
         raise InvalidFileNameException(detail="The file name contains invalid characters.")
@@ -140,10 +140,10 @@ class FileUploadCallbacks:
         file_size = None
         try:
             file_size = storage.size(pending_upload.object_key)
-        except (OSError, ClientError):
+        except OSError, ClientError:
             try:
                 storage.delete(pending_upload.object_key)
-            except (OSError, ClientError):
+            except OSError, ClientError:
                 pass
             raise InvalidFileSizeException(detail="The file size could not be determined.")
 
@@ -151,7 +151,7 @@ class FileUploadCallbacks:
         if file_size > pending_upload.user.file_upload_limit:
             try:
                 storage.delete(pending_upload.object_key)
-            except (OSError, ClientError):
+            except OSError, ClientError:
                 pass
             raise QuotaExceededException(
                 detail=f"File size ({file_size} bytes) exceeds your upload limit ({pending_upload.user.file_upload_limit} bytes)."
@@ -162,7 +162,7 @@ class FileUploadCallbacks:
         if existing_total + file_size > pending_upload.user.file_upload_limit:
             try:
                 storage.delete(pending_upload.object_key)
-            except (OSError, ClientError):
+            except OSError, ClientError:
                 pass
             raise QuotaExceededException(
                 detail=f"Upload would exceed your quota. "
@@ -383,7 +383,7 @@ class FileDownload(APIView):
             file_reference = FileReference.objects.get(id=file_id)
         except FileReference.DoesNotExist:
             raise FileReferenceNotFoundException(detail="That file could not be found.")
-        except (ValueError, TypeError, ValidationError):
+        except ValueError, TypeError, ValidationError:
             raise InvalidFileReferenceException(detail="That is not a valid file.")
 
         if not file_reference.file:
@@ -503,12 +503,12 @@ class FileDelete(APIView):
             if file_reference.file:
                 try:
                     file_reference.file.delete(save=False)
-                except (OSError, ClientError):
+                except OSError, ClientError:
                     pass
             file_reference.delete()
 
             return Response(status=status.HTTP_204_NO_CONTENT)
         except FileReference.DoesNotExist:
             raise FileReferenceNotFoundException(detail="That file could not be found.")
-        except (ValueError, TypeError, ValidationError):
+        except ValueError, TypeError, ValidationError:
             raise InvalidFileReferenceException(detail="That is not a valid file.")

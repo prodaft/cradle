@@ -26,7 +26,7 @@ Django-based backend providing core functionality for CRADLE including:
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.14+
 - PostgreSQL 13+
 - Redis 6.0+
 - uv

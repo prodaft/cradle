@@ -141,7 +141,10 @@ export default function EntryTypesPage() {
             if (error) throw { response, error };
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.entryTypes.apiList() }],
+            invalidateQueries: [
+                { queryKey: queryKeys.entryTypes.apiList() },
+                { queryKey: ['entry_classes'] },
+            ],
             successMessage: 'Entry type deleted successfully',
         },
     });

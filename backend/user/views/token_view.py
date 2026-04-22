@@ -218,14 +218,14 @@ class TokenRefreshLogView(TokenRefreshView):
             jti = old_refresh_token.get("jti")
             if jti and BlacklistedToken.is_blacklisted(jti):
                 raise SessionRenewalFailedException(detail="This session has ended. Please sign in again.")
-        except (TokenError, InvalidToken):
+        except TokenError, InvalidToken:
             raise SessionRenewalFailedException(detail="Your session could not be renewed. Please sign in again.")
         except (ValueError, TypeError, AttributeError) as e:
             logger.debug("Could not parse refresh token for blacklist check: %s", e)
 
         try:
             response = super().post(request, *args, **kwargs)
-        except (TokenError, InvalidToken):
+        except TokenError, InvalidToken:
             raise SessionRenewalFailedException(detail="Your session could not be renewed. Please sign in again.")
 
         if response.status_code == 200:

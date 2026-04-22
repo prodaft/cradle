@@ -21,9 +21,8 @@ import MultipleSelector, { type Option } from '@/components/ui/multi-select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { queryKeys } from '@/hooks/query';
+import { queryKeys, useNdjsonQuery } from '@/hooks/query';
 import { fetchClient } from '@services/openapi/client';
-import { fetchAllEntities } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
 
 type OptimizedEntryResponse = components['schemas']['OptimizedEntryResponse'];
@@ -39,7 +38,8 @@ interface EnrichmentFormData {
     title: string;
     enricherNames: string[];
     entities: number[];
-    request: string;
+    /** One line per request: `subtype:value` (only the first line is used). */
+    artifactInput: string;
 }
 
 /**
@@ -89,7 +89,7 @@ interface EnrichmentRequestDialogProps {
  *   onSuccess={() => console.log('Request created')}
  *   onError={(err) => console.error(err)}
  *   entitiesList={[1, 2, 3]}
- *   artifactsList="type:artifact\ntype:artifact"
+ *   artifactsList="ip:203.0.113.1"
  * />
  * ```
  *
@@ -126,7 +126,7 @@ export default function EnrichmentRequestDialog({
         title: '',
         enricherNames: [],
         entities: [],
-        request: '',
+        artifactInput: '',
     });
 
     const { data: enricherTypesData, isLoading } = useQuery({
@@ -190,10 +190,10 @@ export default function EnrichmentRequestDialog({
         }));
     }, [selectedNoteIds, notesList]);
 
-    // Load entities list (fetches all pages)
-    const { data: allEntitiesData } = useQuery({
+    // Load entities list (NDJSON stream, single request)
+    const { data: allEntitiesData } = useNdjsonQuery({
+        path: '/entries/entities/stream/',
         queryKey: queryKeys.entities.list(),
-        queryFn: () => fetchAllEntities(),
         enabled: open,
         meta: {
             showErrorToast: true,
@@ -270,7 +270,7 @@ export default function EnrichmentRequestDialog({
                 setFormData((prev) => ({
                     ...prev,
                     entities: resolvedEntities || prev.entities,
-                    request: resolvedArtifacts || prev.request,
+                    artifactInput: resolvedArtifacts || prev.artifactInput,
                 }));
 
                 // Update selected entities state for the UI
@@ -349,7 +349,7 @@ export default function EnrichmentRequestDialog({
         mutationFn: async (payload: {
             title: string;
             enricherNames: string[];
-            request: RequestArtifact[];
+            artifact?: RequestArtifact;
             entities: number[];
             notes: string[];
         }) => {
@@ -359,7 +359,7 @@ export default function EnrichmentRequestDialog({
                     body: {
                         title: payload.title,
                         enricher_names: payload.enricherNames,
-                        request: payload.request,
+                        ...(payload.artifact ? { artifact: payload.artifact } : {}),
                         entities: payload.entities,
                         notes: payload.notes,
                     } as any,
@@ -386,29 +386,32 @@ export default function EnrichmentRequestDialog({
             toast.error('At least one enrichment technique must be selected');
             return;
         }
-        if (!formData.entities || formData.entities.length === 0) {
-            toast.error('At least one entity must be selected');
-            return;
-        }
-        if (!formData.request.trim() && selectedNoteIds.size === 0) {
-            toast.error('Request artifacts are required');
+        if (!formData.artifactInput.trim() && selectedNoteIds.size === 0) {
+            toast.error('Specify one artifact or select at least one note');
             return;
         }
 
-        // Parse the request text
-        const parsedRequest = parseRequestText(formData.request);
-        if (parsedRequest.length === 0 && selectedNoteIds.size === 0) {
+        const parsedRequest = parseRequestText(formData.artifactInput);
+        if (parsedRequest.length > 1) {
             toast.error(
-                'Request must contain at least one valid entry in format <type>:<artifact>',
+                'Only one artifact per enrichment request. Use a single line: type:value',
             );
             return;
         }
+        if (parsedRequest.length === 0 && selectedNoteIds.size === 0) {
+            toast.error(
+                'Enter one line as type:value, or select notes that yield a single artifact',
+            );
+            return;
+        }
+
+        const artifact = parsedRequest.length === 1 ? parsedRequest[0]! : undefined;
 
         createMutation.mutate(
             {
                 title: formData.title,
                 enricherNames: formData.enricherNames,
-                request: parsedRequest,
+                artifact,
                 entities: formData.entities,
                 notes: Array.from(selectedNoteIds),
             },
@@ -529,11 +532,9 @@ export default function EnrichmentRequestDialog({
                             </FieldDescription>
                         </Field>
 
-                        {/* Entities */}
+                        {/* Entities — access scope for who can see this request */}
                         <Field>
-                            <FieldLabel htmlFor='entity'>
-                                Entities <span className='text-destructive'>*</span>
-                            </FieldLabel>
+                            <FieldLabel htmlFor='entity'>Entities</FieldLabel>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div id='entity' className='w-full'>
@@ -554,7 +555,7 @@ export default function EnrichmentRequestDialog({
                                                         label: e.name,
                                                     })) as Option[]) || []
                                             }
-                                            placeholder='Select entities to enrich...'
+                                            placeholder='Select entities for access scope…'
                                             disabled={selectedNoteIds.size > 0}
                                             onChange={handleEntityChange}
                                             emptyIndicator={
@@ -567,25 +568,27 @@ export default function EnrichmentRequestDialog({
                                 </TooltipTrigger>
                                 {selectedNoteIds.size > 0 && (
                                     <TooltipContent className='[--tooltip-bg:var(--primary)] [--tooltip-fg:var(--primary-foreground)]'>
-                                        Entities will be selected from the selected
-                                        notes
+                                        Entities are filled from the selected notes
                                     </TooltipContent>
                                 )}
                             </Tooltip>
+                            <FieldDescription>
+                                Leave empty to keep the request visible only to you
+                                (unless you attach entities for shared access).
+                            </FieldDescription>
                         </Field>
 
-                        {/* Request Artifacts */}
+                        {/* Single artifact (optional if notes supply exactly one) */}
                         <Field>
-                            <FieldLabel htmlFor='request'>
-                                Request Artifacts{' '}
-                                <span className='text-destructive'>*</span>
+                            <FieldLabel htmlFor='artifactInput'>
+                                Artifact <span className='text-destructive'>*</span>
                             </FieldLabel>
                             <textarea
-                                id='request'
-                                name='request'
-                                className='flex min-h-[128px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
-                                placeholder='Enter artifacts in format:&#10;type:artifact&#10;type:artifact'
-                                value={formData.request}
+                                id='artifactInput'
+                                name='artifactInput'
+                                className='flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
+                                placeholder='One line only, e.g. ip:203.0.113.1 or domain:example.com'
+                                value={formData.artifactInput}
                                 onChange={handleChange}
                                 required={selectedNoteIds.size === 0}
                             />

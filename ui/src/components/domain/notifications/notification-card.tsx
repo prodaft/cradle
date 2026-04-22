@@ -1,13 +1,25 @@
-import { EnvelopeIcon, EnvelopeOpenIcon } from '@phosphor-icons/react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { queryKeys } from '@/hooks/query';
+import {
+    BellSimpleIcon,
+    CheckCircleIcon,
+    EnvelopeIcon,
+    EnvelopeOpenIcon,
+    FileTextIcon,
+    ShieldCheckIcon,
+    SparkleIcon,
+    UserPlusIcon,
+    WarningCircleIcon,
+    type IconWeight,
+} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { format } from 'date-fns';
-import React, { useState } from 'react';
+import { format, formatDistanceToNow } from 'date-fns';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from 'src/components/ui/button';
-import { Card, CardContent } from 'src/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from 'src/components/ui/tooltip';
 
 type Notification = components['schemas']['Notification'];
@@ -20,16 +32,85 @@ type EnrichmentErrorNotification = components['schemas']['EnrichmentErrorNotific
 
 interface NotificationCardProps {
     notification: Notification;
-    updateFlaggedNotificationsCount: (updater: (prevCount: number) => number) => void;
 }
+
+type AlertVariant = 'default' | 'destructive';
+
+type NotificationVisual = {
+    icon: React.ComponentType<{
+        size?: number | string;
+        weight?: IconWeight;
+        className?: string;
+    }>;
+    title: string;
+    variant: AlertVariant;
+};
+
+const DEFAULT_VISUAL: NotificationVisual = {
+    icon: BellSimpleIcon,
+    title: 'Notification',
+    variant: 'default',
+};
+
+const VISUALS: Record<string, NotificationVisual> = {
+    request_access_notification: {
+        icon: ShieldCheckIcon,
+        title: 'Access request',
+        variant: 'default',
+    },
+    access_granted_notification: {
+        icon: CheckCircleIcon,
+        title: 'Access granted',
+        variant: 'default',
+    },
+    new_user_notification: {
+        icon: UserPlusIcon,
+        title: 'New user',
+        variant: 'default',
+    },
+    report_render_notification: {
+        icon: FileTextIcon,
+        title: 'Report ready',
+        variant: 'default',
+    },
+    report_processing_error_notification: {
+        icon: WarningCircleIcon,
+        title: 'Report failed',
+        variant: 'destructive',
+    },
+    enrichment_complete_notification: {
+        icon: SparkleIcon,
+        title: 'Enrichment complete',
+        variant: 'default',
+    },
+    enrichment_error_notification: {
+        icon: WarningCircleIcon,
+        title: 'Enrichment failed',
+        variant: 'destructive',
+    },
+    message_notification: {
+        icon: BellSimpleIcon,
+        title: 'Message',
+        variant: 'default',
+    },
+};
 
 export default function NotificationCard({
     notification,
-    updateFlaggedNotificationsCount,
 }: NotificationCardProps): React.JSX.Element {
     const { id, message, timestamp, is_marked_unread } = notification;
     const [unreadStatus, setUnreadStatus] = useState(is_marked_unread);
+    const queryClient = useQueryClient();
     const router = useRouter();
+
+    useEffect(() => {
+        setUnreadStatus(is_marked_unread);
+    }, [id, is_marked_unread]);
+
+    const visual =
+        (notification.notification_type && VISUALS[notification.notification_type]) ||
+        DEFAULT_VISUAL;
+    const Icon = visual.icon;
 
     const markUnreadMutation = useMutation({
         mutationFn: async ({
@@ -52,10 +133,13 @@ export default function NotificationCard({
             suppressNotification: true,
         },
         onSuccess: (_data, variables) => {
-            updateFlaggedNotificationsCount(
-                (prevCount) => prevCount + (variables.is_marked_unread ? 1 : -1),
-            );
             setUnreadStatus(variables.is_marked_unread);
+            void queryClient.invalidateQueries({
+                queryKey: queryKeys.notifications.unreadCount(),
+            });
+            void queryClient.invalidateQueries({
+                queryKey: queryKeys.notifications.list(),
+            });
         },
     });
 
@@ -147,160 +231,148 @@ export default function NotificationCard({
         viewReportMutation.mutate(notif.published_report_id);
     };
 
-    const formattedDate = timestamp
-        ? format(new Date(timestamp), 'dd/MM/yyyy, HH:mm')
+    const timestampDate = timestamp ? new Date(timestamp) : null;
+    const relativeTime = timestampDate
+        ? formatDistanceToNow(timestampDate, { addSuffix: true })
+        : 'N/A';
+    const absoluteTime = timestampDate
+        ? format(timestampDate, 'dd MMM yyyy, HH:mm')
         : 'N/A';
 
+    const hasActions = !!(
+        notification.notification_type === 'request_access_notification' ||
+        notification.notification_type === 'new_user_notification' ||
+        notification.notification_type === 'report_render_notification' ||
+        notification.notification_type === 'report_processing_error_notification' ||
+        notification.notification_type === 'enrichment_complete_notification' ||
+        notification.notification_type === 'enrichment_error_notification'
+    );
+
     return (
-        <Card className='py-0 gap-0'>
-            <CardContent className='p-3'>
-                {/* Content */}
-                <div className='min-w-0'>
-                    {/* Meta row: date + read/unread */}
-                    <div className='flex items-center justify-between'>
-                        <span className='text-muted-foreground text-xs'>
-                            {formattedDate}
+        <Alert variant={visual.variant}>
+            <Icon weight='fill' />
+
+            <AlertTitle className='flex items-center gap-2 pr-8'>
+                <span className='truncate'>{visual.title}</span>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <span className='shrink-0 text-xs font-normal text-muted-foreground'>
+                            {relativeTime}
                         </span>
+                    </TooltipTrigger>
+                    <TooltipContent>{absoluteTime}</TooltipContent>
+                </Tooltip>
+            </AlertTitle>
 
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant='ghost'
-                                    size='icon-sm'
-                                    className='p-1.5 hover:bg-secondary'
-                                    onClick={handleMarkUnread}
-                                >
-                                    {unreadStatus ? (
-                                        <EnvelopeIcon
-                                            size={16}
-                                            weight='bold'
-                                            className='text-primary'
-                                            data-testid='mark-read'
-                                        />
-                                    ) : (
-                                        <EnvelopeOpenIcon
-                                            size={16}
-                                            weight='bold'
-                                            className='text-muted-foreground hover:text-foreground'
-                                            data-testid='mark-unread'
-                                        />
-                                    )}
+            <div className='absolute top-2 right-2'>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant='ghost'
+                            size='icon-xs'
+                            onClick={handleMarkUnread}
+                        >
+                            {unreadStatus ? (
+                                <EnvelopeIcon weight='bold' data-testid='mark-read' />
+                            ) : (
+                                <EnvelopeOpenIcon
+                                    weight='bold'
+                                    data-testid='mark-unread'
+                                />
+                            )}
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        {unreadStatus ? 'Mark as read' : 'Mark as unread'}
+                    </TooltipContent>
+                </Tooltip>
+            </div>
+
+            <AlertDescription>
+                <p>{message}</p>
+
+                {hasActions && (
+                    <div className='flex flex-wrap gap-2 pt-2'>
+                        {notification.notification_type ===
+                            'request_access_notification' && (
+                            <>
+                                <Button size='xs' onClick={handleChangeAccess('read')}>
+                                    Read
                                 </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                {unreadStatus ? 'Mark as read' : 'Mark as unread'}
-                            </TooltipContent>
-                        </Tooltip>
+                                <Button
+                                    size='xs'
+                                    onClick={handleChangeAccess('read-write')}
+                                >
+                                    Read/Write
+                                </Button>
+                            </>
+                        )}
+
+                        {notification.notification_type === 'new_user_notification' && (
+                            <Button size='xs' onClick={handleActivateUser}>
+                                Activate user
+                            </Button>
+                        )}
+
+                        {notification.notification_type ===
+                            'report_render_notification' && (
+                            <Button size='xs' onClick={handleViewReport}>
+                                View report
+                            </Button>
+                        )}
+
+                        {notification.notification_type ===
+                            'report_processing_error_notification' && (
+                            <Button
+                                size='xs'
+                                onClick={() => router.navigate({ to: '/reports' })}
+                            >
+                                View details
+                            </Button>
+                        )}
+
+                        {notification.notification_type ===
+                            'enrichment_complete_notification' && (
+                            <Button
+                                size='xs'
+                                onClick={() => {
+                                    const notif =
+                                        notification as EnrichmentCompleteNotification;
+                                    if (!notif.enrichment_request_id) return;
+                                    router.navigate({
+                                        to: '/enrichment/$id',
+                                        params: {
+                                            id: notif.enrichment_request_id,
+                                        },
+                                    });
+                                }}
+                            >
+                                View enrichment
+                            </Button>
+                        )}
+
+                        {notification.notification_type ===
+                            'enrichment_error_notification' && (
+                            <Button
+                                size='xs'
+                                onClick={() => {
+                                    const notif =
+                                        notification as EnrichmentErrorNotification;
+                                    if (!notif.enrichment_request_id) return;
+                                    router.navigate({
+                                        to: '/enrichment/$id',
+                                        params: {
+                                            id: notif.enrichment_request_id,
+                                        },
+                                    });
+                                }}
+                            >
+                                View details
+                            </Button>
+                        )}
                     </div>
-
-                    {/* Message */}
-                    <p className='text-foreground text-sm leading-relaxed mt-1'>
-                        {message}
-                    </p>
-                </div>
-                <div className='flex justify-end gap-2 mt-1'>
-                    {notification.notification_type ===
-                        'request_access_notification' && (
-                        <>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
-                                onClick={handleChangeAccess('read')}
-                            >
-                                Read
-                            </Button>
-                            <Button
-                                variant='outline'
-                                size='sm'
-                                className='px-2.5 py-1 text-xs font-medium text-primary border-primary/30 hover:bg-primary/10'
-                                onClick={handleChangeAccess('read-write')}
-                            >
-                                Read/Write
-                            </Button>
-                        </>
-                    )}
-
-                    {notification.notification_type === 'new_user_notification' && (
-                        <Button
-                            variant='outline'
-                            size='sm'
-                            className='px-2.5 py-1 text-xs font-medium text-primary border-primary/30 hover:bg-primary/10'
-                            onClick={handleActivateUser}
-                        >
-                            Activate User
-                        </Button>
-                    )}
-
-                    {notification.notification_type ===
-                        'report_render_notification' && (
-                        <Button
-                            variant='outline'
-                            size='sm'
-                            className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:border-primary hover:text-primary'
-                            onClick={handleViewReport}
-                        >
-                            View Report
-                        </Button>
-                    )}
-
-                    {notification.notification_type ===
-                        'report_processing_error_notification' && (
-                        <Button
-                            variant='outline'
-                            size='sm'
-                            className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:border-primary hover:text-primary'
-                            onClick={() => router.navigate({ to: '/reports' })}
-                        >
-                            View Details
-                        </Button>
-                    )}
-
-                    {notification.notification_type ===
-                        'enrichment_complete_notification' && (
-                        <Button
-                            variant='outline'
-                            size='sm'
-                            className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:border-primary hover:text-primary'
-                            onClick={() => {
-                                const notif =
-                                    notification as EnrichmentCompleteNotification;
-                                if (!notif.enrichment_request_id) return;
-                                router.navigate({
-                                    to: '/enrichment/$id',
-                                    params: {
-                                        id: notif.enrichment_request_id,
-                                    },
-                                });
-                            }}
-                        >
-                            View Enrichment
-                        </Button>
-                    )}
-
-                    {notification.notification_type ===
-                        'enrichment_error_notification' && (
-                        <Button
-                            variant='outline'
-                            size='sm'
-                            className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:border-primary hover:text-primary'
-                            onClick={() => {
-                                const notif =
-                                    notification as EnrichmentErrorNotification;
-                                if (!notif.enrichment_request_id) return;
-                                router.navigate({
-                                    to: '/enrichment/$id',
-                                    params: {
-                                        id: notif.enrichment_request_id,
-                                    },
-                                });
-                            }}
-                        >
-                            View Details
-                        </Button>
-                    )}
-                </div>
-            </CardContent>
-        </Card>
+                )}
+            </AlertDescription>
+        </Alert>
     );
 }

@@ -48,7 +48,7 @@ export default function KnowledgeGraphSearch({
             } = await fetchClient.GET('/knowledge-graph/');
             if (error) throw { response, error };
 
-            const graphData = responseData!.results?.[0];
+            const graphData = responseData!.results;
 
             if (!graphData?.entries) {
                 return { nodes: [], edges: [], colors: {} };

@@ -2,54 +2,54 @@
 name = "cradle-backend"
 version = "2.10.2"
 description = "CRADLE Backend"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
-    "django==6.0.2",
-    "djangorestframework==3.16.1",
+    "django==6.0.4",
+    "djangorestframework==3.17.1",
     "django-cors-headers==4.9.0",
     "djangorestframework-simplejwt==5.5.1",
-    "djangorestframework-stubs==3.16.8",
-    "django-stubs==5.2.9",
-    "django-stubs-ext==5.2.9",
+    "djangorestframework-stubs==3.16.9",
+    "django-stubs==6.0.3",
+    "django-stubs-ext==6.0.3",
     "minio==7.2.20",
     "django-model-utils==5.0.0",
     "django-extensions==4.1",
-    "pytest==9.0.2",
+    "pytest==9.0.3",
     "mistune==3.2.0",
     "drf-spectacular==0.29.0",
     "django-filter==25.2",
     "pytest-django==4.12.0",
-    "environs==14.6.0",
-    "django-lifecycle==1.2.6",
-    "sentry-sdk[django]==2.53.0",
-    "celery[redis]==5.6.2",
-    # kombu[redis] (via celery[redis]==5.6.2) requires redis<6.5.
+    "environs==15.0.1",
+    "django-lifecycle==1.2.7",
+    "sentry-sdk[django]==2.58.0",
+    "celery[redis]==5.6.3",
+    # kombu[redis] (via celery[redis]) requires redis<6.5.
     "redis==6.4.0",
-    "python-redis-lock==4.0.0",
+    "python-redis-lock==4.0.1",
     "diff-match-patch==20241021",
     "xeger==0.4.0",
     "bleach==6.3.0",
-    "psycopg2-binary==2.9.11",
+    "psycopg2-binary==2.9.12",
     "bcrypt==5.0.0",
     "django-celery-beat==2.9.0",
-    "requests==2.32.5",
+    "requests==2.33.1",
     "python-frontmatter==1.1.0",
     "django-otp==1.7.0",
     "python-magic==0.4.27",
-    "django-silk[formatting]==5.4.3",
-    "gunicorn==25.1.0",
-    "pydantic>=2.12.5",
+    "django-silk[formatting]==5.5.0",
+    "gunicorn==25.3.0",
+    "pydantic==2.13.3",
     "docker==7.1.0",
-    "django-storages[s3]>=1.14.6",
-    "pathvalidate>=3.3.1",
+    "django-storages[s3]==1.14.6",
+    "pathvalidate==3.3.1",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "bump-my-version>=1.2.7",
-    "coverage>=7.13.4",
-    "ruff>=0.15.2",
-    "ipython>=9.10.0",
+    "bump-my-version==1.2.7",
+    "coverage==7.13.5",
+    "ruff==0.15.11",
+    "ipython==9.12.0",
 ]
 
 [tool.mypy]
@@ -84,7 +84,7 @@ convention = "google"
 
 [dependency-groups]
 dev = [
-    "pytest==9.0.2",
+    "pytest==9.0.3",
     "pytest-django==4.12.0",
-    "vulture>=2.14",
+    "vulture==2.14",
 ]

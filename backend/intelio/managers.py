@@ -19,11 +19,14 @@ class EnrichmentRequestQuerySet(models.QuerySet):
         accessible_entity_ids = Access.objects.get_accessible_entity_ids(user.id)
 
         return self.annotate(
+            entity_count=Count("entities", distinct=True),
             inaccessible_count=Count(
                 "entities",
                 filter=~(Q(entities__id__in=accessible_entity_ids) | Q(entities__entry_class__type=EntryType.ARTIFACT)),
-            )
-        ).filter(inaccessible_count=0)
+            ),
+        ).filter(
+            Q(inaccessible_count=0) & (Q(entity_count__gt=0) | Q(user_id=user.pk)),
+        )
 
 
 class EnrichmentRequestManager(models.Manager):

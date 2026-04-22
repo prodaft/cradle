@@ -22,12 +22,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useNdjsonQuery } from '@/hooks/query';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { fetchClient } from '@services/openapi/client';
-import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useMemo, useRef, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
@@ -118,9 +118,9 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
         },
     });
 
-    const { data: entryClassesListData } = useQuery({
+    const { data: entryClassesListData } = useNdjsonQuery({
+        path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'add-entry-type'],
-        queryFn: () => fetchAllEntryClasses(),
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });

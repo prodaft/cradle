@@ -35,7 +35,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { queryKeys } from '@/hooks/query';
+import { queryKeys, useNdjsonQuery } from '@/hooks/query';
 import { SelectOption } from '@/types';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,9 +45,8 @@ import {
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
-import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import isEqual from 'lodash/isEqual';
 import { useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -192,9 +191,9 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         data: entryClassesListData,
         isLoading: isEntryTypesListLoading,
         isPaused: isEntryTypesListPaused,
-    } = useQuery({
+    } = useNdjsonQuery({
+        path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'entry-type-form'],
-        queryFn: () => fetchAllEntryClasses(),
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
@@ -233,6 +232,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
             successMessage: 'Entry type updated successfully!',
             invalidateQueries: [
                 { queryKey: queryKeys.entryTypes.apiList() },
+                { queryKey: ['entry_classes'] },
                 ...(id ? [{ queryKey: queryKeys.entryTypes.apiDetail(id) }] : []),
             ],
         },

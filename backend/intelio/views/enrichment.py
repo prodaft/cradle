@@ -263,7 +263,9 @@ class EnrichmentSettingsAPIView(GenericAPIView):
         operation_id="enrichment_request_create",
         summary="Create enrichment request",
         description=(
-            "Create a new enrichment request for an entity. Required fields: enricher_name, entity, title, and request."
+            "Create a new enrichment request. Required: enricher_names, title, and exactly one artifact "
+            "(the `artifact` object and/or notes that resolve to a single enrichable entry). "
+            "`entities` is optional and scopes which other users can see the request."
         ),
         request=EnrichmentRequestSerializer,
         responses={
@@ -277,7 +279,7 @@ class EnrichmentAPIView(APIView):
     """API view for enrichment-related actions.
 
     GET: List all enrichment requests for the current user with filtering and pagination.
-    POST: Create a new enrichment request for an entity.
+    POST: Create a new enrichment request (optional entity IDs for access scope).
     """
 
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
@@ -459,8 +461,8 @@ class EnrichmentRestartAPIView(EnrichmentRequestObjectMixin, APIView):
         with transaction.atomic():
             # Reset the enrichment request state
             enrichment_request.status = EnrichmentStatus.WAITING
-            enrichment_request.errors = []
-            enrichment_request.warnings = []
+            enrichment_request.errors = {}
+            enrichment_request.warnings = {}
             enrichment_request.enricher_status = {}
             enrichment_request.completed_at = None
             enrichment_request.save(
@@ -552,14 +554,24 @@ class EnrichmentRequestEnricherAPIView(EnrichmentRequestObjectMixin, APIView):
                 name="query",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter by entry name or subclass, supports wildcard queries",
+                description="Advanced entry filter (parse_query syntax; ignored if `search` is set)",
                 required=False,
             ),
             OpenApiParameter(
                 name="details",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter by details, matched with a simple contains search",
+                description="Filter by details, matched with a simple contains search (ignored if `search` is set)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Substring match on either endpoint's name or subtype, or on JSON `details` "
+                    "(case-insensitive). When set, `query` and `details` are ignored."
+                ),
                 required=False,
             ),
         ],
@@ -606,21 +618,31 @@ class EnrichmentRelationsAPIView(EnrichmentRequestObjectMixin, APIView):
         if entry_id is not None:
             relations = relations.filter(Q(e1__id=entry_id) | Q(e2__id=entry_id))
 
-        query_str = request.query_params.get("query")
-        if query_str:
-            try:
-                query_filter = parse_query(query_str + "*")
-            except ValueError as e:
-                raise InvalidSearchSyntaxException(
-                    detail="Use a colon between the entry type and name (for example, *:note or author:Smith)."
-                ) from e
+        search = (request.query_params.get("search") or "").strip()
+        if search:
+            relations = relations.filter(
+                Q(e1__name__icontains=search)
+                | Q(e2__name__icontains=search)
+                | Q(e1__entry_class__subtype__icontains=search)
+                | Q(e2__entry_class__subtype__icontains=search)
+                | Q(details__icontains=search),
+            )
+        else:
+            query_str = request.query_params.get("query")
+            if query_str:
+                try:
+                    query_filter = parse_query(query_str + "*")
+                except ValueError as e:
+                    raise InvalidSearchSyntaxException(
+                        detail="Use a colon between the entry type and name (for example, *:note or author:Smith)."
+                    ) from e
 
-            entries_qs = Entry.objects.filter(query_filter)
-            relations = relations.filter(Q(e1__in=entries_qs) | Q(e2__in=entries_qs))
+                entries_qs = Entry.objects.filter(query_filter)
+                relations = relations.filter(Q(e1__in=entries_qs) | Q(e2__in=entries_qs))
 
-        details = request.query_params.get("details")
-        if details:
-            relations = relations.filter(details__icontains=details)
+            details = request.query_params.get("details")
+            if details:
+                relations = relations.filter(details__icontains=details)
 
         relations = relations.order_by("id")
         # Optimize query

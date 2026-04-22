@@ -3,6 +3,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from '@/contexts/ui';
 import { useAuthActions } from '@/hooks/auth/use-auth';
+import { useNdjsonQuery } from '@/hooks/query';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import {
     cradleLinkColorPlugin,
@@ -61,9 +62,8 @@ import {
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
 import { $api, fetchClient } from '@services/openapi/client';
-import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import {
     forwardRef,
@@ -91,7 +91,7 @@ interface RichEditorProps {
     setMarkdownContent: (content: string) => void;
     fileData: FileReference[];
     setFileData: (data: FileReference[]) => void;
-    saveNote: (autoSave?: boolean) => void;
+    saveNote: () => void;
     additionalExtensions?: Extension[];
     enableEditing?: boolean;
     source?: boolean;
@@ -259,9 +259,9 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         },
     });
 
-    const { data: entryClassesData } = useQuery({
+    const { data: entryClassesData } = useNdjsonQuery({
+        path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'rich-editor'],
-        queryFn: () => fetchAllEntryClasses(),
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
@@ -463,7 +463,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     run: (cm: EditorView) => {
                         if (!enableEditing) return false;
                         setMarkdownContentRef.current(cm.state.doc.toString());
-                        saveNoteRef.current(true);
+                        saveNoteRef.current();
                         return true;
                     },
                 },
@@ -516,7 +516,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             Vim.defineEx('write', 'w', (cm: CodeMirror) => {
                 try {
                     setMarkdownContentRef.current(cm.cm6.state.doc.toString());
-                    saveNoteRef.current(true);
+                    saveNoteRef.current();
                 } catch (error) {
                     toast.error('Failed to save note. Please try again with Ctrl-S.');
                     logger.error('Save via Vim :w failed', error);

@@ -60,7 +60,7 @@ def validate_page_size(
     else:
         try:
             page_size = int(str(page_size_str).strip())
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             raise InvalidPageSizeException(detail="Page size must be a positive whole number.")
 
     if page_size < 1:
@@ -97,7 +97,7 @@ def validate_int_param(
         raise InvalidRequestException(detail=f'Query parameter "{param_name}" is required.')
     try:
         parsed = int(str(value).strip())
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         raise InvalidRequestException(detail=f'Query parameter "{param_name}" must be a whole number.')
     if not allow_negative and parsed < 0:
         raise InvalidRequestException(detail=f'Query parameter "{param_name}" must be zero or greater.')
@@ -153,7 +153,7 @@ def validate_int_list_param(
     for v in values:
         try:
             parsed = int(str(v).strip())
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             raise InvalidRequestException(detail=f'Query parameter "{param_name}" must contain only whole numbers.')
         if not allow_negative and parsed < 0:
             raise InvalidRequestException(

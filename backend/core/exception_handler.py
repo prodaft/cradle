@@ -7,8 +7,10 @@ automatic OpenAPI documentation.
 
 import logging
 
+from django.conf import settings
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError as DRFValidationError
+from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
 from .exceptions import CoreErrorCodes, CradleAPIException
@@ -36,12 +38,13 @@ def custom_exception_handler(exc, context):
         context: Context information about the request.
 
     Returns:
-        Response: Formatted error response.
+        Response: RFC 9457 JSON for handled DRF errors, or for unhandled exceptions a 500
+        problem-details body (so clients do not receive Django's HTML error page).
     """
     # Call DRF's default exception handler first to get the standard error response
     response = exception_handler(exc, context)
 
-    # If DRF didn't handle it, log and return None (will become a 500 error)
+    # If DRF didn't handle it, log and return JSON 500 (Django would otherwise return HTML).
     if response is None:
         request = context.get("request")
         logger.exception(
@@ -51,7 +54,18 @@ def custom_exception_handler(exc, context):
                 "method": getattr(request, "method", None),
             },
         )
-        return None
+        err = CoreErrorCodes.INTERNAL_SERVER_ERROR
+        payload = {
+            "type": err.type_uri,
+            "title": err.title,
+            "status": err.status_code,
+            "code": err.code,
+            "detail": str(exc) if settings.DEBUG else err.title,
+            "timestamp": timezone.now().isoformat(),
+        }
+        if request:
+            payload["instance"] = request.path
+        return Response(payload, status=err.status_code)
 
     request = context.get("request")
 

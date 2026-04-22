@@ -1,5 +1,5 @@
 import { HashIcon } from '@phosphor-icons/react';
-import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
+import { fetchNdjson } from '@services/openapi/ndjson-stream';
 import MarkdownIt from 'markdown-it';
 import markdownItAnchor from 'markdown-it-anchor';
 import { createElement } from 'react';
@@ -14,7 +14,9 @@ export async function parseMarkdown(
     fileData?: any[],
 ): Promise<{ html: string; metadata: Record<string, any> } | undefined> {
     try {
-        const entries = await fetchAllEntryClasses();
+        const entries = await fetchNdjson({
+            path: '/entries/entry-classes/stream/',
+        });
         const entryColors = new Map<string, string>();
         for (const entry of entries) {
             entryColors.set(entry.subtype, entry.color || 'var(--primary)');

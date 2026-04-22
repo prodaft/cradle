@@ -46,9 +46,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useNdjsonQuery } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { fetchClient } from '@services/openapi/client';
-import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { startCase } from 'lodash';
 import {
@@ -190,9 +190,9 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         meta: { showErrorToast: true },
     });
 
-    const entryClassesQuery = useQuery({
+    const entryClassesQuery = useNdjsonQuery({
+        path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'type-mappings'],
-        queryFn: () => fetchAllEntryClasses(),
         meta: { showErrorToast: true },
     });
 

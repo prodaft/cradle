@@ -22,12 +22,12 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
+import { useNdjsonQuery } from '@/hooks/query';
 import { SelectOption } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { fetchClient } from '@services/openapi/client';
-import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -120,9 +120,10 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
         },
     });
 
-    const { data: entryClassesData } = useQuery({
+    const { data: entryClassesData } = useNdjsonQuery({
+        path: '/entries/entry-classes/stream/',
+        params: { query: { show_count: true } },
         queryKey: ['entry_classes', 'add-entity', 'show_count'],
-        queryFn: () => fetchAllEntryClasses({ show_count: true }),
         refetchOnWindowFocus: false,
         meta: {
             showErrorToast: false,

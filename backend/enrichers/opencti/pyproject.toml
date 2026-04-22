@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cradle-enricher-opencti"
+version = "0.0.0"
+description = "CRADLE Docker enricher: OpenCTI"
+requires-python = ">=3.14"
+dependencies = [
+    "pycti>=6.0,<7",
+]
+
+[tool.setuptools]
+packages = []

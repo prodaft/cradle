@@ -114,7 +114,11 @@ class GraphPathFindView(APIView):
 
         min_date_raw = request.query_params.get("min_date")
         max_date_raw = request.query_params.get("max_date")
-        min_date = parse_datetime(min_date_raw) if min_date_raw else datetime.datetime.fromtimestamp(0, tz=timezone.utc)
+        min_date = (
+            parse_datetime(min_date_raw)
+            if min_date_raw
+            else datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
+        )
         max_date = parse_datetime(max_date_raw) if max_date_raw else timezone.now()
         if min_date is None or max_date is None:
             raise BadRequestException(detail="Enter valid start and end values for the date range.")

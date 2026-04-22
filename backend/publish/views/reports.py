@@ -113,7 +113,7 @@ class ReportListAPIView(generics.ListAPIView):
             try:
                 search_uuid = UUID(search)
                 search_filter |= Q(id=search_uuid)
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 pass
             queryset = queryset.filter(search_filter)
 
@@ -266,7 +266,7 @@ class ReportDetailAPIView(generics.RetrieveDestroyAPIView):
                 publisher = publisher_factory(report.anonymized)
                 try:
                     publisher.delete_report(report)
-                except (OSError, IOError):
+                except OSError, IOError:
                     raise ReportDeleteFailedException(detail="The report could not be deleted. Please try again later.")
             report.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

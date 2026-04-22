@@ -6,8 +6,11 @@ import {
     ResizablePanelGroup,
 } from '@/components/ui/resizable';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { useAuthState } from '@/hooks/auth/use-auth';
+import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
+import { queryKeys } from '@/hooks/query';
 import { NotificationsPanel } from '@components/domain/notifications';
+import { fetchClient } from '@services/openapi/client';
+import { useQuery } from '@tanstack/react-query';
 import { Outlet } from '@tanstack/react-router';
 import React, { Suspense, useState } from 'react';
 import Navbar from '../navbar/navbar';
@@ -27,8 +30,21 @@ import Navbar from '../navbar/navbar';
  */
 export default function MainLayout(): React.JSX.Element {
     const { isInitializing } = useAuthState();
+    const { isLoggedIn } = useAuthActions();
     const [showNotifications, setShowNotifications] = useState(false);
-    const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+    const { data: unreadNotifications } = useQuery({
+        queryKey: queryKeys.notifications.unreadCount(),
+        enabled: !isInitializing && isLoggedIn(),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/notifications/unread-count/',
+            );
+            if (error) throw { response, error };
+            return data!;
+        },
+    });
+    const unreadNotificationsCount = unreadNotifications?.count ?? 0;
 
     const handleNotifications = () => {
         setShowNotifications(!showNotifications);
@@ -79,13 +95,10 @@ export default function MainLayout(): React.JSX.Element {
                                 defaultSize='25%'
                                 minSize='25%'
                                 maxSize='45%'
-                                className='bg-card overflow-hidden'
+                                className='bg-card overflow-hidden border-l border-border shadow-xl'
                             >
                                 <NotificationsPanel
-                                    unreadNotificationsCount={unreadNotificationsCount}
-                                    setUnreadNotificationsCount={
-                                        setUnreadNotificationsCount
-                                    }
+                                    onClose={() => setShowNotifications(false)}
                                 />
                             </ResizablePanel>
                         </ResizablePanelGroup>

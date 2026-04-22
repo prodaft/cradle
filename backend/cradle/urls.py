@@ -1,4 +1,4 @@
-"""URL configuration for Cradle. Mounts API routes under /api, admin under BASE_URL, schema docs."""
+"""URL configuration for Cradle. Mounts admin at /<ADMIN_PATH>/, API under /api/."""
 
 from django.conf import settings
 from django.contrib import admin
@@ -13,7 +13,6 @@ from user.views.oauth_view import OAuthLoginView
 from user.views.token_view import LogoutView, TokenObtainPairLogView, TokenRefreshLogView
 from user.views.user_view import ChangePasswordView, EmailConfirm, PasswordReset, SignupView, UserConfigView
 
-base_url = settings.BASE_URL.strip("/")
 admin_path = path(settings.ADMIN_PATH, admin.site.urls)
 
 api_patterns = [
@@ -60,12 +59,8 @@ if settings.USE_SILK:
     api_patterns.append(path("silk/", include("silk.urls", namespace="silk")))
 
 api_prefix = "api/"
-base_prefix = f"{base_url}/" if base_url else ""
 
-if base_prefix == api_prefix:
-    urlpatterns = [path(api_prefix, include([admin_path] + api_patterns))]
-else:
-    urlpatterns = [
-        path(base_prefix or "", include([admin_path])),
-        path(api_prefix, include(api_patterns)),
-    ]
+urlpatterns = [
+    path("", include([admin_path])),
+    path(api_prefix, include(api_patterns)),
+]

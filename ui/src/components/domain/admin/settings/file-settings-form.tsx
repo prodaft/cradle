@@ -18,7 +18,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import { queryKeys } from '@/hooks/query';
+import { queryKeys, useNdjsonQuery } from '@/hooks/query';
 import { SelectOption } from '@/types';
 import { getSuccessMessage } from '@/utils/api';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,7 +29,6 @@ import {
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
-import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import bytes from 'bytes';
 import isEqual from 'lodash/isEqual';
@@ -150,9 +149,9 @@ export default function FileSettingsForm() {
 
     const loadedValuesRef = useRef<FileSettingsFormValues | null>(null);
 
-    const { data: entryClassesData } = useQuery({
+    const { data: entryClassesData } = useNdjsonQuery({
+        path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'file-settings'],
-        queryFn: () => fetchAllEntryClasses(),
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });

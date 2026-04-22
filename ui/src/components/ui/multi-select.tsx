@@ -301,12 +301,16 @@ const MultipleSelector = ({
     }, [value]);
 
     useEffect(() => {
-        /** If `onSearch` is provided, do not trigger options updated. */
-        if (!arrayOptions || onSearch) {
+        /** When `onSearch` is set, options only come from search callbacks. */
+        if (onSearch) {
             return;
         }
 
-        const newOption = transToGroupOption(arrayOptions || [], groupBy);
+        const source =
+            arrayOptions !== undefined && arrayOptions !== null
+                ? arrayOptions
+                : arrayDefaultOptions;
+        const newOption = transToGroupOption(source || [], groupBy);
 
         if (JSON.stringify(newOption) !== JSON.stringify(options)) {
             setOptions(newOption);

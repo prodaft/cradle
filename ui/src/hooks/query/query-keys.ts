@@ -84,8 +84,7 @@ export const queryKeys = {
                 entryId?: number;
                 page?: number;
                 pageSize?: number;
-                query?: string;
-                details?: string;
+                search?: string;
             }) => ['enrichment', 'results', 'relations', params] as const,
         },
     },
@@ -166,6 +165,13 @@ export const queryKeys = {
     management: {
         all: ['management'] as const,
         settings: () => [...queryKeys.management.all, 'settings'] as const,
+    },
+
+    // Notifications
+    notifications: {
+        all: ['notifications'] as const,
+        list: () => [...queryKeys.notifications.all, 'list'] as const,
+        unreadCount: () => [...queryKeys.notifications.all, 'unread-count'] as const,
     },
 
     // Digests

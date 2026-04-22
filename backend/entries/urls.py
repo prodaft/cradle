@@ -2,9 +2,14 @@
 
 from django.urls import path
 
-from .views import entity_views, entry_class_views, entry_view, relation_view
+from .views import entity_views, entry_class_views, entry_view, list_stream_views, relation_view
 
 urlpatterns = [
+    path(
+        "entry-classes/stream/",
+        list_stream_views.EntryClassListStreamView.as_view(),
+        name="entry_class_list_stream",
+    ),
     path(
         "entry-classes/",
         entry_class_views.EntryClassList.as_view(),
@@ -14,6 +19,11 @@ urlpatterns = [
         "entry-classes/<path:class_subtype>/",
         entry_class_views.EntryClassDetail.as_view(),
         name="entry_class_detail",
+    ),
+    path(
+        "entities/stream/",
+        list_stream_views.EntityListStreamView.as_view(),
+        name="entity_list_stream",
     ),
     path("entities/", entity_views.EntityList.as_view(), name="entity_list"),
     path(

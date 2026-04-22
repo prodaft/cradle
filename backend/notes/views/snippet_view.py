@@ -71,7 +71,7 @@ class UserSnippetsListCreateView(APIView):
         else:
             try:
                 target_user = CradleUser.objects.get(id=user_id)
-            except (CradleUser.DoesNotExist, ValueError, TypeError):
+            except CradleUser.DoesNotExist, ValueError, TypeError:
                 raise UserNotFoundException(detail="That user could not be found.")
 
             # Check permissions (404 to avoid revealing user exists)
@@ -121,7 +121,7 @@ class UserSnippetsListCreateView(APIView):
         else:
             try:
                 target_owner = CradleUser.objects.get(id=user_id)
-            except (CradleUser.DoesNotExist, ValueError, TypeError):
+            except CradleUser.DoesNotExist, ValueError, TypeError:
                 raise UserNotFoundException(detail="That user could not be found.")
 
             # Check permissions (404 to avoid revealing user exists)

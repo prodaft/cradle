@@ -9,6 +9,7 @@ Routes:
 
 from django.urls import path
 
+from .views.access_stream_views import EntityAccessListStreamView, UserAccessListStreamView
 from .views.access_view import EntityAccessList, UserAccessList
 from .views.request_access_view import RequestAccess
 from .views.update_access_view import UpdateAccess
@@ -19,7 +20,17 @@ urlpatterns = [
         UpdateAccess.as_view(),
         name="update_access",
     ),
+    path(
+        "user/<uuid:user_id>/stream/",
+        UserAccessListStreamView.as_view(),
+        name="user_access_list_stream",
+    ),
     path("user/<uuid:user_id>/", UserAccessList.as_view(), name="user_access_list"),
+    path(
+        "entity/<int:entity_id>/stream/",
+        EntityAccessListStreamView.as_view(),
+        name="entity_access_list_stream",
+    ),
     path(
         "entity/<int:entity_id>/",
         EntityAccessList.as_view(),

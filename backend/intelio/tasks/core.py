@@ -14,6 +14,17 @@ from ..models.base import BaseDigest, BaseEnricher, EnricherSettings, Enrichment
 logger = logging.getLogger(__name__)
 
 
+def _exception_chain(exc: BaseException) -> list[BaseException]:
+    out: list[BaseException] = []
+    seen: set[int] = set()
+    cur: BaseException | None = exc
+    while cur is not None and id(cur) not in seen:
+        seen.add(id(cur))
+        out.append(cur)
+        cur = cur.__cause__ or cur.__context__
+    return out
+
+
 @shared_task
 def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
     """Run a single enricher for an enrichment request inside an isolated container.
@@ -38,12 +49,14 @@ def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
             entries=entries,
             request=request,
         )
-    except Exception:
+    except Exception as exc:
         label = BaseEnricher.display_label_for_type(enricher_settings.enricher_type)
         logger.exception("Enrichment run failed (%s)", enricher_settings.enricher_type)
         error_message = f"{label} could not finish. Please try again."
-        request._append_error(error_message, enricher_settings.enricher_type)
+        if any(x.__class__.__name__ == "ImageNotFound" for x in _exception_chain(exc)):
+            error_message = f"{label}: Docker image is missing."
         request._set_enricher_status(enricher_settings.enricher_type, EnrichmentStatus.ERROR)
+        request._append_error(error_message, enricher_settings.enricher_type)
         return
 
     request._set_enricher_status(enricher_settings.enricher_type, EnrichmentStatus.DONE)

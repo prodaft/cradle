@@ -29,7 +29,7 @@ import {
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
-import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
+import { fetchNdjson } from '@services/openapi/ndjson-stream';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { startCase } from 'lodash';
 import isEqual from 'lodash/isEqual';
@@ -114,8 +114,9 @@ export default function EnrichmentSettingsForm({
 }: EnrichmentSettingsFormProps) {
     const fetchEntryClassesMutation = useMutation({
         mutationFn: async (q: string) => {
-            const results = await fetchAllEntryClasses({
-                search: q || undefined,
+            const results = await fetchNdjson({
+                path: '/entries/entry-classes/stream/',
+                params: { query: { search: q || undefined } },
             });
             return results.map((entry) => ({
                 value: entry.subtype,

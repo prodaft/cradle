@@ -1,11 +1,11 @@
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
 COPY _base/ ./_base/
 
-COPY abuseipdb/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+COPY abuseipdb/pyproject.toml ./pyproject.toml
+RUN pip install --no-cache-dir .
 
 COPY abuseipdb/enricher.py ./enricher.py
 

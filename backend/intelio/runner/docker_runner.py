@@ -214,8 +214,8 @@ def run_enricher_container(
         An :class:`~.serializers.EnricherResult` with relations, warnings, errors.
 
     Raises:
-        ``docker.errors.ImageNotFound``: If the image cannot be pulled after a
-            missing-image error from ``create``.
+        ``docker.errors.ImageNotFound``: If the image is not in the registry
+            (including after an attempted pull).
         ``docker.errors.DockerException`` / ``docker.errors.APIError``: On other
             Docker API failures.
         ``pydantic.ValidationError`` / ``json.JSONDecodeError``: If stdout is
@@ -275,6 +275,12 @@ def run_enricher_container(
     container = None
     raw_output: bytes = b""
     try:
+        try:
+            client.images.get(image)
+        except docker.errors.ImageNotFound:
+            logger.info("Enricher image %r not present locally; pulling", image)
+            client.images.pull(image)
+
         with tempfile.NamedTemporaryFile(
             mode="w",
             encoding="utf-8",
@@ -283,7 +289,7 @@ def run_enricher_container(
         ) as job_file:
             job_path = job_file.name
             job_file.write(job_json)
-        os.chmod(job_path, 0o600)
+        os.chmod(job_path, 0o644)
 
         volumes = {job_path: {"bind": "/job.json", "mode": "ro"}}
         create_kw = dict(
@@ -299,12 +305,7 @@ def run_enricher_container(
             tmpfs={"/tmp": "rw,nosuid,noexec,size=64m"},
         )
 
-        try:
-            container = client.containers.create(**create_kw)
-        except docker.errors.ImageNotFound:
-            client.images.pull(image)
-            container = client.containers.create(**create_kw)
-
+        container = client.containers.create(**create_kw)
         container.start()
 
         wait_result: dict = {}

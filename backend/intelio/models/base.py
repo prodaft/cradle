@@ -29,6 +29,10 @@ from ..managers import EnrichmentRequestManager
 
 logger = logging.getLogger(__name__)
 
+_ENRICHMENT_REQUEST_SAVE_SKIP_FULL_CLEAN = frozenset(
+    {"errors", "warnings", "enricher_status", "completed_at", "status", "ignored"}
+)
+
 
 def digest_upload_path(instance: "BaseDigest", _filename: str) -> str:
     """Generate upload path for digest: {user_id}/{digest_id}."""
@@ -195,7 +199,7 @@ class BaseDigest(LifecycleModel):
         try:
             if os.path.exists(self.path):
                 os.remove(self.path)
-        except (OSError, PermissionError):
+        except OSError, PermissionError:
             # Best-effort cleanup; never fail digest completion due to local FS issues.
             pass
 
@@ -420,15 +424,15 @@ class ClassMapping(models.Model):
         return typemapping
 
 
-class EnrichmentRequestSchema(BaseModel):
-    """Schema for enrichment requests."""
+class EnrichmentRequestArtifactSchema(BaseModel):
+    """Schema for the single artifact on an enrichment request."""
 
     entry_class: str
     name: str
 
 
 class EnrichmentRequest(LifecycleModel):
-    """A request to enrich one or more artifacts using configured enrichers."""
+    """A request to enrich exactly one artifact using configured enrichers."""
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
     enrichers_settings = models.ManyToManyField(EnricherSettings, help_text="Enrichers to run for this request")
@@ -451,16 +455,25 @@ class EnrichmentRequest(LifecycleModel):
     entities = models.ManyToManyField(
         Entry,
         related_name="enrichment_requests",
-        help_text="Entities being enriched (for access control)",
+        blank=True,
+        help_text="Optional entity entries for access control (who may see this request)",
     )
     enricher_status = models.JSONField(
         default=dict, blank=True, help_text="Per-enricher status (enricher_type -> status)"
     )
     relations = GenericRelation(Relation, related_query_name="enrichment")
-    request = models.JSONField(default=list, blank=False, help_text="List of {entry_class, name} objects to enrich")
+    artifact = models.JSONField(
+        default=dict,
+        blank=False,
+        help_text='Single artifact: {"entry_class": subtype string, "name": artifact value}',
+    )
     errors = models.JSONField(default=dict, blank=True, help_text="Per-enricher error messages")
     warnings = models.JSONField(default=dict, blank=True, help_text="Per-enricher warning messages")
-    ignored = models.JSONField(default=list, blank=True, help_text="Request items ignored (no matching enricher)")
+    ignored = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Ignored artifact (no matching enricher), at most one object matching `artifact` shape",
+    )
 
     objects = EnrichmentRequestManager()
 
@@ -471,34 +484,24 @@ class EnrichmentRequest(LifecycleModel):
             if not self.enrichers_settings.count():
                 raise ValidationError("Select at least one enrichment.")
 
-            if not self.entities.count():
-                raise ValidationError("Select at least one entity.")
+        if not isinstance(self.artifact, dict):
+            raise ValidationError({"artifact": "Provide a single object with entry_class and name."})
 
-        if not isinstance(self.request, list):
-            raise ValidationError({"request": "Provide a list of items to enrich, not a single value."})
-
-        classes = set()
         try:
-            for req in self.request:
-                classes.add(EnrichmentRequestSchema(**req).entry_class)
+            EnrichmentRequestArtifactSchema(**self.artifact)
         except PydanticValidationError:
-            raise ValidationError({"request": "Each item must include an entry type and a name for that type."})
+            raise ValidationError({"artifact": "Include an entry type (entry_class) and a name for that type."})
 
-        if EntryClass.objects.filter(subtype__in=classes, type=EntryType.ARTIFACT).count() != len(classes):
-            invalid_classes = classes - set(
-                EntryClass.objects.filter(subtype__in=classes, type=EntryType.ARTIFACT).values_list(
-                    "subtype", flat=True
-                )
-            )
-            labels = [(str(c).replace("_", " ").strip() or str(c)) for c in sorted(invalid_classes)]
-            names = ", ".join(labels)
-            if len(labels) == 1:
-                msg = f'This entry type cannot be used for enrichment: "{names}".'
-            else:
-                msg = f'These entry types cannot be used for enrichment: "{names}".'
-            raise ValidationError({"request": msg})
+        subtype = self.artifact["entry_class"]
+        if not EntryClass.objects.filter(subtype=subtype, type=EntryType.ARTIFACT).exists():
+            label = str(subtype).replace("_", " ").strip() or str(subtype)
+            raise ValidationError({"artifact": f'This entry type cannot be used for enrichment: "{label}".'})
 
     def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        if update_fields and frozenset(update_fields) <= _ENRICHMENT_REQUEST_SAVE_SKIP_FULL_CLEAN:
+            super().save(*args, **kwargs)
+            return
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -530,21 +533,18 @@ class EnrichmentRequest(LifecycleModel):
         return enrichers
 
     def entries(self, classes: set[str] | None = None):
-        entries = []
-        entry_classes = {}
-
-        for req in self.request:
-            if classes is None or req["entry_class"] in classes:
-                if req["entry_class"] not in entry_classes:
-                    entry_classes[req["entry_class"]] = EntryClass.objects.get(
-                        subtype=req["entry_class"], type=EntryType.ARTIFACT
-                    )
-                entry_class = entry_classes[req["entry_class"]]
-
-                entry, _ = Entry.objects.get_or_create(name=req["name"], entry_class=entry_class)
-                entries.append(entry)
-
-        return entries
+        req = self.artifact
+        if not req or not isinstance(req, dict):
+            return []
+        subtype = req.get("entry_class")
+        name = req.get("name")
+        if not subtype or name is None or name == "":
+            return []
+        if classes is not None and subtype not in classes:
+            return []
+        entry_class = EntryClass.objects.get(subtype=subtype, type=EntryType.ARTIFACT)
+        entry, _ = Entry.objects.get_or_create(name=name, entry_class=entry_class)
+        return [entry]
 
     def start_enrichment(self):
         """Start the enrichment process after creation."""
@@ -555,16 +555,17 @@ class EnrichmentRequest(LifecycleModel):
         all_eclasses = set(self.enrichers_settings.all().values_list("for_eclasses__subtype", flat=True))
         self.relations.clear()
 
-        ignored = {}
-        for req in self.request:
-            if req["entry_class"] not in all_eclasses:
-                ignored[(req["entry_class"], req["name"])] = req
+        req = self.artifact if isinstance(self.artifact, dict) else {}
+        subtype = req.get("entry_class")
+        ignored: list[dict] = []
+        if subtype and subtype not in all_eclasses:
+            ignored = [{"entry_class": subtype, "name": req.get("name", "")}]
 
-        self.ignored = list(ignored.values())
+        self.ignored = ignored
 
         if len(ignored) > 0:
             self.status = EnrichmentStatus.WARNING
-            logger.info("Enrichment request %s has %d ignored artifacts", self.id, len(ignored))
+            logger.info("Enrichment request %s has ignored artifact (no matching enricher)", self.id)
         else:
             self.status = EnrichmentStatus.WORKING
 
@@ -583,45 +584,47 @@ class EnrichmentRequest(LifecycleModel):
     def _set_enricher_status(self, enricher_type: str, status: EnrichmentStatus):
         if self.enricher_status and self.enricher_status.get(enricher_type) == status.value:
             return
+        terminal = frozenset({EnrichmentStatus.DONE.value, EnrichmentStatus.ERROR.value})
+        notify_instance: EnrichmentRequest | None = None
         with transaction.atomic():
             instance = EnrichmentRequest.objects.select_for_update().get(pk=self.pk)
-            instance.enricher_status = instance.enricher_status or {}
+            instance.enricher_status = dict(instance.enricher_status or {})
+            instance.enricher_status[enricher_type] = status.value
 
-            if enricher_type not in instance.enricher_status:
-                instance.enricher_status[enricher_type] = status.value
+            expected_types = frozenset(instance.enrichers_settings.values_list("enricher_type", flat=True))
+            all_reported_terminal = expected_types and all(
+                instance.enricher_status.get(t) in terminal for t in expected_types
+            )
 
-                if (
-                    len(
-                        list(
-                            filter(
-                                lambda x: x == EnrichmentStatus.DONE.value,
-                                instance.enricher_status.values(),
-                            )
-                        )
-                    )
-                    == instance.enrichers_settings.count()
-                ):
-                    instance.completed_at = timezone.now()
-                    err_count, success_count = 0, 0
-                    for stat in instance.enricher_status.values():
-                        if stat == EnrichmentStatus.ERROR.value:
-                            err_count += 1
-                        else:
-                            success_count += 1
+            if all_reported_terminal:
+                instance.completed_at = timezone.now()
+                err_count, success_count = 0, 0
+                for t in expected_types:
+                    stat = instance.enricher_status.get(t)
+                    if stat == EnrichmentStatus.ERROR.value:
+                        err_count += 1
+                    else:
+                        success_count += 1
 
-                    if err_count > 0 and success_count == 0:
-                        instance.status = EnrichmentStatus.ERROR
-                    elif err_count > 0:
-                        instance.status = EnrichmentStatus.WARNING
-                    elif instance.status != EnrichmentStatus.WARNING and instance.status != EnrichmentStatus.ERROR:
-                        instance.status = EnrichmentStatus.DONE
+                if err_count > 0 and success_count == 0:
+                    instance.status = EnrichmentStatus.ERROR
+                elif err_count > 0:
+                    instance.status = EnrichmentStatus.WARNING
+                elif instance.status != EnrichmentStatus.WARNING and instance.status != EnrichmentStatus.ERROR:
+                    instance.status = EnrichmentStatus.DONE
 
-                    instance.save(update_fields=["enricher_status", "completed_at", "status"])
+                instance.save(update_fields=["enricher_status", "completed_at", "status"])
+                notify_instance = instance
+            else:
+                instance.save(update_fields=["enricher_status"])
 
-                    # Send notification after all enrichers complete
-                    self._send_enrichment_notification(instance)
-                else:
-                    instance.save(update_fields=["enricher_status"])
+        self.enricher_status = instance.enricher_status
+        self.status = instance.status
+        if instance.completed_at is not None:
+            self.completed_at = instance.completed_at
+
+        if notify_instance is not None:
+            self._send_enrichment_notification(notify_instance)
 
     def _append_error(self, error, enricher_type: str):
         if error in self.errors.get(enricher_type, []):

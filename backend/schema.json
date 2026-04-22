@@ -519,6 +519,396 @@
                 }
             }
         },
+        "/access/entity/{entity_id}/stream/": {
+            "get": {
+                "operationId": "access_entity_stream",
+                "description": "Returns all users and access types for an entity as NDJSON (one object per line). Admin only; same data as the paginated endpoint.",
+                "summary": "Stream entity access privileges (NDJSON)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "entity_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "ID of the entity",
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Search users by username or user ID"
+                    }
+                ],
+                "tags": [
+                    "access"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "``application/x-ndjson`` body: one JSON object per line (same shape as list items)."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "ENTITYNOTFOUND": {
+                                        "value": {
+                                            "type": "/errors/entity-not-found",
+                                            "title": "Entity Not Found",
+                                            "status": 404,
+                                            "detail": "Entity Not Found",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "ENTITY_NOT_FOUND"
+                                        },
+                                        "summary": "ENTITY_NOT_FOUND"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "ENTITY_NOT_FOUND"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "UNAUTHENTICATED": {
+                                        "value": {
+                                            "type": "/errors/unauthenticated",
+                                            "title": "Unauthenticated",
+                                            "status": 401,
+                                            "detail": "Unauthenticated",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "UNAUTHENTICATED"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "UNAUTHENTICATED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "PERMISSIONDENIED": {
+                                        "value": {
+                                            "type": "/errors/permission-denied",
+                                            "title": "Permission Denied",
+                                            "status": 403,
+                                            "detail": "Permission Denied",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "PERMISSION_DENIED"
+                                        },
+                                        "summary": "PERMISSION_DENIED"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "PERMISSION_DENIED"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "INTERNALSERVERERROR": {
+                                        "value": {
+                                            "type": "/errors/internal-server-error",
+                                            "title": "Internal Server Error",
+                                            "status": 500,
+                                            "detail": "Internal Server Error",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "INTERNAL_SERVER_ERROR"
+                                        },
+                                        "summary": "INTERNAL_SERVER_ERROR"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "INTERNAL_SERVER_ERROR"
+                    }
+                }
+            }
+        },
         "/access/request/{entity_id}/": {
             "post": {
                 "operationId": "access_request_create",
@@ -1963,6 +2353,388 @@
                             }
                         },
                         "description": "UNAUTHENTICATED"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "INTERNALSERVERERROR": {
+                                        "value": {
+                                            "type": "/errors/internal-server-error",
+                                            "title": "Internal Server Error",
+                                            "status": 500,
+                                            "detail": "Internal Server Error",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "INTERNAL_SERVER_ERROR"
+                                        },
+                                        "summary": "INTERNAL_SERVER_ERROR"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "INTERNAL_SERVER_ERROR"
+                    }
+                }
+            }
+        },
+        "/access/user/{user_id}/stream/": {
+            "get": {
+                "operationId": "access_user_stream",
+                "description": "Returns all entities and access types for a user as NDJSON (one object per line). Admin only; same data as the paginated endpoint.",
+                "summary": "Stream user access privileges (NDJSON)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "UUID of the user",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "access"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "``application/x-ndjson`` body: one JSON object per line (same shape as list items)."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "USERNOTFOUND": {
+                                        "value": {
+                                            "type": "/errors/user-not-found",
+                                            "title": "User Not Found",
+                                            "status": 404,
+                                            "detail": "User Not Found",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "USER_NOT_FOUND"
+                                        },
+                                        "summary": "USER_NOT_FOUND"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "USER_NOT_FOUND"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "UNAUTHENTICATED": {
+                                        "value": {
+                                            "type": "/errors/unauthenticated",
+                                            "title": "Unauthenticated",
+                                            "status": 401,
+                                            "detail": "Unauthenticated",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "UNAUTHENTICATED"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "UNAUTHENTICATED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "PERMISSIONDENIED": {
+                                        "value": {
+                                            "type": "/errors/permission-denied",
+                                            "title": "Permission Denied",
+                                            "status": 403,
+                                            "detail": "Permission Denied",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "PERMISSION_DENIED"
+                                        },
+                                        "summary": "PERMISSION_DENIED"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "PERMISSION_DENIED"
                     },
                     "500": {
                         "content": {
@@ -7911,6 +8683,289 @@
                 }
             }
         },
+        "/entries/entities/stream/": {
+            "get": {
+                "operationId": "entities_list_stream",
+                "description": "Returns all entities the caller may list as newline-delimited JSON (one object per line). Same permission rules as the paginated list; uses a single chunked HTTP response.",
+                "summary": "Stream entities (NDJSON)",
+                "tags": [
+                    "entries"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "``application/x-ndjson`` body: one JSON object per line (same shape as list items)."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "UNAUTHENTICATED": {
+                                        "value": {
+                                            "type": "/errors/unauthenticated",
+                                            "title": "Unauthenticated",
+                                            "status": 401,
+                                            "detail": "Unauthenticated",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "UNAUTHENTICATED"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "UNAUTHENTICATED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "PERMISSIONDENIED": {
+                                        "value": {
+                                            "type": "/errors/permission-denied",
+                                            "title": "Permission Denied",
+                                            "status": 403,
+                                            "detail": "Permission Denied",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "PERMISSION_DENIED"
+                                        },
+                                        "summary": "PERMISSION_DENIED"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "PERMISSION_DENIED"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "INTERNALSERVERERROR": {
+                                        "value": {
+                                            "type": "/errors/internal-server-error",
+                                            "title": "Internal Server Error",
+                                            "status": 500,
+                                            "detail": "Internal Server Error",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "INTERNAL_SERVER_ERROR"
+                                        },
+                                        "summary": "INTERNAL_SERVER_ERROR"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "INTERNAL_SERVER_ERROR"
+                    }
+                }
+            }
+        },
         "/entries/entries/": {
             "post": {
                 "operationId": "entries_entries_create",
@@ -10704,6 +11759,307 @@
                             }
                         },
                         "description": "ENTRY_TYPE_NOT_FOUND"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "UNAUTHENTICATED": {
+                                        "value": {
+                                            "type": "/errors/unauthenticated",
+                                            "title": "Unauthenticated",
+                                            "status": 401,
+                                            "detail": "Unauthenticated",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "UNAUTHENTICATED"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "UNAUTHENTICATED"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "INTERNALSERVERERROR": {
+                                        "value": {
+                                            "type": "/errors/internal-server-error",
+                                            "title": "Internal Server Error",
+                                            "status": 500,
+                                            "detail": "Internal Server Error",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "INTERNAL_SERVER_ERROR"
+                                        },
+                                        "summary": "INTERNAL_SERVER_ERROR"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "INTERNAL_SERVER_ERROR"
+                    }
+                }
+            }
+        },
+        "/entries/entry-classes/stream/": {
+            "get": {
+                "operationId": "entry_classes_list_stream",
+                "description": "Returns all entry classes as NDJSON (one object per line). Supports the same ``search`` and ``show_count`` query parameters as the paginated list.",
+                "summary": "Stream entry classes (NDJSON)",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Filter by subtype or description (substring)."
+                    },
+                    {
+                        "in": "query",
+                        "name": "show_count",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Annotate entry counts (admin only, same as paginated list)."
+                    }
+                ],
+                "tags": [
+                    "entries"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "``application/x-ndjson`` body: one JSON object per line (same shape as list items)."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "PERMISSIONDENIED": {
+                                        "value": {
+                                            "type": "/errors/permission-denied",
+                                            "title": "Permission Denied",
+                                            "status": 403,
+                                            "detail": "Permission Denied",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "PERMISSION_DENIED"
+                                        },
+                                        "summary": "PERMISSION_DENIED"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "PERMISSION_DENIED"
                     },
                     "401": {
                         "content": {
@@ -18762,7 +20118,7 @@
             },
             "post": {
                 "operationId": "enrichment_request_create",
-                "description": "Create a new enrichment request for an entity. Required fields: enricher_name, entity, title, and request.",
+                "description": "Create a new enrichment request. Required: enricher_names, title, and exactly one artifact (the `artifact` object and/or notes that resolve to a single enrichable entry). `entities` is optional and scopes which other users can see the request.",
                 "summary": "Create enrichment request",
                 "tags": [
                     "intelio"
@@ -20357,7 +21713,7 @@
                         "schema": {
                             "type": "string"
                         },
-                        "description": "Filter by details, matched with a simple contains search"
+                        "description": "Filter by details, matched with a simple contains search (ignored if `search` is set)"
                     },
                     {
                         "in": "path",
@@ -20407,7 +21763,15 @@
                         "schema": {
                             "type": "string"
                         },
-                        "description": "Filter by entry name or subclass, supports wildcard queries"
+                        "description": "Advanced entry filter (parse_query syntax; ignored if `search` is set)"
+                    },
+                    {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Substring match on either endpoint's name or subtype, or on JSON `details` (case-insensitive). When set, `query` and `details` are ignored."
                     }
                 ],
                 "tags": [
@@ -53441,7 +54805,7 @@
                         "items": {
                             "type": "integer"
                         },
-                        "description": "The entities to enrich"
+                        "description": "Optional entity IDs for access control"
                     },
                     "entities_detail": {
                         "type": "array",
@@ -53473,11 +54837,8 @@
                         },
                         "readOnly": true
                     },
-                    "request": {
-                        "type": "array",
-                        "items": {},
-                        "default": [],
-                        "description": "List of {entry_class, name} artifacts to enrich"
+                    "artifact": {
+                        "description": "Single artifact {\"entry_class\": subtype, \"name\": value}"
                     },
                     "errors": {
                         "type": "object",
@@ -53492,7 +54853,6 @@
                     }
                 },
                 "required": [
-                    "entities",
                     "title"
                 ]
             },
@@ -53512,7 +54872,7 @@
                     },
                     "ignored": {
                         "readOnly": true,
-                        "description": "Request items ignored (no matching enricher)"
+                        "description": "Ignored artifact (no matching enricher), at most one object matching `artifact` shape"
                     },
                     "created_at": {
                         "type": "string",
@@ -53554,9 +54914,9 @@
                         },
                         "readOnly": true
                     },
-                    "request": {
+                    "artifact": {
                         "readOnly": true,
-                        "description": "List of {entry_class, name} objects to enrich"
+                        "description": "Single artifact: {\"entry_class\": subtype string, \"name\": artifact value}"
                     }
                 }
             },
@@ -53688,9 +55048,9 @@
                         },
                         "readOnly": true
                     },
-                    "request": {
+                    "artifact": {
                         "readOnly": true,
-                        "description": "List of {entry_class, name} objects to enrich"
+                        "description": "Single artifact: {\"entry_class\": subtype string, \"name\": artifact value}"
                     }
                 }
             },
@@ -53706,7 +55066,7 @@
                             "description": "Unique identifier for the note."
                         },
                         "writeOnly": true,
-                        "description": "Note IDs to extract artifacts from (alternative to request)"
+                        "description": "Note IDs; entries from selected notes must yield exactly one enrichable artifact combined with `artifact`"
                     },
                     "title": {
                         "type": "string",
@@ -53719,7 +55079,7 @@
                         "items": {
                             "type": "integer"
                         },
-                        "description": "The entities to enrich"
+                        "description": "Optional entity IDs for access control"
                     },
                     "enricher_names": {
                         "type": "array",
@@ -53730,17 +55090,12 @@
                         "writeOnly": true,
                         "description": "The names of the enrichers to use for this request"
                     },
-                    "request": {
-                        "type": "array",
-                        "items": {},
-                        "default": [],
-                        "description": "List of {entry_class, name} artifacts to enrich"
+                    "artifact": {
+                        "description": "Single artifact {\"entry_class\": subtype, \"name\": value}"
                     }
                 },
                 "required": [
                     "enricher_names",
-                    "entities",
-                    "notes",
                     "title"
                 ]
             },
@@ -53871,8 +55226,8 @@
                     }
                 },
                 "required": [
-                    "subtype",
                     "type",
+                    "subtype",
                     "name"
                 ]
             },
@@ -53914,8 +55269,8 @@
                     }
                 },
                 "required": [
-                    "subtype",
                     "type",
+                    "subtype",
                     "name"
                 ]
             },
@@ -54466,8 +55821,8 @@
                     }
                 },
                 "required": [
-                    "subtype",
                     "type",
+                    "subtype",
                     "name"
                 ]
             },
@@ -56280,8 +57635,8 @@
                     }
                 },
                 "required": [
-                    "subtype",
                     "type",
+                    "subtype",
                     "name"
                 ]
             },

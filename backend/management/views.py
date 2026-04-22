@@ -68,7 +68,7 @@ class SettingsView(APIView):
                 try:
                     value = getattr(section, name)
                     result[section.prefix][name] = value
-                except (AttributeError, TypeError, ValueError):
+                except AttributeError, TypeError, ValueError:
                     logger.warning(
                         "Could not read setting %s.%s",
                         section.prefix,
@@ -118,7 +118,7 @@ class SettingsView(APIView):
                     updated.append(full_key)
                 except IntegrityError:
                     errors.append({label: "This value could not be saved; it may conflict with another setting."})
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     logger.warning("Could not save setting %s", full_key, exc_info=True)
                     errors.append({label: "This value could not be saved."})
 

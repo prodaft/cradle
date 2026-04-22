@@ -52,11 +52,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useNdjsonQuery } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { createDashboardLink } from '@/utils/dashboard';
 import { CaretDownIcon, CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
-import { fetchAllEntryClasses } from '@services/openapi/fetch-all-pages';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -478,10 +478,9 @@ export default function Relations({ obj }: RelationsProps) {
         },
     });
 
-    // Query for entry subtypes (fetches all pages)
-    const { data: entrySubtypesData } = useQuery({
+    const { data: entrySubtypesData } = useNdjsonQuery({
+        path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'relations'],
-        queryFn: () => fetchAllEntryClasses(),
         meta: { showErrorToast: true },
     });
 
