@@ -1,3 +1,14 @@
+import {
+    FileUpload,
+    FileUploadDropzone,
+    FileUploadItem,
+    FileUploadItemDelete,
+    FileUploadItemMetadata,
+    FileUploadItemPreview,
+    FileUploadList,
+    FileUploadTrigger,
+} from '@/components/custom/file-upload';
+import MultipleSelector, { type Option } from '@/components/custom/multi-select';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -9,18 +20,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
-import {
-    FileUpload,
-    FileUploadDropzone,
-    FileUploadItem,
-    FileUploadItemDelete,
-    FileUploadItemMetadata,
-    FileUploadItemPreview,
-    FileUploadList,
-    FileUploadTrigger,
-} from '@/components/ui/file-upload';
 import { Input } from '@/components/ui/input';
-import MultipleSelector, { type Option } from '@/components/ui/multi-select';
 import {
     Select,
     SelectContent,

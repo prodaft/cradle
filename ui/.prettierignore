@@ -8,5 +8,6 @@ dist
 src/assets
 src/services/openapi/schema.d.ts
 src/routeTree.gen.ts
+src/hooks/use-mobile.ts
 src/components/ui
 public/

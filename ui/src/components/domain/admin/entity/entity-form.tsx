@@ -1,3 +1,4 @@
+import MultipleSelector, { type Option } from '@/components/custom/multi-select';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -8,7 +9,6 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import MultipleSelector, { type Option } from '@/components/ui/multi-select';
 import {
     Select,
     SelectContent,

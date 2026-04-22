@@ -1,3 +1,4 @@
+import MultipleSelector, { type Option } from '@/components/custom/multi-select';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -12,7 +13,6 @@ import {
     InputGroupInput,
     InputGroupTextarea,
 } from '@/components/ui/input-group';
-import MultipleSelector, { type Option } from '@/components/ui/multi-select';
 import {
     Select,
     SelectContent,

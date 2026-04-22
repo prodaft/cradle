@@ -1,5 +1,3 @@
-import { DataTable } from '@/components/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
     ActionBar,
     ActionBarClose,
@@ -7,7 +5,9 @@ import {
     ActionBarItem,
     ActionBarSelection,
     ActionBarSeparator,
-} from '@/components/ui/action-bar';
+} from '@/components/custom/action-bar';
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
     AlertDialog,
     AlertDialogAction,

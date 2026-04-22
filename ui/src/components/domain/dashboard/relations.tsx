@@ -1,6 +1,4 @@
 import { TableSkeleton } from '@/components/base/table-skeleton';
-import { DataTablePagination } from '@/components/data-table/data-table-pagination';
-import { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
 import {
     ActionBar,
     ActionBarClose,
@@ -8,7 +6,19 @@ import {
     ActionBarItem,
     ActionBarSelection,
     ActionBarSeparator,
-} from '@/components/ui/action-bar';
+} from '@/components/custom/action-bar';
+import {
+    Stepper,
+    StepperDescription,
+    StepperIndicator,
+    StepperItem,
+    StepperList,
+    StepperSeparator,
+    StepperTitle,
+    StepperTrigger,
+} from '@/components/custom/stepper';
+import { DataTablePagination } from '@/components/data-table/data-table-pagination';
+import { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,16 +44,6 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-    Stepper,
-    StepperDescription,
-    StepperIndicator,
-    StepperItem,
-    StepperList,
-    StepperSeparator,
-    StepperTitle,
-    StepperTrigger,
-} from '@/components/ui/stepper';
 import {
     Table,
     TableBody,

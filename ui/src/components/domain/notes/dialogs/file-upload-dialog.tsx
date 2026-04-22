@@ -1,13 +1,3 @@
-import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import {
     FileUpload,
     FileUploadClear,
@@ -18,7 +8,17 @@ import {
     FileUploadItemPreview,
     FileUploadList,
     FileUploadTrigger,
-} from '@/components/ui/file-upload';
+} from '@/components/custom/file-upload';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';

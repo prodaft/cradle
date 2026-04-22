@@ -56,7 +56,15 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
     });
     const unreadCountFromApi = unreadSummary?.count ?? 0;
     const [filter, setFilter] = useState<FilterMode>('all');
-    const viewportRef = useRef<HTMLDivElement>(null);
+    const scrollAreaContainerRef = useRef<HTMLDivElement>(null);
+
+    const getScrollElement = useCallback((): HTMLDivElement | null => {
+        return (
+            scrollAreaContainerRef.current?.querySelector<HTMLDivElement>(
+                '[data-slot="scroll-area-viewport"]',
+            ) ?? null
+        );
+    }, []);
 
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
         useInfiniteQuery({
@@ -104,7 +112,7 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
         count: hasNextPage
             ? filteredNotifications.length + 1
             : filteredNotifications.length,
-        getScrollElement: () => viewportRef.current,
+        getScrollElement,
         estimateSize: () => ESTIMATED_NOTIFICATION_HEIGHT,
         overscan: OVERSCAN,
     });
@@ -137,8 +145,8 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
     ]);
 
     useEffect(() => {
-        viewportRef.current?.scrollTo({ top: 0 });
-    }, [filter]);
+        getScrollElement()?.scrollTo({ top: 0 });
+    }, [filter, getScrollElement]);
 
     const isInitialLoading = isLoading && notifications.length === 0;
     const isEmpty = !isInitialLoading && filteredNotifications.length === 0;
@@ -228,55 +236,60 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
                     </Empty>
                 </div>
             ) : (
-                <ScrollArea viewportRef={viewportRef} className='flex-1 min-h-0'>
-                    <div
-                        style={{
-                            height: `${virtualizer.getTotalSize()}px`,
-                            width: '100%',
-                            position: 'relative',
-                        }}
-                    >
-                        {virtualItems.map((virtualItem) => {
-                            const isLoaderRow =
-                                virtualItem.index >= filteredNotifications.length;
-                            const notification =
-                                filteredNotifications[virtualItem.index];
+                <div
+                    ref={scrollAreaContainerRef}
+                    className='flex min-h-0 flex-1 flex-col min-w-0'
+                >
+                    <ScrollArea className='relative min-h-0 flex-1'>
+                        <div
+                            style={{
+                                height: `${virtualizer.getTotalSize()}px`,
+                                width: '100%',
+                                position: 'relative',
+                            }}
+                        >
+                            {virtualItems.map((virtualItem) => {
+                                const isLoaderRow =
+                                    virtualItem.index >= filteredNotifications.length;
+                                const notification =
+                                    filteredNotifications[virtualItem.index];
 
-                            return (
-                                <div
-                                    key={virtualItem.key}
-                                    data-index={virtualItem.index}
-                                    ref={virtualizer.measureElement}
-                                    style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        width: '100%',
-                                        transform: `translateY(${virtualItem.start}px)`,
-                                    }}
-                                >
-                                    <div className='px-3 py-1.5'>
-                                        {isLoaderRow ? (
-                                            <div className='flex justify-center p-4'>
-                                                {isFetchingNextPage ? (
-                                                    <Spinner className='size-6' />
-                                                ) : (
-                                                    <span className='text-xs text-muted-foreground'>
-                                                        Load more...
-                                                    </span>
-                                                )}
-                                            </div>
-                                        ) : notification ? (
-                                            <NotificationCard
-                                                notification={notification}
-                                            />
-                                        ) : null}
+                                return (
+                                    <div
+                                        key={virtualItem.key}
+                                        data-index={virtualItem.index}
+                                        ref={virtualizer.measureElement}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            transform: `translateY(${virtualItem.start}px)`,
+                                        }}
+                                    >
+                                        <div className='px-3 py-1.5'>
+                                            {isLoaderRow ? (
+                                                <div className='flex justify-center p-4'>
+                                                    {isFetchingNextPage ? (
+                                                        <Spinner className='size-6' />
+                                                    ) : (
+                                                        <span className='text-xs text-muted-foreground'>
+                                                            Load more...
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : notification ? (
+                                                <NotificationCard
+                                                    notification={notification}
+                                                />
+                                            ) : null}
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </ScrollArea>
+                                );
+                            })}
+                        </div>
+                    </ScrollArea>
+                </div>
             )}
         </div>
     );
