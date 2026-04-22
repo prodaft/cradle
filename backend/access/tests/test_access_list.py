@@ -121,7 +121,8 @@ class AccessListTest(AccessTestCase):
         )
         self.assertEqual(response_stream.status_code, 200)
         self.assertEqual(response_stream.headers["Content-Type"], "application/x-ndjson")
-        rows = [json.loads(line) for line in response_stream.content.decode().splitlines() if line.strip()]
+        text = b"".join(response_stream.streaming_content).decode()
+        rows = [json.loads(line) for line in text.splitlines() if line.strip()]
         self.assertEqual(rows, response_list.json()["results"])
 
     def test_entity_access_list_stream_matches_paginated_list(self):
@@ -136,5 +137,6 @@ class AccessListTest(AccessTestCase):
         )
         self.assertEqual(response_stream.status_code, 200)
         self.assertEqual(response_stream.headers["Content-Type"], "application/x-ndjson")
-        rows = [json.loads(line) for line in response_stream.content.decode().splitlines() if line.strip()]
+        text = b"".join(response_stream.streaming_content).decode()
+        rows = [json.loads(line) for line in text.splitlines() if line.strip()]
         self.assertEqual(rows, response_list.json()["results"])
