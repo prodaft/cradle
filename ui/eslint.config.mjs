@@ -53,7 +53,8 @@ export default [
 
             // --- TypeScript (relax noisy rules) ---
             '@typescript-eslint/no-explicit-any': 'off',
-            '@typescript-eslint/no-empty-object-type': 'off',
+            // Avoid `interface Props extends Foo {}` / `{}` aliases with no members (use `Foo` or `type Props = Foo & { … }`).
+            '@typescript-eslint/no-empty-object-type': 'warn',
             '@typescript-eslint/ban-ts-comment': 'off',
 
             // --- React (relax for modern JSX transform) ---

@@ -36,9 +36,9 @@ export default function KnowledgeGraphSearch({
         message: '',
         color: 'red',
     });
-    const appliedRef = useRef(false);
+    const lastAppliedFetchAtRef = useRef<number>(0);
 
-    const { data, isLoading } = useQuery({
+    const { data, isLoading, dataUpdatedAt } = useQuery({
         queryKey: [...queryKeys.knowledgeGraph.all, 'full'],
         queryFn: async () => {
             const {
@@ -103,8 +103,9 @@ export default function KnowledgeGraphSearch({
     }, [isLoading, onLoadingChange]);
 
     useEffect(() => {
-        if (!data || appliedRef.current) return;
-        appliedRef.current = true;
+        if (!data || dataUpdatedAt === 0) return;
+        if (lastAppliedFetchAtRef.current === dataUpdatedAt) return;
+        lastAppliedFetchAtRef.current = dataUpdatedAt;
 
         if (data.nodes.length > 0 || data.edges.length > 0) {
             if (addBoth) {
@@ -121,7 +122,7 @@ export default function KnowledgeGraphSearch({
                 color: 'yellow',
             });
         }
-    }, [data, addBoth, addNodes, addEdges]);
+    }, [data, dataUpdatedAt, addBoth, addNodes, addEdges]);
 
     return (
         <div className='px-2 mt-2 w-full'>

@@ -14,6 +14,8 @@ export interface Node {
 export interface Edge {
     source: string;
     target: string;
+    /** When set, graph loading uses this as the graphology edge key (parallel edges). */
+    id?: string;
 }
 
 /**

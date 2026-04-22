@@ -4,7 +4,7 @@ import {
     ResizablePanelGroup,
 } from '@/components/ui/resizable';
 import { logger } from '@/utils/logger';
-import { ComponentType, useCallback, useMemo, useRef, useState } from 'react';
+import { ComponentType, Suspense, useCallback, useMemo, useRef, useState } from 'react';
 import type Sigma from 'sigma';
 import Graph from './graph';
 import GraphQuery from './graph-query';
@@ -257,14 +257,18 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
             {/* Mount search when panel is closed so graph data still loads */}
             {!activePanel && (
                 <div className='sr-only' aria-hidden>
-                    <GraphQuery {...graphQueryProps} />
+                    <Suspense fallback={null}>
+                        <GraphQuery {...graphQueryProps} />
+                    </Suspense>
                 </div>
             )}
             <ResizablePanelGroup orientation='horizontal' className='h-full'>
                 {activePanel && (
                     <>
                         <ResizablePanel defaultSize='30%' minSize='20%' maxSize='50%'>
-                            <GraphQuery {...graphQueryProps} />
+                            <Suspense fallback={null}>
+                                <GraphQuery {...graphQueryProps} />
+                            </Suspense>
                         </ResizablePanel>
                         <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
                     </>

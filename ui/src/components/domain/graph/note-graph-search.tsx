@@ -37,10 +37,10 @@ export default function NoteGraphSearch(
             message: '',
             color: 'red',
         });
-        const hasFetchedRef = useRef(false);
+        const lastAppliedFetchAtRef = useRef<number>(0);
 
         // Query for note graph data
-        const { data: graphData, isPending } = $api.useQuery(
+        const { data: graphData, isPending, dataUpdatedAt } = $api.useQuery(
             'get',
             '/notes/{note_id}/graph/',
             { params: { path: { note_id: noteId } } },
@@ -56,11 +56,11 @@ export default function NoteGraphSearch(
             onLoadingChange?.(isPending);
         }, [isPending, onLoadingChange]);
 
-        // Process graph data when it loads
+        // Process graph data when it loads (re-run on refetch / new dataUpdatedAt)
         useEffect(() => {
-            if (!graphData || hasFetchedRef.current) return;
-
-            hasFetchedRef.current = true;
+            if (!graphData || dataUpdatedAt === 0) return;
+            if (lastAppliedFetchAtRef.current === dataUpdatedAt) return;
+            lastAppliedFetchAtRef.current = dataUpdatedAt;
 
             try {
                 const { entries, relations, colors } = graphData;
@@ -134,7 +134,7 @@ export default function NoteGraphSearch(
             } catch (e) {
                 logger.error('Note graph: apply graph data failed', e);
             }
-        }, [graphData, addBoth, addNodes, addEdges]);
+        }, [graphData, dataUpdatedAt, addBoth, addNodes, addEdges]);
 
         return (
             <div className='px-2 mt-2 w-full'>

@@ -8,8 +8,6 @@ import type { SearchState } from '@/types/data-grid';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import * as React from 'react';
 
-interface DataGridSearchProps extends SearchState {}
-
 export const DataGridSearch = React.memo(DataGridSearchImpl, (prev, next) => {
     if (prev.searchOpen !== next.searchOpen) return false;
 
@@ -48,7 +46,7 @@ function DataGridSearchImpl({
     onSearch,
     onNavigateToNextMatch,
     onNavigateToPrevMatch,
-}: DataGridSearchProps) {
+}: SearchState) {
     const propsRef = useAsRef({
         onSearchOpenChange,
         onSearchQueryChange,

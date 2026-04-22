@@ -16,9 +16,18 @@ import {
 } from '@react-sigma/core';
 import '@react-sigma/core/lib/style.css';
 import { useWorkerLayoutForceAtlas2 } from '@react-sigma/layout-forceatlas2';
+import type { ForceAtlas2LayoutParameters } from 'graphology-layout-forceatlas2';
 import { MiniMap } from '@react-sigma/minimap';
-import Graph from 'graphology';
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { MultiDirectedGraph } from 'graphology';
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    type CSSProperties,
+    type RefObject,
+} from 'react';
 import {
     AiFillPauseCircle,
     AiFillPlayCircle,
@@ -68,7 +77,7 @@ interface GraphViewerProps {
     onClearGraph?: () => void;
     activePanel?: 'explorer' | 'display' | 'filters' | null;
     onTogglePanel?: (panel: 'explorer' | 'display' | 'filters') => void;
-    sigmaRef?: React.RefObject<{ sigma: Sigma } | null>;
+    sigmaRef?: RefObject<{ sigma: Sigma } | null>;
     isLoading?: boolean;
     fetchProgress?: FetchProgress | null;
     fetchControls?: FetchControls | null;
@@ -84,10 +93,64 @@ const ForceAtlas2LayoutContext = createContext<ForceAtlas2LayoutContextValue | n
     null,
 );
 
+/** Deterministic [0,1) floats from display settings seed (initial node placement). */
+function createSeededRng(seed: string | number | undefined): () => number {
+    let state =
+        typeof seed === 'number' && Number.isFinite(seed)
+            ? Math.floor(Math.abs(seed)) % 2147483646 || 1
+            : typeof seed === 'string' && seed.length > 0
+              ? [...seed].reduce((h, c) => (Math.imul(31, h) + c.charCodeAt(0)) | 0, 0) >>> 0
+              : 88675123;
+    if (state === 0) state = 88675123;
+    return () => {
+        state = (Math.imul(1664525, state) + 1013904223) >>> 0;
+        return state / 4294967296;
+    };
+}
+
+function buildForceAtlas2Params(
+    config: GraphConfig,
+    nodeCount: number,
+): ForceAtlas2LayoutParameters {
+    const friction = config.simulationFriction ?? 0.75;
+    const repulsion = config.simulationRepulsion ?? 1.6;
+    const gravity = config.simulationGravity ?? 0.15;
+    const linkSpring = config.simulationLinkSpring ?? 0.6;
+    const linkDistance = config.simulationLinkDistance ?? 16;
+    const decay = config.simulationDecay ?? 10000;
+
+    // Tighter preferred link distance → slightly calmer global repulsion (helps hub jitter).
+    const linkTightness = Math.sqrt(
+        Math.min(24, Math.max(4, linkDistance)) / 16,
+    );
+    // Higher decay (UI “stabilize faster”) → modest extra damping in FA2.
+    const decayBoost = 0.85 + Math.min(0.35, (decay - 1000) / 14000);
+    // Cluster separation nudges repulsion (no FA2-native “cluster” knob).
+    const cluster = config.simulationCluster ?? 0.1;
+    const clusterScale = 1 + cluster * 0.35;
+
+    return {
+        settings: {
+            // FA2 default slowDown is 1 (very twitchy); higher values calm high-degree hubs.
+            slowDown: (2 + friction * 10) * decayBoost,
+            scalingRatio: Math.max(
+                0.12,
+                repulsion * 0.48 * linkTightness * clusterScale,
+            ),
+            gravity: Math.max(0.02, gravity * 3),
+            strongGravityMode: gravity >= 0.12,
+            outboundAttractionDistribution: true,
+            barnesHutOptimize: nodeCount >= 80,
+            barnesHutTheta: 0.85,
+            edgeWeightInfluence: Math.max(0.2, Math.min(2, 0.45 + linkSpring * 0.75)),
+        },
+    };
+}
+
 function SetSigmaRef({
     sigmaRef,
 }: {
-    sigmaRef: React.RefObject<{ sigma: Sigma } | null>;
+    sigmaRef: RefObject<{ sigma: Sigma } | null>;
 }) {
     const sigma = useSigma();
     useEffect(() => {
@@ -101,7 +164,7 @@ function SetSigmaRef({
     return null;
 }
 
-interface GraphContentProps {
+interface SigmaGraphBindingsProps {
     validNodes: Node[];
     linksData: Array<Edge & { _sourceIndex: number; _targetIndex: number }>;
     idToNode: Map<string, Node>;
@@ -112,23 +175,8 @@ interface GraphContentProps {
     activePanel: 'explorer' | 'display' | 'filters' | null;
 }
 
-function GraphContent({
-    validNodes,
-    linksData,
-    idToNode,
-    config,
-    selectedNodes,
-    setSelectedNodes,
-    onTogglePanel,
-    activePanel,
-}: GraphContentProps) {
-    const loadGraph = useLoadGraph();
-    const registerEvents = useRegisterEvents();
-    const sigma = useSigma();
+function SigmaGraphThemeColors() {
     const setSettings = useSetSettings();
-    const layoutContext = useContext(ForceAtlas2LayoutContext);
-    const [draggedNode, setDraggedNode] = useState<string | null>(null);
-    const stoppedLayoutForDragRef = useRef(false);
     const edgeColorRef = useRef<HTMLDivElement | null>(null);
     const labelColorRef = useRef<HTMLDivElement | null>(null);
     const { isDarkMode } = useTheme();
@@ -155,7 +203,7 @@ function GraphContent({
         });
     }, [setSettings, isDarkMode]);
 
-    const themeSample = (
+    return (
         <>
             <div
                 ref={edgeColorRef}
@@ -169,7 +217,15 @@ function GraphContent({
             />
         </>
     );
+}
 
+function SigmaGraphologyLoader({
+    validNodes,
+    linksData,
+    config,
+}: Pick<SigmaGraphBindingsProps, 'validNodes' | 'linksData' | 'config'>) {
+    const loadGraph = useLoadGraph();
+    const sigma = useSigma();
     const positionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
 
     useEffect(() => {
@@ -186,11 +242,12 @@ function GraphContent({
         }
 
         const sizeCoef = config.nodeRadiusCoefficient ?? 1;
-        const g = new Graph();
+        const rnd = createSeededRng(config.randomSeed);
+        const g = new MultiDirectedGraph();
         validNodes.forEach((node) => {
             const saved = positionsRef.current.get(node.id);
-            const x = saved?.x ?? Math.random() * 100 - 50;
-            const y = saved?.y ?? Math.random() * 100 - 50;
+            const x = saved?.x ?? rnd() * 100 - 50;
+            const y = saved?.y ?? rnd() * 100 - 50;
             positionsRef.current.set(node.id, { x, y });
             g.addNode(node.id, {
                 x,
@@ -202,12 +259,18 @@ function GraphContent({
         });
         if (config.showLinks !== false) {
             linksData.forEach((edge) => {
-                if (!g.hasEdge(edge.source, edge.target)) {
+                const edgeKey =
+                    edge.id != null && String(edge.id) !== '' ? String(edge.id) : null;
+                if (edgeKey) {
+                    if (!g.hasEdge(edgeKey)) {
+                        g.addEdgeWithKey(edgeKey, edge.source, edge.target);
+                    }
+                } else if (!g.hasEdge(edge.source, edge.target)) {
                     g.addEdge(edge.source, edge.target);
                 }
             });
         }
-        loadGraph(g);
+        loadGraph(g, true);
     }, [
         loadGraph,
         sigma,
@@ -215,17 +278,54 @@ function GraphContent({
         linksData,
         config.showLinks,
         config.nodeRadiusCoefficient,
+        config.randomSeed,
     ]);
+
+    return null;
+}
+
+function SigmaGraphEvents({
+    idToNode,
+    selectedNodes,
+    setSelectedNodes,
+    onTogglePanel,
+    activePanel,
+}: Omit<SigmaGraphBindingsProps, 'validNodes' | 'linksData' | 'config'>) {
+    const registerEvents = useRegisterEvents();
+    const sigma = useSigma();
+    const layoutContext = useContext(ForceAtlas2LayoutContext);
+    const draggedNodeRef = useRef<string | null>(null);
+    const nodeDragMovedRef = useRef(false);
+    const ignoreClickNodeIdRef = useRef<string | null>(null);
+    const stoppedLayoutForDragRef = useRef(false);
+    const selectedNodesRef = useRef(selectedNodes);
+    const idToNodeRef = useRef(idToNode);
+    const layoutContextRef = useRef(layoutContext);
+    const activePanelRef = useRef(activePanel);
+    const onTogglePanelRef = useRef(onTogglePanel);
+    const setSelectedNodesRef = useRef(setSelectedNodes);
+
+    selectedNodesRef.current = selectedNodes;
+    idToNodeRef.current = idToNode;
+    layoutContextRef.current = layoutContext;
+    activePanelRef.current = activePanel;
+    onTogglePanelRef.current = onTogglePanel;
+    setSelectedNodesRef.current = setSelectedNodes;
 
     useEffect(() => {
         registerEvents({
             clickNode: (event) => {
                 try {
                     const nodeKey = event.node;
+                    if (ignoreClickNodeIdRef.current === nodeKey) {
+                        ignoreClickNodeIdRef.current = null;
+                        return;
+                    }
+                    const idToNode = idToNodeRef.current;
                     const node = idToNode.get(nodeKey);
                     if (!node) return;
                     let newNodes = new Set<Node>([node]);
-                    if (selectedNodes.has(node)) {
+                    if (selectedNodesRef.current.has(node)) {
                         try {
                             const g = sigma.getGraph();
                             const neighbors = g.neighbors(nodeKey);
@@ -240,19 +340,22 @@ function GraphContent({
                             });
                         }
                     }
-                    setSelectedNodes(newNodes);
-                    if (onTogglePanel && activePanel !== 'explorer') {
-                        onTogglePanel('explorer');
+                    setSelectedNodesRef.current(newNodes);
+                    const onToggle = onTogglePanelRef.current;
+                    if (onToggle && activePanelRef.current !== 'explorer') {
+                        onToggle('explorer');
                     }
                 } catch (error) {
                     logger.error('Graph node click failed', error);
                 }
             },
             clickStage: () => {
-                setSelectedNodes(new Set());
+                ignoreClickNodeIdRef.current = null;
+                setSelectedNodesRef.current(new Set());
             },
             clickEdge: (event) => {
                 try {
+                    const idToNode = idToNodeRef.current;
                     const g = sigma.getGraph();
                     const [source, target] = g.extremities(event.edge);
                     const sourceNode = source ? idToNode.get(source) : undefined;
@@ -260,24 +363,30 @@ function GraphContent({
                     const newNodes = new Set<Node>();
                     if (sourceNode) newNodes.add(sourceNode);
                     if (targetNode) newNodes.add(targetNode);
-                    setSelectedNodes(newNodes);
-                    if (onTogglePanel && activePanel !== 'explorer') {
-                        onTogglePanel('explorer');
+                    setSelectedNodesRef.current(newNodes);
+                    const onToggle = onTogglePanelRef.current;
+                    if (onToggle && activePanelRef.current !== 'explorer') {
+                        onToggle('explorer');
                     }
                 } catch (error) {
                     logger.error('Graph edge click failed', error);
                 }
             },
             downNode: (event) => {
-                setDraggedNode(event.node);
+                draggedNodeRef.current = event.node;
+                nodeDragMovedRef.current = false;
+                ignoreClickNodeIdRef.current = null;
                 sigma.getGraph().setNodeAttribute(event.node, 'highlighted', true);
-                if (layoutContext?.isRunning) {
-                    layoutContext.stop();
+                const lc = layoutContextRef.current;
+                if (lc?.isRunning) {
+                    lc.stop();
                     stoppedLayoutForDragRef.current = true;
                 }
             },
             mousemovebody: (event) => {
+                const draggedNode = draggedNodeRef.current;
                 if (!draggedNode) return;
+                nodeDragMovedRef.current = true;
                 const pos = sigma.viewportToGraph(event);
                 sigma.getGraph().setNodeAttribute(draggedNode, 'x', pos.x);
                 sigma.getGraph().setNodeAttribute(draggedNode, 'y', pos.y);
@@ -286,11 +395,17 @@ function GraphContent({
                 event.original.stopPropagation();
             },
             mouseup: () => {
+                const draggedNode = draggedNodeRef.current;
                 if (draggedNode) {
-                    setDraggedNode(null);
+                    if (nodeDragMovedRef.current) {
+                        ignoreClickNodeIdRef.current = draggedNode;
+                    }
+                    nodeDragMovedRef.current = false;
+                    draggedNodeRef.current = null;
                     sigma.getGraph().removeNodeAttribute(draggedNode, 'highlighted');
-                    if (stoppedLayoutForDragRef.current && layoutContext) {
-                        layoutContext.start();
+                    const lc = layoutContextRef.current;
+                    if (stoppedLayoutForDragRef.current && lc) {
+                        lc.start();
                         stoppedLayoutForDragRef.current = false;
                     }
                 }
@@ -299,23 +414,9 @@ function GraphContent({
                 if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
             },
         });
-    }, [
-        registerEvents,
-        sigma,
-        idToNode,
-        selectedNodes,
-        setSelectedNodes,
-        onTogglePanel,
-        activePanel,
-        draggedNode,
-        layoutContext,
-    ]);
+    }, [registerEvents, sigma]);
 
-    return themeSample;
-}
-
-interface GraphSceneProps extends GraphContentProps {
-    faTime: number;
+    return null;
 }
 
 function GraphControls({
@@ -397,7 +498,6 @@ function GraphControls({
 }
 
 function GraphScene({
-    faTime,
     validNodes,
     linksData,
     idToNode,
@@ -406,9 +506,24 @@ function GraphScene({
     setSelectedNodes,
     onTogglePanel,
     activePanel,
-}: GraphSceneProps) {
+}: SigmaGraphBindingsProps) {
     const sigma = useSigma();
-    const layout = useWorkerLayoutForceAtlas2();
+    // Only simulation-related `config` fields affect FA2; list them explicitly so unrelated `config` keys do not reset the worker.
+    const fa2Params = useMemo(
+        () => buildForceAtlas2Params(config, validNodes.length),
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- explicit simulation keys only (not whole `config`)
+        [
+            validNodes.length,
+            config.simulationFriction,
+            config.simulationRepulsion,
+            config.simulationGravity,
+            config.simulationLinkSpring,
+            config.simulationLinkDistance,
+            config.simulationDecay,
+            config.simulationCluster,
+        ],
+    );
+    const layout = useWorkerLayoutForceAtlas2(fa2Params);
     const layoutContextValue = useMemo(
         () => ({
             stop: layout.stop,
@@ -419,23 +534,23 @@ function GraphScene({
     );
 
     useEffect(() => {
-        if (!sigma || faTime === undefined || faTime <= -1) return;
-        if (sigma.getGraph().order === 0) return;
+        if (!sigma || sigma.getGraph().order === 0) return;
         layout.start();
-        const timeout =
-            faTime > 0 ? window.setTimeout(() => layout.stop(), faTime) : null;
         return () => {
-            if (timeout) clearTimeout(timeout);
+            layout.stop();
         };
-    }, [sigma, faTime, layout]);
+    }, [sigma, layout.start, layout.stop]); // eslint-disable-line react-hooks/exhaustive-deps -- stable `layout.start`/`layout.stop` only
 
     return (
         <ForceAtlas2LayoutContext.Provider value={layoutContextValue}>
-            <GraphContent
+            <SigmaGraphThemeColors />
+            <SigmaGraphologyLoader
                 validNodes={validNodes}
                 linksData={linksData}
-                idToNode={idToNode}
                 config={config}
+            />
+            <SigmaGraphEvents
+                idToNode={idToNode}
                 selectedNodes={selectedNodes}
                 setSelectedNodes={setSelectedNodes}
                 onTogglePanel={onTogglePanel}
@@ -468,20 +583,11 @@ export default function GraphViewer({
     onTogglePanel,
     sigmaRef: externalSigmaRef,
     isLoading = false,
-    fetchProgress: _fetchProgress = null,
-    fetchControls: _fetchControls = null,
+    fetchProgress = null,
+    fetchControls = null,
 }: GraphViewerProps) {
-    const internalSigmaRef = useRef<{ sigma: ReturnType<typeof useSigma> } | null>(
-        null,
-    );
+    const internalSigmaRef = useRef<{ sigma: Sigma } | null>(null);
     const sigmaRef = externalSigmaRef || internalSigmaRef;
-    const [faTime, setFaTime] = useState<number>(2000);
-
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const time = params.get('faTime');
-        setFaTime(Number.parseInt(time ?? '2000', 10) || 2000);
-    }, []);
 
     const validNodes = useMemo(() => {
         return nodes.filter((node) => {
@@ -580,16 +686,22 @@ export default function GraphViewer({
                         style={
                             {
                                 ['--sigma-background-color']: 'var(--background)',
-                            } as React.CSSProperties
+                            } as CSSProperties
                         }
                     >
                         <SigmaContainer
-                            style={{ height: '100%', width: '100%' }}
+                            id='sigma-graph-viewer'
+                            graph={MultiDirectedGraph}
+                            settings={{ allowInvalidContainer: true }}
+                            style={{
+                                height: '100%',
+                                width: '100%',
+                                minHeight: 0,
+                            }}
                             className='rounded-lg'
                         >
                             {sigmaRef && <SetSigmaRef sigmaRef={sigmaRef} />}
                             <GraphScene
-                                faTime={faTime}
                                 validNodes={validNodes}
                                 linksData={linksData}
                                 idToNode={idToNode}
@@ -610,6 +722,41 @@ export default function GraphViewer({
                                 <Spinner className='size-10 mx-auto mb-3' />
                                 <p className='text-lg'>Loading</p>
                                 <p className='text-sm mt-1'>Downloading data…</p>
+                                {fetchProgress != null && fetchProgress.totalPages > 0 && (
+                                    <p className='text-sm mt-2 text-muted-foreground tabular-nums'>
+                                        Page {fetchProgress.currentPage} of{' '}
+                                        {fetchProgress.totalPages}
+                                        {fetchProgress.isPaused ? ' · paused' : ''}
+                                    </p>
+                                )}
+                                {fetchControls != null && (
+                                    <div className='flex gap-2 mt-4 justify-center'>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={() => fetchControls.pause()}
+                                            disabled={
+                                                fetchProgress != null &&
+                                                fetchProgress.isPaused
+                                            }
+                                        >
+                                            Pause
+                                        </Button>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={() => fetchControls.resume()}
+                                            disabled={
+                                                fetchProgress != null &&
+                                                !fetchProgress.isPaused
+                                            }
+                                        >
+                                            Resume
+                                        </Button>
+                                    </div>
+                                )}
                             </>
                         ) : (
                             <>
