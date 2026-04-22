@@ -516,14 +516,12 @@ function FileUpload(props: FileUploadProps) {
 
             for (const file of filesToProcess) {
                 let rejected = false;
-                let rejectionMessage = '';
+                let rejectionMessage: string;
 
                 if (propsRef.current.onFileValidate) {
                     const validationMessage = propsRef.current.onFileValidate(file);
                     if (validationMessage) {
-                        rejectionMessage = validationMessage;
-                        propsRef.current.onFileReject?.(file, rejectionMessage);
-                        rejected = true;
+                        propsRef.current.onFileReject?.(file, validationMessage);
                         invalid = true;
                         continue;
                     }

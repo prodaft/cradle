@@ -2241,8 +2241,8 @@ function useDataGrid<TData>({
         tableRef.current = table;
     }
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: columnSizingInfo and columnSizing are used for calculating the column size vars
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const { columnSizingInfo, columnSizing } = table.getState();
+
     const columnSizeVars = React.useMemo(() => {
         const headers = table.getFlatHeaders();
         const colSizes: { [key: string]: number } = {};
@@ -2251,7 +2251,9 @@ function useDataGrid<TData>({
             colSizes[`--col-${header.column.id}-size`] = header.column.getSize();
         }
         return colSizes;
-    }, [table.getState().columnSizingInfo, table.getState().columnSizing]);
+    // TanStack Table keeps a stable `table` ref; sizing slices must invalidate this memo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable `table` ref; deps are sizing slices
+    }, [columnSizingInfo, columnSizing]);
 
     const isFirefox = React.useSyncExternalStore(
         React.useCallback(() => () => {}, []),
@@ -2264,16 +2266,15 @@ function useDataGrid<TData>({
         React.useCallback(() => false, []),
     );
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: columnPinning is used for calculating the adjustLayout
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const columnPinning = table.getState().columnPinning;
+
     const adjustLayout = React.useMemo(() => {
-        const columnPinning = table.getState().columnPinning;
         return (
             isFirefox &&
             ((columnPinning.left?.length ?? 0) > 0 ||
                 (columnPinning.right?.length ?? 0) > 0)
         );
-    }, [isFirefox, table.getState().columnPinning]);
+    }, [isFirefox, columnPinning]);
 
     const rowVirtualizer = useVirtualizer({
         count: table.getRowModel().rows.length,
