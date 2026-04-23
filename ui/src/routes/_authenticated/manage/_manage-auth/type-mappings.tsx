@@ -7,7 +7,7 @@ const TypeMappingsPage = lazy(
 );
 
 export const Route = createFileRoute(
-    '/_authenticated/manage/_manage-auth/type-mappings' as any,
+    '/_authenticated/manage/_manage-auth/type-mappings',
 )({
     staticData: {
         breadcrumb: 'Type Mappings',

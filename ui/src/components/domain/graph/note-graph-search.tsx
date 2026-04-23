@@ -40,7 +40,11 @@ export default function NoteGraphSearch(
         const lastAppliedFetchAtRef = useRef<number>(0);
 
         // Query for note graph data
-        const { data: graphData, isPending, dataUpdatedAt } = $api.useQuery(
+        const {
+            data: graphData,
+            isPending,
+            dataUpdatedAt,
+        } = $api.useQuery(
             'get',
             '/notes/{note_id}/graph/',
             { params: { path: { note_id: noteId } } },

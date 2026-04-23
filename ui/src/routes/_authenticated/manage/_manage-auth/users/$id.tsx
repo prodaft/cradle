@@ -6,9 +6,7 @@ const UserSettingsPage = lazy(
     () => import('@/components/domain/admin/user/user-settings-page'),
 );
 
-export const Route = createFileRoute(
-    '/_authenticated/manage/_manage-auth/users/$id' as any,
-)({
+export const Route = createFileRoute('/_authenticated/manage/_manage-auth/users/$id')({
     staticData: {
         breadcrumb: 'User Details',
     },

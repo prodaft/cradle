@@ -7,7 +7,7 @@ const EntitySettingsPage = lazy(
 );
 
 export const Route = createFileRoute(
-    '/_authenticated/manage/_manage-auth/entities/$id' as any,
+    '/_authenticated/manage/_manage-auth/entities/$id',
 )({
     staticData: {
         breadcrumb: 'Entity Details',

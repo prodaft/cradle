@@ -2251,8 +2251,8 @@ function useDataGrid<TData>({
             colSizes[`--col-${header.column.id}-size`] = header.column.getSize();
         }
         return colSizes;
-    // TanStack Table keeps a stable `table` ref; sizing slices must invalidate this memo.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable `table` ref; deps are sizing slices
+        // TanStack Table keeps a stable `table` ref; sizing slices must invalidate this memo.
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- stable `table` ref; deps are sizing slices
     }, [columnSizingInfo, columnSizing]);
 
     const isFirefox = React.useSyncExternalStore(

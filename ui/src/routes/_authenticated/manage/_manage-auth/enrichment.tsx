@@ -6,9 +6,7 @@ const EnrichmentPage = lazy(
     () => import('@/components/domain/admin/enrichment/enrichment-page'),
 );
 
-export const Route = createFileRoute(
-    '/_authenticated/manage/_manage-auth/enrichment' as any,
-)({
+export const Route = createFileRoute('/_authenticated/manage/_manage-auth/enrichment')({
     staticData: {
         breadcrumb: 'Enrichment',
     },

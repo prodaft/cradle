@@ -16,9 +16,9 @@ import {
 } from '@react-sigma/core';
 import '@react-sigma/core/lib/style.css';
 import { useWorkerLayoutForceAtlas2 } from '@react-sigma/layout-forceatlas2';
-import type { ForceAtlas2LayoutParameters } from 'graphology-layout-forceatlas2';
 import { MiniMap } from '@react-sigma/minimap';
 import { MultiDirectedGraph } from 'graphology';
+import type { ForceAtlas2LayoutParameters } from 'graphology-layout-forceatlas2';
 import {
     createContext,
     useContext,
@@ -99,7 +99,10 @@ function createSeededRng(seed: string | number | undefined): () => number {
         typeof seed === 'number' && Number.isFinite(seed)
             ? Math.floor(Math.abs(seed)) % 2147483646 || 1
             : typeof seed === 'string' && seed.length > 0
-              ? [...seed].reduce((h, c) => (Math.imul(31, h) + c.charCodeAt(0)) | 0, 0) >>> 0
+              ? [...seed].reduce(
+                    (h, c) => (Math.imul(31, h) + c.charCodeAt(0)) | 0,
+                    0,
+                ) >>> 0
               : 88675123;
     if (state === 0) state = 88675123;
     return () => {
@@ -120,9 +123,7 @@ function buildForceAtlas2Params(
     const decay = config.simulationDecay ?? 10000;
 
     // Tighter preferred link distance → slightly calmer global repulsion (helps hub jitter).
-    const linkTightness = Math.sqrt(
-        Math.min(24, Math.max(4, linkDistance)) / 16,
-    );
+    const linkTightness = Math.sqrt(Math.min(24, Math.max(4, linkDistance)) / 16);
     // Higher decay (UI “stabilize faster”) → modest extra damping in FA2.
     const decayBoost = 0.85 + Math.min(0.35, (decay - 1000) / 14000);
     // Cluster separation nudges repulsion (no FA2-native “cluster” knob).
@@ -147,11 +148,7 @@ function buildForceAtlas2Params(
     };
 }
 
-function SetSigmaRef({
-    sigmaRef,
-}: {
-    sigmaRef: RefObject<{ sigma: Sigma } | null>;
-}) {
+function SetSigmaRef({ sigmaRef }: { sigmaRef: RefObject<{ sigma: Sigma } | null> }) {
     const sigma = useSigma();
     useEffect(() => {
         if (sigmaRef) {
@@ -722,13 +719,14 @@ export default function GraphViewer({
                                 <Spinner className='size-10 mx-auto mb-3' />
                                 <p className='text-lg'>Loading</p>
                                 <p className='text-sm mt-1'>Downloading data…</p>
-                                {fetchProgress != null && fetchProgress.totalPages > 0 && (
-                                    <p className='text-sm mt-2 text-muted-foreground tabular-nums'>
-                                        Page {fetchProgress.currentPage} of{' '}
-                                        {fetchProgress.totalPages}
-                                        {fetchProgress.isPaused ? ' · paused' : ''}
-                                    </p>
-                                )}
+                                {fetchProgress != null &&
+                                    fetchProgress.totalPages > 0 && (
+                                        <p className='text-sm mt-2 text-muted-foreground tabular-nums'>
+                                            Page {fetchProgress.currentPage} of{' '}
+                                            {fetchProgress.totalPages}
+                                            {fetchProgress.isPaused ? ' · paused' : ''}
+                                        </p>
+                                    )}
                                 {fetchControls != null && (
                                     <div className='flex gap-2 mt-4 justify-center'>
                                         <Button

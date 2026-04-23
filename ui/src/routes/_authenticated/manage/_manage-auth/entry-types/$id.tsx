@@ -7,7 +7,7 @@ const EntryTypeSettingsPage = lazy(
 );
 
 export const Route = createFileRoute(
-    '/_authenticated/manage/_manage-auth/entry-types/$id' as any,
+    '/_authenticated/manage/_manage-auth/entry-types/$id',
 )({
     staticData: {
         breadcrumb: 'Entry Type Details',
