@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { debounce } from 'lodash';
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useId, useMemo, useState } from 'react';
 
 type ActionBarButtonVariant = 'circle' | 'pill';
 
@@ -74,6 +74,10 @@ interface ActionBarSearchProps {
     onSubmit?: (value: string) => void;
     /** Called immediately when the user clears the search. */
     onClear?: () => void;
+    /** `id` on the input (defaults to a unique `useId()`). */
+    id?: string;
+    /** `name` on the input (for autofill / form semantics). */
+    name?: string;
 }
 
 export const ActionBarSearch = memo(function ActionBarSearch({
@@ -83,7 +87,11 @@ export const ActionBarSearch = memo(function ActionBarSearch({
     debounceMs = 250,
     onDebouncedChange,
     onSubmit,
+    id: idProp,
+    name = 'action-bar-search',
 }: ActionBarSearchProps) {
+    const generatedId = useId();
+    const inputId = idProp ?? generatedId;
     const isControlled = value !== undefined;
     const [internalValue, setInternalValue] = useState<string>(value ?? initialValue);
 
@@ -114,6 +122,8 @@ export const ActionBarSearch = memo(function ActionBarSearch({
 
     return (
         <Input
+            id={inputId}
+            name={name}
             placeholder={placeholder}
             value={currentValue}
             onChange={(e) => {

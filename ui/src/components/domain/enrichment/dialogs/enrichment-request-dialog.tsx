@@ -16,6 +16,7 @@ import {
     FieldLabel,
     FieldLegend,
     FieldSet,
+    FieldTitle,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -24,12 +25,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { queryKeys, useNdjsonQuery } from '@/hooks/query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useEffect, useId, useState } from 'react';
+import { toast } from 'sonner';
 
 type OptimizedEntryResponse = components['schemas']['OptimizedEntryResponse'];
-
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
 
 /**
  * Form data structure for enrichment request
@@ -113,6 +113,9 @@ export default function EnrichmentRequestDialog({
     artifactsList,
     notesList,
 }: EnrichmentRequestDialogProps): React.JSX.Element {
+    const enrichmentTechniquesDescId = useId();
+    const entitiesDescId = useId();
+
     const [selectedEntities, setSelectedEntities] = useState<
         Array<{ value: number; label: string }>
     >([]);
@@ -483,6 +486,7 @@ export default function EnrichmentRequestDialog({
                     )}
 
                     <FieldGroup className='gap-4'>
+                        {/* Native fields: FieldLabel + htmlFor. Multi-select: FieldTitle + combobox aria-* (cmdk overwrites input id / aria-labelledby). */}
                         {/* Title */}
                         <Field>
                             <FieldLabel htmlFor='title'>
@@ -501,44 +505,51 @@ export default function EnrichmentRequestDialog({
 
                         {/* Enrichment Techniques */}
                         <Field>
-                            <FieldLabel htmlFor='enricherNames'>
+                            <FieldTitle>
                                 Enrichment Techniques{' '}
                                 <span className='text-destructive'>*</span>
-                            </FieldLabel>
-                            <div id='enricherNames'>
-                                <MultipleSelector
-                                    value={enricherTypes.filter((e) =>
-                                        formData.enricherNames.includes(e.value),
-                                    )}
-                                    defaultOptions={enricherTypes}
-                                    placeholder='Select enrichment techniques...'
-                                    disabled={isLoading}
-                                    onChange={handleEnricherChange}
-                                    emptyIndicator={
-                                        isLoading ? (
-                                            <p className='text-center text-sm'>
-                                                Loading enrichment techniques...
-                                            </p>
-                                        ) : (
-                                            <p className='text-center text-sm'>
-                                                No enrichment techniques found
-                                            </p>
-                                        )
-                                    }
-                                />
-                            </div>
-                            <FieldDescription>
+                            </FieldTitle>
+                            <MultipleSelector
+                                inputProps={{
+                                    'aria-label': 'Enrichment Techniques',
+                                    'aria-describedby': enrichmentTechniquesDescId,
+                                    'aria-required': true,
+                                }}
+                                value={enricherTypes.filter((e) =>
+                                    formData.enricherNames.includes(e.value),
+                                )}
+                                defaultOptions={enricherTypes}
+                                placeholder='Select enrichment techniques...'
+                                disabled={isLoading}
+                                onChange={handleEnricherChange}
+                                emptyIndicator={
+                                    isLoading ? (
+                                        <p className='text-center text-sm'>
+                                            Loading enrichment techniques...
+                                        </p>
+                                    ) : (
+                                        <p className='text-center text-sm'>
+                                            No enrichment techniques found
+                                        </p>
+                                    )
+                                }
+                            />
+                            <FieldDescription id={enrichmentTechniquesDescId}>
                                 Select one or more enrichment techniques to apply
                             </FieldDescription>
                         </Field>
 
                         {/* Entities — access scope for who can see this request */}
                         <Field>
-                            <FieldLabel htmlFor='entity'>Entities</FieldLabel>
+                            <FieldTitle>Entities</FieldTitle>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <div id='entity' className='w-full'>
+                                    <div className='w-full'>
                                         <MultipleSelector
+                                            inputProps={{
+                                                'aria-label': 'Entities',
+                                                'aria-describedby': entitiesDescId,
+                                            }}
                                             value={
                                                 selectedEntities.map((e) => ({
                                                     value: String(e.value),
@@ -555,7 +566,7 @@ export default function EnrichmentRequestDialog({
                                                         label: e.name,
                                                     })) as Option[]) || []
                                             }
-                                            placeholder='Select entities for access scope…'
+                                            placeholder='Select entities for access scope...'
                                             disabled={selectedNoteIds.size > 0}
                                             onChange={handleEntityChange}
                                             emptyIndicator={
@@ -572,7 +583,7 @@ export default function EnrichmentRequestDialog({
                                     </TooltipContent>
                                 )}
                             </Tooltip>
-                            <FieldDescription>
+                            <FieldDescription id={entitiesDescId}>
                                 Leave empty to keep the request visible only to you
                                 (unless you attach entities for shared access).
                             </FieldDescription>

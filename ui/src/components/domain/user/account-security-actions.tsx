@@ -25,7 +25,7 @@ import { useAuthActions } from '@/hooks/auth/use-auth';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
 
 interface AccountSecurityActionsProps {
@@ -45,6 +45,12 @@ export default function AccountSecurityActions({
     const [twoFactorDisabling, setTwoFactorDisabling] = useState(false);
     const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
     const [deleteAccountConfirmInput, setDeleteAccountConfirmInput] = useState('');
+
+    const passwordActionId = useId();
+    const apiKeyActionId = useId();
+    const twoFactorActionId = useId();
+    const deleteAccountActionId = useId();
+    const confirmDeleteAccountId = useId();
 
     const { data: userData } = $api.useQuery(
         'get',
@@ -82,7 +88,10 @@ export default function AccountSecurityActions({
                     <FieldGroup className='gap-4'>
                         <Field orientation='horizontal' className='gap-2'>
                             <FieldContent className='flex-1'>
-                                <FieldLabel className='text-sm block mb-0.5'>
+                                <FieldLabel
+                                    className='text-sm block mb-0.5'
+                                    htmlFor={passwordActionId}
+                                >
                                     Password
                                 </FieldLabel>
                                 <FieldDescription>
@@ -90,6 +99,7 @@ export default function AccountSecurityActions({
                                 </FieldDescription>
                             </FieldContent>
                             <Button
+                                id={passwordActionId}
                                 type='button'
                                 variant='outline'
                                 size='sm'
@@ -105,7 +115,10 @@ export default function AccountSecurityActions({
 
                         <Field orientation='horizontal' className='gap-2'>
                             <FieldContent className='flex-1'>
-                                <FieldLabel className='text-sm block mb-0.5'>
+                                <FieldLabel
+                                    className='text-sm block mb-0.5'
+                                    htmlFor={apiKeyActionId}
+                                >
                                     API Key
                                 </FieldLabel>
                                 <FieldDescription>
@@ -113,6 +126,7 @@ export default function AccountSecurityActions({
                                 </FieldDescription>
                             </FieldContent>
                             <Button
+                                id={apiKeyActionId}
                                 type='button'
                                 variant='outline'
                                 size='sm'
@@ -128,7 +142,10 @@ export default function AccountSecurityActions({
 
                         <Field orientation='horizontal' className='gap-2'>
                             <FieldContent className='flex-1'>
-                                <FieldLabel className='text-sm block mb-0.5'>
+                                <FieldLabel
+                                    className='text-sm block mb-0.5'
+                                    htmlFor={twoFactorActionId}
+                                >
                                     Two-Factor Auth
                                 </FieldLabel>
                                 <FieldDescription>
@@ -137,6 +154,7 @@ export default function AccountSecurityActions({
                                 </FieldDescription>
                             </FieldContent>
                             <Button
+                                id={twoFactorActionId}
                                 type='button'
                                 variant={twoFactorEnabled ? 'destructive' : 'outline'}
                                 size='sm'
@@ -154,7 +172,10 @@ export default function AccountSecurityActions({
 
                         <Field orientation='horizontal' className='gap-2'>
                             <FieldContent className='flex-1'>
-                                <FieldLabel className='text-sm block mb-0.5'>
+                                <FieldLabel
+                                    className='text-sm block mb-0.5'
+                                    htmlFor={deleteAccountActionId}
+                                >
                                     Delete Account
                                 </FieldLabel>
                                 <FieldDescription>
@@ -162,6 +183,7 @@ export default function AccountSecurityActions({
                                 </FieldDescription>
                             </FieldContent>
                             <Button
+                                id={deleteAccountActionId}
                                 type='button'
                                 variant='destructive'
                                 size='sm'
@@ -217,11 +239,11 @@ export default function AccountSecurityActions({
                     </AlertDialogHeader>
                     <FieldGroup className='gap-4'>
                         <Field>
-                            <FieldLabel htmlFor='confirm-delete-account'>
+                            <FieldLabel htmlFor={confirmDeleteAccountId}>
                                 Type below to confirm
                             </FieldLabel>
                             <Input
-                                id='confirm-delete-account'
+                                id={confirmDeleteAccountId}
                                 type='text'
                                 placeholder='Type "DELETE" to confirm'
                                 value={deleteAccountConfirmInput}

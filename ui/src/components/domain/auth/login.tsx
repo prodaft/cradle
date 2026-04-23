@@ -30,7 +30,7 @@ import {
 } from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 const LOGIN_IMAGES = ['/1.png', '/2.png', '/3.png', '/4.png'];
 
@@ -72,6 +72,7 @@ export default function Login() {
     const [loginImage] = useState(
         () => LOGIN_IMAGES[Math.floor(Math.random() * LOGIN_IMAGES.length)],
     );
+    const loginTwoFactorOtpId = useId();
     const location = useRouterState({
         select: (state) => state.location,
     });
@@ -326,7 +327,16 @@ export default function Login() {
                                 {requiresTwoFactor ? (
                                     <>
                                         <Field>
+                                            <FieldLabel
+                                                htmlFor={loginTwoFactorOtpId}
+                                                className='sr-only'
+                                            >
+                                                Verification code
+                                            </FieldLabel>
                                             <InputOTP
+                                                id={loginTwoFactorOtpId}
+                                                name='login-2fa-otp'
+                                                autoComplete='one-time-code'
                                                 maxLength={6}
                                                 value={twoFactorToken}
                                                 onChange={(value) =>

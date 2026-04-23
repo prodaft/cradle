@@ -9,6 +9,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Field, FieldLabel } from '@/components/ui/field';
 import {
     InputGroup,
     InputGroupAddon,
@@ -24,7 +25,7 @@ import {
 } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import { toast } from 'sonner';
 
 /**
@@ -64,6 +65,7 @@ export default function ApiKeyGenerateDialog({
         message: '',
         color: 'green',
     });
+    const apiKeyValueId = useId();
 
     const generateMutation = useMutation({
         mutationFn: async () => {
@@ -157,41 +159,54 @@ export default function ApiKeyGenerateDialog({
                 ) : (
                     <>
                         {/* API Key Display */}
-                        <InputGroup>
-                            <InputGroupInput
-                                type={showApiKey ? 'text' : 'password'}
-                                value={apiKey}
-                                readOnly
-                                className='font-mono'
-                            />
-                            <InputGroupAddon align='inline-end' className='flex gap-1'>
-                                <InputGroupButton
-                                    type='button'
-                                    onClick={() => setShowApiKey(!showApiKey)}
-                                    aria-label={
-                                        showApiKey ? 'Hide API key' : 'Show API key'
-                                    }
-                                    title={showApiKey ? 'Hide API key' : 'Show API key'}
+                        <Field>
+                            <FieldLabel htmlFor={apiKeyValueId}>
+                                Your new API key
+                            </FieldLabel>
+                            <InputGroup>
+                                <InputGroupInput
+                                    id={apiKeyValueId}
+                                    name='api-key-generate-value'
+                                    autoComplete='off'
+                                    type={showApiKey ? 'text' : 'password'}
+                                    value={apiKey}
+                                    readOnly
+                                    className='font-mono'
+                                />
+                                <InputGroupAddon
+                                    align='inline-end'
+                                    className='flex gap-1'
                                 >
-                                    {showApiKey ? (
-                                        <EyeSlashIcon
-                                            className='size-4'
-                                            weight='bold'
-                                        />
-                                    ) : (
-                                        <EyeIcon className='size-4' weight='bold' />
-                                    )}
-                                </InputGroupButton>
-                                <InputGroupButton
-                                    type='button'
-                                    onClick={handleCopy}
-                                    aria-label='Copy API key'
-                                    title='Copy API key'
-                                >
-                                    <CopyIcon className='size-4' weight='bold' />
-                                </InputGroupButton>
-                            </InputGroupAddon>
-                        </InputGroup>
+                                    <InputGroupButton
+                                        type='button'
+                                        onClick={() => setShowApiKey(!showApiKey)}
+                                        aria-label={
+                                            showApiKey ? 'Hide API key' : 'Show API key'
+                                        }
+                                        title={
+                                            showApiKey ? 'Hide API key' : 'Show API key'
+                                        }
+                                    >
+                                        {showApiKey ? (
+                                            <EyeSlashIcon
+                                                className='size-4'
+                                                weight='bold'
+                                            />
+                                        ) : (
+                                            <EyeIcon className='size-4' weight='bold' />
+                                        )}
+                                    </InputGroupButton>
+                                    <InputGroupButton
+                                        type='button'
+                                        onClick={handleCopy}
+                                        aria-label='Copy API key'
+                                        title='Copy API key'
+                                    >
+                                        <CopyIcon className='size-4' weight='bold' />
+                                    </InputGroupButton>
+                                </InputGroupAddon>
+                            </InputGroup>
+                        </Field>
                         <DialogFooter>
                             <DialogClose asChild>
                                 <Button type='button' variant='outline' size='sm'>

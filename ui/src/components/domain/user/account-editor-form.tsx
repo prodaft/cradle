@@ -42,6 +42,8 @@ const EDITOR_DEFAULTS: FormData = { vim_mode: false };
 export default function AccountEditorForm({ target = 'me' }: AccountEditorFormProps) {
     const queryClient = useQueryClient();
     const vimModeId = useId();
+    const noteTemplateActionId = useId();
+    const noteSnippetsActionId = useId();
     const snippetListRef = useRef<SnippetListRef>(null);
 
     const [noteTemplateDialogOpen, setNoteTemplateDialogOpen] = useState(false);
@@ -215,7 +217,10 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
                         <FieldGroup className='gap-4'>
                             <Field orientation='horizontal' className='gap-2'>
                                 <FieldContent className='flex-1'>
-                                    <FieldLabel className='text-sm block mb-0.5'>
+                                    <FieldLabel
+                                        className='text-sm block mb-0.5'
+                                        htmlFor={noteTemplateActionId}
+                                    >
                                         Note Template
                                     </FieldLabel>
                                     <FieldDescription>
@@ -223,6 +228,7 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
                                     </FieldDescription>
                                 </FieldContent>
                                 <Button
+                                    id={noteTemplateActionId}
                                     type='button'
                                     variant='outline'
                                     size='sm'
@@ -240,7 +246,10 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
 
                             <Field orientation='horizontal' className='gap-2'>
                                 <FieldContent className='flex-1'>
-                                    <FieldLabel className='text-sm block mb-0.5'>
+                                    <FieldLabel
+                                        className='text-sm block mb-0.5'
+                                        htmlFor={noteSnippetsActionId}
+                                    >
                                         Note Snippets
                                     </FieldLabel>
                                     <FieldDescription>
@@ -249,6 +258,7 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
                                     </FieldDescription>
                                 </FieldContent>
                                 <Button
+                                    id={noteSnippetsActionId}
                                     type='button'
                                     variant='outline'
                                     size='sm'

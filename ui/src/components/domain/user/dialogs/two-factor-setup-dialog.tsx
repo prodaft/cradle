@@ -22,7 +22,7 @@ import { CopyIcon, QrCodeIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 /**
@@ -64,6 +64,8 @@ export default function TwoFactorSetupDialog({
 }: TwoFactorSetupDialogProps): React.JSX.Element {
     const [verificationCode, setVerificationCode] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const twoFactorOtpId = useId();
+    const twoFactorSecretKeyId = useId();
 
     // Query for 2FA setup data (only when enabling) - POST to enable returns config
     const { data: twoFactorData, isLoading } = useQuery({
@@ -194,7 +196,7 @@ export default function TwoFactorSetupDialog({
                             </div>
 
                             <Field>
-                                <FieldLabel htmlFor='input-field-secret-key'>
+                                <FieldLabel htmlFor={twoFactorSecretKeyId}>
                                     Manual Entry
                                 </FieldLabel>
                                 <InputGroup>
@@ -202,7 +204,7 @@ export default function TwoFactorSetupDialog({
                                         <QrCodeIcon className='size-4' />
                                     </InputGroupAddon>
                                     <InputGroupInput
-                                        id='input-field-secret-key'
+                                        id={twoFactorSecretKeyId}
                                         type='text'
                                         value={secret}
                                         readOnly
@@ -226,7 +228,13 @@ export default function TwoFactorSetupDialog({
                     )}
 
                     <Field>
+                        <FieldLabel htmlFor={twoFactorOtpId}>
+                            Verification code
+                        </FieldLabel>
                         <InputOTP
+                            id={twoFactorOtpId}
+                            name='two-factor-setup-otp'
+                            autoComplete='one-time-code'
                             maxLength={6}
                             value={verificationCode}
                             onChange={(value) => setVerificationCode(value)}

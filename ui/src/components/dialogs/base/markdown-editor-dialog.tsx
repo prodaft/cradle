@@ -8,7 +8,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Field, FieldLabel } from '@/components/ui/field';
+import { Field, FieldLabel, FieldTitle } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useTheme } from '@/contexts/ui';
 import { markdown } from '@codemirror/lang-markdown';
@@ -16,7 +16,7 @@ import { languages } from '@codemirror/language-data';
 import { EditorView } from '@codemirror/view';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import CodeMirror from '@uiw/react-codemirror';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 /**
  * MarkdownEditorDialog component props
@@ -84,6 +84,8 @@ export default function MarkdownEditorDialog({
     const [noteTitle, setNoteTitle] = useState(title || '');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { isDarkMode } = useTheme();
+    const titleFieldId = useId();
+    const contentLabelId = useId();
 
     useEffect(() => {
         if (open) {
@@ -127,9 +129,9 @@ export default function MarkdownEditorDialog({
 
                 {titleEditable && (
                     <Field>
-                        <FieldLabel htmlFor='note-title'>Title</FieldLabel>
+                        <FieldLabel htmlFor={titleFieldId}>Title</FieldLabel>
                         <Input
-                            id='note-title'
+                            id={titleFieldId}
                             type='text'
                             value={noteTitle}
                             onChange={handleTitleChange}
@@ -140,9 +142,10 @@ export default function MarkdownEditorDialog({
 
                 {/* Editor Section */}
                 <Field>
-                    <FieldLabel htmlFor='markdown-content'>Content</FieldLabel>
+                    <FieldTitle id={contentLabelId}>Content</FieldTitle>
                     <div className='border border-border rounded-lg overflow-hidden'>
                         <CodeMirror
+                            aria-labelledby={contentLabelId}
                             value={userInput}
                             onChange={handleContentChange}
                             theme={isDarkMode ? 'dark' : eclipse}
