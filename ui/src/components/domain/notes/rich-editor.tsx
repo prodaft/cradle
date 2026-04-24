@@ -5,6 +5,8 @@ import { useTheme } from '@/contexts/ui';
 import { useAuthActions } from '@/hooks/auth/use-auth';
 import { useNdjsonQuery } from '@/hooks/query';
 import { CradleEditor } from '@/utils/editor/enhancements';
+import { codemirrorEditorSyncPeerExtensions } from '@/utils/editor/sync/codemirror-peer';
+import { createNoteEditorSyncConnection } from '@/utils/editor/sync/connection';
 import {
     cradleLinkColorPlugin,
     cradleLinksPlugin,
@@ -71,6 +73,7 @@ import {
     useCallback,
     useEffect,
     useImperativeHandle,
+    useLayoutEffect,
     useMemo,
     useRef,
     useState,
@@ -230,7 +233,65 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const saveNoteRef = useRef(saveNote);
     const setLineNumberRef = useRef(setLineNumber);
     const prevNoteIdRef = useRef(noteid);
+    const editorSyncInitDocRef = useRef('');
     const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
+
+    const needsEditorSyncHydration =
+        typeof SharedWorker !== 'undefined' && Boolean(noteid) && enableEditing;
+    const [editorSyncHydrated, setEditorSyncHydrated] = useState(!needsEditorSyncHydration);
+    const [editorSyncSession, setEditorSyncSession] = useState<{
+        noteid: string;
+        startVersion: number;
+        connection: NonNullable<ReturnType<typeof createNoteEditorSyncConnection>>;
+    } | null>(null);
+
+    useLayoutEffect(() => {
+        setEditorSyncSession((prev) => {
+            prev?.connection.close();
+            return null;
+        });
+        if (needsEditorSyncHydration) setEditorSyncHydrated(false);
+        else setEditorSyncHydrated(true);
+    }, [noteid, needsEditorSyncHydration]);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (!needsEditorSyncHydration) {
+            setEditorSyncHydrated(true);
+            return () => {
+                cancelled = true;
+            };
+        }
+        const conn = createNoteEditorSyncConnection(noteid, markdownContentRef.current ?? '');
+        if (!conn) {
+            setEditorSyncHydrated(true);
+            return () => {
+                cancelled = true;
+            };
+        }
+        void (async () => {
+            try {
+                const { version, doc } = await conn.getDocument();
+                if (cancelled) {
+                    conn.close();
+                    return;
+                }
+                editorSyncInitDocRef.current = doc;
+                setEditorSyncSession({ noteid, startVersion: version, connection: conn });
+                if (doc !== (markdownContentRef.current ?? '')) {
+                    setMarkdownContentRef.current(doc);
+                }
+                setEditorSyncHydrated(true);
+            } catch {
+                conn.close();
+                if (!cancelled) setEditorSyncHydrated(true);
+            }
+        })();
+        return () => {
+            cancelled = true;
+            conn.close();
+        };
+    }, [needsEditorSyncHydration, noteid]);
 
     const onUpdate = useMemo(
         () =>
@@ -476,6 +537,12 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 '.cm-scroller': { overflow: 'auto' },
             }),
             ...additionalExtensions,
+            ...(editorSyncSession && editorSyncSession.noteid === noteid
+                ? codemirrorEditorSyncPeerExtensions(
+                      editorSyncSession.startVersion,
+                      editorSyncSession.connection,
+                  )
+                : []),
         ];
 
         if (source) {
@@ -509,6 +576,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         navigate,
         fileDownloadFn,
         onUpdate,
+        editorSyncSession,
+        noteid,
     ]);
 
     useEffect(() => {
@@ -549,14 +618,19 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     // Initialize editor
     useEffect(() => {
         if (!editorViewRef.current && editorRef.current && extensions.length > 0) {
+            if (needsEditorSyncHydration && !editorSyncHydrated) return;
             try {
+                const initialDoc =
+                    editorSyncSession && editorSyncSession.noteid === noteid
+                        ? editorSyncInitDocRef.current
+                        : markdownContent;
                 logger.debug('Editor init', {
                     noteId: noteid,
-                    initialDocLength: markdownContent.length,
+                    initialDocLength: initialDoc.length,
                     extensionsCount: extensions.length,
                 });
                 const state = EditorState.create({
-                    doc: markdownContent,
+                    doc: initialDoc,
                     extensions,
                 });
 
@@ -574,7 +648,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 );
             }
         }
-    }, [noteid, markdownContent, extensions]);
+    }, [
+        noteid,
+        markdownContent,
+        extensions,
+        editorSyncHydrated,
+        needsEditorSyncHydration,
+        editorSyncSession,
+    ]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -590,6 +671,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     useEffect(() => {
         const view = editorViewRef.current;
         if (!view) return;
+        if (editorSyncSession && editorSyncSession.noteid === noteid) return;
 
         const currentContent = view.state.doc.toString();
         if (currentContent === markdownContent) return;
@@ -605,7 +687,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             },
             selection: { anchor: nextCursorPos, head: nextCursorPos },
         });
-    }, [markdownContent]);
+    }, [markdownContent, editorSyncSession, noteid]);
 
     // Update search panel labels - only observe when editor exists
     useEffect(() => {

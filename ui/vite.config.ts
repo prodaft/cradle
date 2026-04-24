@@ -69,6 +69,7 @@ export default defineConfig(({ mode }) => {
                 '@codemirror/lint',
                 '@codemirror/lang-markdown',
                 '@codemirror/lang-yaml',
+                '@codemirror/collab',
                 '@codemirror/language-data',
                 '@lezer/common',
                 '@lezer/highlight',
