@@ -1,10 +1,10 @@
 'use client';
 
-import { DataGridColumnHeader } from '@/components/data-grid/data-grid-column-header';
-import { DataGridContextMenu } from '@/components/data-grid/data-grid-context-menu';
-import { DataGridPasteDialog } from '@/components/data-grid/data-grid-paste-dialog';
-import { DataGridRow } from '@/components/data-grid/data-grid-row';
-import { DataGridSearch } from '@/components/data-grid/data-grid-search';
+import { DataGridColumnHeader } from '@/components/custom/data-grid/data-grid-column-header';
+import { DataGridContextMenu } from '@/components/custom/data-grid/data-grid-context-menu';
+import { DataGridPasteDialog } from '@/components/custom/data-grid/data-grid-paste-dialog';
+import { DataGridRow } from '@/components/custom/data-grid/data-grid-row';
+import { DataGridSearch } from '@/components/custom/data-grid/data-grid-search';
 import { useAsRef } from '@/hooks/use-as-ref';
 import { useDataGrid } from '@/hooks/use-data-grid';
 import {

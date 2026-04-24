@@ -5,8 +5,6 @@ import { useTheme } from '@/contexts/ui';
 import { useAuthActions } from '@/hooks/auth/use-auth';
 import { useNdjsonQuery } from '@/hooks/query';
 import { CradleEditor } from '@/utils/editor/enhancements';
-import { codemirrorEditorSyncPeerExtensions } from '@/utils/editor/sync/codemirror-peer';
-import { createNoteEditorSyncConnection } from '@/utils/editor/sync/connection';
 import {
     cradleLinkColorPlugin,
     cradleLinksPlugin,
@@ -16,6 +14,8 @@ import {
     referenceLinksPlugin,
     referenceLinkSyntax,
 } from '@/utils/editor/reference-links';
+import { codemirrorEditorSyncPeerExtensions } from '@/utils/editor/sync/codemirror-peer';
+import { createNoteEditorSyncConnection } from '@/utils/editor/sync/connection';
 import { tablePlugin } from '@/utils/editor/table-plugin';
 import { createCradleTheme } from '@/utils/editor/theme';
 import { logger } from '@/utils/logger';
@@ -238,7 +238,9 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     const needsEditorSyncHydration =
         typeof SharedWorker !== 'undefined' && Boolean(noteid) && enableEditing;
-    const [editorSyncHydrated, setEditorSyncHydrated] = useState(!needsEditorSyncHydration);
+    const [editorSyncHydrated, setEditorSyncHydrated] = useState(
+        !needsEditorSyncHydration,
+    );
     const [editorSyncSession, setEditorSyncSession] = useState<{
         noteid: string;
         startVersion: number;
@@ -262,7 +264,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 cancelled = true;
             };
         }
-        const conn = createNoteEditorSyncConnection(noteid, markdownContentRef.current ?? '');
+        const conn = createNoteEditorSyncConnection(
+            noteid,
+            markdownContentRef.current ?? '',
+        );
         if (!conn) {
             setEditorSyncHydrated(true);
             return () => {
@@ -277,7 +282,11 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     return;
                 }
                 editorSyncInitDocRef.current = doc;
-                setEditorSyncSession({ noteid, startVersion: version, connection: conn });
+                setEditorSyncSession({
+                    noteid,
+                    startVersion: version,
+                    connection: conn,
+                });
                 if (doc !== (markdownContentRef.current ?? '')) {
                     setMarkdownContentRef.current(doc);
                 }

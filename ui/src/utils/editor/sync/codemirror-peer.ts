@@ -5,11 +5,8 @@ import {
     sendableUpdates,
 } from '@codemirror/collab';
 import type { Extension } from '@codemirror/state';
-import { ViewPlugin, type ViewUpdate, EditorView } from '@codemirror/view';
-import {
-    EDITOR_SYNC_CONNECTION_CLOSED,
-    type EditorSyncConnection,
-} from './connection';
+import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
+import { EDITOR_SYNC_CONNECTION_CLOSED, type EditorSyncConnection } from './connection';
 
 /**
  * CodeMirror extensions that sync the editor document across tabs (via {@link EditorSyncConnection}),
@@ -42,7 +39,11 @@ export function codemirrorEditorSyncPeerExtensions(
                     await connection.pushUpdates(version, updates);
                 } catch (e) {
                     if (this.done) return;
-                    if (e instanceof Error && e.message === EDITOR_SYNC_CONNECTION_CLOSED) return;
+                    if (
+                        e instanceof Error &&
+                        e.message === EDITOR_SYNC_CONNECTION_CLOSED
+                    )
+                        return;
                     if (sendableUpdates(this.view.state).length) {
                         setTimeout(() => void this.push(), 150);
                     }
@@ -65,7 +66,11 @@ export function codemirrorEditorSyncPeerExtensions(
                         this.view.dispatch(receiveUpdates(this.view.state, updates));
                     } catch (e) {
                         if (this.done) return;
-                        if (e instanceof Error && e.message === EDITOR_SYNC_CONNECTION_CLOSED) return;
+                        if (
+                            e instanceof Error &&
+                            e.message === EDITOR_SYNC_CONNECTION_CLOSED
+                        )
+                            return;
                         await new Promise((r) => setTimeout(r, 200));
                     }
                 }

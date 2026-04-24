@@ -1,6 +1,6 @@
 'use client';
 
-import { DataGridCellWrapper } from '@/components/data-grid/data-grid-cell-wrapper';
+import { DataGridCellWrapper } from '@/components/custom/data-grid/data-grid-cell-wrapper';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';

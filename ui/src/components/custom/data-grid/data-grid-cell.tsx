@@ -12,7 +12,7 @@ import {
     SelectCell,
     ShortTextCell,
     UrlCell,
-} from '@/components/data-grid/data-grid-cell-variants';
+} from '@/components/custom/data-grid/data-grid-cell-variants';
 import type { DataGridCellProps } from '@/types/data-grid';
 
 export const DataGridCell = React.memo(DataGridCellImpl, (prev, next) => {

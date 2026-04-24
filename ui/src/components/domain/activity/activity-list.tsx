@@ -1,7 +1,8 @@
 import type { DateRangeFilter } from '@/components/base/list-view/types';
-import { DateRangeFilterButton } from '@/components/data-table/data-table-date-range-filter';
-import { DataTablePagination } from '@/components/data-table/data-table-pagination';
-import { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
+import { TableSkeleton } from '@/components/base/table-skeleton';
+import { DataTable } from '@/components/custom/data-table/data-table';
+import { DateRangeFilterButton } from '@/components/custom/data-table/data-table-date-range-filter';
+import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,15 +15,6 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Spinner } from '@/components/ui/spinner';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { CaretDownIcon, GitForkIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
@@ -30,8 +22,10 @@ import { $api } from '@services/openapi/client';
 import { useParams } from '@tanstack/react-router';
 import {
     type ColumnDef,
-    flexRender,
+    type ExpandedState,
+    type Row,
     getCoreRowModel,
+    getExpandedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
@@ -294,14 +288,8 @@ const formatDiff = (diffTxt: string): string => {
     }
 };
 
-// Expandable detail panel for a row
-function ExpandedRowDetail({
-    event,
-    colSpan,
-}: {
-    event: ActivityEvent;
-    colSpan: number;
-}) {
+// Expandable detail panel for a row (rendered inside DataTable sub-row cell)
+function ExpandedRowDetail({ event }: { event: ActivityEvent }) {
     const hasDetails = !!event.details;
     const hasSrcLog = !!event.src_log;
     const srcLogFormatted = event.src_log
@@ -309,74 +297,66 @@ function ExpandedRowDetail({
         : null;
 
     return (
-        <tr>
-            <td colSpan={colSpan} className='p-0'>
-                <div className='px-4 py-3 bg-muted/30 border-t space-y-3'>
-                    {hasDetails && (
-                        <div className='space-y-1.5'>
-                            <div className='text-xs font-medium text-muted-foreground'>
-                                Changes
-                            </div>
-                            <div
-                                dangerouslySetInnerHTML={{
-                                    __html: formatDiff(event.details!),
-                                }}
-                            />
-                        </div>
-                    )}
-                    {hasSrcLog && srcLogFormatted && (
-                        <div className='space-y-1.5'>
-                            <div className='flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2'>
-                                <GitForkIcon className='size-3.5' />
-                                <span>Triggered by</span>
-                            </div>
-                            <div className='ml-1 pl-3 border-l-2 border-primary/30'>
-                                <div className='bg-background rounded-md border border-border p-3'>
-                                    <div className='flex flex-wrap items-baseline gap-2 mb-2'>
-                                        <Badge
-                                            variant={getTypeBadgeVariant(
-                                                event.src_log!.type,
-                                            )}
-                                            className='capitalize text-xs'
-                                        >
-                                            {event.src_log!.type}
-                                        </Badge>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <span
-                                                    className={`text-xs cursor-help ${srcLogFormatted.isDeleted ? 'text-muted-foreground line-through' : ''}`}
-                                                >
-                                                    {srcLogFormatted.text}
-                                                </span>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <span className='font-mono text-xs'>
-                                                    {srcLogFormatted.fullId}
-                                                </span>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </div>
-                                    {event.src_log!.details && (
-                                        <>
-                                            <div className='text-xs font-medium text-muted-foreground mt-2 mb-1'>
-                                                Changes
-                                            </div>
-                                            <div
-                                                dangerouslySetInnerHTML={{
-                                                    __html: formatDiff(
-                                                        event.src_log!.details,
-                                                    ),
-                                                }}
-                                            />
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+        <div className='px-4 py-3 bg-muted/30 border-t space-y-3'>
+            {hasDetails && (
+                <div className='space-y-1.5'>
+                    <div className='text-xs font-medium text-muted-foreground'>
+                        Changes
+                    </div>
+                    <div
+                        dangerouslySetInnerHTML={{
+                            __html: formatDiff(event.details!),
+                        }}
+                    />
                 </div>
-            </td>
-        </tr>
+            )}
+            {hasSrcLog && srcLogFormatted && (
+                <div className='space-y-1.5'>
+                    <div className='flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2'>
+                        <GitForkIcon className='size-3.5' />
+                        <span>Triggered by</span>
+                    </div>
+                    <div className='ml-1 pl-3 border-l-2 border-primary/30'>
+                        <div className='bg-background rounded-md border border-border p-3'>
+                            <div className='flex flex-wrap items-baseline gap-2 mb-2'>
+                                <Badge
+                                    variant={getTypeBadgeVariant(event.src_log!.type)}
+                                    className='capitalize text-xs'
+                                >
+                                    {event.src_log!.type}
+                                </Badge>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <span
+                                            className={`text-xs cursor-help ${srcLogFormatted.isDeleted ? 'text-muted-foreground line-through' : ''}`}
+                                        >
+                                            {srcLogFormatted.text}
+                                        </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <span className='font-mono text-xs'>
+                                            {srcLogFormatted.fullId}
+                                        </span>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
+                            {event.src_log!.details && (
+                                <>
+                                    <div className='text-xs font-medium text-muted-foreground mt-2 mb-1'>
+                                        Changes
+                                    </div>
+                                    <div
+                                        dangerouslySetInnerHTML={{
+                                            __html: formatDiff(event.src_log!.details),
+                                        }}
+                                    />
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -399,7 +379,7 @@ export default function ActivityList({
 
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
-    const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+    const [expanded, setExpanded] = useState<ExpandedState>({});
     const showUser = !effectiveUsername;
 
     useEffect(() => {
@@ -566,28 +546,19 @@ export default function ActivityList({
                         event.object_repr,
                         event.object_id,
                     );
-                    const isExpandable = !!event.details || !!event.src_log;
-                    const isExpanded = expandedRows[event.id] ?? false;
                     return (
-                        <div className='flex items-center gap-2'>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <span
-                                        className={`cursor-help ${isDeleted ? 'text-muted-foreground line-through' : ''}`}
-                                    >
-                                        {text}
-                                    </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <span className='font-mono text-xs'>{fullId}</span>
-                                </TooltipContent>
-                            </Tooltip>
-                            {isExpandable && (
-                                <CaretDownIcon
-                                    className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
-                                />
-                            )}
-                        </div>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span
+                                    className={`cursor-help ${isDeleted ? 'text-muted-foreground line-through' : ''}`}
+                                >
+                                    {text}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <span className='font-mono text-xs'>{fullId}</span>
+                            </TooltipContent>
+                        </Tooltip>
                     );
                 },
                 enableSorting: false,
@@ -605,8 +576,26 @@ export default function ActivityList({
                 ),
                 enableSorting: false,
             },
+            {
+                id: 'expand',
+                header: () => <span className='sr-only'>Expand row</span>,
+                meta: { label: 'Expand' },
+                size: 36,
+                enableHiding: false,
+                cell: ({ row }) => {
+                    if (!row.getCanExpand()) return null;
+                    return (
+                        <div className='flex justify-end pr-0.5'>
+                            <CaretDownIcon
+                                className={`size-4 shrink-0 text-muted-foreground transition-transform ${row.getIsExpanded() ? 'rotate-180' : ''}`}
+                            />
+                        </div>
+                    );
+                },
+                enableSorting: false,
+            },
         ],
-        [showUser, expandedRows],
+        [showUser],
     );
 
     // Pagination handler
@@ -627,17 +616,22 @@ export default function ActivityList({
         data: events,
         columns,
         state: {
+            expanded,
             pagination: {
                 pageIndex: page - 1,
                 pageSize,
             },
         },
+        onExpandedChange: setExpanded,
         onPaginationChange: (updater) => {
             const current = { pageIndex: page - 1, pageSize };
             const next = typeof updater === 'function' ? updater(current) : updater;
             handlePaginationChange(next.pageIndex, next.pageSize);
         },
         getCoreRowModel: getCoreRowModel(),
+        getExpandedRowModel: getExpandedRowModel(),
+        getRowCanExpand: (row) => !!(row.original.details || row.original.src_log),
+        getRowId: (row) => row.id,
         manualPagination: true,
         pageCount: totalPages,
     });
@@ -647,147 +641,61 @@ export default function ActivityList({
         setPage(1);
     }, []);
 
-    const toggleRowExpanded = (eventId: string) => {
-        setExpandedRows((prev) => ({
-            ...prev,
-            [eventId]: !prev[eventId],
-        }));
-    };
+    const onRowClickRow = useCallback((row: Row<ActivityEvent>) => {
+        if (row.getCanExpand()) row.toggleExpanded();
+    }, []);
+
+    const renderSubRow = useCallback(
+        (row: Row<ActivityEvent>) => <ExpandedRowDetail event={row.original} />,
+        [],
+    );
+
+    const skeletonColumns = showUser ? 6 : 5;
 
     return (
         <ScrollArea className='flex w-full flex-col gap-2.5'>
-            {/* Toolbar */}
-            <div
-                role='toolbar'
-                aria-orientation='horizontal'
-                className='flex w-full items-start justify-between gap-2 py-1'
-            >
-                <div className='flex flex-1 flex-wrap items-center gap-2'>
-                    {/* Username input */}
-                    <div className='relative w-[200px]'>
-                        <MagnifyingGlassIcon className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
-                        <Input
-                            type='text'
-                            name='username'
-                            value={filters.username}
-                            onChange={(e) =>
-                                handleFilterChange({ username: e.target.value })
-                            }
-                            placeholder='Search by username...'
-                            className='pl-9 h-8'
-                        />
-                    </div>
-
-                    {/* Date range filter */}
-                    <DateRangeFilterButton
-                        title='Date'
-                        value={filters.dateRange}
-                        onChange={(dateRange) => handleFilterChange({ dateRange })}
-                    />
-
-                    {/* Type filter */}
-                    <EventTypeFilter
-                        value={filters.type}
-                        onChange={(type) => handleFilterChange({ type })}
-                    />
-                </div>
-                <DataTableViewOptions table={table} />
-            </div>
-
-            {/* Results */}
             {isPaused && <OfflineIndicator />}
 
-            {isLoading ? (
-                <div className='flex items-center justify-center min-h-[200px] text-foreground'>
-                    <Spinner className='size-10' />
+            <DataTable
+                table={table}
+                isLoading={isLoading}
+                loadingPlaceholder={
+                    <TableSkeleton
+                        showToolbar={false}
+                        rows={8}
+                        columns={skeletonColumns}
+                    />
+                }
+                showPagination={!isLoading}
+                toolbarEnd={<DataTableViewOptions table={table} />}
+                onRowClickRow={onRowClickRow}
+                interactiveRow={(row) => row.getCanExpand()}
+                renderSubRow={renderSubRow}
+                emptyMessage='No event logs found.'
+            >
+                <div className='relative w-[200px]'>
+                    <MagnifyingGlassIcon className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
+                    <Input
+                        type='text'
+                        name='username'
+                        value={filters.username}
+                        onChange={(e) =>
+                            handleFilterChange({ username: e.target.value })
+                        }
+                        placeholder='Search by username...'
+                        className='pl-9 h-8'
+                    />
                 </div>
-            ) : (
-                <>
-                    <div className='overflow-hidden rounded-md border'>
-                        <Table>
-                            <TableHeader>
-                                {table.getHeaderGroups().map((headerGroup) => (
-                                    <TableRow key={headerGroup.id}>
-                                        {headerGroup.headers.map((header) => (
-                                            <TableHead
-                                                key={header.id}
-                                                colSpan={header.colSpan}
-                                            >
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(
-                                                          header.column.columnDef
-                                                              .header,
-                                                          header.getContext(),
-                                                      )}
-                                            </TableHead>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </TableHeader>
-                            <TableBody>
-                                {table.getRowModel().rows?.length ? (
-                                    table.getRowModel().rows.map((row) => {
-                                        const event = row.original;
-                                        const isExpandable =
-                                            !!event.details || !!event.src_log;
-                                        const isExpanded =
-                                            expandedRows[event.id] ?? false;
-                                        return (
-                                            <React.Fragment key={row.id}>
-                                                <TableRow
-                                                    className={
-                                                        isExpandable
-                                                            ? 'cursor-pointer hover:bg-muted/50'
-                                                            : ''
-                                                    }
-                                                    onClick={() =>
-                                                        isExpandable &&
-                                                        toggleRowExpanded(event.id)
-                                                    }
-                                                >
-                                                    {row
-                                                        .getVisibleCells()
-                                                        .map((cell) => (
-                                                            <TableCell key={cell.id}>
-                                                                {flexRender(
-                                                                    cell.column
-                                                                        .columnDef.cell,
-                                                                    cell.getContext(),
-                                                                )}
-                                                            </TableCell>
-                                                        ))}
-                                                </TableRow>
-                                                {isExpanded && (
-                                                    <ExpandedRowDetail
-                                                        event={event}
-                                                        colSpan={
-                                                            row.getVisibleCells().length
-                                                        }
-                                                    />
-                                                )}
-                                            </React.Fragment>
-                                        );
-                                    })
-                                ) : (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={
-                                                table.getHeaderGroups()[0]?.headers
-                                                    .length ?? columns.length
-                                            }
-                                            className='h-24 text-center'
-                                        >
-                                            No event logs found.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                    <DataTablePagination table={table} />
-                </>
-            )}
+                <DateRangeFilterButton
+                    title='Date'
+                    value={filters.dateRange}
+                    onChange={(dateRange) => handleFilterChange({ dateRange })}
+                />
+                <EventTypeFilter
+                    value={filters.type}
+                    onChange={(type) => handleFilterChange({ type })}
+                />
+            </DataTable>
             <ScrollBar orientation='horizontal' />
         </ScrollArea>
     );

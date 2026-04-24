@@ -7,6 +7,8 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/custom/action-bar';
+import { DataTable } from '@/components/custom/data-table/data-table';
+import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
 import {
     Stepper,
     StepperDescription,
@@ -17,8 +19,6 @@ import {
     StepperTitle,
     StepperTrigger,
 } from '@/components/custom/stepper';
-import { DataTablePagination } from '@/components/data-table/data-table-pagination';
-import { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,23 +35,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { useNdjsonQuery } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { createDashboardLink } from '@/utils/dashboard';
@@ -61,17 +46,18 @@ import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import {
+    type Cell,
     type ColumnDef,
     type ExpandedState,
+    type Row,
     type RowSelectionState,
     type VisibilityState,
-    flexRender,
     getCoreRowModel,
     getExpandedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { Check, PlusCircle, XCircle } from 'lucide-react';
-import React, { MouseEvent, useCallback, useMemo, useState } from 'react';
+import { Check, CirclePlus, PlusCircle, XCircle } from 'lucide-react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 type RelationEntry = components['schemas']['EntryWithDepth'] & {
@@ -443,6 +429,78 @@ function SubtypeFilter({
     );
 }
 
+const DEPTH_OPTIONS = [1, 2, 3, 4, 5] as const;
+
+function MaxStepsFilter({
+    value,
+    onChange,
+}: {
+    value: number;
+    onChange: (value: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+
+    const handleSelect = (depth: (typeof DEPTH_OPTIONS)[number]) => {
+        onChange(String(depth));
+        setOpen(false);
+    };
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant='outline'
+                    size='sm'
+                    className='border-dashed font-normal'
+                    aria-label={`Max steps, currently ${value}`}
+                >
+                    <CirclePlus />
+                    Max. steps
+                    <Separator
+                        orientation='vertical'
+                        className='mx-0.5 data-[orientation=vertical]:h-4'
+                    />
+                    <Badge variant='secondary' className='rounded-sm px-1 font-normal'>
+                        {value}
+                    </Badge>
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className='w-44 p-0' align='start'>
+                <Command>
+                    <CommandList className='max-h-full'>
+                        <CommandEmpty>No steps.</CommandEmpty>
+                        <CommandGroup>
+                            {DEPTH_OPTIONS.map((d) => {
+                                const isSelected = value === d;
+                                return (
+                                    <CommandItem
+                                        key={d}
+                                        onSelect={() => handleSelect(d)}
+                                    >
+                                        <div
+                                            className={cn(
+                                                'flex size-4 items-center justify-center rounded-sm border border-primary',
+                                                isSelected
+                                                    ? 'bg-primary'
+                                                    : 'opacity-50 [&_svg]:invisible',
+                                            )}
+                                        >
+                                            <Check className='size-3 text-primary-foreground' />
+                                        </div>
+                                        <span>
+                                            {d} step{d !== 1 ? 's' : ''}
+                                        </span>
+                                    </CommandItem>
+                                );
+                            })}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    );
+}
+
 export default function Relations({ obj }: RelationsProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [depth, setDepth] = useState(2);
@@ -742,6 +800,54 @@ export default function Relations({ obj }: RelationsProps) {
         table.toggleAllRowsSelected(false);
     }, [table]);
 
+    const onRowClickRow = useCallback(
+        (row: Row<RelationEntry>) => {
+            const result = row.original;
+            const isSameEntry = result.id !== undefined && result.id === obj.id;
+            const canExpand = !isSameEntry && result.id !== undefined;
+            if (canExpand) row.toggleExpanded();
+        },
+        [obj.id],
+    );
+
+    const getRowClassName = useCallback(
+        (row: Row<RelationEntry>) => {
+            const result = row.original;
+            const isSameEntry = result.id !== undefined && result.id === obj.id;
+            const canExpand = !isSameEntry && result.id !== undefined;
+            return !canExpand ? 'opacity-70' : undefined;
+        },
+        [obj.id],
+    );
+
+    const getCellProps = useCallback(
+        (cell: Cell<RelationEntry, unknown>) => {
+            if (cell.column.id === 'select' || cell.column.id === 'expand') {
+                return undefined;
+            }
+            const result = cell.row.original;
+            const dashboardLink = createDashboardLink({
+                name: result.name ?? '',
+                subtype: result.subtype,
+                type: result.entry_class?.type,
+            });
+            return {
+                onClick: (e: React.MouseEvent<HTMLTableCellElement>) => {
+                    e.stopPropagation();
+                    router.navigate({ to: dashboardLink as any });
+                },
+            };
+        },
+        [router],
+    );
+
+    const renderSubRow = useCallback(
+        (row: Row<RelationEntry>) => (
+            <ExpandedRowContent srcId={obj.id!} result={row.original} />
+        ),
+        [obj.id],
+    );
+
     return (
         <ScrollArea className='flex w-full flex-col gap-2.5'>
             {hasInaccessible && (
@@ -769,196 +875,67 @@ export default function Relations({ obj }: RelationsProps) {
                 </AlertComponent>
             )}
 
-            <div
-                role='toolbar'
-                aria-orientation='horizontal'
-                className='flex w-full items-start justify-between gap-2 py-1'
-            >
-                <div className='flex flex-1 flex-wrap items-center gap-2'>
-                    <Input
-                        placeholder='Search relations...'
-                        value={searchQuery}
-                        onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setPage(1);
+            <DataTable
+                table={table}
+                isLoading={isLoading}
+                loadingPlaceholder={
+                    <TableSkeleton showToolbar={false} rows={8} columns={5} />
+                }
+                showPagination={!isLoading}
+                onRowClickRow={onRowClickRow}
+                getRowClassName={getRowClassName}
+                getCellProps={getCellProps}
+                renderSubRow={renderSubRow}
+                emptyMessage='No relations found.'
+                toolbarEnd={<DataTableViewOptions table={table} align='end' />}
+                actionBar={
+                    <ActionBar
+                        open={selectedCount > 0}
+                        onOpenChange={(open) => {
+                            if (!open) clearSelection();
                         }}
-                        className='h-8 w-40 lg:w-56'
-                    />
-                    <SubtypeFilter
-                        options={entrySubtypes}
-                        selected={entrySubtypeFilters}
-                        onSelectedChange={setEntrySubtypeFilters}
-                        colorMap={entryClassColors}
-                    />
-                    <div className='flex items-center gap-2'>
-                        <span className='text-sm text-muted-foreground whitespace-nowrap'>
-                            Max. Steps:
-                        </span>
-                        <Select value={String(depth)} onValueChange={handleDepthChange}>
-                            <SelectTrigger className='w-16 h-8'>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {[1, 2, 3, 4, 5].map((d) => (
-                                    <SelectItem key={d} value={String(d)}>
-                                        {d}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                <div className='flex items-center gap-2'>
-                    <DataTableViewOptions table={table} align='end' />
-                </div>
-            </div>
-
-            {isLoading ? (
-                <TableSkeleton />
-            ) : (
-                <>
-                    <div className='overflow-hidden rounded-md border'>
-                        <Table>
-                            <TableHeader>
-                                {table.getHeaderGroups().map((headerGroup) => (
-                                    <TableRow key={headerGroup.id}>
-                                        {headerGroup.headers.map((header) => (
-                                            <TableHead
-                                                key={header.id}
-                                                colSpan={header.colSpan}
-                                            >
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(
-                                                          header.column.columnDef
-                                                              .header,
-                                                          header.getContext(),
-                                                      )}
-                                            </TableHead>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </TableHeader>
-                            <TableBody>
-                                {table.getRowModel().rows?.length ? (
-                                    table.getRowModel().rows.map((row) => {
-                                        const result = row.original;
-                                        const isSameEntry =
-                                            result.id !== undefined &&
-                                            result.id === obj.id;
-                                        const canExpand =
-                                            !isSameEntry && result.id !== undefined;
-                                        const dashboardLink = createDashboardLink({
-                                            name: result.name ?? '',
-                                            subtype: result.subtype,
-                                            type: result.entry_class?.type,
-                                        });
-
-                                        const handleNavigate = (e: MouseEvent) => {
-                                            e.stopPropagation();
-                                            router.navigate({
-                                                to: dashboardLink as any,
-                                            });
-                                        };
-
-                                        return (
-                                            <React.Fragment key={row.id}>
-                                                <TableRow
-                                                    data-state={
-                                                        row.getIsSelected() &&
-                                                        'selected'
-                                                    }
-                                                    className={`cursor-pointer hover:bg-muted/50 ${!canExpand ? 'opacity-70' : ''}`}
-                                                    onClick={() =>
-                                                        canExpand &&
-                                                        row.toggleExpanded()
-                                                    }
-                                                >
-                                                    {row
-                                                        .getVisibleCells()
-                                                        .map((cell) => (
-                                                            <TableCell
-                                                                key={cell.id}
-                                                                onClick={
-                                                                    cell.column.id !==
-                                                                        'select' &&
-                                                                    cell.column.id !==
-                                                                        'expand'
-                                                                        ? handleNavigate
-                                                                        : undefined
-                                                                }
-                                                            >
-                                                                {flexRender(
-                                                                    cell.column
-                                                                        .columnDef.cell,
-                                                                    cell.getContext(),
-                                                                )}
-                                                            </TableCell>
-                                                        ))}
-                                                </TableRow>
-                                                {row.getIsExpanded() && (
-                                                    <TableRow>
-                                                        <TableCell
-                                                            colSpan={
-                                                                row.getVisibleCells()
-                                                                    .length
-                                                            }
-                                                            className='p-0 border-b-0'
-                                                        >
-                                                            <ExpandedRowContent
-                                                                srcId={obj.id!}
-                                                                result={result}
-                                                            />
-                                                        </TableCell>
-                                                    </TableRow>
-                                                )}
-                                            </React.Fragment>
-                                        );
-                                    })
-                                ) : (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={table.getAllColumns().length}
-                                            className='h-24 text-center'
-                                        >
-                                            No relations found.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                    <div className='flex flex-col gap-2.5'>
-                        <DataTablePagination table={table} />
-                    </div>
-                </>
-            )}
-
-            <ActionBar
-                open={selectedCount > 0}
-                onOpenChange={(open) => {
-                    if (!open) clearSelection();
-                }}
-            >
-                <ActionBarSelection>
-                    {selectedCount} relation
-                    {selectedCount !== 1 ? 's' : ''} selected
-                </ActionBarSelection>
-                <ActionBarSeparator />
-                <ActionBarGroup>
-                    <ActionBarItem
-                        onClick={copyToCSV}
-                        disabled={isLoading || selectedCount === 0}
                     >
-                        <CopyIcon size={18} weight='bold' />
-                        Copy to CSV
-                    </ActionBarItem>
-                </ActionBarGroup>
-                <ActionBarSeparator />
-                <ActionBarClose className='px-2 text-sm' onClick={clearSelection}>
-                    Clear
-                </ActionBarClose>
-            </ActionBar>
+                        <ActionBarSelection>
+                            {selectedCount} relation
+                            {selectedCount !== 1 ? 's' : ''} selected
+                        </ActionBarSelection>
+                        <ActionBarSeparator />
+                        <ActionBarGroup>
+                            <ActionBarItem
+                                onClick={copyToCSV}
+                                disabled={isLoading || selectedCount === 0}
+                            >
+                                <CopyIcon size={18} weight='bold' />
+                                Copy to CSV
+                            </ActionBarItem>
+                        </ActionBarGroup>
+                        <ActionBarSeparator />
+                        <ActionBarClose
+                            className='px-2 text-sm'
+                            onClick={clearSelection}
+                        >
+                            Clear
+                        </ActionBarClose>
+                    </ActionBar>
+                }
+            >
+                <Input
+                    placeholder='Search relations...'
+                    value={searchQuery}
+                    onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setPage(1);
+                    }}
+                    className='h-8 w-40 lg:w-56'
+                />
+                <SubtypeFilter
+                    options={entrySubtypes}
+                    selected={entrySubtypeFilters}
+                    onSelectedChange={setEntrySubtypeFilters}
+                    colorMap={entryClassColors}
+                />
+                <MaxStepsFilter value={depth} onChange={handleDepthChange} />
+            </DataTable>
             <ScrollBar orientation='horizontal' />
         </ScrollArea>
     );

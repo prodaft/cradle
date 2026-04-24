@@ -4,8 +4,8 @@
     "project": ["**/*.{ts,tsx,js,jsx}", "!public/**", "!node_modules/**"],
     "ignoreFiles": [
         "src/components/base/status-header-dropdown/index.ts",
-        "src/components/data-grid/**",
-        "src/components/data-table/**",
+        "src/components/custom/data-grid/**",
+        "src/components/custom/data-table/**",
         "src/hooks/use-badge-overflow.ts",
         "src/hooks/use-data-grid.ts",
         "src/lib/data-grid.ts",

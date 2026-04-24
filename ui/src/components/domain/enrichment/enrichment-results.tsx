@@ -1,5 +1,5 @@
 import Pagination from '@/components/base/pagination/pagination';
-import { DataTableViewOptions } from '@/components/data-table/data-table-view-options';
+import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';

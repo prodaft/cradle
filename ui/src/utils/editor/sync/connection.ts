@@ -97,7 +97,11 @@ export function createNoteEditorSyncConnection(
                 clientID: u.clientID,
                 changes: u.changes.toJSON(),
             }));
-            return (await request({ type: 'pushUpdates', version, updates: stripped })) as boolean;
+            return (await request({
+                type: 'pushUpdates',
+                version,
+                updates: stripped,
+            })) as boolean;
         },
         async pullUpdates(version: number) {
             await ensureJoin();

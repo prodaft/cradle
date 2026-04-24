@@ -6,9 +6,9 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/custom/action-bar';
-import { DataTable } from '@/components/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import { DateRangeFilterButton } from '@/components/data-table/data-table-date-range-filter';
+import { DataTable } from '@/components/custom/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
+import { DateRangeFilterButton } from '@/components/custom/data-table/data-table-date-range-filter';
 import EnrichmentRequestDialog from '@/components/domain/enrichment/dialogs/enrichment-request-dialog';
 import ReportGenerationDialog from '@/components/domain/reports/dialogs/report-generation-dialog';
 import {

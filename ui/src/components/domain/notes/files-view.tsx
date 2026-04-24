@@ -1,5 +1,5 @@
-import { DataTable } from '@/components/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import { DataTable } from '@/components/custom/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';

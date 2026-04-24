@@ -1,6 +1,6 @@
 'use client';
 
-import { DataGridCell } from '@/components/data-grid/data-grid-cell';
+import { DataGridCell } from '@/components/custom/data-grid/data-grid-cell';
 import { useComposedRefs } from '@/lib/compose-refs';
 import {
     flexRender,
