@@ -89,7 +89,6 @@ export default function NoteViewer() {
         searchAny.source !== undefined
             ? !searchAny.source
             : localStorage.getItem('richEditor') !== 'false';
-    const enableEditing: boolean = searchAny.edit === true;
     const activeView: ViewMode = (searchAny.view as ViewMode) || ViewMode.CONTENT;
 
     const queryClient = useQueryClient();
@@ -121,6 +120,7 @@ export default function NoteViewer() {
     const [fileData, setFileData] = useState<FileReferenceWithNote[]>([]);
     const [initialMarkdown, setInitialMarkdown] = useState('');
     const [isFleeting, setIsFleeting] = useState(false);
+    const [enableEditing, setEnableEditing] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [saving, setSaving] = useState(false);
     const [showFind, setShowFind] = useState(false);
@@ -232,12 +232,8 @@ export default function NoteViewer() {
     }, [showOutline]);
 
     const toggleEditing = useCallback(() => {
-        router.navigate({
-            to: location.pathname as any,
-            search: { ...(search as any), edit: !enableEditing },
-            replace: true,
-        });
-    }, [enableEditing, router, location.pathname, search]);
+        setEnableEditing((current) => !current);
+    }, []);
 
     const smartLink = useCallback(
         async (onlyTimestamps: boolean) => {
@@ -333,10 +329,16 @@ export default function NoteViewer() {
         },
     );
 
-    const enableEditingRef = useRef({ enableEditing, router, location, search });
+    const permissionSource = noteData ?? note;
+    const canRead =
+        permissionSource?.permission === 'read' ||
+        permissionSource?.permission === 'read-write';
+    const canWrite = permissionSource?.permission === 'read-write';
+
+    const enableEditingRef = useRef(enableEditing);
     useEffect(() => {
-        enableEditingRef.current = { enableEditing, router, location, search };
-    }, [enableEditing, router, location, search]);
+        enableEditingRef.current = enableEditing;
+    }, [enableEditing]);
 
     const editorDraftRef = useRef({ markdownContent: '', initialMarkdown: '' });
     editorDraftRef.current = { markdownContent, initialMarkdown };
@@ -354,20 +356,19 @@ export default function NoteViewer() {
             return;
         }
 
+        const switchedNote = prevNoteIdForDetailRef.current !== noteId;
+        prevNoteIdForDetailRef.current = noteId;
         setNote(noteData);
         const nextIsFleeting = Boolean(noteData.fleeting);
         setIsFleeting(nextIsFleeting);
-        if (nextIsFleeting && !enableEditingRef.current.enableEditing) {
-            const { router: r, location: loc, search: s } = enableEditingRef.current;
-            r.navigate({
-                to: loc.pathname as any,
-                search: { ...(s as any), edit: true },
-                replace: true,
-            });
+        const nextCanWrite = noteData.permission === 'read-write';
+        if (switchedNote) {
+            setEnableEditing(nextCanWrite && nextIsFleeting);
+        } else if (!nextCanWrite && enableEditingRef.current) {
+            setEnableEditing(false);
+        } else if (nextIsFleeting && nextCanWrite && !enableEditingRef.current) {
+            setEnableEditing(true);
         }
-
-        const switchedNote = prevNoteIdForDetailRef.current !== noteId;
-        prevNoteIdForDetailRef.current = noteId;
 
         const { markdownContent: md, initialMarkdown: init } = editorDraftRef.current;
         const applyServerBody =
@@ -515,36 +516,36 @@ export default function NoteViewer() {
         setFindReplaceMode(true);
     }, []);
 
-    const customKeymap = useMemo(
-        () => [
-            Prec.highest(
-                keymap.of([
-                    {
-                        key: 'Mod-s',
-                        run: () => {
-                            handleSaveNote();
-                            return true;
-                        },
+    const customKeymap = useMemo(() => {
+        const bindings = [
+            {
+                key: 'Mod-f',
+                run: () => {
+                    handleFind();
+                    return true;
+                },
+            },
+        ];
+        if (canWrite) {
+            bindings.push(
+                {
+                    key: 'Mod-s',
+                    run: () => {
+                        handleSaveNote();
+                        return true;
                     },
-                    {
-                        key: 'Mod-f',
-                        run: () => {
-                            handleFind();
-                            return true;
-                        },
+                },
+                {
+                    key: 'Mod-h',
+                    run: () => {
+                        handleReplace();
+                        return true;
                     },
-                    {
-                        key: 'Mod-h',
-                        run: () => {
-                            handleReplace();
-                            return true;
-                        },
-                    },
-                ]),
-            ),
-        ],
-        [handleFind, handleReplace, handleSaveNote],
-    );
+                },
+            );
+        }
+        return [Prec.highest(keymap.of(bindings))];
+    }, [handleFind, handleReplace, handleSaveNote, canWrite]);
 
     const debouncedSaveNote = useMemo(
         () => debounce(handleSaveNote, 1500),
@@ -553,7 +554,12 @@ export default function NoteViewer() {
 
     // Auto-save when content changes (skip if last save failed - manual save only)
     useEffect(() => {
-        if (!markdownContent || markdownContent === initialMarkdown) {
+        if (
+            !enableEditing ||
+            !canWrite ||
+            !markdownContent ||
+            markdownContent === initialMarkdown
+        ) {
             debouncedSaveNote.cancel();
             return;
         }
@@ -568,7 +574,13 @@ export default function NoteViewer() {
         return () => {
             debouncedSaveNote.cancel();
         };
-    }, [markdownContent, initialMarkdown, debouncedSaveNote]);
+    }, [
+        enableEditing,
+        canWrite,
+        markdownContent,
+        initialMarkdown,
+        debouncedSaveNote,
+    ]);
 
     // Compute note outline from markdown content
     useEffect(() => {
@@ -638,7 +650,7 @@ export default function NoteViewer() {
             {navbarActionsEl &&
                 createPortal(
                     <>
-                        {note && !noteId?.startsWith('guide_') && (
+                        {note && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -654,31 +666,33 @@ export default function NoteViewer() {
                                 <TooltipContent>About</TooltipContent>
                             </Tooltip>
                         )}
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant='ghost'
-                                    size='icon'
-                                    onClick={() => toggleEditing()}
-                                    className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
-                                    data-testid='actions-dropdown-btn'
-                                >
-                                    {enableEditing ? (
-                                        <PencilSimpleIcon size={20} weight='bold' />
-                                    ) : (
-                                        <BookOpenIcon size={20} weight='bold' />
-                                    )}
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                {enableEditing ? 'Editing view' : 'Reading view'}
-                            </TooltipContent>
-                        </Tooltip>
-                        {!noteId?.startsWith('guide_') && (
+                        {canWrite && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant='ghost'
+                                        size='icon'
+                                        onClick={() => toggleEditing()}
+                                        className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                        data-testid='edit-mode-toggle-btn'
+                                    >
+                                        {enableEditing ? (
+                                            <PencilSimpleIcon size={20} weight='bold' />
+                                        ) : (
+                                            <BookOpenIcon size={20} weight='bold' />
+                                        )}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {enableEditing ? 'Editing view' : 'Reading view'}
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
+                        {canRead && (
                             <ActionsDropdown
                                 activeView={activeView}
                                 richEditor={richEditor}
-                                enableEditing={enableEditing}
+                                enableEditing={enableEditing && canWrite}
                                 setActiveView={handleViewChange}
                                 setRichEditor={handleRichEditorChange}
                                 showOutline={showOutline}
@@ -693,6 +707,7 @@ export default function NoteViewer() {
                                 saving={saving}
                                 handlePublish={handlePublish}
                                 handleDelete={handleDeleteWithConfirmation}
+                                canWrite={canWrite}
                                 handleUploadFiles={handleUploadFiles}
                                 handleFind={handleFind}
                                 handleReplace={handleReplace}

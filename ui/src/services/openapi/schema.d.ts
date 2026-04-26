@@ -1205,14 +1205,14 @@ export interface paths {
         post?: never;
         /**
          * Delete note
-         * @description Deletes an existing note. User must have read-write access to all referenced entities.
+         * @description Deletes an existing note. User must have note write permission (author/admin and read-write access to referenced entities).
          */
         delete: operations["notes_delete"];
         options?: never;
         head?: never;
         /**
          * Update note
-         * @description Updates an existing note. User must have read-write access to referenced entities.
+         * @description Updates an existing note. User must have note write permission (author/admin and read-write access to referenced entities).
          */
         patch: operations["notes_update"];
         trace?: never;
@@ -3203,6 +3203,11 @@ export interface components {
              */
             last_linked?: string | null;
             files: components["schemas"]["FileReferenceWithNote"][];
+            /**
+             * @description none: no access; read: view only; read-write: edit, save, upload files to, and delete.
+             * @enum {string}
+             */
+            readonly permission?: "none" | "read" | "read-write";
         };
         Notification: components["schemas"]["MessageNotification"] | components["schemas"]["AccessGrantedNotification"] | components["schemas"]["NewUserNotification"] | components["schemas"]["AccessRequestNotification"] | components["schemas"]["ReportRenderNotification"] | components["schemas"]["ReportProcessingErrorNotification"] | components["schemas"]["EnrichmentCompleteNotification"] | components["schemas"]["EnrichmentErrorNotification"];
         /** @description Serializer for OAuth connect/login. Validates redirect_uri against whitelist. */
@@ -14734,7 +14739,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description PERMISSION_DENIED */
+            /** @description PERMISSION_DENIED; FILE_UPLOAD_ACCESS_DENIED */
             403: {
                 headers: {
                     [name: string]: unknown;

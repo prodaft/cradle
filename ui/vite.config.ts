@@ -43,9 +43,6 @@ export default defineConfig(({ mode }) => {
             sourcemap: true,
         },
         server: { port: 5173 },
-        optimizeDeps: {
-            include: ['@radix-ui/react-slider'],
-        },
         resolve: {
             tsconfigPaths: true,
             alias: {

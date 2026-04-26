@@ -5,6 +5,7 @@ from typing import Any, Dict, cast
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from access.enums import AccessType
 from core.exceptions import InvalidRequestException
 from cradle.settings_common import INTERNAL_SUBTYPES
 from entries.enums import EntryType
@@ -286,6 +287,20 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
     editor = EssentialUserRetrieveSerializer()
     entries = EntryTypesCompressedTreeSerializer(exclude=INTERNAL_SUBTYPES)
     entities = OptimizedEntryResponseSerializer(many=True, read_only=True)
+    permission = serializers.SerializerMethodField()
+
+    @extend_schema_field(
+        {
+            "type": "string",
+            "enum": AccessType.values,
+            "description": "none: no access; read: view only; read-write: edit, save, upload files to, and delete.",
+        }
+    )
+    def get_permission(self, obj: Note) -> str:
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return AccessType.NONE
+        return obj.get_user_permission(cast(CradleUser, request.user))
 
     class Meta:
         model = Note
@@ -307,6 +322,7 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
             "editor",
             "last_linked",
             "files",
+            "permission",
         ]
 
     def __init__(self, *args, truncate=-1, **kwargs) -> None:

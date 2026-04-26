@@ -141,12 +141,43 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         """No-op: Note does not propagate logs to related objects."""
         return
 
-    def has_access(self, user: CradleUser) -> bool:
+    def has_read_access(self, user: CradleUser) -> bool:
+        """Return whether the user may view this note."""
+        if user.is_cradle_admin:
+            return True
+
+        if self.fleeting:
+            return self.author_id == user.id
+
         return Access.objects.has_access_to_entities(
             user,
             set(self.entries.filter(entry_class__type=EntryType.ENTITY)),
             {AccessType.READ, AccessType.READ_WRITE},
         )
+
+    def has_write_access(self, user: CradleUser) -> bool:
+        """Return whether the user may edit, upload files to, or delete this note."""
+        if user.is_cradle_admin:
+            return True
+
+        if self.fleeting:
+            return self.author_id == user.id
+
+        entities = set(self.entries.filter(entry_class__type=EntryType.ENTITY))
+        has_entity_write = Access.objects.has_access_to_entities(
+            user,
+            entities,
+            {AccessType.READ_WRITE},
+        )
+        return has_entity_write and self.author_id == user.id
+
+    def get_user_permission(self, user: CradleUser) -> AccessType:
+        """Return the user's effective permission for this note."""
+        if self.has_write_access(user):
+            return AccessType.READ_WRITE
+        if self.has_read_access(user):
+            return AccessType.READ
+        return AccessType.NONE
 
     @hook(AFTER_CREATE)
     def after_create(self):

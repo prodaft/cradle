@@ -6,7 +6,7 @@ from core.exceptions import CradleAPIException, ErrorCode
 
 
 class UploadErrorCodes(ErrorCode):
-    """Generic error codes for upload operations."""
+    """Generic error codes for upload operations (initiate, finalize, presigned flow)."""
 
     UPLOAD_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
@@ -42,6 +42,11 @@ class UploadErrorCodes(ErrorCode):
         status.HTTP_400_BAD_REQUEST,
         "Invalid File Size",
         "invalid-file-size",
+    )
+    FILE_UPLOAD_ACCESS_DENIED = (
+        status.HTTP_403_FORBIDDEN,
+        "File Upload Access Denied",
+        "file-upload-access-denied",
     )
 
 
@@ -85,3 +90,9 @@ class InvalidFileSizeException(CradleAPIException):
     """Exception raised when file size is invalid or missing."""
 
     error_code = UploadErrorCodes.INVALID_FILE_SIZE
+
+
+class UploadAccessDeniedException(CradleAPIException):
+    """Exception raised when user cannot attach an upload to a note (e.g. read-only)."""
+
+    error_code = UploadErrorCodes.FILE_UPLOAD_ACCESS_DENIED

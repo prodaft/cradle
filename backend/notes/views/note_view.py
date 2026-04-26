@@ -389,7 +389,7 @@ class NoteList(APIView):
     patch=extend_schema(
         operation_id="notes_update",
         summary="Update note",
-        description="Updates an existing note. User must have read-write access to referenced entities.",  # noqa: E501
+        description="Updates an existing note. User must have note write permission (author/admin and read-write access to referenced entities).",  # noqa: E501
         request=NoteEditSerializer,
         parameters=[
             OpenApiParameter(
@@ -412,7 +412,7 @@ class NoteList(APIView):
     delete=extend_schema(
         operation_id="notes_delete",
         summary="Delete note",
-        description="Deletes an existing note. User must have read-write access to all referenced entities.",
+        description="Deletes an existing note. User must have note write permission (author/admin and read-write access to referenced entities).",
         parameters=[
             OpenApiParameter(
                 name="note_id",
@@ -447,18 +447,13 @@ class NoteDetail(APIView):
                 note = Note.objects.get(id=note_id)
             except Note.DoesNotExist:
                 raise NoteNotFoundException(detail="That note could not be found.")
-            if note.fleeting:
-                if note.author_id != user.id:
-                    raise NoteNotFoundException(detail="That note could not be found.")
-            else:
-                if not Access.objects.has_access_to_entities(
-                    user,
-                    set(note.entries.filter(entry_class__type=EntryType.ENTITY)),
-                    {AccessType.READ, AccessType.READ_WRITE},
-                ):
-                    raise NoteNotFoundException(detail="That note could not be found.")
+            if not note.has_read_access(user):
+                raise NoteNotFoundException(detail="That note could not be found.")
 
-        return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
+        return Response(
+            NoteRetrieveSerializer(note, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
 
     def patch(self, request: Request, note_id: UUID) -> Response:
         try:
@@ -468,14 +463,10 @@ class NoteDetail(APIView):
 
         user = cast(CradleUser, request.user)
 
-        if not Access.objects.has_access_to_entities(
-            user,
-            set(note.entries.filter(entry_class__type=EntryType.ENTITY)),
-            {AccessType.READ, AccessType.READ_WRITE},
-        ):
+        if not note.has_read_access(user):
             raise NoteNotFoundException(detail="That note could not be found.")
 
-        if not user.is_cradle_admin and note.author != user:
+        if not note.has_write_access(user):
             raise CannotEditNoteException(detail="You do not have permission to edit this note.")
 
         serializer = NoteEditSerializer(note, data=request.data, context={"request": request})
@@ -483,7 +474,7 @@ class NoteDetail(APIView):
         serializer.is_valid(raise_exception=True)
         with transaction.atomic():
             note = serializer.save()
-        json_note = NoteRetrieveSerializer(note).data
+        json_note = NoteRetrieveSerializer(note, context={"request": request}).data
         return Response(json_note, status=status.HTTP_200_OK)
 
     def delete(self, request: Request, note_id: UUID) -> Response:
@@ -492,18 +483,13 @@ class NoteDetail(APIView):
         except Note.DoesNotExist:
             raise NoteNotFoundException(detail="That note could not be found.")
 
-        if note_to_delete.fleeting:
-            if note_to_delete.author_id != request.user.id:
-                raise NoteNotFoundException(detail="That note could not be found.")
-        else:
-            if not Access.objects.has_access_to_entities(
-                cast(CradleUser, request.user),
-                set(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)),
-                {AccessType.READ, AccessType.READ_WRITE},
-            ):
-                raise NoAccessToEntriesException(
-                    list(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)),
-                )
+        user = cast(CradleUser, request.user)
+        if not note_to_delete.has_read_access(user):
+            raise NoteNotFoundException(detail="That note could not be found.")
+        if not note_to_delete.has_write_access(user):
+            raise NoAccessToEntriesException(
+                list(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)),
+            )
         with transaction.atomic():
             note_to_delete.delete()
 
@@ -553,7 +539,10 @@ class NoteFinalize(APIView):
         with transaction.atomic():
             note.fleeting = False
             finalized_note = TaskScheduler(request.user).run_pipeline(note)
-        return Response(NoteRetrieveSerializer(finalized_note).data, status=status.HTTP_200_OK)
+        return Response(
+            NoteRetrieveSerializer(finalized_note, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema_view(
@@ -612,7 +601,10 @@ class NoteRelink(APIView):
         )
         relinked_note = scheduler.run_pipeline(note, update_acvec=False)
 
-        return Response(NoteRetrieveSerializer(relinked_note).data, status=status.HTTP_200_OK)
+        return Response(
+            NoteRetrieveSerializer(relinked_note, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema_view(

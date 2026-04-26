@@ -49,6 +49,7 @@ interface ActionsDropdownProps {
     saving: boolean;
     handlePublish: () => void;
     handleDelete: () => void;
+    canWrite: boolean;
     handleUploadFiles: () => void;
     handleFind: () => void;
     handleReplace: () => void;
@@ -76,6 +77,7 @@ export default function ActionsDropdown({
     saving,
     handlePublish,
     handleDelete,
+    canWrite,
     handleUploadFiles,
     handleFind,
     handleReplace,
@@ -239,7 +241,7 @@ export default function ActionsDropdown({
                         <span className='flex-1'>Relink</span>
                     </DropdownMenuItem>
                 )}
-                {activeView !== ViewMode.GRAPH && (
+                {canWrite && activeView !== ViewMode.GRAPH && (
                     <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
@@ -251,7 +253,7 @@ export default function ActionsDropdown({
                         </DropdownMenuItem>
                     </>
                 )}
-                {isFleeting && (
+                {isFleeting && canWrite && (
                     <DropdownMenuItem
                         onClick={handleSaveAsFinal}
                         data-testid='save-as-final-menu-item'
@@ -279,15 +281,19 @@ export default function ActionsDropdown({
                         </DropdownMenuItem>
                     </>
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                    onClick={handleDelete}
-                    variant='destructive'
-                    data-testid='delete-note-menu-item'
-                >
-                    <TrashIcon size={16} weight='bold' />
-                    <span className='flex-1'>Delete</span>
-                </DropdownMenuItem>
+                {canWrite && (
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={handleDelete}
+                            variant='destructive'
+                            data-testid='delete-note-menu-item'
+                        >
+                            <TrashIcon size={16} weight='bold' />
+                            <span className='flex-1'>Delete</span>
+                        </DropdownMenuItem>
+                    </>
+                )}
             </DropdownMenuContent>
         </DropdownMenu>
     );

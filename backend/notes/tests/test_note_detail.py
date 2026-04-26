@@ -81,6 +81,23 @@ class GetNoteTest(NotesTestCase):
         with self.subTest("Correct note"):
             self.assertEqual(response.json()["id"], str(uuid1))
 
+    def test_get_note_includes_permissions(self):
+        entity = Entry.objects.create(name="Perm entity", entry_class=self.entryclass1)
+        note = Note.objects.create(author=self.user, fleeting=False)
+        note.entries.add(entity)
+        Access.objects.create(
+            user_id=self.user.id,
+            entity_id=entity.id,
+            access_type=AccessType.READ_WRITE,
+        )
+        response = self.client.get(
+            reverse("note_detail", kwargs={"note_id": note.id}),
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["permission"], AccessType.READ_WRITE)
+
 
 class DeleteNoteTest(NotesTestCase):
     def setUp(self):
@@ -100,8 +117,8 @@ class DeleteNoteTest(NotesTestCase):
         self.entries = [Entry.objects.create(name=f"Entry{i}", entry_class=self.entryclass_ip) for i in range(0, 4)]
 
         self.notes = []
-        self.notes.append(Note.objects.create())
-        self.notes.append(Note.objects.create())
+        self.notes.append(Note.objects.create(author=self.user))
+        self.notes.append(Note.objects.create(author=self.user))
         self.notes[0].entries.add(self.entries[0])
         self.notes[0].entries.add(self.entries[1])
         self.notes[1].entries.add(self.entries[0])
@@ -156,3 +173,51 @@ class DeleteNoteTest(NotesTestCase):
 
         response = self.client.delete(reverse("note_detail", kwargs={"note_id": note_id}), **self.headers)
         self.assertEqual(response.status_code, 404)
+
+    def test_delete_note_denied_with_read_only_entity_access(self):
+        """Readers must not delete notes; delete requires read-write on all referenced entities."""
+        entity = Entry.objects.create(name="read-only entity", entry_class=self.entryclass1)
+        note = Note.objects.create(author=self.user, fleeting=False)
+        note.entries.add(entity)
+        Access.objects.create(
+            user_id=self.not_owner.id,
+            entity_id=entity.id,
+            access_type=AccessType.READ,
+        )
+
+        response = self.client.delete(
+            reverse("note_detail", kwargs={"note_id": note.id}),
+            **self.not_owner_headers,
+        )
+        self.assertEqual(response.status_code, 404)
+
+        get_response = self.client.get(
+            reverse("note_detail", kwargs={"note_id": note.id}),
+            **self.not_owner_headers,
+        )
+        self.assertEqual(get_response.status_code, 200)
+        self.assertEqual(get_response.json()["permission"], AccessType.READ)
+
+    def test_patch_note_denied_without_write_permission(self):
+        """Author with only entity-level READ has read permission and cannot PATCH."""
+        entity = Entry.objects.create(name="rw-required", entry_class=self.entryclass1)
+        note = Note.objects.create(author=self.user, fleeting=False, content="hello")
+        note.entries.add(entity)
+        Access.objects.create(
+            user_id=self.user.id,
+            entity_id=entity.id,
+            access_type=AccessType.READ,
+        )
+        response = self.client.patch(
+            reverse("note_detail", kwargs={"note_id": note.id}),
+            {"content": "changed"},
+            format="json",
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 403)
+
+        get_body = self.client.get(
+            reverse("note_detail", kwargs={"note_id": note.id}),
+            **self.headers,
+        ).json()
+        self.assertEqual(get_body["permission"], AccessType.READ)

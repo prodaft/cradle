@@ -589,7 +589,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
 
         for note in values:
-            if not note.has_access(user):
+            if not note.has_read_access(user):
                 raise NoteNotFoundException(detail="Some of the selected notes could not be found.")
 
         return list(values)

@@ -20,6 +20,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from notes.models import Note
 
@@ -48,6 +49,7 @@ from .uploads.exceptions import (
     InvalidFileNameException,
     InvalidFileSizeException,
     QuotaExceededException,
+    UploadAccessDeniedException,
     UploadErrorCodes,
 )
 
@@ -90,19 +92,6 @@ def _sanitize_filename(name: str | None, *, default: str | None = None) -> str:
         raise InvalidFileNameException(detail="The file name contains invalid characters.")
 
 
-def _user_can_access_file(file_reference, user) -> bool:
-    """Check if user has permission to access the file."""
-    if user.is_cradle_admin:
-        return True
-    if file_reference.note_id:
-        return Note.objects.get_accessible_notes(user).filter(id=file_reference.note_id).exists()
-    if file_reference.digest_id:
-        return file_reference.digest.user_id == user.id
-    if file_reference.user_id:
-        return file_reference.user_id == user.id
-    return False
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -130,7 +119,8 @@ class FileUploadCallbacks:
             dict with file_id, file_name, object_key.
 
         Raises:
-            FileTransferNoteNotFoundException: If note_id provided but note not found.
+            FileTransferNoteNotFoundException: If note_id provided but note not found or not readable.
+            UploadAccessDeniedException: If note_id provided but user lacks write access on the note.
             InvalidFileSizeException: If file size cannot be determined.
             QuotaExceededException: If file size or total quota is exceeded.
         """
@@ -178,6 +168,14 @@ class FileUploadCallbacks:
                 note = Note.objects.get_accessible_notes(pending_upload.user).get(id=note_id)
             except Note.DoesNotExist:
                 raise FileTransferNoteNotFoundException(detail="That note could not be found.")
+            if not note.has_write_access(pending_upload.user):
+                try:
+                    storage.delete(pending_upload.object_key)
+                except OSError, ClientError:
+                    pass
+                raise UploadAccessDeniedException(
+                    detail="You do not have permission to upload files to this note.",
+                )
 
         # Create FileReference
         file_reference = FileReference(
@@ -291,15 +289,18 @@ class FileUpload(APIView):
         responses={
             201: FileUploadFinalizeResponseSerializer,
             **get_error_responses(
+                CoreErrorCodes.UNAUTHENTICATED,
+                CoreErrorCodes.PERMISSION_DENIED,
+                CoreErrorCodes.INTERNAL_SERVER_ERROR,
                 UploadErrorCodes.UPLOAD_NOT_FOUND,
                 UploadErrorCodes.UPLOAD_EXPIRED,
                 UploadErrorCodes.FILE_NOT_UPLOADED,
                 UploadErrorCodes.INVALID_FILE_SIZE,
                 UploadErrorCodes.QUOTA_EXCEEDED,
                 FileTransferErrorCodes.FILE_TRANSFER_NOTE_NOT_FOUND,
+                UploadErrorCodes.FILE_UPLOAD_ACCESS_DENIED,
                 include_validation_error=True,
             ),
-            **get_common_error_responses(),
         },
     )
 )
@@ -389,7 +390,7 @@ class FileDownload(APIView):
         if not file_reference.file:
             raise StoredFileNotFoundException(detail="The file could not be found.")
 
-        if not _user_can_access_file(file_reference, request.user):
+        if not file_reference.has_access(request.user):
             raise FileAccessDeniedException(detail="You do not have access to this file.")
 
         safe_filename = _sanitize_filename(file_reference.file_name, default="download")
@@ -444,7 +445,7 @@ class FileProcess(APIView):
 
         try:
             file_reference = FileReference.objects.get(id=serializer.validated_data["file_id"])
-            if not _user_can_access_file(file_reference, request.user):
+            if not file_reference.has_access(request.user):
                 raise FileAccessDeniedException(detail="You do not have access to this file.")
             file_reference.process_file()
 
@@ -498,7 +499,7 @@ class FileDelete(APIView):
 
         try:
             file_reference = FileReference.objects.get(id=file_id)
-            if not _user_can_access_file(file_reference, request.user):
+            if not file_reference.has_access(request.user):
                 raise FileAccessDeniedException(detail="You do not have access to this file.")
             if file_reference.file:
                 try:

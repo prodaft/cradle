@@ -13,6 +13,8 @@ from entries.constants import INTERNAL_ENTRY_CLASS_DEFAULTS, SUBTYPE_FILE
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from management.settings import cradle_settings
+from notes.models import Note
+from user.models import CradleUser
 
 from .storage import FileTransferStorage
 from .uploads.models import BasePendingUpload
@@ -105,6 +107,18 @@ class FileReference(models.Model, LifecycleModelMixin):
     file_size: models.BigIntegerField = models.PositiveBigIntegerField(
         null=True, blank=True, help_text="File size in bytes"
     )
+
+    def has_access(self, user: CradleUser) -> bool:
+        """Whether the user may download or otherwise use this file reference."""
+        if user.is_cradle_admin:
+            return True
+        if self.note_id:
+            return Note.objects.get_accessible_notes(user).filter(id=self.note_id).exists()
+        if self.digest_id:
+            return self.digest.user_id == user.id
+        if self.user_id:
+            return self.user_id == user.id
+        return False
 
     @property
     def entities(self) -> list[Entry]:
