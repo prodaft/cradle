@@ -1,5 +1,6 @@
 import EnrichmentRequestDialog from '@/components/domain/enrichment/dialogs/enrichment-request-dialog';
 import InProgress from '@/components/feedback/in-progress';
+import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -32,6 +33,7 @@ interface ColumnFilters {
 const IS_PROD = import.meta.env.VITE_ENV === 'production';
 
 export default function EnrichmentRequests() {
+    useDockPanelTab({ title: 'Enrichment', icon: 'enrichment' });
     if (IS_PROD) return <InProgress />;
     return <EnrichmentRequestsInner />;
 }

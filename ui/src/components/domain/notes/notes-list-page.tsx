@@ -1,4 +1,5 @@
 import PageHeader from '@/components/base/page-header';
+import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
@@ -46,6 +47,7 @@ function filtersFromSearch(search: Record<string, unknown>): SearchFilters {
  * Notes list page: search, filters, and table of all notes the user can access.
  */
 export default function NotesListPage() {
+    useDockPanelTab({ title: 'Notes', icon: 'notes' });
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,

@@ -1,6 +1,10 @@
 import FileUploadDialog from '@/components/domain/notes/dialogs/file-upload-dialog';
 import ReportGenerationDialog from '@/components/domain/reports/dialogs/report-generation-dialog';
 import {
+    useDockPanelActiveForNavbar,
+    useDockPanelTab,
+} from '@/components/layout/dock-panel-tab-context';
+import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -134,6 +138,9 @@ export default function NoteViewer() {
     const [lspLoaded, setLspLoaded] = useState(false);
     const editorRef = useRef<any>(null);
     const [navbarActionsEl, setNavbarActionsEl] = useState<HTMLElement | null>(null);
+
+    const showNavbarActionsPortal = useDockPanelActiveForNavbar();
+
     useEffect(() => {
         const el = document.getElementById('navbar-actions');
         setNavbarActionsEl(el);
@@ -328,6 +335,22 @@ export default function NoteViewer() {
             },
         },
     );
+
+    const dockPanelTitle = useMemo(() => {
+        if (isError) {
+            return 'Not found';
+        }
+        const t = note?.title?.trim();
+        if (!t) {
+            return isFleeting ? 'Fleeting note' : 'Notes';
+        }
+        const prefix = isFleeting ? 'Fleeting note' : 'Notes';
+        return t.length > 56 ? `${prefix}: ${t.slice(0, 53)}…` : `${prefix}: ${t}`;
+    }, [isError, isFleeting, note?.title]);
+    useDockPanelTab({
+        title: dockPanelTitle,
+        icon: isError ? 'not-found' : isFleeting ? 'fleeting-note' : 'notes',
+    });
 
     const permissionSource = noteData ?? note;
     const canRead =
@@ -574,13 +597,7 @@ export default function NoteViewer() {
         return () => {
             debouncedSaveNote.cancel();
         };
-    }, [
-        enableEditing,
-        canWrite,
-        markdownContent,
-        initialMarkdown,
-        debouncedSaveNote,
-    ]);
+    }, [enableEditing, canWrite, markdownContent, initialMarkdown, debouncedSaveNote]);
 
     // Compute note outline from markdown content
     useEffect(() => {
@@ -648,6 +665,7 @@ export default function NoteViewer() {
         <>
             {/* Portal note actions into Navbar */}
             {navbarActionsEl &&
+                showNavbarActionsPortal &&
                 createPortal(
                     <>
                         {note && (

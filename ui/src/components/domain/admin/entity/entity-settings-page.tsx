@@ -1,3 +1,8 @@
+import {
+    SettingsHeaderActionsProvider,
+    SettingsHeaderActionsTarget,
+} from '@/components/domain/settings-header-actions';
+import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -14,6 +19,7 @@ import {
     useSearch,
 } from '@tanstack/react-router';
 import { Shield } from 'lucide-react';
+import { useMemo } from 'react';
 import NotFound from '../../../feedback/not-found';
 import ActivityList from '../../activity/activity-list';
 import EntityForm from './entity-form';
@@ -69,6 +75,20 @@ export default function EntitySettingsPage() {
         },
     );
 
+    const dockPanelTitle = useMemo(
+        () =>
+            isError
+                ? 'Not found'
+                : entityData?.name
+                  ? `Manage: ${entityData.name}`
+                  : 'Manage: Entity',
+        [entityData?.name, isError],
+    );
+    useDockPanelTab({
+        title: dockPanelTitle,
+        icon: isError ? 'not-found' : 'manage-entities',
+    });
+
     const handleTabChange = (tabId: string) => {
         router.navigate({
             to: location.pathname as any,
@@ -97,109 +117,111 @@ export default function EntitySettingsPage() {
     }
 
     return (
-        <div className='w-full h-full'>
-            <main
-                data-layout='fixed'
-                className='px-4 pt-4 pb-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
-            >
-                <div className='flex flex-wrap items-end justify-between gap-2'>
-                    <div className='space-y-1'>
-                        <h2 className='text-2xl font-bold tracking-tight flex items-center gap-2'>
-                            {entityData?.name}
-                        </h2>
-                        <p className='text-muted-foreground'>
-                            {currentDescription || 'Manage entity'}
-                        </p>
+        <SettingsHeaderActionsProvider>
+            <div className='w-full h-full'>
+                <main
+                    data-layout='fixed'
+                    className='px-4 pt-4 pb-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
+                >
+                    <div className='flex flex-wrap items-end justify-between gap-2'>
+                        <div className='space-y-1'>
+                            <h2 className='text-2xl font-bold tracking-tight flex items-center gap-2'>
+                                {entityData?.name}
+                            </h2>
+                            <p className='text-muted-foreground'>
+                                {currentDescription || 'Manage entity'}
+                            </p>
+                        </div>
+                        <SettingsHeaderActionsTarget />
                     </div>
-                    <div id='settings-header-actions' className='flex items-center' />
-                </div>
-                <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
-                    <Tabs value={tab} onValueChange={handleTabChange}>
-                        <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
-                            {ENTITY_SETTINGS_ITEMS.map((item) => {
-                                const Icon = item.icon;
-                                return (
-                                    <TabsTrigger key={item.id} value={item.id}>
-                                        <Icon className='w-4 h-4' />
-                                        {item.label}
-                                    </TabsTrigger>
-                                );
-                            })}
-                        </TabsList>
-                    </Tabs>
-                    <div className='flex w-full overflow-y-hidden p-1'>
-                        <div className='flex flex-1 flex-col'>
-                            {tab === 'activity' ? (
-                                <ScrollArea className='faded-bottom h-full w-full'>
-                                    <CardContent className='px-0'>
-                                        <div className='flex-none mb-4'>
-                                            <h3 className='text-lg font-medium'>
-                                                {currentTab?.label || 'Settings'}
-                                            </h3>
-                                            <p className='text-sm text-muted-foreground'>
-                                                {currentDescription}
-                                            </p>
-                                        </div>
-                                        <Separator
-                                            data-orientation='horizontal'
-                                            role='none'
-                                            className='bg-border mb-4 flex-none'
-                                        />
-                                        <ActivityList
-                                            content_type='entry'
-                                            objectId={entityId}
-                                            name={entityData?.name}
-                                        />
-                                    </CardContent>
-                                </ScrollArea>
-                            ) : (
-                                <ScrollArea className='faded-bottom h-full w-full pb-12'>
-                                    <CardContent className='px-0'>
-                                        <div className='flex-none mb-4'>
-                                            <h3 className='text-lg font-medium'>
-                                                {currentTab?.label || 'Settings'}
-                                            </h3>
-                                            <p className='text-sm text-muted-foreground'>
-                                                {currentDescription}
-                                            </p>
-                                        </div>
-                                        <Separator
-                                            data-orientation='horizontal'
-                                            role='none'
-                                            className='bg-border mb-4 flex-none'
-                                        />
-                                        {tab === 'permissions' ? (
-                                            <EntityPermissionsForm
-                                                entityId={Number(entityId)}
+                    <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
+                        <Tabs value={tab} onValueChange={handleTabChange}>
+                            <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
+                                {ENTITY_SETTINGS_ITEMS.map((item) => {
+                                    const Icon = item.icon;
+                                    return (
+                                        <TabsTrigger key={item.id} value={item.id}>
+                                            <Icon className='w-4 h-4' />
+                                            {item.label}
+                                        </TabsTrigger>
+                                    );
+                                })}
+                            </TabsList>
+                        </Tabs>
+                        <div className='flex w-full overflow-y-hidden p-1'>
+                            <div className='flex flex-1 flex-col'>
+                                {tab === 'activity' ? (
+                                    <ScrollArea className='faded-bottom h-full w-full'>
+                                        <CardContent className='px-0'>
+                                            <div className='flex-none mb-4'>
+                                                <h3 className='text-lg font-medium'>
+                                                    {currentTab?.label || 'Settings'}
+                                                </h3>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    {currentDescription}
+                                                </p>
+                                            </div>
+                                            <Separator
+                                                data-orientation='horizontal'
+                                                role='none'
+                                                className='bg-border mb-4 flex-none'
                                             />
-                                        ) : (
-                                            <EntityForm
-                                                id={Number(entityId)}
-                                                onAdd={() => {
-                                                    queryClient.invalidateQueries({
-                                                        queryKey:
-                                                            queryKeys.entities.lists(),
-                                                    });
-                                                    queryClient.invalidateQueries({
-                                                        queryKey:
-                                                            queryKeys.entities.detail(
-                                                                String(entityId),
-                                                            ),
-                                                    });
-                                                    queryClient.invalidateQueries({
-                                                        queryKey:
-                                                            queryKeys.notes.apiList(),
-                                                    });
-                                                }}
+                                            <ActivityList
+                                                content_type='entry'
+                                                objectId={entityId}
+                                                name={entityData?.name}
                                             />
-                                        )}
-                                    </CardContent>
-                                </ScrollArea>
-                            )}
+                                        </CardContent>
+                                    </ScrollArea>
+                                ) : (
+                                    <ScrollArea className='faded-bottom h-full w-full pb-12'>
+                                        <CardContent className='px-0'>
+                                            <div className='flex-none mb-4'>
+                                                <h3 className='text-lg font-medium'>
+                                                    {currentTab?.label || 'Settings'}
+                                                </h3>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    {currentDescription}
+                                                </p>
+                                            </div>
+                                            <Separator
+                                                data-orientation='horizontal'
+                                                role='none'
+                                                className='bg-border mb-4 flex-none'
+                                            />
+                                            {tab === 'permissions' ? (
+                                                <EntityPermissionsForm
+                                                    entityId={Number(entityId)}
+                                                />
+                                            ) : (
+                                                <EntityForm
+                                                    id={Number(entityId)}
+                                                    onAdd={() => {
+                                                        queryClient.invalidateQueries({
+                                                            queryKey:
+                                                                queryKeys.entities.lists(),
+                                                        });
+                                                        queryClient.invalidateQueries({
+                                                            queryKey:
+                                                                queryKeys.entities.detail(
+                                                                    String(entityId),
+                                                                ),
+                                                        });
+                                                        queryClient.invalidateQueries({
+                                                            queryKey:
+                                                                queryKeys.notes.apiList(),
+                                                        });
+                                                    }}
+                                                />
+                                            )}
+                                        </CardContent>
+                                    </ScrollArea>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </main>
-        </div>
+                </main>
+            </div>
+        </SettingsHeaderActionsProvider>
     );
 }

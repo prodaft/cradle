@@ -8,6 +8,7 @@ import {
 } from '@/components/custom/action-bar';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
+import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -98,6 +99,7 @@ const renderStatusIcon = (status?: string, errorMessage?: string) => {
  * @returns {JSX.Element} Reports
  */
 export default function Reports() {
+    useDockPanelTab({ title: 'Reports', icon: 'reports' });
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,

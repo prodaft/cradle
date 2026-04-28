@@ -1,3 +1,4 @@
+import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthState } from '@/hooks/auth/use-auth';
@@ -31,6 +32,10 @@ export default function Dashboard() {
         from: '/_authenticated/dashboards/$subtype/$name',
     }) as { entry: EntryResponse };
     const contentObject = loaderData?.entry;
+    useDockPanelTab({
+        title: contentObject?.name ? `Dashboard: ${contentObject.name}` : 'Dashboard',
+        icon: 'dashboard',
+    });
     const { isAdmin } = useAuthState();
     const router = useRouter();
     const search = useSearch({

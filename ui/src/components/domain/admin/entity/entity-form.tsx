@@ -1,4 +1,5 @@
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
+import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -25,8 +26,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useId, useMemo, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { SelectOption } from '@/types';
@@ -105,6 +105,7 @@ function getEntityFormFromApi(
 }
 
 export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
+    const formId = useId();
     const fetchAliasesMutation = useMutation({
         mutationFn: async (q: string) => {
             const { data, error, response } = await fetchClient.GET(
@@ -272,11 +273,6 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         );
     }
 
-    const headerContainer =
-        typeof document !== 'undefined'
-            ? document.getElementById('settings-header-actions')
-            : null;
-
     const handleRevert = () => {
         if (loadedValuesRef.current) reset(loadedValuesRef.current);
     };
@@ -286,54 +282,46 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
 
     return (
         <>
-            {headerContainer &&
-                createPortal(
-                    <div className='flex items-center gap-2'>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={!isDirty}
-                            onClick={handleRevert}
-                            title='Revert'
-                        >
-                            <ArrowCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={isAtDefault}
-                            onClick={handleDefault}
-                            title='Default'
-                        >
-                            <ClockCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='submit'
-                            form='entity-form'
-                            variant='default'
-                            size='icon'
-                            disabled={isSubmitting || !isDirty}
-                            title='Save Changes'
-                        >
-                            {isSubmitting ? (
-                                <Spinner className='size-4' />
-                            ) : (
-                                <FloppyDiskIcon className='size-4' weight='bold' />
-                            )}
-                        </Button>
-                    </div>,
-                    headerContainer,
-                )}
+            <SettingsHeaderActionsPortal>
+                <div className='flex items-center gap-2'>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        disabled={!isDirty}
+                        onClick={handleRevert}
+                        title='Revert'
+                    >
+                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
+                    </Button>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        disabled={isAtDefault}
+                        onClick={handleDefault}
+                        title='Default'
+                    >
+                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
+                    </Button>
+                    <Button
+                        type='submit'
+                        form={formId}
+                        variant='default'
+                        size='icon'
+                        disabled={isSubmitting || !isDirty}
+                        title='Save Changes'
+                    >
+                        {isSubmitting ? (
+                            <Spinner className='size-4' />
+                        ) : (
+                            <FloppyDiskIcon className='size-4' weight='bold' />
+                        )}
+                    </Button>
+                </div>
+            </SettingsHeaderActionsPortal>
             <form
-                id='entity-form'
+                id={formId}
                 className='flex flex-col gap-6'
                 onSubmit={handleFormSubmit(onSubmit)}
             >

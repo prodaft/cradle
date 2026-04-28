@@ -1,3 +1,4 @@
+import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -28,7 +29,6 @@ import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import isEqual from 'lodash/isEqual';
 import { useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -145,18 +145,12 @@ export default function UserAccountForm({
             accountDefaultState,
         );
 
-    const headerContainer =
-        typeof document !== 'undefined'
-            ? document.getElementById('settings-header-actions')
-            : null;
-
     if (!userData) return null;
 
     return (
         <>
-            {!isOtherAdmin &&
-                headerContainer &&
-                createPortal(
+            {!isOtherAdmin && (
+                <SettingsHeaderActionsPortal>
                     <div className='flex items-center gap-2'>
                         <Button
                             type='button'
@@ -198,9 +192,9 @@ export default function UserAccountForm({
                                 <FloppyDiskIcon className='size-4' weight='bold' />
                             )}
                         </Button>
-                    </div>,
-                    headerContainer,
-                )}
+                    </div>
+                </SettingsHeaderActionsPortal>
+            )}
             <section id='account'>
                 <div className='flex flex-col gap-4'>
                     <FieldGroup className='gap-4'>

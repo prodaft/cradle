@@ -33,7 +33,7 @@ import { fetchNdjson } from '@services/openapi/ndjson-stream';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { startCase } from 'lodash';
 import isEqual from 'lodash/isEqual';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -112,6 +112,7 @@ const createEnrichmentSchema = (form_fields: FormFields) => {
 export default function EnrichmentSettingsForm({
     enrichment_class,
 }: EnrichmentSettingsFormProps) {
+    const formId = useId();
     const fetchEntryClassesMutation = useMutation({
         mutationFn: async (q: string) => {
             const results = await fetchNdjson({
@@ -146,6 +147,7 @@ export default function EnrichmentSettingsForm({
     const [validationSchema, setValidationSchema] = useState(
         createEnrichmentSchema({}),
     );
+    const [headerContainer, setHeaderContainer] = useState<HTMLDivElement | null>(null);
 
     const form = useForm<z.infer<ReturnType<typeof createEnrichmentSchema>>>({
         resolver: ((values, context, options) =>
@@ -484,11 +486,6 @@ export default function EnrichmentSettingsForm({
         );
     }
 
-    const headerContainer =
-        typeof document !== 'undefined'
-            ? document.getElementById('settings-header-actions')
-            : null;
-
     const handleRevert = () => {
         if (loadedValuesRef.current) reset(loadedValuesRef.current);
     };
@@ -526,7 +523,7 @@ export default function EnrichmentSettingsForm({
                         Manage configuration for {displayName}
                     </p>
                 </div>
-                <div id='settings-header-actions' className='flex items-center' />
+                <div ref={setHeaderContainer} className='flex items-center' />
             </div>
             <div className='px-4'>
                 <Separator
@@ -569,7 +566,7 @@ export default function EnrichmentSettingsForm({
                             </Button>
                             <Button
                                 type='submit'
-                                form='enrichment-form'
+                                form={formId}
                                 variant='default'
                                 size='icon'
                                 disabled={isSubmitting || !isDirty}
@@ -584,7 +581,7 @@ export default function EnrichmentSettingsForm({
                         </div>,
                         headerContainer,
                     )}
-                <form id='enrichment-form' onSubmit={form.handleSubmit(onSubmit)}>
+                <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
                     <div className='flex flex-col gap-6'>
                         {/* General Information */}
                         <FieldSet id='general' className='gap-4'>

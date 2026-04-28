@@ -41,6 +41,7 @@ import type { components } from '@services/openapi/schema';
 type EntrySerializerMinimal = components['schemas']['EntrySerializerMinimal'];
 
 import NotFound from '@/components/feedback/not-found';
+import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import {
@@ -343,6 +344,26 @@ export default function EnrichmentResults() {
     });
 
     const detailsAny = enrichmentDetails as any;
+
+    const dockPanelTitle = useMemo(() => {
+        if (isErrorDetails) {
+            return 'Not found';
+        }
+        if (!id) {
+            return 'Enrichment';
+        }
+        const t = detailsAny?.title;
+        if (typeof t === 'string' && t.trim().length > 0) {
+            const s = t.length > 48 ? `${t.slice(0, 45)}…` : t;
+            return `Enrichment: ${s}`;
+        }
+        return `Enrichment: Request #${id}`;
+    }, [id, isErrorDetails, detailsAny?.title]);
+
+    useDockPanelTab({
+        title: dockPanelTitle,
+        icon: isErrorDetails ? 'not-found' : 'enrichment',
+    });
 
     useEffect(() => {
         if (

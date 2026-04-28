@@ -1,3 +1,4 @@
+import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -26,7 +27,6 @@ import {
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
 
 interface UserPermissionsFormProps {
     id: string;
@@ -225,11 +225,6 @@ export default function UserPermissionsForm({
         (e) => (currentAccess[e.id] ?? 'none') === 'none',
     );
 
-    const headerContainer =
-        typeof document !== 'undefined'
-            ? document.getElementById('settings-header-actions')
-            : null;
-
     // Filter entities based on search
     const filteredEntities = useMemo(() => {
         const needle = searchVal.trim().toLowerCase();
@@ -264,9 +259,8 @@ export default function UserPermissionsForm({
 
     return (
         <>
-            {!readOnly &&
-                headerContainer &&
-                createPortal(
+            {!readOnly && (
+                <SettingsHeaderActionsPortal>
                     <div className='flex items-center gap-2'>
                         <Button
                             type='button'
@@ -310,9 +304,9 @@ export default function UserPermissionsForm({
                                 <FloppyDiskIcon className='size-4' weight='bold' />
                             )}
                         </Button>
-                    </div>,
-                    headerContainer,
-                )}
+                    </div>
+                </SettingsHeaderActionsPortal>
+            )}
             <div className='space-y-4'>
                 {/* Search */}
                 <div className='relative'>

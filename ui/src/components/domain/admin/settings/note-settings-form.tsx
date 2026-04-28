@@ -1,3 +1,4 @@
+import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -24,8 +25,7 @@ import {
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import isEqual from 'lodash/isEqual';
-import { useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useId, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -70,6 +70,7 @@ function getNoteSettingsFromApi(
 }
 
 export default function NoteSettingsForm() {
+    const formId = useId();
     const snippetListRef = useRef<SnippetListRef>(null);
 
     const loadedValuesRef = useRef<NoteSettingsFormData | null>(null);
@@ -166,11 +167,6 @@ export default function NoteSettingsForm() {
         );
     }
 
-    const headerContainer =
-        typeof document !== 'undefined'
-            ? document.getElementById('settings-header-actions')
-            : null;
-
     const handleRevert = () => {
         if (loadedValuesRef.current) reset(loadedValuesRef.current);
     };
@@ -180,53 +176,45 @@ export default function NoteSettingsForm() {
 
     return (
         <>
-            {headerContainer &&
-                createPortal(
-                    <div className='flex items-center gap-2'>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={!isDirty}
-                            onClick={handleRevert}
-                            title='Revert'
-                        >
-                            <ArrowCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={isAtDefault}
-                            onClick={handleDefault}
-                            title='Default'
-                        >
-                            <ClockCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='submit'
-                            form='settings-form'
-                            variant='default'
-                            size='icon'
-                            disabled={updateSettingsMutation.isPending || !isDirty}
-                            title='Save Settings'
-                        >
-                            {updateSettingsMutation.isPending ? (
-                                <Spinner className='size-4' />
-                            ) : (
-                                <FloppyDiskIcon className='size-4' weight='bold' />
-                            )}
-                        </Button>
-                    </div>,
-                    headerContainer,
-                )}
-            <form id='settings-form' onSubmit={handleFormSubmit(onSubmit)}>
+            <SettingsHeaderActionsPortal>
+                <div className='flex items-center gap-2'>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        disabled={!isDirty}
+                        onClick={handleRevert}
+                        title='Revert'
+                    >
+                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
+                    </Button>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        disabled={isAtDefault}
+                        onClick={handleDefault}
+                        title='Default'
+                    >
+                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
+                    </Button>
+                    <Button
+                        type='submit'
+                        form={formId}
+                        variant='default'
+                        size='icon'
+                        disabled={updateSettingsMutation.isPending || !isDirty}
+                        title='Save Settings'
+                    >
+                        {updateSettingsMutation.isPending ? (
+                            <Spinner className='size-4' />
+                        ) : (
+                            <FloppyDiskIcon className='size-4' weight='bold' />
+                        )}
+                    </Button>
+                </div>
+            </SettingsHeaderActionsPortal>
+            <form id={formId} onSubmit={handleFormSubmit(onSubmit)}>
                 <div className='flex flex-col gap-6'>
                     {/* General Section */}
                     <div className='flex flex-col gap-4'>

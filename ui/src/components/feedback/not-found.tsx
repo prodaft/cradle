@@ -1,3 +1,4 @@
+import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import {
     Empty,
     EmptyDescription,
@@ -13,6 +14,7 @@ interface NotFoundProps {
  * NotFound component - a placeholder component for pages that are not found.
  */
 export default function NotFound({ message }: NotFoundProps) {
+    useDockPanelTab({ title: 'Not found', icon: 'not-found' });
     return (
         <Empty>
             <EmptyHeader>

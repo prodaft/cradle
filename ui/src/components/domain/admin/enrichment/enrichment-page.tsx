@@ -1,3 +1,4 @@
+import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Input } from '@/components/ui/input';
 import {
     Sidebar,
@@ -18,6 +19,7 @@ import { useState } from 'react';
 import EnrichmentSettingsForm from './enrichment-settings-form';
 
 export default function EnrichmentPage() {
+    useDockPanelTab({ title: 'Manage: Enrichment', icon: 'manage-enrichment' });
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,

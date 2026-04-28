@@ -1,3 +1,4 @@
+import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Input } from '@/components/ui/input';
 import {
     Sidebar,
@@ -19,6 +20,10 @@ import { useState } from 'react';
 import TypeMappingsEditor from './type-mappings-editor';
 
 export default function TypeMappingsPage() {
+    useDockPanelTab({
+        title: 'Manage: Type mappings',
+        icon: 'manage-type-mappings',
+    });
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,

@@ -1,4 +1,5 @@
 import MarkdownEditorDialog from '@/components/dialogs/base/markdown-editor-dialog';
+import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -23,7 +24,6 @@ import {
 import { $api } from '@services/openapi/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useId, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -42,6 +42,7 @@ const EDITOR_DEFAULTS: FormData = { vim_mode: false };
 export default function AccountEditorForm({ target = 'me' }: AccountEditorFormProps) {
     const queryClient = useQueryClient();
     const vimModeId = useId();
+    const formId = useId();
     const noteTemplateActionId = useId();
     const noteSnippetsActionId = useId();
     const snippetListRef = useRef<SnippetListRef>(null);
@@ -116,11 +117,6 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
         });
     };
 
-    const headerContainer =
-        typeof document !== 'undefined'
-            ? document.getElementById('settings-header-actions')
-            : null;
-
     const handleRevert = () => {
         if (userData) reset({ vim_mode: userData.vim_mode || false });
     };
@@ -136,53 +132,45 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
 
     return (
         <>
-            {headerContainer &&
-                createPortal(
-                    <div className='flex items-center gap-2'>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={!isDirty}
-                            onClick={handleRevert}
-                            title='Revert'
-                        >
-                            <ArrowCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={isAtDefault}
-                            onClick={handleDefault}
-                            title='Default'
-                        >
-                            <ClockCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='submit'
-                            form='account-editor-form'
-                            variant='default'
-                            size='icon'
-                            disabled={saveMutation.isPending || !isDirty}
-                            title='Save Settings'
-                        >
-                            {saveMutation.isPending ? (
-                                <Spinner className='size-4' />
-                            ) : (
-                                <FloppyDiskIcon className='size-4' weight='bold' />
-                            )}
-                        </Button>
-                    </div>,
-                    headerContainer,
-                )}
-            <form id='account-editor-form' onSubmit={handleSubmit(handleSave)}>
+            <SettingsHeaderActionsPortal>
+                <div className='flex items-center gap-2'>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        disabled={!isDirty}
+                        onClick={handleRevert}
+                        title='Revert'
+                    >
+                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
+                    </Button>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        disabled={isAtDefault}
+                        onClick={handleDefault}
+                        title='Default'
+                    >
+                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
+                    </Button>
+                    <Button
+                        type='submit'
+                        form={formId}
+                        variant='default'
+                        size='icon'
+                        disabled={saveMutation.isPending || !isDirty}
+                        title='Save Settings'
+                    >
+                        {saveMutation.isPending ? (
+                            <Spinner className='size-4' />
+                        ) : (
+                            <FloppyDiskIcon className='size-4' weight='bold' />
+                        )}
+                    </Button>
+                </div>
+            </SettingsHeaderActionsPortal>
+            <form id={formId} onSubmit={handleSubmit(handleSave)}>
                 <section id='editor'>
                     <div className='flex flex-col gap-4'>
                         <div className='flex items-center justify-between gap-4'>

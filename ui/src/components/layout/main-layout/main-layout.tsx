@@ -1,4 +1,5 @@
 import { PageLoader } from '@/components/base/page-loader';
+import { AppDockviewShell } from '@/components/layout/app-dockview-shell';
 import { AppSidebar } from '@/components/layout/sidebar/app-sidebar';
 import {
     ResizableHandle,
@@ -11,8 +12,7 @@ import { queryKeys } from '@/hooks/query';
 import { NotificationsPanel } from '@components/domain/notifications';
 import { fetchClient } from '@services/openapi/client';
 import { useQuery } from '@tanstack/react-query';
-import { Outlet } from '@tanstack/react-router';
-import React, { Suspense, useState } from 'react';
+import React, { useState } from 'react';
 import Navbar from '../navbar/navbar';
 
 /**
@@ -21,7 +21,7 @@ import Navbar from '../navbar/navbar';
  * This component provides the main structure for authenticated pages with:
  * - Top navbar with navigation and search
  * - Left sidebar with main navigation items
- * - Content area with route outlet
+ * - Content area with Dockview (VS Code–style tabs / splits) hosting the route outlet
  *
  * @example
  * ```tsx
@@ -67,13 +67,9 @@ export default function MainLayout(): React.JSX.Element {
                 {/* Navbar - Top of screen */}
                 <Navbar />
 
-                {/* Content Area */}
-                <div className='flex-1 overflow-hidden relative'>
-                    <div className='absolute inset-0 overflow-y-auto overflow-x-hidden'>
-                        <Suspense fallback={<PageLoader fill='container' />}>
-                            <Outlet />
-                        </Suspense>
-                    </div>
+                {/* Content: Dockview editor area (tabs, drag/split, + / split actions) */}
+                <div className='relative min-h-0 flex-1 overflow-hidden'>
+                    <AppDockviewShell />
 
                     {/* Notifications Panel - Overlay */}
                     {showNotifications && (

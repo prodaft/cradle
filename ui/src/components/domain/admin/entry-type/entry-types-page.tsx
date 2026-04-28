@@ -10,6 +10,7 @@ import {
 } from '@/components/custom/action-bar';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
+import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -65,6 +66,7 @@ interface EntryTypeData {
 }
 
 export default function EntryTypesPage() {
+    useDockPanelTab({ title: 'Manage: Entry types', icon: 'manage-entry-types' });
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,

@@ -10,6 +10,7 @@ import {
     ColorPickerTrigger,
 } from '@/components/custom/color-picker';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
+import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -48,8 +49,7 @@ import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
 import isEqual from 'lodash/isEqual';
-import { useEffect, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useId, useMemo, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 import OfflineIndicator from '../../../feedback/offline-indicator';
@@ -152,6 +152,7 @@ function getEntryTypeFormFromApi(
 }
 
 export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) {
+    const formId = useId();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const defaultColor = useMemo(() => colorGenerator.nextHexColor(), [colorGenerator]);
     const entryTypeDefaults = useMemo(
@@ -289,11 +290,6 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         );
     }
 
-    const headerContainer =
-        typeof document !== 'undefined'
-            ? document.getElementById('settings-header-actions')
-            : null;
-
     const handleRevert = () => {
         if (loadedValuesRef.current) reset(loadedValuesRef.current);
     };
@@ -302,53 +298,45 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
 
     return (
         <>
-            {headerContainer &&
-                createPortal(
-                    <div className='flex items-center gap-2'>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={!isDirty}
-                            onClick={handleRevert}
-                            title='Revert'
-                        >
-                            <ArrowCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={isAtDefault}
-                            onClick={handleDefault}
-                            title='Default'
-                        >
-                            <ClockCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='submit'
-                            form='entry-type-form'
-                            variant='default'
-                            size='icon'
-                            disabled={updateEntryTypeMutation.isPending || !isDirty}
-                            title='Save Changes'
-                        >
-                            {updateEntryTypeMutation.isPending ? (
-                                <Spinner className='size-4' />
-                            ) : (
-                                <FloppyDiskIcon className='size-4' weight='bold' />
-                            )}
-                        </Button>
-                    </div>,
-                    headerContainer,
-                )}
-            <form id='entry-type-form' onSubmit={handleFormSubmit(onSubmit)}>
+            <SettingsHeaderActionsPortal>
+                <div className='flex items-center gap-2'>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        disabled={!isDirty}
+                        onClick={handleRevert}
+                        title='Revert'
+                    >
+                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
+                    </Button>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        disabled={isAtDefault}
+                        onClick={handleDefault}
+                        title='Default'
+                    >
+                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
+                    </Button>
+                    <Button
+                        type='submit'
+                        form={formId}
+                        variant='default'
+                        size='icon'
+                        disabled={updateEntryTypeMutation.isPending || !isDirty}
+                        title='Save Changes'
+                    >
+                        {updateEntryTypeMutation.isPending ? (
+                            <Spinner className='size-4' />
+                        ) : (
+                            <FloppyDiskIcon className='size-4' weight='bold' />
+                        )}
+                    </Button>
+                </div>
+            </SettingsHeaderActionsPortal>
+            <form id={formId} onSubmit={handleFormSubmit(onSubmit)}>
                 <div className='flex flex-col gap-6'>
                     {/* Basic Section */}
                     <div className='flex flex-col gap-4'>

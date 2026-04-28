@@ -72,6 +72,7 @@
         "dayjs": "^1.11.20",
         "diff": "^9.0.0",
         "diff-match-patch": "^1.0.5",
+        "dockview": "^5.2.0",
         "dompurify": "^3.4.1",
         "graphology": "^0.26.0",
         "graphology-types": "^0.24.8",
@@ -1385,6 +1386,10 @@
     "diff": ["diff@9.0.0", "", {}, "sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw=="],
 
     "diff-match-patch": ["diff-match-patch@1.0.5", "", {}, "sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw=="],
+
+    "dockview": ["dockview@5.2.0", "", { "dependencies": { "dockview-core": "^5.2.0" }, "peerDependencies": { "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-Eh+SWt+AydcyeVmYkwP+Yxax0XpYSQfXsc4Rad9k+6QEddkSCn4hcjsdxp9lLsw/CaMy39jHawbDVxPMC4kvTg=="],
+
+    "dockview-core": ["dockview-core@5.2.0", "", {}, "sha512-Gib8yhK2Ng7w47ASvbUZ7GdhBYbeXEflbIDxf/vobdQBMrN/QXmPaouSsSSkEx5YH0N8ap8GYljfvqjug7h5Fg=="],
 
     "doctrine": ["doctrine@2.1.0", "", { "dependencies": { "esutils": "^2.0.2" } }, "sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw=="],
 

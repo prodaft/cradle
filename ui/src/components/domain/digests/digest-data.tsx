@@ -1,3 +1,4 @@
+import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -47,6 +48,7 @@ interface ColumnFilters {
 }
 
 export default function DigestData() {
+    useDockPanelTab({ title: 'Digest data', icon: 'digest-data' });
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,

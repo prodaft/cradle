@@ -1,3 +1,4 @@
+import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Command,
@@ -29,7 +30,6 @@ import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 
 interface AccountAppearanceFormProps {
@@ -186,59 +186,46 @@ export default function AccountAppearanceForm({
     };
     const isAtDefault = selectedThemeType === PRESET_THEMES[0].id && !pendingTheme;
 
-    const headerContainer =
-        typeof document !== 'undefined'
-            ? document.getElementById('settings-header-actions')
-            : null;
-
     return (
         <>
-            {headerContainer &&
-                createPortal(
-                    <div className='flex items-center gap-2'>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={!pendingTheme}
-                            onClick={handleRevert}
-                            title='Revert'
-                        >
-                            <ArrowCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={isAtDefault}
-                            onClick={handleDefault}
-                            title='Default'
-                        >
-                            <ClockCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='default'
-                            size='icon'
-                            disabled={saveMutation.isPending || !pendingTheme}
-                            onClick={handleSave}
-                            title='Save Settings'
-                        >
-                            {saveMutation.isPending ? (
-                                <Spinner className='size-4' />
-                            ) : (
-                                <FloppyDiskIcon className='size-4' weight='bold' />
-                            )}
-                        </Button>
-                    </div>,
-                    headerContainer,
-                )}
+            <SettingsHeaderActionsPortal>
+                <div className='flex items-center gap-2'>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        disabled={!pendingTheme}
+                        onClick={handleRevert}
+                        title='Revert'
+                    >
+                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
+                    </Button>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        disabled={isAtDefault}
+                        onClick={handleDefault}
+                        title='Default'
+                    >
+                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
+                    </Button>
+                    <Button
+                        type='button'
+                        variant='default'
+                        size='icon'
+                        disabled={saveMutation.isPending || !pendingTheme}
+                        onClick={handleSave}
+                        title='Save Settings'
+                    >
+                        {saveMutation.isPending ? (
+                            <Spinner className='size-4' />
+                        ) : (
+                            <FloppyDiskIcon className='size-4' weight='bold' />
+                        )}
+                    </Button>
+                </div>
+            </SettingsHeaderActionsPortal>
             <section id='appearance'>
                 <div className='flex flex-col gap-4'>
                     <FieldGroup className='gap-4'>

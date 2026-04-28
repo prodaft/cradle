@@ -1,3 +1,4 @@
+import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -26,7 +27,6 @@ import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
 
 type AccessLevel = 'none' | 'read' | 'read-write';
 
@@ -172,11 +172,6 @@ export default function EntityPermissionsForm({
             (access) => (currentAccess[access.user.id ?? ''] ?? 'none') === 'none',
         );
 
-    const headerContainer =
-        typeof document !== 'undefined'
-            ? document.getElementById('settings-header-actions')
-            : null;
-
     if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-[200px] text-foreground'>
@@ -187,52 +182,44 @@ export default function EntityPermissionsForm({
 
     return (
         <>
-            {headerContainer &&
-                createPortal(
-                    <div className='flex items-center gap-2'>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={!hasChanges()}
-                            onClick={handleRevert}
-                            title='Revert'
-                        >
-                            <ArrowCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={isAtDefault}
-                            onClick={handleDefault}
-                            title='Default'
-                        >
-                            <ClockCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='default'
-                            size='icon'
-                            disabled={saveChangesMutation.isPending || !hasChanges()}
-                            onClick={handleSave}
-                            title='Save Settings'
-                        >
-                            {saveChangesMutation.isPending ? (
-                                <Spinner className='size-4' />
-                            ) : (
-                                <FloppyDiskIcon className='size-4' weight='bold' />
-                            )}
-                        </Button>
-                    </div>,
-                    headerContainer,
-                )}
+            <SettingsHeaderActionsPortal>
+                <div className='flex items-center gap-2'>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        disabled={!hasChanges()}
+                        onClick={handleRevert}
+                        title='Revert'
+                    >
+                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
+                    </Button>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        disabled={isAtDefault}
+                        onClick={handleDefault}
+                        title='Default'
+                    >
+                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
+                    </Button>
+                    <Button
+                        type='button'
+                        variant='default'
+                        size='icon'
+                        disabled={saveChangesMutation.isPending || !hasChanges()}
+                        onClick={handleSave}
+                        title='Save Settings'
+                    >
+                        {saveChangesMutation.isPending ? (
+                            <Spinner className='size-4' />
+                        ) : (
+                            <FloppyDiskIcon className='size-4' weight='bold' />
+                        )}
+                    </Button>
+                </div>
+            </SettingsHeaderActionsPortal>
             <form className='w-full h-full flex flex-col space-y-4'>
                 <div className='relative'>
                     <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
