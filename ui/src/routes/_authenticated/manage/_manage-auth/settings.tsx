@@ -2,8 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import * as z from 'zod';
 
-const SettingsPage = lazy(
-    () => import('@/components/domain/admin/settings/admin-settings-page'),
+const ManageSettingsPage = lazy(
+    () => import('@/components/domain/manage/settings/manage-settings-page'),
 );
 
 export const Route = createFileRoute('/_authenticated/manage/_manage-auth/settings')({
@@ -13,5 +13,5 @@ export const Route = createFileRoute('/_authenticated/manage/_manage-auth/settin
     validateSearch: z.object({
         tab: z.string().optional(),
     }),
-    component: SettingsPage,
+    component: ManageSettingsPage,
 });

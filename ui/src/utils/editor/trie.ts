@@ -274,7 +274,9 @@ export class DynamicTrie {
                 a.localeCompare(b),
             );
             for (let i = 0; i < entries.length; i++) {
-                const [char, child] = entries[i];
+                const entry = entries[i];
+                if (!entry) continue;
+                const [char, child] = entry;
                 const isLast = i === entries.length - 1;
                 const branch = isLast ? '└─ ' : '├─ ';
                 const newIndent = indent + (isLast ? '   ' : '│  ');

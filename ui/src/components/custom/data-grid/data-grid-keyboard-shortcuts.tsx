@@ -15,6 +15,8 @@ import { Separator } from '@/components/ui/separator';
 import { SearchIcon, XIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { cn } from '@/lib/utils';
+
 const SHORTCUT_KEY = '/';
 
 interface ShortcutGroup {
@@ -263,23 +265,23 @@ function DataGridKeyboardShortcutsImpl({
                     </DialogDescription>
                 </DialogHeader>
                 <div className='px-6'>
-                    <div className='relative'>
-                        <SearchIcon className='absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground' />
-                        <Input
-                            ref={inputRef}
-                            placeholder='Search shortcuts...'
-                            className='h-8 pl-8'
-                            value={input}
-                            onChange={onInputChange}
-                        />
-                    </div>
+                    <Input
+                        ref={inputRef}
+                        placeholder='Search shortcuts...'
+                        className={cn('h-8 w-full min-w-0')}
+                        value={input}
+                        onChange={onInputChange}
+                    />
                 </div>
                 <Separator className='mx-auto data-[orientation=horizontal]:w-[calc(100%-(--spacing(12)))]' />
                 <div className='h-[40vh] overflow-y-auto px-6'>
                     {filteredGroups.length === 0 ? (
                         <div className='flex h-full flex-col items-center justify-center gap-3 text-center'>
                             <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground'>
-                                <SearchIcon className='pointer-events-none size-6' />
+                                <SearchIcon
+                                    className='pointer-events-none size-6'
+                                    aria-hidden
+                                />
                             </div>
                             <div className='flex flex-col gap-1'>
                                 <div className='font-medium text-lg tracking-tight'>

@@ -6,7 +6,7 @@ import { logger } from '@/utils/logger';
 import { WarningCircleIcon } from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { Node } from './graphFilterUtils';
+import { Node } from './graph-filter-utils';
 
 type EdgeRelation = components['schemas']['EdgeRelation'];
 

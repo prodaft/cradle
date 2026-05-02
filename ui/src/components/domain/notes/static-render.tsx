@@ -29,17 +29,20 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
         (path: string) => {
             const dashboardMatch = path.match(/^\/dashboards\/([^/]+)\/([^/]+)\/?$/);
             if (dashboardMatch) {
-                const [, subtype, name] = dashboardMatch;
-                router.navigate({
-                    to: '/dashboards/$subtype/$name',
-                    params: {
-                        subtype: decodeURIComponent(subtype),
-                        name: decodeURIComponent(name),
-                    },
-                });
-            } else {
-                router.navigate({ to: path as any });
+                const subtype = dashboardMatch[1];
+                const name = dashboardMatch[2];
+                if (subtype !== undefined && name !== undefined) {
+                    router.navigate({
+                        to: '/dashboards/$subtype/$name',
+                        params: {
+                            subtype: decodeURIComponent(subtype),
+                            name: decodeURIComponent(name),
+                        },
+                    });
+                    return;
+                }
             }
+            router.navigate({ to: path as any });
         },
         [router],
     );

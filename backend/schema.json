@@ -55238,8 +55238,8 @@
                     }
                 },
                 "required": [
-                    "type",
                     "subtype",
+                    "type",
                     "name"
                 ]
             },
@@ -55281,8 +55281,8 @@
                     }
                 },
                 "required": [
-                    "type",
                     "subtype",
+                    "type",
                     "name"
                 ]
             },
@@ -55833,8 +55833,8 @@
                     }
                 },
                 "required": [
-                    "type",
                     "subtype",
+                    "type",
                     "name"
                 ]
             },
@@ -57657,8 +57657,8 @@
                     }
                 },
                 "required": [
-                    "type",
                     "subtype",
+                    "type",
                     "name"
                 ]
             },

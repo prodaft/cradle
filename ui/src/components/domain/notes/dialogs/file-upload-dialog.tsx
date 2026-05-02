@@ -22,6 +22,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { uploadFile } from '@utils/files';
@@ -137,7 +138,12 @@ export default function FileUploadDialog({
                     error: uploadError,
                     response: uploadResp,
                 } = await fetchClient.GET('/file-transfer/upload/', {
-                    params: { query: { file_name: file.name, file_size: file.size } },
+                    params: {
+                        query: {
+                            file_name: file.name,
+                            file_size: file.size,
+                        } satisfies ApiQuery<'file_transfer_upload_retrieve'>,
+                    },
                 });
                 if (uploadError) throw { response: uploadResp, error: uploadError };
 

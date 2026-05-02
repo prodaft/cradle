@@ -2,8 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import * as z from 'zod';
 
-const TypeMappingsPage = lazy(
-    () => import('@/components/domain/admin/type-mappings/type-mappings-page'),
+const TypeMappingsList = lazy(
+    () => import('@/components/domain/manage/type-mappings/type-mappings-list'),
 );
 
 export const Route = createFileRoute(
@@ -15,5 +15,5 @@ export const Route = createFileRoute(
     validateSearch: z.object({
         tab: z.string().optional(),
     }),
-    component: TypeMappingsPage,
+    component: TypeMappingsList,
 });

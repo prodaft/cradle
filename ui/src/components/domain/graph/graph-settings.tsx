@@ -133,12 +133,14 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                     max={3}
                                     step={0.1}
                                     value={[config.nodeRadiusCoefficient]}
-                                    onValueChange={(values) =>
+                                    onValueChange={(values) => {
+                                        const v = values[0];
+                                        if (v === undefined) return;
                                         setConfig((prev) => ({
                                             ...prev,
-                                            nodeRadiusCoefficient: values[0],
-                                        }))
-                                    }
+                                            nodeRadiusCoefficient: v,
+                                        }));
+                                    }}
                                 />
                             </Field>
 
@@ -157,12 +159,14 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                     max={2}
                                     step={0.1}
                                     value={[config.linkWidthCoefficient]}
-                                    onValueChange={(values) =>
+                                    onValueChange={(values) => {
+                                        const v = values[0];
+                                        if (v === undefined) return;
                                         setConfig((prev) => ({
                                             ...prev,
-                                            linkWidthCoefficient: values[0],
-                                        }))
-                                    }
+                                            linkWidthCoefficient: v,
+                                        }));
+                                    }}
                                 />
                             </Field>
 
@@ -260,12 +264,14 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                                 max={max}
                                                 step={step}
                                                 value={[value]}
-                                                onValueChange={(values) =>
+                                                onValueChange={(values) => {
+                                                    const v = values[0];
+                                                    if (v === undefined) return;
                                                     setConfig((prev) => ({
                                                         ...prev,
-                                                        [key]: values[0],
-                                                    }))
-                                                }
+                                                        [key]: v,
+                                                    }));
+                                                }}
                                             />
                                         </Field>
                                     ),
@@ -347,12 +353,14 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                     max={1}
                                     step={0.01}
                                     value={[config.simulationCluster]}
-                                    onValueChange={(values) =>
+                                    onValueChange={(values) => {
+                                        const v = values[0];
+                                        if (v === undefined) return;
                                         setConfig((prev) => ({
                                             ...prev,
-                                            simulationCluster: values[0],
-                                        }))
-                                    }
+                                            simulationCluster: v,
+                                        }));
+                                    }}
                                 />
                             </Field>
 

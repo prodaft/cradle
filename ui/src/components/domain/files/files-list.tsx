@@ -52,6 +52,7 @@ import {
     DownloadSimpleIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
@@ -72,23 +73,18 @@ import OfflineIndicator from '../../feedback/offline-indicator';
 
 type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 
-interface FilesListQuery {
-    date?: string;
-    keyword?: string;
-    linked_to?: number | string; // Entry ID (number) or string query parameter
-    linked_to_exact_match?: boolean;
-    mimetype?: string;
-    references?: string;
-    timestamp_gte?: string;
-    timestamp_lte?: string;
-}
+type FilesListApiQuery = ApiQuery<'notes_files_retrieve'>;
 
-/**
- * FilesList component - This component is used to display a list of files.
- * @param query - Query parameters for filtering files
- */
+export type FilesListScopeQuery = Partial<
+    Omit<FilesListApiQuery, 'linked_to' | 'references'>
+> & {
+    linked_to?: number | string;
+    references?: string;
+};
+
 interface FilesListProps {
-    query?: FilesListQuery;
+    query?: FilesListScopeQuery;
+    hidePageHeader?: boolean;
 }
 
 // Mapping of table columns to API field names - moved outside component to prevent recreation
@@ -100,11 +96,14 @@ const SORT_FIELD_MAPPING: Record<string, string> = {
 };
 
 // Empty defaults to prevent new object creation on each render
-const EMPTY_QUERY = {};
+const EMPTY_QUERY: FilesListScopeQuery = {};
 const EMPTY_FILES: FileReferenceWithNote[] = [];
 
-export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
-    useDockPanelTab({ title: 'Files', icon: 'files' });
+export default function FilesList({
+    query = EMPTY_QUERY,
+    hidePageHeader = false,
+}: FilesListProps) {
+    useDockPanelTab({ title: 'Files', icon: 'files' }, !hidePageHeader);
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
@@ -126,7 +125,13 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
         mutationFn: async (fileId: string) => {
             const { data, error, response } = await fetchClient.GET(
                 '/file-transfer/download/',
-                { params: { query: { file_id: fileId } } },
+                {
+                    params: {
+                        query: {
+                            file_id: fileId,
+                        } satisfies ApiQuery<'file_transfer_download_retrieve'>,
+                    },
+                },
             );
             if (error) throw { response, error };
             return data.presigned_url;
@@ -168,9 +173,14 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
                 delete newSearch.files_sort_direction;
             } else {
                 const sort = sorting[0];
-                const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
-                newSearch.files_sort_field = apiField;
-                newSearch.files_sort_direction = sort.desc ? 'desc' : 'asc';
+                if (!sort) {
+                    delete newSearch.files_sort_field;
+                    delete newSearch.files_sort_direction;
+                } else {
+                    const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
+                    newSearch.files_sort_field = apiField;
+                    newSearch.files_sort_direction = sort.desc ? 'desc' : 'asc';
+                }
             }
 
             router.navigate({
@@ -183,10 +193,10 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
     );
 
     // Prepare query parameters
-    const queryParams = useMemo(() => {
+    const queryParams = useMemo((): FilesListApiQuery => {
         const order_by = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
-        const params: Record<string, unknown> = {
+        const params: FilesListApiQuery = {
             page,
             page_size: pageSize,
             order_by,
@@ -200,11 +210,9 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
             timestamp_lte: query.timestamp_lte,
         };
 
-        Object.keys(params).forEach(
-            (key) => params[key] === undefined && delete params[key],
-        );
-
-        return params;
+        return Object.fromEntries(
+            Object.entries(params).filter(([, v]) => v !== undefined),
+        ) as FilesListApiQuery;
     }, [page, pageSize, sortField, sortDirection, query, searchQuery, statusFilter]);
 
     // Query for files
@@ -215,7 +223,7 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
     } = $api.useQuery(
         'get',
         '/notes/files/',
-        { params: { query: queryParams as any } },
+        { params: { query: queryParams } },
         {
             meta: {
                 showErrorToast: true,
@@ -296,7 +304,13 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
         mutationFn: async (fileId: string) => {
             const { error, response } = await fetchClient.DELETE(
                 '/file-transfer/delete/',
-                { params: { query: { file_id: fileId } } },
+                {
+                    params: {
+                        query: {
+                            file_id: fileId,
+                        } satisfies ApiQuery<'file_transfer_delete_destroy'>,
+                    },
+                },
             );
             if (error) throw { response, error };
         },
@@ -706,13 +720,15 @@ export default function FilesList({ query = EMPTY_QUERY }: FilesListProps) {
 
     return (
         <div className='w-full h-full flex flex-col space-y-4'>
-            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
-                <div className='space-y-1'>
-                    <h2 className='text-2xl font-bold tracking-tight'>Files</h2>
-                    <p className='text-muted-foreground'>Browse & Manage Files</p>
+            {!hidePageHeader && (
+                <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
+                    <div className='space-y-1'>
+                        <h2 className='text-2xl font-bold tracking-tight'>Files</h2>
+                        <p className='text-muted-foreground'>Browse & Manage Files</p>
+                    </div>
                 </div>
-            </div>
-            <div className='flex flex-col space-y-4 px-4'>
+            )}
+            <div className={cn('flex flex-col space-y-4', !hidePageHeader && 'px-4')}>
                 {isPaused && (
                     <div className='mb-4'>
                         <OfflineIndicator />

@@ -39,10 +39,8 @@ export class SubtypeHierarchy {
             this.pathsMap[path] = true;
 
             path.split('/').reduce((acc, cur) => {
-                if (!acc[cur]) {
-                    acc[cur] = {};
-                }
-                return acc[cur];
+                const next = acc[cur] ?? (acc[cur] = {});
+                return next;
             }, this.tree);
         }
     }
@@ -71,22 +69,33 @@ export class SubtypeHierarchy {
             const childPaths = this.collectChildPaths(path + value + '/', children);
 
             // Sort children by depth before traversing
-            const sortedKeys = Object.keys(children).sort(
-                (a, b) => this.getDepth(children[a]) - this.getDepth(children[b]),
-            );
+            const sortedKeys = Object.keys(children).sort((a, b) => {
+                const ca = children[a];
+                const cb = children[b];
+                if (!ca || !cb) return 0;
+                return this.getDepth(ca) - this.getDepth(cb);
+            });
 
             for (const key of sortedKeys) {
-                childResults.push(traverse(key, children[key], path + value + '/'));
+                const child = children[key];
+                if (!child) continue;
+                childResults.push(traverse(key, child, path + value + '/'));
             }
 
             return node_callback(value, childResults, childPaths);
         };
 
-        const sortedKeys = Object.keys(this.tree).sort(
-            (a, b) => this.getDepth(this.tree[a]) - this.getDepth(this.tree[b]),
-        );
+        const sortedKeys = Object.keys(this.tree).sort((a, b) => {
+            const ta = this.tree[a];
+            const tb = this.tree[b];
+            if (!ta || !tb) return 0;
+            return this.getDepth(ta) - this.getDepth(tb);
+        });
 
-        return sortedKeys.map((key) => traverse(key, this.tree[key], ''));
+        return sortedKeys.flatMap((key) => {
+            const node = this.tree[key];
+            return node !== undefined ? [traverse(key, node, '')] : [];
+        });
     }
 
     /**
@@ -103,7 +112,10 @@ export class SubtypeHierarchy {
 
             // Process children
             for (const key of Object.keys(subNode)) {
-                collectPaths(nodePath + key + '/', subNode[key]);
+                const child = subNode[key];
+                if (child) {
+                    collectPaths(nodePath + key + '/', child);
+                }
             }
         };
 
@@ -206,15 +218,19 @@ const _groupSubtypes = <T,>(
     const sublistIndices: Record<string, number> = {};
     const entryCards: T[][] = [];
 
-    for (const i in entries) {
+    for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
+        if (entry === undefined) continue;
         // Skip entries without subtype
         if (!entry.subtype) continue;
 
         if (sublistIndices[entry.subtype] === undefined) {
             if (entry.type === 'entity') {
-                for (const j in sublistIndices) {
-                    sublistIndices[j]++;
+                for (const j of Object.keys(sublistIndices)) {
+                    const prev = sublistIndices[j];
+                    if (prev !== undefined) {
+                        sublistIndices[j] = prev + 1;
+                    }
                 }
                 sublistIndices[entry.subtype] = 0;
                 entryCards.unshift([]);
@@ -224,7 +240,11 @@ const _groupSubtypes = <T,>(
             }
         }
 
-        entryCards[sublistIndices[entry.subtype]].push(entry_transformer(entry));
+        const idx = sublistIndices[entry.subtype];
+        const bucket = idx !== undefined ? entryCards[idx] : undefined;
+        if (bucket !== undefined) {
+            bucket.push(entry_transformer(entry));
+        }
     }
 
     return entryCards.filter((l) => l.length !== 0);
@@ -272,10 +292,11 @@ function _naturalSort(a: string, b: string): number {
         let match: RegExpExecArray | null;
 
         while ((match = regex.exec(remainder)) !== null) {
-            // Add the text part
-            parts.push(match[1]);
-            // Add the number part (converted to a number for numeric comparison)
-            parts.push(parseInt(match[2], 10));
+            const textPart = match[1];
+            const numPart = match[2];
+            if (textPart === undefined || numPart === undefined) break;
+            parts.push(textPart);
+            parts.push(parseInt(numPart, 10));
             remainder = remainder.substring(match[0].length);
         }
 
@@ -290,15 +311,18 @@ function _naturalSort(a: string, b: string): number {
     // Compare each part
     const minLength = Math.min(aParts.length, bParts.length);
     for (let i = 0; i < minLength; i++) {
+        const ai = aParts[i];
+        const bi = bParts[i];
+        if (ai === undefined || bi === undefined) continue;
         // If both parts are numbers, compare numerically
-        if (typeof aParts[i] === 'number' && typeof bParts[i] === 'number') {
-            if (aParts[i] !== bParts[i]) {
-                return (aParts[i] as number) - (bParts[i] as number);
+        if (typeof ai === 'number' && typeof bi === 'number') {
+            if (ai !== bi) {
+                return ai - bi;
             }
         }
         // Otherwise compare as strings
-        else if (aParts[i] !== bParts[i]) {
-            return aParts[i].toString().localeCompare(bParts[i].toString());
+        else if (ai !== bi) {
+            return ai.toString().localeCompare(bi.toString());
         }
     }
 

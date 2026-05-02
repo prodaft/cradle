@@ -34,10 +34,14 @@ function maybeBootstrap(session: Session, bootstrapDoc: string | undefined) {
 }
 
 self.onconnect = (event: Event) => {
-    const port = (event as MessageEvent).ports[0];
-    port.start();
+    const ports = (event as MessageEvent).ports;
+    if (!ports?.length) return;
+    const first = ports[0];
+    if (first === undefined) return;
+    const clientPort: MessagePort = first;
+    clientPort.start();
 
-    port.onmessage = (ev: MessageEvent) => {
+    clientPort.onmessage = (ev: MessageEvent) => {
         const raw = ev.data;
         if (raw == null || typeof raw !== 'object') return;
         const data = raw as {
@@ -52,7 +56,7 @@ self.onconnect = (event: Event) => {
 
         function respond(payload: unknown, error?: string) {
             try {
-                port.postMessage(
+                clientPort.postMessage(
                     error != null
                         ? { id: data.id, error }
                         : { id: data.id, ok: true, payload },

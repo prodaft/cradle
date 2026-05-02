@@ -100,12 +100,12 @@ const GraphLegend = ({
                                 children: ReactNode,
                                 childValues: string[],
                             ) => {
+                                const firstChild = childValues[0];
                                 const path =
-                                    childValues.length > 0 &&
-                                    childValues[0].includes('/')
-                                        ? childValues[0].substring(
+                                    firstChild !== undefined && firstChild.includes('/')
+                                        ? firstChild.substring(
                                               0,
-                                              childValues[0].lastIndexOf('/') + 1,
+                                              firstChild.lastIndexOf('/') + 1,
                                           )
                                         : '';
 

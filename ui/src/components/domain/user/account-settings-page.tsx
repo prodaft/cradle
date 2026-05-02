@@ -48,6 +48,8 @@ const ACCOUNT_SETTINGS_ITEMS = [
     },
 ];
 
+const defaultAccountSettingsTabId = ACCOUNT_SETTINGS_ITEMS[0]?.id ?? 'security';
+
 interface AccountSettingsProps {
     target?: string;
 }
@@ -63,7 +65,7 @@ export default function AccountSettingsPage({ target = 'me' }: AccountSettingsPr
     });
     const search = useSearch({ from: '/_authenticated/settings' });
 
-    const tab = (search as any)?.tab ?? ACCOUNT_SETTINGS_ITEMS[0].id;
+    const tab = (search as any)?.tab ?? defaultAccountSettingsTabId;
 
     const handleTabChange = (tabId: string) => {
         router.navigate({
@@ -74,8 +76,8 @@ export default function AccountSettingsPage({ target = 'me' }: AccountSettingsPr
     };
 
     const currentTab =
-        ACCOUNT_SETTINGS_ITEMS.find((item) => item.id === tab) ||
-        ACCOUNT_SETTINGS_ITEMS[0];
+        ACCOUNT_SETTINGS_ITEMS.find((item) => item.id === tab) ??
+        ACCOUNT_SETTINGS_ITEMS.find((item) => item.id === defaultAccountSettingsTabId);
 
     return (
         <SettingsHeaderActionsProvider>

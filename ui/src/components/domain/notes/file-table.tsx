@@ -20,6 +20,7 @@ import {
     TextboxIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
@@ -51,7 +52,13 @@ export default function FileTable({
         mutationFn: async (fileId: string) => {
             const { data, error, response } = await fetchClient.GET(
                 '/file-transfer/download/',
-                { params: { query: { file_id: fileId } } },
+                {
+                    params: {
+                        query: {
+                            file_id: fileId,
+                        } satisfies ApiQuery<'file_transfer_download_retrieve'>,
+                    },
+                },
             );
             if (error) throw { response, error };
             return data.presigned_url;

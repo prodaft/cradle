@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import * as z from 'zod';
 
-const Reports = lazy(() => import('@/components/domain/reports/report-list'));
+const ReportsList = lazy(() => import('@/components/domain/reports/reports-list'));
 
 export const Route = createFileRoute('/_authenticated/reports')({
     staticData: {
@@ -14,5 +14,5 @@ export const Route = createFileRoute('/_authenticated/reports')({
         reports_sort_direction: z.enum(['asc', 'desc']).optional(),
         reports_pagesize: z.coerce.number().optional(),
     }),
-    component: Reports,
+    component: ReportsList,
 });

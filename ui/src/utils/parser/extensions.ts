@@ -1,3 +1,4 @@
+import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import matter from 'gray-matter';
@@ -104,7 +105,11 @@ function fetchMinioDownloadLink(fileId: string): Promise<FileDownload> {
     if (!DownloadLinkPromiseCache[fileId]) {
         DownloadLinkPromiseCache[fileId] = fetchClient
             .GET('/file-transfer/download/', {
-                params: { query: { file_id: fileId } },
+                params: {
+                    query: {
+                        file_id: fileId,
+                    } satisfies ApiQuery<'file_transfer_download_retrieve'>,
+                },
             })
             .then(({ data, error, response }) => {
                 if (error) throw { response, error };
@@ -122,8 +127,12 @@ async function resolveMinioLinks(token: Token): Promise<void> {
         let hrefIndex = token.attrIndex('href');
         hrefIndex = hrefIndex < 0 ? token.attrIndex('src') : hrefIndex;
         if (hrefIndex < 0) return;
-        const href = token.attrs![hrefIndex][1];
-        if (!href.includes('/file-transfer/download/')) return;
+        const attrs = token.attrs;
+        if (!attrs || hrefIndex >= attrs.length) return;
+        const hrefTuple = attrs[hrefIndex];
+        if (!hrefTuple || hrefTuple.length < 2) return;
+        const href = hrefTuple[1];
+        if (!href || !href.includes('/file-transfer/download/')) return;
 
         let url: URL;
         try {
@@ -144,7 +153,9 @@ async function resolveMinioLinks(token: Token): Promise<void> {
             presigned = result.presigned_url;
             MinioCache[fileId] = result;
         }
-        token.attrs![hrefIndex][1] = presigned!;
+        if (presigned) {
+            hrefTuple[1] = presigned;
+        }
     }
 }
 
@@ -168,12 +179,16 @@ export async function parseWithExtensions(
 ): Promise<{ html: string; metadata: Record<string, any> }> {
     DownloadLinkPromiseCache = {};
     ensureCradleLinkRule(md);
-    md.renderer.rules.cradle_link = (tokens: Token[], idx: number) =>
-        renderCradleLink(entryColors, tokens[idx]);
+    md.renderer.rules.cradle_link = (tokens: Token[], idx: number) => {
+        const token = tokens[idx];
+        if (!token) return '';
+        return renderCradleLink(entryColors, token);
+    };
 
     // Override image renderer to add max-width constraint (matching RichEditor behavior)
     md.renderer.rules.image = (tokens: Token[], idx: number) => {
         const token = tokens[idx];
+        if (!token) return '';
         const src = token.attrGet('src') || '';
         const alt = token.attrGet('alt') || '';
         const title = token.attrGet('title') || '';
@@ -258,6 +273,7 @@ function extractPlainText(tokens: Token[]): string {
 
     for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
+        if (!token) continue;
 
         // For inline tokens, extract their content
         if (token.type === 'inline' && token.children) {

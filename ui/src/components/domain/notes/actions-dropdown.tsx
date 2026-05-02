@@ -168,11 +168,10 @@ export default function ActionsDropdown({
                         )}
                     </DropdownMenuItem>
                 )}
-                <DropdownMenuSeparator />
-
                 {/* Reading mode toggle & editor tools */}
                 {activeView === ViewMode.CONTENT && (
                     <>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem
                             onClick={handleFind}
                             data-testid='find-menu-item'
@@ -254,14 +253,17 @@ export default function ActionsDropdown({
                     </>
                 )}
                 {isFleeting && canWrite && (
-                    <DropdownMenuItem
-                        onClick={handleSaveAsFinal}
-                        data-testid='save-as-final-menu-item'
-                    >
-                        <FloppyDiskIcon size={16} weight='bold' />
-                        <span className='flex-1'>Save As Final</span>
-                        {saving && <Spinner />}
-                    </DropdownMenuItem>
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={handleSaveAsFinal}
+                            data-testid='save-as-final-menu-item'
+                        >
+                            <FloppyDiskIcon size={16} weight='bold' />
+                            <span className='flex-1'>Save As Final</span>
+                            {saving && <Spinner />}
+                        </DropdownMenuItem>
+                    </>
                 )}
                 {activeView !== ViewMode.GRAPH && (
                     <>

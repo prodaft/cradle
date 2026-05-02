@@ -81,14 +81,16 @@ function DataTableToolbarFilter<TData>({ column }: DataTableToolbarFilterProps<T
             switch (columnMeta.variant) {
                 case 'text':
                     return (
-                        <Input
-                            placeholder={columnMeta.placeholder ?? columnMeta.label}
-                            value={(column.getFilterValue() as string) ?? ''}
-                            onChange={(event) =>
-                                column.setFilterValue(event.target.value)
-                            }
-                            className='h-8 w-40 lg:w-56'
-                        />
+                        <div className='w-40 lg:w-56'>
+                            <Input
+                                placeholder={columnMeta.placeholder ?? columnMeta.label}
+                                value={(column.getFilterValue() as string) ?? ''}
+                                onChange={(event) =>
+                                    column.setFilterValue(event.target.value)
+                                }
+                                className={cn('h-8 w-full min-w-0')}
+                            />
+                        </div>
                     );
 
                 case 'number':

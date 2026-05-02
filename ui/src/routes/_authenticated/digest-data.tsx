@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import * as z from 'zod';
 
-const DigestData = lazy(() => import('@/components/domain/digests/digest-data'));
+const DigestsList = lazy(() => import('@/components/domain/digests/digests-list'));
 
 export const Route = createFileRoute('/_authenticated/digest-data')({
     staticData: {
@@ -18,5 +18,5 @@ export const Route = createFileRoute('/_authenticated/digest-data')({
         created_at_lte: z.string().optional(),
         status: z.string().optional(),
     }),
-    component: DigestData,
+    component: DigestsList,
 });

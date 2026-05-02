@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 
-const NotesListPage = lazy(() => import('@/components/domain/notes/notes-list-page'));
+const NotesList = lazy(() => import('@/components/domain/notes/notes-list'));
 
 export const Route = createFileRoute('/_authenticated/notes/')({
-    component: NotesListPage,
+    component: NotesList,
 });

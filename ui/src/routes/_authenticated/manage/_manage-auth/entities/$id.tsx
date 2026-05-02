@@ -3,7 +3,7 @@ import { lazy } from 'react';
 import * as z from 'zod';
 
 const EntitySettingsPage = lazy(
-    () => import('@/components/domain/admin/entity/entity-settings-page'),
+    () => import('@/components/domain/manage/entity/entity-settings-page'),
 );
 
 export const Route = createFileRoute(

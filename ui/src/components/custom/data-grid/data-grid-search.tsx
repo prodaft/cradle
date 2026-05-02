@@ -8,6 +8,8 @@ import type { SearchState } from '@/types/data-grid';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import * as React from 'react';
 
+import { cn } from '@/lib/utils';
+
 export const DataGridSearch = React.memo(DataGridSearchImpl, (prev, next) => {
     if (prev.searchOpen !== next.searchOpen) return false;
 
@@ -162,18 +164,20 @@ function DataGridSearchImpl({
             className='fade-in-0 slide-in-from-top-2 absolute end-4 top-4 z-50 flex animate-in flex-col gap-2 rounded-lg border bg-background p-2 shadow-lg'
         >
             <div className='flex items-center gap-2'>
-                <Input
-                    autoComplete='off'
-                    autoCorrect='off'
-                    autoCapitalize='off'
-                    spellCheck={false}
-                    placeholder='Find in table...'
-                    className='h-8 w-64'
-                    ref={inputRef}
-                    value={searchQuery}
-                    onChange={onChange}
-                    onKeyDown={onKeyDown}
-                />
+                <div className='w-64 shrink-0'>
+                    <Input
+                        autoComplete='off'
+                        autoCorrect='off'
+                        autoCapitalize='off'
+                        spellCheck={false}
+                        placeholder='Find in table...'
+                        className={cn('h-8 w-full min-w-0')}
+                        ref={inputRef}
+                        value={searchQuery}
+                        onChange={onChange}
+                        onKeyDown={onKeyDown}
+                    />
+                </div>
                 <div className='flex items-center gap-1'>
                     <Button
                         aria-label='Previous match'

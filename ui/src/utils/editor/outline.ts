@@ -46,7 +46,9 @@ export default function extractHeaderHierarchy(
     }
 
     for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
+        const raw = lines[i];
+        if (raw === undefined) continue;
+        const line = raw.trim();
 
         if (isHorizontalRule(line)) {
             pendingSeparator = true;
@@ -54,8 +56,12 @@ export default function extractHeaderHierarchy(
             const match = line.match(/^(#+)\s+(.*)$/);
             if (!match) continue;
 
-            const level = match[1].length;
-            const text = parseLink(match[2].trim());
+            const hashes = match[1];
+            const body = match[2];
+            if (hashes === undefined || body === undefined) continue;
+
+            const level = hashes.length;
+            const text = parseLink(body.trim());
 
             const node: HeaderNode = {
                 nodeName: text,
@@ -74,14 +80,19 @@ export default function extractHeaderHierarchy(
             headerFound = true;
             pendingSeparator = false;
 
-            while (stack.length > 0 && stack[stack.length - 1].level >= level) {
+            while (stack.length > 0) {
+                const top = stack[stack.length - 1];
+                if (!top || top.level < level) break;
                 stack.pop()!.node.endLine = i;
             }
 
             if (stack.length === 0) {
                 result.push(node);
             } else {
-                stack[stack.length - 1].node.children.push(node);
+                const parent = stack[stack.length - 1];
+                if (parent) {
+                    parent.node.children.push(node);
+                }
             }
 
             stack.push({ level, node });

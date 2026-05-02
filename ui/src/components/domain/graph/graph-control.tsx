@@ -1,11 +1,11 @@
-import { Input } from '@/components/ui/input';
+import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type RefObject, ComponentType, useMemo, useState } from 'react';
 import type Sigma from 'sigma';
 import ExplorerPanel from './explorer-panel';
 import GraphFilters from './graph-filters';
 import GraphSettings from './graph-settings';
-import { type Edge, type EdgeRelation, type Node } from './graphFilterUtils';
+import { type Edge, type EdgeRelation, type Node } from './graph-filter-utils';
 
 interface Entry {
     id: string;
@@ -132,11 +132,13 @@ export default function GraphControl({
                 {/* Graph Search - Only render when nodes are available */}
                 {nodes.length > 0 && (
                     <div className='px-4 mt-4 relative'>
-                        <Input
+                        <ActionBarSearch
                             placeholder='Search nodes...'
+                            name='graph-node-search'
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className='w-full'
+                            className='w-full min-w-0'
+                            onValueChange={setSearchQuery}
+                            onClear={() => setSearchQuery('')}
                         />
                         {searchQuery && searchResults.length > 0 && (
                             <ScrollArea className='absolute z-50 mt-1 w-full rounded-md border border-border bg-popover py-1 shadow-md max-h-48'>

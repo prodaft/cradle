@@ -2,8 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import * as z from 'zod';
 
-const EnrichmentRequests = lazy(
-    () => import('@/components/domain/enrichment/enrichment-requests'),
+const EnrichmentList = lazy(
+    () => import('@/components/domain/enrichment/enrichment-list'),
 );
 
 export const Route = createFileRoute('/_authenticated/enrichment/')({
@@ -15,5 +15,5 @@ export const Route = createFileRoute('/_authenticated/enrichment/')({
         user__username: z.string().optional(),
         status: z.string().optional(),
     }),
-    component: EnrichmentRequests,
+    component: EnrichmentList,
 });

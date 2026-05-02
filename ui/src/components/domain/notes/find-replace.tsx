@@ -16,6 +16,7 @@ import {
 import { EditorSelection } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { XIcon } from '@phosphor-icons/react';
+import { Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
     VscArrowDown,
@@ -214,13 +215,22 @@ export default function FindReplace({
                         <div className='flex flex-col gap-1'>
                             <div className='flex items-center gap-1 min-w-0'>
                                 <InputGroup className='flex-1 min-w-0 bg-muted'>
+                                    <InputGroupAddon
+                                        align='inline-start'
+                                        className='pr-0'
+                                    >
+                                        <Search
+                                            className='size-4 shrink-0 text-muted-foreground'
+                                            aria-hidden
+                                        />
+                                    </InputGroupAddon>
                                     <InputGroupInput
                                         type='text'
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         onKeyDown={handleKeyDown}
                                         placeholder='Find'
-                                        className='px-2 py-1.5'
+                                        className='min-w-0 px-2 py-1.5'
                                         autoFocus
                                     />
                                     <InputGroupAddon align='inline-end'>

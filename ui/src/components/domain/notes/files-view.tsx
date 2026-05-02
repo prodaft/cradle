@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { truncateText } from '@/utils/dashboard';
 import { DownloadSimpleIcon } from '@phosphor-icons/react';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
@@ -35,7 +36,13 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
         mutationFn: async ({ fileId }: DownloadVars) => {
             const { data, error, response } = await fetchClient.GET(
                 '/file-transfer/download/',
-                { params: { query: { file_id: fileId } } },
+                {
+                    params: {
+                        query: {
+                            file_id: fileId,
+                        } satisfies ApiQuery<'file_transfer_download_retrieve'>,
+                    },
+                },
             );
             if (error) throw { response, error };
             return data.presigned_url;

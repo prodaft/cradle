@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { useNdjsonQuery } from '@/hooks/query';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useQuery } from '@tanstack/react-query';
@@ -124,24 +125,25 @@ export default function SearchDialog({
                             query: {
                                 page: searchState.page,
                                 page_size: searchState.pageSize,
-                                query: trimmed ? [trimmed] : undefined,
+                                ...(trimmed ? { query: [trimmed] } : {}),
                                 wildcard: true,
-                            },
+                            } satisfies ApiQuery<'query_advanced_retrieve'>,
                         },
                     },
                 );
                 if (error) throw { response, error };
                 return data;
             }
+            const listQuery = {
+                page: searchState.page,
+                page_size: searchState.pageSize,
+                ...(trimmed ? { name: trimmed } : {}),
+                ...(searchState.filters.length > 0
+                    ? { subtype: searchState.filters }
+                    : {}),
+            } as ApiQuery<'query_list'>;
             const { data, error, response } = await fetchClient.GET('/query/', {
-                params: {
-                    query: {
-                        page: searchState.page,
-                        page_size: searchState.pageSize,
-                        name: trimmed || undefined,
-                        subtype: searchState.filters,
-                    } as any,
-                },
+                params: { query: listQuery },
             });
             if (error) throw { response, error };
             return data;

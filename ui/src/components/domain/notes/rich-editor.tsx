@@ -63,6 +63,7 @@ import {
 } from '@prosemark/core';
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
@@ -214,17 +215,20 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         // Parse dashboard URLs to extract params
         const dashboardMatch = url.match(/^\/dashboards\/([^/]+)\/([^/]+)\/?$/);
         if (dashboardMatch) {
-            const [, subtype, name] = dashboardMatch;
-            routerRef.current.navigate({
-                to: '/dashboards/$subtype/$name',
-                params: {
-                    subtype: decodeURIComponent(subtype),
-                    name: decodeURIComponent(name),
-                },
-            });
-        } else {
-            routerRef.current.navigate({ to: url as any });
+            const subtype = dashboardMatch[1];
+            const name = dashboardMatch[2];
+            if (subtype !== undefined && name !== undefined) {
+                routerRef.current.navigate({
+                    to: '/dashboards/$subtype/$name',
+                    params: {
+                        subtype: decodeURIComponent(subtype),
+                        name: decodeURIComponent(name),
+                    },
+                });
+                return;
+            }
         }
+        routerRef.current.navigate({ to: url as any });
     }, []);
     const editorRef = useRef<HTMLDivElement>(null);
     const editorViewRef = useRef<EditorView | null>(null);
@@ -316,7 +320,13 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         mutationFn: async (fileId: string) => {
             const { data, error, response } = await fetchClient.GET(
                 '/file-transfer/download/',
-                { params: { query: { file_id: fileId } } },
+                {
+                    params: {
+                        query: {
+                            file_id: fileId,
+                        } satisfies ApiQuery<'file_transfer_download_retrieve'>,
+                    },
+                },
             );
             if (error) throw { response, error };
             return {
@@ -433,6 +443,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     let hasText = false;
                     for (let i = 0; i < items.length; i++) {
                         const item = items[i];
+                        if (!item) continue;
                         if (item.kind === 'file') {
                             const file = item.getAsFile();
                             if (file) files.push(file);

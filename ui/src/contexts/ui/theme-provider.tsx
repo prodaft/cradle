@@ -10,6 +10,7 @@
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import type { ThemeConfig, ThemeContextValue } from '@/types/index';
 import { darkTheme, lightTheme } from '@/utils/themes';
+import type { ApiSchema } from '@services/openapi/api-query';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, {
@@ -112,7 +113,7 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
                 '/users/{user_id}/',
                 {
                     params: { path: { user_id: 'me' } },
-                    body: { theme } as any,
+                    body: { theme } satisfies ApiSchema<'PatchedUserUpdateRequest'>,
                 },
             );
             if (error) throw { response, error };

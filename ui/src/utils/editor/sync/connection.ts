@@ -4,8 +4,6 @@ import { ChangeSet } from '@codemirror/state';
 /** Thrown when {@link EditorSyncConnection.close} runs while a request is in flight. */
 export const EDITOR_SYNC_CONNECTION_CLOSED = 'Editor sync connection closed';
 
-const workerUrl = new URL('./authority.shared-worker.ts', import.meta.url);
-
 export type EditorSyncConnection = {
     getDocument(): Promise<{ version: number; doc: string }>;
     pushUpdates(version: number, updates: readonly Update[]): Promise<boolean>;
@@ -26,10 +24,13 @@ export function createNoteEditorSyncConnection(
     const sessionKey = `cradle-note-editor-sync:${noteId}`;
     let worker: SharedWorker;
     try {
-        worker = new SharedWorker(workerUrl, {
-            type: 'module',
-            name: 'cradle-note-editor-sync',
-        });
+        worker = new SharedWorker(
+            new URL('./authority.shared-worker.ts', import.meta.url),
+            {
+                type: 'module',
+                name: 'cradle-note-editor-sync',
+            },
+        );
     } catch {
         return null;
     }

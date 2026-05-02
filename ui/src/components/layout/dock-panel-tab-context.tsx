@@ -97,13 +97,16 @@ export function DockPanelTabProvider({
 }
 
 /** Sets the dock panel tab metadata while this route is mounted (in-app dock tabs). */
-export function useDockPanelTab(metadata: DockPanelTabMetadata): void {
+export function useDockPanelTab(
+    metadata: DockPanelTabMetadata,
+    enabled: boolean = true,
+): void {
     const setMetadata = useContext(DockPanelTabContext);
     const { icon, title } = metadata;
     useEffect(() => {
-        if (!setMetadata) {
+        if (!setMetadata || !enabled) {
             return;
         }
         setMetadata({ icon, title });
-    }, [icon, setMetadata, title]);
+    }, [enabled, icon, setMetadata, title]);
 }

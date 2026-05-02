@@ -9,6 +9,7 @@ import {
 import { linter, type Diagnostic } from '@codemirror/lint';
 import type { EditorState } from '@codemirror/state';
 import type { MarkdownExtension } from '@lezer/markdown';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import dayjs from 'dayjs';
@@ -218,7 +219,7 @@ export class CradleEditor {
                                                     query: {
                                                         type: entryClass.subtype,
                                                         prefix: x,
-                                                    },
+                                                    } satisfies ApiQuery<'lsp_trie_retrieve'>,
                                                 },
                                             });
                                             if (trieError) return {};
@@ -266,8 +267,9 @@ export class CradleEditor {
                 for (const entryClass of Object.values(this.entryClasses ?? {})) {
                     if (!entryClass.format || entryClass.type !== 'entity') continue;
                     if (!this.tries) continue;
-                    if (!this.tries[entryClass.subtype]) continue;
-                    bigTrie.merge(this.tries[entryClass.subtype]);
+                    const subTrie = this.tries[entryClass.subtype];
+                    if (!subTrie) continue;
+                    bigTrie.merge(subTrie);
                 }
                 this.bigTrie = bigTrie;
                 CradleEditor.cachedBigTrie = bigTrie;
@@ -444,7 +446,8 @@ export class CradleEditor {
 
         for (let i = 0; i < text.length; i++) {
             // Only start a match if this position is a word (or line) boundary.
-            if (i > 0 && /\w/.test(text[i - 1])) {
+            const prev = i > 0 ? text[i - 1] : undefined;
+            if (prev !== undefined && /\w/.test(prev)) {
                 continue; // Not at the beginning of a word.
             }
 
@@ -452,11 +455,16 @@ export class CradleEditor {
             let j = i;
             while (j < text.length) {
                 const char = text[j];
+                if (char === undefined) break;
                 if (!currentNode.children[char]) break;
                 currentNode = currentNode.children[char];
                 if (currentNode.eow && currentNode.data) {
                     // Only consider this match if it ends at a word (or line) boundary.
-                    if (j + 1 === text.length || !/\w/.test(text[j + 1])) {
+                    const next = text[j + 1];
+                    if (
+                        j + 1 === text.length ||
+                        (next !== undefined && !/\w/.test(next))
+                    ) {
                         const word = text.substring(i, j + 1);
                         for (const type of currentNode.data) {
                             const key = `${type}:${word}@${i}`;
@@ -943,14 +951,18 @@ export class CradleEditor {
                     const valueNode = node.getChildren('CradleLinkValue');
                     if (!typeNode || !valueNode) return true;
 
-                    const type = text.slice(typeNode[0].from, typeNode[0].to);
-                    const value = text.slice(valueNode[0].from, valueNode[0].to);
+                    const t0 = typeNode[0];
+                    const v0 = valueNode[0];
+                    if (!t0 || !v0) return true;
+
+                    const type = text.slice(t0.from, t0.to);
+                    const value = text.slice(v0.from, v0.to);
 
                     entries.push({
                         type,
                         value,
-                        from: typeNode[0].from,
-                        to: valueNode[0].to,
+                        from: t0.from,
+                        to: v0.to,
                     });
                     return true;
                 }
@@ -960,7 +972,8 @@ export class CradleEditor {
         const artifacts: Array<{ type: string; value: string }> = [];
         const entities: Array<{ type: string; value: string }> = [];
         for (const entry of entries) {
-            if (this.entryClasses?.[entry.type].type === 'entity') {
+            const ec = this.entryClasses[entry.type];
+            if (ec?.type === 'entity') {
                 entities.push(entry);
             } else {
                 if (entry.from < start || entry.to > end) continue;

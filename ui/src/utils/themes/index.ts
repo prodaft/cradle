@@ -128,4 +128,10 @@ export const PRESET_THEMES: PresetTheme[] = [
     },
 ];
 
+const defaultPresetCandidate = PRESET_THEMES[0];
+if (defaultPresetCandidate === undefined) {
+    throw new Error('PRESET_THEMES must contain at least one preset');
+}
+export const DEFAULT_PRESET: PresetTheme = defaultPresetCandidate;
+
 export { darkTheme, lightTheme };

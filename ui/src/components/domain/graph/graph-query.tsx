@@ -3,7 +3,7 @@ import { XIcon } from 'lucide-react';
 import { type RefObject, ComponentType } from 'react';
 import type Sigma from 'sigma';
 import GraphControl from './graph-control';
-import { type Edge, type EdgeRelation, type Node } from './graphFilterUtils';
+import { type Edge, type EdgeRelation, type Node } from './graph-filter-utils';
 
 interface Entry {
     id: string;

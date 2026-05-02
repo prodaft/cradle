@@ -29,6 +29,7 @@
         "strictPropertyInitialization": true,
         "noImplicitThis": true,
         "alwaysStrict": true,
+        "noUncheckedIndexedAccess": true,
 
         "paths": {
             "@/*": ["./src/*"],

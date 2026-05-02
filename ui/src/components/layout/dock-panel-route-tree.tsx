@@ -3,6 +3,7 @@ import Dashboard from '@/components/domain/dashboard/dashboard';
 import KnowledgeGraphSearch from '@/components/domain/graph/knowledge-graph-search';
 import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
+import type { ApiQuery } from '@/services/openapi/api-query';
 import { fetchClient } from '@/services/openapi/client';
 import { isAdmin, isEntryManager } from '@/utils/auth';
 import {
@@ -18,12 +19,12 @@ import * as z from 'zod';
 const AccountSettings = lazy(
     () => import('@/components/domain/user/account-settings-page'),
 );
-const DigestData = lazy(() => import('@/components/domain/digests/digest-data'));
+const DigestsList = lazy(() => import('@/components/domain/digests/digests-list'));
 const EnrichmentLayout = lazy(
     () => import('@/components/domain/enrichment/enrichment-layout'),
 );
-const EnrichmentRequests = lazy(
-    () => import('@/components/domain/enrichment/enrichment-requests'),
+const EnrichmentList = lazy(
+    () => import('@/components/domain/enrichment/enrichment-list'),
 );
 const EnrichmentResults = lazy(
     () => import('@/components/domain/enrichment/enrichment-results'),
@@ -31,34 +32,34 @@ const EnrichmentResults = lazy(
 const FilesList = lazy(() => import('@/components/domain/files/files-list'));
 const GraphExplorer = lazy(() => import('@/components/domain/graph/graph-explorer'));
 const NotesLayout = lazy(() => import('@/components/domain/notes/notes-layout'));
-const NotesListPage = lazy(() => import('@/components/domain/notes/notes-list-page'));
+const NotesList = lazy(() => import('@/components/domain/notes/notes-list'));
 const NoteViewer = lazy(() => import('@/components/domain/notes/note-viewer'));
-const Reports = lazy(() => import('@/components/domain/reports/report-list'));
+const ReportsList = lazy(() => import('@/components/domain/reports/reports-list'));
 
-const EnrichmentPage = lazy(
-    () => import('@/components/domain/admin/enrichment/enrichment-page'),
+const ManageEnrichmentList = lazy(
+    () => import('@/components/domain/manage/enrichment/manage-enrichment-list'),
 );
-const EntitiesPage = lazy(
-    () => import('@/components/domain/admin/entity/entities-page'),
+const EntitiesList = lazy(
+    () => import('@/components/domain/manage/entity/entities-list'),
 );
 const EntitySettingsPage = lazy(
-    () => import('@/components/domain/admin/entity/entity-settings-page'),
+    () => import('@/components/domain/manage/entity/entity-settings-page'),
 );
-const EntryTypesPage = lazy(
-    () => import('@/components/domain/admin/entry-type/entry-types-page'),
+const EntryTypesList = lazy(
+    () => import('@/components/domain/manage/entry-type/entry-types-list'),
 );
 const EntryTypeSettingsPage = lazy(
-    () => import('@/components/domain/admin/entry-type/entry-type-settings-page'),
+    () => import('@/components/domain/manage/entry-type/entry-type-settings-page'),
 );
-const SettingsPage = lazy(
-    () => import('@/components/domain/admin/settings/admin-settings-page'),
+const ManageSettingsPage = lazy(
+    () => import('@/components/domain/manage/settings/manage-settings-page'),
 );
-const TypeMappingsPage = lazy(
-    () => import('@/components/domain/admin/type-mappings/type-mappings-page'),
+const TypeMappingsList = lazy(
+    () => import('@/components/domain/manage/type-mappings/type-mappings-list'),
 );
-const UsersPage = lazy(() => import('@/components/domain/admin/user/users-page'));
+const UsersList = lazy(() => import('@/components/domain/manage/user/users-list'));
 const UserSettingsPage = lazy(
-    () => import('@/components/domain/admin/user/user-settings-page'),
+    () => import('@/components/domain/manage/user/user-settings-page'),
 );
 
 const tabSearch = z.object({
@@ -176,7 +177,7 @@ const notesRoute = createRoute({
 const notesIndexRoute = createRoute({
     getParentRoute: () => notesRoute,
     path: '/',
-    component: NotesListPage,
+    component: NotesList,
 });
 
 const noteRoute = createRoute({
@@ -190,7 +191,7 @@ const reportsRoute = createRoute({
     getParentRoute: () => authenticatedRoute,
     path: 'reports',
     validateSearch: reportsSearch,
-    component: Reports,
+    component: ReportsList,
 });
 
 const filesRoute = createRoute({
@@ -204,7 +205,7 @@ const digestDataRoute = createRoute({
     getParentRoute: () => authenticatedRoute,
     path: 'digest-data',
     validateSearch: digestDataSearch,
-    component: DigestData,
+    component: DigestsList,
 });
 
 const settingsRoute = createRoute({
@@ -235,7 +236,7 @@ const enrichmentIndexRoute = createRoute({
     getParentRoute: () => enrichmentRoute,
     path: '/',
     validateSearch: enrichmentRequestsSearch,
-    component: EnrichmentRequests,
+    component: EnrichmentList,
 });
 
 const enrichmentResultRoute = createRoute({
@@ -264,7 +265,7 @@ const dashboardRoute = createRoute({
                     query: {
                         subtype,
                         name_exact: name,
-                    },
+                    } satisfies ApiQuery<'query_list'>,
                 },
             });
 
@@ -332,7 +333,7 @@ const usersIndexRoute = createRoute({
     getParentRoute: () => usersRoute,
     path: '/',
     validateSearch: usersSearch,
-    component: UsersPage,
+    component: UsersList,
 });
 
 const userRoute = createRoute({
@@ -352,7 +353,7 @@ const entitiesIndexRoute = createRoute({
     getParentRoute: () => entitiesRoute,
     path: '/',
     validateSearch: entitiesSearch,
-    component: EntitiesPage,
+    component: EntitiesList,
 });
 
 const entityRoute = createRoute({
@@ -372,7 +373,7 @@ const entryTypesIndexRoute = createRoute({
     getParentRoute: () => entryTypesRoute,
     path: '/',
     validateSearch: entryTypesSearch,
-    component: EntryTypesPage,
+    component: EntryTypesList,
 });
 
 const entryTypeRoute = createRoute({
@@ -386,21 +387,21 @@ const typeMappingsRoute = createRoute({
     getParentRoute: () => manageAuthRoute,
     path: 'type-mappings',
     validateSearch: tabSearch,
-    component: TypeMappingsPage,
+    component: TypeMappingsList,
 });
 
-const adminSettingsRoute = createRoute({
+const manageSettingsRoute = createRoute({
     getParentRoute: () => manageAuthRoute,
     path: 'settings',
     validateSearch: tabSearch,
-    component: SettingsPage,
+    component: ManageSettingsPage,
 });
 
 const adminEnrichmentRoute = createRoute({
     getParentRoute: () => manageAuthRoute,
     path: 'enrichment',
     validateSearch: tabSearch,
-    component: EnrichmentPage,
+    component: ManageEnrichmentList,
 });
 
 const notFoundRoute = createRoute({
@@ -427,7 +428,7 @@ export const panelRouteTree = rootRoute.addChildren([
                 entitiesRoute.addChildren([entitiesIndexRoute, entityRoute]),
                 entryTypesRoute.addChildren([entryTypesIndexRoute, entryTypeRoute]),
                 typeMappingsRoute,
-                adminSettingsRoute,
+                manageSettingsRoute,
                 adminEnrichmentRoute,
             ]),
         ]),

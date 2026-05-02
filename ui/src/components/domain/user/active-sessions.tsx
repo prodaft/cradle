@@ -26,6 +26,7 @@ import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useAuthActions } from '@/hooks/auth/use-auth';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { TrashIcon } from '@phosphor-icons/react';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -95,17 +96,25 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     }, [sorting]);
 
     // Query for sessions (paginated)
-    const sessionsInit = {
-        params: {
-            path: { user_id: userId },
-            query: {
-                search: searchQuery || undefined,
-                order_by: orderByParam,
-                page,
-                page_size: pageSize,
-            } as any,
-        },
-    };
+    const sessionsQuery = useMemo((): ApiQuery<'users_sessions_list'> => {
+        const q: ApiQuery<'users_sessions_list'> = {
+            page,
+            page_size: pageSize,
+        };
+        if (searchQuery) q.search = searchQuery;
+        if (orderByParam) q.order_by = orderByParam;
+        return q;
+    }, [searchQuery, orderByParam, page, pageSize]);
+
+    const sessionsInit = useMemo(
+        () => ({
+            params: {
+                path: { user_id: userId },
+                query: sessionsQuery,
+            },
+        }),
+        [userId, sessionsQuery],
+    );
     const { data: sessionsResponse, isPending } = $api.useQuery(
         'get',
         '/users/{user_id}/sessions/',
@@ -496,6 +505,10 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     }}
                     onSubmit={(v) => {
                         setSearchQuery(v);
+                        handlePageChange(1);
+                    }}
+                    onClear={() => {
+                        setSearchQuery('');
                         handlePageChange(1);
                     }}
                 />

@@ -12,6 +12,7 @@ import {
     WarningCircleIcon,
     type IconWeight,
 } from '@phosphor-icons/react';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -185,7 +186,9 @@ export default function NotificationCard({
             const { data, error, response } = await fetchClient.GET('/reports/{id}/', {
                 params: {
                     path: { id: reportId },
-                    query: { download_url: false },
+                    query: {
+                        download_url: false,
+                    } satisfies ApiQuery<'reports_retrieve'>,
                 },
             });
             if (error) throw { response, error };

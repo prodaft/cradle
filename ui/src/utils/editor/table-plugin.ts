@@ -45,8 +45,8 @@ function cradleLinksPlugin(
         }
 
         if (!silent) {
-            const linkType = match[1];
-            const value = match[2];
+            const linkType = match[1]!;
+            const value = match[2]!;
             const alias = match[3];
             const timestamp = match[4];
             const color = entryColors.get(linkType) || 'var(--pm-link-color)';
@@ -62,7 +62,14 @@ function cradleLinksPlugin(
     // Renderer for cradle links
     md.renderer.rules.cradle_link = (tokens, idx) => {
         const token = tokens[idx];
-        const { linkType, value, alias, timestamp, color } = token.meta;
+        if (!token?.meta) return '';
+        const { linkType, value, alias, timestamp, color } = token.meta as {
+            linkType: string;
+            value: string;
+            alias?: string;
+            timestamp?: string;
+            color: string;
+        };
         const displayText = alias || value;
         const url = `/dashboards/${encodeURIComponent(linkType)}/${encodeURIComponent(value)}/`;
 
@@ -119,17 +126,19 @@ class TableWidget extends WidgetType {
             return false;
         }
         for (let i = 0; i < this.alignments.length; i++) {
-            if (this.alignments[i] !== other.alignments[i]) return false;
+            if ((this.alignments[i] ?? null) !== (other.alignments[i] ?? null))
+                return false;
         }
         for (let i = 0; i < this.headers.length; i++) {
-            if (this.headers[i] !== other.headers[i]) return false;
+            if ((this.headers[i] ?? null) !== (other.headers[i] ?? null)) return false;
         }
         for (let i = 0; i < this.rows.length; i++) {
             const a = this.rows[i];
             const b = other.rows[i];
+            if (a === undefined || b === undefined) return false;
             if (a.length !== b.length) return false;
             for (let j = 0; j < a.length; j++) {
-                if (a[j] !== b[j]) return false;
+                if ((a[j] ?? null) !== (b[j] ?? null)) return false;
             }
         }
         return true;
@@ -256,21 +265,24 @@ function parseTable(text: string): {
 
     if (lines.length < 2) return null;
 
-    // Parse header
     const headerLine = lines[0];
+    const delimiterLine = lines[1];
+    if (headerLine === undefined || delimiterLine === undefined) return null;
+
     const headers = headerLine
         .split('|')
         .filter((h) => h.trim())
         .map((h) => h.trim());
 
     // Parse alignment from delimiter row
-    const delimiterLine = lines[1];
     const alignments = parseAlignment(delimiterLine);
 
     // Parse body rows
     const rows: string[][] = [];
     for (let i = 2; i < lines.length; i++) {
-        const cells = lines[i]
+        const line = lines[i];
+        if (line === undefined) continue;
+        const cells = line
             .split('|')
             .filter((c) => c.trim())
             .map((c) => c.trim());

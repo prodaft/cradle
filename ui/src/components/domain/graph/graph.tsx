@@ -38,7 +38,7 @@ import {
 } from 'react-icons/ai';
 import { MdFilterCenterFocus } from 'react-icons/md';
 import type Sigma from 'sigma';
-import { Edge, Node } from './graphFilterUtils';
+import { Edge, Node } from './graph-filter-utils';
 
 interface GraphConfig {
     nodeRadiusCoefficient?: number;

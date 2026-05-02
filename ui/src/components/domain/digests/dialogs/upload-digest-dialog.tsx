@@ -33,6 +33,7 @@ import { queryKeys } from '@/hooks/query';
 import { uploadFile } from '@/utils/files';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import React, { useEffect } from 'react';
@@ -130,13 +131,21 @@ export default function UploadDigestDialog({
     const uploadMutation = useMutation({
         mutationFn: async (values: FormValues) => {
             const file = values.files[0];
+            if (!file) {
+                throw new Error('No file selected');
+            }
 
             const {
                 data: initiateData,
                 error: initError,
                 response: initResponse,
             } = await fetchClient.GET('/intelio/digest/upload/', {
-                params: { query: { file_name: file.name, file_size: file.size } },
+                params: {
+                    query: {
+                        file_name: file.name,
+                        file_size: file.size,
+                    } satisfies ApiQuery<'intelio_digest_upload_retrieve'>,
+                },
             });
             if (initError) throw { response: initResponse, error: initError };
 
@@ -463,7 +472,7 @@ export default function UploadDigestDialog({
                                                                     query: {
                                                                         name: query,
                                                                         type: 'entity',
-                                                                    } as any,
+                                                                    } satisfies ApiQuery<'query_list'>,
                                                                 },
                                                             },
                                                         );

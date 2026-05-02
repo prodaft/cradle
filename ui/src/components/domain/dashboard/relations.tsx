@@ -1,3 +1,4 @@
+import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import { TableSkeleton } from '@/components/base/table-skeleton';
 import {
     ActionBar,
@@ -32,7 +33,6 @@ import {
     CommandList,
     CommandSeparator,
 } from '@/components/ui/command';
-import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -41,6 +41,7 @@ import { useNdjsonQuery } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { createDashboardLink } from '@/utils/dashboard';
 import { CaretDownIcon, CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -95,7 +96,7 @@ function ExpandedRowContent({
                         query: {
                             src: srcId,
                             dsts: [result.id!],
-                        },
+                        } satisfies ApiQuery<'knowledge_graph_paths_retrieve'>,
                     },
                 },
             );
@@ -145,7 +146,8 @@ function ExpandedRowContent({
 
         while (queue.length > 0) {
             const path = queue.shift()!;
-            const curr = path[path.length - 1];
+            const curr = path.at(-1);
+            if (curr === undefined) continue;
 
             if (curr === result.id) {
                 foundPath = path;
@@ -579,12 +581,11 @@ export default function Relations({ obj }: RelationsProps) {
                             depth,
                             page,
                             page_size: pageSize,
-                            name: searchQuery ? [searchQuery] : undefined,
-                            subtype:
-                                entrySubtypeFilters.length > 0
-                                    ? entrySubtypeFilters
-                                    : undefined,
-                        },
+                            ...(searchQuery ? { name: [searchQuery] } : {}),
+                            ...(entrySubtypeFilters.length > 0
+                                ? { subtype: entrySubtypeFilters }
+                                : {}),
+                        } satisfies ApiQuery<'knowledge_graph_neighbors_retrieve'>,
                     },
                 },
             );
@@ -619,7 +620,7 @@ export default function Relations({ obj }: RelationsProps) {
                         query: {
                             src: obj.id!,
                             depth,
-                        },
+                        } satisfies ApiQuery<'knowledge_graph_inaccessible_retrieve'>,
                     },
                 },
             );
@@ -919,14 +920,22 @@ export default function Relations({ obj }: RelationsProps) {
                     </ActionBar>
                 }
             >
-                <Input
+                <ActionBarSearch
                     placeholder='Search relations...'
                     value={searchQuery}
-                    onChange={(e) => {
-                        setSearchQuery(e.target.value);
+                    debounceMs={300}
+                    onDebouncedChange={(v) => {
+                        setSearchQuery(v);
                         setPage(1);
                     }}
-                    className='h-8 w-40 lg:w-56'
+                    onSubmit={(v) => {
+                        setSearchQuery(v);
+                        setPage(1);
+                    }}
+                    onClear={() => {
+                        setSearchQuery('');
+                        setPage(1);
+                    }}
                 />
                 <SubtypeFilter
                     options={entrySubtypes}

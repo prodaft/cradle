@@ -2,8 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import * as z from 'zod';
 
-const EntryTypesPage = lazy(
-    () => import('@/components/domain/admin/entry-type/entry-types-page'),
+const EntryTypesList = lazy(
+    () => import('@/components/domain/manage/entry-type/entry-types-list'),
 );
 
 export const Route = createFileRoute(
@@ -14,5 +14,5 @@ export const Route = createFileRoute(
         entry_types_pagesize: z.coerce.number().optional(),
         entry_types_search: z.string().optional(),
     }),
-    component: EntryTypesPage,
+    component: EntryTypesList,
 });

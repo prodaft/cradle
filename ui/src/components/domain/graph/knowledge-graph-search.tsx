@@ -8,7 +8,7 @@ import { WarningCircleIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useQuery } from '@tanstack/react-query';
-import { Node } from './graphFilterUtils';
+import { Node } from './graph-filter-utils';
 
 type EdgeRelation = components['schemas']['EdgeRelation'];
 

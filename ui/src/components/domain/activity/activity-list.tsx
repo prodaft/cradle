@@ -1,3 +1,4 @@
+import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import type { DateRangeFilter } from '@/components/base/list-view/types';
 import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/custom/data-table/data-table';
@@ -11,13 +12,13 @@ import {
     CommandItem,
     CommandList,
 } from '@/components/ui/command';
-import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { CaretDownIcon, GitForkIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
+import { CaretDownIcon, GitForkIcon } from '@phosphor-icons/react';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { $api } from '@services/openapi/client';
 import { useParams } from '@tanstack/react-router';
 import {
@@ -33,6 +34,8 @@ import { diff_match_patch } from 'diff-match-patch';
 import { Check, PlusCircle, XCircle } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import OfflineIndicator from '../../feedback/offline-indicator';
+
+type EventLogsListQuery = ApiQuery<'event_logs_list'>;
 
 interface SearchFilters {
     username: string;
@@ -230,7 +233,9 @@ const formatObjectRepr = (
 
     const angleMatch = repr.match(/^<(\w+):([^>]+)>$/);
     if (angleMatch) {
-        return { text: angleMatch[1], fullId: angleMatch[2], isDeleted: false };
+        const text = angleMatch[1] ?? '';
+        const fullId = angleMatch[2] ?? '';
+        return { text, fullId, isDeleted: false };
     }
 
     return { text: repr, fullId: objectId, isDeleted: false };
@@ -392,21 +397,26 @@ export default function ActivityList({
         setPage(1);
     }, [effectiveUsername, content_type, objectId]);
 
-    const queryParams = useMemo(
-        () => ({
-            page,
-            page_size: pageSize,
-            username: filters.username || undefined,
-            start_date: filters.dateRange.from || undefined,
-            end_date: filters.dateRange.to || undefined,
-            type: (EVENT_TYPE_OPTIONS.some((o) => o.value === filters.type)
-                ? filters.type
-                : undefined) as EventType | undefined,
-            content_type: filters.content_type || undefined,
-            object_id: filters.object_id || undefined,
-        }),
-        [page, pageSize, filters],
-    );
+    const queryParams = useMemo((): EventLogsListQuery => {
+        const type: EventLogsListQuery['type'] | undefined = EVENT_TYPE_OPTIONS.some(
+            (o) => o.value === filters.type,
+        )
+            ? (filters.type as EventLogsListQuery['type'])
+            : undefined;
+
+        return Object.fromEntries(
+            Object.entries({
+                page,
+                page_size: pageSize,
+                username: filters.username || undefined,
+                start_date: filters.dateRange.from || undefined,
+                end_date: filters.dateRange.to || undefined,
+                type,
+                content_type: filters.content_type || undefined,
+                object_id: filters.object_id || undefined,
+            }).filter(([, v]) => v !== undefined),
+        ) as EventLogsListQuery;
+    }, [page, pageSize, filters]);
 
     const {
         data: logsData,
@@ -673,19 +683,15 @@ export default function ActivityList({
                 renderSubRow={renderSubRow}
                 emptyMessage='No event logs found.'
             >
-                <div className='relative w-[200px]'>
-                    <MagnifyingGlassIcon className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
-                    <Input
-                        type='text'
-                        name='username'
-                        value={filters.username}
-                        onChange={(e) =>
-                            handleFilterChange({ username: e.target.value })
-                        }
-                        placeholder='Search by username...'
-                        className='pl-9 h-8'
-                    />
-                </div>
+                <ActionBarSearch
+                    placeholder='Search by username...'
+                    name='username'
+                    value={filters.username}
+                    debounceMs={300}
+                    onDebouncedChange={(username) => handleFilterChange({ username })}
+                    onSubmit={(username) => handleFilterChange({ username })}
+                    onClear={() => handleFilterChange({ username: '' })}
+                />
                 <DateRangeFilterButton
                     title='Date'
                     value={filters.dateRange}

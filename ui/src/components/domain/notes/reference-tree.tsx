@@ -8,6 +8,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Entry, NoteRetrieve } from '@/types';
 import { createDashboardLink, SubtypeHierarchy, truncateText } from '@/utils/dashboard';
 import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -51,7 +52,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                         subtype: path,
                         referenced_in: noteId,
                         page,
-                    } as any,
+                    } satisfies ApiQuery<'query_list'>,
                 },
             });
             if (error) throw { response, error };

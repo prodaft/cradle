@@ -1,3 +1,4 @@
+import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import Pagination from '@/components/base/pagination/pagination';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +10,6 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Input } from '@/components/ui/input';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -35,6 +35,7 @@ import {
     WarningCircleIcon,
     WarningIcon,
 } from '@phosphor-icons/react';
+import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 
@@ -52,7 +53,7 @@ import {
 } from '@tanstack/react-table';
 import JsonView from '@uiw/react-json-view';
 import { format } from 'date-fns';
-import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 
 interface EntryLabel {
     subtype: string;
@@ -300,24 +301,6 @@ export default function EnrichmentResults() {
     const [selectedArtifacts, setSelectedArtifacts] = useState<Set<number>>(new Set());
     const [artifactColumnVisibility, setArtifactColumnVisibility] =
         useState<VisibilityState>({});
-    const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    /** Debounced server-side search via relations `search` query param. */
-    useEffect(() => {
-        if (searchDebounceRef.current) {
-            clearTimeout(searchDebounceRef.current);
-        }
-        searchDebounceRef.current = setTimeout(() => {
-            searchDebounceRef.current = null;
-            setSearchParams((prev) => (prev === searchInput ? prev : searchInput));
-        }, 350);
-        return () => {
-            if (searchDebounceRef.current) {
-                clearTimeout(searchDebounceRef.current);
-                searchDebounceRef.current = null;
-            }
-        };
-    }, [searchInput]);
 
     useEffect(() => {
         setPage(1);
@@ -418,8 +401,10 @@ export default function EnrichmentResults() {
                             entry_id: selectedArtifactId!,
                             page,
                             page_size: pageSize,
-                            search: searchParams.trim() || undefined,
-                        },
+                            ...(searchParams.trim()
+                                ? { search: searchParams.trim() }
+                                : {}),
+                        } satisfies ApiQuery<'enrichment_relations_retrieve'>,
                     },
                 },
             );
@@ -475,23 +460,6 @@ export default function EnrichmentResults() {
         artifactsViewTable.getColumn('enricher')?.getIsVisible() ?? true;
     const showArtifactCol =
         artifactsViewTable.getColumn('artifact')?.getIsVisible() ?? true;
-
-    /** Apply search immediately (Enter) and cancel pending debounce. */
-    const flushSearchToServer = () => {
-        if (searchDebounceRef.current) {
-            clearTimeout(searchDebounceRef.current);
-            searchDebounceRef.current = null;
-        }
-        setSearchParams(searchInput);
-        setPage(1);
-    };
-
-    const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            flushSearchToServer();
-        }
-    };
 
     const getStatusIcon = (status?: string) => {
         if (!status) return null;
@@ -767,14 +735,26 @@ export default function EnrichmentResults() {
                                     className='flex w-full shrink-0 items-start justify-between gap-2 py-1'
                                 >
                                     <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
-                                        <Input
+                                        <ActionBarSearch
                                             placeholder='Search relations...'
+                                            name='relations-search'
                                             value={searchInput}
-                                            onChange={(e) =>
-                                                setSearchInput(e.target.value)
+                                            debounceMs={300}
+                                            className='w-full min-w-0'
+                                            onValueChange={setSearchInput}
+                                            onDebouncedChange={(v) =>
+                                                setSearchParams((prev) =>
+                                                    prev === v ? prev : v,
+                                                )
                                             }
-                                            onKeyDown={handleSearchKeyPress}
-                                            className='h-8 w-40 lg:w-56'
+                                            onSubmit={(v) => {
+                                                setSearchParams(v);
+                                                setPage(1);
+                                            }}
+                                            onClear={() => {
+                                                setSearchParams('');
+                                                setPage(1);
+                                            }}
                                         />
                                     </div>
                                     <div className='flex shrink-0 items-center gap-2'>

@@ -58,7 +58,8 @@ function removeStorageItem(key: string): void {
 function getCsrfToken(): string | null {
     if (typeof document === 'undefined') return null;
     const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
-    return match ? decodeURIComponent(match[1]) : null;
+    const captured = match?.[1];
+    return captured !== undefined ? decodeURIComponent(captured) : null;
 }
 
 const AuthResult = {
@@ -192,13 +193,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 try {
                     const tokenParts = data.access.split('.');
                     if (tokenParts.length === 3) {
-                        const payload = JSON.parse(
-                            atob(tokenParts[1].replace(/-/g, '+').replace(/_/g, '/')),
-                        );
-                        const extractedUserId = payload.user_id || payload.sub || null;
-                        if (extractedUserId) {
-                            setStorageItem('user_id', extractedUserId);
-                            setUserId(extractedUserId);
+                        const payloadPart = tokenParts[1];
+                        if (payloadPart !== undefined) {
+                            const payload = JSON.parse(
+                                atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')),
+                            );
+                            const extractedUserId =
+                                payload.user_id || payload.sub || null;
+                            if (extractedUserId) {
+                                setStorageItem('user_id', extractedUserId);
+                                setUserId(extractedUserId);
+                            }
                         }
                     }
                 } catch {
@@ -278,7 +283,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const logOut = useCallback(async () => {
         try {
-            await fetchClient.POST('/auth/logout/' as any, {
+            await fetchClient.POST('/auth/logout/', {
                 headers: {
                     'X-CSRFToken': getCsrfToken() ?? '',
                 },

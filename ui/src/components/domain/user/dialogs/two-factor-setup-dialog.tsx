@@ -19,6 +19,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Spinner } from '@/components/ui/spinner';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { CopyIcon, QrCodeIcon } from '@phosphor-icons/react';
+import type { ApiSchema } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import { useQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
@@ -117,7 +118,9 @@ export default function TwoFactorSetupDialog({
                     const { error, response } = await fetchClient.POST(
                         '/users/2fa/disable/',
                         {
-                            body: { token: verificationCode } as any,
+                            body: {
+                                token: verificationCode,
+                            } satisfies ApiSchema<'Verify2FARequest'>,
                         },
                     );
                     if (error) throw { response, error };
@@ -125,7 +128,9 @@ export default function TwoFactorSetupDialog({
                     const { error, response } = await fetchClient.POST(
                         '/users/2fa/verify/',
                         {
-                            body: { token: verificationCode } as any,
+                            body: {
+                                token: verificationCode,
+                            } satisfies ApiSchema<'Verify2FARequest'>,
                         },
                     );
                     if (error) throw { response, error };

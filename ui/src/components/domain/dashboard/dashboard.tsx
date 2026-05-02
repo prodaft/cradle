@@ -13,9 +13,9 @@ import {
 import { FileText, FolderOpen, History, Share2 } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import ActivityList from '../activity/activity-list';
-import DashboardEnrichmentRequests from './enrichment';
-import Files from './files';
-import Notes from './notes';
+import EnrichmentList from '../enrichment/enrichment-list';
+import FilesList from '../files/files-list';
+import NotesList from '../notes/notes-list';
 import Relations from './relations';
 
 type EntryResponse = components['schemas']['EntryResponse'];
@@ -45,7 +45,7 @@ export default function Dashboard() {
         select: (state) => state.location,
     });
     const dashboard = useRef<HTMLDivElement>(null);
-    const tab = search.tab ?? DASHBOARD_ITEMS[0].id;
+    const tab = search.tab ?? DASHBOARD_ITEMS[0]?.id ?? 'notes';
 
     const handleTabChange = (tabId: string) => {
         router.navigate({
@@ -113,13 +113,24 @@ export default function Dashboard() {
                                 </TabsList>
                             </Tabs>
                             <ScrollArea className='faded-bottom h-full w-full pb-12'>
-                                {tab === 'notes' && <Notes obj={contentObject} />}
+                                {tab === 'notes' && (
+                                    <NotesList
+                                        hidePageHeader
+                                        linkedToEntryId={contentObject.id}
+                                    />
+                                )}
                                 {tab === 'relations' && (
                                     <Relations obj={contentObject} />
                                 )}
-                                {tab === 'files' && <Files obj={contentObject} />}
+                                {tab === 'files' && (
+                                    <FilesList
+                                        hidePageHeader
+                                        query={{ linked_to: contentObject.id }}
+                                    />
+                                )}
                                 {tab === 'enrichment' && (
-                                    <DashboardEnrichmentRequests
+                                    <EnrichmentList
+                                        hidePageHeader
                                         entryId={contentObject.id}
                                     />
                                 )}

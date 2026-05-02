@@ -8,7 +8,7 @@ import { ComponentType, Suspense, useCallback, useMemo, useRef, useState } from 
 import type Sigma from 'sigma';
 import Graph from './graph';
 import GraphQuery from './graph-query';
-import { type EdgeRelation, filterGraph, type Node } from './graphFilterUtils';
+import { type EdgeRelation, filterGraph, type Node } from './graph-filter-utils';
 
 interface GraphConfig {
     nodeRadiusCoefficient: number;

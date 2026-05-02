@@ -18,7 +18,8 @@ const AUTH_PATHS = [
 function getCsrfToken(): string | null {
     if (typeof document === 'undefined') return null;
     const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
-    return match ? decodeURIComponent(match[1]) : null;
+    const raw = match?.[1];
+    return raw === undefined ? null : decodeURIComponent(raw);
 }
 
 let _accessToken: string | null = null;

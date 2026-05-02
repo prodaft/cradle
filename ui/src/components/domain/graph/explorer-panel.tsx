@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMemo, useState } from 'react';
-import { Edge, Node } from './graphFilterUtils';
+import { Edge, Node } from './graph-filter-utils';
 
 interface ExplorerPanelProps {
     selectedNodes: Set<Node>;

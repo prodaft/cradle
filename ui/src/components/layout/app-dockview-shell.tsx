@@ -66,8 +66,8 @@ import React, {
     useState,
 } from 'react';
 
-import 'dockview/dist/styles/dockview.css';
 import '@styles/dockview.css';
+import 'dockview/dist/styles/dockview.css';
 
 export type AppRouteTabParams = {
     href: string;
@@ -340,8 +340,8 @@ function addTabInGroup(
     api: DockviewApi,
     href: string,
     referencePanel: IDockviewPanel,
-): void {
-    api.addPanel({
+): IDockviewPanel {
+    return api.addPanel({
         id: newTabId(),
         component: 'default',
         title: '',
@@ -349,6 +349,38 @@ function addTabInGroup(
         renderer: 'always',
         position: { direction: 'within', referencePanel: referencePanel.id },
     });
+}
+
+function reconcileDockviewWithOuterLocation(
+    api: DockviewApi,
+    router: AnyRouter,
+    navigateOuterToPanelHref: (href: string) => void,
+): void {
+    const outerHref = locationHref(router.state.location);
+    const activePanel = api.activePanel;
+    const activeHref = panelHref(activePanel);
+
+    if (outerHref === activeHref) {
+        return;
+    }
+
+    const existing = api.panels.find((p) => panelHref(p) === outerHref);
+    if (existing) {
+        existing.api.setActive();
+        return;
+    }
+
+    const ref = activePanel ?? api.panels[0];
+    if (ref) {
+        const added = addTabInGroup(api, outerHref, ref);
+        added.api.setActive();
+        schedulePersistDockviewLayout(api);
+        return;
+    }
+
+    if (activeHref) {
+        navigateOuterToPanelHref(activeHref);
+    }
 }
 
 function splitPanelRight(
@@ -607,19 +639,21 @@ export function AppDockviewShell(): React.JSX.Element {
         (event: DockviewReadyEvent) => {
             const { api } = event;
             if (api.panels.length > 0) {
-                const href = panelHref(api.activePanel);
-                if (href && href !== locationHref(router.state.location)) {
-                    navigateOuterToPanelHref(href);
-                }
+                reconcileDockviewWithOuterLocation(
+                    api,
+                    router,
+                    navigateOuterToPanelHref,
+                );
                 setDockApi(api);
                 return;
             }
 
             if (restoreDockviewLayout(api)) {
-                const href = panelHref(api.activePanel);
-                if (href && href !== locationHref(router.state.location)) {
-                    navigateOuterToPanelHref(href);
-                }
+                reconcileDockviewWithOuterLocation(
+                    api,
+                    router,
+                    navigateOuterToPanelHref,
+                );
                 setDockApi(api);
                 return;
             }

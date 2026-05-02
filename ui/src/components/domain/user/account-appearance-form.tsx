@@ -20,12 +20,13 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
-import { PRESET_THEMES } from '@/utils/themes';
+import { DEFAULT_PRESET, PRESET_THEMES } from '@/utils/themes';
 import {
     ArrowCounterClockwiseIcon,
     ClockCounterClockwiseIcon,
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
+import type { ApiSchema } from '@services/openapi/api-query';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from 'lucide-react';
@@ -59,7 +60,7 @@ export default function AccountAppearanceForm({
             if (!userData?.id) return;
             const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
                 params: { path: { user_id: userData.id } },
-                body: { theme } as any,
+                body: { theme } satisfies ApiSchema<'PatchedUserUpdateRequest'>,
             });
             if (error) throw { response, error };
         },
@@ -107,7 +108,7 @@ export default function AccountAppearanceForm({
         setSelectedThemeType(themeType);
 
         if (themeType === 'custom') {
-            const currentTheme = userData?.theme || PRESET_THEMES[0].theme;
+            const currentTheme = userData?.theme || DEFAULT_PRESET.theme;
             const { name: _name, ...rest } = currentTheme as any;
             setCustomThemeJSON(JSON.stringify(rest, null, 2));
             setPendingTheme(null);
@@ -171,7 +172,7 @@ export default function AccountAppearanceForm({
     };
 
     const handleDefault = () => {
-        const preset = PRESET_THEMES[0];
+        const preset = DEFAULT_PRESET;
         const themeWithName =
             preset.theme &&
             typeof preset.theme === 'object' &&
@@ -184,7 +185,7 @@ export default function AccountAppearanceForm({
         setSelectedThemeType(preset.id);
         setCustomThemeJSON('');
     };
-    const isAtDefault = selectedThemeType === PRESET_THEMES[0].id && !pendingTheme;
+    const isAtDefault = selectedThemeType === DEFAULT_PRESET.id && !pendingTheme;
 
     return (
         <>

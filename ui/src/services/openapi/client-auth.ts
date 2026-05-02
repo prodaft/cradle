@@ -11,6 +11,7 @@ import {
     SessionExpiredException,
 } from '@/components/domain/auth/auth-exceptions';
 import { resetSessionExpiredGate } from '@/query/query-client';
+import type { ApiSchema } from './api-query';
 import { fetchClient, setClientAccessToken, setClientAuthCallbacks } from './client';
 
 function getStorageItem(key: string): string | null {
@@ -43,13 +44,15 @@ function removeStorageItem(key: string): void {
 function getCsrfToken(): string | null {
     if (typeof document === 'undefined') return null;
     const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
-    return match ? decodeURIComponent(match[1]) : null;
+    const raw = match?.[1];
+    return raw === undefined ? null : decodeURIComponent(raw);
 }
 
 const state = {
     accessToken: '',
     accessExpiresAt: null as string | null,
     refreshExpiresAt: null as string | null,
+    refreshToken: '' as string,
     refreshInFlight: null as Promise<boolean> | null,
     refreshTimer: null as ReturnType<typeof setTimeout> | null,
 };
@@ -101,6 +104,7 @@ export function clearClientSession(): void {
     state.accessToken = '';
     state.accessExpiresAt = null;
     state.refreshExpiresAt = null;
+    state.refreshToken = '';
     setClientAccessToken(null);
     removeStorageItem('access_expires_at');
     removeStorageItem('refresh_expires_at');
@@ -118,6 +122,7 @@ export function applyClientTokenData(data: TokenData): void {
     state.accessToken = data.access;
     state.accessExpiresAt = data.accessExpiresAt.toISOString();
     state.refreshExpiresAt = data.refreshExpiresAt.toISOString();
+    state.refreshToken = data.refresh;
     setClientAccessToken(data.access);
     setStorageItem('access_expires_at', state.accessExpiresAt);
     setStorageItem('refresh_expires_at', state.refreshExpiresAt);
@@ -139,7 +144,9 @@ export async function refreshSessionAccessToken(): Promise<boolean> {
     state.refreshInFlight = (async () => {
         try {
             const { data, error, response } = await fetchClient.POST('/auth/refresh/', {
-                body: {} as any,
+                body: {
+                    refresh: state.refreshToken,
+                } satisfies ApiSchema<'TokenRefreshRequest'>,
                 headers: {
                     'X-CSRFToken': getCsrfToken() ?? '',
                 },
