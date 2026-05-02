@@ -5,6 +5,14 @@ import {
     DockPanelTabProvider,
     type DockPanelTabIcon,
 } from '@/components/layout/dock-panel-tab-context';
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import {
     createMemoryHistory,
@@ -45,6 +53,8 @@ import {
     Layers,
     LayoutDashboard,
     Link2,
+    ListMinus,
+    ListX,
     Network,
     Plus,
     Settings,
@@ -240,7 +250,6 @@ function restoreDockviewLayout(api: DockviewApi): boolean {
     }
 
     if (brokenPanels.length > 0) {
-        // Persist the cleaned layout so we don't keep retrying on next load.
         writeDockviewLayout(api);
     }
 
@@ -526,31 +535,125 @@ const components = {
 function AppDockviewTab(
     props: IDockviewPanelHeaderProps<AppRouteTabParams>,
 ): React.JSX.Element {
+    const { api } = props;
     const title = props.params.tabTitle ?? '';
     const Icon = title ? tabIconForParams(props.params) : undefined;
 
+    const middleButtonDown = useRef(false);
+
+    const panelCount = api.group.panels.length;
+    const canCloseOthers = panelCount > 1;
+
+    const onCloseTab = useCallback(() => {
+        api.close();
+    }, [api]);
+
+    const onCloseOtherTabs = useCallback(() => {
+        const selfId = api.id;
+        for (const p of [...api.group.panels]) {
+            if (p.api.id !== selfId) {
+                p.api.close();
+            }
+        }
+    }, [api]);
+
+    const onCloseAllTabs = useCallback(() => {
+        for (const p of [...api.group.panels]) {
+            p.api.close();
+        }
+    }, [api]);
+
+    const onTabPointerDown = useCallback(
+        (event: React.PointerEvent<HTMLDivElement>) => {
+            middleButtonDown.current = event.button === 1;
+        },
+        [],
+    );
+
+    const onTabPointerUp = useCallback(
+        (event: React.PointerEvent<HTMLDivElement>) => {
+            if (middleButtonDown.current && event.button === 1) {
+                middleButtonDown.current = false;
+                event.preventDefault();
+                api.close();
+            }
+        },
+        [api],
+    );
+
+    const onTabPointerLeave = useCallback(() => {
+        middleButtonDown.current = false;
+    }, []);
+
+    const onCloseGlyphPointerDown = useCallback(
+        (event: React.PointerEvent) => {
+            event.preventDefault();
+        },
+        [],
+    );
+
     return (
-        <div className='cradle-dockview-tab-title'>
-            {Icon ? (
-                <Icon
-                    className='cradle-dockview-tab-title-icon'
-                    aria-hidden
-                    strokeWidth={2}
-                />
-            ) : null}
-            <span className='cradle-dockview-tab-title-text'>{title}</span>
-            <button
-                type='button'
-                className='cradle-dockview-tab-title-close'
-                aria-label={`Close ${title || 'tab'}`}
-                onClick={(event) => {
-                    event.stopPropagation();
-                    props.api.close();
-                }}
+        <ContextMenu>
+            <ContextMenuTrigger asChild>
+                <div
+                    className='cradle-dockview-tab-title'
+                    onPointerDown={onTabPointerDown}
+                    onPointerUp={onTabPointerUp}
+                    onPointerLeave={onTabPointerLeave}
+                >
+                    {Icon ? (
+                        <Icon
+                            className='cradle-dockview-tab-title-icon'
+                            aria-hidden
+                            strokeWidth={2}
+                        />
+                    ) : null}
+                    <span className='cradle-dockview-tab-title-text'>{title}</span>
+                    <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon-xs'
+                        className={cn(
+                            'cradle-dockview-tab-title-close',
+                            'size-[18px] min-h-0 min-w-0 rounded-[2px] p-0',
+                        )}
+                        aria-label={`Close ${title || 'tab'}`}
+                        onPointerDown={onCloseGlyphPointerDown}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            api.close();
+                        }}
+                    >
+                        <X aria-hidden className='size-3' strokeWidth={2.2} />
+                    </Button>
+                </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent
+                className={cn(
+                    'w-52',
+                    'z-[10050]',
+                )}
             >
-                <X aria-hidden className='size-3' strokeWidth={2.2} />
-            </button>
-        </div>
+                <ContextMenuItem onSelect={onCloseTab}>
+                    <X aria-hidden className='size-4' strokeWidth={2} />
+                    Close
+                </ContextMenuItem>
+                <ContextMenuItem
+                    onSelect={onCloseOtherTabs}
+                    disabled={!canCloseOthers}
+                >
+                    <ListMinus aria-hidden className='size-4' strokeWidth={2} />
+                    Close others
+                </ContextMenuItem>
+                <ContextMenuItem
+                    variant='destructive'
+                    onSelect={onCloseAllTabs}
+                >
+                    <ListX aria-hidden className='size-4' strokeWidth={2} />
+                    Close all
+                </ContextMenuItem>
+            </ContextMenuContent>
+        </ContextMenu>
     );
 }
 
@@ -563,32 +666,49 @@ function DockviewGroupHeaderActions(props: IDockviewHeaderActionsProps) {
     const api = props.containerApi;
     return (
         <div className='cradle-dockview-header-actions'>
-            <button
-                type='button'
-                className='cradle-dockview-header-action'
-                aria-label='Split right'
-                title='Split right'
-                onClick={(e) => {
-                    e.stopPropagation();
-                    splitPanelRight(api, router, refPanel);
-                }}
-            >
-                <Columns2 className='size-4' strokeWidth={2} />
-            </button>
-            <button
-                type='button'
-                className='cradle-dockview-header-action'
-                aria-label='New tab'
-                title='New tab'
-                onClick={(e) => {
-                    e.stopPropagation();
-                    const href =
-                        panelHref(refPanel) ?? locationHref(router.state.location);
-                    addTabInGroup(api, href, refPanel);
-                }}
-            >
-                <Plus className='size-4' strokeWidth={2} />
-            </button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon-sm'
+                        className='dockview-header-toolbar-btn'
+                        aria-label='Split right'
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            splitPanelRight(api, router, refPanel);
+                        }}
+                    >
+                        <Columns2 className='size-4' strokeWidth={2} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side='bottom' className='z-[10050]'>
+                    Split right
+                </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon-sm'
+                        className='dockview-header-toolbar-btn'
+                        aria-label='New tab'
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            const href =
+                                panelHref(refPanel) ??
+                                locationHref(router.state.location);
+                            addTabInGroup(api, href, refPanel);
+                        }}
+                    >
+                        <Plus className='size-4' strokeWidth={2} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side='bottom' className='z-[10050]'>
+                    New tab
+                </TooltipContent>
+            </Tooltip>
         </div>
     );
 }
@@ -621,10 +741,6 @@ export function AppDockviewShell(): React.JSX.Element {
 
     const navigateOuterToPanelHref = useCallback(
         (href: string) => {
-            // If the outer router is already on `href`, `router.navigate` is a
-            // no-op and the location effect that clears `pendingOuterHrefRef`
-            // never fires. Skip both to avoid leaking pending state into the
-            // next outer→panel sync, which would silently get suppressed.
             if (locationHref(router.state.location) === href) {
                 pendingOuterHrefRef.current = null;
                 return;
@@ -681,15 +797,10 @@ export function AppDockviewShell(): React.JSX.Element {
         const sub = api.onDidLayoutChange(() => {
             schedulePersistDockviewLayout(api);
         });
-
-        // Persist the initial state immediately (post-onReady) so a fresh
-        // session has a starting layout to restore from.
         writeDockviewLayout(api);
 
         return () => {
             sub.dispose();
-            // Flush any pending debounced write so we don't lose the last
-            // change on unmount / hot reload.
             flushPersistDockviewLayout(api);
         };
     }, [dockApi]);
@@ -728,8 +839,6 @@ export function AppDockviewShell(): React.JSX.Element {
         if (pendingHref !== null) {
             pendingOuterHrefRef.current = null;
             if (pendingHref === href) {
-                // This location change was caused by our own panel→outer push;
-                // suppress the echo back to the panel.
                 return;
             }
         }
@@ -739,8 +848,6 @@ export function AppDockviewShell(): React.JSX.Element {
         }
 
         updatePanelParams(panel.api, hrefOnlyTabParams(href));
-        // `updateParameters` does not fire `onDidLayoutChange`, so we must
-        // explicitly persist or the new href is lost on reload.
         schedulePersistDockviewLayout(api);
     }, [dockApi, location]);
 

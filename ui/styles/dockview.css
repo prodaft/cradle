@@ -59,19 +59,22 @@
     padding-right: 4px;
 }
 
-.cradle-dockview-header-action {
+.cradle-dockview-header-actions .dockview-header-toolbar-btn {
     display: flex;
     width: 28px;
     height: 28px;
+    min-width: 28px;
+    min-height: 28px;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
+    padding: 0;
     color: var(--dv-activegroup-visiblepanel-tab-color);
     border-radius: 2px;
     opacity: 0.8;
 }
 
-.cradle-dockview-header-action:hover {
+.cradle-dockview-header-actions .dockview-header-toolbar-btn:hover {
     background-color: var(--dv-icon-hover-background-color);
     opacity: 1;
 }
