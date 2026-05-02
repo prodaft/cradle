@@ -33,7 +33,6 @@ import { queryKeys } from '@/hooks/query';
 import { uploadFile } from '@/utils/files';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import React, { useEffect } from 'react';
@@ -144,7 +143,7 @@ export default function UploadDigestDialog({
                     query: {
                         file_name: file.name,
                         file_size: file.size,
-                    } satisfies ApiQuery<'intelio_digest_upload_retrieve'>,
+                    },
                 },
             });
             if (initError) throw { response: initResponse, error: initError };
@@ -472,7 +471,7 @@ export default function UploadDigestDialog({
                                                                     query: {
                                                                         name: query,
                                                                         type: 'entity',
-                                                                    } satisfies ApiQuery<'query_list'>,
+                                                                    },
                                                                 },
                                                             },
                                                         );

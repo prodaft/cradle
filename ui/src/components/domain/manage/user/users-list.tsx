@@ -38,7 +38,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { PencilIcon, TrashIcon, UserPlusIcon } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -100,11 +99,14 @@ export default function UsersList() {
     }, []);
 
     const searchTerm = searchQuery.trim() || undefined;
-    const usersListQuery = useMemo((): ApiQuery<'users_list'> => {
-        const q: ApiQuery<'users_list'> = { page, page_size: pageSize };
-        if (searchTerm) q.search = searchTerm;
-        return q;
-    }, [page, pageSize, searchTerm]);
+    const usersListQuery = useMemo(
+        () => ({
+            page,
+            page_size: pageSize,
+            ...(searchTerm ? { search: searchTerm } : {}),
+        }),
+        [page, pageSize, searchTerm],
+    );
     const { data: usersData, isPending } = $api.useQuery(
         'get',
         '/users/',

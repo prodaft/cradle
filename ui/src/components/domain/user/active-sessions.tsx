@@ -26,7 +26,6 @@ import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useAuthActions } from '@/hooks/auth/use-auth';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { TrashIcon } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -96,15 +95,15 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     }, [sorting]);
 
     // Query for sessions (paginated)
-    const sessionsQuery = useMemo((): ApiQuery<'users_sessions_list'> => {
-        const q: ApiQuery<'users_sessions_list'> = {
+    const sessionsQuery = useMemo(
+        () => ({
             page,
             page_size: pageSize,
-        };
-        if (searchQuery) q.search = searchQuery;
-        if (orderByParam) q.order_by = orderByParam;
-        return q;
-    }, [searchQuery, orderByParam, page, pageSize]);
+            ...(searchQuery ? { search: searchQuery } : {}),
+            ...(orderByParam ? { order_by: orderByParam } : {}),
+        }),
+        [searchQuery, orderByParam, page, pageSize],
+    );
 
     const sessionsInit = useMemo(
         () => ({

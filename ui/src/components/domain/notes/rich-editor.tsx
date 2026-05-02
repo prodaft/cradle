@@ -63,7 +63,6 @@ import {
 } from '@prosemark/core';
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
@@ -324,7 +323,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     params: {
                         query: {
                             file_id: fileId,
-                        } satisfies ApiQuery<'file_transfer_download_retrieve'>,
+                        },
                     },
                 },
             );

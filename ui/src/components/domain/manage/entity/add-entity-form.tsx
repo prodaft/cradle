@@ -25,7 +25,6 @@ import { Switch } from '@/components/ui/switch';
 import { useNdjsonQuery } from '@/hooks/query';
 import { SelectOption } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
@@ -100,7 +99,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                         query: {
                             query: [q],
                             wildcard: true,
-                        } satisfies ApiQuery<'query_advanced_retrieve'>,
+                        },
                     },
                 },
             );
@@ -124,7 +123,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
     const { data: entryClassesData } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
         params: {
-            query: { show_count: true } satisfies ApiQuery<'entry_classes_list_stream'>,
+            query: { show_count: true },
         },
         queryKey: ['entry_classes', 'add-entity', 'show_count'],
         refetchOnWindowFocus: false,

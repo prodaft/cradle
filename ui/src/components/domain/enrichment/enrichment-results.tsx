@@ -35,7 +35,6 @@ import {
     WarningCircleIcon,
     WarningIcon,
 } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 
@@ -404,7 +403,7 @@ export default function EnrichmentResults() {
                             ...(searchParams.trim()
                                 ? { search: searchParams.trim() }
                                 : {}),
-                        } satisfies ApiQuery<'enrichment_relations_retrieve'>,
+                        },
                     },
                 },
             );

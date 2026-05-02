@@ -15,7 +15,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { BellRingingIcon, XIcon } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -78,7 +77,7 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
                             query: {
                                 page: pageParam,
                                 page_size: PAGE_SIZE,
-                            } satisfies ApiQuery<'notifications_list'>,
+                            },
                         },
                     },
                 );

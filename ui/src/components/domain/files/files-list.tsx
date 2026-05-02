@@ -52,9 +52,8 @@ import {
     DownloadSimpleIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { $api, fetchClient } from '@services/openapi/client';
-import type { components } from '@services/openapi/schema';
+import type { components, operations } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
@@ -73,10 +72,12 @@ import OfflineIndicator from '../../feedback/offline-indicator';
 
 type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 
-type FilesListApiQuery = ApiQuery<'notes_files_retrieve'>;
+type FilesListQuery = NonNullable<
+    operations['notes_files_retrieve']['parameters']['query']
+>;
 
 export type FilesListScopeQuery = Partial<
-    Omit<FilesListApiQuery, 'linked_to' | 'references'>
+    Omit<FilesListQuery, 'linked_to' | 'references'>
 > & {
     linked_to?: number | string;
     references?: string;
@@ -129,7 +130,7 @@ export default function FilesList({
                     params: {
                         query: {
                             file_id: fileId,
-                        } satisfies ApiQuery<'file_transfer_download_retrieve'>,
+                        },
                     },
                 },
             );
@@ -193,10 +194,10 @@ export default function FilesList({
     );
 
     // Prepare query parameters
-    const queryParams = useMemo((): FilesListApiQuery => {
+    const queryParams = useMemo((): FilesListQuery => {
         const order_by = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
-        const params: FilesListApiQuery = {
+        const params: FilesListQuery = {
             page,
             page_size: pageSize,
             order_by,
@@ -212,7 +213,7 @@ export default function FilesList({
 
         return Object.fromEntries(
             Object.entries(params).filter(([, v]) => v !== undefined),
-        ) as FilesListApiQuery;
+        ) as FilesListQuery;
     }, [page, pageSize, sortField, sortDirection, query, searchQuery, statusFilter]);
 
     // Query for files
@@ -308,7 +309,7 @@ export default function FilesList({
                     params: {
                         query: {
                             file_id: fileId,
-                        } satisfies ApiQuery<'file_transfer_delete_destroy'>,
+                        },
                     },
                 },
             );

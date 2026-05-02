@@ -25,9 +25,8 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { useNdjsonQuery } from '@/hooks/query';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
-import type { components } from '@services/openapi/schema';
+import type { components, operations } from '@services/openapi/schema';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
@@ -127,7 +126,7 @@ export default function SearchDialog({
                                 page_size: searchState.pageSize,
                                 ...(trimmed ? { query: [trimmed] } : {}),
                                 wildcard: true,
-                            } satisfies ApiQuery<'query_advanced_retrieve'>,
+                            },
                         },
                     },
                 );
@@ -141,7 +140,7 @@ export default function SearchDialog({
                 ...(searchState.filters.length > 0
                     ? { subtype: searchState.filters }
                     : {}),
-            } as ApiQuery<'query_list'>;
+            } as NonNullable<operations['query_list']['parameters']['query']>;
             const { data, error, response } = await fetchClient.GET('/query/', {
                 params: { query: listQuery },
             });

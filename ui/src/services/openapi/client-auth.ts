@@ -11,7 +11,6 @@ import {
     SessionExpiredException,
 } from '@/components/domain/auth/auth-exceptions';
 import { resetSessionExpiredGate } from '@/query/query-client';
-import type { ApiSchema } from './api-query';
 import { fetchClient, setClientAccessToken, setClientAuthCallbacks } from './client';
 
 function getStorageItem(key: string): string | null {
@@ -146,7 +145,7 @@ export async function refreshSessionAccessToken(): Promise<boolean> {
             const { data, error, response } = await fetchClient.POST('/auth/refresh/', {
                 body: {
                     refresh: state.refreshToken,
-                } satisfies ApiSchema<'TokenRefreshRequest'>,
+                },
                 headers: {
                     'X-CSRFToken': getCsrfToken() ?? '',
                 },

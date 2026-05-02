@@ -42,7 +42,6 @@ import {
     PencilIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -99,15 +98,15 @@ export default function EntryTypesList() {
     }, []);
 
     const searchTerm = searchQuery.trim() || undefined;
-    const entryClassesListQuery = useMemo((): ApiQuery<'entry_classes_list'> => {
-        const q: ApiQuery<'entry_classes_list'> = {
+    const entryClassesListQuery = useMemo(
+        () => ({
             show_count: true,
             page,
             page_size: pageSize,
-        };
-        if (searchTerm) q.search = searchTerm;
-        return q;
-    }, [page, pageSize, searchTerm]);
+            ...(searchTerm ? { search: searchTerm } : {}),
+        }),
+        [page, pageSize, searchTerm],
+    );
     const { data: entryTypesData, isPending } = $api.useQuery(
         'get',
         '/entries/entry-classes/',

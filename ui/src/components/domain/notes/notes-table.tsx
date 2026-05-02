@@ -46,9 +46,8 @@ import {
     SparkleIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { $api, fetchClient } from '@services/openapi/client';
-import type { components } from '@services/openapi/schema';
+import type { components, operations } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
@@ -75,13 +74,13 @@ type NoteListResponse = components['schemas']['NoteListResponse'];
 type NoteMetadata = { title?: string; description?: string };
 type OptimizedEntryResponse = components['schemas']['OptimizedEntryResponse'];
 
-type NotesListApiQuery = ApiQuery<'notes_list'>;
+type NotesListQuery = NonNullable<operations['notes_list']['parameters']['query']>;
 
 /**
  * Props/query for `NotesTable`: fields sent to GET `/notes/` plus URL-scoped keys
  * not present on the generated `notes_list` operation (until OpenAPI is updated).
  */
-export type NotesTableQueryInput = Partial<Omit<NotesListApiQuery, 'linked_to'>> & {
+export type NotesTableQueryInput = Partial<Omit<NotesListQuery, 'linked_to'>> & {
     linked_to?: number | string;
     editor__username?: string;
     linked_to_exact_match?: boolean;
@@ -309,28 +308,28 @@ export default function NotesTable({
         Boolean(columnFilters.edit_timestamp?.from) &&
         Boolean(columnFilters.edit_timestamp?.to);
 
-    const queryParams = useMemo((): NotesListApiQuery | null => {
+    const queryParams = useMemo((): NotesListQuery | null => {
         if (!query) return null;
 
-        const statusExclusive: NotesListApiQuery['status'][] = [
+        const statusExclusive: NotesListQuery['status'][] = [
             'fleeting',
             'healthy',
             'warning',
             'invalid',
             'processing',
         ];
-        const statusForApi: NotesListApiQuery['status'] | undefined =
+        const statusForApi: NotesListQuery['status'] | undefined =
             columnFilters.status === 'all'
                 ? hideFleetingNotes
                     ? 'finalized'
                     : undefined
                 : statusExclusive.includes(
-                        columnFilters.status as NotesListApiQuery['status'],
+                        columnFilters.status as NotesListQuery['status'],
                     )
-                  ? (columnFilters.status as NotesListApiQuery['status'])
+                  ? (columnFilters.status as NotesListQuery['status'])
                   : undefined;
 
-        const params: NotesListApiQuery = {
+        const params: NotesListQuery = {
             page,
             page_size: pageSize,
             order_by: orderBy,
@@ -358,7 +357,7 @@ export default function NotesTable({
 
         return Object.fromEntries(
             Object.entries(params).filter(([, v]) => v !== undefined),
-        ) as NotesListApiQuery;
+        ) as NotesListQuery;
     }, [
         page,
         pageSize,

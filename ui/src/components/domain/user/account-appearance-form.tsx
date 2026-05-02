@@ -26,7 +26,6 @@ import {
     ClockCounterClockwiseIcon,
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
-import type { ApiSchema } from '@services/openapi/api-query';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from 'lucide-react';
@@ -60,7 +59,7 @@ export default function AccountAppearanceForm({
             if (!userData?.id) return;
             const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
                 params: { path: { user_id: userData.id } },
-                body: { theme } satisfies ApiSchema<'PatchedUserUpdateRequest'>,
+                body: { theme },
             });
             if (error) throw { response, error };
         },

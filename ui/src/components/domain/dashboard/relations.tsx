@@ -41,7 +41,6 @@ import { useNdjsonQuery } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { createDashboardLink } from '@/utils/dashboard';
 import { CaretDownIcon, CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -96,7 +95,7 @@ function ExpandedRowContent({
                         query: {
                             src: srcId,
                             dsts: [result.id!],
-                        } satisfies ApiQuery<'knowledge_graph_paths_retrieve'>,
+                        },
                     },
                 },
             );
@@ -585,7 +584,7 @@ export default function Relations({ obj }: RelationsProps) {
                             ...(entrySubtypeFilters.length > 0
                                 ? { subtype: entrySubtypeFilters }
                                 : {}),
-                        } satisfies ApiQuery<'knowledge_graph_neighbors_retrieve'>,
+                        },
                     },
                 },
             );
@@ -620,7 +619,7 @@ export default function Relations({ obj }: RelationsProps) {
                         query: {
                             src: obj.id!,
                             depth,
-                        } satisfies ApiQuery<'knowledge_graph_inaccessible_retrieve'>,
+                        },
                     },
                 },
             );

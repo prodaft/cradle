@@ -28,9 +28,8 @@ import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import PageHeader from '@components/base/page-header';
 import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
 import { ArrowsClockwiseIcon, DownloadIcon, TrashIcon } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
-import type { components } from '@services/openapi/schema';
+import type { components, operations } from '@services/openapi/schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
@@ -48,7 +47,9 @@ import { StatusIcon, type StatusType } from '../notes/status-icon';
 
 type ReportList = components['schemas']['ReportList'];
 
-type ReportsListApiQuery = ApiQuery<'reports_list'>;
+type ReportsListQuery = NonNullable<
+    operations['reports_list']['parameters']['query']
+>;
 
 const SORT_FIELD_MAPPING: Record<string, string> = {
     title: 'title',
@@ -133,7 +134,7 @@ export default function ReportsList() {
                     path: { id },
                     query: {
                         download_url: downloadUrl,
-                    } satisfies ApiQuery<'reports_retrieve'>,
+                    },
                 },
             });
             if (error) throw { response, error };
@@ -154,7 +155,7 @@ export default function ReportsList() {
         [sortDirection, sortField],
     );
 
-    const reportsListQuery = useMemo((): ReportsListApiQuery => {
+    const reportsListQuery = useMemo((): ReportsListQuery => {
         return Object.fromEntries(
             Object.entries({
                 page,
@@ -163,7 +164,7 @@ export default function ReportsList() {
                 search: searchQuery || undefined,
                 status: statusFilter !== 'all' ? statusFilter : undefined,
             }).filter(([, v]) => v !== undefined),
-        ) as ReportsListApiQuery;
+        ) as ReportsListQuery;
     }, [page, pageSize, orderBy, searchQuery, statusFilter]);
 
     // Query for reports

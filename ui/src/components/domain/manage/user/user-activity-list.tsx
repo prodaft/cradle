@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { CaretDownIcon } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { $api } from '@services/openapi/client';
 import { format } from 'date-fns';
 import { diff_match_patch } from 'diff-match-patch';
@@ -252,11 +251,13 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
 export default function UserActivityList({ username }: UserActivityListProps) {
     const [page, setPage] = useState(1);
 
-    const eventLogsQuery = useMemo((): ApiQuery<'event_logs_list'> => {
-        const q: ApiQuery<'event_logs_list'> = { page };
-        if (username) q.username = username;
-        return q;
-    }, [page, username]);
+    const eventLogsQuery = useMemo(
+        () => ({
+            page,
+            ...(username ? { username } : {}),
+        }),
+        [page, username],
+    );
 
     const { data: logsData, isLoading } = $api.useQuery(
         'get',

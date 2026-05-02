@@ -28,7 +28,6 @@ import {
     ClockCounterClockwiseIcon,
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import { fetchNdjson } from '@services/openapi/ndjson-stream';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -121,7 +120,7 @@ export default function EnrichmentSettingsForm({
                 params: {
                     query: {
                         search: q || undefined,
-                    } satisfies ApiQuery<'entry_classes_list_stream'>,
+                    },
                 },
             });
             return results.map((entry) => ({

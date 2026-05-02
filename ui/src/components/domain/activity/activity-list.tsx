@@ -18,7 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { CaretDownIcon, GitForkIcon } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
+import type { operations } from '@services/openapi/schema';
 import { $api } from '@services/openapi/client';
 import { useParams } from '@tanstack/react-router';
 import {
@@ -35,7 +35,9 @@ import { Check, PlusCircle, XCircle } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import OfflineIndicator from '../../feedback/offline-indicator';
 
-type EventLogsListQuery = ApiQuery<'event_logs_list'>;
+type EventLogsListQuery = NonNullable<
+    operations['event_logs_list']['parameters']['query']
+>;
 
 interface SearchFilters {
     username: string;
@@ -52,8 +54,6 @@ const EVENT_TYPE_OPTIONS = [
     { value: 'fetch', label: 'Fetch' },
     { value: 'login', label: 'Login' },
 ] as const;
-
-type EventType = (typeof EVENT_TYPE_OPTIONS)[number]['value'];
 
 interface ActivityListProps {
     name?: string;

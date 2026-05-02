@@ -10,7 +10,6 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
@@ -32,8 +31,9 @@ export default function ManageEnrichmentList() {
     const { data: enrichmentTypesData, isPending } = useQuery({
         queryKey: ['enrichmentTypes', debouncedSearch],
         queryFn: async () => {
-            const query: ApiQuery<'enrichment_subclasses_list'> = {};
-            if (debouncedSearch) query.search = debouncedSearch;
+            const query = {
+                ...(debouncedSearch ? { search: debouncedSearch } : {}),
+            };
             const { data, error, response } = await fetchClient.GET(
                 '/intelio/enrichment/',
                 {

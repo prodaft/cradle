@@ -48,7 +48,6 @@ import {
 } from '@/components/ui/table';
 import { useNdjsonQuery } from '@/hooks/query';
 import { cn } from '@/lib/utils';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { startCase } from 'lodash';
@@ -264,7 +263,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                         path: { class_name: id },
                         query: {
                             mapping_id: mappingId,
-                        } satisfies ApiQuery<'mappings_schema_destroy'>,
+                        },
                     },
                 },
             );

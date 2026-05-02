@@ -41,7 +41,6 @@ import {
     PencilIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -99,15 +98,15 @@ export default function EntitiesList() {
         pageSize,
         ...(searchTerm ? { search: searchTerm } : {}),
     };
-    const entitiesListQuery = useMemo((): ApiQuery<'query_list'> => {
-        const q: ApiQuery<'query_list'> = {
-            type: 'entity',
+    const entitiesListQuery = useMemo(
+        () => ({
+            type: 'entity' as const,
             page,
             page_size: pageSize,
-        };
-        if (searchTerm) q.search = searchTerm;
-        return q;
-    }, [page, pageSize, searchTerm]);
+            ...(searchTerm ? { search: searchTerm } : {}),
+        }),
+        [page, pageSize, searchTerm],
+    );
     const { data: entitiesData, isPending } = useQuery({
         queryKey: queryKeys.entities.list(listFilters),
         queryFn: async () => {

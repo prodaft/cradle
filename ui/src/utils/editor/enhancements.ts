@@ -9,7 +9,6 @@ import {
 import { linter, type Diagnostic } from '@codemirror/lint';
 import type { EditorState } from '@codemirror/state';
 import type { MarkdownExtension } from '@lezer/markdown';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import dayjs from 'dayjs';
@@ -219,7 +218,7 @@ export class CradleEditor {
                                                     query: {
                                                         type: entryClass.subtype,
                                                         prefix: x,
-                                                    } satisfies ApiQuery<'lsp_trie_retrieve'>,
+                                                    },
                                                 },
                                             });
                                             if (trieError) return {};

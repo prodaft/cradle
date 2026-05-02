@@ -3,7 +3,6 @@ import Dashboard from '@/components/domain/dashboard/dashboard';
 import KnowledgeGraphSearch from '@/components/domain/graph/knowledge-graph-search';
 import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
-import type { ApiQuery } from '@/services/openapi/api-query';
 import { fetchClient } from '@/services/openapi/client';
 import { isAdmin, isEntryManager } from '@/utils/auth';
 import {
@@ -265,7 +264,7 @@ const dashboardRoute = createRoute({
                     query: {
                         subtype,
                         name_exact: name,
-                    } satisfies ApiQuery<'query_list'>,
+                    },
                 },
             });
 

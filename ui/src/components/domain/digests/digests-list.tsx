@@ -2,7 +2,7 @@ import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { ApiQuery } from '@services/openapi/api-query';
+import type { operations } from '@services/openapi/schema';
 import { fetchClient } from '@services/openapi/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
@@ -12,7 +12,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import UploadDigestDialog from './dialogs/upload-digest-dialog';
 import DigestsTable from './digests-table';
 
-type DigestListApiQuery = ApiQuery<'intelio_digest_list'>;
+type DigestListQuery = NonNullable<
+    operations['intelio_digest_list']['parameters']['query']
+>;
 
 /** `/digests` route: header + URL state + `DigestsTable`. */
 const toYmd = (iso?: string): string => {
@@ -113,7 +115,7 @@ export default function DigestsList() {
     }, [search]);
 
     // Prepare query parameters
-    const queryParams = useMemo((): DigestListApiQuery => {
+    const queryParams = useMemo((): DigestListQuery => {
         const searchQueryParams: Record<string, unknown> = {
             page,
             page_size: pageSize,
@@ -129,14 +131,14 @@ export default function DigestsList() {
         }
 
         if (columnFilters.status !== 'all') {
-            const allowed: DigestListApiQuery['status'][] = [
+            const allowed: DigestListQuery['status'][] = [
                 'done',
                 'error',
                 'warning',
                 'working',
             ];
             if (
-                allowed.includes(columnFilters.status as DigestListApiQuery['status'])
+                allowed.includes(columnFilters.status as DigestListQuery['status'])
             ) {
                 searchQueryParams.status = columnFilters.status;
             }
@@ -156,7 +158,7 @@ export default function DigestsList() {
 
         return Object.fromEntries(
             Object.entries(searchQueryParams).filter(([, v]) => v !== undefined),
-        ) as DigestListApiQuery;
+        ) as DigestListQuery;
     }, [page, pageSize, sortField, sortDirection, columnFilters, submittedFilters]);
 
     const { data: digestsData, isLoading } = useQuery({

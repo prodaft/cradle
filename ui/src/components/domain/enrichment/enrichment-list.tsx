@@ -6,7 +6,7 @@ import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
-import type { ApiQuery } from '@services/openapi/api-query';
+import type { operations } from '@services/openapi/schema';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
@@ -23,7 +23,9 @@ import { toast } from 'sonner';
 import OfflineIndicator from '../../feedback/offline-indicator';
 import EnrichmentTable from './enrichment-table';
 
-type EnrichmentListApiQuery = ApiQuery<'enrichment_request_list'>;
+type EnrichmentListQuery = NonNullable<
+    operations['enrichment_request_list']['parameters']['query']
+>;
 
 /** `/enrichment` route and dashboard enrichment tab: header + fetch + `EnrichmentTable`. */
 interface SearchFilters {
@@ -84,12 +86,12 @@ function EnrichmentListInner({ hidePageHeader = false, entryId }: EnrichmentList
         user: (searchAny?.user__username as string) || '',
     });
 
-    const queryParams = useMemo((): EnrichmentListApiQuery => {
+    const queryParams = useMemo((): EnrichmentListQuery => {
         const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
         const statusRaw =
             columnFilters.status === 'all' ? undefined : columnFilters.status;
-        const statusAllowed: EnrichmentListApiQuery['status'][] = [
+        const statusAllowed: EnrichmentListQuery['status'][] = [
             'done',
             'error',
             'waiting',
@@ -97,9 +99,9 @@ function EnrichmentListInner({ hidePageHeader = false, entryId }: EnrichmentList
             'working',
         ];
         const status = statusAllowed.includes(
-            statusRaw as EnrichmentListApiQuery['status'],
+            statusRaw as EnrichmentListQuery['status'],
         )
-            ? (statusRaw as EnrichmentListApiQuery['status'])
+            ? (statusRaw as EnrichmentListQuery['status'])
             : undefined;
 
         return Object.fromEntries(
@@ -112,7 +114,7 @@ function EnrichmentListInner({ hidePageHeader = false, entryId }: EnrichmentList
                 order_by: orderBy,
                 ...(entryId != null ? { entry_id: String(entryId) } : {}),
             }).filter(([, v]) => v !== undefined),
-        ) as EnrichmentListApiQuery;
+        ) as EnrichmentListQuery;
     }, [
         page,
         pageSize,

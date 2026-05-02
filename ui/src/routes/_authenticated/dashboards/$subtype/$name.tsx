@@ -1,6 +1,5 @@
 import { PageLoader } from '@/components/base/page-loader';
 import Dashboard from '@/components/domain/dashboard/dashboard';
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import * as z from 'zod';
@@ -31,7 +30,7 @@ export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name'
                     query: {
                         subtype,
                         name_exact: name,
-                    } satisfies ApiQuery<'query_list'>,
+                    },
                 },
             });
 

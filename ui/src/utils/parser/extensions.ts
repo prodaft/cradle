@@ -1,4 +1,3 @@
-import type { ApiQuery } from '@services/openapi/api-query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import matter from 'gray-matter';
@@ -108,7 +107,7 @@ function fetchMinioDownloadLink(fileId: string): Promise<FileDownload> {
                 params: {
                     query: {
                         file_id: fileId,
-                    } satisfies ApiQuery<'file_transfer_download_retrieve'>,
+                    },
                 },
             })
             .then(({ data, error, response }) => {
