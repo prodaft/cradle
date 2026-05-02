@@ -100,6 +100,7 @@ def create_or_update_session(request: Request, user, refresh_token: RefreshToken
         operation_id="auth_login_create",
         description="Obtain a new pair of access and refresh tokens by providing valid user credentials. If 2FA is enabled for the user, a two_factor_token must be provided.",  # noqa: E501
         request=TokenObtainSerializer,
+        auth=[],
         responses={
             200: TokenPairRetrieveSerializer,
             **get_error_responses(
@@ -188,6 +189,7 @@ class TokenObtainPairLogView(TokenObtainPairView):
         summary="Refresh Access Token",
         description="Refresh the access token using a valid refresh token.",
         request=TokenRefreshSerializer,
+        auth=[],
         responses={
             200: TokenPairRetrieveSerializer,
             **get_error_responses(
@@ -279,6 +281,7 @@ class TokenRefreshLogView(TokenRefreshView):
         description="Log out by blacklisting the refresh token, removing the session, and clearing JWT cookies.",
         request=None,
         operation_id="auth_logout_create",
+        auth=[],
         responses={
             204: {"description": "Successfully logged out"},
             **get_common_error_responses(),
@@ -288,6 +291,7 @@ class TokenRefreshLogView(TokenRefreshView):
     ),
 )
 class LogoutView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
     throttle_classes = [AuthRateThrottle]
 

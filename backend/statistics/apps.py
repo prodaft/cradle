@@ -3,7 +3,7 @@
 from django.apps import AppConfig
 
 
-class CradleStatisticsConfig(AppConfig):
-    """Django app config for cradle_statistics."""
+class StatisticsConfig(AppConfig):
+    """Django app config for statistics."""
 
-    name = "cradle_statistics"
+    name = "statistics"

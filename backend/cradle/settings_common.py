@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     "intelio.apps.IntelIOConfig",
     "management.apps.ManagementConfig",
     "lsp.apps.LspConfig",
-    "cradle_statistics.apps.CradleStatisticsConfig",
+    "statistics.apps.StatisticsConfig",
     "notifications.apps.NotificationsConfig",
     "logs.apps.LogsConfig",
     "file_transfer.apps.FileTransferConfig",

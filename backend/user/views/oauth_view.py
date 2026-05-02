@@ -169,6 +169,7 @@ class OAuthConnectView(APIView):
         operation_id="auth_oauth_login",
         summary="Login with OAuth provider",
         request=OAuthConnectSerializer,
+        auth=[],
         responses={
             200: TokenPairRetrieveSerializer,
             **get_error_responses(

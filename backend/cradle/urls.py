@@ -35,7 +35,7 @@ api_patterns = [
     path("file-transfer/", include("file_transfer.urls")),
     path("notifications/", include("notifications.urls")),
     path("knowledge-graph/", include("knowledge_graph.urls")),
-    path("statistics/", include("cradle_statistics.urls")),
+    path("statistics/", include("statistics.urls")),
     path("lsp/", include("lsp.urls")),
     path("intelio/", include("intelio.urls")),
     path("management/", include("management.urls")),

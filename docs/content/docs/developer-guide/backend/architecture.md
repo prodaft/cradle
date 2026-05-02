@@ -26,7 +26,7 @@ structure.
 - `query` for query logic.
 - `knowledge_graph` for graph retrieval.
 - `management` for settings and admin operations.
-- `cradle_statistics` for usage statistics.
+- `statistics` for usage statistics.
 - `intelio` for enrichment orchestration.
 
 ### External service applications

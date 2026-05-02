@@ -163,6 +163,7 @@ class UserList(ListCreateAPIView):
         summary="User signup",
         description="Creates a new user account. Available to unauthenticated users.",
         request=UserCreateSerializer,
+        auth=[],
         responses={
             201: UserRetrieveSerializer,
             **get_error_responses(
@@ -218,6 +219,7 @@ class SignupView(APIView):
         operation_id="auth_config",
         summary="Get auth config",
         description="Returns OAuth configuration metadata and signup status.",
+        auth=[],
         responses={
             200: UserConfigSerializer,
             **get_common_error_responses(),
@@ -655,7 +657,7 @@ class UserMeManage(ManageUser):
 )
 class APIKey(APIView):
     serializer_class = APIKeyResponseSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
     def _get_user_and_check_permission(self, requesting_user: CradleUser, user_id: str | UUID) -> CradleUser:
@@ -722,6 +724,7 @@ class UserMeAPIKey(APIKey):
     summary="Email confirmation",
     description="Confirms a user's email using the token sent to their email address.",
     request=EmailConfirmSerializer,
+    auth=[],
     responses={
         200: {"description": "Email confirmed successfully"},
         **get_error_responses(
@@ -764,6 +767,7 @@ class EmailConfirm(APIView):
         summary="Request password reset",
         description="Sends a password reset email to the user using their email address.",
         request=PasswordResetRequestSerializer,
+        auth=[],
         responses={
             200: {"description": "Password reset email sent"},
             **get_error_responses(include_validation_error=True),
@@ -776,6 +780,7 @@ class EmailConfirm(APIView):
         summary="Reset password with token",
         description="Resets user password using a valid reset token and new password.",
         request=PasswordResetConfirmSerializer,
+        auth=[],
         responses={
             200: {"description": "Password reset successfully"},
             **get_error_responses(
