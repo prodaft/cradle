@@ -2460,6 +2460,14 @@
                 "summary": "Stream user access privileges (NDJSON)",
                 "parameters": [
                     {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Search entities by name, description, or numeric id"
+                    },
+                    {
                         "in": "path",
                         "name": "user_id",
                         "schema": {
@@ -2467,14 +2475,6 @@
                         },
                         "description": "UUID of the user",
                         "required": true
-                    },
-                    {
-                        "in": "query",
-                        "name": "search",
-                        "schema": {
-                            "type": "string"
-                        },
-                        "description": "Search entities by name, description, or numeric id"
                     }
                 ],
                 "tags": [
@@ -27976,7 +27976,7 @@
                         "schema": {
                             "type": "string"
                         },
-                        "description": "Case-insensitive match on object id, content type, or details (use the type query param for event kind)."
+                        "description": "Case-insensitive match on object id, content type, or event type. ``details`` is included only when the term has at least 4 characters (shorter terms skip JSON details to limit scan cost)."
                     },
                     {
                         "in": "query",
@@ -37561,7 +37561,7 @@
                         "schema": {
                             "type": "boolean"
                         },
-                        "description": "If true, return only unread notifications (is_unread or is_marked_unread). Does not mark natural unreads as read; omit or false to list all and clear is_unread."
+                        "description": "If true, return only notifications that are unread (``is_unread`` or ``is_marked_unread``). Does not mark natural unreads as read; use the default list without this flag to clear ``is_unread`` for all notifications."
                     }
                 ],
                 "tags": [
@@ -55271,8 +55271,8 @@
                 },
                 "required": [
                     "type",
-                    "subtype",
-                    "name"
+                    "name",
+                    "subtype"
                 ]
             },
             "EntityRequest": {
@@ -55314,8 +55314,8 @@
                 },
                 "required": [
                     "type",
-                    "subtype",
-                    "name"
+                    "name",
+                    "subtype"
                 ]
             },
             "Entry": {
@@ -55866,8 +55866,8 @@
                 },
                 "required": [
                     "type",
-                    "subtype",
-                    "name"
+                    "name",
+                    "subtype"
                 ]
             },
             "EntrySerializerMinimal": {
@@ -57690,8 +57690,8 @@
                 },
                 "required": [
                     "type",
-                    "subtype",
-                    "name"
+                    "name",
+                    "subtype"
                 ]
             },
             "PatchedNoteEditRequest": {

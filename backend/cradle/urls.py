@@ -1,4 +1,4 @@
-"""URL configuration for Cradle. Mounts admin at /<ADMIN_PATH>/, API under /api/."""
+"""URL configuration for Cradle. Mounts Django admin at /admin/<ADMIN_PATH_UUID>/, API under /api/."""
 
 from django.conf import settings
 from django.contrib import admin
@@ -12,8 +12,6 @@ from drf_spectacular.views import (
 from user.views.oauth_view import OAuthLoginView
 from user.views.token_view import LogoutView, TokenObtainPairLogView, TokenRefreshLogView
 from user.views.user_view import ChangePasswordView, EmailConfirm, PasswordReset, SignupView, UserConfigView
-
-admin_path = path(settings.ADMIN_PATH, admin.site.urls)
 
 api_patterns = [
     path("auth/login/", TokenObtainPairLogView.as_view(), name="auth_login"),
@@ -61,6 +59,9 @@ if settings.USE_SILK:
 api_prefix = "api/"
 
 urlpatterns = [
-    path("", include([admin_path])),
+    path(
+        "admin/",
+        include([path(f"{settings.ADMIN_PATH_UUID}/", admin.site.urls)]),
+    ),
     path(api_prefix, include(api_patterns)),
 ]

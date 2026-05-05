@@ -1,20 +1,9 @@
 """Production/Docker settings for Cradle. Reads from env; Sentry, RabbitMQ/Redis, JWT tuning."""
 
-import random
-
-# Ugly hack to get graph_tool working
-import sys
-
 import sentry_sdk
 from environs import Env
 
 from .settings_common import *  # noqa:F401,F403
-
-global_base = random.__file__.removesuffix("random.py")
-
-global_packages = [global_base + "site-packages/", global_base + "dist-packages/"]
-
-sys.path += global_packages
 
 # Initialize environs
 env = Env()
@@ -25,6 +14,7 @@ sentry_sdk.init(
     traces_sample_rate=1.0,
 )
 
+# Django core (secrets, hosts, URLs)
 SECRET_KEY = env.str("SECRET_KEY", "django-insecure-default-secret-key")
 DEBUG = env.bool("DEBUG", False)
 
@@ -46,6 +36,9 @@ _csrf_origins = list(
 )
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", _csrf_origins)
 
+ADMIN_PATH_UUID = env.str("ADMIN_PATH_UUID", ADMIN_PATH_UUID)  # noqa: F405
+
+# Database
 DATABASES = {
     "default": {
         "ENGINE": env.str("DB_ENGINE", "django.contrib.gis.db.backends.postgis"),
@@ -57,6 +50,7 @@ DATABASES = {
     }
 }
 
+# Object storage (MinIO / S3)
 MINIO_CONFIG = {
     "endpoint": env.str("MINIO_ENDPOINT", "localhost:9000"),
     "access_key": env.str("MINIO_ROOT_USER", "admin"),
@@ -92,7 +86,7 @@ AWS_S3_ADDRESSING_STYLE = "path"
 AWS_S3_REGION_NAME = env.str("AWS_S3_REGION_NAME", "us-east-1")
 AWS_S3_SIGNATURE_VERSION = env.str("AWS_S3_SIGNATURE_VERSION", "s3v4")
 
-# CORS: frontend origins (subset of CSRF)
+# CORS / OAuth (browser clients)
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
     list(dict.fromkeys(o for o in _csrf_origins if o == FRONTEND_URL or ":5173" in o)),
@@ -104,11 +98,13 @@ OAUTH_REDIRECT_URI_WHITELIST = env.list(
     CORS_ALLOWED_ORIGINS,
 )
 
+# Celery (broker prefers RabbitMQ; result backend uses Redis)
 RABBITMQ_URL = env.str("RABBITMQ_URL", None)
 REDIS_URL = env.str("REDIS_URL", None)
 BROKER = RABBITMQ_URL if RABBITMQ_URL else REDIS_URL
 RESULT_BACKEND = REDIS_URL
 
+# Email (SMTP)
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 if env.bool("NOCHECK_EMAIL_SSL", False):
@@ -117,11 +113,11 @@ if env.bool("NOCHECK_EMAIL_SSL", False):
 EMAIL_HOST = env.str("EMAIL_HOST", None)
 EMAIL_PORT = env.int("EMAIL_PORT", -1)
 EMAIL_HOST_USER = env.str("EMAIL_HOST_USER", None)
-DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", None)
 EMAIL_HOST_PASSWORD = env.str("EMAIL_HOST_PASSWORD", None)
+DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", None)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", False)
 
-# JWT settings
+# JWT (token lifetimes and auth cookies)
 _access_lifetime_minutes = env.int("JWT_ACCESS_TOKEN_LIFETIME_MINUTES", 30)
 _refresh_lifetime_days = env.int("JWT_REFRESH_TOKEN_LIFETIME_DAYS", 14)
 
@@ -131,18 +127,19 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=_refresh_lifetime_days),  # noqa: F405
 }
 
-JWT_COOKIE_SECURE = env.bool("JWT_COOKIE_SECURE", True)
 JWT_COOKIE_DOMAIN = env.str("JWT_COOKIE_DOMAIN", "") or None
 JWT_COOKIE_PATH = env.str("JWT_COOKIE_PATH", "/")
+JWT_COOKIE_SECURE = env.bool("JWT_COOKIE_SECURE", True)
 
-USE_SILK = env.bool("USE_SILK", False)
-
-# Enricher container isolation
+# Intelio enricher containers
 ENRICHER_DOCKER_IMAGE_PREFIX = env.str("ENRICHER_DOCKER_IMAGE_PREFIX", "cradle/enricher")
 ENRICHER_MEM_LIMIT = env.str("ENRICHER_MEM_LIMIT", "256m")
 ENRICHER_CPU_QUOTA = env.int("ENRICHER_CPU_QUOTA", 50000)
 ENRICHER_TIMEOUT = env.int("ENRICHER_TIMEOUT", 120)
 ENRICHER_EXTERNAL_NETWORK = env.str("ENRICHER_EXTERNAL_NETWORK", "enricher_external")
+
+# Silk request profiling (mutates MIDDLEWARE when enabled)
+USE_SILK = env.bool("USE_SILK", False)
 
 if USE_SILK:
     MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE  # noqa: F405

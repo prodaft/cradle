@@ -22239,7 +22239,7 @@ export interface operations {
                 page?: number;
                 /** @description Number of results to return per page. */
                 page_size?: number;
-                /** @description Case-insensitive match on object id, content type, or details (use the type query param for event kind). */
+                /** @description Case-insensitive match on object id, content type, or event type. ``details`` is included only when the term has at least 4 characters (shorter terms skip JSON details to limit scan cost). */
                 search?: string;
                 /** @description Events on or after this datetime. */
                 start_date?: string;
@@ -28493,7 +28493,7 @@ export interface operations {
                 page?: number;
                 /** @description Number of notifications to return per page. Max 200. */
                 page_size?: number;
-                /** @description If true, return only unread notifications (is_unread or is_marked_unread). Does not mark natural unreads as read; omit or false to list all and clear is_unread. */
+                /** @description If true, return only notifications that are unread (``is_unread`` or ``is_marked_unread``). Does not mark natural unreads as read; use the default list without this flag to clear ``is_unread`` for all notifications. */
                 unread_only?: boolean;
             };
             header?: never;

@@ -294,7 +294,8 @@ STATICFILES_DIRS = []
 MINIO_BACKEND_URL = None
 
 # Application-specific config
-ADMIN_PATH = "29acee84-15db-481b-b602-2c1a579178d0/"
+# UUID segment for Django admin URL: /admin/<ADMIN_PATH_UUID>/
+ADMIN_PATH_UUID = "1eef2e9b-6350-4fb7-a65b-ccaaf09c39b2"
 
 CATALYST_HOST = "https://prod.blindspot.prodaft.com"
 CATALYST_PUBLISH_CATEGORY = "RESEARCH"

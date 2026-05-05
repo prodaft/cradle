@@ -1,8 +1,10 @@
 """Custom managers and querysets for Entry, Relation, and Edge models."""
 
 from django.apps import apps
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import BooleanField, Case, Exists, OuterRef, Value, When
 from django.db.models.expressions import RawSQL
 from django.db.models.query_utils import Q
 
@@ -10,7 +12,7 @@ from core.fields import BitStringField
 from cradle.settings_common import INTERNAL_SUBTYPES
 from user.models import CradleUser
 
-from .enums import EntryType
+from .enums import EntryType, RelationReason
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
@@ -55,8 +57,26 @@ class RelationQuerySet(models.QuerySet):
     """QuerySet with access-vector filtering for relations."""
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
-        """Filter to relations accessible to the user."""
-        return _accessible_by_access_vector(self, user)
+        """Filter to relations accessible to the user.
+
+        Relations with reason NOTE must reference a note that passes ``Note``
+        access rules (access-vector alone is insufficient for orphan notes).
+        """
+        qs = _accessible_by_access_vector(self, user)
+        if user.is_cradle_admin:
+            return qs
+
+        Note = apps.get_model("notes", "Note")
+        note_ct_id = ContentType.objects.get_for_model(Note).id
+        accessible_note = Note.objects.accessible(user).filter(pk=OuterRef("object_id"))
+        return qs.annotate(
+            _note_accessible=Case(
+                When(~Q(reason=RelationReason.NOTE), then=Value(True)),
+                When(~Q(content_type_id=note_ct_id), then=Value(True)),
+                default=Exists(accessible_note),
+                output_field=BooleanField(),
+            ),
+        ).filter(_note_accessible=True)
 
 
 class EdgeQuerySet(models.QuerySet):

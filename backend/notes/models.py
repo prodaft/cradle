@@ -142,16 +142,24 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         return
 
     def has_read_access(self, user: CradleUser) -> bool:
-        """Return whether the user may view this note."""
+        """Return whether the user may view this note.
+
+        Non-fleeting notes with no linked entity entries are restricted to the author
+        (legacy rows used to appear world-readable via empty ``has_access_to_entities``).
+        """
         if user.is_cradle_admin:
             return True
 
         if self.fleeting:
             return self.author_id == user.id
 
+        entities = set(self.entries.filter(entry_class__type=EntryType.ENTITY))
+        if not entities:
+            return self.author_id == user.id
+
         return Access.objects.has_access_to_entities(
             user,
-            set(self.entries.filter(entry_class__type=EntryType.ENTITY)),
+            entities,
             {AccessType.READ, AccessType.READ_WRITE},
         )
 
@@ -164,6 +172,9 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
             return self.author_id == user.id
 
         entities = set(self.entries.filter(entry_class__type=EntryType.ENTITY))
+        if not entities:
+            return self.author_id == user.id
+
         has_entity_write = Access.objects.has_access_to_entities(
             user,
             entities,

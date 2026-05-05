@@ -4,9 +4,10 @@ from typing import List, Optional
 from uuid import UUID
 
 from django.db import models
-from django.db.models import Case, Count, ExpressionWrapper, F, Q, Value, When
+from django.db.models import Case, Count, Exists, ExpressionWrapper, F, OuterRef, Q, Value, When
 
 from core.fields import BitStringField
+from entries.enums import EntryType
 from entries.models import Entry
 from user.models import CradleUser
 
@@ -46,9 +47,18 @@ class NoteQuerySet(models.QuerySet):
 
         v = user.access_vector
 
+        linked_entity = Entry.objects.filter(
+            notes__id=OuterRef("pk"),
+            entry_class__type=EntryType.ENTITY,
+        )
         queryset = self.annotate(
-            bit_or=ExpressionWrapper(F("access_vector").bitor(Value(v)), output_field=fieldtype)
-        ).filter(Q(bit_or=v, fleeting=False) | Q(fleeting=True, author=user))
+            bit_or=ExpressionWrapper(F("access_vector").bitor(Value(v)), output_field=fieldtype),
+            _has_linked_entity=Exists(linked_entity),
+        ).filter(
+            Q(fleeting=True, author=user)
+            | Q(fleeting=False, _has_linked_entity=True, bit_or=v)
+            | Q(fleeting=False, _has_linked_entity=False, author=user)
+        )
 
         return queryset
 
@@ -57,6 +67,10 @@ class NoteManager(models.Manager):
     def get_queryset(self):
         """Return NoteQuerySet with custom methods (for_entry, accessible, etc.)."""
         return NoteQuerySet(self.model, using=self._db)
+
+    def accessible(self, user: CradleUser) -> models.QuerySet:
+        """Notes visible to ``user`` (bitmask + entity links + orphan author-only rule)."""
+        return self.get_queryset().accessible(user)
 
     def get_all_notes(self, entry_id: UUID | str) -> models.QuerySet:
         """Return notes for an entry, ordered by timestamp descending."""

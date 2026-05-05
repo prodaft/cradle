@@ -1,7 +1,10 @@
 from collections import Counter
 
+from django.contrib.contenttypes.models import ContentType
+
 from access.models import Access
-from entries.models import Entry
+from entries.enums import RelationReason
+from entries.models import Entry, Relation
 from user.models import CradleUser, UserRoles
 
 from ..models import Note
@@ -127,6 +130,35 @@ class AccessibleNotesTest(NotesTestCase):
         expected = Note.objects.exclude(id=self.note3.id)
 
         self.assertQuerySetEqual(notes, expected, ordered=False)
+
+    def test_orphan_note_no_entities_visible_only_to_author(self):
+        """Legacy notes with no linked entities must not be world-readable."""
+        orphan = Note.objects.create(content="legacy orphan", author=self.user1, fleeting=False)
+        orphan.access_vector = calculate_acvec([])
+        orphan.save()
+
+        self.assertTrue(orphan.has_read_access(self.user1))
+        self.assertFalse(orphan.has_read_access(self.user2))
+        self.assertIn(orphan, Note.objects.get_accessible_notes(self.user1))
+        self.assertNotIn(orphan, Note.objects.get_accessible_notes(self.user2))
+
+    def test_orphan_note_note_relation_visible_only_to_author(self):
+        """NOTE relations inherit visibility from the backing note (not bitmask alone)."""
+        orphan = Note.objects.create(content="legacy orphan", author=self.user1, fleeting=False)
+        orphan.access_vector = calculate_acvec([])
+        orphan.save()
+
+        rel = Relation.objects.create(
+            e1=self.entity1,
+            e2=self.entity2,
+            object_id=orphan.id,
+            content_type=ContentType.objects.get_for_model(Note),
+            reason=RelationReason.NOTE,
+            access_vector=orphan.access_vector,
+        )
+
+        self.assertIn(rel, Relation.objects.accessible(self.user1))
+        self.assertNotIn(rel, Relation.objects.accessible(self.user2))
 
 
 class GetAllNotesTest(NotesTestCase):
