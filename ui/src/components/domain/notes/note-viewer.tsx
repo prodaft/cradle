@@ -342,9 +342,9 @@ export default function NoteViewer() {
         }
         const t = note?.title?.trim();
         if (!t) {
-            return isFleeting ? 'Fleeting note' : 'Notes';
+            return isFleeting ? 'Fleeting note' : 'Note';
         }
-        const prefix = isFleeting ? 'Fleeting note' : 'Notes';
+        const prefix = isFleeting ? 'Fleeting note' : 'Note';
         return t.length > 56 ? `${prefix}: ${t.slice(0, 53)}…` : `${prefix}: ${t}`;
     }, [isError, isFleeting, note?.title]);
     useDockPanelTab({
@@ -831,6 +831,12 @@ export default function NoteViewer() {
                                                                 hasUnsavedChanges={
                                                                     hasUnsavedChanges
                                                                 }
+                                                                noteStatus={
+                                                                    note?.status
+                                                                }
+                                                                noteStatusMessage={
+                                                                    note?.status_message
+                                                                }
                                                             />
                                                             {/* Reference Tree below the editor */}
                                                             {note && (
@@ -907,6 +913,10 @@ export default function NoteViewer() {
                                                         saving={saving}
                                                         hasUnsavedChanges={
                                                             hasUnsavedChanges
+                                                        }
+                                                        noteStatus={note?.status}
+                                                        noteStatusMessage={
+                                                            note?.status_message
                                                         }
                                                     />
                                                     {/* Reference Tree below the editor */}

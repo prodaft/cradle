@@ -23,6 +23,7 @@ class NotificationUnreadTest(NotificationsTestCase):
             password="password",
             is_staff=False,
             email="alabala@gmail.com",
+            is_active=True,
         )
         self.entity = Entry.objects.create(name="Entity", entry_class=self.entryclass1)
 

@@ -17,6 +17,10 @@ import {
 import '@react-sigma/core/lib/style.css';
 import { useWorkerLayoutForceAtlas2 } from '@react-sigma/layout-forceatlas2';
 import { MiniMap } from '@react-sigma/minimap';
+import EdgeCurveProgram, {
+    DEFAULT_EDGE_CURVATURE,
+    indexParallelEdgesIndex,
+} from '@sigma/edge-curve';
 import { MultiDirectedGraph } from 'graphology';
 import type { ForceAtlas2LayoutParameters } from 'graphology-layout-forceatlas2';
 import {
@@ -93,6 +97,56 @@ const ForceAtlas2LayoutContext = createContext<ForceAtlas2LayoutContextValue | n
     null,
 );
 
+/** Sigma v3 edge program for `type: "curved"` (see `@sigma/edge-curve`). */
+const SIGMA_EDGE_PROGRAM_CLASSES = { curved: EdgeCurveProgram };
+
+const PARALLEL_EDGE_INDEX_ATTRS = [
+    'parallelIndex',
+    'parallelMinIndex',
+    'parallelMaxIndex',
+] as const;
+
+/**
+ * Curvature for parallel edges (same extremities), adapted from sigma.js edge-curve storybook.
+ */
+function bundleCurvature(index: number, maxIndex: number): number {
+    if (maxIndex <= 0) return DEFAULT_EDGE_CURVATURE;
+    if (index < 0) return -bundleCurvature(-index, maxIndex);
+    const amplitude = 3.5;
+    const maxCurvature =
+        amplitude * (1 - Math.exp(-maxIndex / amplitude)) * DEFAULT_EDGE_CURVATURE;
+    return (maxCurvature * index) / maxIndex;
+}
+
+function applyCurvedEdgeRenderAttrs(g: MultiDirectedGraph) {
+    if (g.size === 0) return;
+    indexParallelEdgesIndex(g);
+    g.forEachEdge((edge, attrs) => {
+        const parallelIndex = attrs.parallelIndex as number | null | undefined;
+        const parallelMinIndex = attrs.parallelMinIndex as number | null | undefined;
+        const parallelMaxIndex = attrs.parallelMaxIndex as number | null | undefined;
+        let curvature = DEFAULT_EDGE_CURVATURE;
+        if (
+            typeof parallelMinIndex === 'number' &&
+            typeof parallelIndex === 'number' &&
+            typeof parallelMaxIndex === 'number'
+        ) {
+            curvature = bundleCurvature(parallelIndex, parallelMaxIndex);
+        } else if (
+            typeof parallelIndex === 'number' &&
+            typeof parallelMaxIndex === 'number'
+        ) {
+            curvature = bundleCurvature(parallelIndex, parallelMaxIndex);
+        }
+        g.mergeEdgeAttributes(edge, { type: 'curved', curvature });
+        for (const key of PARALLEL_EDGE_INDEX_ATTRS) {
+            if (g.hasEdgeAttribute(edge, key)) {
+                g.removeEdgeAttribute(edge, key);
+            }
+        }
+    });
+}
+
 /** Deterministic [0,1) floats from display settings seed (initial node placement). */
 function createSeededRng(seed: string | number | undefined): () => number {
     let state =
@@ -122,17 +176,13 @@ function buildForceAtlas2Params(
     const linkDistance = config.simulationLinkDistance ?? 16;
     const decay = config.simulationDecay ?? 10000;
 
-    // Tighter preferred link distance → slightly calmer global repulsion (helps hub jitter).
     const linkTightness = Math.sqrt(Math.min(24, Math.max(4, linkDistance)) / 16);
-    // Higher decay (UI “stabilize faster”) → modest extra damping in FA2.
     const decayBoost = 0.85 + Math.min(0.35, (decay - 1000) / 14000);
-    // Cluster separation nudges repulsion (no FA2-native “cluster” knob).
     const cluster = config.simulationCluster ?? 0.1;
     const clusterScale = 1 + cluster * 0.35;
 
     return {
         settings: {
-            // FA2 default slowDown is 1 (very twitchy); higher values calm high-degree hubs.
             slowDown: (2 + friction * 10) * decayBoost,
             scalingRatio: Math.max(
                 0.12,
@@ -266,6 +316,9 @@ function SigmaGraphologyLoader({
                     g.addEdge(edge.source, edge.target);
                 }
             });
+            if (config.curvedLinks === true) {
+                applyCurvedEdgeRenderAttrs(g);
+            }
         }
         loadGraph(g, true);
     }, [
@@ -274,6 +327,7 @@ function SigmaGraphologyLoader({
         validNodes,
         linksData,
         config.showLinks,
+        config.curvedLinks,
         config.nodeRadiusCoefficient,
         config.randomSeed,
     ]);
@@ -622,6 +676,14 @@ export default function GraphViewer({
 
     const hasValidData = validNodes.length > 0;
 
+    const sigmaContainerSettings = useMemo(
+        () => ({
+            allowInvalidContainer: true as const,
+            edgeProgramClasses: SIGMA_EDGE_PROGRAM_CLASSES,
+        }),
+        [],
+    );
+
     return (
         <div className='w-full h-full bg-background relative overflow-hidden'>
             {hasValidData ? (
@@ -689,7 +751,7 @@ export default function GraphViewer({
                         <SigmaContainer
                             id='sigma-graph-viewer'
                             graph={MultiDirectedGraph}
-                            settings={{ allowInvalidContainer: true }}
+                            settings={sigmaContainerSettings}
                             style={{
                                 height: '100%',
                                 width: '100%',

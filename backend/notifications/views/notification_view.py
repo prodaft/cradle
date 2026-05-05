@@ -53,7 +53,12 @@ def _get_notification_or_404(user: CradleUser, notification_id: UUID) -> Message
     get=extend_schema(
         operation_id="notifications_list",
         summary="Fetch Notifications",
-        description="Retrieve paginated notifications for the authenticated user, sorted with unread notifications first, then by newest to oldest.",  # noqa: E501
+        description=(
+            "Retrieve paginated notifications for the authenticated user, sorted with unread "
+            "notifications first, then by newest to oldest. When ``unread_only`` is true, only unread "
+            "rows are returned and natural unreads are not cleared; otherwise opening the list marks "
+            "natural unreads (``is_unread``) as read for the user."
+        ),  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="page_size",
@@ -67,6 +72,17 @@ def _get_notification_or_404(user: CradleUser, notification_id: UUID) -> Message
                 type=int,
                 location=OpenApiParameter.QUERY,
                 description="Page number for pagination",
+            ),
+            OpenApiParameter(
+                name="unread_only",
+                type=bool,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "If true, return only notifications that are unread "
+                    "(``is_unread`` or ``is_marked_unread``). Does not mark natural unreads as read; "
+                    "use the default list without this flag to clear ``is_unread`` for all notifications."
+                ),
+                required=False,
             ),
         ],
         responses={
@@ -111,9 +127,19 @@ class NotificationList(APIView):
     def get(self, request: Request) -> Response:
         """Return paginated notifications, unread first, and mark them as read."""
         user = cast(CradleUser, request.user)
+        unread_only = str(request.query_params.get("unread_only", "")).lower() in (
+            "1",
+            "true",
+            "yes",
+            "on",
+        )
+
+        qs = MessageNotification.objects.filter(user=user)
+        if unread_only:
+            qs = qs.filter(Q(is_unread=True) | Q(is_marked_unread=True))
+
         notifications = (
-            MessageNotification.objects.filter(user=user)
-            .select_subclasses()  # type: ignore
+            qs.select_subclasses()  # type: ignore
             .annotate(
                 is_unread_status=Case(
                     When(Q(is_unread=True) | Q(is_marked_unread=True), then=True),
@@ -123,8 +149,8 @@ class NotificationList(APIView):
             .order_by("-is_unread_status", "-timestamp")
         )
 
-        # Mark notifications as read (update only unread ones)
-        MessageNotification.objects.filter(user=user, is_unread=True).update(is_unread=False)
+        if not unread_only:
+            MessageNotification.objects.filter(user=user, is_unread=True).update(is_unread=False)
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(notifications, request)

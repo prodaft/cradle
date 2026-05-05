@@ -3,9 +3,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { type RefObject, ComponentType, useMemo, useState } from 'react';
 import type Sigma from 'sigma';
 import ExplorerPanel from './explorer-panel';
+import { type Edge, type EdgeRelation, type Node } from './graph-filter-utils';
 import GraphFilters from './graph-filters';
 import GraphSettings from './graph-settings';
-import { type Edge, type EdgeRelation, type Node } from './graph-filter-utils';
 
 interface Entry {
     id: string;

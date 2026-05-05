@@ -1,7 +1,6 @@
 import datetime
 import enum
 import hashlib
-import itertools
 from collections.abc import Iterable
 from typing import Any, Optional
 
@@ -203,22 +202,6 @@ class Node:
             return {note_link}
 
         return set()
-
-    def get_relation_tuples(self) -> list[tuple[Link, Link]]:
-        node_links = self.get_effective_links()
-        result: set[tuple[Link, Link]] = set()
-
-        result.update(itertools.combinations(node_links, 2))
-
-        for child in self.children:
-            child_links = child.get_effective_links()
-            for node_link in node_links:
-                for child_link in child_links:
-                    if node_link != child_link:
-                        result.add((node_link, child_link))
-            result.update(child.get_relation_tuples())
-
-        return list(result)
 
     def all_links(self, ignore_connectors: bool = False) -> set[Link]:
         """Returns all links in the node and its children."""
@@ -462,7 +445,7 @@ class LinksRenderer(BaseRenderer):
     def table_row(self) -> Node:
         return self.node_factory.create_node(type=NodeType.TABLE_ROW)
 
-    def table_cell(self, _align: Optional[str] = None, head: bool = False) -> Node:
+    def table_cell(self, align: Optional[str] = None, head: bool = False) -> Node:
         return self.node_factory.create_node(type=NodeType.TABLE_CELL)
 
     def inline_html(self, *args, **kwargs) -> None:

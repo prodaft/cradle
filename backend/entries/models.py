@@ -11,6 +11,7 @@ from typing import Optional
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models as gis_models
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -384,11 +385,15 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
         Relation.objects.filter(e1=self, reason=RelationReason.ALIAS).delete()
 
-        for e in self.aliases.all():
+        root = self.__class__.objects.select_related("entry_class").get(pk=self.pk)
+        alias_entries = root.aliases.all().select_related("entry_class")
+        for e in alias_entries:
+            if not Relation.includes_entity(root, e):
+                continue
             Relation.objects.create(
-                e1=self,
+                e1=root,
                 e2=e,
-                content_object=self,
+                content_object=root,
                 reason=RelationReason.ALIAS,
                 access_vector=e.get_acvec(),
                 virtual=True,
@@ -449,9 +454,16 @@ class Relation(LifecycleModel):
 
     virtual = models.BooleanField(default=False, help_text="Whether this relation is virtual (e.g. alias)")
 
+    @staticmethod
+    def includes_entity(e1: "Entry", e2: "Entry") -> bool:
+        """True if at least one endpoint is an entity (enforced on save and Relation.objects.bulk_create)."""
+        return e1.entry_class.type == EntryType.ENTITY or e2.entry_class.type == EntryType.ENTITY
+
     def save(self, *args, **kwargs):
         if self.e1.id > self.e2.id:
             self.e1, self.e2 = self.e2, self.e1
+        if not Relation.includes_entity(self.e1, self.e2):
+            raise ValidationError("Each relation must involve at least one entity endpoint.")
         super().save(*args, **kwargs)
 
     class Meta:

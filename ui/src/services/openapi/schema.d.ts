@@ -1070,7 +1070,7 @@ export interface paths {
         };
         /**
          * List event logs
-         * @description Returns a paginated and filtered list of event logs. Only available to admin users.
+         * @description Returns a paginated and filtered list of event logs. Only available to admin users. Omits log rows that are the ``src_log`` of another row (propagation source only); the propagated copy is listed instead.
          */
         get: operations["event_logs_list"];
         put?: never;
@@ -1402,7 +1402,7 @@ export interface paths {
         };
         /**
          * Fetch Notifications
-         * @description Retrieve paginated notifications for the authenticated user, sorted with unread notifications first, then by newest to oldest.
+         * @description Retrieve paginated notifications for the authenticated user, sorted with unread notifications first, then by newest to oldest. When ``unread_only`` is true, only unread rows are returned and natural unreads are not cleared; otherwise opening the list marks natural unreads (``is_unread``) as read for the user.
          */
         get: operations["notifications_list"];
         put?: never;
@@ -5097,6 +5097,8 @@ export interface operations {
                 page?: number;
                 /** @description Page size */
                 page_size?: number;
+                /** @description Search entities by name, description, or numeric id */
+                search?: string;
             };
             header?: never;
             path: {
@@ -5747,7 +5749,10 @@ export interface operations {
     };
     access_user_stream: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Search entities by name, description, or numeric id */
+                search?: string;
+            };
             header?: never;
             path: {
                 /** @description UUID of the user */
@@ -22234,6 +22239,8 @@ export interface operations {
                 page?: number;
                 /** @description Number of results to return per page. */
                 page_size?: number;
+                /** @description Case-insensitive match on object id, content type, or details (use the type query param for event kind). */
+                search?: string;
                 /** @description Events on or after this datetime. */
                 start_date?: string;
                 /**
@@ -28486,6 +28493,8 @@ export interface operations {
                 page?: number;
                 /** @description Number of notifications to return per page. Max 200. */
                 page_size?: number;
+                /** @description If true, return only unread notifications (is_unread or is_marked_unread). Does not mark natural unreads as read; omit or false to list all and clear is_unread. */
+                unread_only?: boolean;
             };
             header?: never;
             path?: never;

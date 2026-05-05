@@ -1,5 +1,6 @@
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogClose,
@@ -9,6 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import {
     Field,
     FieldDescription,
@@ -21,6 +23,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys, useNdjsonQuery } from '@/hooks/query';
 import { fetchClient } from '@services/openapi/client';
@@ -460,12 +463,21 @@ export default function EnrichmentRequestDialog({
                                                         : 'bg-secondary/10'
                                                 }`}
                                             >
-                                                <input
-                                                    type='checkbox'
-                                                    className='cradle-checkbox'
+                                                <Checkbox
                                                     checked={isSelected}
-                                                    onChange={() =>
+                                                    onCheckedChange={() =>
                                                         toggleNoteSelection(note.id)
+                                                    }
+                                                    aria-label={
+                                                        isSelected
+                                                            ? `Deselect note ${
+                                                                  note.title ||
+                                                                  'Untitled'
+                                                              }`
+                                                            : `Select note ${
+                                                                  note.title ||
+                                                                  'Untitled'
+                                                              }`
                                                     }
                                                 />
                                                 <span
@@ -509,6 +521,12 @@ export default function EnrichmentRequestDialog({
                                 Enrichment Techniques{' '}
                                 <span className='text-destructive'>*</span>
                             </FieldTitle>
+                            {isLoading ? (
+                                <div className='flex items-center gap-2 py-1 text-muted-foreground text-sm'>
+                                    <Spinner className='size-4' />
+                                    Loading enrichment techniques...
+                                </div>
+                            ) : null}
                             <MultipleSelector
                                 inputProps={{
                                     'aria-label': 'Enrichment Techniques',
@@ -523,15 +541,13 @@ export default function EnrichmentRequestDialog({
                                 disabled={isLoading}
                                 onChange={handleEnricherChange}
                                 emptyIndicator={
-                                    isLoading ? (
-                                        <p className='text-center text-sm'>
-                                            Loading enrichment techniques...
-                                        </p>
-                                    ) : (
-                                        <p className='text-center text-sm'>
-                                            No enrichment techniques found
-                                        </p>
-                                    )
+                                    <Empty className='min-h-0 border-0 p-4 shadow-none'>
+                                        <EmptyHeader className='max-w-none gap-0'>
+                                            <EmptyDescription>
+                                                No enrichment techniques found
+                                            </EmptyDescription>
+                                        </EmptyHeader>
+                                    </Empty>
                                 }
                             />
                             <FieldDescription id={enrichmentTechniquesDescId}>
@@ -570,9 +586,13 @@ export default function EnrichmentRequestDialog({
                                             disabled={selectedNoteIds.size > 0}
                                             onChange={handleEntityChange}
                                             emptyIndicator={
-                                                <p className='text-center text-sm'>
-                                                    No entities found
-                                                </p>
+                                                <Empty className='min-h-0 border-0 p-4 shadow-none'>
+                                                    <EmptyHeader className='max-w-none gap-0'>
+                                                        <EmptyDescription>
+                                                            No entities found
+                                                        </EmptyDescription>
+                                                    </EmptyHeader>
+                                                </Empty>
                                             }
                                         />
                                     </div>
@@ -594,10 +614,10 @@ export default function EnrichmentRequestDialog({
                             <FieldLabel htmlFor='artifactInput'>
                                 Artifact <span className='text-destructive'>*</span>
                             </FieldLabel>
-                            <textarea
+                            <Textarea
                                 id='artifactInput'
                                 name='artifactInput'
-                                className='flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
+                                className='min-h-[80px]'
                                 placeholder='One line only, e.g. ip:203.0.113.1 or domain:example.com'
                                 value={formData.artifactInput}
                                 onChange={handleChange}

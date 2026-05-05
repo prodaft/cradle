@@ -16,13 +16,11 @@ import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { BellRingingIcon, XIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
-import type { components } from '@services/openapi/schema';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import NotificationCard from './notification-card';
 
-type Notification = components['schemas']['Notification'];
 type FilterMode = 'all' | 'unread';
 
 interface NotificationsPanelProps {
@@ -68,8 +66,11 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
 
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
         useInfiniteQuery({
-            queryKey: queryKeys.notifications.list(),
+            queryKey: queryKeys.notifications.list(
+                filter === 'unread' ? 'unread' : 'all',
+            ),
             queryFn: async ({ pageParam }) => {
+                const unreadOnly = filter === 'unread';
                 const { data, error, response } = await fetchClient.GET(
                     '/notifications/',
                     {
@@ -77,15 +78,17 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
                             query: {
                                 page: pageParam,
                                 page_size: PAGE_SIZE,
+                                ...(unreadOnly ? { unread_only: true } : {}),
                             },
                         },
                     },
                 );
                 if (error) throw { response, error };
-                // List GET marks natural unreads read on the server; refresh sidebar count.
-                void queryClient.invalidateQueries({
-                    queryKey: queryKeys.notifications.unreadCount(),
-                });
+                if (!unreadOnly) {
+                    void queryClient.invalidateQueries({
+                        queryKey: queryKeys.notifications.unreadCount(),
+                    });
+                }
                 return data!;
             },
             getNextPageParam: (lastPage) => {
@@ -104,17 +107,8 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
         return data?.pages.flatMap((page) => page.results) ?? [];
     }, [data]);
 
-    const filteredNotifications = useMemo(() => {
-        if (filter === 'unread') {
-            return notifications.filter((n: Notification) => n.is_marked_unread);
-        }
-        return notifications;
-    }, [notifications, filter]);
-
     const virtualizer = useVirtualizer({
-        count: hasNextPage
-            ? filteredNotifications.length + 1
-            : filteredNotifications.length,
+        count: hasNextPage ? notifications.length + 1 : notifications.length,
         getScrollElement,
         estimateSize: () => ESTIMATED_NOTIFICATION_HEIGHT,
         overscan: OVERSCAN,
@@ -133,7 +127,7 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
         if (!lastItem) return;
 
         if (
-            lastItem.index >= filteredNotifications.length - 1 &&
+            lastItem.index >= notifications.length - 1 &&
             hasNextPage &&
             !isFetchingNextPage
         ) {
@@ -141,7 +135,7 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
         }
     }, [
         virtualItems,
-        filteredNotifications.length,
+        notifications.length,
         hasNextPage,
         isFetchingNextPage,
         handleLoadMore,
@@ -152,7 +146,7 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
     }, [filter, getScrollElement]);
 
     const isInitialLoading = isLoading && notifications.length === 0;
-    const isEmpty = !isInitialLoading && filteredNotifications.length === 0;
+    const isEmpty = !isInitialLoading && notifications.length === 0;
 
     return (
         <div
@@ -253,9 +247,8 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
                         >
                             {virtualItems.map((virtualItem) => {
                                 const isLoaderRow =
-                                    virtualItem.index >= filteredNotifications.length;
-                                const notification =
-                                    filteredNotifications[virtualItem.index];
+                                    virtualItem.index >= notifications.length;
+                                const notification = notifications[virtualItem.index];
 
                                 return (
                                     <div

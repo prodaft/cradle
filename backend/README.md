@@ -87,8 +87,8 @@ Django-based backend providing core functionality for CRADLE including:
    # Start Django development server
    uv run python manage.py runserver
 
-   # Start Celery worker (in separate terminal)
-   uv run celery -A cradle worker -Q email,notes,publish,import -l INFO
+   # Start Celery worker with beat and all routed queues (in separate terminal)
+   uv run celery -A cradle worker --beat -Q email,notes,graph,publish,import,access,enrich,digest,files,cleanup -l INFO
    ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

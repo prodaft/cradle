@@ -98,6 +98,8 @@ def scan_for_children(entry_ids, content_type_id, content_id):
         for k, v in matches.items():
             for i in v:
                 e, _ = Entry.objects.get_or_create(name=i, entry_class=k)
+                if not Relation.includes_entity(e, entry):
+                    continue
                 rel = Relation(
                     e1=e,
                     e2=entry,

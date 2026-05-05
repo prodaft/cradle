@@ -107,7 +107,6 @@ interface ContentSearch {
 
 interface NotesTableProps {
     query: NotesTableQueryInput | null;
-    filteredNotes?: NoteListResponse[];
     hideFleetingNotes?: boolean;
     noteActions?: unknown[];
     hideActionBar?: boolean;
@@ -120,7 +119,6 @@ interface NotesTableProps {
 
 export default function NotesTable({
     query,
-    filteredNotes = [],
     hideFleetingNotes = false,
     noteActions: _noteActions = [],
     hideActionBar = false,
@@ -177,7 +175,6 @@ export default function NotesTable({
         author: query?.author__username || '',
         editor: query?.editor__username || '',
         timestamp: {
-            // Only treat date filters as active when the range is complete.
             from:
                 query?.created_date_from && query?.created_date_to
                     ? query.created_date_from
@@ -200,7 +197,6 @@ export default function NotesTable({
     });
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Mapping of table columns to API field names
     const sortFieldMapping = useMemo<Record<string, string>>(
         () => ({
             title: 'title',
@@ -300,7 +296,6 @@ export default function NotesTable({
         query?.updated_date_to,
     ]);
 
-    // Prepare query parameters
     const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
     const hasCompleteCreatedRange =
         Boolean(columnFilters.timestamp?.from) && Boolean(columnFilters.timestamp?.to);
@@ -371,7 +366,6 @@ export default function NotesTable({
         orderBy,
     ]);
 
-    // Query for notes
     const {
         data: notesData,
         isLoading,
@@ -392,7 +386,6 @@ export default function NotesTable({
     const totalPages = notesData?.total_pages || 1;
     const totalCount = notesData?.count || 0;
 
-    // Update total count callback
     useEffect(() => {
         if (onTotalCountChange) {
             onTotalCountChange({ current: notes.length, total: totalCount });
@@ -421,12 +414,10 @@ export default function NotesTable({
         [searchAny, router, location.pathname],
     );
 
-    // Handle pagination changes from DataTable
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
 
-            // Handle page size change
             if (newPageSize !== pageSize) {
                 const newSearch: any = {
                     ...searchAny,
@@ -438,16 +429,13 @@ export default function NotesTable({
                     search: newSearch as any,
                     replace: true,
                 });
-            }
-            // Handle page change
-            else if (newPage !== page) {
+            } else if (newPage !== page) {
                 handlePageChange(newPage);
             }
         },
         [page, pageSize, searchAny, router, location.pathname, handlePageChange],
     );
 
-    // Delete mutation
     const deleteMutation = useMutation({
         mutationFn: async (noteId: string) => {
             const { error, response } = await fetchClient.DELETE('/notes/{note_id}/', {
@@ -494,7 +482,6 @@ export default function NotesTable({
         }
     };
 
-    // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
         const columnId =
             Object.keys(sortFieldMapping).find(
@@ -525,18 +512,10 @@ export default function NotesTable({
         [rowSelection],
     );
 
-    // Filter out filtered notes - optimized with Set for O(n) instead of O(n*m)
-    const filteredData = useMemo(() => {
-        if (filteredNotes.length === 0) return notes;
-        const filteredNoteIds = new Set(filteredNotes.map((n) => n.id));
-        return notes.filter((note) => !filteredNoteIds.has(note.id));
-    }, [notes, filteredNotes]);
-
     const renderNotePreview = useCallback((note: NoteListResponse) => {
         return <NotePreviewContent note={note} />;
     }, []);
 
-    // Memoize columns to prevent recreation on every render
     const columns = useMemo<ColumnDef<NoteListResponse>[]>(
         () => [
             {
@@ -844,7 +823,7 @@ export default function NotesTable({
     );
 
     const table = useReactTable({
-        data: filteredData,
+        data: notes,
         columns,
         state: {
             sorting,

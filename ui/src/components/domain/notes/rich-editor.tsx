@@ -84,25 +84,45 @@ import { getSaveStatus } from './status-indicators';
 
 type FileDownload = components['schemas']['FileDownload'];
 type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
+type NoteProcessingStatus = components['schemas']['NoteRetrieve']['status'];
 
-// Type alias for compatibility with referenceLinks
-type FileReference = FileReferenceWithNote;
+function noteStatusIconClass(status: NoteProcessingStatus | undefined): string {
+    switch (status) {
+        case 'healthy':
+            return 'text-primary';
+        case 'processing':
+            return 'text-amber-500 dark:text-amber-400';
+        case 'warning':
+            return 'text-muted-foreground';
+        case 'invalid':
+            return 'text-destructive';
+        default:
+            return 'text-muted-foreground';
+    }
+}
+
+function formatNoteStatusLabel(status: NoteProcessingStatus | undefined): string {
+    if (!status) return '—';
+    return status.charAt(0).toUpperCase() + status.slice(1);
+}
 
 interface RichEditorProps {
     noteid: string;
     markdownContent: string;
     setMarkdownContent: (content: string) => void;
-    fileData: FileReference[];
-    setFileData: (data: FileReference[]) => void;
+    fileData: FileReferenceWithNote[];
+    setFileData: (data: FileReferenceWithNote[]) => void;
     saveNote: () => void;
     additionalExtensions?: Extension[];
     enableEditing?: boolean;
     source?: boolean;
     setLineNumber: (lineNumber: number) => void;
     editorUtils: CradleEditor;
-    referenceMappings?: Record<string, FileReference>;
+    referenceMappings?: Record<string, FileReferenceWithNote>;
     saving?: boolean;
     hasUnsavedChanges?: boolean;
+    noteStatus?: NoteProcessingStatus;
+    noteStatusMessage?: string | null;
 }
 
 interface RichEditorRef {
@@ -191,6 +211,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         referenceMappings: propReferenceMappings,
         saving = false,
         hasUnsavedChanges = false,
+        noteStatus,
+        noteStatusMessage,
     },
     ref,
 ) {
@@ -469,7 +491,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     // Use prop referenceMappings if provided, otherwise compute from fileData
     const referenceMappings = useMemo(() => {
         if (propReferenceMappings) return propReferenceMappings;
-        const mappings: Record<string, FileReference> = {};
+        const mappings: Record<string, FileReferenceWithNote> = {};
         for (const file of fileData) {
             if (file.id) mappings[file.id] = file;
             mappings[`${file.id}-${file.file_name}`] = file;
@@ -764,9 +786,15 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const charCount = markdownContent.length;
     const saveStatus = getSaveStatus(markdownContent, saving, hasUnsavedChanges);
 
+    const noteStatusBadgeDescription =
+        noteStatusMessage?.trim() ||
+        (noteStatus
+            ? `Note status: ${formatNoteStatusLabel(noteStatus)}`
+            : 'Note status unavailable');
+
     const handleFilesChange = useCallback(
         (files: FileReferenceWithNote[]) => {
-            setFileData(files as FileReference[]);
+            setFileData(files);
         },
         [setFileData],
     );
@@ -813,14 +841,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 </div>
             )}
 
-            {/* Bottom toolbar: word count, character count, check icon, save status */}
-            <div className='flex-none flex items-center justify-end gap-4 px-3 py-1.5 border-t border-border bg-muted/30 text-muted-foreground text-xs'>
+            {/* Bottom toolbar: word count, character count, vim, save status, check badge */}
+            <div className='flex-none flex items-center justify-end gap-2 px-3 py-1.5 border-t border-border bg-muted/30 text-muted-foreground text-xs'>
                 <span>{wordCount} words</span>
                 <span>{charCount} chars</span>
                 {profile?.vim_mode && (
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <span className='inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'>
+                            <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'>
                                 <span className='w-1.5 h-1.5 rounded-full bg-green-500' />
                                 <span className='cradle-mono'>Vim</span>
                             </span>
@@ -828,32 +856,40 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                         <TooltipContent>Vim mode enabled</TooltipContent>
                     </Tooltip>
                 )}
-                <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    width='14'
-                    height='14'
-                    fill='currentColor'
-                    viewBox='0 0 256 256'
-                    className='text-primary shrink-0'
-                    aria-hidden
-                >
-                    <path d='M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z' />
-                </svg>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <div
-                            className={`flex items-center justify-center w-1.5 h-1.5 rounded-full shrink-0 ${
-                                saveStatus === 'saved'
-                                    ? 'bg-primary'
-                                    : saveStatus === 'saving'
-                                      ? 'bg-accent'
-                                      : saveStatus === 'unsaved'
-                                        ? 'bg-destructive'
-                                        : 'bg-muted-foreground'
-                            }`}
+                        <span
+                            className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent cursor-default'
                             data-testid='save-status-dot'
                             data-state={saveStatus}
-                        />
+                        >
+                            <span
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                    saveStatus === 'saved'
+                                        ? 'bg-green-500'
+                                        : saveStatus === 'saving'
+                                          ? 'bg-amber-500 dark:bg-amber-400'
+                                          : saveStatus === 'unsaved'
+                                            ? 'bg-destructive'
+                                            : 'bg-muted-foreground'
+                                }`}
+                            />
+                            <span
+                                className={`cradle-mono tabular-nums ${
+                                    saveStatus === 'saving'
+                                        ? 'text-amber-800 dark:text-amber-300'
+                                        : ''
+                                }`}
+                            >
+                                {saveStatus === 'saved'
+                                    ? 'Saved'
+                                    : saveStatus === 'saving'
+                                      ? 'Saving'
+                                      : saveStatus === 'unsaved'
+                                        ? 'Unsaved'
+                                        : '—'}
+                            </span>
+                        </span>
                     </TooltipTrigger>
                     <TooltipContent>
                         {saveStatus === 'saved'
@@ -865,6 +901,26 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                                 : 'Cannot save empty note'}
                     </TooltipContent>
                 </Tooltip>
+                <span
+                    className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'
+                    title={noteStatusBadgeDescription}
+                    aria-label={noteStatusBadgeDescription}
+                >
+                    <svg
+                        xmlns='http://www.w3.org/2000/svg'
+                        width='14'
+                        height='14'
+                        fill='currentColor'
+                        viewBox='0 0 256 256'
+                        className={`shrink-0 ${noteStatusIconClass(noteStatus)}`}
+                        aria-hidden
+                    >
+                        <path d='M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z' />
+                    </svg>
+                    <span className='cradle-mono'>
+                        {formatNoteStatusLabel(noteStatus)}
+                    </span>
+                </span>
             </div>
 
             {/* File Upload Dialog */}
@@ -874,7 +930,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     setShowFileUploadDialog(open);
                     if (!open) setClipboardFiles([]);
                 }}
-                files={fileData as FileReferenceWithNote[]}
+                files={fileData}
                 onFilesChange={handleFilesChange}
                 initialFiles={clipboardFiles}
                 noteId={noteid}
@@ -898,6 +954,8 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.setLineNumber === nextProps.setLineNumber &&
         prevProps.referenceMappings === nextProps.referenceMappings &&
         prevProps.saving === nextProps.saving &&
-        prevProps.hasUnsavedChanges === nextProps.hasUnsavedChanges
+        prevProps.hasUnsavedChanges === nextProps.hasUnsavedChanges &&
+        prevProps.noteStatus === nextProps.noteStatus &&
+        prevProps.noteStatusMessage === nextProps.noteStatusMessage
     );
 });

@@ -15,7 +15,12 @@ class AccessListTest(AccessTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(username="user", password="pass", email="alabala@gmail.com")
+        self.user = CradleUser.objects.create_user(
+            username="user",
+            password="pass",
+            email="alabala@gmail.com",
+            is_active=True,
+        )
         self.admin = CradleUser.objects.create_superuser(username="admin", password="pass", email="b@c.d")
         self.token_admin = str(AccessToken.for_user(self.admin))
         self.token_normal = str(AccessToken.for_user(self.user))
@@ -140,3 +145,26 @@ class AccessListTest(AccessTestCase):
         text = b"".join(response_stream.streaming_content).decode()
         rows = [json.loads(line) for line in text.splitlines() if line.strip()]
         self.assertEqual(rows, response_list.json()["results"])
+
+    def test_user_access_list_search_matches_stream(self):
+        Access.objects.create(user=self.user, entity=self.entity, access_type=AccessType.READ)
+        Entry.objects.create(name="Other entity", entry_class=self.entryclass1)
+        response_list = self.client.get(
+            reverse("user_access_list", kwargs={"user_id": self.user.id}),
+            {"search": "Entity 1", "page": "1", "page_size": "200"},
+            **self.headers_admin,
+        )
+        self.assertEqual(response_list.status_code, 200)
+        results = response_list.json()["results"]
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["name"], "Entity 1")
+
+        response_stream = self.client.get(
+            reverse("user_access_list_stream", kwargs={"user_id": self.user.id}),
+            {"search": "Entity 1"},
+            **self.headers_admin,
+        )
+        self.assertEqual(response_stream.status_code, 200)
+        text = b"".join(response_stream.streaming_content).decode()
+        rows = [json.loads(line) for line in text.splitlines() if line.strip()]
+        self.assertEqual(rows, results)

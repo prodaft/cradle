@@ -91,6 +91,6 @@ more.
 
 | Variable              | Type    | Default Value                                  | Description                                                           |
 |-----------------------|---------|------------------------------------------------|-----------------------------------------------------------------------|
-| `CELERY_QUEUES`       | String  | `"email,notes,graph,publish,import,access,enrich,digest"` | Comma-separated list of Celery task queues.                           |
+| `CELERY_QUEUES`       | String  | `"email,notes,graph,publish,import,access,enrich,digest,files,cleanup"` | Comma-separated list of Celery task queues (see `cradle/celery.py` `task_routes`). |
 | `CELERY_CONCURRENCY`  | Integer | `4`                                            | Number of concurrent Celery worker threads per process.               |
 | `NUM_WORKERS`         | Integer | `12`                                           | Number of Gunicorn worker processes.                                  |

@@ -5,13 +5,13 @@ import {
     DockPanelTabProvider,
     type DockPanelTabIcon,
 } from '@/components/layout/dock-panel-tab-context';
+import { Button } from '@/components/ui/button';
 import {
     ContextMenu,
     ContextMenuContent,
     ContextMenuItem,
     ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import {
@@ -477,7 +477,7 @@ function PanelRouteSync({
         }
 
         if (isActive && locationHref(outerRouter.state.location) !== href) {
-            navigateToHref(outerRouter, href);
+            navigateToHref(outerRouter, href, false);
         }
     }, [containerApi, href, isActive, outerRouter, panelApi]);
 
@@ -585,12 +585,9 @@ function AppDockviewTab(
         middleButtonDown.current = false;
     }, []);
 
-    const onCloseGlyphPointerDown = useCallback(
-        (event: React.PointerEvent) => {
-            event.preventDefault();
-        },
-        [],
-    );
+    const onCloseGlyphPointerDown = useCallback((event: React.PointerEvent) => {
+        event.preventDefault();
+    }, []);
 
     return (
         <ContextMenu>
@@ -628,27 +625,16 @@ function AppDockviewTab(
                     </Button>
                 </div>
             </ContextMenuTrigger>
-            <ContextMenuContent
-                className={cn(
-                    'w-52',
-                    'z-[10050]',
-                )}
-            >
+            <ContextMenuContent className={cn('w-52', 'z-[10050]')}>
                 <ContextMenuItem onSelect={onCloseTab}>
                     <X aria-hidden className='size-4' strokeWidth={2} />
                     Close
                 </ContextMenuItem>
-                <ContextMenuItem
-                    onSelect={onCloseOtherTabs}
-                    disabled={!canCloseOthers}
-                >
+                <ContextMenuItem onSelect={onCloseOtherTabs} disabled={!canCloseOthers}>
                     <ListMinus aria-hidden className='size-4' strokeWidth={2} />
                     Close others
                 </ContextMenuItem>
-                <ContextMenuItem
-                    variant='destructive'
-                    onSelect={onCloseAllTabs}
-                >
+                <ContextMenuItem variant='destructive' onSelect={onCloseAllTabs}>
                     <ListX aria-hidden className='size-4' strokeWidth={2} />
                     Close all
                 </ContextMenuItem>

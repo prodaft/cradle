@@ -26,7 +26,7 @@
         "worker",
         "--beat",
         "-Q",
-        "email,notes,graph,publish,import,access,enrich,digest,files",
+        "email,notes,graph,publish,import,access,enrich,digest,files,cleanup",
         "--loglevel",
         "info",
         "--concurrency",

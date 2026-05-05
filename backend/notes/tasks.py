@@ -25,7 +25,6 @@ from user.models import CradleUser
 
 from .enums import NoteStatus
 from .exceptions import EntriesNotFoundException, EntryTypesNotFoundException
-from .markdown.to_links import Link
 from .markdown.to_metadata import infer_metadata
 from .models import Note
 
@@ -35,68 +34,82 @@ logger = logging.getLogger(__name__)
 @shared_task
 @distributed_lock("smartlinker_note_{note_id}", timeout=1800)
 def smart_linker_task(note_id, user_id=None):
-    """Create links between entries for a note from its reference tree.
+    """Create NOTE relations for graph materialization.
 
-    Args:
-        note_id: ID of the Note object to process.
-        user_id: ID of the user performing the action (optional, for logging).
+    - A canonical ``note`` artifact entry (name = note UUID) is ensured and linked on the note.
+    - That note entry gets NOTE relations only to linked entities (not to other artifacts).
+    - Other artifacts still get NOTE relations to every linked entity (clique), excluding the
+      note hub row to avoid duplicates.
+    - If the note references **no entities**, no NOTE relations are created (artifact-artifact
+      NOTE edges from the legacy reference-tree combinator are intentionally not materialized).
     """
     from entries.tasks import refresh_edges_materialized_view
 
     note = Note.objects.get(id=note_id)
 
     try:
-        Relation.objects.filter(note=note, reason=RelationReason.NOTE).delete()
+        note_ct = ContentType.objects.get_for_model(Note)
+        Relation.objects.filter(
+            content_type=note_ct,
+            object_id=note.pk,
+            reason=RelationReason.NOTE,
+        ).delete()
 
-        pairs = note.reference_tree.get_relation_tuples()
-        pairs_resolved = set()
+        note_ec, _ = EntryClass.objects.get_or_create(
+            subtype=SUBTYPE_NOTE,
+            defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_NOTE],
+        )
+        note_entry, _ = Entry.objects.get_or_create(
+            name=str(note.id),
+            entry_class=note_ec,
+        )
+        note.entries.add(note_entry)
 
-        entries = {}
-        for e in note.entries.all():
-            entries[Link(e.entry_class.subtype, e.name)] = e
+        entries_list = list(note.entries.all().select_related("entry_class"))
+        entities = [e for e in entries_list if e.entry_class.type == EntryType.ENTITY]
+        artifacts_other = [
+            e for e in entries_list if e.entry_class.type == EntryType.ARTIFACT and e.id != note_entry.id
+        ]
 
-        # Resolve pairs from reference tree
-        for src, dst in pairs:
-            if src in entries and dst in entries:
-                if (
-                    src.date and dst.date and src.date != dst.date
-                ):  # If both have dates, and they are different, two relations with both dates are created
-                    pairs_resolved.add(
-                        (
-                            entries[src],
-                            entries[dst],
-                            src.virtual or dst.virtual,
-                            dst.date,
-                        )
-                    )
+        now = timezone.now()
+        to_create: list[Relation] = []
+        seen_pairs: set[tuple[int, int]] = set()
 
-                pairs_resolved.add(
-                    (
-                        entries[src],
-                        entries[dst],
-                        src.virtual or dst.virtual,
-                        src.date or dst.date,
-                    )
-                )
-            else:
-                logger.warning(f"Pair ({src}, {dst}) not found in entries. Skipping this pair.")
-
-        # Bulk create relations
-        Relation.objects.bulk_create(
-            [
+        def append_note_rel(a: Entry, b: Entry) -> None:
+            e1, e2 = (a, b) if a.id < b.id else (b, a)
+            key = (e1.id, e2.id)
+            if key in seen_pairs:
+                return
+            seen_pairs.add(key)
+            to_create.append(
                 Relation(
-                    e1=src,
-                    e2=dst,
+                    e1=e1,
+                    e2=e2,
                     content_object=note,
                     access_vector=note.access_vector,
-                    virtual=virtual,
+                    virtual=False,
                     reason=RelationReason.NOTE,
-                    created_at=date if date else timezone.now(),
-                    last_seen=date if date else timezone.now(),
+                    created_at=now,
+                    last_seen=now,
                 )
-                for src, dst, virtual, date in pairs_resolved
-            ]
-        )
+            )
+
+        for art in artifacts_other:
+            for ent in entities:
+                append_note_rel(art, ent)
+
+        for ent in entities:
+            append_note_rel(note_entry, ent)
+
+        if not entities:
+            logger.info(
+                "smart_linker_task note %s: no entity references; skipping NOTE relation materialization "
+                "(no hub-entity or artifact-entity NOTE edges)",
+                note_id,
+            )
+
+        if to_create:
+            Relation.objects.bulk_create(to_create)
 
         note.last_linked = timezone.now()
         note.save()
@@ -176,6 +189,14 @@ def link_files_task(note_id, file_ref_id=None):
             hashes.append(entry)
 
         for h in hashes:
+            if not Relation.includes_entity(h, f.entry):
+                logger.warning(
+                    "Skipping hash-file artifact-artifact relation for note %s (entries %s, %s)",
+                    note_id,
+                    h.id,
+                    f.entry.id,
+                )
+                continue
             relations.append(
                 Relation(
                     e1=h,
@@ -233,6 +254,7 @@ def entry_class_creation_task(note_id, user_id=None):
 
 
 @shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3)
+@distributed_lock("entry_population_note_{note_id}", timeout=1800)
 def entry_population_task(note_id, user_id=None):
     """Create missing entries for a note from its reference tree.
 
@@ -397,6 +419,8 @@ def connect_aliases(note_id, user_id=None):
         for subtype, name in entries:
             e = entry_map.get((subtype, name))
             if e is None:
+                continue
+            if not Relation.includes_entity(e, alias):
                 continue
             relations.append(
                 Relation(

@@ -1,25 +1,14 @@
 import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import Pagination from '@/components/base/pagination/pagination';
+import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cradleJsonTheme } from '@/config/json-view';
 import { queryKeys } from '@/hooks/query';
@@ -45,14 +34,18 @@ import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import {
-    type ColumnDef,
-    type VisibilityState,
     getCoreRowModel,
+    getExpandedRowModel,
     useReactTable,
+    type ColumnDef,
+    type ExpandedState,
+    type Row,
+    type Updater,
+    type VisibilityState,
 } from '@tanstack/react-table';
 import JsonView from '@uiw/react-json-view';
 import { format } from 'date-fns';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
 
 interface EntryLabel {
     subtype: string;
@@ -78,6 +71,23 @@ const normalizeId = (value?: number | string | null) => {
     const parsed = typeof value === 'number' ? value : Number(value);
     return Number.isNaN(parsed) ? null : parsed;
 };
+
+function getArtifactRowId(row: EnricherArtifact, index: number): string {
+    const n = normalizeId(row.id);
+    return n != null ? `id-${n}` : `idx-${index}`;
+}
+
+function expandedFromSelectedArtifact(
+    artifacts: EnricherArtifact[],
+    selectedArtifactId: number | null,
+): ExpandedState {
+    if (selectedArtifactId == null) return {};
+    const idx = artifacts.findIndex((a) => normalizeId(a.id) === selectedArtifactId);
+    if (idx === -1) return {};
+    const row = artifacts[idx];
+    if (!row) return {};
+    return { [getArtifactRowId(row, idx)]: true };
+}
 
 const getEntryLabel = (entry?: EntrySerializerMinimal | null): EntryLabel | null => {
     if (!entry) return null;
@@ -181,98 +191,39 @@ function RelationItem({ relation, isLast }: RelationItemProps) {
     );
 }
 
-// Grouped row component
-interface ArtifactRowProps {
-    artifact: EnricherArtifact;
-    artifactBadge?: ReactNode;
-    enricherName: string;
-    isOpen: boolean;
-    onToggle: (open: boolean) => void;
-    relations: RelationDisplay[];
-    isLoading: boolean;
-    isChecked: boolean;
-    onCheckChange: (checked: boolean) => void;
-    showEnricherColumn: boolean;
-    showArtifactColumn: boolean;
-}
-
-function ArtifactRow({
-    artifact,
-    artifactBadge,
-    enricherName,
-    isOpen,
-    onToggle,
-    relations,
+function ArtifactRelationsPanel({
     isLoading,
-    isChecked,
-    onCheckChange,
-    showEnricherColumn,
-    showArtifactColumn,
-}: ArtifactRowProps) {
-    const relationCount = artifact.count ?? (isOpen ? relations.length : undefined);
-    const artifactName = artifact.name || 'Untitled';
-    const colSpan = 1 + (showEnricherColumn ? 1 : 0) + (showArtifactColumn ? 1 : 0);
-
-    const rowContent = (
-        <TableRow>
-            <TableCell onClick={(e) => e.stopPropagation()}>
-                <Checkbox
-                    checked={isChecked}
-                    onCheckedChange={(checked) => onCheckChange(checked === true)}
-                    aria-label={`Select ${artifactName}`}
-                />
-            </TableCell>
-            {showEnricherColumn && <TableCell>{enricherName}</TableCell>}
-            {showArtifactColumn && (
-                <TableCell>
-                    <div className='flex items-center gap-2'>
-                        {artifactBadge}
-                        <span className='text-foreground truncate'>{artifactName}</span>
-                        {relationCount !== undefined && (
-                            <span className='text-muted-foreground text-xs ml-auto'>
-                                {relationCount} result{relationCount !== 1 ? 's' : ''}
-                            </span>
-                        )}
-                        <CaretDownIcon
-                            className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
-                        />
-                    </div>
-                </TableCell>
-            )}
-        </TableRow>
-    );
-
+    relations,
+}: {
+    isLoading: boolean;
+    relations: RelationDisplay[];
+}) {
+    if (isLoading) {
+        return (
+            <div className='flex items-center justify-center py-6'>
+                <Spinner className='size-10' />
+            </div>
+        );
+    }
+    if (relations.length === 0) {
+        return (
+            <Empty className='border-0 p-3'>
+                <EmptyHeader className='max-w-none'>
+                    <EmptyDescription>No relations found.</EmptyDescription>
+                </EmptyHeader>
+            </Empty>
+        );
+    }
     return (
-        <Collapsible open={isOpen} onOpenChange={onToggle} asChild>
-            <>
-                <CollapsibleTrigger asChild>{rowContent}</CollapsibleTrigger>
-                <CollapsibleContent asChild>
-                    <tr>
-                        <td colSpan={colSpan} className='p-0'>
-                            <div className='bg-muted/30 border-t'>
-                                {isLoading ? (
-                                    <div className='flex items-center justify-center py-6'>
-                                        <Spinner className='size-10' />
-                                    </div>
-                                ) : relations.length === 0 ? (
-                                    <div className='px-4 py-3 text-sm text-muted-foreground'>
-                                        No relations found.
-                                    </div>
-                                ) : (
-                                    relations.map((relation, idx) => (
-                                        <RelationItem
-                                            key={idx}
-                                            relation={relation}
-                                            isLast={idx === relations.length - 1}
-                                        />
-                                    ))
-                                )}
-                            </div>
-                        </td>
-                    </tr>
-                </CollapsibleContent>
-            </>
-        </Collapsible>
+        <>
+            {relations.map((relation, idx) => (
+                <RelationItem
+                    key={idx}
+                    relation={relation}
+                    isLast={idx === relations.length - 1}
+                />
+            ))}
+        </>
     );
 }
 
@@ -428,13 +379,92 @@ export default function EnrichmentResults() {
         [results, selectedArtifactId],
     );
 
-    const artifactViewColumns = useMemo<ColumnDef<EnricherArtifact>[]>(
+    const selectedEnricherName =
+        detailsAny?.enrichers?.find(
+            (enricher: any) =>
+                (enricher.enricher_type ?? enricher.enricherType) === selectedEnricher,
+        )?.display_name ??
+        detailsAny?.enrichers?.find(
+            (enricher: any) =>
+                (enricher.enricher_type ?? enricher.enricherType) === selectedEnricher,
+        )?.displayName ??
+        selectedEnricher;
+
+    const expandedState = useMemo(
+        () => expandedFromSelectedArtifact(artifacts, selectedArtifactId),
+        [artifacts, selectedArtifactId],
+    );
+
+    const artifactColumns = useMemo<ColumnDef<EnricherArtifact>[]>(
         () => [
+            {
+                id: 'select',
+                header: ({ table }) => {
+                    const rows = table.getRowModel().rows;
+                    const allSelected =
+                        rows.length > 0 &&
+                        rows.every((r) => {
+                            const aid = normalizeId(r.original.id);
+                            return aid !== null && selectedArtifacts.has(aid);
+                        });
+                    return (
+                        <Checkbox
+                            checked={allSelected}
+                            onCheckedChange={(checked) => {
+                                if (checked === true) {
+                                    const allIds = artifacts
+                                        .map((a) => normalizeId(a.id))
+                                        .filter((aid): aid is number => aid !== null);
+                                    setSelectedArtifacts(new Set(allIds));
+                                } else {
+                                    setSelectedArtifacts(new Set());
+                                }
+                            }}
+                            aria-label='Select all'
+                        />
+                    );
+                },
+                cell: ({ row }) => {
+                    const artifact = row.original;
+                    const artifactId = normalizeId(artifact.id);
+                    const artifactName = artifact.name || 'Untitled';
+                    return (
+                        <div onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                                checked={
+                                    artifactId !== null &&
+                                    selectedArtifacts.has(artifactId)
+                                }
+                                onCheckedChange={(checked) => {
+                                    if (artifactId === null) return;
+                                    setSelectedArtifacts((prev) => {
+                                        const next = new Set(prev);
+                                        if (checked === true) {
+                                            next.add(artifactId);
+                                        } else {
+                                            next.delete(artifactId);
+                                        }
+                                        return next;
+                                    });
+                                }}
+                                aria-label={`Select ${artifactName}`}
+                            />
+                        </div>
+                    );
+                },
+                enableHiding: false,
+                size: 40,
+            },
             {
                 id: 'enricher',
                 meta: { label: 'Enricher' },
                 accessorFn: (row) => row.subtype ?? row.name ?? '',
                 header: 'Enricher',
+                cell: () => (
+                    <span className='text-sm text-foreground'>
+                        {selectedEnricherName}
+                    </span>
+                ),
             },
             {
                 id: 'artifact',
@@ -442,23 +472,117 @@ export default function EnrichmentResults() {
                 accessorFn: (row) => row.name ?? '',
                 header: 'Artifact',
                 enableHiding: false,
+                cell: ({ row }) => {
+                    const artifact = row.original;
+                    const artifactBadge = renderEntryBadge(artifact);
+                    const artifactName = artifact.name || 'Untitled';
+                    const isOpen = row.getIsExpanded();
+                    const artifactId = normalizeId(artifact.id);
+                    const relationCount =
+                        artifact.count ??
+                        (isOpen && artifactId === selectedArtifactId
+                            ? relations.length
+                            : undefined);
+                    return (
+                        <div className='flex items-center gap-2'>
+                            {artifactBadge}
+                            <span className='text-foreground truncate'>
+                                {artifactName}
+                            </span>
+                            {relationCount !== undefined && (
+                                <span className='text-muted-foreground text-xs ml-auto'>
+                                    {relationCount} result
+                                    {relationCount !== 1 ? 's' : ''}
+                                </span>
+                            )}
+                            <CaretDownIcon
+                                className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
+                            />
+                        </div>
+                    );
+                },
             },
         ],
-        [],
+        [
+            artifacts,
+            relations,
+            selectedArtifactId,
+            selectedArtifacts,
+            selectedEnricherName,
+        ],
     );
 
-    const artifactsViewTable = useReactTable({
+    const onArtifactsExpandedChange = useCallback(
+        (updater: Updater<ExpandedState>) => {
+            const prev = expandedFromSelectedArtifact(artifacts, selectedArtifactId);
+            const next =
+                typeof updater === 'function'
+                    ? (updater as (p: ExpandedState) => ExpandedState)(prev)
+                    : updater;
+            if (next === true) {
+                return;
+            }
+            if (!next || typeof next !== 'object') {
+                setSelectedArtifactId(null);
+                return;
+            }
+            const openEntries = Object.entries(next as Record<string, boolean>).filter(
+                ([, v]) => v,
+            );
+            if (openEntries.length === 0) {
+                setSelectedArtifactId(null);
+                return;
+            }
+            const lastOpen = openEntries[openEntries.length - 1];
+            if (!lastOpen) {
+                setSelectedArtifactId(null);
+                return;
+            }
+            const key = lastOpen[0];
+            if (key.startsWith('id-')) {
+                setSelectedArtifactId(Number(key.slice(3)));
+                setPage(1);
+                return;
+            }
+            if (key.startsWith('idx-')) {
+                const i = Number(key.slice(4));
+                setSelectedArtifactId(normalizeId(artifacts[i]?.id));
+                setPage(1);
+            }
+        },
+        [artifacts, selectedArtifactId],
+    );
+
+    const artifactsTable = useReactTable({
         data: artifacts,
-        columns: artifactViewColumns,
-        state: { columnVisibility: artifactColumnVisibility },
+        columns: artifactColumns,
+        state: {
+            columnVisibility: artifactColumnVisibility,
+            expanded: expandedState,
+        },
         onColumnVisibilityChange: setArtifactColumnVisibility,
+        onExpandedChange: onArtifactsExpandedChange,
         getCoreRowModel: getCoreRowModel(),
+        getExpandedRowModel: getExpandedRowModel(),
+        getRowId: (row, index) => getArtifactRowId(row, index),
+        getRowCanExpand: () => true,
     });
 
-    const showEnricherCol =
-        artifactsViewTable.getColumn('enricher')?.getIsVisible() ?? true;
-    const showArtifactCol =
-        artifactsViewTable.getColumn('artifact')?.getIsVisible() ?? true;
+    const renderArtifactSubRow = useCallback(
+        (row: Row<EnricherArtifact>) => {
+            const aid = normalizeId(row.original.id);
+            const isSel = aid === selectedArtifactId;
+            return (
+                <div className='bg-muted/30 border-t'>
+                    <ArtifactRelationsPanel
+                        isLoading={isSel && isLoadingResults}
+                        relations={isSel ? relations : []}
+                    />
+                </div>
+            );
+        },
+        [isLoadingResults, relations, selectedArtifactId],
+    );
 
     const getStatusIcon = (status?: string) => {
         if (!status) return null;
@@ -492,13 +616,10 @@ export default function EnrichmentResults() {
         }
     };
 
-    // Download results as JSON
     const handleDownloadResults = () => {
         if (!results || results.length === 0) return;
 
-        // Format the data according to specifications
         const formattedData = results.map((result) => {
-            // Build entries array from e1 and e2
             const entries: Array<{ type: string; name: string }> = [];
 
             if (result.e1) {
@@ -521,7 +642,6 @@ export default function EnrichmentResults() {
             };
         });
 
-        // Create and download the file
         const jsonString = JSON.stringify(formattedData, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -534,7 +654,6 @@ export default function EnrichmentResults() {
         URL.revokeObjectURL(url);
     };
 
-    // Handle enricher selection
     const handleEnricherSelect = (enricherType: string) => {
         setSelectedEnricher(enricherType);
         setSelectedArtifactId(null);
@@ -544,27 +663,10 @@ export default function EnrichmentResults() {
         setSearchInput('');
     };
 
-    // Handle ignored artifacts selection
     const handleIgnoredSelect = () => {
         setSelectedEnricher(null);
         setSelectedArtifactId(null);
         setShowIgnored(true);
-        // Query will automatically handle null when enabled is false
-    };
-
-    const handleArtifactToggle = (artifactId: number | null, open: boolean) => {
-        if (open) {
-            if (artifactId == null) {
-                return;
-            }
-            setPage(1);
-            setSelectedArtifactId(artifactId);
-            return;
-        }
-
-        if (selectedArtifactId === artifactId) {
-            setSelectedArtifactId(null);
-        }
     };
 
     const errorMsg = () => {
@@ -596,17 +698,55 @@ export default function EnrichmentResults() {
     const hasWarnings = enricherAny?.warnings && enricherAny.warnings.length > 0;
     const hasErrors = enricherAny?.errors && enricherAny.errors.length > 0;
 
-    const ignoredArtifacts = detailsAny?.ignored ?? [];
-    const selectedEnricherName =
-        detailsAny?.enrichers?.find(
-            (enricher: any) =>
-                (enricher.enricher_type ?? enricher.enricherType) === selectedEnricher,
-        )?.display_name ??
-        detailsAny?.enrichers?.find(
-            (enricher: any) =>
-                (enricher.enricher_type ?? enricher.enricherType) === selectedEnricher,
-        )?.displayName ??
-        selectedEnricher;
+    const ignoredArtifacts = useMemo(
+        () => detailsAny?.ignored ?? [],
+        [detailsAny?.ignored],
+    );
+
+    const ignoredRows = useMemo(
+        () =>
+            ignoredArtifacts.map((artifact: any, index: number) => ({
+                key: `ignored-${index}`,
+                artifact,
+            })),
+        [ignoredArtifacts],
+    );
+
+    const ignoredColumns = useMemo<ColumnDef<{ key: string; artifact: any }>[]>(
+        () => [
+            {
+                id: 'artifact',
+                header: 'Artifact',
+                meta: { label: 'Artifact' },
+                enableHiding: false,
+                cell: ({ row }) => {
+                    const artifact = row.original.artifact;
+                    return (
+                        <div className='flex items-center gap-2'>
+                            {artifact.subtype && (
+                                <Badge variant='secondary' className='flex-shrink-0'>
+                                    {artifact.subtype}
+                                </Badge>
+                            )}
+                            <span className='text-foreground truncate'>
+                                {typeof artifact === 'string'
+                                    ? artifact
+                                    : artifact.name || JSON.stringify(artifact)}
+                            </span>
+                        </div>
+                    );
+                },
+            },
+        ],
+        [],
+    );
+
+    const ignoredTable = useReactTable({
+        data: ignoredRows,
+        columns: ignoredColumns,
+        getCoreRowModel: getCoreRowModel(),
+        getRowId: (r) => r.key,
+    });
 
     if (isErrorDetails) {
         return (
@@ -751,6 +891,7 @@ export default function EnrichmentResults() {
                                                 setPage(1);
                                             }}
                                             onClear={() => {
+                                                setSearchInput('');
                                                 setSearchParams('');
                                                 setPage(1);
                                             }}
@@ -776,7 +917,7 @@ export default function EnrichmentResults() {
                                         </Button>
                                         {artifacts.length > 0 && (
                                             <DataTableViewOptions
-                                                table={artifactsViewTable}
+                                                table={artifactsTable}
                                                 align='end'
                                             />
                                         )}
@@ -786,44 +927,12 @@ export default function EnrichmentResults() {
 
                             {showIgnored ? (
                                 <ScrollArea className='min-h-0 flex-1 overflow-hidden rounded-md border'>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Artifact</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {ignoredArtifacts.map(
-                                                (artifact: any, index: number) => (
-                                                    <TableRow key={index}>
-                                                        <TableCell>
-                                                            <div className='flex items-center gap-2'>
-                                                                {artifact.subtype && (
-                                                                    <Badge
-                                                                        variant='secondary'
-                                                                        className='flex-shrink-0'
-                                                                    >
-                                                                        {
-                                                                            artifact.subtype
-                                                                        }
-                                                                    </Badge>
-                                                                )}
-                                                                <span className='text-foreground truncate'>
-                                                                    {typeof artifact ===
-                                                                    'string'
-                                                                        ? artifact
-                                                                        : artifact.name ||
-                                                                          JSON.stringify(
-                                                                              artifact,
-                                                                          )}
-                                                                </span>
-                                                            </div>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ),
-                                            )}
-                                        </TableBody>
-                                    </Table>
+                                    <DataTable
+                                        table={ignoredTable}
+                                        density='compact'
+                                        emptyMessage='No ignored artifacts.'
+                                        showPagination={false}
+                                    />
                                     <ScrollBar orientation='horizontal' />
                                 </ScrollArea>
                             ) : selectedEnricher ? (
@@ -833,193 +942,38 @@ export default function EnrichmentResults() {
                                         <Spinner className='size-10' />
                                     </div>
                                 ) : artifacts.length === 0 ? (
-                                    <div className='text-center py-8'>
-                                        <p className='text-sm text-muted-foreground'>
-                                            No artifacts found.
-                                        </p>
-                                    </div>
+                                    <Empty className='border-0 py-8'>
+                                        <EmptyHeader className='max-w-none'>
+                                            <EmptyDescription>
+                                                No artifacts found.
+                                            </EmptyDescription>
+                                        </EmptyHeader>
+                                    </Empty>
                                 ) : (
                                     <div className='flex min-h-0 flex-1 flex-col gap-2.5'>
                                         <div className='flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border'>
                                             <ScrollArea className='min-h-0 flex-1'>
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead className='w-10'>
-                                                                <Checkbox
-                                                                    checked={
-                                                                        artifacts.length >
-                                                                            0 &&
-                                                                        artifacts.every(
-                                                                            (a) => {
-                                                                                const id =
-                                                                                    normalizeId(
-                                                                                        a.id,
-                                                                                    );
-                                                                                return (
-                                                                                    id !==
-                                                                                        null &&
-                                                                                    selectedArtifacts.has(
-                                                                                        id,
-                                                                                    )
-                                                                                );
-                                                                            },
-                                                                        )
-                                                                    }
-                                                                    onCheckedChange={(
-                                                                        checked,
-                                                                    ) => {
-                                                                        if (
-                                                                            checked ===
-                                                                            true
-                                                                        ) {
-                                                                            const allIds =
-                                                                                artifacts
-                                                                                    .map(
-                                                                                        (
-                                                                                            a,
-                                                                                        ) =>
-                                                                                            normalizeId(
-                                                                                                a.id,
-                                                                                            ),
-                                                                                    )
-                                                                                    .filter(
-                                                                                        (
-                                                                                            id,
-                                                                                        ): id is number =>
-                                                                                            id !==
-                                                                                            null,
-                                                                                    );
-                                                                            setSelectedArtifacts(
-                                                                                new Set(
-                                                                                    allIds,
-                                                                                ),
-                                                                            );
-                                                                        } else {
-                                                                            setSelectedArtifacts(
-                                                                                new Set(),
-                                                                            );
-                                                                        }
-                                                                    }}
-                                                                    aria-label='Select all'
-                                                                />
-                                                            </TableHead>
-                                                            {showEnricherCol && (
-                                                                <TableHead>
-                                                                    Enricher
-                                                                </TableHead>
-                                                            )}
-                                                            {showArtifactCol && (
-                                                                <TableHead>
-                                                                    Artifact
-                                                                </TableHead>
-                                                            )}
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {artifacts.map(
-                                                            (artifact, index) => {
-                                                                const artifactId =
-                                                                    normalizeId(
-                                                                        artifact.id,
-                                                                    );
-                                                                const artifactBadge =
-                                                                    renderEntryBadge(
-                                                                        artifact,
-                                                                    );
-
-                                                                const isSelected =
-                                                                    artifactId !==
-                                                                        null &&
-                                                                    artifactId ===
-                                                                        selectedArtifactId;
-
-                                                                return (
-                                                                    <ArtifactRow
-                                                                        key={
-                                                                            artifact.id ??
-                                                                            index
-                                                                        }
-                                                                        artifact={
-                                                                            artifact
-                                                                        }
-                                                                        artifactBadge={
-                                                                            artifactBadge
-                                                                        }
-                                                                        enricherName={
-                                                                            selectedEnricherName ||
-                                                                            ''
-                                                                        }
-                                                                        isOpen={
-                                                                            isSelected
-                                                                        }
-                                                                        onToggle={(
-                                                                            open,
-                                                                        ) =>
-                                                                            handleArtifactToggle(
-                                                                                artifactId,
-                                                                                open,
-                                                                            )
-                                                                        }
-                                                                        relations={
-                                                                            isSelected
-                                                                                ? relations
-                                                                                : []
-                                                                        }
-                                                                        isLoading={
-                                                                            isSelected &&
-                                                                            isLoadingResults
-                                                                        }
-                                                                        isChecked={
-                                                                            artifactId !==
-                                                                                null &&
-                                                                            selectedArtifacts.has(
-                                                                                artifactId,
-                                                                            )
-                                                                        }
-                                                                        onCheckChange={(
-                                                                            checked,
-                                                                        ) => {
-                                                                            if (
-                                                                                artifactId ===
-                                                                                null
-                                                                            )
-                                                                                return;
-                                                                            setSelectedArtifacts(
-                                                                                (
-                                                                                    prev,
-                                                                                ) => {
-                                                                                    const next =
-                                                                                        new Set(
-                                                                                            prev,
-                                                                                        );
-                                                                                    if (
-                                                                                        checked
-                                                                                    ) {
-                                                                                        next.add(
-                                                                                            artifactId,
-                                                                                        );
-                                                                                    } else {
-                                                                                        next.delete(
-                                                                                            artifactId,
-                                                                                        );
-                                                                                    }
-                                                                                    return next;
-                                                                                },
-                                                                            );
-                                                                        }}
-                                                                        showEnricherColumn={
-                                                                            showEnricherCol
-                                                                        }
-                                                                        showArtifactColumn={
-                                                                            showArtifactCol
-                                                                        }
-                                                                    />
-                                                                );
-                                                            },
-                                                        )}
-                                                    </TableBody>
-                                                </Table>
+                                                <DataTable
+                                                    table={artifactsTable}
+                                                    density='compact'
+                                                    onRowClickRow={(row) =>
+                                                        row.toggleExpanded()
+                                                    }
+                                                    interactiveRow={() => true}
+                                                    renderSubRow={renderArtifactSubRow}
+                                                    getCellProps={(cell) =>
+                                                        cell.column.id === 'select'
+                                                            ? {
+                                                                  onClick: (
+                                                                      e: MouseEvent<HTMLTableCellElement>,
+                                                                  ) =>
+                                                                      e.stopPropagation(),
+                                                              }
+                                                            : undefined
+                                                    }
+                                                    emptyMessage='No artifacts found.'
+                                                    showPagination={false}
+                                                />
                                                 <ScrollBar orientation='horizontal' />
                                             </ScrollArea>
                                         </div>

@@ -27,7 +27,7 @@ import requests.exceptions
 from django.conf import settings
 
 from entries.enums import EntryType, RelationReason
-from entries.models import Entry, EntryClass
+from entries.models import Entry, EntryClass, Relation
 
 from ..models.base import EnrichmentRequest
 from .network import NETWORK_EXTERNAL, NETWORK_NONE, ensure_enricher_network, resolve_network_mode
@@ -186,7 +186,17 @@ def _apply_result(
             )
 
     if relations_to_create:
-        Relation.objects.bulk_create(relations_to_create)
+        before = len(relations_to_create)
+        relations_to_create = [r for r in relations_to_create if Relation.includes_entity(r.e1, r.e2)]
+        skipped = before - len(relations_to_create)
+        if skipped:
+            logger.warning(
+                "Container enricher %s skipped %d artifact-artifact relations",
+                enricher_type,
+                skipped,
+            )
+        if relations_to_create:
+            Relation.objects.bulk_create(relations_to_create)
 
     for warning in result.warnings:
         request._append_warning(warning, enricher_type)

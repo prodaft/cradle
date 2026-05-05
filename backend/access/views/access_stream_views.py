@@ -33,6 +33,13 @@ from ..serializers import AccessEntitySerializer, AccessUserSerializer
                 location=OpenApiParameter.PATH,
                 description="UUID of the user",
             ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search entities by name, description, or numeric id",
+                required=False,
+            ),
         ],
         responses={
             200: OpenApiResponse(
@@ -58,7 +65,8 @@ class UserAccessListStreamView(APIView):
         except CradleUser.DoesNotExist as exc:
             raise UserNotFoundException(detail="That user could not be found.") from exc
 
-        qs = Access.objects.get_accesses(access_user.id)
+        search = request.query_params.get("search")
+        qs = Access.objects.get_accesses(access_user.id, search)
         context = {"request": request, "is_admin": access_user.is_cradle_admin}
         serializer = AccessEntitySerializer(context=context)
 

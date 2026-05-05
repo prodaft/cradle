@@ -1,4 +1,6 @@
 import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
+import { DataTable } from '@/components/custom/data-table/data-table';
+import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
 import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,22 +12,22 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { useNdjsonQuery } from '@/hooks/query';
-import {
     ArrowCounterClockwiseIcon,
     ClockCounterClockwiseIcon,
     FloppyDiskIcon,
 } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import type { components } from '@services/openapi/schema';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 
 interface UserPermissionsFormProps {
     id: string;
@@ -33,6 +35,8 @@ interface UserPermissionsFormProps {
 }
 
 type AccessType = 'none' | 'read' | 'read-write';
+
+type AccessEntity = components['schemas']['AccessEntity'];
 
 interface PermissionEntity {
     id: number;
@@ -46,50 +50,6 @@ const ACCESS_OPTIONS = [
     { value: 'read-write', label: 'Read-Write' },
 ];
 
-function PermissionRow({
-    entity,
-    currentAccess,
-    onAccessChange,
-    isSaving,
-}: {
-    entity: PermissionEntity;
-    currentAccess: AccessType;
-    onAccessChange: (entityId: number, accessType: AccessType) => void;
-    isSaving: boolean;
-}) {
-    const handleChange = (newAccess: string) => {
-        onAccessChange(entity.id, newAccess as AccessType);
-    };
-
-    return (
-        <TableRow>
-            <TableCell className='text-muted-foreground'>{entity.id}</TableCell>
-            <TableCell className='font-medium'>{entity.name}</TableCell>
-            <TableCell className='text-muted-foreground text-sm'>
-                {entity.description || '-'}
-            </TableCell>
-            <TableCell>
-                <Select
-                    value={currentAccess}
-                    onValueChange={handleChange}
-                    disabled={isSaving}
-                >
-                    <SelectTrigger className='w-[140px]'>
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {ACCESS_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </TableCell>
-        </TableRow>
-    );
-}
-
 export default function UserPermissionsForm({
     id,
     readOnly,
@@ -99,80 +59,170 @@ export default function UserPermissionsForm({
     );
     const [currentAccess, setCurrentAccess] = useState<Record<number, AccessType>>({});
     const [searchVal, setSearchVal] = useState('');
+    const [pagination, setPagination] = useState({
+        pageIndex: 0,
+        pageSize: 20,
+    });
     const queryClient = useQueryClient();
 
-    const permissionsQuery = useNdjsonQuery({
-        path: '/access/user/{user_id}/stream/',
-        params: { path: { user_id: id } },
-        queryKey: ['get', '/access/user/{user_id}/', id],
+    const trimmedSearch = searchVal.trim();
+
+    const accessMapsRef = useRef({
+        original: {} as Record<number, AccessType>,
+        current: {} as Record<number, AccessType>,
+    });
+    accessMapsRef.current.original = originalAccess;
+    accessMapsRef.current.current = currentAccess;
+
+    const hasLoadedListContextRef = useRef(false);
+
+    const permissionsQuery = useQuery({
+        queryKey: [
+            'get',
+            '/access/user/{user_id}/',
+            id,
+            pagination.pageIndex + 1,
+            pagination.pageSize,
+            trimmedSearch,
+        ],
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET(
+                '/access/user/{user_id}/',
+                {
+                    params: {
+                        path: { user_id: id },
+                        query: {
+                            page: pagination.pageIndex + 1,
+                            page_size: pagination.pageSize,
+                            ...(trimmedSearch ? { search: trimmedSearch } : {}),
+                        },
+                    },
+                },
+            );
+            if (error) throw { response, error };
+            return data;
+        },
         enabled: !!id,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
     });
 
+    const pageData = permissionsQuery.data;
+    const totalPages = Math.max(1, pageData?.total_pages ?? 1);
+
     const entities: PermissionEntity[] = useMemo(() => {
-        const permissions = permissionsQuery.data ?? [];
-        return permissions.map((c: any) => ({
+        const results = pageData?.results ?? [];
+        return results.map((c: AccessEntity) => ({
             id: c.id,
             name: c.name,
-            description: c.description,
+            description: undefined,
         }));
-    }, [permissionsQuery.data]);
+    }, [pageData?.results]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
+        hasLoadedListContextRef.current = false;
         setOriginalAccess({});
         setCurrentAccess({});
+        setSearchVal('');
+        setPagination((p) => ({ pageIndex: 0, pageSize: p.pageSize }));
     }, [id]);
 
+    useLayoutEffect(() => {
+        hasLoadedListContextRef.current = false;
+        setOriginalAccess({});
+        setCurrentAccess({});
+        setPagination((p) => ({ pageIndex: 0, pageSize: p.pageSize }));
+    }, [trimmedSearch]);
+
     useEffect(() => {
-        const permissions = permissionsQuery.data;
-        if (!permissions) return;
+        if (permissionsQuery.isSuccess && permissionsQuery.data !== undefined) {
+            hasLoadedListContextRef.current = true;
+        }
+    }, [permissionsQuery.isSuccess, permissionsQuery.data]);
 
-        const original: Record<number, AccessType> = {};
-        const current: Record<number, AccessType> = {};
+    useEffect(() => {
+        if (!pageData) return;
+        const maxIndex = Math.max(0, (pageData.total_pages ?? 1) - 1);
+        setPagination((p) =>
+            p.pageIndex > maxIndex ? { ...p, pageIndex: maxIndex } : p,
+        );
+    }, [pageData?.total_pages, pageData]);
 
-        permissions.forEach((c: any) => {
-            const accessType = (c.access_type ?? 'none') as AccessType;
-            original[c.id] = accessType;
-            current[c.id] = accessType;
-        });
+    useEffect(() => {
+        if (!pageData) return;
+        if (pageData.count === 0) {
+            setOriginalAccess({});
+            setCurrentAccess({});
+            return;
+        }
 
-        setOriginalAccess(original);
-        setCurrentAccess(current);
-    }, [permissionsQuery.data]);
+        const results = pageData.results;
+        if (!results) return;
 
-    const handleAccessChange = (entityId: number, accessType: AccessType) => {
-        setCurrentAccess((prev) => ({
-            ...prev,
-            [entityId]: accessType,
-        }));
-    };
+        const prevOriginal = accessMapsRef.current.original;
+        const prevCurrent = accessMapsRef.current.current;
+        const nextOriginal = { ...prevOriginal };
+        const nextCurrent = { ...prevCurrent };
 
-    const hasUnsavedChanges = useMemo(
-        () =>
-            entities.some((entity) => {
-                const original = originalAccess[entity.id];
-                const current = currentAccess[entity.id];
-                return original !== current;
-            }),
-        [entities, originalAccess, currentAccess],
+        for (const row of results as AccessEntity[]) {
+            const entityId = row.id;
+            const server = row.access_type;
+            const orig = prevOriginal[entityId];
+            const cur = prevCurrent[entityId];
+            const dirty = orig !== undefined && cur !== undefined && orig !== cur;
+            if (dirty) {
+                nextOriginal[entityId] = orig;
+                nextCurrent[entityId] = cur;
+            } else {
+                nextOriginal[entityId] = server;
+                nextCurrent[entityId] = server;
+            }
+        }
+
+        setOriginalAccess(nextOriginal);
+        setCurrentAccess(nextCurrent);
+    }, [pageData]);
+
+    const handleAccessChange = useCallback(
+        (entityId: number, accessType: AccessType) => {
+            setCurrentAccess((prev) => ({
+                ...prev,
+                [entityId]: accessType,
+            }));
+        },
+        [],
     );
+
+    const hasUnsavedChanges = useMemo(() => {
+        const keys = new Set([
+            ...Object.keys(originalAccess),
+            ...Object.keys(currentAccess),
+        ]);
+        for (const k of keys) {
+            const entityId = Number(k);
+            if (originalAccess[entityId] !== currentAccess[entityId]) return true;
+        }
+        return false;
+    }, [originalAccess, currentAccess]);
 
     const saveChangesMutation = useMutation({
         mutationFn: async () => {
-            const updates = entities.reduce<
-                Array<{ entityId: number; accessType: AccessType }>
-            >((acc, entity) => {
-                const original = originalAccess[entity.id];
-                const current = currentAccess[entity.id];
+            const keys = new Set([
+                ...Object.keys(originalAccess),
+                ...Object.keys(currentAccess),
+            ]);
+            const updates: Array<{ entityId: number; accessType: AccessType }> = [];
+            for (const k of keys) {
+                const entityId = Number(k);
+                const original = originalAccess[entityId];
+                const current = currentAccess[entityId];
                 if (original !== current && current !== undefined) {
-                    acc.push({
-                        entityId: entity.id,
+                    updates.push({
+                        entityId,
                         accessType: current,
                     });
                 }
-                return acc;
-            }, []);
+            }
 
             if (updates.length === 0) return;
 
@@ -198,7 +248,9 @@ export default function UserPermissionsForm({
             successMessage: 'Permissions updated successfully',
         },
         onSuccess: () => {
-            setOriginalAccess({ ...currentAccess });
+            const saved = { ...accessMapsRef.current.current };
+            setOriginalAccess(saved);
+            setCurrentAccess(saved);
             queryClient.invalidateQueries({
                 queryKey: ['get', '/access/user/{user_id}/', id],
             });
@@ -215,27 +267,109 @@ export default function UserPermissionsForm({
     };
 
     const handleDefault = () => {
-        const defaults: Record<number, AccessType> = {};
-        entities.forEach((e) => (defaults[e.id] = 'none'));
+        const defaults: Record<number, AccessType> = { ...currentAccess };
+        entities.forEach((e) => {
+            defaults[e.id] = 'none';
+        });
         setCurrentAccess(defaults);
     };
 
-    const isAtDefault = entities.every(
-        (e) => (currentAccess[e.id] ?? 'none') === 'none',
+    const isAtDefault =
+        entities.length > 0 &&
+        entities.every((e) => (currentAccess[e.id] ?? 'none') === 'none');
+
+    const emptyMessage = searchVal.trim()
+        ? 'No entities found matching your search'
+        : 'No entities available';
+
+    const handleSearchChange = useCallback((value: string) => {
+        setSearchVal(value);
+        setPagination((p) => ({ ...p, pageIndex: 0 }));
+    }, []);
+
+    const columns = useMemo<ColumnDef<PermissionEntity>[]>(
+        () => [
+            {
+                accessorKey: 'id',
+                header: 'ID',
+                meta: { label: 'ID' },
+                cell: ({ row }) => (
+                    <span className='text-muted-foreground'>{row.original.id}</span>
+                ),
+                size: 60,
+            },
+            {
+                accessorKey: 'name',
+                header: 'Entity',
+                meta: { label: 'Entity' },
+                cell: ({ row }) => (
+                    <span className='font-medium'>{row.original.name}</span>
+                ),
+                size: 200,
+            },
+            {
+                accessorKey: 'description',
+                header: 'Description',
+                meta: { label: 'Description' },
+                cell: ({ row }) => (
+                    <span className='text-muted-foreground text-sm'>
+                        {row.original.description ?? '-'}
+                    </span>
+                ),
+            },
+            {
+                id: 'access',
+                header: 'Access',
+                meta: { label: 'Access' },
+                enableHiding: false,
+                cell: ({ row }) => {
+                    const entity = row.original;
+                    const value = currentAccess[entity.id] ?? 'none';
+                    const disabled = saveChangesMutation.isPending || !!readOnly;
+                    return (
+                        <div onClick={(e) => e.stopPropagation()}>
+                            <Select
+                                value={value}
+                                onValueChange={(v) =>
+                                    handleAccessChange(entity.id, v as AccessType)
+                                }
+                                disabled={disabled}
+                            >
+                                <SelectTrigger className='w-[140px]'>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {ACCESS_OPTIONS.map((option) => (
+                                        <SelectItem
+                                            key={option.value}
+                                            value={option.value}
+                                        >
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    );
+                },
+                size: 160,
+            },
+        ],
+        [currentAccess, handleAccessChange, readOnly, saveChangesMutation.isPending],
     );
 
-    // Filter entities based on search
-    const filteredEntities = useMemo(() => {
-        const needle = searchVal.trim().toLowerCase();
-        return entities.filter((entity) => {
-            if (!needle) return true;
-            const haystack =
-                `${entity.name || ''} ${entity.description || ''}`.toLowerCase();
-            return haystack.includes(needle);
-        });
-    }, [entities, searchVal]);
+    const table = useReactTable({
+        data: entities,
+        columns,
+        state: { pagination },
+        onPaginationChange: setPagination,
+        getCoreRowModel: getCoreRowModel(),
+        manualPagination: true,
+        pageCount: totalPages,
+        getRowId: (row) => String(row.id),
+    });
 
-    if (permissionsQuery.isLoading) {
+    if (permissionsQuery.isPending && !hasLoadedListContextRef.current) {
         return (
             <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                 <Spinner className='size-10' />
@@ -307,53 +441,38 @@ export default function UserPermissionsForm({
                 </SettingsHeaderActionsPortal>
             )}
             <div className='space-y-4'>
-                <ActionBarSearch
-                    placeholder='Search entities...'
-                    name='user-permissions-entity-search'
-                    value={searchVal}
-                    className='w-full min-w-0'
-                    onValueChange={setSearchVal}
-                    onClear={() => setSearchVal('')}
-                />
-
-                {/* Permissions Table */}
-                <div className='overflow-hidden rounded-md border'>
-                    {filteredEntities.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className='w-[60px]'>ID</TableHead>
-                                    <TableHead className='w-[200px]'>Entity</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead className='w-[160px]'>Access</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredEntities.map((entity) => (
-                                    <PermissionRow
-                                        key={entity.id}
-                                        entity={entity}
-                                        currentAccess={
-                                            currentAccess[entity.id] || 'none'
-                                        }
-                                        onAccessChange={handleAccessChange}
-                                        isSaving={
-                                            saveChangesMutation.isPending || !!readOnly
-                                        }
-                                    />
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <div className='text-center py-8'>
-                            <p className='text-sm text-muted-foreground'>
-                                {searchVal
-                                    ? 'No entities found matching your search'
-                                    : 'No entities available'}
-                            </p>
-                        </div>
-                    )}
+                <div className='flex w-full min-w-0 shrink-0 items-start justify-between gap-2 py-1'>
+                    <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
+                        <ActionBarSearch
+                            placeholder='Search entities...'
+                            name='user-permissions-entity-search'
+                            value={searchVal}
+                            debounceMs={300}
+                            onDebouncedChange={handleSearchChange}
+                            onSubmit={handleSearchChange}
+                            onClear={() => handleSearchChange('')}
+                            disabled={hasUnsavedChanges || !!readOnly}
+                            className='w-72 max-w-full min-w-0'
+                        />
+                    </div>
+                    <div className='flex shrink-0 items-center gap-2'>
+                        <DataTableViewOptions table={table} />
+                    </div>
                 </div>
+                <DataTable
+                    table={table}
+                    density='compact'
+                    emptyMessage={emptyMessage}
+                    showPagination={
+                        (pageData?.count ?? 0) > 0 || permissionsQuery.isFetching
+                    }
+                    paginationDisabled={hasUnsavedChanges || !!readOnly}
+                    isLoading={
+                        hasLoadedListContextRef.current &&
+                        permissionsQuery.isFetching &&
+                        !pageData
+                    }
+                />
             </div>
         </>
     );

@@ -226,7 +226,7 @@ class PlateJSRenderer(BaseRenderer):
     def table_cell(
         self,
         text: List,
-        _align: Optional[str] = None,
+        align: Optional[str] = None,
         head: bool = False,
     ) -> Dict[str, Any]:
         return {"type": "th" if head else "td", "children": text}

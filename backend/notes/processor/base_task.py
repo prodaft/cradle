@@ -27,6 +27,15 @@ class BaseTask(ABC):
     def run(self, note: Note, entries: Iterable[Entry]) -> tuple[Signature | None, Iterable[Entry]]:
         """Execute this step in the chain of responsibility.
 
-        Returns (async_task, entries). async_task may be None. Raises on failure.
+        Implementations may raise to abort the pipeline.
+
+        Args:
+            note: The note being processed through the pipeline.
+            entries: Entries accumulated from prior steps; implementations often pass
+                these through unchanged.
+
+        Returns:
+            A Celery ``Signature`` to enqueue next work (or ``None`` if there is no
+            async follow-up), and the ``entries`` iterable for downstream steps.
         """
         ...

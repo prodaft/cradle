@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { FileReference } from '@/types';
+import type { FileReferenceWithNote } from '@/types';
 import { createDownloadPath } from '@/utils/links';
 import {
     ClipboardTextIcon,
@@ -25,17 +25,17 @@ import { useMutation } from '@tanstack/react-query';
 import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useCallback, useMemo, useState } from 'react';
 
-const buildReferenceTag = (file: FileReference) =>
+const buildReferenceTag = (file: FileReferenceWithNote) =>
     file.id && file.file_name ? `${file.id}-${file.file_name}` : (file.id ?? '');
 
-const buildMarkdownReference = (file: FileReference) => {
+const buildMarkdownReference = (file: FileReferenceWithNote) => {
     const name = file.file_name ?? 'file';
     const tag = buildReferenceTag(file);
     return `[${name}][${tag}]`;
 };
 interface FileTableProps {
-    fileData: FileReference[];
-    setFileData: (data: FileReference[]) => void;
+    fileData: FileReferenceWithNote[];
+    setFileData: (data: FileReferenceWithNote[]) => void;
     insertTextCallback: (text: string) => void;
 }
 
@@ -45,7 +45,9 @@ export default function FileTable({
     insertTextCallback,
 }: FileTableProps) {
     const basePath = import.meta.env.VITE_API_BASE_URL ?? '';
-    const [deletingFile, setDeletingFile] = useState<FileReference | null>(null);
+    const [deletingFile, setDeletingFile] = useState<FileReferenceWithNote | null>(
+        null,
+    );
 
     const downloadMutation = useMutation({
         mutationFn: async (fileId: string) => {
@@ -73,7 +75,7 @@ export default function FileTable({
 
     // Removes a file from the table only. The file is not deleted from the server.
     const handleDelete = useCallback(
-        (data: FileReference) => {
+        (data: FileReferenceWithNote) => {
             setFileData(fileData.filter((d) => d.id !== data.id));
             try {
                 const raw = localStorage.getItem('minio-cache');
@@ -90,7 +92,7 @@ export default function FileTable({
 
     const { mutateAsync: downloadFile } = downloadMutation;
     const handleDownload = useCallback(
-        async (data: FileReference) => {
+        async (data: FileReferenceWithNote) => {
             if (!data.id) return;
             const presignedUrl = await downloadFile(data.id);
             const link = document.createElement('a');
@@ -104,7 +106,7 @@ export default function FileTable({
     );
 
     // Memoize columns to prevent recreation on every render
-    const columns = useMemo<ColumnDef<FileReference>[]>(
+    const columns = useMemo<ColumnDef<FileReferenceWithNote>[]>(
         () => [
             {
                 accessorKey: 'file_name',

@@ -86,59 +86,90 @@ def get_neighbors_paginated(
     """Return paginated neighbors at `depth` hops from the source set.
 
     Same traversal logic as get_neighbors but with pagination and ordering.
-    """
-    current_level = sourceset
 
+    When ``cumulative`` is True, depth levels are concatenated in order (depth 0,
+    then 1, …) with ``order_by`` applied within each level. The global offset
+    ``(page_number - 1) * page_size`` skips entries across that combined sequence,
+    then at most ``page_size`` rows are returned (callers often pass
+    ``page_size + 1`` so the API can report ``has_next`` without loading an
+    unbounded queryset). Skipping within a level still uses ``COUNT`` once for
+    that level; taking from the start of a level uses a bounded ``LIMIT`` on ids
+    instead of counting the whole level.
+
+    When ``cumulative`` is False, only the deepest hop is paginated (``offset``
+    and ``page_size`` apply to that level only).
+    """
     offset = (page_number - 1) * page_size
-    count = 0
-    results = {}
-    visited = [current_level]
+    visited: list = [sourceset]
     if skip_virtual:
-        virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
+        virt_edges = Edge.objects.filter(src__in=sourceset, virtual=True)
         visited.append(virt_edges.values_list("dst", flat=True).distinct())
 
-    if offset == 0:
-        lvl = (filter(current_level) if filter else current_level).order_by(order_by)
-        results[0] = lvl
-        count += lvl.count()
+    if cumulative:
+        skip_remaining = offset
+        rows_left = page_size
+        results: dict[int, QuerySet] = {}
 
-    for current_depth in range(depth):
-        if count >= page_size:
-            break
+        def ordered_qs(level_qs: QuerySet) -> QuerySet:
+            return (filter(level_qs) if filter else level_qs).order_by(order_by)
 
+        def take_from_level(level_qs: QuerySet, depth_key: int) -> None:
+            nonlocal skip_remaining, rows_left
+            if rows_left <= 0:
+                return
+            qs = ordered_qs(level_qs)
+            if not qs.exists():
+                return
+            if skip_remaining:
+                total = qs.count()
+                if skip_remaining >= total:
+                    skip_remaining -= total
+                    return
+                start = skip_remaining
+                skip_remaining = 0
+            else:
+                start = 0
+            # Avoid a full-table count when taking from the head of a level: fetch at most
+            # ``rows_left`` primary keys, then re-filter to preserve ``order_by``.
+            end = start + rows_left
+            ids = list(qs.values_list("id", flat=True)[start:end])
+            if not ids:
+                return
+            chunk = len(ids)
+            results[depth_key] = qs.filter(id__in=ids).order_by(order_by)
+            rows_left -= chunk
+
+        take_from_level(sourceset, 0)
+
+        current_level = sourceset
+        for hop in range(depth):
+            if rows_left <= 0:
+                break
+            current_level = _get_next_level(current_level, visited, user, skip_virtual)
+            visited.append(current_level)
+            if skip_virtual:
+                virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
+                visited.append(virt_edges.values_list("dst", flat=True).distinct())
+            take_from_level(current_level, hop + 1)
+
+        if not results:
+            return Entry.objects.none()
+        final_result = None
+        for k in sorted(results):
+            v = results[k].annotate(depth=Value(k, output_field=IntegerField()))
+            final_result = v if final_result is None else final_result.union(v)
+        return final_result.order_by("depth")
+
+    current_level = sourceset
+    for _ in range(depth):
         current_level = _get_next_level(current_level, visited, user, skip_virtual)
-        lvl = (filter(current_level) if filter else current_level).order_by(order_by)
-
         visited.append(current_level)
         if skip_virtual:
             virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
             visited.append(virt_edges.values_list("dst", flat=True).distinct())
 
-        if cumulative:
-            if offset > 0:
-                lvl_count = lvl[:offset].count()
-                if lvl_count == offset:
-                    lvl = lvl[offset:]
-                offset -= lvl_count
-
-            if offset == 0:
-                results[current_depth + 1] = lvl[: (page_size - count)]
-                count += lvl.count()
-
-        else:
-            results = {current_depth + 1: lvl[offset : offset + page_size]}
-
-    final_result = None
-    for k, v in results.items():
-        v = v.annotate(depth=Value(k, output_field=IntegerField()))
-        if final_result is None:
-            final_result = v
-        else:
-            final_result = final_result.union(v)
-
-    if final_result is None:
-        return Entry.objects.none()
-    return final_result.order_by("depth")
+    lvl = (filter(current_level) if filter else current_level).order_by(order_by)
+    return lvl[offset : offset + page_size].annotate(depth=Value(depth, output_field=IntegerField()))
 
 
 def get_edges_for_paths(

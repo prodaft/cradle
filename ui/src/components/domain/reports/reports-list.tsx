@@ -47,9 +47,7 @@ import { StatusIcon, type StatusType } from '../notes/status-icon';
 
 type ReportList = components['schemas']['ReportList'];
 
-type ReportsListQuery = NonNullable<
-    operations['reports_list']['parameters']['query']
->;
+type ReportsListQuery = NonNullable<operations['reports_list']['parameters']['query']>;
 
 const SORT_FIELD_MAPPING: Record<string, string> = {
     title: 'title',
@@ -167,7 +165,6 @@ export default function ReportsList() {
         ) as ReportsListQuery;
     }, [page, pageSize, orderBy, searchQuery, statusFilter]);
 
-    // Query for reports
     const { data: reportsData, isLoading } = useQuery({
         queryKey: queryKeys.reports.list({
             page,
@@ -241,7 +238,6 @@ export default function ReportsList() {
                 reports_page: 1,
             };
             if (sorting.length === 0) {
-                // Ensure URL reflects default sort so back/forward sync doesn't re-apply old sort.
                 newSearch.reports_sort_field = 'created_at';
                 newSearch.reports_sort_direction = 'desc';
             } else {
@@ -282,11 +278,9 @@ export default function ReportsList() {
 
     const executeDelete = async (idsArray: string[]) => {
         try {
-            // Send all delete requests in parallel
             const deletePromises = idsArray.map((id) => deleteMutation.mutateAsync(id));
             const results = await Promise.allSettled(deletePromises);
 
-            // Count successes and failures
             const successes = results.filter((r) => r.status === 'fulfilled').length;
             const failures = results.filter((r) => r.status === 'rejected').length;
 
@@ -356,7 +350,6 @@ export default function ReportsList() {
                 );
             }
 
-            // Important: do NOT refetch here; retry is async and refetching causes a full table rerender.
             setRowSelection({});
         } catch (error) {
             const parsed = await parseAPIError(error);
@@ -372,7 +365,6 @@ export default function ReportsList() {
         [resetToFirstPage],
     );
 
-    // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
         const columnId =
             Object.keys(SORT_FIELD_MAPPING).find(

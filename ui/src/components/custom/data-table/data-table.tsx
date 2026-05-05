@@ -8,6 +8,7 @@ import * as React from 'react';
 
 import { DataTablePagination } from '@/components/custom/data-table/data-table-pagination';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
+import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
     Table,
@@ -43,6 +44,8 @@ interface DataTableProps<TData> extends React.ComponentProps<'div'> {
     loadingPlaceholder?: React.ReactNode;
     /** When false, pagination is omitted (e.g. while loadingPlaceholder is shown). */
     showPagination?: boolean;
+    /** When true, pagination controls are disabled (e.g. while unsaved edits exist). */
+    paginationDisabled?: boolean;
     /** comfortable = fixed h-12 rows (default); compact = natural row height */
     density?: 'comfortable' | 'compact';
     /** Renders a full-width cell below the row when row.getIsExpanded() is true */
@@ -66,6 +69,7 @@ export function DataTable<TData>({
     isLoading = false,
     loadingPlaceholder,
     showPagination = true,
+    paginationDisabled = false,
     density = 'comfortable',
     renderSubRow,
     getRowClassName,
@@ -218,9 +222,15 @@ export function DataTable<TData>({
                             <TableRow>
                                 <TableCell
                                     colSpan={table.getAllColumns().length}
-                                    className='h-24 text-center'
+                                    className='p-0'
                                 >
-                                    {emptyMessage}
+                                    <Empty className='min-h-24 flex-none gap-2 border-0 rounded-none py-8'>
+                                        <EmptyHeader className='max-w-none'>
+                                            <EmptyDescription>
+                                                {emptyMessage}
+                                            </EmptyDescription>
+                                        </EmptyHeader>
+                                    </Empty>
                                 </TableCell>
                             </TableRow>
                         )}
@@ -248,7 +258,9 @@ export function DataTable<TData>({
             )}
             {tableSection}
             <div className='flex flex-col gap-2.5'>
-                {showPagination ? <DataTablePagination table={table} /> : null}
+                {showPagination ? (
+                    <DataTablePagination table={table} disabled={paginationDisabled} />
+                ) : null}
                 {actionBar &&
                     table.getFilteredSelectedRowModel().rows.length > 0 &&
                     actionBar}

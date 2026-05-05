@@ -18,8 +18,8 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { CaretDownIcon, GitForkIcon } from '@phosphor-icons/react';
-import type { operations } from '@services/openapi/schema';
 import { $api } from '@services/openapi/client';
+import type { operations } from '@services/openapi/schema';
 import { useParams } from '@tanstack/react-router';
 import {
     type ColumnDef,
@@ -438,52 +438,42 @@ export default function ActivityList({
     const events = useMemo(() => {
         if (!logsData?.results) return [];
 
-        const srcLogIds = new Set<string>();
-        logsData.results.forEach((log: any) => {
-            if (log.src_log?.id) {
-                srcLogIds.add(log.src_log.id);
-            }
-        });
-
-        return logsData.results
-            .filter((log: any) => !srcLogIds.has(log.id))
-            .map(
-                (log: any): ActivityEvent => ({
-                    id: log.id || '',
-                    timestamp:
-                        typeof log.timestamp === 'string'
-                            ? log.timestamp
-                            : new Date().toISOString(),
-                    type: log.type,
-                    username: log.user?.username || 'unknown',
-                    content_type: log.content_type || 'unknown',
-                    object_id: log.object_id || '',
-                    object_repr: log.object_repr || '',
-                    details: log.details || undefined,
-                    src_log: log.src_log
-                        ? {
-                              id: log.src_log.id,
-                              type: log.src_log.type,
-                              details: log.src_log.details,
-                              content_type: log.src_log.content_type,
-                              object_id: log.src_log.object_id,
-                              object_repr: log.src_log.object_repr,
-                          }
-                        : undefined,
-                }),
-            );
+        return logsData.results.map(
+            (log: any): ActivityEvent => ({
+                id: log.id || '',
+                timestamp:
+                    typeof log.timestamp === 'string'
+                        ? log.timestamp
+                        : new Date().toISOString(),
+                type: log.type,
+                username: log.user?.username || 'unknown',
+                content_type: log.content_type || 'unknown',
+                object_id: log.object_id || '',
+                object_repr: log.object_repr || '',
+                details: log.details || undefined,
+                src_log: log.src_log
+                    ? {
+                          id: log.src_log.id,
+                          type: log.src_log.type,
+                          details: log.src_log.details,
+                          content_type: log.src_log.content_type,
+                          object_id: log.src_log.object_id,
+                          object_repr: log.src_log.object_repr,
+                      }
+                    : undefined,
+            }),
+        );
     }, [logsData?.results]);
 
     const totalPages = logsData?.total_pages || 1;
 
-    // Column definitions (TanStack Table)
     const columns = useMemo<ColumnDef<ActivityEvent>[]>(
         () => [
             {
                 accessorKey: 'type',
                 id: 'action',
-                header: 'Action',
-                meta: { label: 'Action' },
+                header: 'Type',
+                meta: { label: 'Type' },
                 size: 80,
                 cell: ({ row }) => {
                     const event = row.original;
@@ -534,9 +524,9 @@ export default function ActivityList({
                 : []),
             {
                 accessorKey: 'content_type',
-                id: 'type',
-                header: 'Type',
-                meta: { label: 'Type' },
+                id: 'content',
+                header: 'Content',
+                meta: { label: 'Content' },
                 size: 100,
                 cell: ({ row }) => (
                     <span className='text-muted-foreground capitalize'>
@@ -608,7 +598,6 @@ export default function ActivityList({
         [showUser],
     );
 
-    // Pagination handler
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1;

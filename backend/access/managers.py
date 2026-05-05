@@ -116,16 +116,18 @@ class AccessManager(models.Manager):
             return True
         return Entry.entities.filter(pk=entity_id, is_public=True).exists()
 
-    def get_accesses(self, user_id: UUID) -> QuerySet:
+    def get_accesses(self, user_id: UUID, search: str | None = None) -> QuerySet:
         """Retrieves access_type of all entities for a given user id.
 
         Args:
             user_id: ID of the user whose access is to be retrieved.
+            search: Optional case-insensitive substring match on entity name or description,
+                or exact match on entity id when ``search`` is numeric.
 
         Returns:
             QuerySet of dicts with keys: id, name, access_type, description.
         """
-        return (
+        qs = (
             Entry.entities.annotate(
                 access_type=FilteredRelation("access", condition=Q(access__user=user_id))
             )  # left outer join
@@ -133,6 +135,16 @@ class AccessManager(models.Manager):
             .annotate(access_type=F("access_type__access_type"))  # rename obscure field
             .order_by("name")
         )
+        term = (search or "").strip()
+        if term:
+            q = Q(name__icontains=term) | Q(description__icontains=term)
+            if term.isdigit():
+                try:
+                    q |= Q(id=int(term))
+                except ValueError, OverflowError:
+                    pass
+            qs = qs.filter(q)
+        return qs
 
     def get_users_with_access(self, entity_id: int) -> QuerySet:
         """Retrieves user ids that can grant access for the given entity.

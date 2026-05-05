@@ -47,11 +47,11 @@ class TaskScheduler:
 
         Raises:
             NotEnoughReferencesException: When the note does not reference at
-                least one entity and at least two entries.
+            least one entity and at least two entries.
             EntriesNotFoundException: When the note references entities that
-                do not exist.
+            do not exist.
             NoAccessToEntriesException: When the user does not have access to
-                the referenced entities.
+            the referenced entities.
         """
         dmp = diff_match_patch()
         patches = None
@@ -79,9 +79,9 @@ class TaskScheduler:
                 if async_task:
                     tasks.append(async_task)
 
-            task_chain = chain(*tasks)
-
-            transaction.on_commit(lambda: task_chain.apply_async())
+            if tasks:
+                task_chain = chain(*tasks)
+                transaction.on_commit(lambda c=task_chain: c.apply_async())
 
             if update_acvec:
                 note.access_vector = calculate_acvec([x for x in entries if x.entry_class.type == EntryType.ENTITY])

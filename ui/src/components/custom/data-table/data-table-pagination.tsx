@@ -14,26 +14,33 @@ import { cn } from '@/lib/utils';
 interface DataTablePaginationProps<TData> extends React.ComponentProps<'div'> {
     table: Table<TData>;
     pageSizeOptions?: number[];
+    /** When true, all pagination controls are non-interactive. */
+    disabled?: boolean;
 }
 
 export function DataTablePagination<TData>({
     table,
     pageSizeOptions = [10, 20, 30, 40, 50],
+    disabled = false,
     className,
     ...props
 }: DataTablePaginationProps<TData>) {
+    const selectedCount = table.getFilteredSelectedRowModel().rows.length;
     return (
         <div
             className={cn(
                 'flex w-full flex-col-reverse items-center justify-between gap-4 overflow-auto p-1 sm:flex-row sm:gap-8',
+                selectedCount === 0 && 'sm:justify-end',
                 className,
             )}
             {...props}
         >
-            <div className='flex-1 whitespace-nowrap text-muted-foreground text-sm'>
-                {table.getFilteredSelectedRowModel().rows.length} of{' '}
-                {table.getFilteredRowModel().rows.length} row(s) selected.
-            </div>
+            {selectedCount > 0 ? (
+                <div className='flex-1 whitespace-nowrap text-muted-foreground text-sm'>
+                    {selectedCount} of {table.getFilteredRowModel().rows.length} row(s)
+                    selected.
+                </div>
+            ) : null}
             <div className='flex flex-col-reverse items-center gap-4 sm:flex-row sm:gap-6 lg:gap-8'>
                 <div className='flex items-center space-x-2'>
                     <p className='whitespace-nowrap font-medium text-sm'>
@@ -44,6 +51,7 @@ export function DataTablePagination<TData>({
                         onValueChange={(value) => {
                             table.setPageSize(Number(value));
                         }}
+                        disabled={disabled}
                     >
                         <SelectTrigger className='h-8 w-18 data-size:h-8'>
                             <SelectValue
@@ -70,7 +78,7 @@ export function DataTablePagination<TData>({
                         size='icon'
                         className='hidden size-8 lg:flex'
                         onClick={() => table.setPageIndex(0)}
-                        disabled={!table.getCanPreviousPage()}
+                        disabled={disabled || !table.getCanPreviousPage()}
                     >
                         <ChevronsLeft />
                     </Button>
@@ -80,7 +88,7 @@ export function DataTablePagination<TData>({
                         size='icon'
                         className='size-8'
                         onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
+                        disabled={disabled || !table.getCanPreviousPage()}
                     >
                         <ChevronLeft />
                     </Button>
@@ -90,7 +98,7 @@ export function DataTablePagination<TData>({
                         size='icon'
                         className='size-8'
                         onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
+                        disabled={disabled || !table.getCanNextPage()}
                     >
                         <ChevronRight />
                     </Button>
@@ -100,7 +108,7 @@ export function DataTablePagination<TData>({
                         size='icon'
                         className='hidden size-8 lg:flex'
                         onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                        disabled={!table.getCanNextPage()}
+                        disabled={disabled || !table.getCanNextPage()}
                     >
                         <ChevronsRight />
                     </Button>

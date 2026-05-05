@@ -10,6 +10,7 @@ import logging
 from celery import shared_task
 from django.db import transaction
 
+import file_transfer.uploads.tasks as _upload_tasks  # noqa: F401 — Celery autodiscover only loads this module, not uploads.tasks
 from file_transfer.models import FileReference
 from file_transfer.s3_utils import get_file_transfer_storage
 from management.settings import cradle_settings

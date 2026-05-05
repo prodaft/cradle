@@ -1,5 +1,6 @@
 import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
+import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import {
     Sidebar,
     SidebarContent,
@@ -100,10 +101,16 @@ export default function ManageEnrichmentList() {
                                         <Spinner className='size-4' /> Loading...
                                     </div>
                                 ) : enrichmentTypes.length === 0 ? (
-                                    <div className='px-4 py-2 text-sm text-muted-foreground'>
-                                        {searchQuery
-                                            ? 'No enrichment types match your search'
-                                            : 'No enrichment types found'}
+                                    <div className='p-2'>
+                                        <Empty className='border-0 p-3'>
+                                            <EmptyHeader className='max-w-none gap-0'>
+                                                <EmptyDescription>
+                                                    {searchQuery
+                                                        ? 'No enrichment types match your search'
+                                                        : 'No enrichment types found'}
+                                                </EmptyDescription>
+                                            </EmptyHeader>
+                                        </Empty>
                                     </div>
                                 ) : (
                                     enrichmentTypes.map((enrichment) => (

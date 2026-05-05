@@ -1,5 +1,6 @@
 import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
+import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import {
     Sidebar,
     SidebarContent,
@@ -100,10 +101,16 @@ export default function TypeMappingsList() {
                                         <Spinner className='size-4' /> Loading...
                                     </div>
                                 ) : mappingTypes.length === 0 ? (
-                                    <div className='px-4 py-2 text-sm text-muted-foreground'>
-                                        {searchQuery
-                                            ? 'No mappings match your search'
-                                            : 'No type mappings found'}
+                                    <div className='p-2'>
+                                        <Empty className='border-0 p-3'>
+                                            <EmptyHeader className='max-w-none gap-0'>
+                                                <EmptyDescription>
+                                                    {searchQuery
+                                                        ? 'No mappings match your search'
+                                                        : 'No type mappings found'}
+                                                </EmptyDescription>
+                                            </EmptyHeader>
+                                        </Empty>
                                     </div>
                                 ) : (
                                     mappingTypes.map((mapping) => (

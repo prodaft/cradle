@@ -2,7 +2,7 @@
  * Link utilities for handling URLs and redirects
  */
 
-import type { FileReference } from '@/types';
+import type { FileReferenceWithNote } from '@/types';
 
 /**
  * Creates a download path for a file. This path corresponds to the download endpoint in the backend.
@@ -12,7 +12,10 @@ import type { FileReference } from '@/types';
  * @param apiBaseUrl - Base URL of the backend
  * @returns Download link
  */
-export const createDownloadPath = (file: FileReference, apiBaseUrl: string): string => {
+export const createDownloadPath = (
+    file: FileReferenceWithNote,
+    apiBaseUrl: string,
+): string => {
     const params = new URLSearchParams({ file_id: file.id! });
     return `${apiBaseUrl}/file-transfer/download/?${params.toString()}`;
 };
@@ -28,7 +31,7 @@ export const createDownloadPath = (file: FileReference, apiBaseUrl: string): str
  */
 export const prependLinks = (
     mdContent: string,
-    fileData: FileReference[],
+    fileData: FileReferenceWithNote[],
     apiBaseUrl: string,
 ): string => {
     const mdLinks = fileData

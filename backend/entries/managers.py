@@ -1,6 +1,7 @@
 """Custom managers and querysets for Entry, Relation, and Edge models."""
 
 from django.apps import apps
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.expressions import RawSQL
 from django.db.models.query_utils import Q
@@ -122,10 +123,12 @@ class RelationManager(models.Manager):
         return self.get_queryset().accessible(user)
 
     def bulk_create(self, objs, **kwargs):
-        """Bulk create relations, normalizing e1/e2 order (e1.id <= e2.id)."""
+        """Bulk create relations: normalize e1/e2 order (e1.id <= e2.id), require an entity endpoint."""
         for obj in objs:
             if obj.e1.id > obj.e2.id:
                 obj.e1, obj.e2 = obj.e2, obj.e1
+            if not self.model.includes_entity(obj.e1, obj.e2):
+                raise ValidationError("Each relation must involve at least one entity endpoint.")
         return super().bulk_create(objs, **kwargs)
 
 

@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { StateSetter } from '@/types';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch } from '@components/base/action-bar/action-bar';
@@ -70,7 +69,7 @@ interface DigestsTableProps {
     sortDirection?: 'asc' | 'desc';
     onSort: (field: string, direction: 'asc' | 'desc') => void;
     selectedDigests?: string[];
-    setSelectedDigests?: StateSetter<string[]>;
+    setSelectedDigests?: React.Dispatch<React.SetStateAction<string[]>>;
     pageSize?: number;
     setPageSize?: (size: number) => void;
     onColumnFilterChange?:

@@ -19,6 +19,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
@@ -499,9 +500,13 @@ export default function UploadDigestDialog({
                                                     );
                                                 }}
                                                 emptyIndicator={
-                                                    <p className='text-center text-sm'>
-                                                        No entries found
-                                                    </p>
+                                                    <Empty className='min-h-0 border-0 p-4 shadow-none'>
+                                                        <EmptyHeader className='max-w-none gap-0'>
+                                                            <EmptyDescription>
+                                                                No entries found
+                                                            </EmptyDescription>
+                                                        </EmptyHeader>
+                                                    </Empty>
                                                 }
                                                 className='w-full'
                                             />

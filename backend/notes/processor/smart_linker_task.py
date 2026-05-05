@@ -1,4 +1,4 @@
-"""Task to create relations between entries from note reference tree."""
+"""Task that schedules NOTE graph relations (note hub→entities, artifact↔entity clique)."""
 
 from typing import Iterable, Tuple
 
@@ -17,7 +17,7 @@ class SmartLinkerTask(BaseTask):
         return False
 
     def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[Signature, Iterable[Entry]]:
-        """Create the links between the entries, using the note reference tree.
+        """Schedule NOTE graph relations (note hub→entities, artifact↔entity clique).
 
         Args:
             note: The note object being processed.

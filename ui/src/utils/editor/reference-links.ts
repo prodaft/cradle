@@ -16,21 +16,18 @@ type FileDownload = components['schemas']['FileDownload'];
 type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 type FileDownloadRequest = { fileId: string };
 
-// Type alias for compatibility - export it
-type FileReference = FileReferenceWithNote;
-
 /**
  * Widget to display the reference link.
  * It renders as a styled span element, hiding the underlying markdown syntax.
  */
 class ReferenceLinkWidget extends WidgetType {
     text: string;
-    file: FileReference;
+    file: FileReferenceWithNote;
     resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>;
 
     constructor(
         text: string,
-        file: FileReference,
+        file: FileReferenceWithNote,
         resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>,
     ) {
         super();
@@ -92,12 +89,12 @@ class ReferenceImageWidget extends WidgetType {
     private static urlCache = new Map<string, string>();
 
     text: string;
-    file: FileReference;
+    file: FileReferenceWithNote;
     resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>;
 
     constructor(
         text: string,
-        file: FileReference,
+        file: FileReferenceWithNote,
         resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>,
     ) {
         super();
@@ -166,14 +163,14 @@ class ReferenceImageWidget extends WidgetType {
  * @param textStart  Position of the first character inside the opening `[`
  * @param pos        Position of the very first character of the construct (`[` or `!`)
  * @param kind       `'ExternalReferenceLink'` or `'ExternalReferenceImage'`
- * @param mappings   Label → FileReference lookup table
+ * @param mappings   Label → FileReferenceWithNote lookup table
  */
 function parseExternalReference(
     cx: InlineContext,
     textStart: number,
     pos: number,
     kind: 'ExternalReferenceLink' | 'ExternalReferenceImage',
-    mappings: Record<string, FileReference>,
+    mappings: Record<string, FileReferenceWithNote>,
 ): number {
     let p = textStart;
     let balance = 1;
@@ -285,7 +282,7 @@ function parseExternalReference(
  * 3. [text]        -> uses 'text' key (shortcut reference) - IF text matches a mapping
  */
 export function referenceLinkSyntax(
-    mappings: Record<string, FileReference>,
+    mappings: Record<string, FileReferenceWithNote>,
 ): MarkdownConfig {
     return {
         defineNodes: [
@@ -332,13 +329,13 @@ export function referenceLinkSyntax(
  * CodeMirror ViewPlugin to render the ExternalReferenceLink nodes.
  */
 export function referenceLinksPlugin(
-    mappings: Record<string, FileReference>,
+    mappings: Record<string, FileReferenceWithNote>,
     resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>,
     sourceMode: boolean,
 ) {
     return ViewPlugin.fromClass(
         class {
-            mappings: Record<string, FileReference>;
+            mappings: Record<string, FileReferenceWithNote>;
             resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>;
             decorations: DecorationSet;
 
@@ -408,7 +405,7 @@ function createReferenceDecoration(
     node: { from: number; to: number; node: SyntaxNode },
     text: string,
     cursorPos: number,
-    mappings: Record<string, FileReference>,
+    mappings: Record<string, FileReferenceWithNote>,
     resolveMinioLink: (file: FileDownloadRequest) => Promise<FileDownload>,
     sourceMode: boolean,
 ): Range<Decoration> | null {

@@ -1,13 +1,12 @@
 import EnrichmentRequestDialog from '@/components/domain/enrichment/dialogs/enrichment-request-dialog';
-import InProgress from '@/components/feedback/in-progress';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
-import type { operations } from '@services/openapi/schema';
 import { fetchClient } from '@services/openapi/client';
+import type { operations } from '@services/openapi/schema';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Sparkles } from 'lucide-react';
@@ -37,8 +36,6 @@ interface ColumnFilters {
     user: string;
 }
 
-const IS_PROD = import.meta.env.VITE_ENV === 'production';
-
 export interface EnrichmentListProps {
     hidePageHeader?: boolean;
     /** Scope list to enrichment requests for this entry (dashboard). */
@@ -50,11 +47,6 @@ export default function EnrichmentList({
     entryId,
 }: EnrichmentListProps = {}) {
     useDockPanelTab({ title: 'Enrichment', icon: 'enrichment' }, !hidePageHeader);
-    if (IS_PROD) return <InProgress />;
-    return <EnrichmentListInner hidePageHeader={hidePageHeader} entryId={entryId} />;
-}
-
-function EnrichmentListInner({ hidePageHeader = false, entryId }: EnrichmentListProps) {
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
@@ -70,17 +62,14 @@ function EnrichmentListInner({ hidePageHeader = false, entryId }: EnrichmentList
     const [page, setPage] = useState(1);
     const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
 
-    // Search state (title only — user filter lives in columnFilters)
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
         title: (searchAny?.title as string) || '',
     });
 
-    // Initialize from URL so the first fetch fires immediately (no null gating)
     const [submittedFilters, setSubmittedFilters] = useState<SearchFilters>({
         title: (searchAny?.title as string) || '',
     });
 
-    // Column filters for table header (user filter is authoritative here)
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: (searchAny?.status as string) || 'all',
         user: (searchAny?.user__username as string) || '',

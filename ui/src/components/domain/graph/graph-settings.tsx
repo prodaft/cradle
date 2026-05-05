@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldContent, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { InfoIcon } from '@phosphor-icons/react';
@@ -109,7 +109,7 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
     return (
         <div className='px-4 pt-3'>
             <Tabs defaultValue='appearance' className='w-full'>
-                <TabsList className='grid w-full grid-cols-3'>
+                <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
                     <TabsTrigger value='appearance'>Appearance</TabsTrigger>
                     <TabsTrigger value='physics'>Physics</TabsTrigger>
                     <TabsTrigger value='advanced'>Advanced</TabsTrigger>
@@ -171,38 +171,49 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                             </Field>
 
                             <div className='border-t pt-3 space-y-2'>
-                                <Field orientation='responsive'>
-                                    <Checkbox
+                                <Field orientation='horizontal'>
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='showLinks'
+                                            className='text-xs'
+                                        >
+                                            Show links
+                                        </FieldLabel>
+                                    </FieldContent>
+                                    <Switch
                                         id='showLinks'
+                                        size='sm'
                                         checked={config.showLinks ?? true}
                                         onCheckedChange={(checked) =>
                                             setConfig((prev) => ({
                                                 ...prev,
-                                                showLinks: checked === true,
+                                                showLinks: checked,
                                             }))
                                         }
+                                        className='self-start md:self-center'
                                     />
-                                    <FieldLabel htmlFor='showLinks' className='text-xs'>
-                                        Show links
-                                    </FieldLabel>
                                 </Field>
-                                <Field orientation='responsive'>
-                                    <Checkbox
+                                <Field orientation='horizontal'>
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='curvedLinks'
+                                            className='text-xs'
+                                        >
+                                            Curved links
+                                        </FieldLabel>
+                                    </FieldContent>
+                                    <Switch
                                         id='curvedLinks'
+                                        size='sm'
                                         checked={config.curvedLinks ?? false}
                                         onCheckedChange={(checked) =>
                                             setConfig((prev) => ({
                                                 ...prev,
-                                                curvedLinks: checked === true,
+                                                curvedLinks: checked,
                                             }))
                                         }
+                                        className='self-start md:self-center'
                                     />
-                                    <FieldLabel
-                                        htmlFor='curvedLinks'
-                                        className='text-xs'
-                                    >
-                                        Curved links
-                                    </FieldLabel>
                                 </Field>
                             </div>
                         </FieldGroup>
@@ -365,23 +376,27 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                             </Field>
 
                             <div className='border-t pt-3 space-y-2'>
-                                <Field orientation='responsive'>
-                                    <Checkbox
+                                <Field orientation='horizontal'>
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='scaleLinksOnZoom'
+                                            className='text-xs'
+                                        >
+                                            Scale links on zoom
+                                        </FieldLabel>
+                                    </FieldContent>
+                                    <Switch
                                         id='scaleLinksOnZoom'
+                                        size='sm'
                                         checked={config.scaleLinksOnZoom ?? false}
                                         onCheckedChange={(checked) =>
                                             setConfig((prev) => ({
                                                 ...prev,
-                                                scaleLinksOnZoom: checked === true,
+                                                scaleLinksOnZoom: checked,
                                             }))
                                         }
+                                        className='self-start md:self-center'
                                     />
-                                    <FieldLabel
-                                        htmlFor='scaleLinksOnZoom'
-                                        className='text-xs'
-                                    >
-                                        Scale links on zoom
-                                    </FieldLabel>
                                 </Field>
                             </div>
                         </FieldGroup>

@@ -45,6 +45,13 @@ from ..serializers import AccessEntitySerializer, AccessUserSerializer
                 description="Page size",
                 required=False,
             ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search entities by name, description, or numeric id",
+                required=False,
+            ),
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(AccessEntitySerializer),
@@ -73,7 +80,8 @@ class UserAccessList(ListAPIView):
             self._access_user = CradleUser.objects.get(id=user_id)
         except CradleUser.DoesNotExist:
             raise UserNotFoundException(detail="That user could not be found.")
-        return Access.objects.get_accesses(self._access_user.id)
+        search = self.request.query_params.get("search")
+        return Access.objects.get_accesses(self._access_user.id, search)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

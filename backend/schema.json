@@ -1435,6 +1435,14 @@
                         "description": "Page size"
                     },
                     {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Search entities by name, description, or numeric id"
+                    },
+                    {
                         "in": "path",
                         "name": "user_id",
                         "schema": {
@@ -2459,6 +2467,14 @@
                         },
                         "description": "UUID of the user",
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Search entities by name, description, or numeric id"
                     }
                 ],
                 "tags": [
@@ -27908,7 +27924,7 @@
         "/logs/": {
             "get": {
                 "operationId": "event_logs_list",
-                "description": "Returns a paginated and filtered list of event logs. Only available to admin users.",
+                "description": "Returns a paginated and filtered list of event logs. Only available to admin users. Omits log rows that are the ``src_log`` of another row (propagation source only); the propagated copy is listed instead.",
                 "summary": "List event logs",
                 "parameters": [
                     {
@@ -27953,6 +27969,14 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Case-insensitive match on object id, content type, or details (use the type query param for event kind)."
                     },
                     {
                         "in": "query",
@@ -37511,7 +37535,7 @@
         "/notifications/": {
             "get": {
                 "operationId": "notifications_list",
-                "description": "Retrieve paginated notifications for the authenticated user, sorted with unread notifications first, then by newest to oldest.",
+                "description": "Retrieve paginated notifications for the authenticated user, sorted with unread notifications first, then by newest to oldest. When ``unread_only`` is true, only unread rows are returned and natural unreads are not cleared; otherwise opening the list marks natural unreads (``is_unread``) as read for the user.",
                 "summary": "Fetch Notifications",
                 "parameters": [
                     {
@@ -37530,6 +37554,14 @@
                             "default": 10
                         },
                         "description": "Number of notifications to return per page. Max 200."
+                    },
+                    {
+                        "in": "query",
+                        "name": "unread_only",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "If true, return only unread notifications (is_unread or is_marked_unread). Does not mark natural unreads as read; omit or false to list all and clear is_unread."
                     }
                 ],
                 "tags": [
@@ -55238,9 +55270,9 @@
                     }
                 },
                 "required": [
+                    "type",
                     "subtype",
-                    "name",
-                    "type"
+                    "name"
                 ]
             },
             "EntityRequest": {
@@ -55281,9 +55313,9 @@
                     }
                 },
                 "required": [
+                    "type",
                     "subtype",
-                    "name",
-                    "type"
+                    "name"
                 ]
             },
             "Entry": {
@@ -55833,9 +55865,9 @@
                     }
                 },
                 "required": [
+                    "type",
                     "subtype",
-                    "name",
-                    "type"
+                    "name"
                 ]
             },
             "EntrySerializerMinimal": {
@@ -57657,9 +57689,9 @@
                     }
                 },
                 "required": [
+                    "type",
                     "subtype",
-                    "name",
-                    "type"
+                    "name"
                 ]
             },
             "PatchedNoteEditRequest": {

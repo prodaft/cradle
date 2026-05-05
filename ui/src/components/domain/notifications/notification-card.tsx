@@ -138,7 +138,7 @@ export default function NotificationCard({
                 queryKey: queryKeys.notifications.unreadCount(),
             });
             void queryClient.invalidateQueries({
-                queryKey: queryKeys.notifications.list(),
+                queryKey: queryKeys.notifications.all,
             });
         },
     });

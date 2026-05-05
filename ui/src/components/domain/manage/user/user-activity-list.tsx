@@ -1,29 +1,31 @@
-import Pagination from '@/components/base/pagination/pagination';
+import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
+import { TableSkeleton } from '@/components/base/table-skeleton';
+import { DataTable } from '@/components/custom/data-table/data-table';
+import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
 import { Badge } from '@/components/ui/badge';
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { Spinner } from '@/components/ui/spinner';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { CaretDownIcon } from '@phosphor-icons/react';
+import { CaretDownIcon, GitForkIcon } from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
+import type { operations } from '@services/openapi/schema';
+import {
+    type ColumnDef,
+    type ExpandedState,
+    type Row,
+    getCoreRowModel,
+    getExpandedRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { diff_match_patch } from 'diff-match-patch';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 interface UserActivityListProps {
     username: string;
 }
+
+type EventLogsListQuery = NonNullable<
+    operations['event_logs_list']['parameters']['query']
+>;
 
 interface SrcLog {
     id: string;
@@ -60,19 +62,16 @@ const getTypeBadgeVariant = (type: string) => {
     }
 };
 
-// Format object representation for display
 const formatObjectRepr = (
     repr: string,
     objectId: string,
 ): { text: string; fullId: string; isDeleted: boolean } => {
     if (!repr) return { text: '-', fullId: '', isDeleted: false };
 
-    // Check if deleted
     if (repr === 'DELETED') {
         return { text: 'Deleted', fullId: objectId, isDeleted: true };
     }
 
-    // Format [[type:name]] style
     const bracketMatch = repr.match(/^\[\[([^:]+):([^\]]+)\]\]$/);
     if (bracketMatch) {
         return {
@@ -82,7 +81,6 @@ const formatObjectRepr = (
         };
     }
 
-    // Format <Type:uuid> style - extract just the type
     const angleMatch = repr.match(/^<(\w+):([^>]+)>$/);
     if (angleMatch) {
         const text = angleMatch[1] ?? '';
@@ -93,7 +91,6 @@ const formatObjectRepr = (
     return { text: repr, fullId: objectId, isDeleted: false };
 };
 
-// Format diff for display
 const formatDiff = (diffTxt: string): string => {
     if (!diffTxt) return '';
 
@@ -108,7 +105,6 @@ const formatDiff = (diffTxt: string): string => {
         const lines: string[] = [];
 
         for (const [op, text] of diffs) {
-            // URL decode the text first
             let decodedText: string;
             try {
                 decodedText = decodeURIComponent(text);
@@ -146,124 +142,109 @@ const formatDiff = (diffTxt: string): string => {
     }
 };
 
-function ActivityRow({ event }: { event: ActivityEvent }) {
-    const [open, setOpen] = useState(false);
-
-    // Get details from event or from srcLog if event has no details
-    const effectiveDetails = event.details || event.srcLog?.details;
-    const hasDetails = !!effectiveDetails;
-
-    const {
-        text: objectText,
-        fullId,
-        isDeleted,
-    } = formatObjectRepr(event.objectRepr, event.objectId);
-
+function ExpandedRowDetail({ event }: { event: ActivityEvent }) {
+    const hasDetails = !!event.details;
+    const hasSrcLog = !!event.srcLog;
     const srcLogFormatted = event.srcLog
         ? formatObjectRepr(event.srcLog.object_repr, event.srcLog.object_id)
         : null;
 
-    const rowContent = (
-        <TableRow
-            className={hasDetails ? 'cursor-pointer hover:bg-muted/50' : ''}
-            onClick={() => hasDetails && setOpen(!open)}
-        >
-            <TableCell>
-                <Badge variant={getTypeBadgeVariant(event.type)} className='capitalize'>
-                    {event.type}
-                </Badge>
-            </TableCell>
-            <TableCell>
-                <span className='text-muted-foreground capitalize'>
-                    {event.contentType}
-                </span>
-            </TableCell>
-            <TableCell>
-                <div className='flex flex-col gap-0.5'>
-                    <div className='flex items-center gap-2'>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span
-                                    className={`cursor-help ${isDeleted ? 'text-muted-foreground line-through' : ''}`}
-                                >
-                                    {objectText}
-                                </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <span className='font-mono text-xs'>{fullId}</span>
-                            </TooltipContent>
-                        </Tooltip>
-                        {hasDetails && (
-                            <CaretDownIcon
-                                className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
-                            />
-                        )}
-                    </div>
-                    {event.srcLog && srcLogFormatted && (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span className='text-xs text-muted-foreground cursor-help'>
-                                    via {event.srcLog.content_type}:{' '}
-                                    {srcLogFormatted.text}
-                                </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <span className='font-mono text-xs'>
-                                    {srcLogFormatted.fullId}
-                                </span>
-                            </TooltipContent>
-                        </Tooltip>
-                    )}
-                </div>
-            </TableCell>
-            <TableCell className='text-right text-muted-foreground text-sm'>
-                {format(new Date(event.timestamp), 'dd/MM/yyyy HH:mm')}
-            </TableCell>
-        </TableRow>
-    );
-
-    if (!hasDetails) {
-        return rowContent;
-    }
-
     return (
-        <Collapsible open={open} onOpenChange={setOpen} asChild>
-            <>
-                <CollapsibleTrigger asChild>{rowContent}</CollapsibleTrigger>
-                <CollapsibleContent asChild>
-                    <tr>
-                        <td colSpan={4} className='p-0'>
-                            <div className='px-4 py-3 bg-muted/30 border-t'>
-                                <div
-                                    dangerouslySetInnerHTML={{
-                                        __html: formatDiff(effectiveDetails!),
-                                    }}
-                                />
+        <div className='px-4 py-3 bg-muted/30 border-t space-y-3'>
+            {hasDetails && (
+                <div className='space-y-1.5'>
+                    <div className='text-xs font-medium text-muted-foreground'>
+                        Changes
+                    </div>
+                    <div
+                        dangerouslySetInnerHTML={{
+                            __html: formatDiff(event.details!),
+                        }}
+                    />
+                </div>
+            )}
+            {hasSrcLog && srcLogFormatted && (
+                <div className='space-y-1.5'>
+                    <div className='flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2'>
+                        <GitForkIcon className='size-3.5' />
+                        <span>Triggered by</span>
+                    </div>
+                    <div className='ml-1 pl-3 border-l-2 border-primary/30'>
+                        <div className='bg-background rounded-md border border-border p-3'>
+                            <div className='flex flex-wrap items-baseline gap-2 mb-2'>
+                                <Badge
+                                    variant={getTypeBadgeVariant(event.srcLog!.type)}
+                                    className='capitalize text-xs'
+                                >
+                                    {event.srcLog!.type}
+                                </Badge>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <span
+                                            className={`text-xs cursor-help ${srcLogFormatted.isDeleted ? 'text-muted-foreground line-through' : ''}`}
+                                        >
+                                            {srcLogFormatted.text}
+                                        </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <span className='font-mono text-xs'>
+                                            {srcLogFormatted.fullId}
+                                        </span>
+                                    </TooltipContent>
+                                </Tooltip>
                             </div>
-                        </td>
-                    </tr>
-                </CollapsibleContent>
-            </>
-        </Collapsible>
+                            {event.srcLog!.details && (
+                                <>
+                                    <div className='text-xs font-medium text-muted-foreground mt-2 mb-1'>
+                                        Changes
+                                    </div>
+                                    <div
+                                        dangerouslySetInnerHTML={{
+                                            __html: formatDiff(event.srcLog!.details),
+                                        }}
+                                    />
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
 
 export default function UserActivityList({ username }: UserActivityListProps) {
     const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(20);
+    const [search, setSearch] = useState('');
+    const [expanded, setExpanded] = useState<ExpandedState>({});
 
-    const eventLogsQuery = useMemo(
-        () => ({
-            page,
-            ...(username ? { username } : {}),
-        }),
-        [page, username],
-    );
+    const queryParams = useMemo((): EventLogsListQuery => {
+        return Object.fromEntries(
+            Object.entries({
+                page,
+                page_size: pageSize,
+                username: username || undefined,
+                search: search.trim() || undefined,
+            }).filter(([, v]) => v !== undefined),
+        ) as EventLogsListQuery;
+    }, [page, pageSize, username, search]);
+
+    const handleSearchDebounced = useCallback((value: string) => {
+        setSearch(value);
+        setPage(1);
+    }, []);
+
+    const handleSearchClear = useCallback(() => {
+        setSearch('');
+        setPage(1);
+    }, []);
 
     const { data: logsData, isLoading } = $api.useQuery(
         'get',
         '/logs/',
         {
-            params: { query: eventLogsQuery },
+            params: { query: queryParams },
         },
         {
             enabled: !!username,
@@ -276,91 +257,226 @@ export default function UserActivityList({ username }: UserActivityListProps) {
     const totalPages = logsData?.total_pages || 1;
     const totalCount = logsData?.count || 0;
 
-    const handlePageChange = (newPage: number) => {
-        setPage(newPage);
-    };
-
     const events = useMemo(() => {
         if (!logsData?.results) return [];
 
-        const srcLogIds = new Set<string>();
-        logsData.results.forEach((log: any) => {
-            if (log.src_log?.id) {
-                srcLogIds.add(log.src_log.id);
-            }
-        });
-
-        return logsData.results
-            .filter((log: any) => !srcLogIds.has(log.id))
-            .map(
-                (log: any): ActivityEvent => ({
-                    id: log.id || '',
-                    timestamp:
-                        typeof log.timestamp === 'string'
-                            ? log.timestamp
-                            : new Date().toISOString(),
-                    type: log.type,
-                    contentType: log.content_type || 'unknown',
-                    objectId: log.object_id || '',
-                    objectRepr: log.object_repr || '',
-                    details: log.details || undefined,
-                    srcLog: log.src_log
-                        ? {
-                              id: log.src_log.id,
-                              type: log.src_log.type,
-                              details: log.src_log.details,
-                              content_type: log.src_log.content_type,
-                              object_id: log.src_log.object_id,
-                              object_repr: log.src_log.object_repr,
-                          }
-                        : undefined,
-                }),
-            );
+        return logsData.results.map(
+            (log: any): ActivityEvent => ({
+                id: log.id || '',
+                timestamp:
+                    typeof log.timestamp === 'string'
+                        ? log.timestamp
+                        : new Date().toISOString(),
+                type: log.type,
+                contentType: log.content_type || 'unknown',
+                objectId: log.object_id || '',
+                objectRepr: log.object_repr || '',
+                details: log.details || undefined,
+                srcLog: log.src_log
+                    ? {
+                          id: log.src_log.id,
+                          type: log.src_log.type,
+                          details: log.src_log.details,
+                          content_type: log.src_log.content_type,
+                          object_id: log.src_log.object_id,
+                          object_repr: log.src_log.object_repr,
+                      }
+                    : undefined,
+            }),
+        );
     }, [logsData?.results]);
 
-    if (isLoading) {
-        return (
-            <div className='flex items-center justify-center min-h-[200px] text-foreground'>
-                <Spinner className='size-10' />
-            </div>
-        );
-    }
+    const columns = useMemo<ColumnDef<ActivityEvent>[]>(
+        () => [
+            {
+                accessorKey: 'type',
+                id: 'action',
+                header: 'Type',
+                meta: { label: 'Type' },
+                size: 80,
+                cell: ({ row }) => {
+                    const event = row.original;
+                    const hasSrcLog = !!event.srcLog;
+                    return (
+                        <div className='flex items-center gap-1.5'>
+                            <Badge
+                                variant={getTypeBadgeVariant(event.type)}
+                                className='capitalize'
+                            >
+                                {event.type}
+                            </Badge>
+                            {hasSrcLog && (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <span className='text-muted-foreground'>
+                                            <GitForkIcon className='size-3.5' />
+                                        </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <span className='text-xs'>
+                                            Triggered by another event
+                                        </span>
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
+                        </div>
+                    );
+                },
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'contentType',
+                id: 'type',
+                header: 'Content type',
+                meta: { label: 'Content type' },
+                size: 100,
+                cell: ({ row }) => (
+                    <span className='text-muted-foreground capitalize'>
+                        {row.original.contentType}
+                    </span>
+                ),
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'objectRepr',
+                id: 'object',
+                header: 'Object',
+                meta: { label: 'Object' },
+                cell: ({ row }) => {
+                    const event = row.original;
+                    const { text, fullId, isDeleted } = formatObjectRepr(
+                        event.objectRepr,
+                        event.objectId,
+                    );
+                    return (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span
+                                    className={`cursor-help ${isDeleted ? 'text-muted-foreground line-through' : ''}`}
+                                >
+                                    {text}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <span className='font-mono text-xs'>{fullId}</span>
+                            </TooltipContent>
+                        </Tooltip>
+                    );
+                },
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'timestamp',
+                id: 'date',
+                header: () => <span className='block text-right'>Date</span>,
+                meta: { label: 'Date' },
+                size: 140,
+                cell: ({ row }) => (
+                    <div className='text-right text-muted-foreground text-sm'>
+                        {format(new Date(row.original.timestamp), 'dd/MM/yyyy HH:mm')}
+                    </div>
+                ),
+                enableSorting: false,
+            },
+            {
+                id: 'expand',
+                header: () => <span className='sr-only'>Expand row</span>,
+                meta: { label: 'Expand' },
+                size: 36,
+                enableHiding: false,
+                cell: ({ row }) => {
+                    if (!row.getCanExpand()) return null;
+                    return (
+                        <div className='flex justify-end pr-0.5'>
+                            <CaretDownIcon
+                                className={`size-4 shrink-0 text-muted-foreground transition-transform ${row.getIsExpanded() ? 'rotate-180' : ''}`}
+                            />
+                        </div>
+                    );
+                },
+                enableSorting: false,
+            },
+        ],
+        [],
+    );
 
-    if (events.length === 0) {
-        return (
-            <div className='text-center py-8'>
-                <p className='text-sm text-muted-foreground'>
-                    No activity found for this user.
-                </p>
-            </div>
-        );
+    const handlePaginationChange = useCallback(
+        (pageIndex: number, newPageSize: number) => {
+            const newPage = pageIndex + 1;
+            if (newPageSize !== pageSize) {
+                setPageSize(newPageSize);
+                setPage(1);
+            } else if (newPage !== page) {
+                setPage(newPage);
+            }
+        },
+        [page, pageSize],
+    );
+
+    const table = useReactTable({
+        data: events,
+        columns,
+        state: {
+            expanded,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize,
+            },
+        },
+        onExpandedChange: setExpanded,
+        onPaginationChange: (updater) => {
+            const current = { pageIndex: page - 1, pageSize };
+            const next = typeof updater === 'function' ? updater(current) : updater;
+            handlePaginationChange(next.pageIndex, next.pageSize);
+        },
+        getCoreRowModel: getCoreRowModel(),
+        getExpandedRowModel: getExpandedRowModel(),
+        getRowCanExpand: (row) => !!(row.original.details || row.original.srcLog),
+        getRowId: (row) => row.id,
+        manualPagination: true,
+        pageCount: totalPages,
+        rowCount: totalCount,
+    });
+
+    const onRowClickRow = useCallback((row: Row<ActivityEvent>) => {
+        if (row.getCanExpand()) row.toggleExpanded();
+    }, []);
+
+    const renderSubRow = useCallback(
+        (row: Row<ActivityEvent>) => <ExpandedRowDetail event={row.original} />,
+        [],
+    );
+
+    if (!username) {
+        return null;
     }
 
     return (
         <div className='flex flex-col space-y-4'>
-            <div className='overflow-hidden rounded-md border'>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className='w-[80px]'>Action</TableHead>
-                            <TableHead className='w-[100px]'>Type</TableHead>
-                            <TableHead>Object</TableHead>
-                            <TableHead className='w-[140px] text-right'>Date</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {events.map((event) => (
-                            <ActivityRow key={event.id} event={event} />
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-            <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                totalRows={totalCount}
-            />
+            <DataTable
+                table={table}
+                isLoading={isLoading}
+                loadingPlaceholder={
+                    <TableSkeleton showToolbar={false} rows={8} columns={5} />
+                }
+                showPagination={!isLoading}
+                toolbarEnd={<DataTableViewOptions table={table} />}
+                onRowClickRow={onRowClickRow}
+                interactiveRow={(row) => row.getCanExpand()}
+                renderSubRow={renderSubRow}
+                emptyMessage='No activity found for this user.'
+            >
+                <ActionBarSearch
+                    placeholder='Search object id, type, details…'
+                    name='user_activity_search'
+                    value={search}
+                    debounceMs={300}
+                    onDebouncedChange={handleSearchDebounced}
+                    onSubmit={handleSearchDebounced}
+                    onClear={handleSearchClear}
+                    className='w-full min-w-[12rem] max-w-md sm:w-72'
+                />
+            </DataTable>
         </div>
     );
 }

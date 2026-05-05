@@ -1,6 +1,7 @@
 """Knowledge graph API views: path finding, neighbors, and full graph."""
 
 import datetime
+from typing import cast
 
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -25,6 +26,7 @@ from entries.models import Entry, Relation
 from query.exceptions import InvalidSearchSyntaxException, QueryErrorCodes
 from query.filters import EntryFilter
 from query.utils import parse_query
+from user.models import CradleUser
 
 from .exceptions import DepthOutOfRangeException, KnowledgeGraphErrorCodes
 from .serializers import (
@@ -36,13 +38,19 @@ from .utils import filter_valid_edges, get_edges_for_paths, get_neighbors, get_n
 
 
 def _get_accessible_entry(user, entry_id: int) -> Entry:
-    """Return entry by ID if it exists and user has access; raise EntryNotFoundException otherwise."""
+    """Return entry by ID if the user may use it as a graph anchor; raise EntryNotFoundException otherwise.
+
+    Artifacts must appear in ``Entry.objects.accessible`` (same basis as entry
+    detail). Entities additionally require explicit read access or public flag
+    via ``has_access_to_entities``.
+    """
+    cradle_user = cast(CradleUser, user)
     try:
-        entry = Entry.objects.get(pk=entry_id)
+        entry = Entry.objects.accessible(cradle_user).select_related("entry_class").get(pk=entry_id)
     except Entry.DoesNotExist:
         raise EntryNotFoundException(detail="That entry could not be found.")
     if entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
-        user, {entry}, {AccessType.READ, AccessType.READ_WRITE}
+        cradle_user, {entry}, {AccessType.READ, AccessType.READ_WRITE}
     ):
         raise EntryNotFoundException(detail="That entry could not be found.")
     return entry

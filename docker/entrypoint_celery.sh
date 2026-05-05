@@ -1,6 +1,6 @@
 #!/bin/sh
 
-: "${CELERY_QUEUES:=email,notes,graph,publish,import,access,enrich,digest,files}"
+: "${CELERY_QUEUES:=email,notes,graph,publish,import,access,enrich,digest,files,cleanup}"
 : "${LOGLEVEL:=info}"
 : "${CELERY_CONCURRENCY:=4}"
 

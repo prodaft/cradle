@@ -2,8 +2,8 @@ import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { operations } from '@services/openapi/schema';
 import { fetchClient } from '@services/openapi/client';
+import type { operations } from '@services/openapi/schema';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { debounce } from 'lodash';
@@ -57,7 +57,6 @@ interface ColumnFilters {
     };
 }
 
-/** `/digest-data` route: header + fetch + `DigestsTable`. */
 export default function DigestsList() {
     useDockPanelTab({ title: 'Digest data', icon: 'digest-data' });
     const router = useRouter();
@@ -77,7 +76,6 @@ export default function DigestsList() {
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
 
-    // Search state
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
         title: (search as any)?.title || '',
         author: (search as any)?.author || '',
@@ -89,7 +87,6 @@ export default function DigestsList() {
         created_at_gte: (search as any)?.created_at_gte || '',
     });
 
-    // Date range state
     const [dateRange, setDateRange] = useState<DateRange>({
         startDate: (search as any)?.created_at_gte
             ? toYmd((search as any).created_at_gte)
@@ -99,7 +96,6 @@ export default function DigestsList() {
             : null,
     });
 
-    // Column filters for table header
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: (search as any)?.status || 'all',
         user: (search as any)?.author || '',
@@ -114,7 +110,6 @@ export default function DigestsList() {
         searchRef.current = search;
     }, [search]);
 
-    // Prepare query parameters
     const queryParams = useMemo((): DigestListQuery => {
         const searchQueryParams: Record<string, unknown> = {
             page,
@@ -125,7 +120,6 @@ export default function DigestsList() {
             created_at_lte: submittedFilters.created_at_lte || undefined,
         };
 
-        // Add column filter parameters
         if (columnFilters.user) {
             searchQueryParams.author = columnFilters.user;
         }
@@ -137,9 +131,7 @@ export default function DigestsList() {
                 'warning',
                 'working',
             ];
-            if (
-                allowed.includes(columnFilters.status as DigestListQuery['status'])
-            ) {
+            if (allowed.includes(columnFilters.status as DigestListQuery['status'])) {
                 searchQueryParams.status = columnFilters.status;
             }
         }
@@ -179,7 +171,6 @@ export default function DigestsList() {
     const digests = digestsData?.results ?? [];
     const totalPages = digestsData?.total_pages ?? 1;
 
-    // Initialize filters from URL parameters
     useEffect(() => {
         const searchAny = search as any;
         const initialFilters: SearchFilters = {
@@ -252,9 +243,6 @@ export default function DigestsList() {
     );
 
     useEffect(() => {
-        // If the current UI filters already match what we've "submitted" (i.e. what drives fetching),
-        // don't schedule another URL/submittedFilters update. This avoids duplicate fetches when a submit
-        // and a debounced update happen back-to-back with the same values.
         const expectedCreatedAtGte = toStartIso(dateRange.startDate) ?? '';
         const expectedCreatedAtLte = toEndIso(dateRange.endDate) ?? '';
 
@@ -281,9 +269,6 @@ export default function DigestsList() {
     const handleSearchSubmit = (e: React.FormEvent | React.MouseEvent) => {
         (e as any).preventDefault?.();
 
-        // If we're being called from ActionBarSearch (or other non-form submit), we may get a synthetic
-        // event with a { target: { name, value } } shape. Prefer that value so submit doesn't depend
-        // on any debounced/lagging state updates.
         const target = (e as any).target as
             | { name?: string; value?: string }
             | undefined;
@@ -297,12 +282,10 @@ export default function DigestsList() {
             setSearchFilters(nextFilters);
         }
 
-        // Prevent "double search": user submits (Enter) while a debounced update is still pending.
         debouncedUpdateSearchParams.cancel();
         updateSearchParams(nextFilters, dateRange);
     };
 
-    // Invalidate digests query helper
     const invalidateDigests = useCallback(() => {
         queryClient.invalidateQueries({ queryKey: ['digests'] });
     }, [queryClient]);

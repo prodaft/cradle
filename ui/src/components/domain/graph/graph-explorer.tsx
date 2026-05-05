@@ -3,12 +3,22 @@ import {
     ResizablePanel,
     ResizablePanelGroup,
 } from '@/components/ui/resizable';
+import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
-import { ComponentType, Suspense, useCallback, useMemo, useRef, useState } from 'react';
+import {
+    ComponentType,
+    Suspense,
+    useCallback,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
+import { usePanelRef } from 'react-resizable-panels';
 import type Sigma from 'sigma';
 import Graph from './graph';
-import GraphQuery from './graph-query';
 import { type EdgeRelation, filterGraph, type Node } from './graph-filter-utils';
+import GraphQuery from './graph-query';
 
 interface GraphConfig {
     nodeRadiusCoefficient: number;
@@ -81,6 +91,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
     const [fetchProgress, setFetchProgress] = useState<FetchProgress | null>(null);
     const [fetchControls, setFetchControls] = useState<FetchControls | null>(null);
     const sigmaRef = useRef<{ sigma: Sigma } | null>(null);
+    const queryPanelRef = usePanelRef();
 
     const handleLoadingChange = useCallback((loading: boolean) => {
         setIsLoading(loading);
@@ -252,31 +263,50 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         onFetchControlsReady: handleFetchControlsReady,
     };
 
+    useLayoutEffect(() => {
+        const panel = queryPanelRef.current;
+        if (!panel) return;
+        if (activePanel) {
+            panel.expand();
+        } else {
+            panel.collapse();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- queryPanelRef is stable; only sync when activePanel changes
+    }, [activePanel]);
+
     return (
         <div className='w-full h-full overflow-y-hidden relative'>
-            {/* Mount search when panel is closed so graph data still loads */}
-            {!activePanel && (
-                <div className='sr-only' aria-hidden>
-                    <Suspense fallback={null}>
-                        <GraphQuery {...graphQueryProps} />
-                    </Suspense>
-                </div>
-            )}
-            <ResizablePanelGroup orientation='horizontal' className='h-full'>
-                {activePanel && (
-                    <>
-                        <ResizablePanel defaultSize='30%' minSize='20%' maxSize='50%'>
-                            <Suspense fallback={null}>
-                                <GraphQuery {...graphQueryProps} />
-                            </Suspense>
-                        </ResizablePanel>
-                        <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
-                    </>
-                )}
+            <ResizablePanelGroup
+                orientation='horizontal'
+                className='h-full'
+                defaultLayout={{
+                    'graph-explorer-query': 0,
+                    'graph-explorer-main': 100,
+                }}
+            >
                 <ResizablePanel
-                    defaultSize={activePanel ? '70%' : '100%'}
-                    minSize='50%'
+                    id='graph-explorer-query'
+                    panelRef={queryPanelRef}
+                    minSize='20%'
+                    maxSize='50%'
+                    collapsible
+                    collapsedSize='0%'
                 >
+                    <div className='h-full min-h-0 overflow-hidden'>
+                        <Suspense fallback={null}>
+                            <GraphQuery {...graphQueryProps} />
+                        </Suspense>
+                    </div>
+                </ResizablePanel>
+                <ResizableHandle
+                    disabled={!activePanel}
+                    className={cn(
+                        'w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors',
+                        !activePanel &&
+                            'pointer-events-none opacity-0 w-0 min-w-0 border-0 p-0',
+                    )}
+                />
+                <ResizablePanel id='graph-explorer-main' minSize='50%'>
                     <div className='relative h-full'>
                         <Graph
                             selectedNodes={selectedNodes}

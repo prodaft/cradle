@@ -103,7 +103,7 @@ services:
       REDIS_URL: "redis://192.168.42.7:6379/0"
       RABBITMQ_URL: "amqp://cradle:cradle@192.168.42.11:5672//"
 
-      CELERY_QUEUES: "email,notes,graph,publish,import,access,enrich,digest,files"
+      CELERY_QUEUES: "email,notes,graph,publish,import,access,enrich,digest,files,cleanup"
       CELERY_CONCURRENCY: 4
       NUM_WORKERS: 4
 

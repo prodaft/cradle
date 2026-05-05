@@ -253,16 +253,21 @@ class FalconDigest(BaseDigest):
                 )
 
                 if len(rels) >= INTELIO_FALCON_DIGEST_REL_CHUNK_SIZE:
-                    Relation.objects.bulk_create(rels)
+                    to_save = [r for r in rels if Relation.includes_entity(r.e1, r.e2)]
+                    if to_save:
+                        Relation.objects.bulk_create(to_save)
                     rels = []
 
             if len(rels) >= INTELIO_FALCON_DIGEST_REL_CHUNK_SIZE:
-                Relation.objects.bulk_create(rels)
+                to_save = [r for r in rels if Relation.includes_entity(r.e1, r.e2)]
+                if to_save:
+                    Relation.objects.bulk_create(to_save)
                 rels = []
 
         if len(rels) > 0:
-            # Save all relations in bulk for performance
-            Relation.objects.bulk_create(rels)
+            to_save = [r for r in rels if Relation.includes_entity(r.e1, r.e2)]
+            if to_save:
+                Relation.objects.bulk_create(to_save)
 
         rels = [
             Relation(
@@ -276,6 +281,8 @@ class FalconDigest(BaseDigest):
             for entity in entities.values()
         ]
 
-        Relation.objects.bulk_create(rels)
+        to_save = [r for r in rels if Relation.includes_entity(r.e1, r.e2)]
+        if to_save:
+            Relation.objects.bulk_create(to_save)
         if entities:
             self.entities.add(*entities.values())

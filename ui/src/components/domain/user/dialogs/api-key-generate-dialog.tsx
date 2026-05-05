@@ -1,4 +1,4 @@
-import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -16,7 +16,6 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
-import { Alert } from '@/types';
 import {
     CopyIcon,
     EyeIcon,
@@ -25,7 +24,7 @@ import {
 } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
 
 /**
@@ -60,12 +59,15 @@ export default function ApiKeyGenerateDialog({
 }: ApiKeyGenerateDialogProps) {
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [showApiKey, setShowApiKey] = useState(false);
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'green',
-    });
+    const [generateError, setGenerateError] = useState<string | null>(null);
     const apiKeyValueId = useId();
+
+    useEffect(() => {
+        if (!open) return;
+        setApiKey(null);
+        setShowApiKey(false);
+        setGenerateError(null);
+    }, [open]);
 
     const generateMutation = useMutation({
         mutationFn: async () => {
@@ -82,16 +84,22 @@ export default function ApiKeyGenerateDialog({
         meta: {
             suppressNotification: true,
         },
+        onMutate: () => {
+            setGenerateError(null);
+        },
         onSuccess: (apiKey) => {
             setApiKey(apiKey);
         },
-        onError: (error: any) => {
-            setAlert({
-                show: true,
-                message:
-                    error?.detail || 'An error occurred while generating the API key.',
-                color: 'red',
-            });
+        onError: (err: unknown) => {
+            const e = err as {
+                detail?: string;
+                error?: { detail?: string };
+            };
+            setGenerateError(
+                e?.detail ??
+                    e?.error?.detail ??
+                    'An error occurred while generating the API key.',
+            );
         },
     });
 
@@ -120,18 +128,13 @@ export default function ApiKeyGenerateDialog({
 
                 {!apiKey ? (
                     <>
-                        {alert.show && (
-                            <AlertComponent
-                                variant={
-                                    alert.color === 'red' || alert.color === 'error'
-                                        ? 'destructive'
-                                        : 'default'
-                                }
-                            >
+                        {generateError ? (
+                            <Alert variant='destructive'>
                                 <WarningCircleIcon />
-                                <AlertDescription>{alert.message}</AlertDescription>
-                            </AlertComponent>
-                        )}
+                                <AlertTitle>Could not generate API key</AlertTitle>
+                                <AlertDescription>{generateError}</AlertDescription>
+                            </Alert>
+                        ) : null}
 
                         <DialogFooter>
                             <Button

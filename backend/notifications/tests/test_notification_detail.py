@@ -25,6 +25,7 @@ class NotificationDetailTest(NotificationsTestCase):
             password="password",
             is_staff=False,
             email="alabala@gmail.com",
+            is_active=True,
         )
         self.entity = Entry.objects.create(name="Entity", entry_class=self.entryclass1)
         self.message_user = MessageNotification.objects.create(user=self.user, message="Test message")
@@ -73,6 +74,7 @@ class NotificationDetailTest(NotificationsTestCase):
             password="password",
             is_staff=False,
             email="other@example.com",
+            is_active=True,
         )
         other_notification = MessageNotification.objects.create(
             user=other_user,

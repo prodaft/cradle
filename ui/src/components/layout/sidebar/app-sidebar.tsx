@@ -13,6 +13,7 @@ import {
     HelpCircle,
     Layers,
     Link2,
+    Network,
     Sparkles,
     Users,
     Wrench,
@@ -65,6 +66,8 @@ export function AppSidebar({
     ];
     const isManageActive = manageRoutes.some(isActive);
 
+    const isProd = import.meta.env.VITE_ENV === 'production';
+
     const navMain = [
         {
             title: 'Notes',
@@ -90,20 +93,22 @@ export function AppSidebar({
             icon: FileBarChart,
             isActive: isActive('/reports'),
         },
-        {
-            title: 'Enrichment',
-            url: '/enrichment',
-            icon: Sparkles,
-            isActive: isActive('/enrichment'),
-        },
-        /*
-        {
-            title: 'Graph Explorer',
-            url: '/knowledge-graph',
-            icon: Network,
-            isActive: isActive('/knowledge-graph'),
-        },
-        */
+        ...(isProd
+            ? []
+            : [
+                  {
+                      title: 'Enrichment',
+                      url: '/enrichment',
+                      icon: Sparkles,
+                      isActive: isActive('/enrichment'),
+                  },
+                  {
+                      title: 'Knowledge Graph',
+                      url: '/knowledge-graph',
+                      icon: Network,
+                      isActive: isActive('/knowledge-graph'),
+                  },
+              ]),
     ];
 
     return (
