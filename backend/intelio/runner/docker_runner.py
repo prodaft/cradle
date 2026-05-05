@@ -147,8 +147,6 @@ def _apply_result(
     Creates ``Entry`` rows (via ``get_or_create``) and bulk-creates ``Relation``
     rows.  Appends any warnings/errors to the ``EnrichmentRequest``.
     """
-    from entries.models import Relation
-
     # Cache entry-class lookups within this call
     ec_cache: dict[str, EntryClass] = {}
 
