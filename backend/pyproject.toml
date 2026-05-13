@@ -52,6 +52,10 @@ dev = [
     "ipython==9.12.0",
 ]
 
+[tool.uv]
+exclude-newer = "30 days"
+exclude-newer-package = { django-stubs = false, django-stubs-ext = false, psycopg2-binary = false, pydantic = false, pydantic-core = false, ruff = false }
+
 [tool.mypy]
 namespace_packages = true
 warn_unused_ignores = false

@@ -2,6 +2,18 @@ version = 1
 revision = 3
 requires-python = ">=3.14"
 
+[options]
+exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer-span = "P30D"
+
+[options.exclude-newer-package]
+psycopg2-binary = false
+django-stubs = false
+pydantic = false
+pydantic-core = false
+django-stubs-ext = false
+ruff = false
+
 [[package]]
 name = "amqp"
 version = "5.3.1"
