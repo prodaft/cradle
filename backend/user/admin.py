@@ -1,27 +1,39 @@
+"""Django admin configuration for the user app."""
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.db.models import QuerySet
+from django.http import HttpRequest
 
-from file_transfer.utils import MinioClient
+from file_transfer.s3_utils import ensure_cradle_buckets_exist
+
 from .models import CradleUser
 
 
-@admin.action(description="Create Minio Bucket")
-def create_minio_bucket(modeladmin, request, queryset):
-    for user in queryset:
-        MinioClient().create_user_bucket(str(user.id))
+@admin.action(description="Ensure storage buckets exist")
+def ensure_storage_buckets(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet[CradleUser]) -> None:
+    """Ensure all CRADLE S3/MinIO buckets exist (best-effort)."""
+    try:
+        ensure_cradle_buckets_exist()
+        modeladmin.message_user(request, "Storage buckets ensured.")
+    except Exception as e:
+        modeladmin.message_user(request, f"Failed: {e}", level=40)
 
 
 @admin.action(description="Send Confirmation Email")
-def send_email_confirmation(modeladmin, request, queryset):
+def send_email_confirmation(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet[CradleUser]) -> None:
+    """Send email confirmation to each selected user. No-op for already confirmed users."""
     for user in queryset:
         user.send_email_confirmation()
 
 
 class CradleUserAdmin(UserAdmin):
+    """Admin for CradleUser: list/filter/search, fieldsets, and custom actions."""
+
     model = CradleUser
-    list_display = ("username", "email", "is_active", "email_confirmed", "last_login")
-    list_filter = ("is_active", "email_confirmed", "is_staff", "groups")
-    search_fields = ("username", "email")
+    list_display = ("username", "email", "role", "is_active", "email_confirmed", "last_login")
+    list_filter = ("is_active", "email_confirmed", "is_staff", "role", "groups")
+    search_fields = ("username", "email", "role")
     ordering = ("username",)
     readonly_fields = (
         "id",
@@ -29,10 +41,11 @@ class CradleUserAdmin(UserAdmin):
         "date_joined",
         "password_reset_token_expiry",
         "email_confirmation_token_expiry",
+        "two_factor_enabled",
     )
 
     fieldsets = (
-        (None, {"fields": ("username", "password")}),
+        (None, {"fields": ("id", "username", "password")}),
         ("Personal Info", {"fields": ("first_name", "last_name", "email")}),
         (
             "Status",
@@ -40,6 +53,7 @@ class CradleUserAdmin(UserAdmin):
                 "fields": (
                     "is_active",
                     "email_confirmed",
+                    "two_factor_enabled",
                 )
             },
         ),
@@ -48,12 +62,13 @@ class CradleUserAdmin(UserAdmin):
             {
                 "fields": (
                     "is_staff",
+                    "role",
                     "groups",
                     "user_permissions",
                 )
             },
         ),
-        ("API Keys", {"fields": ("vt_api_key", "catalyst_api_key")}),
+        ("API Keys", {"fields": ("catalyst_api_key",)}),
         (
             "Tokens & Expiry",
             {
@@ -80,14 +95,14 @@ class CradleUserAdmin(UserAdmin):
                     "password2",
                     "is_active",
                     "is_staff",
+                    "role",
                     "groups",
                 ),
             },
         ),
     )
 
-    actions = [create_minio_bucket, send_email_confirmation]
+    actions = [ensure_storage_buckets, send_email_confirmation]
 
 
-# Register the CradleUser model and the custom admin interface
 admin.site.register(CradleUser, CradleUserAdmin)

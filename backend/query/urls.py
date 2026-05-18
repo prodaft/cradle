@@ -1,4 +1,7 @@
+"""URL routing for query (list, advanced)."""
+
 from django.urls import path
+
 from .views.query_view import AdvancedQueryView, EntryListQuery
 
 urlpatterns = [

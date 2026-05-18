@@ -1,39 +1,57 @@
+"""Shared Django settings for Cradle. Installed apps, middleware, REST/OpenAPI config."""
+
 import django_stubs_ext
 
 django_stubs_ext.monkeypatch()
 
-import os
-from datetime import timedelta
-from pathlib import Path
+import tomllib
+import os  # noqa: E402
+from datetime import timedelta  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-VERSION = "2.10.2"
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+with open(BASE_DIR / "pyproject.toml", "rb") as f:
+    VERSION = tomllib.load(f).get("project", {}).get("version", "0.0.0")
+
 MEDIA_ROOT = os.path.join(BASE_DIR, "../media")
 
-# CORS_ALLOW_HEADERS = ["*"]
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS: restrict to allowed origins (set CORS_ALLOWED_ORIGINS in env or settings_docker)
 CORS_ALLOW_CREDENTIALS = True
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOWED_ORIGINS = []
+CORS_ALLOW_HEADERS = list(default_headers) + ["Api-Key"]
+
+# Default frontend/CSRF origins (override in settings_docker/settings_test)
+DEFAULT_FRONTEND_URL = "http://localhost:5173"
+DEFAULT_CSRF_ORIGINS = [
+    DEFAULT_FRONTEND_URL,
+    "http://localhost",
+    "http://127.0.0.1",
+    "http://127.0.0.1:5173",
+]
+
+# S3/MinIO signature (shared by docker and test settings)
+AWS_S3_SIGNATURE_VERSION = "s3v4"
 
 
 # Application definition
 INSTALLED_APPS = [
     "corsheaders",
+    "storages",
     "knowledge_graph.apps.KnowledgeGraphConfig",
     "intelio.apps.IntelIOConfig",
     "management.apps.ManagementConfig",
     "lsp.apps.LspConfig",
-    "cradle_statistics.apps.CradleStatisticsConfig",
+    "statistics.apps.StatisticsConfig",
     "notifications.apps.NotificationsConfig",
     "logs.apps.LogsConfig",
     "file_transfer.apps.FileTransferConfig",
     "query.apps.QueryConfig",
     "access.apps.AccessConfig",
     "entries.apps.EntriesConfig",
-    "fleeting_notes.apps.FleetingNotesConfig",
     "user.apps.UserConfig",
     "notes.apps.NotesConfig",
     "mail.apps.MailConfig",
@@ -62,6 +80,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -71,10 +90,8 @@ MIDDLEWARE = [
 
 def get_log_directory():
     """Get the log directory for the application.
-    This is /var/log/cradle/ if /var/log/ exists and is writable,
-    and cradle/ can be created in it. Otherwise, it is the BASE_DIR.
 
-    Args:
+    Returns /var/log/cradle/ if /var/log/ exists and is writable; else BASE_DIR.
 
     Returns:
         str: The log directory for the application.
@@ -101,10 +118,6 @@ LOGGING = {
     "formatters": {
         "verbose": {
             "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
-            "style": "{",
-        },
-        "simple": {
-            "format": "{levelname} {message}",
             "style": "{",
         },
     },
@@ -134,14 +147,15 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "user.authentication.APIKeyAuthentication",
+        "user.authentication.CookieJWTAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    "DEFAULT_PARSER_CLASSES": (
-        "rest_framework.parsers.FormParser",
-        "rest_framework.parsers.MultiPartParser",
-        "rest_framework.parsers.JSONParser",
-    ),
+    "DEFAULT_SCHEMA_CLASS": "core.openapi.CradleAutoSchema",
+    "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
+    "EXCEPTION_HANDLER": "core.exception_handler.custom_exception_handler",
+    "DEFAULT_THROTTLE_RATES": {
+        "auth": "10/minute",
+    },
 }
 
 SPECTACULAR_SETTINGS = {
@@ -149,23 +163,74 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Threat Intelligence Knowledge Management",
     "VERSION": VERSION,
     "SERVE_INCLUDE_SCHEMA": False,
-    "SCHEMA_PATH_PREFIX": r"/api/v[0-9]",
+    "SCHEMA_PATH_PREFIX": r"/api",
+    "SCHEMA_PATH_PREFIX_TRIM": True,
+    "SERVERS": [{"url": "/api", "description": "API"}],
     "COMPONENT_SPLIT_REQUEST": True,
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
-    "POSTPROCESSING_HOOKS": ["cradle.schema_processors.postprocess_schema_enums"],
+    "POSTPROCESSING_HOOKS": [
+        "cradle.schema_processors.postprocess_schema_enums",
+        "cradle.schema_processors.postprocess_schema_operation_ids",
+        "cradle.schema_processors.postprocess_schema_pagination_refs",
+    ],
+    # Error handling - RFC 9457 compliant
+    "ENUM_NAME_OVERRIDES": {
+        "ErrorCodeEnum": "core.exceptions.ErrorCode",
+    },
 }
 
 SIMPLE_JWT = {
     "TOKEN_OBTAIN_SERIALIZER": "user.serializers.TokenObtainSerializer",
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
-    "SLIDING_TOKEN_LIFETIME": timedelta(days=30),
-    "SLIDING_TOKEN_REFRESH_LIFETIME_LATE_USER": timedelta(days=1),
-    "SLIDING_TOKEN_LIFETIME_LATE_USER": timedelta(days=30),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+}
+
+# JWT HttpOnly cookie settings
+JWT_ACCESS_COOKIE_NAME = "access_token"
+JWT_REFRESH_COOKIE_NAME = "refresh_token"
+JWT_COOKIE_SECURE = True
+JWT_COOKIE_SAMESITE = "Lax"
+JWT_COOKIE_DOMAIN = None
+JWT_COOKIE_PATH = "/"
+
+# OAuth provider settings used by backend OAuth flows.
+OAUTH_PROVIDERS = {}
+# Allowed redirect_uri origins for OAuth (scheme + netloc). Override in settings_docker.
+OAUTH_REDIRECT_URI_WHITELIST = []
+
+
+def build_oauth_methods(oauth_providers: dict) -> list[dict]:
+    """Build OAuth method metadata for the auth/config endpoint from provider config."""
+    methods = []
+    for provider, config in oauth_providers.items():
+        if not isinstance(config, dict):
+            continue
+        method = {
+            "id": provider,
+            "label": config.get("label") or provider,
+        }
+        if config.get("authorization_url"):
+            method["authorization_url"] = config["authorization_url"]
+        methods.append(method)
+    return methods
+
+
+# OAuth provider metadata exposed by the auth/config endpoint.
+OAUTH_METHODS = build_oauth_methods(OAUTH_PROVIDERS)
+
+# Cache for rate limiting (throttling). Uses local memory by default.
+# Override with Redis in production for multi-worker deployments.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
 }
 
 ROOT_URLCONF = "cradle.urls"
 
+CSRF_COOKIE_NAME = "csrf_token"
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = "None"
@@ -223,23 +288,35 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "notes", "static")]
+STATICFILES_DIRS = []
 
 # Can be set in specific config files if needed
 MINIO_BACKEND_URL = None
 
-## Application Specific Config
-ADMIN_PATH = "29acee84-15db-481b-b602-2c1a579178d0/"
+# Application-specific config
+# UUID segment for Django admin URL: /admin/<ADMIN_PATH_UUID>/
+ADMIN_PATH_UUID = "1eef2e9b-6350-4fb7-a65b-ccaaf09c39b2"
 
 CATALYST_HOST = "https://prod.blindspot.prodaft.com"
 CATALYST_PUBLISH_CATEGORY = "RESEARCH"
 CATALYST_PUBLISH_SUBCATEGORY = "4dff0ddf-fc2f-4a8e-b43f-1bc25973537b"
 
-## File Upload max size limit
+# File upload max size limit
 FILE_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024
 
-## Default settings dict
+# Default settings dict
 DEFAULT_SETTINGS = {}
 
-## Internal Subtypes
-INTERNAL_SUBTYPES = set(["alias", "virtual", "file"])
+# Internal subtypes (excluded from user-managed entry classes)
+from entries.constants import INTERNAL_SUBTYPES  # noqa: E402
+
+# Enricher container isolation settings
+# Requires the 'docker' Python SDK (docker>=7) to be installed.
+ENRICHER_DOCKER_IMAGE_PREFIX = "cradle/enricher"
+ENRICHER_MEM_LIMIT = "256m"
+# CPU quota in microseconds per 100ms period (50000 = 50% of one core)
+ENRICHER_CPU_QUOTA = 50000
+# Seconds before the container is killed (should match Celery task_time_limit)
+ENRICHER_TIMEOUT = 120
+# Docker network for enrichers that need outbound internet access
+ENRICHER_EXTERNAL_NETWORK = "enricher_external"

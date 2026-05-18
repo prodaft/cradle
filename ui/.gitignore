@@ -19,7 +19,7 @@ docs
 
 # Editor directories and files
 .vscode/*
-!.vscode/extensions.json
+!.vscode/launch.json
 .idea
 .DS_Store
 *.suo
@@ -28,8 +28,12 @@ docs
 *.sln
 *.sw?
 
-#Tailwind CSS
-src/renderer/src/styles/output.css
+# Tailwind CSS
+src/styles/output.css
 
 .env
-.vscode
+stats.html
+CLAUDE.md
+tsconfig.tsbuildinfo
+.vite-cache
+.tanstack

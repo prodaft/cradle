@@ -26,10 +26,10 @@ Django-based backend providing core functionality for CRADLE including:
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.14+
 - PostgreSQL 13+
 - Redis 6.0+
-- Pipenv
+- uv
 - MinIO (optional)
 
 ### Installation
@@ -38,7 +38,6 @@ Django-based backend providing core functionality for CRADLE including:
    ```bash
    git clone https://github.com/prodaft/cradle.git
    cd cradle/backend
-   git submodule update --init --recursive
    ```
 
 2. **Database Setup**
@@ -74,22 +73,22 @@ Django-based backend providing core functionality for CRADLE including:
 
 5. **Install Dependencies**
    ```bash
-   pip install pipenv
-   pipenv install
+   pip install uv
+   uv sync
    ```
 
 6. **Run Migrations**
    ```bash
-   pipenv run python manage.py migrate
+   uv run python manage.py migrate
    ```
 
 7. **Start Services**
    ```bash
    # Start Django development server
-   pipenv run python manage.py runserver
+   uv run python manage.py runserver
 
-   # Start Celery worker (in separate terminal)
-   pipenv run celery -A cradle worker -Q email,notes,publish,import -l INFO
+   # Start Celery worker with beat and all routed queues (in separate terminal)
+   uv run celery -A cradle worker --beat -Q email,notes,graph,publish,import,access,enrich,digest,files,cleanup -l INFO
    ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -100,25 +99,28 @@ Django-based backend providing core functionality for CRADLE including:
 ### Common Commands
 ```bash
 # Run tests
-pipenv run python manage.py test
+uv run python manage.py test
 
 # Create new migration
-pipenv run python manage.py makemigrations
+uv run python manage.py makemigrations
 
 # Generate API documentation
 cd docs && make html
 
 # Monitor Celery tasks
-pipenv run celery -A cradle flower
+uv run celery -A cradle flower
 ```
 
 ### Development Tips
 ```bash
 # Access Django shell
-pipenv run python manage.py shell_plus --ipython
+uv run python manage.py shell_plus --ipython
+
+# Format code
+uv run ruff format .
 
 # Check code quality
-pipenv run flake8 .
+uv run ruff check .
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

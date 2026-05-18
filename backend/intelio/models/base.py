@@ -1,59 +1,85 @@
-from datetime import timedelta
+import logging
+import os
+import uuid
+from collections import defaultdict
 from typing import Any, Optional
+
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from core.fields import BitStringField
-from entries.models import EntryClass, Entry
-from entries.models import Relation
-from collections import defaultdict
-import os
-
+from django.utils import timezone
 from django_lifecycle import (
     AFTER_DELETE,
+    AFTER_UPDATE,
     LifecycleModel,
     hook,
 )
+from pydantic import BaseModel
+from pydantic import ValidationError as PydanticValidationError
+
+from entries.constants import SUBTYPE_DIGEST, SUBTYPE_ENRICHMENT
+from entries.enums import EntryType
+from entries.models import Entry, EntryClass, Relation
+from file_transfer.storage import DigestStorage
+from user.models import CradleUser
+
+from ..enums import DigestStatus, EnrichmentStatus
+from ..managers import EnrichmentRequestManager
+
+logger = logging.getLogger(__name__)
+
+_ENRICHMENT_REQUEST_SAVE_SKIP_FULL_CLEAN = frozenset(
+    {"errors", "warnings", "enricher_status", "completed_at", "status", "ignored"}
+)
 
 
-from ..enums import EnrichmentStrategy, DigestStatus
-import uuid
-
-fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
+def digest_upload_path(instance: "BaseDigest", _filename: str) -> str:
+    """Generate upload path for digest: {user_id}/{digest_id}."""
+    return f"{instance.user_id}/{instance.id}"
 
 
 class BaseDigest(LifecycleModel):
-    """
-    An import of multiple external objects and connections, bulk "digested" into the platform
-    """
+    """An import of multiple external objects and connections, bulk "digested" into the platform."""
 
     infer_entities = False
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    title: models.CharField = models.CharField(max_length=255, null=False, blank=False)
+    title: models.CharField = models.CharField(
+        max_length=255, null=False, blank=False, help_text="Human-readable title for the digest"
+    )
     user = models.ForeignKey(
-        "user.CradleUser", on_delete=models.CASCADE, related_name="digests"
+        "user.CradleUser", on_delete=models.CASCADE, related_name="digests", help_text="User who created the digest"
+    )
+
+    # Digest file stored in S3
+    file: models.FileField = models.FileField(
+        upload_to=digest_upload_path,
+        storage=DigestStorage,
+        null=True,
+        blank=True,
+        help_text="Uploaded digest file (stored in S3)",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
-
     status = models.CharField(
         max_length=255,
         choices=DigestStatus.choices,
         default=DigestStatus.WORKING,
+        help_text="Processing status of the digest",
     )
-    errors = models.JSONField(default=list, blank=True)
-    warnings = models.JSONField(default=list, blank=True)
-
-    digest_type = models.CharField(max_length=255, null=False, blank=False)
-
+    errors = models.JSONField(default=list, blank=True, help_text="List of error messages from processing")
+    warnings = models.JSONField(default=list, blank=True, help_text="List of warning messages from processing")
+    digest_type = models.CharField(
+        max_length=255, null=False, blank=False, help_text="Subclass name (e.g. CradleDigest, FalconDigest)"
+    )
     entities = models.ManyToManyField(
         Entry,
         related_name="digests",
+        help_text="Entities associated with this digest",
     )
-
     relations = GenericRelation(Relation, related_query_name="digest")
+    summary = models.JSONField(default=dict, blank=True, help_text="Summary statistics from digest processing")
 
     class Meta:
         ordering = ["-created_at"]
@@ -61,16 +87,30 @@ class BaseDigest(LifecycleModel):
         # digest_type cannot be BaseDigest
         constraints = [
             models.CheckConstraint(
-                check=~models.Q(digest_type="BaseDigest"),
+                condition=~models.Q(digest_type="BaseDigest"),
                 name="digest_type_not_base_digest",
             ),
         ]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.digest_type = (
-            self.__class__.__name__ if not self.digest_type else self.digest_type
+        self.digest_type = self.__class__.__name__ if not self.digest_type else self.digest_type
+
+    @property
+    def entry(self) -> Entry:
+        """Return the entry representing this digest."""
+        entry_class, _ = EntryClass.objects.get_or_create(subtype=SUBTYPE_DIGEST, defaults={"type": EntryType.ARTIFACT})
+        entry, _ = Entry.objects.get_or_create(
+            name=f"{self.digest_type} Digest {self.title} [{self.id}]",
+            entry_class=entry_class,
         )
+        return entry
+
+    @property
+    def access_vector(self):
+        from notes.utils import calculate_acvec
+
+        return calculate_acvec(self.entities.all())
 
     @classmethod
     def from_db(cls, db, field_names, values):
@@ -104,31 +144,75 @@ class BaseDigest(LifecycleModel):
 
         display_name = getattr(cls, "display_name", None)
         if not isinstance(display_name, str):
-            raise TypeError(
-                f"{cls.__name__} must define a class attribute 'name' as a string"
-            )
+            raise TypeError(f"{cls.__name__} must define a class attribute 'display_name' as a string")
+
+    @hook(AFTER_DELETE)
+    def delete_file(self):
+        self.id = self._initial_state.get_value(self, "id")
+
+        self.cleanup_local_file()
+
+    @hook(AFTER_UPDATE, when="status", has_changed=True)
+    def status_updated_cleanup_file(self):
+        """Cleanup local digest file after reaching a terminal state.
+
+        This covers digests that do not call finalize() (e.g. FalconDigest chunks).
+        """
+        if self.status in [DigestStatus.DONE, DigestStatus.ERROR, DigestStatus.WARNING]:
+            self.cleanup_local_file()
 
     @property
     def path(self):
+        """Local cache path for digest file."""
         upload_dir = os.path.join(settings.MEDIA_ROOT, "digests", str(self.user.id))
         os.makedirs(upload_dir, exist_ok=True)
         fpath = os.path.join(upload_dir, str(self.id))
         return fpath
 
-    def digest(self):
+    @property
+    def storage_key(self) -> str:
+        """Object key for this digest in the digests bucket.
+
+        Returns the file.name if FileField is set, otherwise computes
+        deterministic key for backward compatibility.
         """
-        Perform the actual digesting of the external data.
+        if self.file:
+            return self.file.name
+        return f"{self.user_id}/{self.id}"
+
+    def ensure_local_file(self) -> None:
+        """Ensure the digest file exists at self.path by fetching it from S3.
+
+        Downloads from FileField if available, otherwise uses legacy storage_key.
         """
+        if os.path.exists(self.path) and os.path.getsize(self.path) > 0:
+            return
+
+        with self.file.open("rb") as source:
+            os.makedirs(os.path.dirname(self.path), exist_ok=True)
+            with open(self.path, "wb") as dest:
+                for chunk in source.chunks():
+                    dest.write(chunk)
+
+    def cleanup_local_file(self) -> None:
+        """Remove the local cached digest file (best-effort)."""
         try:
-            if self._digest():
-                self.status = DigestStatus.WORKING
-            else:
-                self.status = DigestStatus.ERROR
-        except Exception as e:
+            if os.path.exists(self.path):
+                os.remove(self.path)
+        except OSError, PermissionError:
+            # Best-effort cleanup; never fail digest completion due to local FS issues.
+            pass
+
+    def digest(self):
+        """Perform the actual digesting of the external data."""
+        try:
+            self.ensure_local_file()
+            self.status = DigestStatus.WORKING
+            self.save(update_fields=["status"])
+            self._digest()
+        except OSError as e:
             self.status = DigestStatus.ERROR
-            self.errors.append(
-                "An unknown error has occured, please contact your administrator"
-            )
+            self.errors.append("An unknown error has occurred, please contact your administrator")
             self.save()
             raise e
 
@@ -137,12 +221,16 @@ class BaseDigest(LifecycleModel):
     def _digest(self):
         raise NotImplementedError
 
-    @hook(AFTER_DELETE)
-    def delete_file(self):
-        self.id = self._initial_state.get_value(self, "id")
+    def finalize(self):
+        if len(self.errors) > 0:
+            self.status = DigestStatus.ERROR
+        elif len(self.warnings) > 0:
+            self.status = DigestStatus.WARNING
+        else:
+            self.status = DigestStatus.DONE
 
-        if os.path.exists(self.path):
-            os.remove(self.path)
+        self.save(update_fields=["status"])
+        self.cleanup_local_file()
 
     def _append_error(self, error):
         if error in self.errors:
@@ -179,14 +267,21 @@ class BaseEnricher:
     display_name = None
     settings_fields = {}
 
-    def __init__(self, settings: dict):
+    def __init__(self, settings: dict, request: "EnrichmentRequest"):
         self.settings = settings
+        self.request = request
 
-    def pre_enrich(self, entries: list[Entry], user) -> Optional[str]:
+    def pre_enrich(self, entries: list[Entry]) -> Optional[str]:
+        """Validate config and entries before enrichment. Return error message or None."""
         raise NotImplementedError
 
-    def enrich(self, entries: list[Entry], content_object, user) -> None:
+    def enrich(self, entries: list[Entry]) -> None:
+        """Perform enrichment on the given entries, creating relations as needed."""
         raise NotImplementedError
+
+    @property
+    def name(self):
+        return self.__class__.__name__
 
     @classmethod
     def get_subclass(cls, name):
@@ -197,10 +292,33 @@ class BaseEnricher:
         return None
 
     @classmethod
+    def display_label_for_type(cls, enricher_type: str) -> str:
+        """Human-readable label for an enricher implementation (not a Python class name)."""
+        config_cls = cls.get_subclass(enricher_type)
+        if config_cls and getattr(config_cls, "display_name", None):
+            return config_cls.display_name
+        base = enricher_type[:-8] if enricher_type.endswith("Enricher") else enricher_type
+        b = str(base)
+        return (b.replace("_", " ").strip() or b) or enricher_type
+
+    @classmethod
+    def enricher_messages_for_ui(cls, raw: dict | None) -> dict[str, list]:
+        """Map per-enricher keys from internal class names to display labels (errors, warnings, etc.)."""
+        if not raw:
+            return {}
+        out: dict[str, list] = {}
+        for enricher_type, msgs in raw.items():
+            label = cls.display_label_for_type(enricher_type)
+            msg_list = list(msgs) if msgs is not None else []
+            if label in out:
+                out[label] = out[label] + msg_list
+            else:
+                out[label] = msg_list
+        return out
+
+    @classmethod
     def get_default_settings(cls):
-        """
-        Build a dictionary of default settings values based on the defined model fields.
-        """
+        """Build a dictionary of default settings values based on the defined model fields."""
         defaults = {}
         for field_name, field in cls.settings_fields.items():
             defaults[field_name] = field.get_default() if field.has_default() else None
@@ -208,84 +326,68 @@ class BaseEnricher:
 
     @classmethod
     def validate_settings(cls, settings_data):
-        """
-        Validate the provided settings_data using the defined model fields.
+        """Validate the provided settings_data using the defined model fields.
+
         Returns a dictionary of errors (empty if valid).
         """
         errors = {}
         for field_name, field in cls.settings_fields.items():
             try:
                 field.clean(settings_data.get(field_name), None)
-            except Exception as e:
-                errors[field_name] = str(e)
+            except ValidationError as e:
+                msgs = getattr(e, "messages", None)
+                if msgs:
+                    errors[field_name] = msgs[0]
+                elif getattr(e, "message", None):
+                    errors[field_name] = e.message
+                else:
+                    errors[field_name] = "This value is not valid."
+            except Exception:
+                logger.warning(
+                    "Unexpected error validating enricher setting %s",
+                    field_name,
+                    exc_info=True,
+                )
+                errors[field_name] = "This value is not valid."
         return errors
-
-    @classmethod
-    def serialize_settings(cls, settings_data):
-        return settings_data
-
-    @classmethod
-    def deserialize_settings(cls, json_data):
-        return json_data
 
 
 class EnricherSettings(models.Model):
-    """
-    A strategy for enriching an entry with additional information.
-    """
+    """A strategy for enriching an entry with additional information."""
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
-    strategy = models.CharField(
-        max_length=255,
-        choices=EnrichmentStrategy.choices,
-        default=EnrichmentStrategy.MANUAL,
-    )
-    periodicity = models.DurationField(null=False, default=timedelta(days=1))
-    last_run = models.DateTimeField(null=True, blank=True)
-
     for_eclasses = models.ManyToManyField(
-        EntryClass, related_name="enrichers", blank=True
+        EntryClass, related_name="enrichers", blank=True, help_text="Entry classes this enricher applies to"
     )
-
-    enricher_type = models.CharField(max_length=255, unique=True)
-    settings = models.JSONField(default=dict, blank=True)
-
-    enabled = models.BooleanField(default=False)
+    enricher_type = models.CharField(
+        max_length=255, unique=True, help_text="Enricher class name (e.g. AbuseIPDBEnricher)"
+    )
+    settings = models.JSONField(default=dict, blank=True, help_text="Enricher-specific configuration")
+    enabled = models.BooleanField(default=False, help_text="Whether this enricher is enabled")
 
     def __str__(self):
         display = self.enricher_type
         return f"{display} ({self.for_eclasses})"
 
     def clean(self):
-        """
-        Optional: validate that the settings match the expected fields for the enricher_type.
-        """
         config = BaseEnricher.get_subclass(self.enricher_type)
         if config is None:
-            raise ValidationError(f"Unknown enricher type: {self.enricher_type}")
-
-        if config is None:
-            raise ValidationError(f"Unknown enricher type: {self.enricher_type}")
+            raise ValidationError("That enrichment is not available.")
         errors = config.validate_settings(self.settings)
         if errors:
-            raise ValidationError(errors)
+            raise ValidationError({str(k): v for k, v in errors.items()})
 
-    @property
-    def enricher(self):
-        """
-        Return the enricher class based on the enricher_type.
-        """
+    def enricher(self, request: "EnrichmentRequest"):
+        """Return the enricher class based on the enricher_type."""
         config = BaseEnricher.get_subclass(self.enricher_type)
         if config is None:
-            raise ValidationError(f"Unknown enricher type: {self.enricher_type}")
-        return config(settings=self.settings)
+            raise ValidationError("That enrichment is not available.")
+        return config(settings=self.settings, request=request)
 
 
 class ClassMapping(models.Model):
-    """
-    Abstract model representing a mapping from an internal entry class
-    to an external type.
+    """Abstract model for mapping internal entry class to external type.
 
     Subclasses should implement the actual key-value pairs.
     """
@@ -293,7 +395,10 @@ class ClassMapping(models.Model):
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
     internal_class = models.ForeignKey(
-        EntryClass, related_name="%(class)ss", on_delete=models.CASCADE
+        EntryClass,
+        related_name="%(class)ss",
+        on_delete=models.CASCADE,
+        help_text="CRADLE entry class this mapping targets",
     )
 
     class Meta:
@@ -307,9 +412,7 @@ class ClassMapping(models.Model):
 
         display_name = getattr(cls, "display_name", None)
         if not isinstance(display_name, str):
-            raise TypeError(
-                f"{cls.__name__} must define a class attribute 'name' as a string"
-            )
+            raise TypeError(f"{cls.__name__} must define a class attribute 'display_name' as a string")
 
     @classmethod
     def get_typemapping(cls):
@@ -319,3 +422,265 @@ class ClassMapping(models.Model):
             typemapping[mapping.internal_class] = mapping
 
         return typemapping
+
+
+class EnrichmentRequestArtifactSchema(BaseModel):
+    """Schema for the single artifact on an enrichment request."""
+
+    entry_class: str
+    name: str
+
+
+class EnrichmentRequest(LifecycleModel):
+    """A request to enrich exactly one artifact using configured enrichers."""
+
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    enrichers_settings = models.ManyToManyField(EnricherSettings, help_text="Enrichers to run for this request")
+    title = models.CharField(max_length=255, help_text="Human-readable title")
+    completed_at = models.DateTimeField(null=True, blank=True, help_text="When all enrichers finished")
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=255,
+        choices=EnrichmentStatus.choices,
+        default=EnrichmentStatus.WAITING,
+        help_text="Overall status of the enrichment request",
+    )
+    user = models.ForeignKey(
+        CradleUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="enrichment_requests",
+        help_text="User who created the request",
+    )
+    entities = models.ManyToManyField(
+        Entry,
+        related_name="enrichment_requests",
+        blank=True,
+        help_text="Optional entity entries for access control (who may see this request)",
+    )
+    enricher_status = models.JSONField(
+        default=dict, blank=True, help_text="Per-enricher status (enricher_type -> status)"
+    )
+    relations = GenericRelation(Relation, related_query_name="enrichment")
+    artifact = models.JSONField(
+        default=dict,
+        blank=False,
+        help_text='Single artifact: {"entry_class": subtype string, "name": artifact value}',
+    )
+    errors = models.JSONField(default=dict, blank=True, help_text="Per-enricher error messages")
+    warnings = models.JSONField(default=dict, blank=True, help_text="Per-enricher warning messages")
+    ignored = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Ignored artifact (no matching enricher), at most one object matching `artifact` shape",
+    )
+
+    objects = EnrichmentRequestManager()
+
+    def clean(self):
+        # Only validate M2M relationships if the instance already exists in the database
+        # (not during initial creation when M2M fields haven't been set yet)
+        if not self._state.adding:
+            if not self.enrichers_settings.count():
+                raise ValidationError("Select at least one enrichment.")
+
+        if not isinstance(self.artifact, dict):
+            raise ValidationError({"artifact": "Provide a single object with entry_class and name."})
+
+        try:
+            EnrichmentRequestArtifactSchema(**self.artifact)
+        except PydanticValidationError:
+            raise ValidationError({"artifact": "Include an entry type (entry_class) and a name for that type."})
+
+        subtype = self.artifact["entry_class"]
+        if not EntryClass.objects.filter(subtype=subtype, type=EntryType.ARTIFACT).exists():
+            label = str(subtype).replace("_", " ").strip() or str(subtype)
+            raise ValidationError({"artifact": f'This entry type cannot be used for enrichment: "{label}".'})
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        if update_fields and frozenset(update_fields) <= _ENRICHMENT_REQUEST_SAVE_SKIP_FULL_CLEAN:
+            super().save(*args, **kwargs)
+            return
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def entry(self):
+        """Return the entry representing this enrichment request."""
+        entry_class, _ = EntryClass.objects.get_or_create(
+            subtype=SUBTYPE_ENRICHMENT, defaults={"type": EntryType.ARTIFACT}
+        )
+        entry, _ = Entry.objects.get_or_create(
+            name=f"Enrichment Request {self.title} [{self.id}]", entry_class=entry_class
+        )
+        return entry
+
+    @property
+    def enrichers(self):
+        """Return the enricher class based on the enrichers_settings."""
+        enrichers = []
+
+        for enricher_settings in self.enrichers_settings.all():
+            subclass = BaseEnricher.get_subclass(enricher_settings.enricher_type)
+
+            if subclass is None:
+                raise ValidationError("That enrichment is not available.")
+            config = subclass(settings=enricher_settings.settings, request=self)
+            config.id = enricher_settings.id
+            enrichers.append(config)
+
+        return enrichers
+
+    def entries(self, classes: set[str] | None = None):
+        req = self.artifact
+        if not req or not isinstance(req, dict):
+            return []
+        subtype = req.get("entry_class")
+        name = req.get("name")
+        if not subtype or name is None or name == "":
+            return []
+        if classes is not None and subtype not in classes:
+            return []
+        entry_class = EntryClass.objects.get(subtype=subtype, type=EntryType.ARTIFACT)
+        entry, _ = Entry.objects.get_or_create(name=name, entry_class=entry_class)
+        return [entry]
+
+    def start_enrichment(self):
+        """Start the enrichment process after creation."""
+        from ..tasks import start_enrich
+
+        # Trigger the enrichment process
+        # This could be handled by a background task or Celery
+        all_eclasses = set(self.enrichers_settings.all().values_list("for_eclasses__subtype", flat=True))
+        self.relations.clear()
+
+        req = self.artifact if isinstance(self.artifact, dict) else {}
+        subtype = req.get("entry_class")
+        ignored: list[dict] = []
+        if subtype and subtype not in all_eclasses:
+            ignored = [{"entry_class": subtype, "name": req.get("name", "")}]
+
+        self.ignored = ignored
+
+        if len(ignored) > 0:
+            self.status = EnrichmentStatus.WARNING
+            logger.info("Enrichment request %s has ignored artifact (no matching enricher)", self.id)
+        else:
+            self.status = EnrichmentStatus.WORKING
+
+        self.save(update_fields=["status", "ignored"])
+        start_enrich.apply_async((self.id,))
+
+    @property
+    def access_vector(self):
+        from notes.utils import calculate_acvec
+
+        return calculate_acvec(self.entities.all())
+
+    def update_access_vector(self):
+        self.relations.update(access_vector=self.access_vector)
+
+    def _set_enricher_status(self, enricher_type: str, status: EnrichmentStatus):
+        if self.enricher_status and self.enricher_status.get(enricher_type) == status.value:
+            return
+        terminal = frozenset({EnrichmentStatus.DONE.value, EnrichmentStatus.ERROR.value})
+        notify_instance: EnrichmentRequest | None = None
+        with transaction.atomic():
+            instance = EnrichmentRequest.objects.select_for_update().get(pk=self.pk)
+            instance.enricher_status = dict(instance.enricher_status or {})
+            instance.enricher_status[enricher_type] = status.value
+
+            expected_types = frozenset(instance.enrichers_settings.values_list("enricher_type", flat=True))
+            all_reported_terminal = expected_types and all(
+                instance.enricher_status.get(t) in terminal for t in expected_types
+            )
+
+            if all_reported_terminal:
+                instance.completed_at = timezone.now()
+                err_count, success_count = 0, 0
+                for t in expected_types:
+                    stat = instance.enricher_status.get(t)
+                    if stat == EnrichmentStatus.ERROR.value:
+                        err_count += 1
+                    else:
+                        success_count += 1
+
+                if err_count > 0 and success_count == 0:
+                    instance.status = EnrichmentStatus.ERROR
+                elif err_count > 0:
+                    instance.status = EnrichmentStatus.WARNING
+                elif instance.status != EnrichmentStatus.WARNING and instance.status != EnrichmentStatus.ERROR:
+                    instance.status = EnrichmentStatus.DONE
+
+                instance.save(update_fields=["enricher_status", "completed_at", "status"])
+                notify_instance = instance
+            else:
+                instance.save(update_fields=["enricher_status"])
+
+        self.enricher_status = instance.enricher_status
+        self.status = instance.status
+        if instance.completed_at is not None:
+            self.completed_at = instance.completed_at
+
+        if notify_instance is not None:
+            self._send_enrichment_notification(notify_instance)
+
+    def _append_error(self, error, enricher_type: str):
+        if error in self.errors.get(enricher_type, []):
+            return
+        with transaction.atomic():
+            # Use select_for_update to lock the row and prevent race conditions
+            instance = EnrichmentRequest.objects.select_for_update().get(pk=self.pk)
+            instance.errors = instance.errors or {}
+            instance.errors[enricher_type] = instance.errors.get(enricher_type, [])
+
+            if error not in instance.errors[enricher_type]:
+                instance.errors[enricher_type].append(error)
+                instance.save(update_fields=["errors"])
+            # Update the current instance to reflect the change
+            self.errors = instance.errors
+
+    def _append_warning(self, warning, enricher_type: str):
+        if warning in self.warnings.get(enricher_type, []):
+            return
+        with transaction.atomic():
+            # Use select_for_update to lock the row and prevent race conditions
+            instance = EnrichmentRequest.objects.select_for_update().get(pk=self.pk)
+            instance.warnings = instance.warnings or {}
+            instance.warnings[enricher_type] = instance.warnings.get(enricher_type, [])
+            if warning not in instance.warnings[enricher_type]:
+                instance.warnings[enricher_type].append(warning)
+                instance.save(update_fields=["warnings"])
+            # Update the current instance to reflect the change
+            self.warnings = instance.warnings
+
+    def _send_enrichment_notification(self, instance):
+        """Send notification when enrichment completes or fails.
+
+        Call after all enrichers have finished processing.
+        """
+        from notifications.models import (
+            EnrichmentCompleteNotification,
+            EnrichmentErrorNotification,
+        )
+
+        if instance.status == EnrichmentStatus.ERROR:
+            # All enrichers failed
+            labeled = BaseEnricher.enricher_messages_for_ui(instance.errors)
+            lines = [f"{label}: {msg}" for label, msgs in labeled.items() for msg in msgs]
+            error_body = "\n".join(lines) if lines else "An error occurred while processing your enrichment."
+
+            EnrichmentErrorNotification.objects.create(
+                user=instance.user,
+                message=f"There was an error processing your enrichment: {instance.title}",
+                enrichment_request=instance,
+                error_message=error_body,
+            )
+        elif instance.status in [EnrichmentStatus.DONE, EnrichmentStatus.WARNING]:
+            # At least some enrichers succeeded
+            EnrichmentCompleteNotification.objects.create(
+                user=instance.user,
+                message=f'Your enrichment "{instance.title}" is now complete.',
+                enrichment_request=instance,
+            )

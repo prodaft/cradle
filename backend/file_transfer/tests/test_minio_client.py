@@ -1,6 +1,6 @@
-from .utils import FileTransferTestCase
+from ..exceptions import StoredFileNotFoundException
 from ..utils import MinioClient
-from ..exceptions import MinioObjectNotFound
+from .utils import FileTransferTestCase
 
 
 class TestMinioClient(FileTransferTestCase):
@@ -24,35 +24,25 @@ class TestMinioClient(FileTransferTestCase):
         self.mocked_make_bucket.assert_called_once_with("user")
 
     def test_create_presigned_put(self):
-        minio_file_name, _ = MinioClient().create_presigned_put(
-            self.bucket_name, self.file_name, self.expiry_time
-        )
+        minio_file_name, _ = MinioClient().create_presigned_put(self.bucket_name, self.file_name, self.expiry_time)
         self.assertEqual(minio_file_name, self.minio_file_name)
         self.mocked_presigned_put.assert_called_once_with(
             self.bucket_name, self.minio_file_name, expires=self.expiry_time
         )
 
     def test_create_presigned_get_successfully(self):
-        presigned = MinioClient().create_presigned_get(
-            self.bucket_name, self.minio_file_name, self.expiry_time
-        )
+        presigned = MinioClient().create_presigned_get(self.bucket_name, self.minio_file_name, self.expiry_time)
         self.assertEqual(presigned, self.presigned_url)
 
     def test_create_presigned_get_exception(self):
-        with self.assertRaises(MinioObjectNotFound):
-            MinioClient().create_presigned_get(
-                "wrong bucket", self.minio_file_name, self.expiry_time
-            )
+        with self.assertRaises(StoredFileNotFoundException):
+            MinioClient().create_presigned_get("wrong bucket", self.minio_file_name, self.expiry_time)
 
     def test_file_exists_at_path_true(self):
-        self.assertTrue(
-            MinioClient().file_exists_at_path(self.bucket_name, self.minio_file_name)
-        )
+        self.assertTrue(MinioClient().file_exists_at_path(self.bucket_name, self.minio_file_name))
 
     def test_file_exists_at_path_false(self):
-        self.assertFalse(
-            MinioClient().file_exists_at_path("wrong_bucket", self.minio_file_name)
-        )
+        self.assertFalse(MinioClient().file_exists_at_path("wrong_bucket", self.minio_file_name))
 
     def tearDown(self):
         super().tearDown()

@@ -1,11 +1,13 @@
+"""Registry of publish strategies (upload to Catalyst, download as HTML/plaintext/JSON)."""
+
 from django.conf import settings
 
+from .catalyst import CatalystPublish
+from .html import HTMLPublish
+from .json import JSONPublish
 from .plaintext import PlaintextPublish
 
-from .html import HTMLPublish
-from .catalyst import CatalystPublish
-from .json import JSONPublish
-
+# Map strategy key to factory: (anonymized: bool) -> BasePublishStrategy
 PUBLISH_STRATEGIES = {
     "catalyst": lambda anon: CatalystPublish(
         "TLP:RED",

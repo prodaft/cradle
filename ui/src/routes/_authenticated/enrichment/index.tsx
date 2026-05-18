@@ -1,0 +1,19 @@
+import { createFileRoute } from '@tanstack/react-router';
+import { lazy } from 'react';
+import * as z from 'zod';
+
+const EnrichmentList = lazy(
+    () => import('@/components/domain/enrichment/enrichment-list'),
+);
+
+export const Route = createFileRoute('/_authenticated/enrichment/')({
+    validateSearch: z.object({
+        sort_field: z.string().optional(),
+        sort_direction: z.enum(['asc', 'desc']).optional(),
+        pagesize: z.coerce.number().optional(),
+        title: z.string().optional(),
+        user__username: z.string().optional(),
+        status: z.string().optional(),
+    }),
+    component: EnrichmentList,
+});

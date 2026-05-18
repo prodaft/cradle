@@ -3,7 +3,7 @@
 <div align="center">
   <h3 align="center">CRADLE Frontend</h3>
   <p align="center">
-    Electron/Web client for CRADLE
+    Client for CRADLE
     <br />
     <a href="https://github.com/prodaft/cradle"><strong>Explore main project »</strong></a>
   </p>
@@ -13,18 +13,17 @@
 
 ## About
 
-The CRADLE frontend is a modern desktop application built with:
+The CRADLE frontend is a modern application built with:
 
--   **React** for UI components
--   **Electron** for desktop runtime
--   **Vite** for development and bundling
--   **Tailwind CSS** for styling
+- **React** for UI components
+- **Vite** for development and bundling
+- **Tailwind CSS** for styling
 
 It provides an intuitive interface for cybersecurity analysts to:
 
--   Collaborate on threat intelligence
--   Visualize entity relationships
--   Generate and export reports
+- Collaborate on threat intelligence
+- Visualize entity relationships
+- Generate and export reports
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -34,8 +33,8 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 ### Prerequisites
 
--   Node.js 18+
--   Git
+- Bun runtime
+- Git
 
 ### Installation
 
@@ -49,19 +48,21 @@ It provides an intuitive interface for cybersecurity analysts to:
 2. **Install dependencies**
 
     ```bash
-    npm install
+    bun install
     ```
 
 3. **Configure environment**
-   Create `.env` file with backend API URL:
+   Copy the example environment file and configure it:
 
-    ```env
-    VITE_API_BASE_URL=http://localhost:8000
+    ```bash
+    cp .env.example .env
     ```
+
+    Then edit `.env` and set `VITE_API_BASE_URL` to your backend API URL (default: `http://localhost:8000`).
 
 4. **Start development server**
     ```bash
-    npm run dev
+    bun run dev
     ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -74,20 +75,18 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 | Command             | Description                        |
 | ------------------- | ---------------------------------- |
-| `npm run dev`       | Start development server           |
-| `npm run build-web` | Build production bundle            |
-| `npm run preview`   | Preview production build           |
-| `npm run lint`      | Run ESLint for code quality checks |
-| `npm run test`      | Execute test suite                 |
-| `npm run jsdoc`     | Generate documentation             |
-| `npm run prettier`  | Format code with Prettier          |
+| `bun run dev`       | Start development server           |
+| `bun run build`     | Build production bundle            |
+| `bun run lint`      | Run ESLint for code quality checks |
+| `bun run typecheck` | Run tsc for typecheck              |
+| `bun run verify`    | Lint and Typecheck                 |
+| `bun run prettier`  | Format code with Prettier          |
 
 ### Key Features
 
--   Hot module replacement during development
--   Optimized production builds
--   Automated code formatting and linting
--   Comprehensive test suite
+- Hot module replacement during development
+- Optimized production builds
+- Automated code formatting and linting
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -97,13 +96,13 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 **Build Issues**
 
--   Ensure Node.js version matches `.nvmrc`
--   Delete `node_modules` and reinstall dependencies
+- Ensure Bun runtime is properly installed
+- Delete `node_modules` and reinstall dependencies
 
 **Runtime Errors**
 
--   Verify backend service is running
--   Check `.env` configuration
+- Verify backend service is running
+- Check `.env` configuration
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

@@ -1,0 +1,28 @@
+import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
+import {
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyTitle,
+} from '@/components/ui/empty';
+
+interface NotFoundProps {
+    message?: string;
+}
+
+/**
+ * NotFound component - a placeholder component for pages that are not found.
+ */
+export default function NotFound({ message }: NotFoundProps) {
+    useDockPanelTab({ title: 'Not found', icon: 'not-found' });
+    return (
+        <Empty>
+            <EmptyHeader>
+                <EmptyTitle>404 - Not Found</EmptyTitle>
+                <EmptyDescription>
+                    {message || "The page you're looking for doesn't exist."}
+                </EmptyDescription>
+            </EmptyHeader>
+        </Empty>
+    );
+}

@@ -1,31 +1,45 @@
 # vi: ft=dockerfile
 
-FROM tiagopeixoto/graph-tool
+FROM python:3.14-slim AS builder
 
-# Set the working directory
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    python3-dev \
+    libgdal-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /app
 
-# Update system and install dependencies
-RUN pacman -Sy --noconfirm && \
-    pacman -S --noconfirm python python-pip gdal gcc python-uv
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_SYSTEM_PYTHON=1
 
-# Copy and install Python dependencies
-COPY ./backend/pyproject.toml .
-COPY ./backend/uv.lock .
-RUN uv sync --frozen
+COPY ./backend/pyproject.toml ./backend/uv.lock ./
+RUN uv pip install --system -r pyproject.toml
 
-# Copy application code
+FROM python:3.14-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    UV_SYSTEM_PYTHON=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gdal-bin \
+    libmagic-dev \
+    curl \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
 COPY ./backend/ .
-
-# Copy Docker-specific settings
 COPY ./backend/cradle/settings_docker.py ./cradle/settings.py
 
-COPY ./docker/entrypoint_backend.sh .
-COPY ./docker/entrypoint_celery.sh .
+COPY ./docker/entrypoint_backend.sh ./docker/entrypoint_celery.sh ./
+RUN chmod +x ./entrypoint_backend.sh ./entrypoint_celery.sh
 
-# Make the entrypoint script executable
-RUN chmod +x ./entrypoint_backend.sh
-RUN chmod +x ./entrypoint_celery.sh
-
-# Start the application
-CMD ./entrypoint_backend.sh
+CMD ["./entrypoint_backend.sh"]

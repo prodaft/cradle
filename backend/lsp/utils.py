@@ -1,24 +1,32 @@
-from collections.abc import Iterable
-from typing import Dict, List, Any
+"""LSP utilities: trie for autocomplete and completion data builders."""
 
+from collections.abc import Iterable
+from typing import Any
+
+from django.db.models import QuerySet
+
+from access.models import Access
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from user.models import CradleUser
-from access.models import Access
 
 
 class TrieNode:
+    """Node in a trie for prefix-based completion lookups."""
+
     def __init__(self):
         self.children = {}
         self.eow = False
 
 
 class Trie:
+    """Trie for LSP autocomplete. Custom implementation; serializes to compact {"eow", "c"} format for the UI client."""
+
     def __init__(self):
         self.root = TrieNode()
 
-    def insert(self, word):
-        """Inserts a word into the trie."""
+    def insert(self, word: str) -> None:
+        """Insert a word into the trie."""
         current_node = self.root
         for char in word:
             if char not in current_node.children:
@@ -26,26 +34,8 @@ class Trie:
             current_node = current_node.children[char]
         current_node.eow = True
 
-    def search(self, word):
-        """Searches for a word in the trie."""
-        current_node = self.root
-        for char in word:
-            if char not in current_node.children:
-                return False
-            current_node = current_node.children[char]
-        return current_node.eow
-
-    def starts_with(self, prefix):
-        """Checks if any word in the trie starts with the given prefix."""
-        current_node = self.root
-        for char in prefix:
-            if char not in current_node.children:
-                return False
-            current_node = current_node.children[char]
-        return True
-
-    def serialize(self):
-        """Serializes the trie into a dictionary."""
+    def serialize(self) -> dict[str, Any]:
+        """Serialize the trie to compact {"eow", "c"} dict for the UI client."""
 
         def _serialize_node(node):
             serialized = {"eow": node.eow, "c": {}}
@@ -56,53 +46,42 @@ class Trie:
         return _serialize_node(self.root)
 
 
-class LspUtils:
-    @staticmethod
-    def get_lsp_entries(
-        user: CradleUser, eclass: EntryClass, initial: str
-    ) -> List[Entry]:
-        accessible_entries = (
-            Entry.objects.accessible(user)
-            .filter(
-                entry_class=eclass,
-                name__istartswith=initial,
-            )
-            .distinct()
-        )
-        return accessible_entries
+def get_lsp_entries(user: CradleUser, eclass: EntryClass, initial: str) -> QuerySet[Entry]:
+    """Return entries accessible to the user for the given class, filtered by name prefix."""
+    return Entry.objects.accessible(user).filter(entry_class=eclass, name__istartswith=initial).distinct()
 
-    @staticmethod
-    def get_entities(user: CradleUser) -> List[Entry]:
-        if user.is_cradle_admin:
-            return Entry.entities.all().distinct()
 
-        entity_ids = Access.objects.get_accessible_entity_ids(user.id)
-        return Entry.entities.filter(pk__in=entity_ids).distinct()
+def get_entities(user: CradleUser) -> QuerySet[Entry]:
+    """Return entities accessible to the user (all if admin, else by access)."""
+    if user.is_cradle_admin:
+        return Entry.entities.all().distinct()
+    entity_ids = Access.objects.get_accessible_entity_ids(user.id)
+    return Entry.entities.filter(pk__in=entity_ids).distinct()
 
-    @staticmethod
-    def get_lsp_pack(
-        user: CradleUser, classes: Iterable[EntryClass], initial=""
-    ) -> Dict[str, Dict[str, Any]]:
-        tries = {}
 
-        for eclass in classes:
-            if eclass.type == EntryType.ENTITY:
-                entries = LspUtils.get_entities(user).filter(entry_class=eclass)
-            elif eclass.options:
-                trie = Trie()
+def get_lsp_pack(user: CradleUser, classes: Iterable[EntryClass], initial: str = "") -> dict[str, dict[str, Any]]:
+    """Build a map of subtype -> serialized trie for LSP completion from the given entry classes."""
+    tries: dict[str, dict[str, Any]] = {}
 
-                for i in eclass.options.split("\n"):
-                    trie.insert(i.strip())
-
-                tries[eclass.subtype] = trie.serialize()
-                continue
-            else:
-                entries = LspUtils.get_lsp_entries(user, eclass, initial)
-
+    for eclass in classes:
+        if eclass.type == EntryType.ENTITY:
+            entries = get_entities(user).filter(entry_class=eclass)
+            if initial:
+                entries = entries.filter(name__istartswith=initial)
+        elif eclass.options:
             trie = Trie()
-            if entries.count() > 0:
-                for entry in entries:
-                    trie.insert(entry.name)
-                tries[eclass.subtype] = trie.serialize()
+            for opt in eclass.options.split("\n"):
+                if stripped := opt.strip():
+                    trie.insert(stripped)
+            tries[eclass.subtype] = trie.serialize()
+            continue
+        else:
+            entries = get_lsp_entries(user, eclass, initial)
 
-        return tries
+        trie = Trie()
+        if entries.exists():
+            for entry in entries:
+                trie.insert(entry.name)
+            tries[eclass.subtype] = trie.serialize()
+
+    return tries

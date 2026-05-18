@@ -1,0 +1,13 @@
+.auto-carousel {position: relative; margin: 1rem 0!important;}
+.auto-carousel ul {overflow: auto; display: flex; flex-wrap: nowrap; scroll-snap-type: x mandatory; scroll-snap-points-y: repeat(100%); scroll-behavior: smooth; background: gray; -ms-overflow-style: none; scrollbar-width: none; margin: 0!important; padding: 0; cursor: grab; user-select: none;}
+.auto-carousel ul.grabbing {cursor: grabbing; scroll-snap-type: none;}
+.auto-carousel ul::-webkit-scrollbar {display: none;}
+.auto-carousel ul li {position: relative; min-width: 100%; list-style: none; background: url() center center / cover no-repeat; scroll-snap-align: start; pointer-events: none;}
+.auto-carousel ul li > img {border-radius: 0;}
+.auto-carousel ul li > div {display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 20px;}
+.auto-carousel ol {position: absolute; bottom: 15px; display: flex; justify-content: center; left: 50%; transform: translateX(-50%); z-index: 9; margin: 0!important;}
+.auto-carousel ol li {list-style: none; padding: 0 5px;}
+.auto-carousel ol li a {display: block; height: 10px; width: 10px; border: 2px solid white; background: transparent; border-radius: 100%;}
+.auto-carousel ol li.selected a {background: white;}
+.auto-carousel .prev, .auto-carousel .next {display: none; user-select:none; cursor: pointer; font-size: 50px; color: white; position: absolute; left: 0; padding: 25px 15px; top: 50%; transform: translateY(-50%); z-index: 9; line-height: 0;}
+.auto-carousel .next {left: auto; right: 0;}

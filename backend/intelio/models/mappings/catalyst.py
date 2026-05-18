@@ -1,16 +1,15 @@
 from django.db import models
+
 from ..base import ClassMapping
 
 
 class CatalystMapping(ClassMapping):
-    """
-    A mapping for Catalyst types.
-    """
+    """Maps Catalyst types to CRADLE entry classes for publish/ingest workflows."""
 
     display_name = "catalyst"
 
-    type = models.CharField(max_length=255)
-    field = models.CharField(max_length=255)
-    level = models.CharField(max_length=255, blank=True, null=True)
-    link_type = models.CharField(max_length=255)
-    extras = models.CharField(max_length=255, blank=True, null=True)
+    type = models.CharField(max_length=255, help_text="Catalyst type identifier")
+    field = models.CharField(max_length=255, help_text="Catalyst field name")
+    level = models.CharField(max_length=255, blank=True, null=True, help_text="Optional level")
+    link_type = models.CharField(max_length=255, help_text="Link type for relations")
+    extras = models.CharField(max_length=255, blank=True, null=True, help_text="Optional extra data")

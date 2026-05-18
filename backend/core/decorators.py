@@ -1,24 +1,28 @@
+"""Celery task decorators for distributed locking and debouncing.
+
+Provides distributed_lock (Redis-based lock) and debounce_task
+(debounce Celery task execution within a time window).
+"""
+
 import functools
-import redis
 from inspect import getfullargspec
+
+import redis
+from celery import current_task
 from django.conf import settings
 from django.db import close_old_connections
-from celery import current_task
 from redis_lock import Lock
 
 
-def distributed_lock(
-    lock_name_template, timeout=3600, retry_countdown=60, expire=7200, max_retries=3
-):
-    """
-    Distributed lock decorator using Redis.
+def distributed_lock(lock_name_template, timeout=3600, retry_countdown=60, expire=7200, max_retries=3):
+    """Distributed lock decorator using Redis.
 
     Args:
-        lock_name_template: String template for lock name (e.g. "task_{arg_name}")
-        timeout: Maximum lock duration in seconds
-        retry_countdown: Retry delay if lock is held
-        expire: Lock expiration in seconds
-        max_retries: Maximum number of retries if lock cannot be acquired
+        lock_name_template: String template for lock name (e.g. "task_{arg_name}").
+        timeout: Maximum lock duration in seconds.
+        retry_countdown: Retry delay if lock is held.
+        expire: Lock expiration in seconds.
+        max_retries: Maximum number of retries if lock cannot be acquired.
     """
 
     def decorator(task_func):
@@ -68,8 +72,7 @@ def distributed_lock(
 
 
 def debounce_task(timeout):
-    """
-    A decorator for Celery tasks to debounce calls.
+    """A decorator for Celery tasks to debounce calls.
 
     Normally, the first call schedules the task for execution after `timeout` seconds.
     All subsequent calls within the debounce window are ignored.

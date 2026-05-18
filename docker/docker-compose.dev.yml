@@ -1,8 +1,10 @@
 services:
   postgres:
-    image: pgrouting/pgrouting:16-3.5-3.7
+    image: pgrouting/pgrouting:16-3.5-4.0
     container_name: cradle_postgres
     command: postgres -c log_statement=all
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_DB=cradle
       - POSTGRES_USER=cradle
@@ -29,7 +31,7 @@ services:
         ipv4_address: 192.168.31.43
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4-management-alpine
     container_name: cradle_rabbitmq
     ports:
       - "5672:5672"     # AMQP port
@@ -42,14 +44,17 @@ services:
         ipv4_address: 192.168.31.44
 
   minio:
-    image: quay.io/minio/minio:RELEASE.2024-05-28T17-19-04Z
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     command: server --console-address ":9001" /data
     container_name: cradle_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
     environment:
       MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: minio_admin
+      MINIO_ROOT_PASSWORD: cradle_minio
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 5s
@@ -60,18 +65,36 @@ services:
         ipv4_address: 192.168.31.41
 
   redis:
-    image: redis:alpine
+    image: redis:8-alpine
     container_name: cradle_redis
+    ports:
+      - "6379:6379"
     networks:
       default:
         ipv4_address: 192.168.31.42
+
+  keycloak:
+    image: keycloak/keycloak:26.5.4
+    container_name: cradle_keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./keycloak-realm.json:/opt/keycloak/data/import/realm.json:ro
+    networks:
+      default:
+        ipv4_address: 192.168.31.45
 
 volumes:
   pg_data:
   minio_data:
 
 networks:
-  other:
   default:
     driver: bridge
     ipam:

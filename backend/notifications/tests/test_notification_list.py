@@ -1,13 +1,19 @@
-from .utils import NotificationsTestCase
-from user.models import CradleUser
-from entries.models import Entry
-from notifications.models import MessageNotification, AccessRequestNotification
+"""Tests for notification list API."""
+
+from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
-from django.urls import reverse
+
+from entries.models import Entry
+from user.models import CradleUser
+
+from ..models import AccessRequestNotification, MessageNotification
+from .utils import NotificationsTestCase
 
 
 class NotificationListTest(NotificationsTestCase):
+    """Tests for GET /notifications/."""
+
     def setUp(self):
         super().setUp()
         self.client = APIClient()
@@ -17,12 +23,14 @@ class NotificationListTest(NotificationsTestCase):
             password="password",
             is_staff=False,
             email="alabala@gmail.com",
+            is_active=True,
         )
         self.other_user = CradleUser.objects.create_user(
             username="other_user",
             password="password",
             is_staff=False,
             email="b@c.d",
+            is_active=True,
         )
         self.entity = Entry.objects.create(name="Entity", entry_class=self.entryclass1)
 
@@ -35,12 +43,8 @@ class NotificationListTest(NotificationsTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_get_notifications_successfully(self):
-        message_user = MessageNotification.objects.create(
-            user=self.user, message="Test message"
-        )
-        MessageNotification.objects.create(
-            user=self.other_user, message="Test message other user"
-        )
+        message_user = MessageNotification.objects.create(user=self.user, message="Test message")
+        MessageNotification.objects.create(user=self.other_user, message="Test message other user")
         access_request_user = AccessRequestNotification.objects.create(
             user=self.user,
             requesting_user=self.other_user,
@@ -60,57 +64,60 @@ class NotificationListTest(NotificationsTestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()), 2)
+        data = response.json()
+        self.assertEqual(data["page"], 1)
+        self.assertEqual(data["count"], 2)
+        self.assertEqual(data["total_pages"], 1)
+        results = data["results"]
 
-        expected_response_message_notification = {
-            "id": str(message_user.id),
-            "message": message_user.message,
-            "is_marked_unread": False,
-            "timestamp": message_user.timestamp.isoformat().replace("+00:00", "Z"),
-            "notification_type": "message_notification",
-        }
+        result_ids = [n["id"] for n in results]
+        expected_ids = [str(message_user.id), str(access_request_user.id)]
+        self.assertCountEqual(result_ids, expected_ids)
 
-        expected_response_access_request_notification = {
-            "id": str(access_request_user.id),
-            "message": access_request_user.message,
-            "is_marked_unread": False,
-            "notification_type": "request_access_notification",
-            "entity_id": str(access_request_user.entity.id),
-            "timestamp": access_request_user.timestamp.isoformat().replace(
-                "+00:00", "Z"
-            ),
-            "requesting_user_id": str(access_request_user.requesting_user.id),
-        }
+        self.assertTrue(results[0]["timestamp"] >= results[1]["timestamp"])
 
-        response_filtered = [
-            notification["id"]
-            for notification in response.json()
-            if notification["id"]
-            in [
-                expected_response_message_notification["id"],
-                expected_response_access_request_notification["id"],
-            ]
-        ]
+        self.assertFalse(MessageNotification.objects.filter(user=self.user, is_unread=True).exists())
+        self.assertFalse(MessageNotification.objects.filter(user=self.other_user, is_unread=False).exists())
 
-        print(response_filtered, expected_response_message_notification)
-
-        self.assertCountEqual(
-            [
-                expected_response_access_request_notification["id"],
-                expected_response_message_notification["id"],
-            ],
-            response_filtered,
+    def test_get_notifications_unread_only_filters_and_preserves_natural_unread(self):
+        natural = MessageNotification.objects.create(
+            user=self.user,
+            message="Natural unread",
+            is_unread=True,
+            is_marked_unread=False,
+        )
+        read = MessageNotification.objects.create(
+            user=self.user,
+            message="Read",
+            is_unread=False,
+            is_marked_unread=False,
+        )
+        marked = MessageNotification.objects.create(
+            user=self.user,
+            message="Marked unread",
+            is_unread=False,
+            is_marked_unread=True,
         )
 
-        self.assertTrue(
-            response.json()[0]["timestamp"] >= response.json()[1]["timestamp"]
+        response = self.client.get(
+            reverse("notification_list"),
+            {"unread_only": "true", "page": 1, "page_size": 20},
+            **self.headers,
         )
 
-        self.assertFalse(
-            MessageNotification.objects.filter(user=self.user, is_unread=True).exists()
-        )
-        self.assertFalse(
-            MessageNotification.objects.filter(
-                user=self.other_user, is_unread=False
-            ).exists()
-        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["count"], 2)
+        result_ids = {n["id"] for n in data["results"]}
+        self.assertEqual(result_ids, {str(natural.id), str(marked.id)})
+
+        natural.refresh_from_db()
+        self.assertTrue(natural.is_unread)
+        read.refresh_from_db()
+        self.assertFalse(read.is_unread)
+
+        # Default list still clears natural unreads.
+        r2 = self.client.get(reverse("notification_list"), **self.headers)
+        self.assertEqual(r2.status_code, 200)
+        natural.refresh_from_db()
+        self.assertFalse(natural.is_unread)

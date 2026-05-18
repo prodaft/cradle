@@ -1,64 +1,74 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.db import transaction
+from django.urls import reverse
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.openapi import get_common_error_responses, get_error_responses
+from notes.models import Note
+from user.authentication import APIKeyAuthentication
+
+from ..exceptions import (
+    ExportFormatNotFoundException,
+    NotesNotFoundException,
+    PublishErrorCodes,
+)
+from ..models import DownloadStrategies, PublishedReport, UploadStrategies
 from ..serializers import (
     PublishReportSerializer,
-    ReportSerializer,
     PublishStrategiesResponseSerializer,
+    ReportListSerializer,
 )
-from ..models import PublishedReport
-from notes.models import Note
 from ..strategies import PUBLISH_STRATEGIES
-from ..models import UploadStrategies, DownloadStrategies
 from ..tasks import generate_report
-
-from drf_spectacular.utils import extend_schema, extend_schema_view
 
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="reports_publish_retrieve",
         summary="Get publish strategies",
         description="Returns available upload and download strategies for publishing reports.",  # noqa: E501
         responses={
             200: PublishStrategiesResponseSerializer,
-            401: {"description": "User is not authenticated"},
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
+        operation_id="reports_publish_create",
         summary="Create published report",
         description="Creates a new published report from selected notes using specified strategy.",  # noqa: E501
         request=PublishReportSerializer,
         responses={
-            200: ReportSerializer,
-            400: {"description": "Invalid request data"},
-            401: {"description": "User is not authenticated"},
-            403: {"description": "Note is not publishable"},
-            404: {"description": "One or more notes not found or strategy not found"},
+            201: ReportListSerializer,
+            **get_error_responses(
+                PublishErrorCodes.NOTES_NOT_FOUND,
+                PublishErrorCodes.EXPORT_FORMAT_NOT_FOUND,
+                include_validation_error=True,
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
 class PublishReportAPIView(APIView):
-    authentication_classes = [JWTAuthentication]
+    """List publish strategies (GET) or create a new published report (POST)."""
+
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        upload_strategies = [
-            {"label": choice.label, "strategy": choice.value}
-            for choice in UploadStrategies
-        ]
-        download_strategies = [
-            {"label": choice.label, "strategy": choice.value}
-            for choice in DownloadStrategies
-        ]
-        return Response({"upload": upload_strategies, "download": download_strategies})
+    def get(self, request: Request) -> Response:
+        """Return available upload and download strategies."""
+        upload_strategies = [{"label": choice.label, "strategy": choice.value} for choice in UploadStrategies]
+        download_strategies = [{"label": choice.label, "strategy": choice.value} for choice in DownloadStrategies]
+        return Response({"upload": upload_strategies, "download": download_strategies}, status=status.HTTP_200_OK)
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
+        """Create a report from selected notes and enqueue generation task."""
         serializer = PublishReportSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         note_ids = data["note_ids"]
@@ -68,38 +78,28 @@ class PublishReportAPIView(APIView):
 
         user = request.user
 
-        notes = Note.objects.filter(publishable=True, id__in=note_ids)
+        notes = Note.objects.get_accessible_notes(user).filter(id__in=note_ids)
         if notes.count() != len(note_ids):
-            return Response(
-                {"detail": "One or more notes not found."},
-                status=status.HTTP_404_NOT_FOUND,
+            raise NotesNotFoundException(detail="Some of the selected notes could not be found.")
+
+        if (strategy_key or "").lower() not in PUBLISH_STRATEGIES:
+            raise ExportFormatNotFoundException(detail="That export format could not be found.")
+
+        with transaction.atomic():
+            report = PublishedReport.objects.create(
+                title=title,
+                user=user,
+                strategy=strategy_key,
+                anonymized=anonymized,
             )
-
-        for note in notes:
-            if not note.publishable:
-                return Response(
-                    {"detail": f"Note {note.id} is not publishable."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
-
-        publisher_factory = PUBLISH_STRATEGIES.get(strategy_key)
-
-        if publisher_factory is None:
-            return Response(
-                {"detail": "Strategy not found."}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        report = PublishedReport.objects.create(
-            title=title,
-            user=user,
-            strategy=strategy_key,
-        )
-
-        report.anonymized = anonymized
-        report.save()
-        report.notes.set(notes)
-        report.log_create(user)
+            report.notes.set(notes)
+            report.log_create(user)
 
         generate_report.delay(report.id)
 
-        return Response(ReportSerializer(report).data, status=status.HTTP_201_CREATED)
+        location = request.build_absolute_uri(reverse("report_detail", kwargs={"pk": report.id}))
+        return Response(
+            ReportListSerializer(report).data,
+            status=status.HTTP_201_CREATED,
+            headers={"Location": location},
+        )

@@ -1,17 +1,14 @@
+import json
+
 from django.urls import reverse
-from user.models import CradleUser
-from ..models import Access
-from ..enums import AccessType
-from entries.models import Entry
-from rest_framework.parsers import JSONParser
 from rest_framework_simplejwt.tokens import AccessToken
+
+from entries.models import Entry
+from user.models import CradleUser
+
+from ..enums import AccessType
+from ..models import Access
 from .utils import AccessTestCase
-
-import io
-
-
-def bytes_to_json(data):
-    return JSONParser().parse(io.BytesIO(data))
 
 
 class AccessListTest(AccessTestCase):
@@ -19,11 +16,12 @@ class AccessListTest(AccessTestCase):
         super().setUp()
 
         self.user = CradleUser.objects.create_user(
-            username="user", password="pass", email="alabala@gmail.com"
+            username="user",
+            password="pass",
+            email="alabala@gmail.com",
+            is_active=True,
         )
-        self.admin = CradleUser.objects.create_superuser(
-            username="admin", password="pass", email="b@c.d"
-        )
+        self.admin = CradleUser.objects.create_superuser(username="admin", password="pass", email="b@c.d")
         self.token_admin = str(AccessToken.for_user(self.admin))
         self.token_normal = str(AccessToken.for_user(self.user))
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
@@ -35,52 +33,46 @@ class AccessListTest(AccessTestCase):
     def test_access_list_success(self):
         response = self.client.get(
             reverse(
-                "access_list",
+                "user_access_list",
                 kwargs={"user_id": self.user.id},
             ),
             **self.headers_admin,
         )
 
-        expected_response = [
-            {"id": str(self.entity.id), "name": "Entity 1", "access_type": "none"}
-        ]
+        expected_results = [{"id": self.entity.id, "name": "Entity 1", "access_type": "none"}]
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(bytes_to_json(data=response.content), expected_response)
+        self.assertEqual(response.json()["results"], expected_results)
 
     def test_access_list_not_admin(self):
         response = self.client.get(
             reverse(
-                "access_list",
+                "user_access_list",
                 kwargs={"user_id": self.user.id},
             ),
             **self.headers_normal,
         )
-
-        print(response.content)
 
         self.assertEqual(response.status_code, 403)
 
     def test_access_list_admin(self):
         response = self.client.get(
             reverse(
-                "access_list",
+                "user_access_list",
                 kwargs={"user_id": self.admin.id},
             ),
             **self.headers_admin,
         )
 
-        expected_response = [
-            {"id": str(self.entity.id), "name": "Entity 1", "access_type": "read-write"}
-        ]
+        expected_results = [{"id": self.entity.id, "name": "Entity 1", "access_type": "read-write"}]
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(bytes_to_json(data=response.content), expected_response)
+        self.assertEqual(response.json()["results"], expected_results)
 
     def test_access_list_not_authenticated(self):
         response = self.client.get(
             reverse(
-                "access_list",
+                "user_access_list",
                 kwargs={"user_id": self.user.id},
             ),
         )
@@ -88,42 +80,91 @@ class AccessListTest(AccessTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_access_list_access_already_there(self):
-        Access.objects.create(
-            user=self.user, entity=self.entity, access_type=AccessType.READ
-        )
+        Access.objects.create(user=self.user, entity=self.entity, access_type=AccessType.READ)
         response = self.client.get(
             reverse(
-                "access_list",
+                "user_access_list",
                 kwargs={"user_id": self.user.id},
             ),
             **self.headers_admin,
         )
 
-        expected_response = [
-            {"id": str(self.entity.id), "name": "Entity 1", "access_type": "read"}
-        ]
+        expected_results = [{"id": self.entity.id, "name": "Entity 1", "access_type": "read"}]
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(bytes_to_json(data=response.content), expected_response)
+        self.assertEqual(response.json()["results"], expected_results)
 
     def test_access_list_multiple_entities(self):
-        Access.objects.create(
-            user=self.user, entity=self.entity, access_type=AccessType.READ
-        )
+        Access.objects.create(user=self.user, entity=self.entity, access_type=AccessType.READ)
         entity2 = Entry.objects.create(name="Entity 2", entry_class=self.entryclass1)
 
         response = self.client.get(
             reverse(
-                "access_list",
+                "user_access_list",
                 kwargs={"user_id": self.user.id},
             ),
             **self.headers_admin,
         )
 
-        expected_response = [
-            {"id": str(self.entity.id), "name": "Entity 1", "access_type": "read"},
-            {"id": str(entity2.id), "name": "Entity 2", "access_type": "none"},
+        expected_results = [
+            {"id": self.entity.id, "name": "Entity 1", "access_type": "read"},
+            {"id": entity2.id, "name": "Entity 2", "access_type": "none"},
         ]
 
         self.assertEqual(response.status_code, 200)
-        self.assertCountEqual(bytes_to_json(data=response.content), expected_response)
+        self.assertCountEqual(response.json()["results"], expected_results)
+
+    def test_user_access_list_stream_matches_paginated_list(self):
+        response_list = self.client.get(
+            reverse("user_access_list", kwargs={"user_id": self.user.id}),
+            {"page": "1", "page_size": "200"},
+            **self.headers_admin,
+        )
+        response_stream = self.client.get(
+            reverse("user_access_list_stream", kwargs={"user_id": self.user.id}),
+            **self.headers_admin,
+        )
+        self.assertEqual(response_stream.status_code, 200)
+        self.assertEqual(response_stream.headers["Content-Type"], "application/x-ndjson")
+        text = b"".join(response_stream.streaming_content).decode()
+        rows = [json.loads(line) for line in text.splitlines() if line.strip()]
+        self.assertEqual(rows, response_list.json()["results"])
+
+    def test_entity_access_list_stream_matches_paginated_list(self):
+        response_list = self.client.get(
+            reverse("entity_access_list", kwargs={"entity_id": self.entity.id}),
+            {"page": "1", "page_size": "200"},
+            **self.headers_admin,
+        )
+        response_stream = self.client.get(
+            reverse("entity_access_list_stream", kwargs={"entity_id": self.entity.id}),
+            **self.headers_admin,
+        )
+        self.assertEqual(response_stream.status_code, 200)
+        self.assertEqual(response_stream.headers["Content-Type"], "application/x-ndjson")
+        text = b"".join(response_stream.streaming_content).decode()
+        rows = [json.loads(line) for line in text.splitlines() if line.strip()]
+        self.assertEqual(rows, response_list.json()["results"])
+
+    def test_user_access_list_search_matches_stream(self):
+        Access.objects.create(user=self.user, entity=self.entity, access_type=AccessType.READ)
+        Entry.objects.create(name="Other entity", entry_class=self.entryclass1)
+        response_list = self.client.get(
+            reverse("user_access_list", kwargs={"user_id": self.user.id}),
+            {"search": "Entity 1", "page": "1", "page_size": "200"},
+            **self.headers_admin,
+        )
+        self.assertEqual(response_list.status_code, 200)
+        results = response_list.json()["results"]
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["name"], "Entity 1")
+
+        response_stream = self.client.get(
+            reverse("user_access_list_stream", kwargs={"user_id": self.user.id}),
+            {"search": "Entity 1"},
+            **self.headers_admin,
+        )
+        self.assertEqual(response_stream.status_code, 200)
+        text = b"".join(response_stream.streaming_content).decode()
+        rows = [json.loads(line) for line in text.splitlines() if line.strip()]
+        self.assertEqual(rows, results)

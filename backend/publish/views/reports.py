@@ -1,28 +1,45 @@
+from uuid import UUID
+
+from django.db import transaction
+from django.db.models import Q
+from django.http import Http404
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.db.models import Q
 
+from core.exceptions import CoreErrorCodes
+from core.openapi import (
+    get_common_error_responses,
+    get_error_responses,
+)
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
-from notes.models import Note
-from publish.strategies import PUBLISH_STRATEGIES
+from core.validators import validate_choice_param
+from user.authentication import APIKeyAuthentication
 
-from ..models import PublishedReport, ReportStatus
-from ..tasks import generate_report, edit_report
-from ..serializers import (
-    EditReportSerializer,
-    ReportSerializer,
-    ReportRetryErrorResponseSerializer,
+from ..exceptions import (
+    PublishErrorCodes,
+    ReportAlreadyCompletedException,
+    ReportAlreadyGeneratingException,
+    ReportDeleteFailedException,
+    ReportNotFoundException,
 )
-
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from ..models import PublishedReport, ReportStatus
+from ..serializers import (
+    ReportDetailSerializer,
+    ReportListSerializer,
+)
+from ..strategies import PUBLISH_STRATEGIES
+from ..tasks import generate_report
 
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="reports_list",
         summary="Get published reports",
         description="Returns a paginated list of published reports for the authenticated user, ordered by creation date descending. Can be filtered by search term matching report ID or title.",  # noqa: E501
         parameters=[
@@ -53,48 +70,61 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
                 required=False,
                 default="-created_at",
             ),
+            OpenApiParameter(
+                name="status",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter reports by status (e.g. done, working, error)",
+                required=False,
+            ),
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(
-                ReportSerializer
+                ReportListSerializer, name="ReportListPaginatedResponse"
             ),
-            401: {"description": "User is not authenticated"},
+            **get_error_responses(
+                CoreErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
+                CoreErrorCodes.INVALID_REQUEST,
+            ),
+            **get_common_error_responses(),
         },
     )
 )
-class ReportListDeleteAPIView(generics.ListAPIView):
-    serializer_class = ReportSerializer
-    authentication_classes = [JWTAuthentication]
+class ReportListAPIView(generics.ListAPIView):
+    """List published reports for the authenticated user with search, filter, and ordering."""
+
+    serializer_class = ReportListSerializer
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
 
     def get_queryset(self):
-        return PublishedReport.objects.filter(user=self.request.user)
+        """Return reports scoped to the authenticated user."""
+        return PublishedReport.objects.for_user(self.request.user)
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: Request, *args, **kwargs) -> Response:
         queryset = self.get_queryset()
 
         # Handle search parameter
         search = request.query_params.get("search")
         if search:
-            queryset = queryset.filter(
-                Q(id__icontains=search) | Q(title__icontains=search)
-            )
+            search_filter = Q(title__icontains=search)
+            try:
+                search_uuid = UUID(search)
+                search_filter |= Q(id=search_uuid)
+            except ValueError, TypeError:
+                pass
+            queryset = queryset.filter(search_filter)
 
-        # Handle page_size parameter
-        try:
-            page_size = int(request.query_params.get("page_size", 10))
-        except ValueError:
-            return Response(
-                "Invalid page_size value. Must be an integer.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if page_size > 200:
-            return Response(
-                "page_size cannot be greater than 200.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # Handle status filter
+        status_filter = validate_choice_param(
+            request.query_params.get("status"),
+            [c[0] for c in ReportStatus.choices],
+            param_name="status",
+        )
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
@@ -107,199 +137,136 @@ class ReportListDeleteAPIView(generics.ListAPIView):
         ]
 
         # Parse and validate order_by parameter
-        order_fields, error_response = validate_order_by(order_by, valid_order_fields)
-        if error_response:
-            return error_response
-
+        order_fields = validate_order_by(order_by, valid_order_fields)
         if order_fields:
             queryset = queryset.order_by(*order_fields)
         else:
             queryset = queryset.order_by("-created_at")
 
         # Apply pagination
-        paginator = TotalPagesPagination(page_size=page_size)
-        result_page = paginator.paginate_queryset(queryset, request)
-
-        if result_page is not None:
-            serializer = self.get_serializer(result_page, many=True)
-            return paginator.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 @extend_schema_view(
     post=extend_schema(
+        operation_id="reports_retry_create",
         summary="Retry failed report generation",
         description="Resets the report status, re-queues the generation task, and returns the updated report. Only works for failed reports - cannot retry reports that are currently processing or already completed.",  # noqa: E501
+        request=None,
         responses={
-            200: ReportSerializer,
-            400: ReportRetryErrorResponseSerializer,
-            401: {"description": "User is not authenticated"},
-            404: ReportRetryErrorResponseSerializer,
+            200: ReportListSerializer,
+            **get_error_responses(
+                PublishErrorCodes.REPORT_NOT_FOUND,
+                PublishErrorCodes.REPORT_ALREADY_GENERATING,
+                PublishErrorCodes.REPORT_ALREADY_COMPLETED,
+            ),
+            **get_common_error_responses(),
         },
     )
 )
 class ReportRetryAPIView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    serializer_class = ReportSerializer
+    """Retry failed report generation by re-queuing the Celery task."""
 
-    def post(self, request, pk):
-        """
-        POST /reports/<uuid:pk>/retry/
-        Resets the report status, re-queues the generation task, and returns the updated report.
-        """
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, pk: UUID) -> Response:
+        """Reset report status, re-queue generation task, and return updated report."""
         try:
             report = PublishedReport.objects.for_user(request.user).get(id=pk)
         except PublishedReport.DoesNotExist:
-            return Response(
-                {"detail": "Report not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+            raise ReportNotFoundException(detail="That report could not be found.")
 
         if report.status == ReportStatus.WORKING:
-            return Response(
-                {"detail": "Report is already being generated."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ReportAlreadyGeneratingException(detail="Report generation is already in progress.")
 
         if report.status == ReportStatus.DONE:
-            return Response(
-                {"detail": "Report already generated successfully."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ReportAlreadyCompletedException(detail="This report has already been generated.")
 
-        report.status = ReportStatus.WORKING
-        report.error_message = ""
-        report.save()
+        with transaction.atomic():
+            report.status = ReportStatus.WORKING
+            report.error_message = ""
+            report.save()
 
         # Re-run the generation Celery task
         generate_report.delay(report.id)
 
-        return Response(ReportSerializer(report).data, status=status.HTTP_200_OK)
+        return Response(ReportListSerializer(report).data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="reports_retrieve",
         summary="Get report details",
         description="Returns the details of a specific report belonging to the authenticated user.",
+        parameters=[
+            OpenApiParameter(
+                name="download_url",
+                type=bool,
+                location=OpenApiParameter.QUERY,
+                description="Whether to return the download URL for the report",
+                default=False,
+            ),
+        ],
         responses={
-            200: ReportSerializer,
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Report not found"},
-        },
-    ),
-    put=extend_schema(
-        summary="Update report",
-        description="Updates an existing report with new notes and title.",
-        request=EditReportSerializer,
-        responses={
-            200: ReportSerializer,
-            400: {
-                "description": "Invalid request data or report is already being generated"
-            },
-            401: {"description": "User is not authenticated"},
-            403: {"description": "Note is not publishable"},
-            404: {"description": "Report or one or more notes not found"},
+            200: ReportDetailSerializer,
+            **get_error_responses(PublishErrorCodes.REPORT_NOT_FOUND),
+            **get_common_error_responses(),
         },
     ),
     delete=extend_schema(
+        operation_id="reports_destroy",
         summary="Delete report",
         description="Deletes a specific report belonging to the authenticated user.",
         responses={
             204: {"description": "Report deleted successfully"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "Report not found"},
+            **get_error_responses(
+                PublishErrorCodes.REPORT_NOT_FOUND,
+                PublishErrorCodes.REPORT_DELETE_FAILED,
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
-class ReportDetailAPIView(generics.RetrieveAPIView):
-    """
-    GET /reports/<id>/ returns the details of a specific report.
-    """
+class ReportDetailAPIView(generics.RetrieveDestroyAPIView):
+    """Retrieve or delete a specific report belonging to the authenticated user."""
 
-    serializer_class = ReportSerializer
-    authentication_classes = [JWTAuthentication]
+    serializer_class = ReportDetailSerializer
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
+    def retrieve(self, request: Request, *args, **kwargs) -> Response:
+        """Return report details; include presigned download URL if download_url=true."""
+        val = request.query_params.get("download_url", "")
+        download_url = str(val).lower() in ("true", "1", "yes")
+        return Response(
+            ReportDetailSerializer(self.get_object(), context={"download_url": download_url}).data,
+            status=status.HTTP_200_OK,
+        )
+
     def get_queryset(self):
-        return PublishedReport.objects.filter(user=self.request.user).order_by(
-            "-created_at"
-        )
+        """Return reports scoped to the authenticated user."""
+        return PublishedReport.objects.for_user(self.request.user)
 
-    def put(self, request, pk):
+    def get_object(self):
         try:
-            report = PublishedReport.objects.for_user(request.user).get(id=pk)
-        except PublishedReport.DoesNotExist:
-            return Response(
-                {"detail": "Report not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+            return super().get_object()
+        except Http404:
+            raise ReportNotFoundException(detail="That report could not be found.")
 
-        serializer = EditReportSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        data = serializer.validated_data
-        note_ids = data["note_ids"]
-        title = data["title"]
-
-        notes = Note.objects.filter(publishable=True, id__in=note_ids)
-        if notes.count() != len(note_ids):
-            return Response(
-                {"detail": "One or more notes not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        for note in notes:
-            if not note.publishable:
-                return Response(
-                    {"detail": f"Note {note.id} is not publishable."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
-
-        if report.status == ReportStatus.WORKING:
-            return Response(
-                {"detail": "Report is already being generated."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        report.status = ReportStatus.WORKING
-        report.title = title
-        report.error_message = ""
-
-        report.save()
-        report.notes.set(notes)
-
-        edit_report.delay(str(report.id))
-
-        return Response(
-            {"detail": "Edit task queued."}, status=status.HTTP_202_ACCEPTED
-        )
-
-    def delete(self, request, pk):
-        if not pk:
-            return Response(
-                {"detail": "Report id required."}, status=status.HTTP_400_BAD_REQUEST
-            )
-        try:
-            report = self.get_queryset().get(id=pk)
-        except PublishedReport.DoesNotExist:
-            return Response(
-                {"detail": "Report not found."}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        publisher_factory = PUBLISH_STRATEGIES.get(report.strategy)
-        if publisher_factory is not None:
-            publisher = publisher_factory(report.anonymized)
-
-            try:
-                publisher.delete_report(report)
-            except Exception:
-                return Response(
-                    {"detail": "Error deleting report."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-
-        report.delete()
-        return Response(
-            {"detail": "Report deleted."}, status=status.HTTP_204_NO_CONTENT
-        )
+    def destroy(self, request: Request, *args, **kwargs) -> Response:
+        """Delete the report and any associated external resources."""
+        report = self.get_object()
+        with transaction.atomic():
+            publisher_factory = PUBLISH_STRATEGIES.get((report.strategy or "").lower())
+            if publisher_factory is not None:
+                publisher = publisher_factory(report.anonymized)
+                try:
+                    publisher.delete_report(report)
+                except OSError, IOError:
+                    raise ReportDeleteFailedException(detail="The report could not be deleted. Please try again later.")
+            report.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

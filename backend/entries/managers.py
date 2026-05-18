@@ -1,203 +1,164 @@
+"""Custom managers and querysets for Entry, Relation, and Edge models."""
+
 from django.apps import apps
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models.expressions import F
+from django.db.models import BooleanField, Case, Exists, OuterRef, Value, When
+from django.db.models.expressions import RawSQL
 from django.db.models.query_utils import Q
 
+from core.fields import BitStringField
+from cradle.settings_common import INTERNAL_SUBTYPES
 from user.models import CradleUser
 
-from .enums import EntryType
-
-from core.fields import BitStringField
+from .enums import EntryType, RelationReason
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
 
+def _accessible_by_access_vector(queryset: models.QuerySet, user: CradleUser) -> models.QuerySet:
+    """Filter queryset to rows where (access_vector & user.access_vector_inv) = 0."""
+    return queryset.annotate(
+        _av_check=RawSQL(
+            "(access_vector & %s) = %s",
+            [user.access_vector_inv, fieldtype.get_prep_value(0)],
+        )
+    ).filter(_av_check=True)
+
+
 class EntryQuerySet(models.QuerySet):
-    def with_entry_class(self):
-        return self
+    """QuerySet with entry-specific filters and access control."""
 
     def is_artifact(self) -> models.QuerySet:
-        """
-        Get artifacts
-        """
+        """Filter to artifact entries only."""
         return self.filter(entry_class__type=EntryType.ARTIFACT)
 
     def is_entity(self) -> models.QuerySet:
-        """
-        Get entity
-        """
+        """Filter to entity entries only."""
         return self.filter(entry_class__type=EntryType.ENTITY)
 
     def unreferenced(self) -> models.QuerySet:
-        """
-        Get entries that are not referenced by any relation
-        """
+        """Filter to entries with no relations."""
         return self.filter(Q(relations_1=None) & Q(relations_2=None))
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
-        """
-        Filter all entries accessible to a user
-        """
+        """Filter to entries accessible to the user (via edges or entity type)."""
         Edge = apps.get_model("entries", "Edge")
-        accessible_vertices = Edge.objects.accessible(user).values_list(
-            "src", flat=True
-        )
-        return self.filter(
-            Q(id__in=accessible_vertices) | Q(entry_class__type=EntryType.ENTITY)
-        )
+        accessible_vertices = Edge.objects.accessible(user).values_list("src", flat=True)
+        return self.filter(Q(id__in=accessible_vertices) | Q(entry_class__type=EntryType.ENTITY))
 
     def non_virtual(self) -> models.QuerySet:
-        """
-        Get non virtual entries
-        """
-        return self.exclude(
-            Q(entry_class__subtype="virtual") | Q(entry_class__subtype="file")
-        )
+        """Exclude internal/virtual entry classes."""
+        return self.exclude(entry_class__subtype__in=INTERNAL_SUBTYPES)
 
 
 class RelationQuerySet(models.QuerySet):
+    """QuerySet with access-vector filtering for relations."""
+
     def accessible(self, user: CradleUser) -> models.QuerySet:
+        """Filter to relations accessible to the user.
+
+        Relations with reason NOTE must reference a note that passes ``Note``
+        access rules (access-vector alone is insufficient for orphan notes).
         """
-        Filter all relations accessible to a user
-        """
-        return self.extra(
-            where=["(access_vector & %s) = %s"],
-            params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
-        )
+        qs = _accessible_by_access_vector(self, user)
+        if user.is_cradle_admin:
+            return qs
+
+        Note = apps.get_model("notes", "Note")
+        note_ct_id = ContentType.objects.get_for_model(Note).id
+        accessible_note = Note.objects.accessible(user).filter(pk=OuterRef("object_id"))
+        return qs.annotate(
+            _note_accessible=Case(
+                When(~Q(reason=RelationReason.NOTE), then=Value(True)),
+                When(~Q(content_type_id=note_ct_id), then=Value(True)),
+                default=Exists(accessible_note),
+                output_field=BooleanField(),
+            ),
+        ).filter(_note_accessible=True)
 
 
 class EdgeQuerySet(models.QuerySet):
-    def accessible(self, user: CradleUser) -> models.QuerySet:
-        """
-        Filter all relations accessible to a user
-        """
-        return self.extra(
-            where=["(access_vector & %s) = %s"],
-            params=[user.access_vector_inv, fieldtype.get_prep_value(0)],
-        )
+    """QuerySet with access-vector filtering for edges."""
 
-    def remove_mirrors(self) -> models.QuerySet:
-        return self.filter(src__lt=F("dst"))
+    def accessible(self, user: CradleUser) -> models.QuerySet:
+        """Filter to edges accessible to the user."""
+        return _accessible_by_access_vector(self, user)
 
 
 class EntryManager(models.Manager):
+    """Manager for Entry with access control and type-specific filters."""
+
     def get_queryset(self):
-        """
-        Returns a queryset that uses the custom TeamQuerySet,
-        allowing access to its methods for all querysets retrieved by this manager.
-        """
-        return EntryQuerySet(self.model, using=self._db).with_entry_class()
+        """Return EntryQuerySet for entry-specific filters and access control."""
+        return EntryQuerySet(self.model, using=self._db)
 
     def non_virtual(self) -> models.QuerySet:
-        """
-        Get non virtual entries
-        """
+        """Exclude internal/virtual entry classes."""
         return self.get_queryset().non_virtual()
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
-        """
-        Filter all entities accessible to a user
-        """
+        """Filter to entries accessible to the user."""
         return self.get_queryset().accessible(user)
 
     def is_artifact(self) -> models.QuerySet:
-        """
-        Get artifacts
-        """
+        """Filter to artifact entries only."""
         return self.get_queryset().is_artifact()
 
     def is_entity(self) -> models.QuerySet:
-        """
-        Get entity
-        """
+        """Filter to entity entries only."""
         return self.get_queryset().is_entity()
 
     def unreferenced(self) -> models.QuerySet:
-        """
-        Get entries that are not referenced by any note
-        """
+        """Filter to entries with no relations."""
         return self.get_queryset().unreferenced()
-
-    def get_filtered_entries(
-        self,
-        query_set: models.QuerySet,
-        entry_subtypes: list[str],
-        name_substr: str,
-    ) -> models.QuerySet:
-        """For a given initial query_set, a list of entry types, a list of entry
-        subtypes and a string, filter the initial query set to keep only
-        entries which have the entry type in entry_types, the artifacts which
-        have the the subtype in entry_subtypes and the name containing name_substr
-        as a substring. The check for containment ignores upper and lowerentity.
-
-        Args:
-            query_set: the query_set on which the additional filters are applied.
-            entrySubtypes: the entry subtypes on which the QuerySet is filtered.
-            name_prefix: the name_prefix on which the QuerySet is filtered.
-
-        Returns:
-            a QuerySet instance, filtered according to the entry types, entry
-            subtypes and name prefix specified
-        """
-        return (
-            # filter entries by entry type
-            query_set.filter(entry_class__subtype__in=entry_subtypes)
-            # filter name
-            .filter(name__icontains=name_substr)
-            .order_by("name")
-        )
-
-    def get_neighbours(self, user: CradleUser | None) -> models.QuerySet:
-        """
-        Get the neighbours of an entry
-        """
-        return self.get_queryset().get_neighbours(user)
 
 
 class EntityManager(EntryManager):
+    """Manager for Entry querysets restricted to entities."""
+
     def get_queryset(self) -> models.QuerySet:
+        """Return queryset filtered to entity entries only."""
         return super().get_queryset().is_entity()
 
 
 class ArtifactManager(EntryManager):
+    """Manager for Entry querysets restricted to artifacts."""
+
     def get_queryset(self) -> models.QuerySet:
+        """Return queryset filtered to artifact entries only."""
         return super().get_queryset().is_artifact()
 
 
 class RelationManager(models.Manager):
+    """Manager for Relation with access-vector filtering and e1/e2 normalization."""
+
     def get_queryset(self):
-        """
-        Returns a queryset that uses the custom QuerySet
-        allowing access to its methods for all querysets retrieved by this manager.
-        """
+        """Return RelationQuerySet for access-vector filtering."""
         return RelationQuerySet(self.model, using=self._db)
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
-        """
-        Filter all relations accessible to a user
-        """
+        """Filter to relations accessible to the user."""
         return self.get_queryset().accessible(user)
 
     def bulk_create(self, objs, **kwargs):
+        """Bulk create relations: normalize e1/e2 order (e1.id <= e2.id), require an entity endpoint."""
         for obj in objs:
             if obj.e1.id > obj.e2.id:
                 obj.e1, obj.e2 = obj.e2, obj.e1
+            if not self.model.includes_entity(obj.e1, obj.e2):
+                raise ValidationError("Each relation must involve at least one entity endpoint.")
         return super().bulk_create(objs, **kwargs)
 
 
 class EdgeManager(models.Manager):
+    """Manager for Edge materialized view with access filtering."""
+
     def get_queryset(self):
-        """
-        Returns a queryset that uses the custom QuerySet
-        allowing access to its methods for all querysets retrieved by this manager.
-        """
+        """Return EdgeQuerySet for access-vector filtering."""
         return EdgeQuerySet(self.model, using=self._db)
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
-        """
-        Filter all relations accessible to a user
-        """
+        """Filter to edges accessible to the user."""
         return self.get_queryset().accessible(user)
-
-    def remove_mirrors(self) -> models.QuerySet:
-        return self.get_queryset().remove_mirrors()

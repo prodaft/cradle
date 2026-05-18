@@ -1,59 +1,69 @@
-from django.db.models import Q
-from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.request import Request
-from typing import cast
-from entries.enums import EntryType
-from entries.models import EntryClass
-from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+"""LSP API views: type definitions and completion trie."""
 
-from lsp.serializers import LspEntryClassSerializer
-from ..utils import LspUtils
-from user.models import CradleUser
+from typing import cast
 
 from django.conf import settings
+from django.db.models import Q
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view, inline_serializer
+from rest_framework import serializers, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from core.exceptions import BadRequestException, CoreErrorCodes
+from core.openapi import get_common_error_responses, get_error_responses
+from entries.enums import EntryType
+from entries.models import EntryClass
+from user.models import CradleUser
+
+from ..serializers import LspEntryClassSerializer
+from ..utils import get_lsp_pack
 
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="lsp_types_retrieve",
         summary="Get LSP Types",
-        description="Returns LSP type definitions grouped by subtype, excluding aliases.",
+        description="Returns LSP type definitions grouped by subtype, excluding internal types (alias, note, file, digest, enrichment). Response is a map of subtype -> type definition.",
         responses={
-            200: {
-                "description": "Successful retrieval of LSP types",
-            },
-            401: {"description": "User is not authenticated"},
+            200: inline_serializer(
+                name="LspTypesResponse",
+                fields={
+                    "types": serializers.DictField(
+                        child=LspEntryClassSerializer(),
+                        help_text="Map of subtype to type definition.",
+                    )
+                },
+            ),
+            **get_common_error_responses(),
         },
     )
 )
 class LspTypes(APIView):
+    """Returns LSP type definitions (subtype -> type definition) for the editor."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request: Request) -> Response:
+        """Return types grouped by subtype, excluding internal types."""
         queryset = EntryClass.objects.filter(~Q(subtype__in=settings.INTERNAL_SUBTYPES))
         serializer = LspEntryClassSerializer(queryset, many=True)
-
-        grouped_data = {}
-        for item in serializer.data:
-            subtype = item.get("subtype")
-            grouped_data[subtype] = item
-
-        return Response(grouped_data)
+        grouped_data = {item["subtype"]: item for item in serializer.data}
+        return Response({"types": grouped_data}, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="lsp_trie_retrieve",
         summary="Get LSP Completion Trie",
-        description="Returns LSP completion trie data for entity types and types without regex/options. "  # noqa: E501
-        "Used for autocomplete suggestions in the LSP interface.",
+        description="Returns LSP completion trie data for entity types and types with options (excluding internal and regex-only types). Used for autocomplete suggestions in the LSP interface.",
         parameters=[
             OpenApiParameter(
                 name="prefix",
-                description="prefix text to filter completions (must be at least 4 characters if provided)",
+                description="prefix text to filter completions (must be at least 3 characters if provided)",
                 required=False,
                 type=str,
             ),
@@ -68,16 +78,19 @@ class LspTypes(APIView):
             200: {
                 "description": "Successful retrieval of completion trie data",
             },
-            400: {"description": "Bad request - prefix parameter is too short"},
-            401: {"description": "User is not authenticated"},
+            **get_error_responses(CoreErrorCodes.BAD_REQUEST),
+            **get_common_error_responses(),
         },
     )
 )
 class CompletionTrie(APIView):
+    """Returns serialized completion tries for LSP autocomplete (entities and option-based types)."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
+        """Return completion trie(s) for the given prefix and optional type filter."""
         user: CradleUser = cast(CradleUser, request.user)
 
         prefix = request.query_params.get("prefix")
@@ -85,27 +98,27 @@ class CompletionTrie(APIView):
 
         if prefix:
             if len(prefix) < 3:
-                return Response(
-                    {"error": "prefix parameter must be at least 3 characters long"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                raise BadRequestException(detail="Enter at least 3 characters to search.")
 
-            if entry_type:
-                # Get entry class with matching subtype
-                entry_class = (
-                    EntryClass.objects.filter(subtype=entry_type)
-                    .filter(format=None)
-                    .first()
-                )
+        if entry_type:
+            try:
+                entry_class = EntryClass.objects.get(subtype=entry_type)
+            except EntryClass.DoesNotExist:
+                raise BadRequestException(detail="That entry type could not be found.")
+            if entry_type in settings.INTERNAL_SUBTYPES:
+                raise BadRequestException(detail="That entry type could not be found.")
+            if entry_class.format is not None:
+                raise BadRequestException(detail="That entry type could not be found.")
+            return Response(
+                get_lsp_pack(user, [entry_class], prefix or ""),
+                status=status.HTTP_200_OK,
+            )
 
-                if entry_class:
-                    return Response(LspUtils.get_lsp_pack(user, [entry_class], prefix))
-                else:
-                    return Response(
-                        {"error": "Invalid entry type"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-        # Default behavior if conditions aren't met
-        classes = EntryClass.objects.filter(Q(type=EntryType.ENTITY) | ~Q(options=""))
-        return Response(LspUtils.get_lsp_pack(user, classes))
+        classes = EntryClass.objects.filter(
+            ~Q(subtype__in=settings.INTERNAL_SUBTYPES),
+            Q(type=EntryType.ENTITY) | ~Q(options=""),
+        )
+        return Response(
+            get_lsp_pack(user, classes, prefix or ""),
+            status=status.HTTP_200_OK,
+        )

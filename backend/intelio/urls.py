@@ -1,48 +1,103 @@
+"""URL routing for intelio API: digests, enrichment, and mappings."""
+
 from django.urls import path
 
-from intelio.views.digest import DigestAPIView, DigestSubclassesAPIView
+from .views.digest import (
+    DigestAPIView,
+    DigestDetailAPIView,
+    DigestSubclassesAPIView,
+    DigestUploadAPIView,
+    DigestUploadFinalizeAPIView,
+)
+from .views.enrichment import (
+    EnrichmentAPIView,
+    EnrichmentDetailAPIView,
+    EnrichmentRelationsAPIView,
+    EnrichmentRequestEnricherAPIView,
+    EnrichmentRestartAPIView,
+    EnrichmentSettingsAPIView,
+    EnrichmentSubclassesAPIView,
+)
 from .views.mappings import (
     ClassMappingSubclassesAPIView,
-    MappingSchemaView,
     MappingKeysSchemaView,
+    MappingSchemaView,
 )
-
-from .views.enrichment import EnrichmentSubclassesAPIView, EnrichmentSettingsAPIView
 
 urlpatterns = [
     path(
         "mappings/",
         ClassMappingSubclassesAPIView.as_view(),
-        name="classmapping-subclasses",
+        name="classmapping_subclasses",
     ),
     path(
         "mappings/<str:class_name>/",
         MappingSchemaView.as_view(),
-        name="mapping-schema",
+        name="mapping_schema",
     ),
     path(
-        "mappings/<str:class_name>/keys",
+        "mappings/<str:class_name>/keys/",
         MappingKeysSchemaView.as_view(),
-        name="mapping-keys-schema",
+        name="mapping_keys_schema",
     ),
     path(
         "enrichment/",
         EnrichmentSubclassesAPIView.as_view(),
-        name="enrichment-subclasses",
+        name="enrichment_subclasses",
     ),
     path(
         "enrichment/<str:enricher_type>/",
         EnrichmentSettingsAPIView.as_view(),
-        name="enrichment-schema",
+        name="enrichment_schema",
     ),
     path(
         "digest/options/",
         DigestSubclassesAPIView.as_view(),
-        name="enrichment-subclasses",
+        name="digest_subclasses",
     ),
     path(
         "digest/",
         DigestAPIView.as_view(),
-        name="enrichment-subclasses",
+        name="digest_list",
+    ),
+    path(
+        "digest/upload/",
+        DigestUploadAPIView.as_view(),
+        name="digest_upload",
+    ),
+    path(
+        "digest/upload/<str:upload_id>/finalize/",
+        DigestUploadFinalizeAPIView.as_view(),
+        name="digest_upload_finalize",
+    ),
+    path(
+        "digest/<uuid:pk>/",
+        DigestDetailAPIView.as_view(),
+        name="digest_detail",
+    ),
+    path(
+        "enrich/",
+        EnrichmentAPIView.as_view(),
+        name="enrichment_requests",
+    ),
+    path(
+        "enrich/<uuid:pk>/",
+        EnrichmentDetailAPIView.as_view(),
+        name="enrichment_detail",
+    ),
+    path(
+        "enrich/<uuid:pk>/restart/",
+        EnrichmentRestartAPIView.as_view(),
+        name="enrichment_restart",
+    ),
+    path(
+        "enrich/<uuid:pk>/<str:enricher_type>/relations/",
+        EnrichmentRelationsAPIView.as_view(),
+        name="enrichment_relations",
+    ),
+    path(
+        "enrich/<uuid:pk>/<str:enricher_type>/",
+        EnrichmentRequestEnricherAPIView.as_view(),
+        name="enrichment_enricher",
     ),
 ]

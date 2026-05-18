@@ -1,13 +1,19 @@
-from .utils import NotificationsTestCase
-from user.models import CradleUser
-from entries.models import Entry
-from notifications.models import MessageNotification, AccessRequestNotification
+"""Tests for unread notification count API."""
+
+from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
-from django.urls import reverse
+
+from entries.models import Entry
+from user.models import CradleUser
+
+from ..models import AccessRequestNotification, MessageNotification
+from .utils import NotificationsTestCase
 
 
-class NotificationListTest(NotificationsTestCase):
+class NotificationUnreadTest(NotificationsTestCase):
+    """Tests for GET /notifications/unread-count/."""
+
     def setUp(self):
         super().setUp()
         self.client = APIClient()
@@ -17,6 +23,7 @@ class NotificationListTest(NotificationsTestCase):
             password="password",
             is_staff=False,
             email="alabala@gmail.com",
+            is_active=True,
         )
         self.entity = Entry.objects.create(name="Entity", entry_class=self.entryclass1)
 
@@ -30,18 +37,10 @@ class NotificationListTest(NotificationsTestCase):
 
     def test_unread_notifications_messages(self):
         fields = {"user": self.user, "message": ""}
-        MessageNotification.objects.create(
-            **fields, is_unread=True, is_marked_unread=False
-        )
-        MessageNotification.objects.create(
-            **fields, is_unread=False, is_marked_unread=True
-        )
-        MessageNotification.objects.create(
-            **fields, is_unread=True, is_marked_unread=True
-        )
-        MessageNotification.objects.create(
-            **fields, is_unread=False, is_marked_unread=False
-        )
+        MessageNotification.objects.create(**fields, is_unread=True, is_marked_unread=False)
+        MessageNotification.objects.create(**fields, is_unread=False, is_marked_unread=True)
+        MessageNotification.objects.create(**fields, is_unread=True, is_marked_unread=True)
+        MessageNotification.objects.create(**fields, is_unread=False, is_marked_unread=False)
 
         response = self.client.get(reverse("notification_unread"), **self.headers)
 
@@ -55,18 +54,10 @@ class NotificationListTest(NotificationsTestCase):
             "entity": self.entity,
             "message": "",
         }
-        AccessRequestNotification.objects.create(
-            **fields, is_unread=True, is_marked_unread=False
-        )
-        AccessRequestNotification.objects.create(
-            **fields, is_unread=False, is_marked_unread=True
-        )
-        AccessRequestNotification.objects.create(
-            **fields, is_unread=True, is_marked_unread=True
-        )
-        AccessRequestNotification.objects.create(
-            **fields, is_unread=False, is_marked_unread=False
-        )
+        AccessRequestNotification.objects.create(**fields, is_unread=True, is_marked_unread=False)
+        AccessRequestNotification.objects.create(**fields, is_unread=False, is_marked_unread=True)
+        AccessRequestNotification.objects.create(**fields, is_unread=True, is_marked_unread=True)
+        AccessRequestNotification.objects.create(**fields, is_unread=False, is_marked_unread=False)
 
         response = self.client.get(reverse("notification_unread"), **self.headers)
 

@@ -1,0 +1,130 @@
+.cradle-dockview.dockview-theme-light,
+.cradle-dockview.dockview-theme-dark {
+    --dv-paneview-active-outline-color: var(--ring);
+    --dv-drag-over-background-color: color-mix(
+        in oklch,
+        var(--primary) 18%,
+        transparent
+    );
+    --dv-drag-over-border-color: var(--primary);
+    --dv-tabs-container-scrollbar-color: var(--muted-foreground);
+    --dv-icon-hover-background-color: var(--accent);
+    --dv-floating-box-shadow: var(--shadow-lg);
+    --dv-group-view-background-color: var(--background);
+    --dv-tabs-and-actions-container-background-color: var(--muted);
+    --dv-activegroup-visiblepanel-tab-background-color: var(--background);
+    --dv-activegroup-hiddenpanel-tab-background-color: var(--background);
+    --dv-inactivegroup-visiblepanel-tab-background-color: var(--background);
+    --dv-inactivegroup-hiddenpanel-tab-background-color: var(--background);
+    --dv-tab-divider-color: var(--border);
+    --dv-activegroup-visiblepanel-tab-color: var(--foreground);
+    --dv-activegroup-hiddenpanel-tab-color: var(--muted-foreground);
+    --dv-inactivegroup-visiblepanel-tab-color: var(--muted-foreground);
+    --dv-inactivegroup-hiddenpanel-tab-color: var(--muted-foreground);
+    --dv-separator-border: var(--border);
+    --dv-paneview-header-border-color: var(--border);
+    --dv-scrollbar-background-color: color-mix(
+        in oklch,
+        var(--muted-foreground) 35%,
+        transparent
+    );
+    --dv-sash-color: transparent;
+    --dv-active-sash-color: var(--ring);
+}
+
+.cradle-dockview .dv-groupview > .dv-content-container {
+    background: var(--background);
+    color: var(--foreground);
+}
+
+.cradle-dockview .dv-tabs-and-actions-container {
+    border-bottom: 1px solid var(--border);
+}
+
+.cradle-dockview .dv-void-container,
+.cradle-dockview .dv-right-actions-container,
+.cradle-dockview .dv-right-actions-container > .dv-react-part {
+    background-color: var(--sidebar);
+}
+
+.cradle-dockview .dv-right-actions-container,
+.cradle-dockview-header-actions {
+    align-items: center;
+}
+
+.cradle-dockview-header-actions {
+    display: flex;
+    height: 100%;
+    gap: 2px;
+    padding-right: 4px;
+}
+
+.cradle-dockview-header-actions .dockview-header-toolbar-btn {
+    display: flex;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--dv-activegroup-visiblepanel-tab-color);
+    border-radius: 2px;
+    opacity: 0.8;
+}
+
+.cradle-dockview-header-actions .dockview-header-toolbar-btn:hover {
+    background-color: var(--dv-icon-hover-background-color);
+    opacity: 1;
+}
+
+.cradle-dockview-tab-title {
+    display: flex;
+    height: 100%;
+    min-width: 0;
+    align-items: center;
+    gap: 6px;
+    padding-left: 4px;
+    padding-right: 6px;
+}
+
+.cradle-dockview-tab-title-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: currentColor;
+    opacity: 0.8;
+}
+
+.cradle-dockview-tab-title-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cradle-dockview-tab-title-close {
+    display: flex;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    opacity: 0.7;
+}
+
+.cradle-dockview-tab-title-close:hover {
+    background-color: var(--dv-icon-hover-background-color);
+    opacity: 1;
+}
+
+.cradle-dockview .dv-tab {
+    border-right: 1px solid var(--border);
+}
+
+.cradle-dockview .dv-inactive-tab {
+    box-shadow: none;
+    outline: none;
+}

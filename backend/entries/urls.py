@@ -1,22 +1,29 @@
+"""URL routing for entries app: entry classes, entities, entries, relations."""
+
 from django.urls import path
 
-
-from .views import entry_view
-from .views import entity_views
-from .views import entry_class_views
-from .views import relation_view
-from .views import enrich_view
+from .views import entity_views, entry_class_views, entry_view, list_stream_views, relation_view
 
 urlpatterns = [
     path(
-        "entry_classes/",
+        "entry-classes/stream/",
+        list_stream_views.EntryClassListStreamView.as_view(),
+        name="entry_class_list_stream",
+    ),
+    path(
+        "entry-classes/",
         entry_class_views.EntryClassList.as_view(),
         name="entry_class_list",
     ),
     path(
-        "entry_classes/<path:class_subtype>/",
+        "entry-classes/<path:class_subtype>/",
         entry_class_views.EntryClassDetail.as_view(),
         name="entry_class_detail",
+    ),
+    path(
+        "entities/stream/",
+        list_stream_views.EntityListStreamView.as_view(),
+        name="entity_list_stream",
     ),
     path("entities/", entity_views.EntityList.as_view(), name="entity_list"),
     path(
@@ -25,23 +32,16 @@ urlpatterns = [
         name="entity_detail",
     ),
     path(
-        "next_name/<path:class_subtype>/",
+        "next-name/<path:class_subtype>/",
         entry_class_views.NextName.as_view(),
         name="next_name",
     ),
-    path("entries/", entry_view.EntryView.as_view(), name="entry-list-create"),
-    path(
-        "entries/<uuid:id>/", entry_view.EntryDetailView.as_view(), name="entry-detail"
-    ),
-    path("relations/", relation_view.RelationListView.as_view(), name="relation-list"),
+    path("entries/", entry_view.EntryView.as_view(), name="entry_create"),
+    path("entries/<int:entry_id>/", entry_view.EntryDetailView.as_view(), name="entry_detail"),
+    path("relations/", relation_view.RelationListView.as_view(), name="relation_list"),
     path(
         "relations/<uuid:relation_id>/",
         relation_view.RelationDetailView.as_view(),
-        name="relation-detail",
-    ),
-    path(
-        "entries/<int:entry_id>/enrich/",
-        enrich_view.EntryEnrichersView.as_view(),
-        name="entry-enrichers",
+        name="relation_detail",
     ),
 ]

@@ -6,7 +6,9 @@ title = 'Getting Started'
 weight = 1
 +++
 
-This guide will help you quickly set up and run a demo of CRADLE—the collaborative threat intelligence platform—in just a few minutes. Follow these simple steps to get up and running.
+This guide will help you quickly set up and run a demo of CRADLE—the
+collaborative threat intelligence platform—in just a few minutes. Follow these
+simple steps to get up and running.
 
 ## Prerequisites
 
@@ -16,8 +18,8 @@ Before you begin, ensure you have the following installed:
 - **Docker Compose** (version 2.0+)
 - **Git**
 
-{{< callout emoji="🐋" >}} **Tip:** If you don’t have Docker installed, download it from [Docker's official website](https://www.docker.com/)! {{< /callout >}}
-
+{{< callout emoji="🐋" >}} **Tip:** If you don’t have Docker installed, download
+it from [Docker's official website](https://www.docker.com/)! {{< /callout >}}
 
 {{% steps %}}
 
@@ -36,9 +38,10 @@ cd cradle
 ### Start the Demo Environment
 Launch the demo using Docker Compose with the pre-configured demo file:
 ```sh
-docker compose -f docker-compose.demo.yml up -d
+docker-compose -f docker-compose.demo.yml up -d
 ```
-This command downloads the necessary images, builds the containers, and starts all services in the background.
+This command downloads the necessary images, builds the containers, and starts
+all services in the background.
 
 ### Open CRADLE in Your Browser
 Once the containers are running, open your web browser and navigate to:
@@ -54,23 +57,28 @@ Use the default credentials to log in:
 
 ### Check-Out The User Guide
 
-Have a look at the [user guide]({{< ref "/docs/userguide" >}}) to get a general understanding of how CRADLE works and learn how to use its features more efficiently.
+Have a look at the [user guide]({{< ref "/docs/user-guide" >}}) to get a general
+understanding of how CRADLE works and learn how to use its features more
+efficiently.
 
 ### Explore CRADLE
 Now that you're logged in, take a few minutes to:
-- **Browse Dashboards:** View centralized intelligence data and explore related entities.
-- **Use the Graph Explorer:** Visualize and traverse relationships between entities and artifacts.
-- **Create and Edit Notes:** Experience collaborative note-taking and see how CRADLE links related data automatically.
-
+- **Browse Dashboards:** View centralized intelligence data and explore related
+  entities.
+- **Use the Graph Explorer:** Visualize and traverse relationships between
+  entities and artifacts.
+- **Create and Edit Notes:** Experience collaborative note-taking and see how
+  CRADLE links related data automatically.
 
 {{% /steps %}}
 
-
 ## Wrapping Up
 
-You now have a fully functional demo of CRADLE running on your machine! When you’re finished exploring, you can stop the demo by executing:
+You now have a fully functional demo of CRADLE running on your machine! When
+you’re finished exploring, you can stop the demo by executing:
 ```sh
-docker compose -f docker-compose.demo.yml down
+docker-compose -f docker-compose.demo.yml down
 ```
 
-For more detailed documentation and advanced configuration, please refer to the [CRADLE Documentation](https://github.com/prodaft/cradle/tree/main/docker).
+For more detailed documentation and advanced configuration, please refer to the
+[CRADLE Documentation](https://github.com/prodaft/cradle/tree/main/docker).

@@ -1,22 +1,49 @@
-from django.db import IntegrityError
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import serializers
-from django.apps import apps
-from drf_spectacular.utils import extend_schema, extend_schema_view
+"""Mapping API views: subclasses, schema, keys."""
 
-from ..models.base import ClassMapping
-from ..serializers import ClassMappingSerializer, MappingSubclassSerializer
+import uuid
+
+from django.apps import apps
+from django.db import IntegrityError, transaction
+from django.urls import reverse
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from core.openapi import get_common_error_responses, get_error_responses
 from core.utils import fields_to_form
+from user.authentication import APIKeyAuthentication
 from user.permissions import HasEntryManagerRole
 
+from ..exceptions import (
+    DataConflictException,
+    IntelIOErrorCodes,
+    InvalidMappingException,
+    InvalidMappingSelectionException,
+    MappingNotFoundException,
+    MappingRequiredException,
+    TargetTypeRequiredException,
+    UnknownMappingException,
+)
+from ..models.base import ClassMapping
+from ..serializers import ClassMappingSerializer, MappingSubclassSerializer
 
-class MappingSchemaRequestSerializer(serializers.Serializer):
-    """Basic serializer for mapping schema requests"""
 
-    pass
+def _get_mapping_class(class_name: str):
+    """Resolve mapping class by name; raise UnknownMappingException or InvalidMappingSelectionException on failure."""
+    try:
+        mapping_class = apps.get_model(app_label="intelio", model_name=class_name)
+    except LookupError:
+        raise UnknownMappingException(detail="That mapping is not recognized.")
+
+    if not issubclass(mapping_class, ClassMapping) or mapping_class._meta.abstract:
+        raise InvalidMappingSelectionException(detail="That selection is not a valid mapping.")
+
+    return mapping_class
 
 
 @extend_schema_view(
@@ -24,23 +51,28 @@ class MappingSchemaRequestSerializer(serializers.Serializer):
         operation_id="mappings_subclasses_list",
         summary="Get class mapping subclasses",
         description="Returns a list of all subclasses of ClassMapping with their names.",
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search mapping types by name or class name",
+                required=False,
+            ),
+        ],
         responses={
             200: MappingSubclassSerializer(many=True),
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have entry manager role"},
+            **get_common_error_responses(),
         },
     )
 )
 class ClassMappingSubclassesAPIView(APIView):
-    """
-    DRF API view that returns a list of all subclasses of ClassMapping
-    with their names.
-    """
+    """DRF API view that returns all ClassMapping subclasses with their names."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated, HasEntryManagerRole]
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: Request, *args, **kwargs) -> Response:
         subclasses = ClassMapping.__subclasses__()
 
         subclass_data = [
@@ -49,8 +81,15 @@ class ClassMappingSubclassesAPIView(APIView):
             if hasattr(subclass, "display_name")
         ]
 
+        search = request.query_params.get("search")
+        if search:
+            search_lower = search.lower()
+            subclass_data = [
+                s for s in subclass_data if search_lower in s["name"].lower() or search_lower in s["class"].lower()
+            ]
+
         serializer = MappingSubclassSerializer(subclass_data, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -63,31 +102,25 @@ class ClassMappingSubclassesAPIView(APIView):
                 "type": "object",
                 "description": "Field mapping schema",
             },
-            400: {"description": "Invalid class name or not a valid mapping class"},
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have entry manager role"},
+            **get_error_responses(
+                IntelIOErrorCodes.UNKNOWN_MAPPING,
+                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
+            ),
+            **get_common_error_responses(),
         },
     )
 )
 class MappingKeysSchemaView(APIView):
-    """
-    Given a class name, return the possible values in a mapping.
-    """
+    """Given a class name, return the possible values in a mapping."""
 
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated, HasEntryManagerRole]
 
-    def get(self, request, class_name):
-        try:
-            mapping_class = apps.get_model(app_label="intelio", model_name=class_name)
-        except LookupError:
-            return Response({"error": "Invalid class name"}, status=400)
-
-        if not issubclass(mapping_class, ClassMapping) or mapping_class._meta.abstract:
-            return Response({"error": "Not a valid mapping class"}, status=400)
-
+    def get(self, request: Request, class_name: str) -> Response:
+        mapping_class = _get_mapping_class(class_name)
         field_mapping = fields_to_form({f.name: f for f in mapping_class._meta.fields})
 
-        return Response(field_mapping)
+        return Response(field_mapping, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -103,118 +136,137 @@ class MappingKeysSchemaView(APIView):
                     "description": "Mapping instance data",
                 },
             },
-            400: {"description": "Invalid class name or not a valid mapping class"},
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have entry manager role"},
+            **get_error_responses(
+                IntelIOErrorCodes.UNKNOWN_MAPPING,
+                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
+            ),
+            **get_common_error_responses(),
         },
     ),
     post=extend_schema(
         operation_id="mappings_schema_create_or_update",
         summary="Create or update mapping",
         description="Create a new mapping or update an existing one for a given class.",
-        request=MappingSchemaRequestSerializer,
+        request=OpenApiTypes.OBJECT,
         responses={
             200: {
                 "type": "object",
                 "description": "Mapping instance data",
             },
-            400: {
-                "description": "Invalid class name, not a valid mapping class, or bad request data"
-            },
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have entry manager role"},
+            **get_error_responses(
+                IntelIOErrorCodes.UNKNOWN_MAPPING,
+                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
+                IntelIOErrorCodes.TARGET_TYPE_REQUIRED,
+                IntelIOErrorCodes.INVALID_MAPPING,
+                IntelIOErrorCodes.DATA_CONFLICT,
+                include_validation_error=True,
+            ),
+            **get_common_error_responses(),
         },
     ),
     delete=extend_schema(
         operation_id="mappings_schema_destroy",
         summary="Delete mapping",
         description="Delete a mapping instance for a given class.",
+        parameters=[
+            OpenApiParameter(
+                name="mapping_id",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="The ID of the mapping to delete",
+            ),
+        ],
         responses={
-            200: {"description": "Mapping successfully deleted"},
-            400: {
-                "description": "Invalid class name, not a valid mapping class, or missing mapping_id"
-            },
-            404: {"description": "Mapping not found"},
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User does not have entry manager role"},
+            204: {"description": "Mapping successfully deleted"},
+            **get_error_responses(
+                IntelIOErrorCodes.UNKNOWN_MAPPING,
+                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
+                IntelIOErrorCodes.MAPPING_REQUIRED,
+                IntelIOErrorCodes.INVALID_MAPPING,
+                IntelIOErrorCodes.MAPPING_NOT_FOUND,
+            ),
+            **get_common_error_responses(),
         },
     ),
 )
 class MappingSchemaView(APIView):
-    """
-    Given a class name, return the possible values in a mapping.
-    """
+    """Given a class name, return the possible values in a mapping."""
 
+    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated, HasEntryManagerRole]
-    serializer_class = MappingSchemaRequestSerializer
 
-    def get(self, request, class_name):
-        try:
-            mapping_class = apps.get_model(app_label="intelio", model_name=class_name)
-        except LookupError:
-            return Response({"error": "Invalid class name"}, status=400)
-
-        if not issubclass(mapping_class, ClassMapping) or mapping_class._meta.abstract:
-            return Response({"error": "Not a valid mapping class"}, status=400)
-
+    def get(self, request: Request, class_name: str) -> Response:
+        mapping_class = _get_mapping_class(class_name)
         mappings = mapping_class.objects.all()
         serializer = ClassMappingSerializer.get_serializer(mapping_class)
 
-        return Response(serializer(mappings, many=True).data)
+        return Response(serializer(mappings, many=True).data, status=status.HTTP_200_OK)
 
-    def post(self, request, class_name):
-        try:
-            mapping_class = apps.get_model(app_label="intelio", model_name=class_name)
-        except LookupError:
-            return Response({"error": "Invalid class name"}, status=400)
+    def post(self, request: Request, class_name: str) -> Response:
+        mapping_class = _get_mapping_class(class_name)
+        serializer = ClassMappingSerializer.get_serializer(mapping_class)(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        validated_data = dict(serializer.validated_data)
 
-        if not issubclass(mapping_class, ClassMapping) or mapping_class._meta.abstract:
-            return Response({"error": "Not a valid mapping class"}, status=400)
+        mapping_id = validated_data.pop("id", None) or request.data.get("id")
+        if mapping_id is not None:
+            try:
+                uuid.UUID(str(mapping_id))
+            except ValueError, TypeError, AttributeError:
+                raise InvalidMappingException(detail="That mapping is not valid.")
 
-        values = {}
+        if mapping_id is None and "internal_class" not in validated_data:
+            raise TargetTypeRequiredException(detail="Select which entry type this mapping applies to.")
 
-        for f in mapping_class._meta.fields:
-            if f.name in request.data:
-                values[f.name] = request.data[f.name]
+        if "internal_class" in validated_data:
+            validated_data["internal_class_id"] = validated_data.pop("internal_class").pk
 
-        if "internal_class" not in values:
-            return Response({"error": "internal_class is required"}, status=400)
-
-        mappingf = mapping_class.objects.filter(
-            id=values.pop("id", None),
-        )
-
-        values["internal_class_id"] = values.pop("internal_class")
-
-        serializer = ClassMappingSerializer.get_serializer(mapping_class)
+        existing_mapping = mapping_class.objects.filter(id=mapping_id)
+        response_serializer = ClassMappingSerializer.get_serializer(mapping_class)
 
         try:
-            if mappingf.exists():
-                mappingf.update(**values)
-                return Response(serializer(mappingf.first()).data)
-            else:
-                mapping = mapping_class.objects.create(**values)
-                return Response(serializer(mapping).data)
-        except IntegrityError as e:
-            return Response({"error": str(e)}, status=400)
+            with transaction.atomic():
+                if existing_mapping.exists():
+                    existing_mapping.update(**validated_data)
+                    updated = mapping_class.objects.get(id=mapping_id)
+                    return Response(response_serializer(updated).data, status=status.HTTP_200_OK)
+                elif mapping_id is not None:
+                    raise MappingNotFoundException(detail="That mapping could not be found.")
+                else:
+                    mapping = mapping_class.objects.create(**validated_data)
+                    mapping_url = reverse(
+                        "mapping_schema",
+                        kwargs={"class_name": class_name},
+                    )
+                    location = request.build_absolute_uri(f"{mapping_url}?mapping_id={mapping.id}")
+                    return Response(
+                        response_serializer(mapping).data,
+                        status=status.HTTP_201_CREATED,
+                        headers={"Location": location},
+                    )
+        except mapping_class.DoesNotExist:
+            raise MappingNotFoundException(detail="That mapping could not be found.")
+        except IntegrityError:
+            raise DataConflictException(
+                detail="This could not be saved because it conflicts with existing information."
+            )
 
-    def delete(self, request, class_name):
+    def delete(self, request: Request, class_name: str) -> Response:
+        mapping_class = _get_mapping_class(class_name)
+        mapping_id = request.query_params.get("mapping_id")
+
+        if not mapping_id:
+            raise MappingRequiredException(detail="A mapping is required.")
+
         try:
-            mapping_class = apps.get_model(app_label="intelio", model_name=class_name)
-        except LookupError:
-            return Response({"error": "Invalid class name"}, status=400)
+            uuid.UUID(str(mapping_id))
+        except ValueError, TypeError, AttributeError:
+            raise InvalidMappingException(detail="That mapping is not valid.")
 
-        if not issubclass(mapping_class, ClassMapping) or mapping_class._meta.abstract:
-            return Response({"error": "Not a valid mapping class"}, status=400)
+        try:
+            mapping = mapping_class.objects.get(id=mapping_id)
+        except mapping_class.DoesNotExist:
+            raise MappingNotFoundException(detail="That mapping could not be found.")
 
-        id = request.query_params.get("mapping_id")
-
-        if not id:
-            return Response({"error": "mapping_id is required"}, status=400)
-
-        mapping = mapping_class.objects.filter(id=id)
-
-        if not mapping.exists():
-            return Response({"error": "Mapping not found"}, status=404)
-
-        return Response(mapping.delete())
+        mapping.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

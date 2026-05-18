@@ -47,7 +47,7 @@ more.
 |----------------------|---------|--------------------|-----------------------------------------------------|
 | `MINIO_ENDPOINT`     | String  | `"localhost"`      | MinIO server endpoint.                              |
 | `MINIO_ROOT_USER`    | String  | `"admin"`          | Access key for MinIO.                               |
-| `MINIO_ROOT_PASSWORD`| String  | `"admin"`          | Secret key for MinIO.                               |
+| `MINIO_ROOT_PASSWORD`| String  | `"cradle_minio"`   | Secret key for MinIO.                               |
 | `MINIO_SECURE`       | Boolean | `True`             | Use HTTPS when connecting to MinIO.               |
 | `MINIO_BACKEND_URL`  | String  | *(See settings)*   | URL to access the MinIO backend (inherited from settings). |
 
@@ -91,6 +91,6 @@ more.
 
 | Variable              | Type    | Default Value                                  | Description                                                           |
 |-----------------------|---------|------------------------------------------------|-----------------------------------------------------------------------|
-| `CELERY_QUEUES`       | String  | `"email,notes,graph,publish,import,access,enrich,digest"` | Comma-separated list of Celery task queues.                           |
+| `CELERY_QUEUES`       | String  | `"email,notes,graph,publish,import,access,enrich,digest,files,cleanup"` | Comma-separated list of Celery task queues (see `cradle/celery.py` `task_routes`). |
 | `CELERY_CONCURRENCY`  | Integer | `4`                                            | Number of concurrent Celery worker threads per process.               |
 | `NUM_WORKERS`         | Integer | `12`                                           | Number of Gunicorn worker processes.                                  |

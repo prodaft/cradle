@@ -1,6 +1,6 @@
 services:
   minio:
-    image: quay.io/minio/minio:RELEASE.2024-07-16T23-46-41Z
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: minio
     command: server /data --console-address "0.0.0.0:9001"
     restart: unless-stopped
@@ -13,7 +13,7 @@ services:
       - minio_data:/data
     environment:
       MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: minioAdminPassword
+      MINIO_ROOT_PASSWORD: cradle_minio
       MINIO_SERVER_URL: http://localhost:8000
       MINIO_BROWSER_REDIRECT_URL: http://localhost:8000/minio/ui
     networks:
@@ -21,12 +21,12 @@ services:
         ipv4_address: 192.168.42.5
 
   postgres:
-    image: pgrouting/pgrouting:16-3.5-3.7
+    image: pgrouting/pgrouting:16-3.5-4.0
     container_name: postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: cradle
-      POSTGRES_PASSWORD: cradlePostgresPassword
+      POSTGRES_PASSWORD: cradle
       POSTGRES_DB: cradle
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -40,7 +40,7 @@ services:
         ipv4_address: 192.168.42.6
 
   redis:
-    image: "redis:alpine"
+    image: "redis:8-alpine"
     container_name: redis
     networks:
       cradle_demo_network:
@@ -54,17 +54,19 @@ services:
     container_name: celery
     restart: unless-stopped
     command: /app/entrypoint_celery.sh
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     environment: &cradle_env
       INITIALIZE_ENTRYCLASSES: false
       DB_NAME: cradle
       DB_USER: cradle
-      DB_PASSWORD: cradlePostgresPassword
+      DB_PASSWORD: cradle
       DB_HOST: 192.168.42.6
       DB_PORT: 5432
 
       MINIO_ENDPOINT: localhost:8000
       MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: minioAdminPassword
+      MINIO_ROOT_PASSWORD: cradle_minio
       MINIO_SECURE: false
 
       MINIO_BACKEND_URL: http://192.168.42.5:9000
@@ -73,10 +75,10 @@ services:
       CRADLE_ADMIN_EMAIL: admin@cradle.sh
       CRADLE_ADMIN_PASSWORD: admin
 
-      CRADLE_SECRET_KEY: "super-secret-key"
+      SECRET_KEY: "super-secret-key"
 
       ALLOWED_HOSTS: localhost
-      CRADLE_TRUSTED_ORIGINS: http://localhost
+      CSRF_TRUSTED_ORIGINS: http://localhost
       BASE_URL: api
       FRONTEND_URL: http://localhost:8000
 
@@ -101,13 +103,14 @@ services:
       REDIS_URL: "redis://192.168.42.7:6379/0"
       RABBITMQ_URL: "amqp://cradle:cradle@192.168.42.11:5672//"
 
-      CELERY_QUEUES: "email,notes,graph,publish,import,access,enrich,digest"
+      CELERY_QUEUES: "email,notes,graph,publish,import,access,enrich,digest,files,cleanup"
       CELERY_CONCURRENCY: 4
       NUM_WORKERS: 4
 
     depends_on:
       - postgres
       - minio
+      - cradle
     networks:
       cradle_demo_network:
         ipv4_address: 192.168.42.8
@@ -119,6 +122,12 @@ services:
       dockerfile: ./docker/Dockerfile.backend
     container_name: cradle
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/schema"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     volumes:
       - ./build/www/static:/app/static
       - ./media:/media
@@ -154,7 +163,7 @@ services:
         ipv4_address: 192.168.42.10
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4-management-alpine
     container_name: cradle_rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: cradle

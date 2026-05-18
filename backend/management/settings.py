@@ -2,157 +2,98 @@ from .models import BaseSettingsSection
 
 
 class NotesSettings(BaseSettingsSection):
+    """Note processing and linking settings."""
+
     prefix = "notes"
 
     @property
+    def default_note_template(self):
+        """Default template content for new notes."""
+        return self.get("default_note_template", "")
+
+    @property
     def min_entries(self):
+        """Minimum entries required before a note is considered complete."""
         return self.get("min_entries", 2)
 
     @property
     def min_entities(self):
+        """Minimum entities required before a note is considered complete."""
         return self.get("min_entities", 1)
 
     @property
     def max_clique_size(self):
+        """Maximum clique size for smart linking."""
         return self.get("max_clique_size", 4)
 
     @property
     def allow_dynamic_entry_class_creation(self):
+        """Whether to auto-create entry classes from note content."""
         return self.get("allow_dynamic_entry_class_creation", False)
 
 
 class UserSettings(BaseSettingsSection):
+    """User registration and confirmation settings."""
+
     prefix = "users"
 
     @property
     def require_admin_confirmation(self):
+        """Whether new users need admin approval before access."""
         return self.get("require_admin_confirmation", True)
 
     @property
     def require_email_confirmation(self):
+        """Whether new users must confirm their email."""
         return self.get("require_email_confirmation", False)
 
     @property
     def allow_registration(self):
+        """Whether public registration is enabled."""
         return self.get("allow_registration", False)
 
 
-class GraphSettings(BaseSettingsSection):
-    prefix = "graph"
-
-    @property
-    def simulate_method(self):
-        return self.get("simulate_method", "graph_tool")
-
-    @property
-    def K(self):
-        return self.get("K", 300)
-
-    @property
-    def p(self):
-        return self.get("p", 2)
-
-    @property
-    def theta(self):
-        return self.get("theta", 0.9)
-
-    @property
-    def max_level(self):
-        return self.get("max_level", 10)
-
-    @property
-    def epsilon(self):
-        return self.get("epsilon", 1e-3)
-
-    @property
-    def r(self):
-        return self.get("r", 5)
-
-    @property
-    def max_iter_gt(self):
-        return self.get("max_iter_gt", 2000)
-
-    @property
-    def max_iter_fa2(self):
-        return self.get("max_iter_fa2", 1000)
-
-    @property
-    def dissuade_hubs(self):
-        return self.get("dissuade_hubs", False)
-
-    @property
-    def lin_log_mode(self):
-        return self.get("lin_log_mode", False)
-
-    @property
-    def adjust_sizes(self):
-        return self.get("adjust_sizes", True)
-
-    @property
-    def jitter_tolerance(self):
-        return self.get("jitter_tolerance", 1.0)
-
-    @property
-    def barnes_hut_optimize(self):
-        return self.get("barnes_hut_optimize", True)
-
-    @property
-    def barnes_hut_theta(self):
-        return self.get("barnes_hut_theta", 1.2)
-
-    @property
-    def scaling_ratio(self):
-        return self.get("scaling_ratio", 2.0)
-
-    @property
-    def strong_gravity_mode(self):
-        return self.get("strong_gravity_mode", False)
-
-    @property
-    def gravity(self):
-        return self.get("gravity", 1.0)
-
-
 class FileSettings(BaseSettingsSection):
+    """File upload and processing settings."""
+
     prefix = "files"
 
     @property
+    def upload_limit(self):
+        """Max total upload size in bytes."""
+        return self.get("upload_limit", 2**31)
+
+    @property
     def autoprocess_files(self):
-        return self.get("autoprocess_files", False)
+        """Whether to auto-process uploaded files."""
+        return self.get("autoprocess_files", True)
 
     @property
     def md5_subtype(self):
+        """MIME subtype for MD5 hashes."""
         return self.get("md5_subtype", "hash/md5")
 
     @property
     def sha1_subtype(self):
+        """MIME subtype for SHA1 hashes."""
         return self.get("sha1_subtype", "hash/sha1")
 
     @property
     def sha256_subtype(self):
+        """MIME subtype for SHA256 hashes."""
         return self.get("sha256_subtype", "hash/sha256")
 
     @property
-    def mimetype_patterns(self):
-        default_patterns = [
-            "application/x-pie-executable",
-            "application/vnd.microsoft.portable-executable",
-            "application/x-dosexec",
-            "application/x-msdownload",
-            "application/x-executable",
-            "application/pdf",
-            "application/msword",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
-        ]
-        return self.get("mimetype_patterns", default_patterns)
+    def max_file_size_for_hashing(self):
+        """Max file size (bytes) to compute hashes for; larger files skip hashing."""
+        return self.get("max_file_size_for_hashing", 10 * 1024 * 1024)  # 10MB
 
 
 class CradleSettings:
+    """Aggregate of all settings sections."""
+
     def __init__(self):
         self.notes = NotesSettings()
-        self.graph = GraphSettings()
         self.users = UserSettings()
         self.files = FileSettings()
 

@@ -1,20 +1,27 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.request import Request
+"""Views for listing user and entity access privileges (admin only)."""
 
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from core.exceptions import CoreErrorCodes
+from core.openapi import get_common_error_responses, get_error_responses
+from core.pagination import TotalPagesPagination
+from entries.exceptions import EntriesErrorCodes
+from entries.models import Entry
+from user.exceptions import UserErrorCodes, UserNotFoundException
 from user.models import CradleUser
 from user.permissions import HasAdminRole
+
+from ..entity_access_rows import build_entity_access_user_rows
 from ..models import Access
-from ..serializers import AccessEntitySerializer
-from uuid import UUID
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from ..serializers import AccessEntitySerializer, AccessUserSerializer
 
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="access_user_retrieve",
         summary="Get user access privileges",
         description="Returns a list of all entities with their access types for a specific user. Only available to admin users.",  # noqa: E501
         parameters=[
@@ -23,51 +30,121 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
                 type=str,
                 location=OpenApiParameter.PATH,
                 description="UUID of the user to get access privileges for",
-            )
+            ),
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page size",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search entities by name, description, or numeric id",
+                required=False,
+            ),
         ],
         responses={
-            200: AccessEntitySerializer(many=True),
-            401: {"description": "User is not authenticated"},
-            403: {"description": "User is not an admin"},
-            404: {"description": "User not found"},
+            200: TotalPagesPagination().get_paginated_response_serializer(AccessEntitySerializer),
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                CoreErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
+            ),
+            **get_common_error_responses(),
         },
     )
 )
-class AccessList(APIView):
+class UserAccessList(ListAPIView):
+    """List entities and their access types for a given user (admin only)."""
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
     serializer_class = AccessEntitySerializer
+    pagination_class = TotalPagesPagination
 
-    def get(self, request: Request, user_id: UUID) -> Response:
-        """Allows an admin to get the access priviliges of a User
-            on all Entities.
-
-        Args:
-            request: The request that was sent
-            user_id: Id of the user whose access is updated
-
-        Returns:
-            Response(body, status=200):
-                if the request was successful. The body will contain a JSON
-                representation of a list of all entities with an additional
-                "access_type" attribute.
-                Example: [{"id" : 2, "name" : "Entity 1", "access_type" : "none"}]
-            Response("User is not authenticated", status=401):
-                if the user was not authenticated.
-            Response("User is not an admin", status=403):
-                if the user was not an admin.
-            Response("User does not exist.", status=404):
-                if the user does not exist.
-        """
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Entry.entities.none()
+        user_id = self.kwargs["user_id"]
         try:
-            user = CradleUser.objects.get(id=user_id)
+            self._access_user = CradleUser.objects.get(id=user_id)
         except CradleUser.DoesNotExist:
-            return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
+            raise UserNotFoundException(detail="That user could not be found.")
+        search = self.request.query_params.get("search")
+        return Access.objects.get_accesses(self._access_user.id, search)
 
-        entities_with_access = Access.objects.get_accesses(user)
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["is_admin"] = getattr(self, "_access_user", None) and self._access_user.is_cradle_admin
+        return context
 
-        serializer = AccessEntitySerializer(
-            entities_with_access, context={"is_admin": user.is_cradle_admin}, many=True
-        )
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="access_entity_retrieve",
+        summary="Get entity access privileges",
+        description="Returns a list of all users with their access types for a specific entity. Only available to admin users.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="entity_id",
+                type=int,
+                location=OpenApiParameter.PATH,
+                description="ID of the entity to get access privileges for",
+            ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search users by username or user ID",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page size",
+                required=False,
+            ),
+        ],
+        responses={
+            200: TotalPagesPagination().get_paginated_response_serializer(AccessUserSerializer),
+            **get_error_responses(
+                EntriesErrorCodes.ENTITY_NOT_FOUND,
+                CoreErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
+            ),
+            **get_common_error_responses(),
+        },
+    )
+)
+class EntityAccessList(ListAPIView):
+    """List users and their access types for a given entity (admin only)."""
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, HasAdminRole]
+    pagination_class = TotalPagesPagination
+    serializer_class = AccessUserSerializer
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return []
+        entity_id = self.kwargs["entity_id"]
+        search = self.request.query_params.get("search")
+        return build_entity_access_user_rows(entity_id, search)

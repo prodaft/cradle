@@ -1,6 +1,9 @@
+"""Notes app configuration."""
+
 from django.apps import AppConfig
 
 
 class NotesConfig(AppConfig):
-    default_auto_field = "django.db.models.BigAutoField"
+    """App config for notes: notes with cradle links, snippets, and processing pipeline."""
+
     name = "notes"

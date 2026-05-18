@@ -1,26 +1,72 @@
+"""File transfer models for storing file references and tracking pending uploads.
+
+FileReference stores metadata for files uploaded via presigned URLs. PendingUpload
+tracks uploads in progress until they are finalized or expire.
+"""
+
 import uuid
-from typing import TYPE_CHECKING
 
 from django.db import models
-from django_lifecycle import AFTER_DELETE, LifecycleModelMixin, hook
+from django_lifecycle import AFTER_CREATE, LifecycleModelMixin, hook
+
+from entries.constants import INTERNAL_ENTRY_CLASS_DEFAULTS, SUBTYPE_FILE
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
+from management.settings import cradle_settings
+from notes.models import Note
+from user.models import CradleUser
 
-from .utils import MinioClient
+from .storage import FileTransferStorage
+from .uploads.models import BasePendingUpload
 
-if TYPE_CHECKING:
-    pass
+
+def file_upload_path(instance: "FileReference", filename: str) -> str:
+    """Generate upload path: {uuid}-{filename}."""
+    return f"{instance.id}-{filename}"
+
+
+class PendingUpload(BasePendingUpload):
+    """Tracks pending file uploads that have been initiated but not yet finalized.
+
+    Used to manage presigned URL uploads and cleanup of abandoned uploads.
+    """
+
+    class Meta:
+        db_table = "file_transfer_pendingupload"
 
 
 class FileReference(models.Model, LifecycleModelMixin):
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    """Metadata record for a file stored in S3/MinIO.
 
-    minio_file_name: models.CharField = models.CharField()
-    file_name: models.CharField = models.CharField()
-    bucket_name: models.CharField = models.CharField()
+    Links files to notes, digests, or users. Supports automatic hash calculation
+    and mimetype detection via process_file().
+    """
+
+    id: models.UUIDField = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False, help_text="Unique identifier for the file reference"
+    )
+    timestamp: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True, help_text="When the file was first uploaded"
+    )
+
+    file: models.FileField = models.FileField(
+        upload_to=file_upload_path,
+        storage=FileTransferStorage,
+        max_length=512,
+        null=True,
+        blank=True,
+        help_text="Reference to the file in S3/MinIO storage",
+    )
+
+    minio_file_name: models.CharField = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Legacy: object key from old MinIO storage"
+    )
+    file_name: models.CharField = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Original filename for display and download"
+    )
+    bucket_name: models.CharField = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Legacy: bucket name from old MinIO storage"
+    )
 
     note: models.ForeignKey = models.ForeignKey(
         "notes.Note",
@@ -28,13 +74,7 @@ class FileReference(models.Model, LifecycleModelMixin):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-    )
-    report: models.ForeignKey = models.OneToOneField(
-        "publish.PublishedReport",
-        related_name="file",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
+        help_text="Note this file is attached to, if any",
     )
     digest: models.ForeignKey = models.ForeignKey(
         "intelio.BaseDigest",
@@ -42,69 +82,89 @@ class FileReference(models.Model, LifecycleModelMixin):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
+        help_text="Digest this file belongs to, if any",
+    )
+    user: models.ForeignKey = models.ForeignKey(
+        "user.CradleUser",
+        related_name="files",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text="User who uploaded the file",
     )
 
-    md5_hash: models.CharField = models.CharField(max_length=32, null=True, blank=True)
-    sha1_hash: models.CharField = models.CharField(max_length=40, null=True, blank=True)
+    md5_hash: models.CharField = models.CharField(
+        max_length=32, null=True, blank=True, help_text="MD5 hash of file contents"
+    )
+    sha1_hash: models.CharField = models.CharField(
+        max_length=40, null=True, blank=True, help_text="SHA-1 hash of file contents"
+    )
     sha256_hash: models.CharField = models.CharField(
-        max_length=64, null=True, blank=True
+        max_length=64, null=True, blank=True, help_text="SHA-256 hash of file contents"
     )
-    mimetype: models.CharField = models.CharField(max_length=255, null=True, blank=True)
+    mimetype: models.CharField = models.CharField(
+        max_length=255, null=True, blank=True, help_text="MIME type detected from file content"
+    )
+    file_size: models.BigIntegerField = models.PositiveBigIntegerField(
+        null=True, blank=True, help_text="File size in bytes"
+    )
 
-    def to_dict(self) -> dict[str, str]:
-        return {
-            "minio_file_name": self.minio_file_name,
-            "file_name": self.file_name,
-            "bucket_name": self.bucket_name,
-        }
+    def has_access(self, user: CradleUser) -> bool:
+        """Whether the user may download or otherwise use this file reference."""
+        if user.is_cradle_admin:
+            return True
+        if self.note_id:
+            return Note.objects.get_accessible_notes(user).filter(id=self.note_id).exists()
+        if self.digest_id:
+            return self.digest.user_id == user.id
+        if self.user_id:
+            return self.user_id == user.id
+        return False
 
     @property
-    def entities(self) -> list[str]:
+    def entities(self) -> list[Entry]:
+        """Entity entries linked to this file's note (for relation creation)."""
         if self.note:
             # Use prefetched data if available to avoid N+1 queries
-            if (
-                hasattr(self.note, "_prefetched_objects_cache")
-                and "entries" in self.note._prefetched_objects_cache
-            ):
-                return [
-                    entry
-                    for entry in self.note.entries.all()
-                    if entry.entry_class.type == EntryType.ENTITY
-                ]
-            return list(
-                self.note.entries.filter(entry_class__type=EntryType.ENTITY).all()
-            )
+            if hasattr(self.note, "_prefetched_objects_cache") and "entries" in self.note._prefetched_objects_cache:
+                return [entry for entry in self.note.entries.all() if entry.entry_class.type == EntryType.ENTITY]
+            return list(self.note.entries.filter(entry_class__type=EntryType.ENTITY).all())
         return []
 
     @property
-    def entry(self):
+    def entry(self) -> Entry:
+        """Artifact entry representing this file (for relations and linking)."""
         file_class, _ = EntryClass.objects.get_or_create(
-            type=EntryType.ARTIFACT, subtype="file"
+            subtype=SUBTYPE_FILE, defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_FILE]
         )
 
         entry, _ = Entry.objects.get_or_create(
             entry_class=file_class,
-            name=f"{self.bucket_name}/{self.file_name}_{self.minio_file_name}",
+            name=f"{self.id}-{self.file_name}",
         )
 
         return entry
 
     def process_file(self):
-        """
-        Process the file after it is created.
-        Schedules the file processing task.
-        """
-        if self.note is None:
-            return
+        """Process the file after it is created.
 
+        Schedules the file processing task (hashes, mimetype). Note linking
+        is handled inside the task when a note is attached.
+        """
         from .tasks import process_file_task
 
-        process_file_task.apply_async(args=(str(self.id),))
+        try:
+            # Try to run asynchronously first
+            process_file_task.apply_async(args=(str(self.id),))
+        except Exception:
+            # If async fails (no Celery workers), run synchronously
+            process_file_task(str(self.id))
 
-    @hook(AFTER_DELETE)
-    def delete_file(self):
+    @hook(AFTER_CREATE)
+    def auto_process_file(self):
+        """Automatically process the file after it is created.
+
+        Ensures hashes are calculated immediately upon file creation.
         """
-        Delete the file from MinIO after it is deleted from the database.
-        """
-        minio_client = MinioClient()
-        minio_client.delete_files(self.bucket_name, [self.minio_file_name])
+        if cradle_settings.files.autoprocess_files:
+            self.process_file()

@@ -1,3 +1,5 @@
+"""Celery app for Cradle. Task routing, beat schedule, and worker config."""
+
 from __future__ import absolute_import, unicode_literals
 
 import os
@@ -25,46 +27,32 @@ app.conf.task_routes = {
     "notes.tasks.entry_class_creation_task": {"queue": "notes"},
     "notes.tasks.entry_population_task": {"queue": "notes"},
     "notes.tasks.connect_aliases": {"queue": "notes"},
-    "notes.tasks.ping_entries": {"queue": "notes"},
     "notes.tasks.note_finalize_task": {"queue": "notes"},
     "notes.tasks.link_files_task": {"queue": "notes"},
     "notes.tasks.note_metadata_process_task": {"queue": "notes"},
     "entries.tasks.remap_notes_task": {"queue": "notes"},
-    "entries.tasks.simulate_graph": {"queue": "graph"},
     "entries.tasks.refresh_edges_materialized_view": {"queue": "graph"},
     "publish.tasks.generate_report": {"queue": "publish"},
     "publish.tasks.edit_report": {"queue": "publish"},
-    "publish.tasks.import_json_report": {"queue": "import"},
-    "publish.tasks.download_file_for_note": {"queue": "import"},
     "notes.tasks.propagate_acvec": {"queue": "access"},
-    "intelio.tasks.core.propagate_acvec": {"queue": "access"},
+    "intelio.tasks.core.propagate_acvec_digest": {"queue": "access"},
+    "intelio.tasks.core.propagate_acvec_enrich": {"queue": "access"},
     "entries.tasks.update_accesses": {"queue": "access"},
     "entries.tasks.scan_for_children": {"queue": "enrich"},
-    "intelio.tasks.core.enrich_periodic": {"queue": "enrich"},
-    "intelio.tasks.core.enrich_entries": {"queue": "enrich"},
+    "intelio.tasks.core.run_enricher": {"queue": "enrich"},
+    "intelio.tasks.core.start_enrich": {"queue": "enrich"},
     "intelio.tasks.core.start_digest": {"queue": "digest"},
+    "intelio.tasks.cradle.download_file_for_note": {"queue": "digest"},
     "intelio.tasks.falcon.digest_chunk": {"queue": "digest"},
     "entries.tasks.delete_hanging_artifacts": {"queue": "cleanup"},
+    "file_transfer.uploads.tasks.cleanup_expired_upload_generic": {"queue": "cleanup"},
     "file_transfer.tasks.process_file_task": {"queue": "files"},
     "file_transfer.tasks.reprocess_all_files_task": {"queue": "files"},
-    "file_transfer.tasks.delete_hanging_files": {"queue": "cleanup"},
+    "file_transfer.uploads.tasks.cleanup_all_expired_uploads": {"queue": "cleanup"},
 }
 
 app.conf.task_default_priority = 5
 app.conf.task_send_sent_event = True
-
-app.conf.task_routes.update(
-    {
-        "send_email_task": {
-            "queue": "email",
-            "rate_limit": "100/m",
-        },
-        "smart_linker_task": {
-            "queue": "email",
-            "rate_limit": "100/m",
-        },
-    },
-)
 
 app.conf.task_time_limit = 30 * 60
 app.conf.task_soft_time_limit = 15 * 60
@@ -79,20 +67,13 @@ app.conf.beat_schedule = {
     "refresh-edges-materialized-view-every-night": {
         "task": "entries.tasks.refresh_edges_materialized_view",
         "schedule": crontab(hour=3, minute=0),
-        "kwargs": {
-            "simulate": True,
-        },
     },
     "delete-hanging-artifacts-every-night": {
         "task": "entries.tasks.delete_hanging_artifacts",
         "schedule": crontab(hour=2, minute=0),
     },
-    "delete-hanging-files-every-night": {
-        "task": "entries.tasks.delete_hanging_artifacts",
-        "schedule": crontab(hour=2, minute=0),
-    },
-    "enrich_periodic-check-minutely": {
-        "task": "intelio.tasks.core.enrich_periodic",
-        "schedule": crontab(minute="*/1"),
+    "cleanup-expired-uploads-every-10-minutes": {
+        "task": "file_transfer.uploads.tasks.cleanup_all_expired_uploads",
+        "schedule": crontab(minute="*/10"),
     },
 }

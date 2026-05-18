@@ -1,0 +1,507 @@
+/* ============================================
+   MAIN CSS ENTRY POINT
+   Font imports, Tailwind, and app-specific overrides
+   ============================================ */
+
+@import 'tailwindcss' source('../src');
+@import 'tw-animate-css';
+
+/* Custom variant for dark mode */
+@custom-variant dark (&:is([data-theme='dark'] *));
+
+/* Shadcn UI styles - includes CSS variables and theme configuration */
+@import './globals.css';
+
+/* ============================================
+   PROSEMARK – :root (per ProseMark Getting Started)
+   ============================================ */
+:root {
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    --pm-header-mark-color: oklch(82.8% 0.111 230.318);
+    --pm-heading-color: oklch(0% 0 0);
+    --pm-list-mark-color: oklch(82.8% 0.111 230.318);
+    --pm-link-color: oklch(58.8% 0.158 241.966);
+    --pm-muted-color: oklch(37.2% 0.044 257.287);
+    --pm-code-background-color: oklch(92.9% 0.013 255.508);
+    --pm-code-btn-background-color: oklch(86.9% 0.022 252.894);
+    --pm-code-btn-hover-background-color: oklch(70.4% 0.04 256.788);
+    --pm-blockquote-vertical-line-background-color: oklch(70.4% 0.04 256.788);
+
+    --pm-syntax-link: oklch(62.75% 0.188 259.38);
+    --pm-syntax-keyword: oklch(58.13% 0.248 297.57);
+    --pm-syntax-atom: oklch(51.29% 0.219 260.63);
+    --pm-syntax-literal: oklch(57.38% 0.111 170.31);
+    --pm-syntax-string: oklch(54.86% 0.184 25.53);
+    --pm-syntax-regexp: oklch(65.88% 0.184 43.8);
+    --pm-syntax-definition-variable: oklch(45.32% 0.171 260.3);
+    --pm-syntax-local-variable: oklch(64.13% 0.09 184.42);
+    --pm-syntax-type-namespace: oklch(49.1% 0.091 165.52);
+    --pm-syntax-class-name: oklch(64.42% 0.11 168.83);
+    --pm-syntax-special-variable-macro: oklch(52.58% 0.212 282.71);
+    --pm-syntax-definition-property: oklch(42.1% 0.142 260.08);
+    --pm-syntax-comment: oklch(62.79% 0.022 252.89);
+    --pm-syntax-invalid: oklch(64.62% 0.203 29.2);
+    --pm-cursor-color: black;
+
+    --pm-spellcheck-tooltip-background: oklch(100% 0 0);
+    --pm-spellcheck-tooltip-border: oklch(82% 0.005 264);
+    --pm-spellcheck-tooltip-text: oklch(30% 0.02 264);
+    --pm-spellcheck-tooltip-error: oklch(55% 0.22 29);
+    --pm-spellcheck-tooltip-hover: oklch(96% 0.005 264);
+    --pm-spellcheck-tooltip-actions-border: oklch(82% 0.005 264);
+    --pm-spellcheck-tooltip-font-size: 0.9rem;
+}
+
+/* ============================================
+   PROSEMARK – Dark theme (per ProseMark Getting Started)
+   ============================================ */
+:root[data-theme='dark'] {
+    --pm-header-mark-color: oklch(44.3% 0.11 240.79);
+    --pm-heading-color: oklch(100% 0 0);
+    --pm-list-mark-color: oklch(44.3% 0.11 240.79);
+    --pm-link-color: oklch(58.8% 0.158 241.966);
+    --pm-muted-color: oklch(55.4% 0.046 257.417);
+    --pm-code-background-color: oklch(27.9% 0.041 260.031);
+    --pm-code-btn-background-color: oklch(37.2% 0.044 257.287);
+    --pm-code-btn-hover-background-color: oklch(44.6% 0.043 257.281);
+    --pm-blockquote-vertical-line-background-color: oklch(44.6% 0.043 257.281);
+
+    --pm-syntax-link: oklch(73.24% 0.17 258.63);
+    --pm-syntax-keyword: oklch(70.05% 0.217 296.83);
+    --pm-syntax-atom: oklch(65.69% 0.2 259.93);
+    --pm-syntax-literal: oklch(71.27% 0.101 169.93);
+    --pm-syntax-string: oklch(68.53% 0.164 25.1);
+    --pm-syntax-regexp: oklch(76.88% 0.16 43.42);
+    --pm-syntax-definition-variable: oklch(61.42% 0.158 259.6);
+    --pm-syntax-local-variable: oklch(75.88% 0.082 184.11);
+    --pm-syntax-type-namespace: oklch(64.51% 0.083 165.19);
+    --pm-syntax-class-name: oklch(76.14% 0.1 168.52);
+    --pm-syntax-special-variable-macro: oklch(66.67% 0.193 282.06);
+    --pm-syntax-definition-property: oklch(58.92% 0.132 259.4);
+    --pm-syntax-comment: oklch(74.9% 0.02 252.89);
+    --pm-syntax-invalid: oklch(75.93% 0.182 28.91);
+    --pm-cursor-color: white;
+
+    --pm-spellcheck-tooltip-background: oklch(25% 0.02 264);
+    --pm-spellcheck-tooltip-border: oklch(40% 0.02 264);
+    --pm-spellcheck-tooltip-text: oklch(75% 0.02 264);
+    --pm-spellcheck-tooltip-error: oklch(65% 0.22 29);
+    --pm-spellcheck-tooltip-hover: oklch(35% 0.02 264);
+    --pm-spellcheck-tooltip-actions-border: oklch(40% 0.02 264);
+}
+
+/* ============================================
+   PROSEMARK – #codemirror-container (per ProseMark Getting Started)
+   ============================================ */
+#codemirror-container {
+    min-height: 100px;
+    width: 100%;
+    --font:
+        Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+#codemirror-container * {
+    margin-top: 0;
+}
+
+/* ============================================
+   CODEMIRROR CURSOR STYLES
+   ============================================ */
+.cm-editor .cm-cursor,
+.cm-editor .cm-cursor-primary {
+    border-left-color: var(--pm-cursor-color) !important;
+}
+
+/* Vim command response message */
+.cm-vim-message {
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    max-width: 275px !important;
+}
+
+/* ============================================
+   PREVIEW PANE WORD BREAKING
+   ============================================ */
+#preview-pane {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+#preview-pane p,
+#preview-pane h1,
+#preview-pane h2,
+#preview-pane h3,
+#preview-pane h4,
+#preview-pane h5,
+#preview-pane h6,
+#preview-pane li,
+#preview-pane td,
+#preview-pane th {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* ============================================
+   MARKDOWN BODY & CODEMIRROR BASE STYLES
+   ============================================ */
+.markdown-body,
+.cm-editor,
+.cm-content {
+    color-scheme: light dark;
+    background-color: transparent !important;
+    color: var(--foreground);
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial,
+        sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji' !important;
+    font-size: 16px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+/* ============================================
+   MARKDOWN TYPOGRAPHY
+   ============================================ */
+.markdown-body a {
+    background-color: transparent;
+    color: var(--pm-link-color);
+    text-decoration: none;
+}
+
+.markdown-body a:hover {
+    text-decoration: underline;
+}
+
+.markdown-body b,
+.markdown-body strong {
+    font-weight: 600;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--pm-heading-color);
+}
+
+.markdown-body h1 {
+    margin: 0.67em 0;
+    padding-bottom: 0.3em;
+    font-size: 2em;
+    border-bottom: 1px solid var(--border);
+}
+
+.markdown-body h2 {
+    padding-bottom: 0.3em;
+    font-size: 1.5em;
+    border-bottom: 1px solid var(--border);
+}
+
+.markdown-body h3 {
+    font-size: 1.25em;
+}
+.markdown-body h4 {
+    font-size: 1em;
+}
+.markdown-body h5 {
+    font-size: 0.875em;
+}
+.markdown-body h6 {
+    font-size: 0.85em;
+    color: var(--pm-muted-color);
+}
+
+/* Header anchor links - show on hover */
+
+.markdown-body .header-anchor {
+    opacity: 0;
+    margin-left: 0.5rem;
+    color: var(--muted-foreground);
+    text-decoration: none;
+    transition: opacity 0.15s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+}
+
+.markdown-body .header-anchor:hover {
+    color: var(--foreground);
+}
+
+.markdown-body h1:hover .header-anchor,
+.markdown-body h2:hover .header-anchor,
+.markdown-body h3:hover .header-anchor,
+.markdown-body h4:hover .header-anchor,
+.markdown-body h5:hover .header-anchor,
+.markdown-body h6:hover .header-anchor {
+    opacity: 1;
+}
+
+.cm-line.cm-heading-1,
+.cm-line.cm-heading-2,
+.cm-line.cm-heading-3,
+.cm-line.cm-heading-4,
+.cm-line.cm-heading-5,
+.cm-line.cm-heading-6 {
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--pm-heading-color);
+}
+
+.cm-line.cm-heading-1 .cradle-link-widget-container {
+    font-size: 1.6em;
+}
+.cm-line.cm-heading-2 .cradle-link-widget-container {
+    font-size: 1.4em;
+}
+.cm-line.cm-heading-3 .cradle-link-widget-container {
+    font-size: 1.2em;
+}
+
+.markdown-body p {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.markdown-body blockquote {
+    margin: 0 0 1rem;
+    padding: 0 1em;
+    color: var(--pm-muted-color);
+    border-left: 0.25em solid var(--pm-blockquote-vertical-line-background-color);
+}
+
+.markdown-body ul,
+.markdown-body ol {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 2em;
+}
+
+/* Bullet points and numbers in CodeMirror */
+.markdown-body .cm-rendered-list-mark {
+    color: var(--pm-list-mark-color);
+}
+
+/* Ensure PTI links inherit parent typography in the rich editor. */
+.cradle-link-widget-container,
+.cradle-link-widget,
+.cradle-link-widget a,
+.cradle-link-timestamp {
+    font: inherit;
+    line-height: inherit;
+}
+
+.cradle-link-lint-warning {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    color: var(--pm-syntax-invalid);
+}
+
+/* Static render (read-only note preview) */
+.static-render {
+    padding: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.static-render h1:first-child,
+.static-render h2:first-child,
+.static-render h3:first-child,
+.static-render h4:first-child,
+.static-render h5:first-child,
+.static-render h6:first-child {
+    margin-top: 0 !important;
+}
+
+.static-render h1,
+.static-render h2 {
+    border-bottom: 1px solid var(--border) !important;
+    padding-bottom: 0.3em !important;
+}
+
+.static-render h3,
+.static-render h4,
+.static-render h5,
+.static-render h6 {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+}
+
+.static-render pre {
+    overflow-x: auto !important;
+    max-width: 100% !important;
+    white-space: pre !important;
+}
+
+.static-render table {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    display: block !important;
+}
+
+.static-render img {
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+.static-render ul,
+.static-render ol {
+    list-style-position: outside !important;
+    padding-left: 1.5em !important;
+    margin-left: 0 !important;
+    color: var(--foreground) !important;
+}
+
+.static-render ul {
+    list-style-type: disc !important;
+}
+
+.static-render ol {
+    list-style-type: decimal !important;
+}
+
+.static-render li {
+    display: list-item !important;
+    color: var(--foreground) !important;
+}
+
+.static-render ul > li::marker,
+.static-render ol > li::marker {
+    color: var(--foreground) !important;
+}
+
+/* ============================================
+   CODE BLOCKS
+   ============================================ */
+.markdown-body code,
+.markdown-body tt,
+.markdown-body samp {
+    font-family: monospace !important;
+    font-size: 1em;
+    padding: 0.2em 0.4em;
+    margin: 0;
+    white-space: break-spaces;
+    background-color: var(--pm-code-background-color);
+    border-radius: 6px;
+}
+
+.markdown-body pre {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-family: monospace !important;
+    font-size: 1em;
+    word-wrap: normal;
+    padding: 1rem;
+    overflow: auto;
+    line-height: 1.45;
+    color: inherit;
+    background-color: var(--pm-code-background-color);
+    border-radius: 6px;
+}
+
+.markdown-body pre code,
+.markdown-body pre tt {
+    display: inline;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    line-height: inherit;
+    word-wrap: normal;
+    background-color: transparent;
+    border: 0;
+}
+
+/* ============================================
+   HORIZONTAL RULES & TABLES
+   ============================================ */
+.markdown-body hr {
+    box-sizing: content-box;
+    overflow: hidden;
+    height: 0.25em;
+    margin: 1.5rem 0;
+    background-color: var(--border);
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0;
+}
+
+.markdown-body table {
+    border-spacing: 0;
+    border-collapse: collapse;
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow: auto;
+    font-variant: tabular-nums;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+    padding: 6px 13px;
+    border: 1px solid var(--border);
+}
+
+.markdown-body table tr {
+    background-color: var(--background);
+    border-top: 1px solid var(--border);
+}
+
+.markdown-body table tr:nth-child(2n) {
+    background-color: var(--muted);
+}
+
+/* ============================================
+   KEYBOARD SHORTCUTS
+   ============================================ */
+.markdown-body kbd {
+    display: inline-block;
+    padding: 0.25rem;
+    font:
+        11px ui-monospace,
+        SFMono-Regular,
+        SF Mono,
+        Menlo,
+        Consolas,
+        'Liberation Mono',
+        monospace;
+    line-height: 10px;
+    color: var(--foreground);
+    vertical-align: middle;
+    background-color: var(--muted);
+    border: solid 1px var(--border);
+    border-radius: 6px;
+    box-shadow: inset 0 -1px 0 var(--border);
+}
+
+/* ============================================
+   ACTIONS TABLE ANIMATIONS
+   ============================================ */
+@keyframes actions-fade-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.animate-actions-fade-in-right {
+    animation: actions-fade-in-right 150ms ease-out backwards;
+}

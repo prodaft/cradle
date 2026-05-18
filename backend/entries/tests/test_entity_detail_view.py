@@ -1,19 +1,18 @@
-from user.models import CradleUser
+"""Tests for entity detail view (get, update, delete)."""
+
 from django.urls import reverse
-from rest_framework.parsers import JSONParser
 from rest_framework.test import APIClient
-import io
 from rest_framework_simplejwt.tokens import AccessToken
-from .utils import EntriesTestCase
+
+from user.models import CradleUser
 
 from ..models import Entry
-
-
-def bytes_to_json(data):
-    return JSONParser().parse(io.BytesIO(data))
+from .utils import EntriesTestCase
 
 
 class DeleteEntityDetailsTest(EntriesTestCase):
+    """Tests for DELETE /entities/<id>/."""
+
     def setUp(self):
         super().setUp()
 
@@ -36,9 +35,7 @@ class DeleteEntityDetailsTest(EntriesTestCase):
         self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
 
     def test_delete_entity_authenticated_not_admin(self):
-        entity = Entry.objects.create(
-            name="Entity1", description="Description1", entry_class=self.entryclass1
-        )
+        entity = Entry.objects.create(name="Entity1", description="Description1", entry_class=self.entryclass1)
 
         response = self.client.delete(
             reverse("entity_detail", kwargs={"entity_id": entity.pk}),
@@ -48,12 +45,8 @@ class DeleteEntityDetailsTest(EntriesTestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_delete_entity_not_authenticated(self):
-        entity = Entry.objects.create(
-            name="Entity1", description="Description1", entry_class=self.entryclass1
-        )
+        entity = Entry.objects.create(name="Entity1", description="Description1", entry_class=self.entryclass1)
 
-        response = self.client.delete(
-            reverse("entity_detail", kwargs={"entity_id": entity.pk})
-        )
+        response = self.client.delete(reverse("entity_detail", kwargs={"entity_id": entity.pk}))
 
         self.assertEqual(response.status_code, 401)
