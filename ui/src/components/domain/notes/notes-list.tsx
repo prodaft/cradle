@@ -110,6 +110,8 @@ export default function NotesList({
                 }
             });
 
+            nextSearch.notes_page = 1;
+
             router.navigate({
                 to: pathname as any,
                 search: nextSearch as any,

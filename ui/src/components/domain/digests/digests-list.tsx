@@ -206,6 +206,7 @@ export default function DigestsList() {
 
     const updateSearchParams = useCallback(
         (filters: SearchFilters, dateRangeValue: DateRange) => {
+            setPage(1);
             const currentSearch = searchRef.current as any;
             const newSearch: any = {
                 ...currentSearch,

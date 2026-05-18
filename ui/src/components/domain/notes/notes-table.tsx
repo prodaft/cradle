@@ -252,12 +252,20 @@ export default function NotesTable({
         [onFilterChange],
     );
 
-    const handleStatusChange = useCallback((status: string) => {
-        setColumnFilters((prev) => ({
-            ...prev,
-            status,
-        }));
-    }, []);
+    const handleStatusChange = useCallback(
+        (status: string) => {
+            setColumnFilters((prev) => ({
+                ...prev,
+                status,
+            }));
+            router.navigate({
+                to: location.pathname as any,
+                search: { ...searchAny, notes_page: 1 } as any,
+                replace: true,
+            });
+        },
+        [router, location.pathname, searchAny],
+    );
 
     useEffect(() => {
         setColumnFilters({

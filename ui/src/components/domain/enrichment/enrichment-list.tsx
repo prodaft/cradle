@@ -139,6 +139,7 @@ export default function EnrichmentList({
 
     const updateSearchParams = useCallback(
         (filters: SearchFilters) => {
+            setPage(1);
             const newSearch: any = {
                 ...search,
                 title: filters.title || undefined,

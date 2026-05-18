@@ -3,6 +3,7 @@
 from celery import shared_task
 
 from file_transfer.storage import DigestStorage
+from file_transfer.uploads.tasks import cleanup_all_expired_uploads, cleanup_expired_upload_generic
 
 
 @shared_task
@@ -12,8 +13,6 @@ def cleanup_expired_digest_upload(pending_upload_id: str):
     Deprecated: This task delegates to the generic cleanup task.
     Use file_transfer.uploads.tasks.cleanup_expired_upload_generic instead.
     """
-    from file_transfer.uploads.tasks import cleanup_expired_upload_generic
-
     cleanup_expired_upload_generic(
         pending_upload_id,
         "intelio.PendingDigestUpload",
@@ -28,6 +27,4 @@ def cleanup_expired_digest_uploads():
     Deprecated: This task delegates to the generic cleanup task.
     Use file_transfer.uploads.tasks.cleanup_all_expired_uploads instead.
     """
-    from file_transfer.uploads.tasks import cleanup_all_expired_uploads
-
     cleanup_all_expired_uploads()

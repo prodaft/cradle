@@ -1,10 +1,12 @@
 """Tests for file upload API (initiate presigned URL)."""
 
+import uuid
 from unittest.mock import patch
 
 from django.urls import reverse
 from rest_framework_simplejwt.tokens import AccessToken
 
+from file_transfer.views import file_upload_flow
 from user.models import CradleUser
 
 from .utils import FileTransferTestCase
@@ -17,7 +19,13 @@ class TestFileUpload(FileTransferTestCase):
         super().setUp()
         self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
         self.patcher.start()
-        self.user = CradleUser.objects.create_user(username="user", password="user", email="alabala@gmail.com")
+        self.user = CradleUser.objects.create_user(
+            username="user",
+            password="user",
+            email="alabala@gmail.com",
+            is_active=True,
+            email_confirmed=True,
+        )
         self.user_token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
         self.file_name = "evidence.png"
@@ -33,7 +41,7 @@ class TestFileUpload(FileTransferTestCase):
             mock_flow.initiate.return_value = {
                 "upload_id": "aad5cae6-5737-409d-8ce2-5f116ed5e2de",
                 "presigned_url": "https://example.com/put",
-                "object_key": "aad5cae6-5737-409d-8ce2-5f116ed5e2de-evidence.png",
+                "object_key": "aad5cae6-5737-409d-8ce2-5f116ed5e2de",
                 "expires_in": 300,
             }
             response = self.client.get(
@@ -97,3 +105,9 @@ class TestFileUpload(FileTransferTestCase):
             **self.headers,
         )
         self.assertEqual(response.status_code, 400)
+
+    def test_file_transfer_object_key_is_short_uuid(self):
+        """Object keys must stay short so MinIO/S3 accepts them for very long original names."""
+        uid = uuid.uuid4()
+        key = file_upload_flow.config.object_key_generator(uid, "a" * 400 + ".txt", self.user)
+        self.assertEqual(key, str(uid))

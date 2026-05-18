@@ -52,6 +52,7 @@ class FileReference(models.Model, LifecycleModelMixin):
     file: models.FileField = models.FileField(
         upload_to=file_upload_path,
         storage=FileTransferStorage,
+        max_length=512,
         null=True,
         blank=True,
         help_text="Reference to the file in S3/MinIO storage",

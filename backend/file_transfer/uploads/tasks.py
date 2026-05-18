@@ -7,6 +7,7 @@ from django.apps import apps
 from django.utils import timezone
 
 from file_transfer.s3_utils import delete_object, exists
+from file_transfer.storage import DigestStorage, FileTransferStorage
 
 logger = logging.getLogger("django.request")
 
@@ -85,8 +86,8 @@ def cleanup_all_expired_uploads():
         ...     },
         ... }
     """
+    # Local import: module-level would participate in models -> uploads -> flows -> tasks cycle.
     from file_transfer.models import PendingUpload
-    from file_transfer.storage import FileTransferStorage
 
     # Clean up file transfer uploads
     expired_file_uploads = PendingUpload.objects.filter(expires_at__lt=timezone.now())
@@ -103,8 +104,6 @@ def cleanup_all_expired_uploads():
     # Clean up digest uploads (if intelio app is installed)
     digest_count = 0
     if apps.is_installed("intelio"):
-        from file_transfer.storage import DigestStorage
-
         PendingDigestUpload = apps.get_model("intelio", "PendingDigestUpload")
         expired_digest_uploads = PendingDigestUpload.objects.filter(expires_at__lt=timezone.now())
         digest_count = expired_digest_uploads.count()

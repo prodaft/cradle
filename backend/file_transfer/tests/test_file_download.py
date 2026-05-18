@@ -19,7 +19,13 @@ class TestFileDownload(FileTransferTestCase):
         super().setUp()
         self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
         self.patcher.start()
-        self.user = CradleUser.objects.create_user(username="user", password="user", email="alabala@gmail.com")
+        self.user = CradleUser.objects.create_user(
+            username="user",
+            password="user",
+            email="alabala@gmail.com",
+            is_active=True,
+            email_confirmed=True,
+        )
         self.user_token = str(AccessToken.for_user(self.user))
         self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
 
@@ -33,7 +39,7 @@ class TestFileDownload(FileTransferTestCase):
             file_name="evidence.png",
             user=self.user,
         )
-        FileReference.objects.filter(pk=file_ref.pk).update(file=f"{file_ref.id}-evidence.png")
+        FileReference.objects.filter(pk=file_ref.pk).update(file=str(file_ref.id))
         file_ref.refresh_from_db()
 
         with patch("file_transfer.views.presign_get", return_value="https://example.com/download"):
@@ -78,12 +84,18 @@ class TestFileDownload(FileTransferTestCase):
 
     def test_download_access_denied(self):
         """Download returns 403 when user does not have access to the file."""
-        other_user = CradleUser.objects.create_user(username="other", password="other", email="other@gmail.com")
+        other_user = CradleUser.objects.create_user(
+            username="other",
+            password="other",
+            email="other@gmail.com",
+            is_active=True,
+            email_confirmed=True,
+        )
         file_ref = FileReference.objects.create(
             file_name="private.png",
             user=other_user,
         )
-        FileReference.objects.filter(pk=file_ref.pk).update(file=f"{file_ref.id}-private.png")
+        FileReference.objects.filter(pk=file_ref.pk).update(file=str(file_ref.id))
 
         response = self.client.get(
             reverse("file_download"),

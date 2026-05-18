@@ -163,7 +163,7 @@ class ReferenceImageWidget extends WidgetType {
  * @param textStart  Position of the first character inside the opening `[`
  * @param pos        Position of the very first character of the construct (`[` or `!`)
  * @param kind       `'ExternalReferenceLink'` or `'ExternalReferenceImage'`
- * @param mappings   Label → FileReferenceWithNote lookup table
+ * @param mappings   Label -> FileReferenceWithNote lookup table
  */
 function parseExternalReference(
     cx: InlineContext,

@@ -3,6 +3,7 @@ import ReportGenerationDialog from '@/components/domain/reports/dialogs/report-g
 import {
     useDockPanelActiveForNavbar,
     useDockPanelTab,
+    type DockPanelTabMetadata,
 } from '@/components/layout/dock-panel-tab-context';
 import {
     AlertDialog,
@@ -38,8 +39,9 @@ import { cn } from '@/lib/utils';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import extractHeaderHierarchy, { HeaderNode } from '@/utils/editor/outline';
+import { parseMarkdownInline } from '@/utils/parser';
 import { Prec } from '@codemirror/state';
-import { keymap } from '@codemirror/view';
+import { keymap, type EditorView } from '@codemirror/view';
 import { BookOpenIcon, InfoIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
@@ -66,6 +68,7 @@ import StaticRender from './static-render';
 
 type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 type NoteRetrieve = components['schemas']['NoteRetrieve'];
+type NoteMetadata = { title?: string; description?: string };
 
 interface LocationState {
     from?: { pathname: string };
@@ -137,9 +140,16 @@ export default function NoteViewer() {
     const [noteOutline, setNoteOutline] = useState<HeaderNode[]>([]);
     const [lspLoaded, setLspLoaded] = useState(false);
     const editorRef = useRef<any>(null);
+    const [findPanelEditorView, setFindPanelEditorView] = useState<EditorView | null>(
+        null,
+    );
     const [navbarActionsEl, setNavbarActionsEl] = useState<HTMLElement | null>(null);
 
     const showNavbarActionsPortal = useDockPanelActiveForNavbar();
+
+    useEffect(() => {
+        setFindPanelEditorView(null);
+    }, [noteId]);
 
     useEffect(() => {
         const el = document.getElementById('navbar-actions');
@@ -248,7 +258,7 @@ export default function NoteViewer() {
                 return;
             }
 
-            const view = editorRef.current.view || editorRef.current;
+            const view = editorRef.current?.view;
             if (!view || !view.state) {
                 return;
             }
@@ -291,7 +301,7 @@ export default function NoteViewer() {
 
     const handleEnrichData = useCallback(async () => {
         if (!editorRef.current) return;
-        const view = editorRef.current.view || editorRef.current;
+        const view = editorRef.current?.view;
         if (!view) return;
 
         let to = view.state.selection.main.to;
@@ -336,21 +346,38 @@ export default function NoteViewer() {
         },
     );
 
-    const dockPanelTitle = useMemo(() => {
+    const dockPanelTab = useMemo((): DockPanelTabMetadata => {
         if (isError) {
-            return 'Not found';
+            return { title: 'Not found', icon: 'not-found' };
         }
-        const t = note?.title?.trim();
-        if (!t) {
-            return isFleeting ? 'Fleeting note' : 'Note';
+        const src = noteData ?? note;
+        const fleeting = Boolean(src?.fleeting);
+        const raw = (
+            (src?.metadata as NoteMetadata | undefined)?.title ||
+            src?.title ||
+            ''
+        ).trim();
+        let parsedTitle = raw;
+        try {
+            parsedTitle = (parseMarkdownInline(raw) ?? '').trim() || raw;
+        } catch {
+            parsedTitle = raw;
         }
-        const prefix = isFleeting ? 'Fleeting note' : 'Note';
-        return t.length > 56 ? `${prefix}: ${t.slice(0, 53)}…` : `${prefix}: ${t}`;
-    }, [isError, isFleeting, note?.title]);
-    useDockPanelTab({
-        title: dockPanelTitle,
-        icon: isError ? 'not-found' : isFleeting ? 'fleeting-note' : 'notes',
-    });
+        const icon = fleeting ? 'fleeting-note' : 'notes';
+        if (!parsedTitle) {
+            return {
+                title: fleeting ? 'Fleeting note' : 'Note',
+                icon,
+            };
+        }
+        const prefix = fleeting ? 'Fleeting note' : 'Note';
+        const title =
+            parsedTitle.length > 56
+                ? `${prefix}: ${parsedTitle.slice(0, 53)}...`
+                : `${prefix}: ${parsedTitle}`;
+        return { title, icon };
+    }, [isError, note, noteData]);
+    useDockPanelTab(dockPanelTab);
 
     const permissionSource = noteData ?? note;
     const canRead =
@@ -538,6 +565,11 @@ export default function NoteViewer() {
         setShowFind(true);
         setFindReplaceMode(true);
     }, []);
+
+    const handleEditorViewChange = useCallback(
+        (view: EditorView | null) => setFindPanelEditorView(view),
+        [],
+    );
 
     const customKeymap = useMemo(() => {
         const bindings = [
@@ -748,27 +780,11 @@ export default function NoteViewer() {
                                         orientation='horizontal'
                                         className='h-full'
                                     >
-                                        {/* Outline sidebar - rendered once */}
-                                        <ResizablePanel
-                                            defaultSize='15%'
-                                            minSize='10%'
-                                            maxSize='30%'
-                                        >
-                                            <ScrollArea className='h-full pr-2'>
-                                                <NoteOutline
-                                                    data={noteOutline}
-                                                    title='Note Outline'
-                                                    showSeparators={true}
-                                                    currentLine={lineNumber}
-                                                />
-                                            </ScrollArea>
-                                        </ResizablePanel>
-                                        <ResizableHandle className='w-[2px] border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
                                         {/* Editor Panel - conditionally renders Rich or Normal editor */}
                                         <ResizablePanel defaultSize='85%' minSize='50%'>
                                             <div
                                                 className={cn(
-                                                    'h-full flex flex-col border-l border-border relative',
+                                                    'h-full flex flex-col border-r border-border relative',
                                                     !enableEditing &&
                                                         richEditor &&
                                                         'overflow-hidden',
@@ -776,10 +792,7 @@ export default function NoteViewer() {
                                             >
                                                 {showFind && (
                                                     <FindReplace
-                                                        view={
-                                                            editorRef.current?.view ||
-                                                            editorRef.current
-                                                        }
+                                                        view={findPanelEditorView}
                                                         onClose={() =>
                                                             setShowFind(false)
                                                         }
@@ -837,6 +850,9 @@ export default function NoteViewer() {
                                                                 noteStatusMessage={
                                                                     note?.status_message
                                                                 }
+                                                                onEditorViewChange={
+                                                                    handleEditorViewChange
+                                                                }
                                                             />
                                                             {/* Reference Tree below the editor */}
                                                             {note && (
@@ -859,6 +875,22 @@ export default function NoteViewer() {
                                                 </div>
                                             </div>
                                         </ResizablePanel>
+                                        <ResizableHandle className='w-[2px] border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
+                                        {/* Outline sidebar - right */}
+                                        <ResizablePanel
+                                            defaultSize='15%'
+                                            minSize='10%'
+                                            maxSize='30%'
+                                        >
+                                            <ScrollArea className='h-full px-2'>
+                                                <NoteOutline
+                                                    data={noteOutline}
+                                                    title='Outline'
+                                                    showSeparators={true}
+                                                    currentLine={lineNumber}
+                                                />
+                                            </ScrollArea>
+                                        </ResizablePanel>
                                     </ResizablePanelGroup>
                                 ) : (
                                     <div
@@ -871,10 +903,7 @@ export default function NoteViewer() {
                                     >
                                         {showFind && (
                                             <FindReplace
-                                                view={
-                                                    editorRef.current?.view ||
-                                                    editorRef.current
-                                                }
+                                                view={findPanelEditorView}
                                                 onClose={() => setShowFind(false)}
                                                 initialReplace={findReplaceMode}
                                             />
@@ -917,6 +946,9 @@ export default function NoteViewer() {
                                                         noteStatus={note?.status}
                                                         noteStatusMessage={
                                                             note?.status_message
+                                                        }
+                                                        onEditorViewChange={
+                                                            handleEditorViewChange
                                                         }
                                                     />
                                                     {/* Reference Tree below the editor */}

@@ -13,7 +13,7 @@ export type EditorSyncConnection = {
 
 /**
  * Syncs the note editor document across browser tabs via a SharedWorker, using
- * {@link https://codemirror.net/examples/collab/ | CodeMirror’s collab OT} on the wire.
+ * {@link https://codemirror.net/examples/collab/ | CodeMirror's collab OT} on the wire.
  */
 export function createNoteEditorSyncConnection(
     noteId: string,

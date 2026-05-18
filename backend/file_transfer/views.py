@@ -197,7 +197,9 @@ class FileUploadCallbacks:
 
 # Create the upload flow instance
 file_upload_flow = PresignedUploadFlow(
-    config=UploadConfig(bucket_name=FileTransferStorage.bucket_name),
+    config=UploadConfig(
+        bucket_name=FileTransferStorage.bucket_name,
+    ),
     pending_model=PendingUpload,
     callbacks=FileUploadCallbacks(),
 )

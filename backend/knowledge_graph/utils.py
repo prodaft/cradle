@@ -88,7 +88,7 @@ def get_neighbors_paginated(
     Same traversal logic as get_neighbors but with pagination and ordering.
 
     When ``cumulative`` is True, depth levels are concatenated in order (depth 0,
-    then 1, …) with ``order_by`` applied within each level. The global offset
+    then 1, ...) with ``order_by`` applied within each level. The global offset
     ``(page_number - 1) * page_size`` skips entries across that combined sequence,
     then at most ``page_size`` rows are returned (callers often pass
     ``page_size + 1`` so the API can report ``has_next`` without loading an

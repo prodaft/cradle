@@ -9,7 +9,12 @@ from typing import TYPE_CHECKING, Callable, Generic, Protocol, Type, TypeVar
 from django.db import models
 from django.utils import timezone
 
-from file_transfer.s3_utils import exists
+from file_transfer.s3_utils import (
+    _get_storage_for_bucket,
+    delete_object,
+    ensure_bucket_exists,
+    exists,
+)
 
 from .exceptions import (
     AlreadyUploadingException,
@@ -44,8 +49,8 @@ class UploadConfig:
     bucket_name: str
     expiry_seconds: int = 5 * 60  # 5 minutes
     allow_concurrent_per_user: bool = False
-    object_key_generator: Callable[[uuid.UUID, str, "CradleUser"], str] = lambda upload_id, file_name, user: (
-        f"{upload_id}-{file_name}"
+    object_key_generator: Callable[[uuid.UUID, str, "CradleUser"], str] = lambda upload_id, _file_name, _user: str(
+        upload_id
     )
 
 
@@ -70,7 +75,7 @@ class UploadFlowCallbacks(Protocol):
 
 
 class PresignedUploadFlow(Generic[T]):
-    """Reusable two-phase presigned upload flow.
+    """Reusable presigned upload flow (initiate -> client PUT to object storage -> finalize).
 
     This class encapsulates the common logic for handling S3 presigned URL uploads:
     1. Initiate: Generate presigned URL and create pending upload record.
@@ -81,10 +86,7 @@ class PresignedUploadFlow(Generic[T]):
         T: The concrete BasePendingUpload subclass to use.
 
     Example:
-        >>> config = UploadConfig(
-        ...     bucket_name="cradle-files",
-        ...     object_key_generator=lambda id, name, user: f"{id}-{name}",
-        ... )
+        >>> config = UploadConfig(bucket_name="cradle-files")
         >>> class MyCallbacks:
         ...     def on_finalize_success(self, pending_upload, **kwargs):
         ...         # Create domain model
@@ -114,8 +116,6 @@ class PresignedUploadFlow(Generic[T]):
 
     def _get_storage(self):
         """Get storage instance for the configured bucket."""
-        from file_transfer.s3_utils import _get_storage_for_bucket, ensure_bucket_exists
-
         storage = _get_storage_for_bucket(self.config.bucket_name)
         try:
             ensure_bucket_exists(self.config.bucket_name)
@@ -141,7 +141,7 @@ class PresignedUploadFlow(Generic[T]):
         Raises:
             AlreadyUploadingException: If user has pending upload and
                 allow_concurrent_per_user is False.
-            InvalidFileSizeException: If file_size is invalid (<=0 or too large).
+            InvalidFileSizeException: If file_size is invalid (<= 0 or exceeds the per-file upload limit).
             QuotaExceededException: If upload would exceed user's quota.
         """
         # Validate file size
@@ -155,6 +155,7 @@ class PresignedUploadFlow(Generic[T]):
             )
 
         # Check quota: sum of existing files + new file
+        # Local import: file_transfer.models loads uploads/__init__.py, which imports this module.
         from file_transfer.models import FileReference
 
         existing_total = FileReference.objects.filter(user=user).aggregate(total=models.Sum("file_size"))["total"] or 0
@@ -192,18 +193,22 @@ class PresignedUploadFlow(Generic[T]):
 
         # Generate presigned URL for upload with size constraint
         storage = self._get_storage()
-        presigned_url = storage.connection.meta.client.generate_presigned_url(
-            "put_object",
-            Params={
-                "Bucket": storage.bucket_name,
-                "Key": object_key,
-                # Enforce exact file size (allow 1 byte variance for potential encoding differences)
-                "ContentLength": file_size,
-            },
-            ExpiresIn=self.config.expiry_seconds,
-        )
+        try:
+            presigned_url = storage.connection.meta.client.generate_presigned_url(
+                "put_object",
+                Params={
+                    "Bucket": storage.bucket_name,
+                    "Key": object_key,
+                    "ContentLength": file_size,
+                },
+                ExpiresIn=self.config.expiry_seconds,
+            )
+        except Exception:
+            pending_upload.delete()
+            raise
 
-        # Schedule cleanup task for when upload expires
+        # Schedule one-shot cleanup shortly after session / presigned URL expiry (see countdown).
+        # Local import: top-level would create flows -> tasks -> models while models is still loading.
         from .tasks import cleanup_expired_upload_generic
 
         try:
@@ -213,10 +218,11 @@ class PresignedUploadFlow(Generic[T]):
                     f"{self.pending_model._meta.app_label}.{self.pending_model.__name__}",
                     self.config.bucket_name,
                 ),
-                countdown=self.config.expiry_seconds + 60,  # Add 1 minute buffer
+                # Buffer past expiry so the pending row is definitely expired when the task runs.
+                countdown=self.config.expiry_seconds + 60,
             )
         except Exception as e:
-            # If Celery is not available, cleanup will happen via periodic task
+            # apply_async can fail if the broker is down; cleanup_all_expired_uploads (Beat) is the fallback.
             logger.warning(f"Could not schedule cleanup task: {e}")
 
         return {
@@ -256,8 +262,6 @@ class PresignedUploadFlow(Generic[T]):
         if pending_upload.is_expired:
             # Clean up the uploaded file
             try:
-                from file_transfer.s3_utils import delete_object
-
                 delete_object(self.config.bucket_name, pending_upload.object_key)
             except Exception as e:
                 logger.warning(f"Could not delete expired upload {pending_upload.object_key}: {e}")
@@ -266,7 +270,19 @@ class PresignedUploadFlow(Generic[T]):
             raise UploadExpiredException(detail="This upload session has expired. Please initiate a new upload.")
 
         # Call domain-specific finalization logic
-        response_data = self.callbacks.on_finalize_success(pending_upload, **kwargs)
+        try:
+            response_data = self.callbacks.on_finalize_success(pending_upload, **kwargs)
+        except Exception:
+            try:
+                delete_object(self.config.bucket_name, pending_upload.object_key)
+            except Exception as exc:
+                logger.warning(
+                    "Could not delete storage object after failed finalize (upload_id=%s): %s",
+                    upload_id,
+                    exc,
+                )
+            pending_upload.delete()
+            raise
 
         # Delete pending upload record
         pending_upload.delete()

@@ -11,6 +11,8 @@ from rest_framework import serializers
 from access.enums import AccessType
 from access.models import Access
 from core.exceptions import PermissionDeniedException
+from file_transfer.s3_utils import presign_get
+from file_transfer.storage import RelationStorage
 
 from .enums import EntryType
 from .exceptions import (
@@ -779,9 +781,6 @@ class AttachmentSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_presigned_url(self, obj):
         """Generate presigned URL for attachment download."""
-        from file_transfer.s3_utils import presign_get
-        from file_transfer.storage import RelationStorage
-
         if not obj.file:
             return None
 

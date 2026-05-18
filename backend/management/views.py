@@ -111,7 +111,7 @@ class SettingsView(APIView):
 
         with transaction.atomic():
             for full_key, value in flat_settings.items():
-                label = " › ".join(p.replace("_", " ").strip().title() for p in full_key.split(".") if p) or full_key
+                label = " > ".join(p.replace("_", " ").strip().title() for p in full_key.split(".") if p) or full_key
                 try:
                     Setting.objects.update_or_create(key=full_key, defaults={"value": value})
                     cache.set(f"setting:{full_key}", value, timeout=300)

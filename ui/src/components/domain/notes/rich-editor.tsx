@@ -123,6 +123,7 @@ interface RichEditorProps {
     hasUnsavedChanges?: boolean;
     noteStatus?: NoteProcessingStatus;
     noteStatusMessage?: string | null;
+    onEditorViewChange?: (view: EditorView | null) => void;
 }
 
 interface RichEditorRef {
@@ -213,6 +214,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         hasUnsavedChanges = false,
         noteStatus,
         noteStatusMessage,
+        onEditorViewChange,
     },
     ref,
 ) {
@@ -231,6 +233,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const router = useRouter();
     const routerRef = useRef(router);
     routerRef.current = router;
+    const onEditorViewChangeRef = useRef(onEditorViewChange);
+    onEditorViewChangeRef.current = onEditorViewChange;
     // Stable navigate function — uses ref to avoid invalidating extensions memo
     const navigate = useCallback((url: string) => {
         // Parse dashboard URLs to extract params
@@ -648,6 +652,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     useEffect(() => {
         if (prevNoteIdRef.current !== noteid) {
             if (editorViewRef.current) {
+                onEditorViewChangeRef.current?.(null);
                 editorViewRef.current.destroy();
                 editorViewRef.current = null;
                 setEditorReady(false);
@@ -681,6 +686,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 });
 
                 editorViewRef.current = view;
+                onEditorViewChangeRef.current?.(view);
                 setEditorReady(true);
             } catch (error) {
                 logger.error('Editor init failed', error);
@@ -702,6 +708,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     useEffect(() => {
         return () => {
             if (editorViewRef.current) {
+                onEditorViewChangeRef.current?.(null);
                 editorViewRef.current.destroy();
                 editorViewRef.current = null;
             }

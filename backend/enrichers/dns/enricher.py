@@ -1,7 +1,7 @@
 """DNS enricher container.
 
 Resolves A and AAAA records for domain entries using the configured DNS server.
-No database access — DNS type mappings are passed in the job payload.
+No database access - DNS type mappings are passed in the job payload.
 
 Network requirement: external (needs outbound UDP/TCP 53).
 """

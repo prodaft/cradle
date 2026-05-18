@@ -1,5 +1,5 @@
 /**
- * Thin alias for ``useNdjsonQuery`` — same NDJSON stream GET + collect behavior.
+ * Thin alias for ``useNdjsonQuery`` - same NDJSON stream GET + collect behavior.
  */
 
 export {

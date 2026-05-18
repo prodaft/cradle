@@ -1,4 +1,4 @@
-"""Access model: user–entity permission mapping (read, read-write, or none)."""
+"""Access model: user-entity permission mapping (read, read-write, or none)."""
 
 import uuid
 
@@ -12,7 +12,7 @@ from .managers import AccessManager
 
 
 class Access(models.Model):
-    """User–entity permission record. Unique per (user, entity); entity may be null."""
+    """User-entity permission record. Unique per (user, entity); entity may be null."""
 
     id: models.UUIDField = models.UUIDField(
         primary_key=True,

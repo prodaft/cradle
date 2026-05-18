@@ -467,7 +467,7 @@ export default function UserActivityList({ username }: UserActivityListProps) {
                 emptyMessage='No activity found for this user.'
             >
                 <ActionBarSearch
-                    placeholder='Search object id, type, details…'
+                    placeholder='Search object id, type, details...'
                     name='user_activity_search'
                     value={search}
                     debounceMs={300}

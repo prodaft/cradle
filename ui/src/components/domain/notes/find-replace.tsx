@@ -51,7 +51,7 @@ export default function FindReplace({
 
     // Update CodeMirror search query whenever local state changes
     useEffect(() => {
-        if (!view) return;
+        if (!view || typeof view.dispatch !== 'function') return;
 
         const query = new SearchQuery({
             search: searchTerm,
@@ -187,7 +187,7 @@ export default function FindReplace({
         }
     };
 
-    if (!view) return null;
+    if (!view || typeof view.dispatch !== 'function') return null;
 
     return (
         <div className='absolute top-2 right-4 z-50 w-[28rem] bg-card border border-border shadow-lg rounded-md p-2 text-sm'>

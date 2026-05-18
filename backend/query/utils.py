@@ -52,7 +52,7 @@ def process_pattern(field: str, was_quoted: bool) -> tuple[str | None, str | Non
     """Map field value to Django ORM lookup and processed value.
 
     Quoted fields: exact match (wildcards literal).
-    Unquoted: * at extremes → istartswith/iendswith/icontains; else → iregex.
+    Unquoted: * at extremes -> istartswith/iendswith/icontains; else -> iregex.
     Lone '*' returns (None, None).
     """
     if was_quoted:

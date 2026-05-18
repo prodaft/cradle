@@ -20,7 +20,10 @@ export async function uploadFile(presignedUrl: string, file: File): Promise<Resp
     });
 
     if (!response.ok) {
-        throw new Error(`File upload failed: ${response.statusText}`);
+        const reason = [String(response.status), response.statusText]
+            .filter(Boolean)
+            .join(' ');
+        throw new Error(`Storage upload failed (${reason}).`);
     }
 
     return response;

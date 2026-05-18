@@ -98,7 +98,7 @@ export default function SearchFilterSection({
                 className='data-[orientation=vertical]:h-4'
             />
 
-            {/* Chips area — single line, no wrap */}
+            {/* Chips area - single line, no wrap */}
             <div className='flex flex-1 items-center gap-1 min-w-0 overflow-hidden'>
                 {hasFilters
                     ? entrySubtypeFilters.map((subtype) => {

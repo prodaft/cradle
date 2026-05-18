@@ -555,7 +555,7 @@ export default function EnrichmentRequestDialog({
                             </FieldDescription>
                         </Field>
 
-                        {/* Entities — access scope for who can see this request */}
+                        {/* Entities - access scope for who can see this request */}
                         <Field>
                             <FieldTitle>Entities</FieldTitle>
                             <Tooltip>

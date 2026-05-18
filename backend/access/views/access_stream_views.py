@@ -51,7 +51,7 @@ from ..serializers import AccessEntitySerializer, AccessUserSerializer
     ),
 )
 class UserAccessListStreamView(APIView):
-    """Stream user→entity access rows as NDJSON."""
+    """Stream user->entity access rows as NDJSON."""
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
@@ -110,7 +110,7 @@ class UserAccessListStreamView(APIView):
     ),
 )
 class EntityAccessListStreamView(APIView):
-    """Stream entity→user access rows as NDJSON."""
+    """Stream entity->user access rows as NDJSON."""
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]

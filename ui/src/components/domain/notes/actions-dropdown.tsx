@@ -27,7 +27,7 @@ import {
     MagnifyingGlassIcon,
     SparkleIcon,
     TrashIcon,
-    TreeView,
+    TreeViewIcon,
 } from '@phosphor-icons/react';
 import { ViewMode } from './constants';
 
@@ -208,8 +208,8 @@ export default function ActionsDropdown({
                         onClick={toggleOutline}
                         data-testid='toggle-outline-menu-item'
                     >
-                        <TreeView width='16' height='16' />
-                        <span className='flex-1'>Toggle Outline</span>
+                        <TreeViewIcon width='16' height='16' />
+                        <span className='flex-1'>Outline</span>
                         {showOutline && <CheckIcon size={16} weight='bold' />}
                     </DropdownMenuItem>
                 )}

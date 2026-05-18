@@ -55270,9 +55270,9 @@
                     }
                 },
                 "required": [
-                    "type",
+                    "subtype",
                     "name",
-                    "subtype"
+                    "type"
                 ]
             },
             "EntityRequest": {
@@ -55313,9 +55313,9 @@
                     }
                 },
                 "required": [
-                    "type",
+                    "subtype",
                     "name",
-                    "subtype"
+                    "type"
                 ]
             },
             "Entry": {
@@ -55865,9 +55865,9 @@
                     }
                 },
                 "required": [
-                    "type",
+                    "subtype",
                     "name",
-                    "subtype"
+                    "type"
                 ]
             },
             "EntrySerializerMinimal": {
@@ -57689,9 +57689,9 @@
                     }
                 },
                 "required": [
-                    "type",
+                    "subtype",
                     "name",
-                    "subtype"
+                    "type"
                 ]
             },
             "PatchedNoteEditRequest": {

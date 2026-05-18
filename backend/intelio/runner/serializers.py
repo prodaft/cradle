@@ -65,7 +65,7 @@ def serialize_job(
         entries: List of ORM ``Entry`` objects to enrich.
         enrichment_entry_name: ``entry.name`` of the ``EnrichmentRequest.entry`` sentinel.
         enrichment_entry_class: ``entry.entry_class.subtype`` of the sentinel entry.
-        dns_typemapping: Optional mapping of DNS record type → CRADLE subtype string,
+        dns_typemapping: Optional mapping of DNS record type -> CRADLE subtype string,
             used by DNS-based enrichers that cannot query the DB.
 
     Returns:

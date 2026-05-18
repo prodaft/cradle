@@ -1,6 +1,6 @@
 """Shared utilities for model introspection and query parameter validation.
 
-Provides flatten, fields_to_form (Django model → form schema), and
+Provides flatten, fields_to_form (Django model -> form schema), and
 validate_order_by for order_by query parameter validation.
 """
 

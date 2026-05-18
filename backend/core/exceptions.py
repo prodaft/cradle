@@ -30,12 +30,12 @@ class ErrorCode(Enum):
 
     Each Django app defines ``YourAppErrorCodes(ErrorCode)`` with one member per distinct API
     error. The response ``code`` field is the member name (UPPER_SNAKE_CASE); member names must
-    not collide across apps—use an app-specific prefix when two domains could both apply (e.g.
+    not collide across apps; use an app-specific prefix when two domains could both apply (e.g.
     ``FILE_TRANSFER_NOTE_NOT_FOUND`` vs ``NOTE_NOT_FOUND``).
 
     Each enum value is ``(http_status_code, error_title, type_suffix)``:
 
-    * ``type_suffix``: always the member name lowercased with ``_`` → ``-`` (URI path segment
+    * ``type_suffix``: always the member name lowercased with ``_`` -> ``-`` (URI path segment
       under ``/errors/``).
     * ``error_title``: short summary; normally title-case each word from the member name.
       Use conventional spelling for acronyms (e.g. OAuth) or minor words (e.g. "of") when it
@@ -43,8 +43,8 @@ class ErrorCode(Enum):
       404s), document that on the enum member.
 
     Exception classes should be ``PascalCase`` + ``Exception``, with words taken from the same
-    member name (e.g. ``USERNAME_UNAVAILABLE`` → ``UsernameUnavailableException``). Use
-    conventional acronym casing where needed (e.g. ``OAUTH_SIGN_IN_FAILED`` →
+    member name (e.g. ``USERNAME_UNAVAILABLE`` -> ``UsernameUnavailableException``). Use
+    conventional acronym casing where needed (e.g. ``OAUTH_SIGN_IN_FAILED`` ->
     ``OAuthSignInFailedException``, not ``OauthSignInFailedException``).
 
     Example:
