@@ -39,7 +39,7 @@ class PresignedUploadFinalizeCleanupTests(TestCase):
         )
 
     @patch("file_transfer.uploads.flows.exists", return_value=True)
-    @patch("file_transfer.s3_utils.delete_object")
+    @patch("file_transfer.uploads.flows.delete_object")
     def test_finalize_removes_pending_when_callback_fails(self, mock_delete, _mock_exists):
         self.callbacks.on_finalize_success.side_effect = ValueError("callback boom")
 

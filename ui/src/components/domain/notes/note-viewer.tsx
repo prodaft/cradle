@@ -357,7 +357,7 @@ export default function NoteViewer() {
             src?.title ||
             ''
         ).trim();
-        let parsedTitle = raw;
+        let parsedTitle: string;
         try {
             parsedTitle = (parseMarkdownInline(raw) ?? '').trim() || raw;
         } catch {
