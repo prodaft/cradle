@@ -1,7 +1,7 @@
 import {
     SettingsHeaderActionsProvider,
     SettingsHeaderActionsTarget,
-} from '@/components/domain/settings-header-actions';
+} from '@/components/base/settings-header-actions/settings-header-actions';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -67,7 +67,7 @@ export default function AccountSettingsPage({ target = 'me' }: AccountSettingsPr
 
     const tab = (search as any)?.tab ?? defaultAccountSettingsTabId;
 
-    const handleTabChange = (tabId: string) => {
+    const changeTab = (tabId: string) => {
         router.navigate({
             to: location.pathname as any,
             search: { ...(search as any), tab: tabId },
@@ -95,7 +95,7 @@ export default function AccountSettingsPage({ target = 'me' }: AccountSettingsPr
                     <SettingsHeaderActionsTarget />
                 </div>
                 <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
-                    <Tabs value={tab} onValueChange={handleTabChange}>
+                    <Tabs value={tab} onValueChange={changeTab}>
                         <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
                             {ACCOUNT_SETTINGS_ITEMS.map((item) => {
                                 const Icon = item.icon;

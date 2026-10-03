@@ -15,7 +15,7 @@ import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 export default function EntriesSettingsForm() {
-    const propagateAccessMutation = useMutation({
+    const propagateAccess = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}/',
@@ -38,7 +38,7 @@ export default function EntriesSettingsForm() {
         },
     });
 
-    const deleteHangingArtifactsMutation = useMutation({
+    const deleteHangingArtifacts = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}/',
@@ -62,12 +62,12 @@ export default function EntriesSettingsForm() {
         },
     });
 
-    const handlePropagateAccessVectors = () => {
-        propagateAccessMutation.mutate();
+    const propagate = () => {
+        propagateAccess.mutate();
     };
 
-    const handleDeleteHangingArtifacts = () => {
-        deleteHangingArtifactsMutation.mutate();
+    const deleteHanging = () => {
+        deleteHangingArtifacts.mutate();
     };
 
     return (
@@ -93,13 +93,11 @@ export default function EntriesSettingsForm() {
                             variant='outline'
                             size='sm'
                             className='self-start md:self-center'
-                            onClick={handlePropagateAccessVectors}
-                            disabled={propagateAccessMutation.isPending}
+                            onClick={propagate}
+                            disabled={propagateAccess.isPending}
                         >
                             <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
-                            {propagateAccessMutation.isPending
-                                ? 'Propagating…'
-                                : 'Propagate'}
+                            {propagateAccess.isPending ? 'Propagating…' : 'Propagate'}
                         </Button>
                     </Field>
 
@@ -119,13 +117,11 @@ export default function EntriesSettingsForm() {
                             variant='destructive'
                             size='sm'
                             className='self-start md:self-center'
-                            onClick={handleDeleteHangingArtifacts}
-                            disabled={deleteHangingArtifactsMutation.isPending}
+                            onClick={deleteHanging}
+                            disabled={deleteHangingArtifacts.isPending}
                         >
                             <TrashIcon className='w-3.5 h-3.5' weight='bold' />
-                            {deleteHangingArtifactsMutation.isPending
-                                ? 'Deleting…'
-                                : 'Delete'}
+                            {deleteHangingArtifacts.isPending ? 'Deleting…' : 'Delete'}
                         </Button>
                     </Field>
                 </FieldGroup>

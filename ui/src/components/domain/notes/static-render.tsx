@@ -13,18 +13,17 @@ type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 
 interface StaticRenderProps {
     markdownContent: string;
-    fileData: FileReferenceWithNote[];
+    files: FileReferenceWithNote[];
 }
 
 /**
  * StaticRender component - renders markdown content statically (without editing)
  * with proper styling to match RichEditor appearance
  */
-export default function StaticRender({ markdownContent, fileData }: StaticRenderProps) {
+export default function StaticRender({ markdownContent, files }: StaticRenderProps) {
     const previewRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
 
-    // Create a NavigateHandler adapter for handleLinkClick
     const navigateHandler: NavigateHandler = useCallback(
         (path: string) => {
             const dashboardMatch = path.match(/^\/dashboards\/([^/]+)\/([^/]+)\/?$/);
@@ -47,34 +46,33 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
         [router],
     );
 
-    const handleContentClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const onContentClick = (event: React.MouseEvent<HTMLDivElement>) => {
         handleLinkClick(navigateHandler)(event.nativeEvent);
     };
 
-    const { data: htmlContent = '', isLoading } = useQuery({
-        queryKey: ['parseMarkdown', markdownContent, fileData],
+    const { data: html = '', isLoading } = useQuery({
+        queryKey: ['parseMarkdown', markdownContent, files],
         queryFn: async () => {
             if (markdownContent === '') return '';
             const baseURL = import.meta.env.VITE_API_BASE_URL ?? '';
-            const result = await parseMarkdown(markdownContent, baseURL, fileData);
+            const result = await parseMarkdown(markdownContent, baseURL, files);
             return result?.html ?? '';
         },
         meta: { showErrorToast: true },
         staleTime: Infinity,
     });
 
-    // Single place: update preview DOM when HTML content changes
     useEffect(() => {
         const el = previewRef.current;
-        if (el && htmlContent !== undefined) {
-            el.innerHTML = DOMPurify.sanitize(htmlContent, {
+        if (el && html !== undefined) {
+            el.innerHTML = DOMPurify.sanitize(html, {
                 ADD_ATTR: ['style'],
             });
             Prism.highlightAllUnder(el);
         }
-    }, [htmlContent]);
+    }, [html]);
 
-    const isInitialLoad = isLoading && !htmlContent;
+    const isInitialLoad = isLoading && !html;
 
     return (
         <div className='h-full w-full flex flex-col relative overflow-hidden'>
@@ -88,7 +86,7 @@ export default function StaticRender({ markdownContent, fileData }: StaticRender
                 <div
                     className='rich-editor markdown-body static-render'
                     ref={previewRef}
-                    onClick={handleContentClick}
+                    onClick={onContentClick}
                 ></div>
             </ScrollArea>
         </div>

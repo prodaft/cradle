@@ -1,4 +1,7 @@
-import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
+import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
+import SnippetList, {
+    SnippetListRef,
+} from '@/components/base/snippet-list/snippet-list';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -29,12 +32,11 @@ import { useEffect, useId, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import SnippetList, { SnippetListRef } from '../../../base/snippet-list/snippet-list';
 
 const noteSettingsSchema = z.object({
-    minEntries: z.coerce.number().min(1, { message: 'Must be at least 1' }),
-    minEntities: z.coerce.number().min(1, { message: 'Must be at least 1' }),
-    maxCliqueSize: z.coerce.number().min(1, { message: 'Must be at least 1' }),
+    minEntries: z.coerce.number().min(1, { error: 'Must be at least 1' }),
+    minEntities: z.coerce.number().min(1, { error: 'Must be at least 1' }),
+    maxCliqueSize: z.coerce.number().min(1, { error: 'Must be at least 1' }),
     allowDynamicEntryClassCreation: z.boolean().default(false),
 });
 
@@ -76,7 +78,7 @@ export default function NoteSettingsForm() {
     const loadedValuesRef = useRef<NoteSettingsFormData | null>(null);
 
     const {
-        handleSubmit: handleFormSubmit,
+        handleSubmit,
         reset,
         watch,
         control,
@@ -86,7 +88,7 @@ export default function NoteSettingsForm() {
         defaultValues: NOTE_SETTINGS_DEFAULTS,
     });
 
-    const { data: settingsData, isPending } = useQuery({
+    const { data: settings, isPending } = useQuery({
         queryKey: queryKeys.management.settings(),
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
@@ -99,18 +101,18 @@ export default function NoteSettingsForm() {
         meta: { showErrorToast: false, suppressNotification: true },
     });
 
-    const updateSettingsMutation = useMutation({
-        mutationFn: async (data: NoteSettingsFormData) => {
+    const saveSettings = useMutation({
+        mutationFn: async (values: NoteSettingsFormData) => {
             const { error, response } = await fetchClient.POST(
                 '/management/settings/',
                 {
                     body: {
                         notes: {
-                            min_entries: data.minEntries,
-                            min_entities: data.minEntities,
-                            max_clique_size: data.maxCliqueSize,
+                            min_entries: values.minEntries,
+                            min_entities: values.minEntities,
+                            max_clique_size: values.maxCliqueSize,
                             allow_dynamic_entry_class_creation:
-                                data.allowDynamicEntryClassCreation,
+                                values.allowDynamicEntryClassCreation,
                         },
                     },
                 },
@@ -126,7 +128,7 @@ export default function NoteSettingsForm() {
         },
     });
 
-    const relinkNotesMutation = useMutation({
+    const relinkNotes = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST('/notes/relink/', {
                 body: undefined,
@@ -146,18 +148,13 @@ export default function NoteSettingsForm() {
     });
 
     useEffect(() => {
-        const values = getNoteSettingsFromApi(settingsData);
+        const values = getNoteSettingsFromApi(settings);
         if (!values) return;
         loadedValuesRef.current = values;
         reset(values);
-    }, [settingsData, reset]);
+    }, [settings, reset]);
 
-    const onSubmit = (data: NoteSettingsFormData) =>
-        updateSettingsMutation.mutateAsync(data);
-
-    const handleReLinkNotes = () => {
-        relinkNotesMutation.mutate();
-    };
+    const onSubmit = (values: NoteSettingsFormData) => saveSettings.mutateAsync(values);
 
     if (isPending) {
         return (
@@ -167,10 +164,10 @@ export default function NoteSettingsForm() {
         );
     }
 
-    const handleRevert = () => {
+    const revert = () => {
         if (loadedValuesRef.current) reset(loadedValuesRef.current);
     };
-    const handleDefault = () =>
+    const resetToDefaults = () =>
         reset(NOTE_SETTINGS_DEFAULTS, { keepDefaultValues: true });
     const isAtDefault = isEqual(watch(), NOTE_SETTINGS_DEFAULTS);
 
@@ -183,7 +180,7 @@ export default function NoteSettingsForm() {
                         variant='outline'
                         size='icon'
                         disabled={!isDirty}
-                        onClick={handleRevert}
+                        onClick={revert}
                         title='Revert'
                     >
                         <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
@@ -193,7 +190,7 @@ export default function NoteSettingsForm() {
                         variant='outline'
                         size='icon'
                         disabled={isAtDefault}
-                        onClick={handleDefault}
+                        onClick={resetToDefaults}
                         title='Default'
                     >
                         <ClockCounterClockwiseIcon className='size-4' weight='bold' />
@@ -203,10 +200,10 @@ export default function NoteSettingsForm() {
                         form={formId}
                         variant='default'
                         size='icon'
-                        disabled={updateSettingsMutation.isPending || !isDirty}
+                        disabled={saveSettings.isPending || !isDirty}
                         title='Save Settings'
                     >
-                        {updateSettingsMutation.isPending ? (
+                        {saveSettings.isPending ? (
                             <Spinner className='size-4' />
                         ) : (
                             <FloppyDiskIcon className='size-4' weight='bold' />
@@ -214,7 +211,7 @@ export default function NoteSettingsForm() {
                     </Button>
                 </div>
             </SettingsHeaderActionsPortal>
-            <form id={formId} onSubmit={handleFormSubmit(onSubmit)}>
+            <form id={formId} onSubmit={handleSubmit(onSubmit)}>
                 <div className='flex flex-col gap-6'>
                     {/* General Section */}
                     <div className='flex flex-col gap-4'>
@@ -467,8 +464,8 @@ export default function NoteSettingsForm() {
                                     variant='outline'
                                     size='sm'
                                     className='self-start md:self-center'
-                                    disabled={relinkNotesMutation.isPending}
-                                    onClick={handleReLinkNotes}
+                                    disabled={relinkNotes.isPending}
+                                    onClick={() => relinkNotes.mutate()}
                                 >
                                     <ArrowClockwiseIcon
                                         className='w-3.5 h-3.5'

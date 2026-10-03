@@ -1,4 +1,4 @@
-import MarkdownEditorDialog from '@/components/dialogs/base/markdown-editor-dialog';
+import MarkdownEditorDialog from '@/components/base/markdown-editor-dialog/markdown-editor-dialog';
 import {
     AlertDialog,
     AlertDialogCancel,

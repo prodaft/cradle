@@ -70,7 +70,7 @@ interface EnrichmentRequestDialogProps {
     /** Optional artifacts text or promise resolving to artifacts text */
     artifactsList?: string | Promise<string>;
     /** Optional list of notes to include in the enrichment request */
-    notesList?: Array<{
+    notes?: Array<{
         id: string;
         title: string;
         entities: OptimizedEntryResponse[];
@@ -114,7 +114,7 @@ export default function EnrichmentRequestDialog({
     onError,
     entitiesList,
     artifactsList,
-    notesList,
+    notes,
 }: EnrichmentRequestDialogProps): React.JSX.Element {
     const enrichmentTechniquesDescId = useId();
     const entitiesDescId = useId();
@@ -122,20 +122,19 @@ export default function EnrichmentRequestDialog({
     const [selectedEntities, setSelectedEntities] = useState<
         Array<{ value: number; label: string }>
     >([]);
-    const [initialDataLoading, setInitialDataLoading] = useState(false);
-    const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(
-        () => new Set(notesList?.map((n) => n.id) || []),
+    const [isInitialDataLoading, setIsInitialDataLoading] = useState(false);
+    const [checkedIds, setCheckedIds] = useState<Set<string>>(
+        () => new Set(notes?.map((n) => n.id) || []),
     );
 
-    // Form state
-    const [formData, setFormData] = useState<EnrichmentFormData>({
+    const [form, setForm] = useState<EnrichmentFormData>({
         title: '',
         enricherNames: [],
         entities: [],
         artifactInput: '',
     });
 
-    const { data: enricherTypesData, isLoading } = useQuery({
+    const { data: enrichers, isLoading } = useQuery({
         queryKey: ['enrichment', 'subclasses'],
         queryFn: async () => {
             const { data, error, response } =
@@ -149,22 +148,21 @@ export default function EnrichmentRequestDialog({
         },
     });
 
-    const enricherTypes: Option[] = ((enricherTypesData ?? []) as any[])
+    const enricherTypes: Option[] = ((enrichers ?? []) as any[])
         .filter((enricher) => enricher.enabled)
         .map((enricher) => ({
             value: enricher.class_name,
             label: enricher.name,
         }));
 
-    // Update selected note IDs if notesList changes
     useEffect(() => {
-        if (notesList) {
-            setSelectedNoteIds(new Set(notesList.map((n) => n.id)));
+        if (notes) {
+            setCheckedIds(new Set(notes.map((n) => n.id)));
         }
-    }, [notesList]);
+    }, [notes]);
 
-    const toggleNoteSelection = (id: string) => {
-        setSelectedNoteIds((prev) => {
+    const toggleNote = (id: string) => {
+        setCheckedIds((prev) => {
             const next = new Set(prev);
             if (next.has(id)) next.delete(id);
             else next.add(id);
@@ -173,31 +171,30 @@ export default function EnrichmentRequestDialog({
     };
 
     useEffect(() => {
-        const byId = new Map<number, OptimizedEntryResponse>();
-        for (const note of notesList || []) {
-            if (!selectedNoteIds.has(note.id)) continue;
+        const entitiesById = new Map<number, OptimizedEntryResponse>();
+        for (const note of notes || []) {
+            if (!checkedIds.has(note.id)) continue;
             for (const entity of note.entities) {
                 if (typeof entity.id === 'number') {
-                    byId.set(entity.id, entity);
+                    entitiesById.set(entity.id, entity);
                 }
             }
         }
 
-        const entityArr = Array.from(byId.values());
+        const entityArr = Array.from(entitiesById.values());
         setSelectedEntities(
             entityArr.map((entity) => ({
                 value: entity.id as number,
                 label: entity.name,
             })),
         );
-        setFormData((prev) => ({
+        setForm((prev) => ({
             ...prev,
             entities: entityArr.map((entity) => entity.id as number),
         }));
-    }, [selectedNoteIds, notesList]);
+    }, [checkedIds, notes]);
 
-    // Load entities list (NDJSON stream, single request)
-    const { data: allEntitiesData } = useNdjsonQuery({
+    const { data: allEntities } = useNdjsonQuery({
         path: '/entries/entities/stream/',
         queryKey: queryKeys.entities.list(),
         enabled: open,
@@ -206,14 +203,13 @@ export default function EnrichmentRequestDialog({
         },
     });
 
-    // Load initial data from props (entities and artifacts lists)
     useEffect(() => {
         const loadInitialData = async () => {
             if (!entitiesList && !artifactsList) {
                 return;
             }
 
-            setInitialDataLoading(true);
+            setIsInitialDataLoading(true);
             try {
                 const isNumberArray = (x: unknown): x is number[] =>
                     Array.isArray(x) && x.every((v) => typeof v === 'number');
@@ -227,16 +223,15 @@ export default function EnrichmentRequestDialog({
                             typeof (v as Record<string, unknown>)?.value === 'string',
                     );
 
-                // Resolve entities list if provided
                 let resolvedEntities: number[] | undefined;
-                if (entitiesList && allEntitiesData) {
+                if (entitiesList && allEntities) {
                     const entities = await Promise.resolve(entitiesList);
                     if (isNumberArray(entities)) {
                         resolvedEntities = entities;
                     } else if (isTypedEntityArray(entities)) {
                         resolvedEntities = entities
                             .map((entity) => {
-                                const match = allEntitiesData.find(
+                                const match = allEntities.find(
                                     (e) =>
                                         e.name === entity.value &&
                                         e.subtype === entity.type,
@@ -247,20 +242,14 @@ export default function EnrichmentRequestDialog({
                     }
                 }
 
-                // Resolve artifacts list if provided
                 let resolvedArtifacts: string | undefined;
                 if (artifactsList) {
                     resolvedArtifacts = await Promise.resolve(artifactsList);
                 }
 
-                // Fetch entity details for the UI if entity IDs are provided
                 let entityOptions: Array<{ value: number; label: string }> = [];
-                if (
-                    resolvedEntities &&
-                    resolvedEntities.length > 0 &&
-                    allEntitiesData
-                ) {
-                    entityOptions = allEntitiesData
+                if (resolvedEntities && resolvedEntities.length > 0 && allEntities) {
+                    entityOptions = allEntities
                         .filter(
                             (entity) =>
                                 typeof entity.id === 'number' &&
@@ -272,14 +261,12 @@ export default function EnrichmentRequestDialog({
                         }));
                 }
 
-                // Update form data with resolved values
-                setFormData((prev) => ({
+                setForm((prev) => ({
                     ...prev,
                     entities: resolvedEntities || prev.entities,
                     artifactInput: resolvedArtifacts || prev.artifactInput,
                 }));
 
-                // Update selected entities state for the UI
                 if (entityOptions.length > 0) {
                     setSelectedEntities(entityOptions);
                 }
@@ -289,48 +276,47 @@ export default function EnrichmentRequestDialog({
                     onError(error as Error);
                 }
             } finally {
-                setInitialDataLoading(false);
+                setIsInitialDataLoading(false);
             }
         };
 
-        if (allEntitiesData || artifactsList) {
+        if (allEntities || artifactsList) {
             loadInitialData();
         }
-    }, [entitiesList, artifactsList, allEntitiesData, onError]);
+    }, [entitiesList, artifactsList, allEntities, onError]);
 
-    const handleChange = (
+    const updateField = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({
+        setForm((prev) => ({
             ...prev,
             [name]: value,
         }));
     };
 
-    const handleEnricherChange = (options?: Option[]) => {
+    const updateEnrichers = (options?: Option[]) => {
         const enricherNames = (options ?? []).map((opt) => String(opt.value));
-        setFormData((prev) => ({
+        setForm((prev) => ({
             ...prev,
             enricherNames,
         }));
     };
 
-    const handleEntityChange = (options?: Option[]) => {
+    const updateEntities = (options?: Option[]) => {
         const selected = (options ?? []).map((o) => ({
             value: Number(o.value),
             label: o.label,
         }));
         const entities = selected.map((opt) => opt.value);
         setSelectedEntities(selected);
-        setFormData((prev) => ({
+        setForm((prev) => ({
             ...prev,
             entities,
         }));
     };
 
     const parseRequestText = (text: string): RequestArtifact[] => {
-        // Parse lines in the format: <type>:<artifact>
         const lines = text.split('\n').filter((line) => line.trim() !== '');
         const parsed: RequestArtifact[] = [];
 
@@ -351,7 +337,7 @@ export default function EnrichmentRequestDialog({
         return parsed;
     };
 
-    const createMutation = useMutation({
+    const createRequest = useMutation({
         mutationFn: async (payload: {
             title: string;
             enricherNames: string[];
@@ -380,31 +366,30 @@ export default function EnrichmentRequestDialog({
         },
     });
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const submit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        // Validate form data
-        if (!formData.title.trim()) {
+        if (!form.title.trim()) {
             toast.error('Title is required');
             return;
         }
-        if (!formData.enricherNames || formData.enricherNames.length === 0) {
+        if (!form.enricherNames || form.enricherNames.length === 0) {
             toast.error('At least one enrichment technique must be selected');
             return;
         }
-        if (!formData.artifactInput.trim() && selectedNoteIds.size === 0) {
+        if (!form.artifactInput.trim() && checkedIds.size === 0) {
             toast.error('Specify one artifact or select at least one note');
             return;
         }
 
-        const parsedRequest = parseRequestText(formData.artifactInput);
+        const parsedRequest = parseRequestText(form.artifactInput);
         if (parsedRequest.length > 1) {
             toast.error(
                 'Only one artifact per enrichment request. Use a single line: type:value',
             );
             return;
         }
-        if (parsedRequest.length === 0 && selectedNoteIds.size === 0) {
+        if (parsedRequest.length === 0 && checkedIds.size === 0) {
             toast.error(
                 'Enter one line as type:value, or select notes that yield a single artifact',
             );
@@ -413,13 +398,13 @@ export default function EnrichmentRequestDialog({
 
         const artifact = parsedRequest.length === 1 ? parsedRequest[0]! : undefined;
 
-        createMutation.mutate(
+        createRequest.mutate(
             {
-                title: formData.title,
-                enricherNames: formData.enricherNames,
+                title: form.title,
+                enricherNames: form.enricherNames,
                 artifact,
-                entities: formData.entities,
-                notes: Array.from(selectedNoteIds),
+                entities: form.entities,
+                notes: Array.from(checkedIds),
             },
             {
                 onSuccess: () => {
@@ -436,7 +421,7 @@ export default function EnrichmentRequestDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={submit}>
                     <DialogHeader>
                         <DialogTitle>Enrichment Request</DialogTitle>
                         <DialogDescription>
@@ -445,31 +430,31 @@ export default function EnrichmentRequestDialog({
                         </DialogDescription>
                     </DialogHeader>
                     {/* Selected Notes List */}
-                    {notesList && notesList.length > 0 && (
+                    {notes && notes.length > 0 && (
                         <FieldSet>
                             <FieldLegend>
-                                Selected Notes ({selectedNoteIds.size})
+                                Selected Notes ({checkedIds.size})
                             </FieldLegend>
                             <ScrollArea className='border border-border rounded-lg max-h-48'>
                                 <ul>
-                                    {notesList.map((note) => {
-                                        const isSelected = selectedNoteIds.has(note.id);
+                                    {notes.map((note) => {
+                                        const isChecked = checkedIds.has(note.id);
                                         return (
                                             <li
                                                 key={note.id}
                                                 className={`flex items-center gap-3 px-4 py-2 border-b border-border last:border-b-0 transition-colors ${
-                                                    isSelected
+                                                    isChecked
                                                         ? 'hover:bg-secondary/50'
                                                         : 'bg-secondary/10'
                                                 }`}
                                             >
                                                 <Checkbox
-                                                    checked={isSelected}
+                                                    checked={isChecked}
                                                     onCheckedChange={() =>
-                                                        toggleNoteSelection(note.id)
+                                                        toggleNote(note.id)
                                                     }
                                                     aria-label={
-                                                        isSelected
+                                                        isChecked
                                                             ? `Deselect note ${
                                                                   note.title ||
                                                                   'Untitled'
@@ -482,7 +467,7 @@ export default function EnrichmentRequestDialog({
                                                 />
                                                 <span
                                                     className={`text-sm truncate flex-1 ${
-                                                        isSelected
+                                                        isChecked
                                                             ? 'text-foreground'
                                                             : 'text-muted-foreground line-through decoration-muted-foreground'
                                                     }`}
@@ -509,8 +494,8 @@ export default function EnrichmentRequestDialog({
                                 name='title'
                                 type='text'
                                 placeholder='Enter request title'
-                                value={formData.title}
-                                onChange={handleChange}
+                                value={form.title}
+                                onChange={updateField}
                                 required
                             />
                         </Field>
@@ -534,12 +519,12 @@ export default function EnrichmentRequestDialog({
                                     'aria-required': true,
                                 }}
                                 value={enricherTypes.filter((e) =>
-                                    formData.enricherNames.includes(e.value),
+                                    form.enricherNames.includes(e.value),
                                 )}
                                 defaultOptions={enricherTypes}
                                 placeholder='Select enrichment techniques...'
                                 disabled={isLoading}
-                                onChange={handleEnricherChange}
+                                onChange={updateEnrichers}
                                 emptyIndicator={
                                     <Empty className='min-h-0 border-0 p-4 shadow-none'>
                                         <EmptyHeader className='max-w-none gap-0'>
@@ -573,7 +558,7 @@ export default function EnrichmentRequestDialog({
                                                 })) as Option[]
                                             }
                                             defaultOptions={
-                                                ((allEntitiesData ?? [])
+                                                ((allEntities ?? [])
                                                     .filter(
                                                         (e) => typeof e.id === 'number',
                                                     )
@@ -583,8 +568,8 @@ export default function EnrichmentRequestDialog({
                                                     })) as Option[]) || []
                                             }
                                             placeholder='Select entities for access scope...'
-                                            disabled={selectedNoteIds.size > 0}
-                                            onChange={handleEntityChange}
+                                            disabled={checkedIds.size > 0}
+                                            onChange={updateEntities}
                                             emptyIndicator={
                                                 <Empty className='min-h-0 border-0 p-4 shadow-none'>
                                                     <EmptyHeader className='max-w-none gap-0'>
@@ -597,7 +582,7 @@ export default function EnrichmentRequestDialog({
                                         />
                                     </div>
                                 </TooltipTrigger>
-                                {selectedNoteIds.size > 0 && (
+                                {checkedIds.size > 0 && (
                                     <TooltipContent className='[--tooltip-bg:var(--primary)] [--tooltip-fg:var(--primary-foreground)]'>
                                         Entities are filled from the selected notes
                                     </TooltipContent>
@@ -619,9 +604,9 @@ export default function EnrichmentRequestDialog({
                                 name='artifactInput'
                                 className='min-h-[80px]'
                                 placeholder='One line only, e.g. ip:203.0.113.1 or domain:example.com'
-                                value={formData.artifactInput}
-                                onChange={handleChange}
-                                required={selectedNoteIds.size === 0}
+                                value={form.artifactInput}
+                                onChange={updateField}
+                                required={checkedIds.size === 0}
                             />
                         </Field>
                     </FieldGroup>
@@ -632,7 +617,7 @@ export default function EnrichmentRequestDialog({
                                 variant='outline'
                                 size='sm'
                                 disabled={
-                                    createMutation.isPending || initialDataLoading
+                                    createRequest.isPending || isInitialDataLoading
                                 }
                             >
                                 Cancel
@@ -642,11 +627,11 @@ export default function EnrichmentRequestDialog({
                             type='submit'
                             variant='default'
                             size='sm'
-                            disabled={createMutation.isPending || initialDataLoading}
+                            disabled={createRequest.isPending || isInitialDataLoading}
                         >
-                            {createMutation.isPending ? (
+                            {createRequest.isPending ? (
                                 'Creating...'
-                            ) : initialDataLoading ? (
+                            ) : isInitialDataLoading ? (
                                 <>
                                     <Spinner className='mr-2' /> Loading...
                                 </>

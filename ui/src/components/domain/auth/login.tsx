@@ -1,3 +1,4 @@
+import Logo from '@/components/base/logo/logo';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +20,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { useTheme } from '@/contexts/ui';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
-import Logo from '@components/base/logo/logo';
 import {
     ArrowUUpLeftIcon,
     EyeIcon,
@@ -63,9 +63,9 @@ const OTP_INDICES = [0, 1, 2, 3, 4, 5] as const;
 export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [twoFactorToken, setTwoFactorToken] = useState('');
-    const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
+    const [isTwoFactorRequired, setIsTwoFactorRequired] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
     const [formErrorTitle, setFormErrorTitle] = useState<string | undefined>(undefined);
@@ -89,7 +89,6 @@ export default function Login() {
 
     const router = useRouter();
 
-    // Query for OAuth configuration
     const { data: userConfig } = $api.useQuery('get', '/auth/config/', undefined, {
         enabled: !!basePath && !loggedIn,
         meta: {
@@ -115,10 +114,8 @@ export default function Login() {
     });
 
     const oauthMethods = userConfig?.oauthMethods || [];
-    const signup = userConfig?.signup;
 
     useEffect(() => {
-        // If user is already logged in, redirect to dashboard
         if (loggedIn) {
             router.navigate({ to: '/', replace: true });
         }
@@ -193,7 +190,6 @@ export default function Login() {
             redirectUrl.searchParams.set('state', `oauth_login:${provider}`);
             return redirectUrl.toString();
         } catch (_error) {
-            // Invalid URL, return empty string
             return '';
         }
     };
@@ -206,7 +202,7 @@ export default function Login() {
         }))
         .filter((x) => !!x.redirectUrl);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const submit = async (e: React.SubmitEvent) => {
         e.preventDefault();
 
         if (isSubmitting) {
@@ -221,11 +217,11 @@ export default function Login() {
             const result = await logIn(
                 username,
                 password,
-                requiresTwoFactor && twoFactorToken ? twoFactorToken : null,
+                isTwoFactorRequired && twoFactorToken ? twoFactorToken : null,
             );
 
             if (result.result === 'success') {
-                setRequiresTwoFactor(false);
+                setIsTwoFactorRequired(false);
 
                 router.navigate({
                     to: getRedirectPath(from) as any,
@@ -233,7 +229,7 @@ export default function Login() {
                 });
                 return;
             } else if (result.result === 'requires_2fa') {
-                setRequiresTwoFactor(true);
+                setIsTwoFactorRequired(true);
             } else {
                 setFormError(result.message || 'Login failed');
                 setFormErrorTitle(result.title);
@@ -251,8 +247,6 @@ export default function Login() {
         }
     };
 
-    // If user is logged in, don't render the login form
-    // This prevents flash of login page after successful login
     if (loggedIn) {
         return null;
     }
@@ -267,10 +261,10 @@ export default function Login() {
                         <Logo text={true} width='120px' />
                     </Link>
                     {/* Theme Button */}
-                    {requiresTwoFactor ? (
+                    {isTwoFactorRequired ? (
                         <Button
                             onClick={() => {
-                                setRequiresTwoFactor(false);
+                                setIsTwoFactorRequired(false);
                                 setTwoFactorToken('');
                             }}
                             variant='ghost'
@@ -301,9 +295,9 @@ export default function Login() {
                 {/* Form Container */}
                 <div className='flex flex-1 items-center justify-center'>
                     <div className='w-full max-w-xs'>
-                        <form className='flex flex-col gap-6' onSubmit={handleSubmit}>
+                        <form className='flex flex-col gap-6' onSubmit={submit}>
                             <FieldGroup className='gap-4'>
-                                {!requiresTwoFactor && (
+                                {!isTwoFactorRequired && (
                                     <div className='flex flex-col items-center gap-1 text-center'>
                                         <h1 className='text-2xl font-bold'>
                                             Login to your account
@@ -314,7 +308,7 @@ export default function Login() {
                                         </p>
                                     </div>
                                 )}
-                                {requiresTwoFactor && (
+                                {isTwoFactorRequired && (
                                     <div className='flex flex-col items-center gap-1 text-center'>
                                         <h1 className='text-2xl font-bold'>
                                             2FA Authentication
@@ -324,7 +318,7 @@ export default function Login() {
                                         </p>
                                     </div>
                                 )}
-                                {requiresTwoFactor ? (
+                                {isTwoFactorRequired ? (
                                     <>
                                         <Field>
                                             <FieldLabel
@@ -418,7 +412,7 @@ export default function Login() {
                                                     className='ml-auto text-sm underline-offset-4 hover:underline'
                                                     replace={true}
                                                     onClick={() =>
-                                                        setRequiresTwoFactor(false)
+                                                        setIsTwoFactorRequired(false)
                                                     }
                                                 >
                                                     Forgot password?
@@ -429,7 +423,7 @@ export default function Login() {
                                                     id='password'
                                                     name='password'
                                                     type={
-                                                        showPassword
+                                                        isPasswordVisible
                                                             ? 'text'
                                                             : 'password'
                                                     }
@@ -444,22 +438,22 @@ export default function Login() {
                                                     <InputGroupButton
                                                         type='button'
                                                         onClick={() =>
-                                                            setShowPassword(
-                                                                !showPassword,
+                                                            setIsPasswordVisible(
+                                                                !isPasswordVisible,
                                                             )
                                                         }
                                                         aria-label={
-                                                            showPassword
+                                                            isPasswordVisible
                                                                 ? 'Hide password'
                                                                 : 'Show password'
                                                         }
                                                         title={
-                                                            showPassword
+                                                            isPasswordVisible
                                                                 ? 'Hide password'
                                                                 : 'Show password'
                                                         }
                                                     >
-                                                        {showPassword ? (
+                                                        {isPasswordVisible ? (
                                                             <EyeSlashIcon
                                                                 className='size-4'
                                                                 weight='bold'
@@ -537,7 +531,7 @@ export default function Login() {
                                                 )}
                                             </>
                                         )}
-                                        {basePath && signup !== false && (
+                                        {basePath && userConfig?.signup !== false && (
                                             <>
                                                 <FieldSeparator />
                                                 <Field>
@@ -553,7 +547,7 @@ export default function Login() {
                                                                 } as any
                                                             }
                                                             onClick={() =>
-                                                                setRequiresTwoFactor(
+                                                                setIsTwoFactorRequired(
                                                                     false,
                                                                 )
                                                             }

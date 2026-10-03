@@ -37,23 +37,23 @@ interface ActionsDropdownProps {
     enableEditing: boolean;
     setActiveView: (view: ViewMode) => void;
     setRichEditor: (rich: boolean) => void;
-    showOutline: boolean;
+    isOutlineOpen: boolean;
     toggleOutline: () => void;
-    lspLoaded: boolean;
+    isLspLoaded: boolean;
     smartLink: (addTimestamps: boolean) => void;
     isAdmin: boolean;
-    handleRelinkNote: () => void;
+    relink: () => void;
     isFleeting: boolean;
     hasFiles: boolean;
-    handleSaveAsFinal: () => void;
-    saving: boolean;
-    handlePublish: () => void;
-    handleDelete: () => void;
-    canWrite: boolean;
-    handleUploadFiles: () => void;
-    handleFind: () => void;
-    handleReplace: () => void;
-    enrichData: () => void;
+    finalize: () => void;
+    isSaving: boolean;
+    publish: () => void;
+    confirmDelete: () => void;
+    isWritable: boolean;
+    openUpload: () => void;
+    find: () => void;
+    replace: () => void;
+    enrich: () => void;
 }
 
 /**
@@ -65,23 +65,23 @@ export default function ActionsDropdown({
     enableEditing,
     setActiveView,
     setRichEditor,
-    showOutline,
+    isOutlineOpen,
     toggleOutline,
-    lspLoaded,
+    isLspLoaded,
     smartLink,
     isAdmin,
-    handleRelinkNote,
+    relink,
     isFleeting,
     hasFiles,
-    handleSaveAsFinal,
-    saving,
-    handlePublish,
-    handleDelete,
-    canWrite,
-    handleUploadFiles,
-    handleFind,
-    handleReplace,
-    enrichData,
+    finalize,
+    isSaving,
+    publish,
+    confirmDelete,
+    isWritable,
+    openUpload,
+    find,
+    replace,
+    enrich,
 }: ActionsDropdownProps) {
     return (
         <DropdownMenu>
@@ -172,10 +172,7 @@ export default function ActionsDropdown({
                 {activeView === ViewMode.CONTENT && (
                     <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            onClick={handleFind}
-                            data-testid='find-menu-item'
-                        >
+                        <DropdownMenuItem onClick={find} data-testid='find-menu-item'>
                             <MagnifyingGlassIcon size={16} weight='bold' />
                             <span className='flex-1'>Find</span>
                             <DropdownMenuShortcut>
@@ -187,7 +184,7 @@ export default function ActionsDropdown({
                         </DropdownMenuItem>
                         {enableEditing && (
                             <DropdownMenuItem
-                                onClick={handleReplace}
+                                onClick={replace}
                                 data-testid='replace-menu-item'
                             >
                                 <ArrowsLeftRightIcon size={16} weight='bold' />
@@ -210,10 +207,10 @@ export default function ActionsDropdown({
                     >
                         <TreeViewIcon width='16' height='16' />
                         <span className='flex-1'>Outline</span>
-                        {showOutline && <CheckIcon size={16} weight='bold' />}
+                        {isOutlineOpen && <CheckIcon size={16} weight='bold' />}
                     </DropdownMenuItem>
                 )}
-                {lspLoaded && enableEditing && activeView === ViewMode.CONTENT && (
+                {isLspLoaded && enableEditing && activeView === ViewMode.CONTENT && (
                     <DropdownMenuItem
                         onClick={() => smartLink(false)}
                         data-testid='auto-link-menu-item'
@@ -222,7 +219,7 @@ export default function ActionsDropdown({
                         <span className='flex-1'>Auto Link</span>
                     </DropdownMenuItem>
                 )}
-                {enableEditing && lspLoaded && activeView === ViewMode.CONTENT && (
+                {enableEditing && isLspLoaded && activeView === ViewMode.CONTENT && (
                     <DropdownMenuItem
                         onClick={() => smartLink(true)}
                         data-testid='add-timestamps-menu-item'
@@ -233,18 +230,18 @@ export default function ActionsDropdown({
                 )}
                 {isAdmin && !isFleeting && activeView === ViewMode.CONTENT && (
                     <DropdownMenuItem
-                        onClick={handleRelinkNote}
+                        onClick={relink}
                         data-testid='relink-note-menu-item'
                     >
                         <ArrowClockwiseIcon size={16} weight='bold' />
                         <span className='flex-1'>Relink</span>
                     </DropdownMenuItem>
                 )}
-                {canWrite && activeView !== ViewMode.GRAPH && (
+                {isWritable && activeView !== ViewMode.GRAPH && (
                     <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                            onClick={handleUploadFiles}
+                            onClick={openUpload}
                             data-testid='manage-files-menu-item'
                         >
                             <CloudArrowUpIcon size={16} weight='bold' />
@@ -252,30 +249,30 @@ export default function ActionsDropdown({
                         </DropdownMenuItem>
                     </>
                 )}
-                {isFleeting && canWrite && (
+                {isFleeting && isWritable && (
                     <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                            onClick={handleSaveAsFinal}
+                            onClick={finalize}
                             data-testid='save-as-final-menu-item'
                         >
                             <FloppyDiskIcon size={16} weight='bold' />
                             <span className='flex-1'>Save As Final</span>
-                            {saving && <Spinner />}
+                            {isSaving && <Spinner />}
                         </DropdownMenuItem>
                     </>
                 )}
                 {activeView !== ViewMode.GRAPH && (
                     <>
                         <DropdownMenuItem
-                            onClick={enrichData}
+                            onClick={enrich}
                             data-testid='enrich-data-menu-item'
                         >
                             <SparkleIcon size={16} weight='bold' />
                             <span className='flex-1'>Enrich Artifacts</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            onClick={handlePublish}
+                            onClick={publish}
                             data-testid='publish-menu-item'
                         >
                             <ChartBarIcon size={16} weight='bold' />
@@ -283,11 +280,11 @@ export default function ActionsDropdown({
                         </DropdownMenuItem>
                     </>
                 )}
-                {canWrite && (
+                {isWritable && (
                     <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                            onClick={handleDelete}
+                            onClick={confirmDelete}
                             variant='destructive'
                             data-testid='delete-note-menu-item'
                         >

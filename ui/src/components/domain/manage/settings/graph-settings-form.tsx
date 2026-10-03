@@ -15,7 +15,7 @@ import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 export default function GraphSettingsForm() {
-    const refreshGraphMutation = useMutation({
+    const refreshMaterializedGraph = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}/',
@@ -38,7 +38,7 @@ export default function GraphSettingsForm() {
         },
     });
 
-    const recalculatePositionsMutation = useMutation({
+    const recalculateNodePositions = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}/',
@@ -60,14 +60,6 @@ export default function GraphSettingsForm() {
             );
         },
     });
-
-    const handleRefreshMaterializedGraph = () => {
-        refreshGraphMutation.mutate();
-    };
-
-    const handleRecalculateNodePositions = () => {
-        recalculatePositionsMutation.mutate();
-    };
 
     return (
         <div className='flex flex-col gap-6'>
@@ -92,11 +84,13 @@ export default function GraphSettingsForm() {
                             variant='outline'
                             size='sm'
                             className='self-start md:self-center'
-                            onClick={handleRefreshMaterializedGraph}
-                            disabled={refreshGraphMutation.isPending}
+                            onClick={() => refreshMaterializedGraph.mutate()}
+                            disabled={refreshMaterializedGraph.isPending}
                         >
                             <ArrowClockwiseIcon className='w-3.5 h-3.5' weight='bold' />
-                            {refreshGraphMutation.isPending ? 'Refreshing…' : 'Refresh'}
+                            {refreshMaterializedGraph.isPending
+                                ? 'Refreshing…'
+                                : 'Refresh'}
                         </Button>
                     </Field>
 
@@ -116,11 +110,11 @@ export default function GraphSettingsForm() {
                             variant='outline'
                             size='sm'
                             className='self-start md:self-center'
-                            onClick={handleRecalculateNodePositions}
-                            disabled={recalculatePositionsMutation.isPending}
+                            onClick={() => recalculateNodePositions.mutate()}
+                            disabled={recalculateNodePositions.isPending}
                         >
                             <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
-                            {recalculatePositionsMutation.isPending
+                            {recalculateNodePositions.isPending
                                 ? 'Recalculating…'
                                 : 'Recalculate'}
                         </Button>

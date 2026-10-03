@@ -1,3 +1,4 @@
+import Logo from '@/components/base/logo/logo';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +17,6 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { getDisplayMessage, getSuccessMessage, parseAPIError } from '@/utils/api';
-import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
     ArrowUUpLeftIcon,
@@ -49,8 +49,8 @@ type FormData = z.infer<typeof resetPasswordSchema>;
  * ResetPassword component - renders the change password form
  */
 export default function ResetPassword() {
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
     const [formAlert, setFormAlert] = useState<{
         show: boolean;
         message: string;
@@ -63,14 +63,13 @@ export default function ResetPassword() {
                 Math.floor(Math.random() * RESET_PASSWORD_IMAGES.length)
             ],
     );
-    const search = useSearch({ from: '/reset-password' });
-    const searchAny = search as any;
-    const token = searchAny?.token as string | undefined;
+    const search = useSearch({ from: '/reset-password' }) as { token?: string };
+    const token = search.token;
     const router = useRouter();
     const { role } = useAuthState();
     const { isLoggedIn } = useAuthActions();
 
-    const resetPasswordMutation = useMutation({
+    const resetPassword = useMutation({
         mutationFn: async (data: { token: string; password: string }) => {
             const {
                 data: resData,
@@ -110,13 +109,11 @@ export default function ResetPassword() {
     });
 
     useEffect(() => {
-        // If user is already logged in, redirect to dashboard
         if (isLoggedIn()) {
             router.navigate({ to: '/', replace: true });
         }
     }, [role, router, isLoggedIn]);
 
-    // Validate token exists
     if (!token) {
         return (
             <div className='grid min-h-svh lg:grid-cols-2'>
@@ -178,10 +175,9 @@ export default function ResetPassword() {
 
     const onSubmit = async (data: FormData) => {
         if (!token) return;
-        resetPasswordMutation.mutate({ token, password: data.password });
+        resetPassword.mutate({ token, password: data.password });
     };
 
-    // If user is logged in, don't render the reset password form
     if (isLoggedIn()) {
         return null;
     }
@@ -237,7 +233,7 @@ export default function ResetPassword() {
                                                         {...field}
                                                         id={field.name}
                                                         type={
-                                                            showPassword
+                                                            isPasswordVisible
                                                                 ? 'text'
                                                                 : 'password'
                                                         }
@@ -246,29 +242,29 @@ export default function ResetPassword() {
                                                             fieldState.invalid
                                                         }
                                                         disabled={
-                                                            resetPasswordMutation.isPending
+                                                            resetPassword.isPending
                                                         }
                                                     />
                                                     <InputGroupAddon align='inline-end'>
                                                         <InputGroupButton
                                                             type='button'
                                                             onClick={() =>
-                                                                setShowPassword(
-                                                                    !showPassword,
+                                                                setIsPasswordVisible(
+                                                                    !isPasswordVisible,
                                                                 )
                                                             }
                                                             aria-label={
-                                                                showPassword
+                                                                isPasswordVisible
                                                                     ? 'Hide password'
                                                                     : 'Show password'
                                                             }
                                                             title={
-                                                                showPassword
+                                                                isPasswordVisible
                                                                     ? 'Hide password'
                                                                     : 'Show password'
                                                             }
                                                         >
-                                                            {showPassword ? (
+                                                            {isPasswordVisible ? (
                                                                 <EyeSlashIcon
                                                                     className='size-4'
                                                                     weight='bold'
@@ -305,7 +301,7 @@ export default function ResetPassword() {
                                                         {...field}
                                                         id={field.name}
                                                         type={
-                                                            showConfirmPassword
+                                                            isConfirmPasswordVisible
                                                                 ? 'text'
                                                                 : 'password'
                                                         }
@@ -314,29 +310,29 @@ export default function ResetPassword() {
                                                             fieldState.invalid
                                                         }
                                                         disabled={
-                                                            resetPasswordMutation.isPending
+                                                            resetPassword.isPending
                                                         }
                                                     />
                                                     <InputGroupAddon align='inline-end'>
                                                         <InputGroupButton
                                                             type='button'
                                                             onClick={() =>
-                                                                setShowConfirmPassword(
-                                                                    !showConfirmPassword,
+                                                                setIsConfirmPasswordVisible(
+                                                                    !isConfirmPasswordVisible,
                                                                 )
                                                             }
                                                             aria-label={
-                                                                showConfirmPassword
+                                                                isConfirmPasswordVisible
                                                                     ? 'Hide password'
                                                                     : 'Show password'
                                                             }
                                                             title={
-                                                                showConfirmPassword
+                                                                isConfirmPasswordVisible
                                                                     ? 'Hide password'
                                                                     : 'Show password'
                                                             }
                                                         >
-                                                            {showConfirmPassword ? (
+                                                            {isConfirmPasswordVisible ? (
                                                                 <EyeSlashIcon
                                                                     className='size-4'
                                                                     weight='bold'
@@ -387,10 +383,10 @@ export default function ResetPassword() {
                                 variant='default'
                                 size='default'
                                 className='w-full'
-                                disabled={resetPasswordMutation.isPending}
+                                disabled={resetPassword.isPending}
                                 data-testid='login-register-button'
                             >
-                                {resetPasswordMutation.isPending && (
+                                {resetPassword.isPending && (
                                     <Spinner className='size-4' />
                                 )}
                                 Change Password

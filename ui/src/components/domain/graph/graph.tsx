@@ -97,7 +97,6 @@ const ForceAtlas2LayoutContext = createContext<ForceAtlas2LayoutContextValue | n
     null,
 );
 
-/** Sigma v3 edge program for `type: "curved"` (see `@sigma/edge-curve`). */
 const SIGMA_EDGE_PROGRAM_CLASSES = { curved: EdgeCurveProgram };
 
 const PARALLEL_EDGE_INDEX_ATTRS = [
@@ -147,7 +146,6 @@ function applyCurvedEdgeRenderAttrs(g: MultiDirectedGraph) {
     });
 }
 
-/** Deterministic [0,1) floats from display settings seed (initial node placement). */
 function createSeededRng(seed: string | number | undefined): () => number {
     let state =
         typeof seed === 'number' && Number.isFinite(seed)
@@ -475,7 +473,11 @@ function GraphControls({
 }: {
     layout: ReturnType<typeof useWorkerLayoutForceAtlas2>;
 }) {
-    const { zoomIn, zoomOut, reset } = useCamera({ duration: 200, factor: 1.5 });
+    const {
+        zoomIn,
+        zoomOut,
+        reset: resetCamera,
+    } = useCamera({ duration: 200, factor: 1.5 });
     const { toggle: toggleFullScreen, isFullScreen } = useFullScreen();
 
     return (
@@ -508,7 +510,7 @@ function GraphControls({
                     variant='outline'
                     size='icon-sm'
                     className='text-foreground'
-                    onClick={() => reset()}
+                    onClick={() => resetCamera()}
                     title='See whole graph'
                 >
                     <MdFilterCenterFocus className='size-4 text-foreground' />
@@ -559,7 +561,6 @@ function GraphScene({
     activePanel,
 }: SigmaGraphBindingsProps) {
     const sigma = useSigma();
-    // Only simulation-related `config` fields affect FA2; list them explicitly so unrelated `config` keys do not reset the worker.
     const fa2Params = useMemo(
         () => buildForceAtlas2Params(config, validNodes.length),
         // eslint-disable-next-line react-hooks/exhaustive-deps -- explicit simulation keys only (not whole `config`)
@@ -674,7 +675,7 @@ export default function GraphViewer({
             }));
     }, [edges, nodeIdToIndex]);
 
-    const hasValidData = validNodes.length > 0;
+    const hasNodes = validNodes.length > 0;
 
     const sigmaContainerSettings = useMemo(
         () => ({
@@ -686,7 +687,7 @@ export default function GraphViewer({
 
     return (
         <div className='w-full h-full bg-background relative overflow-hidden'>
-            {hasValidData ? (
+            {hasNodes ? (
                 <>
                     <div className='absolute bottom-2 left-2 z-10 bg-background/90 backdrop-blur-sm border border-border rounded-lg px-3 py-1.5 flex items-center gap-3 shadow-md text-xs'>
                         <span className='text-muted-foreground'>

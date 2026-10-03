@@ -1,5 +1,5 @@
+import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
-import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -26,10 +26,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
-import { useEffect, useId, useMemo, useRef } from 'react';
+import { useId, useLayoutEffect, useMemo, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
-import { SelectOption } from '@/types';
+import OfflineIndicator from '@/components/feedback/offline-indicator';
+import { SelectOption } from '@/types/models';
 import {
     ArrowCounterClockwiseIcon,
     ClockCounterClockwiseIcon,
@@ -37,7 +38,6 @@ import {
 } from '@phosphor-icons/react';
 import isEqual from 'lodash/isEqual';
 import * as z from 'zod';
-import OfflineIndicator from '../../../feedback/offline-indicator';
 
 type Entity = components['schemas']['Entity'];
 type EntityRequest = components['schemas']['EntityRequest'];
@@ -106,14 +106,14 @@ function getEntityFormFromApi(
 
 export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     const formId = useId();
-    const fetchAliasesMutation = useMutation({
-        mutationFn: async (q: string) => {
+    const searchAliases = useMutation({
+        mutationFn: async (searchTerm: string) => {
             const { data, error, response } = await fetchClient.GET(
                 '/query/advanced/',
                 {
                     params: {
                         query: {
-                            query: [q],
+                            query: [searchTerm],
                             wildcard: true,
                         },
                     },
@@ -136,7 +136,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         },
     });
 
-    const updateEntityMutation = useMutation({
+    const updateEntity = useMutation({
         mutationFn: async (payload: EntityRequest) => {
             const { data, error, response } = await fetchClient.PATCH(
                 '/entries/entities/{entity_id}/',
@@ -163,27 +163,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
 
     const loadedValuesRef = useRef<EntityFormData | null>(null);
 
-    const {
-        handleSubmit: handleFormSubmit,
-        reset,
-        watch,
-        control,
-        formState: { isSubmitting, isDirty },
-    } = useForm<EntityFormData>({
-        resolver: zodResolver(entitySchema) as any,
-        defaultValues: ENTITY_FORM_DEFAULTS,
-    });
-
-    // Fetch aliases for async select
-    const fetchAliases = async (q: string): Promise<AliasOption[]> => {
-        try {
-            return await fetchAliasesMutation.mutateAsync(q);
-        } catch (_error) {
-            return [];
-        }
-    };
-
-    const { data: entryClassesData } = useNdjsonQuery({
+    const { data: entryClasses } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
         params: {
             query: { show_count: true },
@@ -197,17 +177,17 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     });
 
     const subtypeOptions = useMemo<SubtypeOption[]>(() => {
-        const results = entryClassesData ?? [];
+        const results = entryClasses ?? [];
         return results
             .filter((entry) => entry.type === 'entity')
             .map((entry) => ({
                 value: entry.subtype,
                 label: entry.subtype,
             }));
-    }, [entryClassesData]);
+    }, [entryClasses]);
 
     const {
-        data: entityData,
+        data: entity,
         isLoading,
         isPaused,
     } = $api.useQuery(
@@ -221,39 +201,51 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     );
 
     const resolvedSubtypeOptions = useMemo(() => {
-        if (!entityData?.subtype) return subtypeOptions;
+        if (!entity?.subtype) return subtypeOptions;
 
-        const hasCurrent = subtypeOptions.some(
-            (option) => option.value === entityData.subtype,
-        );
-        if (hasCurrent) return subtypeOptions;
+        const listed = subtypeOptions.some((option) => option.value === entity.subtype);
+        if (listed) return subtypeOptions;
 
-        return [
-            ...subtypeOptions,
-            { value: entityData.subtype, label: entityData.subtype },
-        ];
-    }, [entityData?.subtype, subtypeOptions]);
+        return [...subtypeOptions, { value: entity.subtype, label: entity.subtype }];
+    }, [entity?.subtype, subtypeOptions]);
 
-    // Update form when entity data loads
-    useEffect(() => {
-        const values = getEntityFormFromApi(entityData);
+    const {
+        handleSubmit,
+        reset,
+        watch,
+        control,
+        formState: { isSubmitting, isDirty },
+    } = useForm<EntityFormData>({
+        resolver: zodResolver(entitySchema) as any,
+        defaultValues: ENTITY_FORM_DEFAULTS,
+    });
+
+    const fetchAliases = async (searchTerm: string): Promise<AliasOption[]> => {
+        try {
+            return await searchAliases.mutateAsync(searchTerm);
+        } catch (_error) {
+            return [];
+        }
+    };
+
+    useLayoutEffect(() => {
+        const values = getEntityFormFromApi(entity);
         if (!values) return;
         loadedValuesRef.current = values;
         reset(values);
-    }, [entityData, reset]);
+    }, [entity, reset]);
 
-    // Handle form submission
-    const onSubmit = async (data: EntityFormData) => {
+    const onSubmit = async (values: EntityFormData) => {
         const payload = {
             type: 'entity',
-            name: data.name,
-            description: data.description,
-            subtype: data.subtype || '',
-            is_public: data.isPublic,
-            aliases: data.aliases.map((alias) => alias.value),
+            name: values.name,
+            description: values.description,
+            subtype: values.subtype || '',
+            is_public: values.isPublic,
+            aliases: values.aliases.map((alias) => alias.value),
         };
         try {
-            await updateEntityMutation.mutateAsync(payload);
+            await updateEntity.mutateAsync(payload);
         } catch (_error) {
             // errors/toasts handled by mutation/meta; keep form responsive
         }
@@ -275,10 +267,10 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         );
     }
 
-    const handleRevert = () => {
+    const revert = () => {
         if (loadedValuesRef.current) reset(loadedValuesRef.current);
     };
-    const handleDefault = () =>
+    const resetToDefaults = () =>
         reset(ENTITY_FORM_DEFAULTS, { keepDefaultValues: true });
     const isAtDefault = isEqual(watch(), ENTITY_FORM_DEFAULTS);
 
@@ -291,7 +283,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                         variant='outline'
                         size='icon'
                         disabled={!isDirty}
-                        onClick={handleRevert}
+                        onClick={revert}
                         title='Revert'
                     >
                         <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
@@ -301,7 +293,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                         variant='outline'
                         size='icon'
                         disabled={isAtDefault}
-                        onClick={handleDefault}
+                        onClick={resetToDefaults}
                         title='Default'
                     >
                         <ClockCounterClockwiseIcon className='size-4' weight='bold' />
@@ -325,7 +317,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
             <form
                 id={formId}
                 className='flex flex-col gap-6'
-                onSubmit={handleFormSubmit(onSubmit)}
+                onSubmit={handleSubmit(onSubmit)}
             >
                 <section id='entity-settings'>
                     <div className='flex flex-col gap-4'>

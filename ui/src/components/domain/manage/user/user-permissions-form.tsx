@@ -1,7 +1,7 @@
-import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
+import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
-import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -58,14 +58,14 @@ export default function UserPermissionsForm({
         {},
     );
     const [currentAccess, setCurrentAccess] = useState<Record<number, AccessType>>({});
-    const [searchVal, setSearchVal] = useState('');
+    const [appliedSearch, setAppliedSearch] = useState('');
     const [pagination, setPagination] = useState({
         pageIndex: 0,
         pageSize: 20,
     });
     const queryClient = useQueryClient();
 
-    const trimmedSearch = searchVal.trim();
+    const trimmed = appliedSearch.trim();
 
     const accessMapsRef = useRef({
         original: {} as Record<number, AccessType>,
@@ -74,16 +74,23 @@ export default function UserPermissionsForm({
     accessMapsRef.current.original = originalAccess;
     accessMapsRef.current.current = currentAccess;
 
-    const hasLoadedListContextRef = useRef(false);
+    const hydratedRef = useRef(false);
 
-    const permissionsQuery = useQuery({
+    const {
+        data: permissions,
+        isPending,
+        isFetching,
+        isError,
+        isSuccess,
+        refetch,
+    } = useQuery({
         queryKey: [
             'get',
             '/access/user/{user_id}/',
             id,
             pagination.pageIndex + 1,
             pagination.pageSize,
-            trimmedSearch,
+            trimmed,
         ],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
@@ -94,7 +101,7 @@ export default function UserPermissionsForm({
                         query: {
                             page: pagination.pageIndex + 1,
                             page_size: pagination.pageSize,
-                            ...(trimmedSearch ? { search: trimmedSearch } : {}),
+                            ...(trimmed ? { search: trimmed } : {}),
                         },
                     },
                 },
@@ -107,56 +114,55 @@ export default function UserPermissionsForm({
         refetchOnReconnect: false,
     });
 
-    const pageData = permissionsQuery.data;
-    const totalPages = Math.max(1, pageData?.total_pages ?? 1);
+    const totalPages = Math.max(1, permissions?.total_pages ?? 1);
 
     const entities: PermissionEntity[] = useMemo(() => {
-        const results = pageData?.results ?? [];
+        const results = permissions?.results ?? [];
         return results.map((c: AccessEntity) => ({
             id: c.id,
             name: c.name,
             description: undefined,
         }));
-    }, [pageData?.results]);
+    }, [permissions?.results]);
 
     useLayoutEffect(() => {
-        hasLoadedListContextRef.current = false;
+        hydratedRef.current = false;
         setOriginalAccess({});
         setCurrentAccess({});
-        setSearchVal('');
+        setAppliedSearch('');
         setPagination((p) => ({ pageIndex: 0, pageSize: p.pageSize }));
     }, [id]);
 
     useLayoutEffect(() => {
-        hasLoadedListContextRef.current = false;
+        hydratedRef.current = false;
         setOriginalAccess({});
         setCurrentAccess({});
         setPagination((p) => ({ pageIndex: 0, pageSize: p.pageSize }));
-    }, [trimmedSearch]);
+    }, [trimmed]);
 
     useEffect(() => {
-        if (permissionsQuery.isSuccess && permissionsQuery.data !== undefined) {
-            hasLoadedListContextRef.current = true;
+        if (isSuccess && permissions !== undefined) {
+            hydratedRef.current = true;
         }
-    }, [permissionsQuery.isSuccess, permissionsQuery.data]);
+    }, [isSuccess, permissions]);
 
     useEffect(() => {
-        if (!pageData) return;
-        const maxIndex = Math.max(0, (pageData.total_pages ?? 1) - 1);
+        if (!permissions) return;
+        const maxIndex = Math.max(0, (permissions.total_pages ?? 1) - 1);
         setPagination((p) =>
             p.pageIndex > maxIndex ? { ...p, pageIndex: maxIndex } : p,
         );
-    }, [pageData?.total_pages, pageData]);
+    }, [permissions?.total_pages, permissions]);
 
     useEffect(() => {
-        if (!pageData) return;
-        if (pageData.count === 0) {
+        if (!permissions) return;
+        if (permissions.count === 0) {
             setOriginalAccess({});
             setCurrentAccess({});
             return;
         }
 
-        const results = pageData.results;
+        const results = permissions.results;
         if (!results) return;
 
         const prevOriginal = accessMapsRef.current.original;
@@ -169,8 +175,8 @@ export default function UserPermissionsForm({
             const server = row.access_type;
             const orig = prevOriginal[entityId];
             const cur = prevCurrent[entityId];
-            const dirty = orig !== undefined && cur !== undefined && orig !== cur;
-            if (dirty) {
+            const isRowDirty = orig !== undefined && cur !== undefined && orig !== cur;
+            if (isRowDirty) {
                 nextOriginal[entityId] = orig;
                 nextCurrent[entityId] = cur;
             } else {
@@ -181,19 +187,16 @@ export default function UserPermissionsForm({
 
         setOriginalAccess(nextOriginal);
         setCurrentAccess(nextCurrent);
-    }, [pageData]);
+    }, [permissions]);
 
-    const handleAccessChange = useCallback(
-        (entityId: number, accessType: AccessType) => {
-            setCurrentAccess((prev) => ({
-                ...prev,
-                [entityId]: accessType,
-            }));
-        },
-        [],
-    );
+    const updateAccess = useCallback((entityId: number, accessType: AccessType) => {
+        setCurrentAccess((prev) => ({
+            ...prev,
+            [entityId]: accessType,
+        }));
+    }, []);
 
-    const hasUnsavedChanges = useMemo(() => {
+    const isDirty = useMemo(() => {
         const keys = new Set([
             ...Object.keys(originalAccess),
             ...Object.keys(currentAccess),
@@ -205,7 +208,7 @@ export default function UserPermissionsForm({
         return false;
     }, [originalAccess, currentAccess]);
 
-    const saveChangesMutation = useMutation({
+    const savePermissions = useMutation({
         mutationFn: async () => {
             const keys = new Set([
                 ...Object.keys(originalAccess),
@@ -257,34 +260,33 @@ export default function UserPermissionsForm({
         },
     });
 
-    const handleSave = () => {
-        if (!hasUnsavedChanges) return;
-        saveChangesMutation.mutate();
+    const save = () => {
+        if (!isDirty) return;
+        savePermissions.mutate();
     };
 
-    const handleRevert = () => {
+    const revert = () => {
         setCurrentAccess({ ...originalAccess });
     };
 
-    const handleDefault = () => {
-        const defaults: Record<number, AccessType> = { ...currentAccess };
+    const resetToNone = () => {
+        const nextAccess: Record<number, AccessType> = { ...currentAccess };
         entities.forEach((e) => {
-            defaults[e.id] = 'none';
+            nextAccess[e.id] = 'none';
         });
-        setCurrentAccess(defaults);
+        setCurrentAccess(nextAccess);
     };
 
     const isAtDefault =
         entities.length > 0 &&
         entities.every((e) => (currentAccess[e.id] ?? 'none') === 'none');
 
-    const emptyMessage = searchVal.trim()
+    const emptyMessage = appliedSearch.trim()
         ? 'No entities found matching your search'
         : 'No entities available';
 
-    const handleSearchChange = useCallback((value: string) => {
-        setSearchVal(value);
-        setPagination((p) => ({ ...p, pageIndex: 0 }));
+    const applySearch = useCallback((value: string) => {
+        setAppliedSearch(value);
     }, []);
 
     const columns = useMemo<ColumnDef<PermissionEntity>[]>(
@@ -325,15 +327,15 @@ export default function UserPermissionsForm({
                 cell: ({ row }) => {
                     const entity = row.original;
                     const value = currentAccess[entity.id] ?? 'none';
-                    const disabled = saveChangesMutation.isPending || !!readOnly;
+                    const isDisabled = savePermissions.isPending || !!readOnly;
                     return (
                         <div onClick={(e) => e.stopPropagation()}>
                             <Select
                                 value={value}
                                 onValueChange={(v) =>
-                                    handleAccessChange(entity.id, v as AccessType)
+                                    updateAccess(entity.id, v as AccessType)
                                 }
-                                disabled={disabled}
+                                disabled={isDisabled}
                             >
                                 <SelectTrigger className='w-[140px]'>
                                     <SelectValue />
@@ -355,7 +357,7 @@ export default function UserPermissionsForm({
                 size: 160,
             },
         ],
-        [currentAccess, handleAccessChange, readOnly, saveChangesMutation.isPending],
+        [currentAccess, updateAccess, readOnly, savePermissions.isPending],
     );
 
     const table = useReactTable({
@@ -369,7 +371,7 @@ export default function UserPermissionsForm({
         getRowId: (row) => String(row.id),
     });
 
-    if (permissionsQuery.isPending && !hasLoadedListContextRef.current) {
+    if (isPending && !hydratedRef.current) {
         return (
             <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                 <Spinner className='size-10' />
@@ -377,13 +379,13 @@ export default function UserPermissionsForm({
         );
     }
 
-    if (permissionsQuery.isError) {
+    if (isError) {
         return (
             <div className='flex flex-col items-center justify-center min-h-[200px] gap-3 text-foreground'>
                 <p className='text-sm text-muted-foreground'>
                     Failed to load permissions.
                 </p>
-                <Button type='button' onClick={() => permissionsQuery.refetch()}>
+                <Button type='button' onClick={() => refetch()}>
                     Retry
                 </Button>
             </div>
@@ -399,8 +401,8 @@ export default function UserPermissionsForm({
                             type='button'
                             variant='outline'
                             size='icon'
-                            disabled={!hasUnsavedChanges}
-                            onClick={handleRevert}
+                            disabled={!isDirty}
+                            onClick={revert}
                             title='Revert'
                         >
                             <ArrowCounterClockwiseIcon
@@ -413,7 +415,7 @@ export default function UserPermissionsForm({
                             variant='outline'
                             size='icon'
                             disabled={isAtDefault}
-                            onClick={handleDefault}
+                            onClick={resetToNone}
                             title='Default'
                         >
                             <ClockCounterClockwiseIcon
@@ -425,13 +427,11 @@ export default function UserPermissionsForm({
                             type='button'
                             variant='default'
                             size='icon'
-                            disabled={
-                                saveChangesMutation.isPending || !hasUnsavedChanges
-                            }
-                            onClick={handleSave}
+                            disabled={savePermissions.isPending || !isDirty}
+                            onClick={save}
                             title='Save Settings'
                         >
-                            {saveChangesMutation.isPending ? (
+                            {savePermissions.isPending ? (
                                 <Spinner className='size-4' />
                             ) : (
                                 <FloppyDiskIcon className='size-4' weight='bold' />
@@ -446,12 +446,12 @@ export default function UserPermissionsForm({
                         <ActionBarSearch
                             placeholder='Search entities...'
                             name='user-permissions-entity-search'
-                            value={searchVal}
+                            value={appliedSearch}
                             debounceMs={300}
-                            onDebouncedChange={handleSearchChange}
-                            onSubmit={handleSearchChange}
-                            onClear={() => handleSearchChange('')}
-                            disabled={hasUnsavedChanges || !!readOnly}
+                            onDebouncedChange={applySearch}
+                            onSubmit={applySearch}
+                            onClear={() => applySearch('')}
+                            disabled={isDirty || !!readOnly}
                             className='w-72 max-w-full min-w-0'
                         />
                     </div>
@@ -463,15 +463,9 @@ export default function UserPermissionsForm({
                     table={table}
                     density='compact'
                     emptyMessage={emptyMessage}
-                    showPagination={
-                        (pageData?.count ?? 0) > 0 || permissionsQuery.isFetching
-                    }
-                    paginationDisabled={hasUnsavedChanges || !!readOnly}
-                    isLoading={
-                        hasLoadedListContextRef.current &&
-                        permissionsQuery.isFetching &&
-                        !pageData
-                    }
+                    showPagination={(permissions?.count ?? 0) > 0 || isFetching}
+                    paginationDisabled={isDirty || !!readOnly}
+                    isLoading={hydratedRef.current && isFetching && !permissions}
                 />
             </div>
         </>

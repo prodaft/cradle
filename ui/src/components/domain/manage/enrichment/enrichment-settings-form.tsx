@@ -21,7 +21,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import { SelectOption } from '@/types';
+import { SelectOption } from '@/types/models';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
     ArrowCounterClockwiseIcon,
@@ -56,27 +56,23 @@ interface FormFields {
     [key: string]: FormField;
 }
 
-// Dynamic schema generation based on form_fields
 const createEnrichmentSchema = (form_fields: FormFields) => {
     const settingsShape = Object.entries(form_fields || {}).reduce(
         (acc, [key, field]) => {
-            let validator: z.ZodTypeAny = z.string();
+            let validator: z.ZodType = z.string();
 
             if (field.type === 'number') {
                 validator = z.coerce.number();
             } else if (field.type === 'boolean') {
                 validator = z.boolean();
             } else if (field.type === 'url') {
-                const urlValidator = z
-                    .string()
-                    .url({ message: `${key} must be a valid URL` });
+                const urlValidator = z.url({ error: `${key} must be a valid URL` });
                 validator = field.required
                     ? urlValidator
                     : z.union([z.literal(''), urlValidator]);
             }
 
             if (field.required) {
-                // Only apply .min() to string/number types, not boolean
                 if (
                     field.type === 'string' ||
                     field.type === 'choice' ||
@@ -84,11 +80,11 @@ const createEnrichmentSchema = (form_fields: FormFields) => {
                     field.type === 'url'
                 ) {
                     validator = (validator as z.ZodString).min(1, {
-                        message: `${key} is required`,
+                        error: `${key} is required`,
                     });
                 } else if (field.type === 'number') {
                     validator = (validator as z.ZodNumber).min(0, {
-                        message: `${key} is required`,
+                        error: `${key} is required`,
                     });
                 }
             }
@@ -96,7 +92,7 @@ const createEnrichmentSchema = (form_fields: FormFields) => {
             acc[key] = validator;
             return acc;
         },
-        {} as Record<string, z.ZodTypeAny>,
+        {} as Record<string, z.ZodType>,
     );
 
     return z.object({
@@ -113,7 +109,7 @@ export default function EnrichmentSettingsForm({
     enrichment_class,
 }: EnrichmentSettingsFormProps) {
     const formId = useId();
-    const fetchEntryClassesMutation = useMutation({
+    const fetchClasses = useMutation({
         mutationFn: async (q: string) => {
             const results = await fetchNdjson({
                 path: '/entries/entry-classes/stream/',
@@ -133,7 +129,7 @@ export default function EnrichmentSettingsForm({
         },
     });
 
-    const updateEnrichmentSettingsMutation = useMutation({
+    const saveSettings = useMutation({
         mutationFn: async (formatted_data: any) => {
             const { error, response } = await fetchClient.POST(
                 '/intelio/enrichment/{enricher_type}/',
@@ -173,16 +169,15 @@ export default function EnrichmentSettingsForm({
         ReturnType<typeof createEnrichmentSchema>
     > | null>(null);
 
-    // Fetch all entry classes for the for_eclasses selector
     const fetchEntryClasses = async (q: string): Promise<EclassOption[]> => {
         try {
-            return await fetchEntryClassesMutation.mutateAsync(q);
+            return await fetchClasses.mutateAsync(q);
         } catch (_err) {
             return [];
         }
     };
 
-    const { data: settingsData, isLoading } = useQuery({
+    const { data: enrichmentSettings, isLoading } = useQuery({
         queryKey: ['enrichment', 'settings', enrichment_class],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
@@ -202,8 +197,8 @@ export default function EnrichmentSettingsForm({
     });
 
     useEffect(() => {
-        if (settingsData) {
-            const sd = settingsData as any;
+        if (enrichmentSettings) {
+            const sd = enrichmentSettings as any;
             const formFields = sd.form_fields ?? sd.formFields ?? {};
             setValidationSchema(createEnrichmentSchema(formFields));
 
@@ -231,31 +226,29 @@ export default function EnrichmentSettingsForm({
             loadedValuesRef.current = values;
             reset(values);
         }
-    }, [settingsData, reset]);
+    }, [enrichmentSettings, reset]);
 
-    // Handle errors
     useEffect(() => {
-        if (settingsData === undefined && !isLoading && enrichment_class) {
+        if (enrichmentSettings === undefined && !isLoading && enrichment_class) {
             toast.error('Failed to load enrichment settings');
         }
-    }, [settingsData, isLoading, enrichment_class]);
+    }, [enrichmentSettings, isLoading, enrichment_class]);
 
-    const sd = settingsData as any;
+    const sd = enrichmentSettings as any;
     const displayName = sd?.display_name ?? sd?.displayName ?? '';
     const formFields = sd?.form_fields ?? sd?.formFields ?? {};
 
     const onSubmit = async (
-        data: z.infer<ReturnType<typeof createEnrichmentSchema>>,
+        values: z.infer<ReturnType<typeof createEnrichmentSchema>>,
     ) => {
-        const { for_eclasses, ...rest } = data;
+        const { for_eclasses, ...rest } = values;
         const formatted_data = {
             ...rest,
             for_eclasses: for_eclasses?.map((item) => item.value),
         };
-        await updateEnrichmentSettingsMutation.mutateAsync(formatted_data);
+        await saveSettings.mutateAsync(formatted_data);
     };
 
-    // Render form fields (docs: Field orientation="responsive" with FieldContent)
     const renderSettingsFields = () => {
         const entries = Object.entries(formFields) as [string, FormField][];
         return entries.map(([key, field], index) => {
@@ -443,8 +436,7 @@ export default function EnrichmentSettingsForm({
                                         className='w-64 shrink-0 self-start md:self-center'
                                         value={
                                             (controllerField.value as
-                                                | string
-                                                | number) ?? ''
+                                                string | number) ?? ''
                                         }
                                         onChange={(e) =>
                                             controllerField.onChange(e.target.value)
@@ -490,7 +482,7 @@ export default function EnrichmentSettingsForm({
         );
     }
 
-    const handleRevert = () => {
+    const revert = () => {
         if (loadedValuesRef.current) reset(loadedValuesRef.current);
     };
 
@@ -511,7 +503,7 @@ export default function EnrichmentSettingsForm({
             settings: initialSettings,
         };
     };
-    const handleDefault = () =>
+    const resetToDefaults = () =>
         reset(getDefaultSettings(), { keepDefaultValues: true });
     const isAtDefault = isEqual(form.watch(), getDefaultSettings());
 
@@ -547,7 +539,7 @@ export default function EnrichmentSettingsForm({
                                 variant='outline'
                                 size='icon'
                                 disabled={!isDirty}
-                                onClick={handleRevert}
+                                onClick={revert}
                                 title='Revert'
                             >
                                 <ArrowCounterClockwiseIcon
@@ -560,7 +552,7 @@ export default function EnrichmentSettingsForm({
                                 variant='outline'
                                 size='icon'
                                 disabled={isAtDefault}
-                                onClick={handleDefault}
+                                onClick={resetToDefaults}
                                 title='Default'
                             >
                                 <ClockCounterClockwiseIcon

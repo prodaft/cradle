@@ -211,7 +211,7 @@ export const createDashboardLink = (entry: DashboardEntry | null): string => {
  * @param entry_transformer - Function to transform each entry
  * @returns Grouped entry cards
  */
-const _groupSubtypes = <T,>(
+const _groupSubtypes = <T>(
     entries: DashboardEntry[],
     entry_transformer: (entry: DashboardEntry) => T,
 ): T[][] => {

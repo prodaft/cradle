@@ -1,7 +1,7 @@
 import { PageLoader } from '@/components/base/page-loader';
-import { AuthProvider } from '@/components/domain/auth/auth-provider';
-import { Toaster } from '@/components/ui/sonner';
+import { AppToaster } from '@/components/base/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { AuthProvider } from '@/contexts/auth/auth-provider';
 import { QueryProvider } from '@/contexts/query/query-provider';
 import { ThemeProvider } from '@/contexts/ui';
 import * as Sentry from '@sentry/tanstackstart-react';
@@ -71,7 +71,7 @@ function RootComponent() {
             <AuthProvider>
                 <QueryProvider>
                     <ThemeProvider>
-                        <Toaster />
+                        <AppToaster />
                         <TooltipProvider>
                             <div id='root-content'>
                                 <Suspense fallback={<PageLoader fill='screen' logo />}>

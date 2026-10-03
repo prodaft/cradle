@@ -1,19 +1,14 @@
 import { PageLoader } from '@/components/base/page-loader';
 import Dashboard from '@/components/domain/dashboard/dashboard';
+import { dashboardValidateSearchSchema } from '@/components/domain/notes/notes-list-search-schema';
 import { fetchClient } from '@services/openapi/client';
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import * as z from 'zod';
 
 export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name')({
     staticData: {
         breadcrumb: (match: any) => match.params.name || 'Dashboard',
     },
-    validateSearch: z.looseObject({
-        heading: z.string().optional(),
-        tab: z
-            .enum(['notes', 'relations', 'files', 'enrichment', 'eventlog'])
-            .optional(),
-    }),
+    validateSearch: dashboardValidateSearchSchema,
     gcTime: 1000 * 60 * 5,
     staleTime: 1000 * 60,
     pendingComponent: () => <PageLoader fill='container' />,

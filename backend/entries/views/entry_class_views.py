@@ -2,7 +2,6 @@
 
 from typing import cast
 
-from django.conf import settings
 from django.db import transaction
 from django.db.models import Count
 from django.db.models.functions import Length
@@ -23,6 +22,7 @@ from core.pagination import TotalPagesPagination
 from user.models import CradleUser
 from user.permissions import EntryClassDetailPermission, EntryClassListPermission, HasAdminRole
 
+from ..constants import INTERNAL_SUBTYPES
 from ..exceptions import (
     AdminOnlyEntryTypeChangeException,
     AdminOnlyEntryTypeDeleteException,
@@ -215,7 +215,7 @@ class EntryClassDetail(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request: Request, class_subtype: str) -> Response:
-        if class_subtype in settings.INTERNAL_SUBTYPES:
+        if class_subtype in INTERNAL_SUBTYPES:
             raise CannotDeleteAliasEntryTypeException(detail="This entry type is an alias and cannot be deleted.")
 
         if not request.user.is_cradle_admin:
@@ -228,7 +228,7 @@ class EntryClassDetail(APIView):
 
     def post(self, request: Request, class_subtype: str) -> Response:
         """Update entry class; cannot edit alias class."""
-        if class_subtype in settings.INTERNAL_SUBTYPES:
+        if class_subtype in INTERNAL_SUBTYPES:
             raise CannotEditAliasEntryTypeException(detail="This entry type is an alias and cannot be edited.")
 
         user = cast(CradleUser, request.user)
@@ -240,7 +240,7 @@ class EntryClassDetail(APIView):
         new_subtype = request.data.get("subtype")
 
         with transaction.atomic():
-            if new_subtype != class_subtype and new_subtype:
+            if new_subtype is not None:
                 entry_class = entry_class.rename(new_subtype, user.id)
 
             serializer = EntryClassSerializer(entry_class, data=request.data)

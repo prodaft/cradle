@@ -1,4 +1,4 @@
-import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
+import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -20,7 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { queryKeys, useNdjsonQuery } from '@/hooks/query';
-import { SelectOption } from '@/types';
+import { SelectOption } from '@/types/models';
 import { getSuccessMessage } from '@/utils/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -128,7 +128,7 @@ function getFileSettingsFromApi(
 
 export default function FileSettingsForm() {
     const formId = useId();
-    const reprocessFilesMutation = useMutation({
+    const reprocessFiles = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}/',
@@ -150,7 +150,7 @@ export default function FileSettingsForm() {
 
     const loadedValuesRef = useRef<FileSettingsFormValues | null>(null);
 
-    const { data: entryClassesData } = useNdjsonQuery({
+    const { data: entryClasses } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'file-settings'],
         refetchOnWindowFocus: false,
@@ -158,7 +158,7 @@ export default function FileSettingsForm() {
     });
 
     const {
-        data: settingsData,
+        data: settings,
         isLoading,
         isError: isSettingsError,
         error: settingsError,
@@ -176,22 +176,22 @@ export default function FileSettingsForm() {
         meta: { showErrorToast: false, suppressNotification: true },
     });
 
-    const updateSettingsMutation = useMutation({
-        mutationFn: async (data: FileSettingsFormValues) => {
+    const saveSettings = useMutation({
+        mutationFn: async (values: FileSettingsFormValues) => {
             const { error, response } = await fetchClient.POST(
                 '/management/settings/',
                 {
                     body: {
                         files: {
-                            autoprocess_files: data.autoprocessFiles,
-                            md5_subtype: data.md5Subtype?.value || null,
-                            sha1_subtype: data.sha1Subtype?.value || null,
-                            sha256_subtype: data.sha256Subtype?.value || null,
-                            max_file_size_for_hashing: data.maxFileSizeForHashing
-                                ? bytes.parse(data.maxFileSizeForHashing)
+                            autoprocess_files: values.autoprocessFiles,
+                            md5_subtype: values.md5Subtype?.value || null,
+                            sha1_subtype: values.sha1Subtype?.value || null,
+                            sha256_subtype: values.sha256Subtype?.value || null,
+                            max_file_size_for_hashing: values.maxFileSizeForHashing
+                                ? bytes.parse(values.maxFileSizeForHashing)
                                 : null,
-                            upload_limit: data.uploadLimit
-                                ? bytes.parse(data.uploadLimit)
+                            upload_limit: values.uploadLimit
+                                ? bytes.parse(values.uploadLimit)
                                 : null,
                         },
                     },
@@ -210,14 +210,14 @@ export default function FileSettingsForm() {
     });
 
     const subtypes = useMemo<SubtypeOption[]>(() => {
-        const results = entryClassesData ?? [];
+        const results = entryClasses ?? [];
         return results
             .filter((entry) => entry.type === 'artifact')
             .map((entry) => ({ value: entry.subtype, label: entry.subtype }));
-    }, [entryClassesData]);
+    }, [entryClasses]);
 
     const {
-        handleSubmit: handleFormSubmit,
+        handleSubmit,
         reset,
         watch,
         control,
@@ -228,14 +228,14 @@ export default function FileSettingsForm() {
     });
 
     useEffect(() => {
-        const values = getFileSettingsFromApi(settingsData);
+        const values = getFileSettingsFromApi(settings);
         if (!values) return;
         loadedValuesRef.current = values;
         reset(values);
-    }, [settingsData, reset]);
+    }, [settings, reset]);
 
-    const onSubmit = (data: FileSettingsFormValues) =>
-        updateSettingsMutation.mutateAsync(data);
+    const onSubmit = (values: FileSettingsFormValues) =>
+        saveSettings.mutateAsync(values);
 
     if (isLoading) {
         return (
@@ -267,10 +267,10 @@ export default function FileSettingsForm() {
         );
     }
 
-    const handleRevert = () => {
+    const revert = () => {
         if (loadedValuesRef.current) reset(loadedValuesRef.current);
     };
-    const handleDefault = () =>
+    const resetToDefaults = () =>
         reset(FILE_SETTINGS_DEFAULTS, { keepDefaultValues: true });
     const isAtDefault = isEqual(watch(), FILE_SETTINGS_DEFAULTS);
 
@@ -283,7 +283,7 @@ export default function FileSettingsForm() {
                         variant='outline'
                         size='icon'
                         disabled={!isDirty}
-                        onClick={handleRevert}
+                        onClick={revert}
                         title='Revert'
                     >
                         <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
@@ -293,7 +293,7 @@ export default function FileSettingsForm() {
                         variant='outline'
                         size='icon'
                         disabled={isAtDefault}
-                        onClick={handleDefault}
+                        onClick={resetToDefaults}
                         title='Default'
                     >
                         <ClockCounterClockwiseIcon className='size-4' weight='bold' />
@@ -303,10 +303,10 @@ export default function FileSettingsForm() {
                         form={formId}
                         variant='default'
                         size='icon'
-                        disabled={updateSettingsMutation.isPending || !isDirty}
+                        disabled={saveSettings.isPending || !isDirty}
                         title='Save Settings'
                     >
-                        {updateSettingsMutation.isPending ? (
+                        {saveSettings.isPending ? (
                             <Spinner className='size-4' />
                         ) : (
                             <FloppyDiskIcon className='size-4' weight='bold' />
@@ -314,7 +314,7 @@ export default function FileSettingsForm() {
                     </Button>
                 </div>
             </SettingsHeaderActionsPortal>
-            <form id={formId} onSubmit={handleFormSubmit(onSubmit)}>
+            <form id={formId} onSubmit={handleSubmit(onSubmit)}>
                 <div className='flex flex-col gap-6'>
                     {/* Processing Section */}
                     <div className='flex flex-col gap-4'>
@@ -675,14 +675,14 @@ export default function FileSettingsForm() {
                                     variant='outline'
                                     size='sm'
                                     className='self-start md:self-center'
-                                    onClick={() => reprocessFilesMutation.mutate()}
-                                    disabled={reprocessFilesMutation.isPending}
+                                    onClick={() => reprocessFiles.mutate()}
+                                    disabled={reprocessFiles.isPending}
                                 >
                                     <ArrowClockwiseIcon
                                         className='w-3.5 h-3.5'
                                         weight='bold'
                                     />
-                                    {reprocessFilesMutation.isPending
+                                    {reprocessFiles.isPending
                                         ? 'Processing\u2026'
                                         : 'Process'}
                                 </Button>

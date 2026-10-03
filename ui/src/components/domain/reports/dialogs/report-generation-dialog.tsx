@@ -58,8 +58,8 @@ interface ReportGenerationDialogProps {
     onOpenChange: (open: boolean) => void;
     /** ID of the note to generate report from */
     noteId?: string;
-    /** List of selected notes to generate report from */
-    selectedNotes?: { id: string; title: string }[];
+    /** List of notes to generate report from */
+    notes?: { id: string; title: string }[];
     /** Title of the note */
     noteTitle?: string;
 }
@@ -84,14 +84,14 @@ export default function ReportGenerationDialog({
     open,
     onOpenChange,
     noteId,
-    selectedNotes,
+    notes,
     noteTitle,
 }: ReportGenerationDialogProps): React.JSX.Element {
     const [title, setTitle] = useState(noteTitle || '');
     const [format, setFormat] = useState<ReportFormat>('html');
     const [mode, setMode] = useState<ReportMode>('anonymized');
 
-    const generateReportMutation = useMutation({
+    const generateReport = useMutation({
         mutationFn: async (data: {
             title: string;
             format: ReportFormat;
@@ -118,15 +118,13 @@ export default function ReportGenerationDialog({
 
     const targets = useMemo(() => {
         return (
-            selectedNotes ??
-            (noteId ? [{ id: noteId, title: noteTitle || 'Untitled' }] : [])
+            notes ?? (noteId ? [{ id: noteId, title: noteTitle || 'Untitled' }] : [])
         );
-    }, [selectedNotes, noteId, noteTitle]);
+    }, [notes, noteId, noteTitle]);
 
-    const isSingleNote = targets.length === 1;
+    const isSingle = targets.length === 1;
 
-    // Track selected note IDs
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    const [checkedIds, setCheckedIds] = useState<Set<string>>(
         () => new Set(targets.map((t) => t.id)),
     );
 
@@ -142,15 +140,15 @@ export default function ReportGenerationDialog({
 
         const next = new Set(targets.map((t) => t.id));
 
-        setSelectedIds((prev) => {
+        setCheckedIds((prev) => {
             if (prev.size !== next.size) return next;
             for (const id of prev) if (!next.has(id)) return next;
             return prev; // no change => no re-render loop
         });
     }, [open, targets]);
 
-    const toggleSelection = (id: string) => {
-        setSelectedIds((prev) => {
+    const toggleNote = (id: string) => {
+        setCheckedIds((prev) => {
             const next = new Set(prev);
             if (next.has(id)) next.delete(id);
             else next.add(id);
@@ -158,27 +156,26 @@ export default function ReportGenerationDialog({
         });
     };
 
-    const handleGenerate = () => {
+    const submit = () => {
         if (!title.trim()) {
             toast.error('Please enter a report title.');
             return;
         }
 
-        // For single note, use all targets; for bulk, filter by selection
-        const validTargets = isSingleNote
+        const selectedNotes = isSingle
             ? targets
-            : targets.filter((t) => selectedIds.has(t.id));
+            : targets.filter((t) => checkedIds.has(t.id));
 
-        if (validTargets.length === 0) {
+        if (selectedNotes.length === 0) {
             toast.error('No notes selected for report generation.');
             return;
         }
 
-        generateReportMutation.mutate({
+        generateReport.mutate({
             title: title.trim(),
             format,
             mode,
-            noteIds: validTargets.map((t) => t.id),
+            noteIds: selectedNotes.map((t) => t.id),
         });
     };
 
@@ -188,38 +185,38 @@ export default function ReportGenerationDialog({
                 <DialogHeader>
                     <DialogTitle>Generate Report</DialogTitle>
                     <DialogDescription>
-                        {isSingleNote
+                        {isSingle
                             ? `Generate a report from "${targets[0]?.title || 'Untitled'}" in various formats (HTML, JSON, or plain text).`
                             : 'Generate reports from selected notes in various formats (HTML, JSON, or plain text).'}
                     </DialogDescription>
                 </DialogHeader>
 
                 {/* Selected Notes List - Only show for bulk operations */}
-                {!isSingleNote && targets.length > 0 && (
+                {!isSingle && targets.length > 0 && (
                     <FieldSet>
-                        <FieldLegend>Selected Notes ({selectedIds.size})</FieldLegend>
+                        <FieldLegend>Selected Notes ({checkedIds.size})</FieldLegend>
                         <ScrollArea className='border border-border rounded-lg max-h-48'>
                             <ul>
                                 {targets.map((note) => {
-                                    const isSelected = selectedIds.has(note.id);
+                                    const isChecked = checkedIds.has(note.id);
                                     return (
                                         <li
                                             key={note.id}
                                             className={`flex items-center gap-3 px-4 py-2 border-b border-border last:border-b-0 transition-colors ${
-                                                isSelected
+                                                isChecked
                                                     ? 'hover:bg-secondary/50'
                                                     : 'bg-secondary/10'
                                             }`}
                                         >
                                             <Checkbox
-                                                checked={isSelected}
+                                                checked={isChecked}
                                                 onCheckedChange={() =>
-                                                    toggleSelection(note.id)
+                                                    toggleNote(note.id)
                                                 }
                                             />
                                             <span
                                                 className={`text-sm truncate flex-1 ${
-                                                    isSelected
+                                                    isChecked
                                                         ? 'text-foreground'
                                                         : 'text-muted-foreground line-through decoration-muted-foreground'
                                                 }`}
@@ -244,7 +241,7 @@ export default function ReportGenerationDialog({
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder='Enter report title...'
-                            disabled={generateReportMutation.isPending}
+                            disabled={generateReport.isPending}
                         />
                     </Field>
 
@@ -254,7 +251,7 @@ export default function ReportGenerationDialog({
                         <Select
                             value={format}
                             onValueChange={(value) => setFormat(value as ReportFormat)}
-                            disabled={generateReportMutation.isPending}
+                            disabled={generateReport.isPending}
                         >
                             <SelectTrigger id='format-select' className='w-full'>
                                 <SelectValue placeholder='Select format' />
@@ -285,7 +282,7 @@ export default function ReportGenerationDialog({
                         <Select
                             value={mode}
                             onValueChange={(value) => setMode(value as ReportMode)}
-                            disabled={generateReportMutation.isPending}
+                            disabled={generateReport.isPending}
                         >
                             <SelectTrigger id='mode-select' className='w-full'>
                                 <SelectValue placeholder='Select mode' />
@@ -310,22 +307,20 @@ export default function ReportGenerationDialog({
                             type='button'
                             variant='outline'
                             size='sm'
-                            disabled={generateReportMutation.isPending}
+                            disabled={generateReport.isPending}
                         >
                             Cancel
                         </Button>
                     </DialogClose>
                     <Button
-                        onClick={handleGenerate}
-                        disabled={generateReportMutation.isPending || !title.trim()}
+                        onClick={submit}
+                        disabled={generateReport.isPending || !title.trim()}
                         type='button'
                         variant='default'
                         size='sm'
                     >
-                        {generateReportMutation.isPending && <Spinner />}
-                        {generateReportMutation.isPending
-                            ? 'Generating...'
-                            : 'Generate Report'}
+                        {generateReport.isPending && <Spinner />}
+                        {generateReport.isPending ? 'Generating...' : 'Generate Report'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

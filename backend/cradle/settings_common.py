@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     "intelio.apps.IntelIOConfig",
     "management.apps.ManagementConfig",
     "lsp.apps.LspConfig",
-    "statistics.apps.StatisticsConfig",
+    "stats.apps.StatisticsConfig",
     "notifications.apps.NotificationsConfig",
     "logs.apps.LogsConfig",
     "file_transfer.apps.FileTransferConfig",
@@ -306,9 +306,6 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024
 
 # Default settings dict
 DEFAULT_SETTINGS = {}
-
-# Internal subtypes (excluded from user-managed entry classes)
-from entries.constants import INTERNAL_SUBTYPES  # noqa: E402
 
 # Enricher container isolation settings
 # Requires the 'docker' Python SDK (docker>=7) to be installed.

@@ -5,12 +5,12 @@
  * does not prescribe a module name for this — it is app-specific wiring).
  */
 
-import type { TokenData } from '@/components/domain/auth/auth-context';
+import type { TokenData } from '@/contexts/auth/auth-context';
+import { resetSessionExpiredGate } from '@/contexts/query/query-client';
 import {
     AuthTokenException,
     SessionExpiredException,
-} from '@/components/domain/auth/auth-exceptions';
-import { resetSessionExpiredGate } from '@/query/query-client';
+} from '@services/openapi/auth-exceptions';
 import { fetchClient, setClientAccessToken, setClientAuthCallbacks } from './client';
 
 function getStorageItem(key: string): string | null {

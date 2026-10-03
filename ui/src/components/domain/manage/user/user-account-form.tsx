@@ -1,4 +1,4 @@
-import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
+import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -54,14 +54,14 @@ export default function UserAccountForm({
     const queryClient = useQueryClient();
     const previousValuesRef = useRef<Partial<FormData> | null>(null);
 
-    const { data: userData } = $api.useQuery(
+    const { data: user } = $api.useQuery(
         'get',
         '/users/{user_id}/',
         { params: { path: { user_id: userId } } },
         { enabled: !!userId, meta: { suppressNotification: true } },
     );
 
-    const saveMutation = useMutation({
+    const updateUser = useMutation({
         mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
             const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
                 params: { path: { user_id: userId } },
@@ -89,63 +89,63 @@ export default function UserAccountForm({
     });
 
     useEffect(() => {
-        if (!userData) return;
-        const data = {
-            id: userData.id,
-            username: userData.username,
-            email: userData.email,
-            role: userData.role || 'author',
+        if (!user) return;
+        const values = {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role || 'author',
         };
-        reset(data);
-        previousValuesRef.current = data;
-    }, [userData, reset]);
+        reset(values);
+        previousValuesRef.current = values;
+    }, [user, reset]);
 
-    const handleSave = () => {
-        const data = getValues();
+    const save = () => {
+        const values = getValues();
         const prev = previousValuesRef.current;
-        if (!data.id) return;
+        if (!values.id) return;
 
         const payload: any = {};
-        if (data.username !== prev?.username) payload.username = data.username;
-        if (data.email !== prev?.email) payload.email = data.email;
-        if (data.role !== prev?.role) payload.role = data.role;
+        if (values.username !== prev?.username) payload.username = values.username;
+        if (values.email !== prev?.email) payload.email = values.email;
+        if (values.role !== prev?.role) payload.role = values.role;
 
         if (Object.keys(payload).length === 0) {
             toast.info('No changes to save');
             return;
         }
 
-        saveMutation.mutate(
-            { userId: data.id, payload },
+        updateUser.mutate(
+            { userId: values.id, payload },
             {
                 onSuccess: () => {
-                    previousValuesRef.current = { ...prev, ...data };
+                    previousValuesRef.current = { ...prev, ...values };
                 },
             },
         );
     };
 
-    const handleRevert = () => {
+    const revert = () => {
         if (previousValuesRef.current) reset(previousValuesRef.current);
     };
     const accountDefaultState = {
-        username: userData?.username ?? '',
-        email: userData?.email ?? '',
-        role: userData?.role || 'author',
+        username: user?.username ?? '',
+        email: user?.email ?? '',
+        role: user?.role || 'author',
     };
-    const handleDefault = () => {
-        const defaultData = { ...accountDefaultState, id: userData?.id };
-        reset(defaultData, { keepDefaultValues: true });
-        previousValuesRef.current = defaultData;
+    const resetToDefaults = () => {
+        const baseline = { ...accountDefaultState, id: user?.id };
+        reset(baseline, { keepDefaultValues: true });
+        previousValuesRef.current = baseline;
     };
     const isAtDefault =
-        !!userData &&
+        !!user &&
         isEqual(
             { username: watch('username'), email: watch('email'), role: watch('role') },
             accountDefaultState,
         );
 
-    if (!userData) return null;
+    if (!user) return null;
 
     return (
         <>
@@ -157,7 +157,7 @@ export default function UserAccountForm({
                             variant='outline'
                             size='icon'
                             disabled={!isDirty}
-                            onClick={handleRevert}
+                            onClick={revert}
                             title='Revert'
                         >
                             <ArrowCounterClockwiseIcon
@@ -170,7 +170,7 @@ export default function UserAccountForm({
                             variant='outline'
                             size='icon'
                             disabled={isAtDefault}
-                            onClick={handleDefault}
+                            onClick={resetToDefaults}
                             title='Default'
                         >
                             <ClockCounterClockwiseIcon
@@ -182,11 +182,11 @@ export default function UserAccountForm({
                             type='button'
                             variant='default'
                             size='icon'
-                            disabled={saveMutation.isPending || !isDirty}
-                            onClick={handleSave}
+                            disabled={updateUser.isPending || !isDirty}
+                            onClick={save}
                             title='Save Settings'
                         >
-                            {saveMutation.isPending ? (
+                            {updateUser.isPending ? (
                                 <Spinner className='size-4' />
                             ) : (
                                 <FloppyDiskIcon className='size-4' weight='bold' />
@@ -290,7 +290,7 @@ export default function UserAccountForm({
                                 <Input
                                     id='userId'
                                     type='text'
-                                    value={userData?.id || ''}
+                                    value={user?.id || ''}
                                     className='opacity-60'
                                     disabled
                                     readOnly

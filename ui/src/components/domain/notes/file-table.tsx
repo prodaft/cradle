@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { FileReferenceWithNote } from '@/types';
+import type { FileReferenceWithNote } from '@/types/models';
 import { createDownloadPath } from '@/utils/links';
 import {
     ClipboardTextIcon,
@@ -34,29 +34,28 @@ const buildMarkdownReference = (file: FileReferenceWithNote) => {
     return `[${name}][${tag}]`;
 };
 interface FileTableProps {
-    fileData: FileReferenceWithNote[];
-    setFileData: (data: FileReferenceWithNote[]) => void;
+    files: FileReferenceWithNote[];
+    setFiles: (data: FileReferenceWithNote[]) => void;
     insertTextCallback: (text: string) => void;
 }
 
 export default function FileTable({
-    fileData,
-    setFileData,
+    files,
+    setFiles,
     insertTextCallback,
 }: FileTableProps) {
     const basePath = import.meta.env.VITE_API_BASE_URL ?? '';
-    const [deletingFile, setDeletingFile] = useState<FileReferenceWithNote | null>(
-        null,
-    );
+    const [pendingRemoveFile, setPendingRemoveFile] =
+        useState<FileReferenceWithNote | null>(null);
 
-    const downloadMutation = useMutation({
-        mutationFn: async (fileId: string) => {
+    const { mutateAsync: fetchDownloadUrl } = useMutation({
+        mutationFn: async (id: string) => {
             const { data, error, response } = await fetchClient.GET(
                 '/file-transfer/download/',
                 {
                     params: {
                         query: {
-                            file_id: fileId,
+                            file_id: id,
                         },
                     },
                 },
@@ -73,56 +72,54 @@ export default function FileTable({
         await navigator.clipboard.writeText(text);
     }, []);
 
-    // Removes a file from the table only. The file is not deleted from the server.
-    const handleDelete = useCallback(
-        (data: FileReferenceWithNote) => {
-            setFileData(fileData.filter((d) => d.id !== data.id));
+    const removeFile = useCallback(
+        (row: FileReferenceWithNote) => {
+            setFiles(files.filter((d) => d.id !== row.id));
             try {
                 const raw = localStorage.getItem('minio-cache');
                 if (!raw) return;
                 const minioCache = JSON.parse(raw) as Record<string, unknown>;
-                delete minioCache[createDownloadPath(data, basePath)];
+                delete minioCache[createDownloadPath(row, basePath)];
                 localStorage.setItem('minio-cache', JSON.stringify(minioCache));
             } catch {
                 // Ignore cache corruption / JSON parse errors
             }
         },
-        [basePath, fileData, setFileData],
+        [basePath, files, setFiles],
     );
 
-    const { mutateAsync: downloadFile } = downloadMutation;
-    const handleDownload = useCallback(
-        async (data: FileReferenceWithNote) => {
-            if (!data.id) return;
-            const presignedUrl = await downloadFile(data.id);
+    const download = useCallback(
+        async (item: FileReferenceWithNote) => {
+            if (!item.id) return;
+            const presignedUrl = await fetchDownloadUrl(item.id);
             const link = document.createElement('a');
             link.href = presignedUrl;
-            link.download = data.file_name || 'data';
+            link.download = item.file_name || 'data';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         },
-        [downloadFile],
+        [fetchDownloadUrl],
     );
 
-    // Memoize columns to prevent recreation on every render
     const columns = useMemo<ColumnDef<FileReferenceWithNote>[]>(
         () => [
             {
                 accessorKey: 'file_name',
                 id: 'file_name',
+                meta: { label: 'File' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='File' />
                 ),
                 cell: ({ row }) => {
-                    const data = row.original;
+                    const item = row.original;
                     return (
                         <div className='text-foreground flex items-center'>
                             <span
                                 className='truncate max-w-[200px]'
-                                title={data.file_name ?? undefined}
+                                title={item.file_name ?? undefined}
                             >
-                                {data.file_name}
+                                {item.file_name}
                             </span>
                         </div>
                     );
@@ -131,13 +128,14 @@ export default function FileTable({
             },
             {
                 id: 'tag',
+                meta: { label: 'Reference Tag' },
                 accessorFn: (row) => buildReferenceTag(row),
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Reference Tag' />
                 ),
                 cell: ({ row }) => {
-                    const data = row.original;
-                    const tag = buildReferenceTag(data);
+                    const item = row.original;
+                    const tag = buildReferenceTag(item);
                     return (
                         <code
                             className='text-xs text-muted-foreground font-mono truncate max-w-[480px] block'
@@ -153,8 +151,8 @@ export default function FileTable({
                 id: 'actions',
                 header: '',
                 cell: ({ row }) => {
-                    const data = row.original;
-                    const reference = buildMarkdownReference(data);
+                    const item = row.original;
+                    const reference = buildMarkdownReference(item);
                     return (
                         <div className='flex items-center justify-end gap-1'>
                             <Tooltip>
@@ -206,7 +204,7 @@ export default function FileTable({
                                         className='size-7 text-muted-foreground hover:text-foreground'
                                         onClick={async (e) => {
                                             e.stopPropagation();
-                                            await handleDownload(data);
+                                            await download(item);
                                         }}
                                     >
                                         <DownloadSimpleIcon
@@ -227,7 +225,7 @@ export default function FileTable({
                                         className='size-7 text-muted-foreground hover:text-destructive'
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            setDeletingFile(data);
+                                            setPendingRemoveFile(item);
                                         }}
                                     >
                                         <TrashIcon className='size-4' weight='bold' />
@@ -241,11 +239,11 @@ export default function FileTable({
                 enableSorting: false,
             },
         ],
-        [copyToClipboard, handleDownload, insertTextCallback],
+        [copyToClipboard, download, insertTextCallback],
     );
 
     const table = useReactTable({
-        data: fileData,
+        data: files,
         columns,
         getCoreRowModel: getCoreRowModel(),
         getRowId: (row, index) => row.id ?? String(index),
@@ -253,7 +251,7 @@ export default function FileTable({
 
     return (
         <div className='w-full h-full text-sm [&_.rounded-md.border]:rounded-none [&_.rounded-md.border]:border-0'>
-            {fileData.length === 0 ? (
+            {files.length === 0 ? (
                 <p className='px-4 py-3 text-muted-foreground text-center'>
                     No files uploaded yet.
                 </p>
@@ -261,9 +259,9 @@ export default function FileTable({
                 <DataTable table={table} showViewOptions />
             )}
             <AlertDialog
-                open={Boolean(deletingFile)}
+                open={Boolean(pendingRemoveFile)}
                 onOpenChange={(open) => {
-                    if (!open) setDeletingFile(null);
+                    if (!open) setPendingRemoveFile(null);
                 }}
             >
                 <AlertDialogContent className='sm:max-w-md'>
@@ -281,9 +279,9 @@ export default function FileTable({
                             variant='destructive'
                             size='sm'
                             onClick={() => {
-                                if (!deletingFile) return;
-                                handleDelete(deletingFile);
-                                setDeletingFile(null);
+                                if (!pendingRemoveFile) return;
+                                removeFile(pendingRemoveFile);
+                                setPendingRemoveFile(null);
                             }}
                         >
                             Delete

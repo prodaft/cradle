@@ -1,6 +1,6 @@
+import Logo from '@/components/base/logo/logo';
 import { useAuthActions } from '@/hooks/auth/use-auth';
 import { getDisplayMessage, getSuccessMessage, parseAPIError } from '@/utils/api';
-import Logo from '@components/base/logo/logo';
 import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { Link, useRouter, useSearch } from '@tanstack/react-router';

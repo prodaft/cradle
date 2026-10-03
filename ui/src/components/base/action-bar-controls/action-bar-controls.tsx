@@ -10,6 +10,7 @@ import React, {
     useEffect,
     useId,
     useMemo,
+    useRef,
     useState,
     type HTMLInputTypeAttribute,
 } from 'react';
@@ -118,16 +119,24 @@ export const ActionBarSearch = memo(function ActionBarSearch({
     const isControlled = value !== undefined;
     const [internalValue, setInternalValue] = useState<string>(value ?? initialValue);
 
-    // Keep internal state in sync when controlled value changes.
     useEffect(() => {
         if (!isControlled) return;
         setInternalValue(value ?? '');
     }, [isControlled, value]);
 
+    const onDebouncedChangeRef = useRef(onDebouncedChange);
+    useEffect(() => {
+        onDebouncedChangeRef.current = onDebouncedChange;
+    });
+    const hasDebouncedChange = onDebouncedChange !== undefined;
+
     const debounced = useMemo(() => {
-        if (!onDebouncedChange) return null;
-        return debounce((next: string) => onDebouncedChange(next), debounceMs);
-    }, [onDebouncedChange, debounceMs]);
+        if (!hasDebouncedChange) return null;
+        return debounce(
+            (next: string) => onDebouncedChangeRef.current?.(next),
+            debounceMs,
+        );
+    }, [hasDebouncedChange, debounceMs]);
 
     useEffect(() => {
         return () => {
@@ -139,9 +148,12 @@ export const ActionBarSearch = memo(function ActionBarSearch({
 
     const flushAndSubmit = useCallback(
         (liveValue: string) => {
-            debounced?.flush?.();
-            debounced?.cancel?.();
-            onSubmit?.(liveValue);
+            if (onSubmit) {
+                debounced?.cancel();
+                onSubmit(liveValue);
+            } else {
+                debounced?.flush();
+            }
         },
         [onSubmit, debounced],
     );
@@ -149,7 +161,11 @@ export const ActionBarSearch = memo(function ActionBarSearch({
     const handleChange = (next: string) => {
         setInternalValue(next);
         onValueChange?.(next);
-        if (next === '') onClear?.();
+        if (next === '' && onClear) {
+            debounced?.cancel();
+            onClear();
+            return;
+        }
         debounced?.(next);
     };
 

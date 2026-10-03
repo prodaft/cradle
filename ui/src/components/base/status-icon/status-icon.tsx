@@ -19,6 +19,7 @@ export type StatusType =
     | 'waiting'
     | 'info'
     | 'fleeting'
+    | 'finalized'
     | 'all';
 
 interface StatusIconProps {
@@ -34,6 +35,7 @@ export function StatusIcon({ status, size = 18, className }: StatusIconProps) {
     switch (status) {
         case 'healthy':
         case 'done':
+        case 'finalized':
             return (
                 <CheckCircleIcon
                     size={size}

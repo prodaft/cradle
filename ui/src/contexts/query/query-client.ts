@@ -3,8 +3,8 @@
  * All cross-cutting behavior lives here: toasts, session-expired, invalidation
  */
 
-import { SessionExpiredException } from '@/components/domain/auth/auth-exceptions';
 import { getDisplayMessage, getSuccessMessage, parseAPIError } from '@/utils/api';
+import { SessionExpiredException } from '@services/openapi/auth-exceptions';
 import {
     MutationCache,
     QueryCache,

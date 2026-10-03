@@ -1,5 +1,8 @@
-import MarkdownEditorDialog from '@/components/dialogs/base/markdown-editor-dialog';
-import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
+import MarkdownEditorDialog from '@/components/base/markdown-editor-dialog/markdown-editor-dialog';
+import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
+import SnippetList, {
+    SnippetListRef,
+} from '@/components/base/snippet-list/snippet-list';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -12,9 +15,6 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import SnippetList, {
-    SnippetListRef,
-} from '@components/base/snippet-list/snippet-list';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
     ArrowCounterClockwiseIcon,
@@ -47,10 +47,10 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
     const noteSnippetsActionId = useId();
     const snippetListRef = useRef<SnippetListRef>(null);
 
-    const [noteTemplateDialogOpen, setNoteTemplateDialogOpen] = useState(false);
+    const [isTemplateOpen, setIsTemplateOpen] = useState(false);
     const [noteTemplateContent, setNoteTemplateContent] = useState('');
 
-    const { data: userData } = $api.useQuery(
+    const { data: userSettings } = $api.useQuery(
         'get',
         '/users/{user_id}/',
         { params: { path: { user_id: target } } },
@@ -60,7 +60,7 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
         },
     );
 
-    const saveMutation = $api.useMutation('patch', '/users/{user_id}/', {
+    const saveSettings = $api.useMutation('patch', '/users/{user_id}/', {
         meta: { successMessage: 'Settings saved successfully' },
         onSuccess: () => {
             queryClient.invalidateQueries({
@@ -69,17 +69,18 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
         },
     });
 
-    const noteTemplateQuery = $api.useQuery(
-        'get',
-        '/users/{user_id}/default-note-template/',
-        { params: { path: { user_id: target } } },
-        {
-            enabled: false,
-            meta: { suppressNotification: true },
-        },
-    );
+    const { refetch: refetchNoteTemplate, isFetching: isTemplateFetching } =
+        $api.useQuery(
+            'get',
+            '/users/{user_id}/default-note-template/',
+            { params: { path: { user_id: target } } },
+            {
+                enabled: false,
+                meta: { suppressNotification: true },
+            },
+        );
 
-    const saveNoteTemplateMutation = $api.useMutation(
+    const saveNoteTemplate = $api.useMutation(
         'patch',
         '/users/{user_id}/default-note-template/',
         {
@@ -99,35 +100,35 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
     });
 
     useEffect(() => {
-        if (userData) {
-            reset({ vim_mode: userData.vim_mode || false });
+        if (userSettings) {
+            reset({ vim_mode: userSettings.vim_mode || false });
         }
-    }, [userData, reset]);
+    }, [userSettings, reset]);
 
-    const handleSave = (data: FormData) => {
-        saveMutation.mutate({
+    const save = (values: FormData) => {
+        saveSettings.mutate({
             params: {
                 path: {
                     user_id: target,
                 },
             },
             body: {
-                vim_mode: data.vim_mode,
+                vim_mode: values.vim_mode,
             },
         });
     };
 
-    const handleRevert = () => {
-        if (userData) reset({ vim_mode: userData.vim_mode || false });
+    const revert = () => {
+        if (userSettings) reset({ vim_mode: userSettings.vim_mode || false });
     };
-    const handleDefault = () => reset(EDITOR_DEFAULTS, { keepDefaultValues: true });
+    const resetToDefaults = () => reset(EDITOR_DEFAULTS, { keepDefaultValues: true });
     const isAtDefault = watch('vim_mode') === EDITOR_DEFAULTS.vim_mode;
 
     const openNoteTemplateDialog = async () => {
-        const { data, error } = await noteTemplateQuery.refetch();
+        const { data: noteTemplate, error } = await refetchNoteTemplate();
         if (error) return;
-        setNoteTemplateContent(data?.template ?? '');
-        setNoteTemplateDialogOpen(true);
+        setNoteTemplateContent(noteTemplate?.template ?? '');
+        setIsTemplateOpen(true);
     };
 
     return (
@@ -139,7 +140,7 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
                         variant='outline'
                         size='icon'
                         disabled={!isDirty}
-                        onClick={handleRevert}
+                        onClick={revert}
                         title='Revert'
                     >
                         <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
@@ -149,7 +150,7 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
                         variant='outline'
                         size='icon'
                         disabled={isAtDefault}
-                        onClick={handleDefault}
+                        onClick={resetToDefaults}
                         title='Default'
                     >
                         <ClockCounterClockwiseIcon className='size-4' weight='bold' />
@@ -159,10 +160,10 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
                         form={formId}
                         variant='default'
                         size='icon'
-                        disabled={saveMutation.isPending || !isDirty}
+                        disabled={saveSettings.isPending || !isDirty}
                         title='Save Settings'
                     >
-                        {saveMutation.isPending ? (
+                        {saveSettings.isPending ? (
                             <Spinner className='size-4' />
                         ) : (
                             <FloppyDiskIcon className='size-4' weight='bold' />
@@ -170,7 +171,7 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
                     </Button>
                 </div>
             </SettingsHeaderActionsPortal>
-            <form id={formId} onSubmit={handleSubmit(handleSave)}>
+            <form id={formId} onSubmit={handleSubmit(save)}>
                 <section id='editor'>
                     <div className='flex flex-col gap-4'>
                         <div className='flex items-center justify-between gap-4'>
@@ -222,11 +223,12 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
                                     size='sm'
                                     className='self-center'
                                     onClick={openNoteTemplateDialog}
-                                    disabled={noteTemplateQuery.isFetching}
+                                    disabled={isTemplateFetching}
                                 >
-                                    {noteTemplateQuery.isFetching
-                                        ? 'Loading...'
-                                        : 'Edit'}
+                                    {isTemplateFetching ? (
+                                        <Spinner className='size-4' />
+                                    ) : null}
+                                    Edit
                                 </Button>
                             </Field>
 
@@ -269,15 +271,15 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
             </form>
 
             <MarkdownEditorDialog
-                open={noteTemplateDialogOpen}
-                onOpenChange={setNoteTemplateDialogOpen}
+                open={isTemplateOpen}
+                onOpenChange={setIsTemplateOpen}
                 title='Note Template'
                 titleEditable={false}
                 description='Edit the markdown template used for new notes.'
                 initialContent={noteTemplateContent}
                 helpText='This markdown template will be used as the starting content for new notes you create.'
                 onConfirm={async (content) => {
-                    await saveNoteTemplateMutation.mutateAsync({
+                    await saveNoteTemplate.mutateAsync({
                         params: {
                             path: {
                                 user_id: target,

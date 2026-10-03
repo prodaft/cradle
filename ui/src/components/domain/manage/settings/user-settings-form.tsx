@@ -1,4 +1,4 @@
-import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
+import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -77,7 +77,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         defaultValues: USER_SETTINGS_DEFAULTS,
     });
 
-    const { data: settingsData, isPending } = useQuery({
+    const { data: settings, isPending } = useQuery({
         queryKey: queryKeys.management.settings(),
         refetchOnWindowFocus: false,
         queryFn: async () => {
@@ -93,16 +93,16 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         },
     });
 
-    const saveMutation = useMutation({
-        mutationFn: async (data: UserSettingsFormData) => {
+    const saveSettings = useMutation({
+        mutationFn: async (values: UserSettingsFormData) => {
             const { error, response } = await fetchClient.POST(
                 '/management/settings/',
                 {
                     body: {
                         users: {
-                            allow_registration: data.allowRegistration,
-                            require_email_confirmation: data.requireEmailActivation,
-                            require_admin_confirmation: data.requireAdminConfirmation,
+                            allow_registration: values.allowRegistration,
+                            require_email_confirmation: values.requireEmailActivation,
+                            require_admin_confirmation: values.requireAdminConfirmation,
                         },
                     },
                 },
@@ -119,15 +119,15 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
     });
 
     useEffect(() => {
-        const values = getUserSettingsFromApi(settingsData);
+        const values = getUserSettingsFromApi(settings);
         if (!values) return;
         loadedValuesRef.current = values;
         reset(values);
-    }, [settingsData, reset]);
+    }, [settings, reset]);
 
-    const onSubmit: SubmitHandler<UserSettingsFormData> = async (data) => {
+    const onSubmit: SubmitHandler<UserSettingsFormData> = async (values) => {
         try {
-            await saveMutation.mutateAsync(data);
+            await saveSettings.mutateAsync(values);
             onAdd?.();
         } catch (_error) {
             // Error already handled by mutation
@@ -142,10 +142,10 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         );
     }
 
-    const handleRevert = () => {
+    const revert = () => {
         if (loadedValuesRef.current) reset(loadedValuesRef.current);
     };
-    const handleDefault = () =>
+    const resetToDefaults = () =>
         reset(USER_SETTINGS_DEFAULTS, { keepDefaultValues: true });
     const isAtDefault = isEqual(watch(), USER_SETTINGS_DEFAULTS);
 
@@ -158,7 +158,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                         variant='outline'
                         size='icon'
                         disabled={!isDirty}
-                        onClick={handleRevert}
+                        onClick={revert}
                         title='Revert'
                     >
                         <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
@@ -168,7 +168,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                         variant='outline'
                         size='icon'
                         disabled={isAtDefault}
-                        onClick={handleDefault}
+                        onClick={resetToDefaults}
                         title='Default'
                     >
                         <ClockCounterClockwiseIcon className='size-4' weight='bold' />

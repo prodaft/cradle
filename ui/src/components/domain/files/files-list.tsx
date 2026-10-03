@@ -1,3 +1,4 @@
+import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
 import {
     ActionBar,
     ActionBarClose,
@@ -8,6 +9,7 @@ import {
 } from '@/components/custom/action-bar';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
+import OfflineIndicator from '@/components/feedback/offline-indicator';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import {
     AlertDialog,
@@ -44,7 +46,6 @@ import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBarSearch } from '@components/base/action-bar/action-bar';
 import { useDroppable } from '@dnd-kit/core';
 import {
     ArrowClockwiseIcon,
@@ -68,27 +69,23 @@ import { format } from 'date-fns';
 import { Check, PlusCircle, XCircle } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import OfflineIndicator from '../../feedback/offline-indicator';
 
-type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
+type FileRow = components['schemas']['FileReferenceWithNote'];
 
-type FilesListQuery = NonNullable<
-    operations['notes_files_retrieve']['parameters']['query']
->;
+type ListQuery = NonNullable<operations['notes_files_retrieve']['parameters']['query']>;
 
 export type FilesListScopeQuery = Partial<
-    Omit<FilesListQuery, 'linked_to' | 'references'>
+    Omit<ListQuery, 'linked_to' | 'references'>
 > & {
     linked_to?: number | string;
     references?: string;
 };
 
 interface FilesListProps {
-    query?: FilesListScopeQuery;
+    scope?: FilesListScopeQuery;
     hidePageHeader?: boolean;
 }
 
-// Mapping of table columns to API field names - moved outside component to prevent recreation
 const SORT_FIELD_MAPPING: Record<string, string> = {
     file_name: 'file_name',
     timestamp: 'timestamp',
@@ -96,12 +93,11 @@ const SORT_FIELD_MAPPING: Record<string, string> = {
     file_size: 'file_size',
 };
 
-// Empty defaults to prevent new object creation on each render
-const EMPTY_QUERY: FilesListScopeQuery = {};
-const EMPTY_FILES: FileReferenceWithNote[] = [];
+const EMPTY_SCOPE: FilesListScopeQuery = {};
+const EMPTY_ROWS: FileRow[] = [];
 
 export default function FilesList({
-    query = EMPTY_QUERY,
+    scope = EMPTY_SCOPE,
     hidePageHeader = false,
 }: FilesListProps) {
     useDockPanelTab({ title: 'Files', icon: 'files' }, !hidePageHeader);
@@ -109,27 +105,23 @@ export default function FilesList({
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ strict: false });
+    const search = useSearch({ strict: false }) as any;
+    const page = Number(search?.files_page ?? 1) || 1;
+    const sortField = (search?.files_sort_field ?? 'timestamp') as string;
+    const sortDirection: 'asc' | 'desc' = (search?.files_sort_direction ?? 'desc') as
+        'asc' | 'desc';
+    const pageSize = Number(search?.files_pagesize ?? 20) || 20;
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
 
-    const searchAny = search as any;
-    const page = Number(searchAny?.files_page ?? 1) || 1;
-    const sortField = (searchAny?.files_sort_field ?? 'timestamp') as string;
-    const sortDirection: 'asc' | 'desc' = (searchAny?.files_sort_direction ??
-        'desc') as 'asc' | 'desc';
-    const pageSize = Number(searchAny?.files_pagesize ?? 20) || 20;
-    const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-    const [bulkDeleteFileIds, setBulkDeleteFileIds] = useState<string[]>([]);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
-
-    const downloadFileMutation = useMutation({
-        mutationFn: async (fileId: string) => {
+    const downloadFile = useMutation({
+        mutationFn: async (id: string) => {
             const { data, error, response } = await fetchClient.GET(
                 '/file-transfer/download/',
                 {
                     params: {
                         query: {
-                            file_id: fileId,
+                            file_id: id,
                         },
                     },
                 },
@@ -144,11 +136,11 @@ export default function FilesList({
         },
     });
 
-    const reprocessFileMutation = useMutation({
-        mutationFn: async (fileId: string) => {
+    const reprocessFile = useMutation({
+        mutationFn: async (id: string) => {
             const { error, response } = await fetchClient.POST(
                 '/file-transfer/process/',
-                { body: { file_id: fileId } },
+                { body: { file_id: id } },
             );
             if (error) throw { response, error };
         },
@@ -157,74 +149,71 @@ export default function FilesList({
         },
     });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchQuery, setSearchQuery] = useState('');
+    const [appliedSearch, setAppliedSearch] = useState('');
     const statusFilter: 'all' | 'healthy' | 'warning' =
-        (searchAny?.files_status as 'all' | 'healthy' | 'warning') || 'all';
+        (search?.files_status as 'all' | 'healthy' | 'warning') || 'all';
 
     const { setNodeRef } = useDroppable({
         id: 'files-droppable',
     });
 
-    const handleSortingChange = useCallback(
+    const applySort = useCallback(
         (sorting: SortingState) => {
-            const newSearch: any = { ...searchAny, files_page: 1 };
+            const next: any = { ...search, files_page: 1 };
 
             if (sorting.length === 0) {
-                delete newSearch.files_sort_field;
-                delete newSearch.files_sort_direction;
+                delete next.files_sort_field;
+                delete next.files_sort_direction;
             } else {
-                const sort = sorting[0];
-                if (!sort) {
-                    delete newSearch.files_sort_field;
-                    delete newSearch.files_sort_direction;
+                const entry = sorting[0];
+                if (!entry) {
+                    delete next.files_sort_field;
+                    delete next.files_sort_direction;
                 } else {
-                    const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
-                    newSearch.files_sort_field = apiField;
-                    newSearch.files_sort_direction = sort.desc ? 'desc' : 'asc';
+                    const apiField = SORT_FIELD_MAPPING[entry.id] || entry.id;
+                    next.files_sort_field = apiField;
+                    next.files_sort_direction = entry.desc ? 'desc' : 'asc';
                 }
             }
 
             router.navigate({
                 to: location.pathname as any,
-                search: newSearch as any,
+                search: next as any,
                 replace: true,
             });
         },
-        [searchAny, router, location.pathname],
+        [search, router, location.pathname],
     );
 
-    // Prepare query parameters
-    const queryParams = useMemo((): FilesListQuery => {
+    const listQuery = useMemo((): ListQuery => {
         const order_by = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
-        const params: FilesListQuery = {
-            page,
-            page_size: pageSize,
-            order_by,
-            date: query.date,
-            keyword: searchQuery || query.keyword,
-            linked_to: query.linked_to != null ? String(query.linked_to) : undefined,
-            mimetype: query.mimetype,
-            references: query.references ? [query.references] : undefined,
-            status: statusFilter !== 'all' ? statusFilter : undefined,
-            timestamp_gte: query.timestamp_gte,
-            timestamp_lte: query.timestamp_lte,
-        };
-
         return Object.fromEntries(
-            Object.entries(params).filter(([, v]) => v !== undefined),
-        ) as FilesListQuery;
-    }, [page, pageSize, sortField, sortDirection, query, searchQuery, statusFilter]);
+            Object.entries({
+                page,
+                page_size: pageSize,
+                order_by,
+                date: scope.date,
+                keyword: appliedSearch || scope.keyword,
+                linked_to:
+                    scope.linked_to != null ? String(scope.linked_to) : undefined,
+                mimetype: scope.mimetype,
+                references: scope.references ? [scope.references] : undefined,
+                status: statusFilter !== 'all' ? statusFilter : undefined,
+                timestamp_gte: scope.timestamp_gte,
+                timestamp_lte: scope.timestamp_lte,
+            }).filter(([, v]) => v !== undefined),
+        ) as ListQuery;
+    }, [page, pageSize, sortField, sortDirection, scope, appliedSearch, statusFilter]);
 
-    // Query for files
     const {
-        data: filesData,
+        data: filesPage,
         isLoading,
         isPaused,
     } = $api.useQuery(
         'get',
         '/notes/files/',
-        { params: { query: queryParams } },
+        { params: { query: listQuery } },
         {
             meta: {
                 showErrorToast: true,
@@ -232,17 +221,17 @@ export default function FilesList({
         },
     );
 
-    const files = filesData?.results ?? EMPTY_FILES;
-    const totalPages = filesData?.total_pages || 1;
+    const rows = filesPage?.results ?? EMPTY_ROWS;
+    const totalPages = filesPage?.total_pages || 1;
 
-    const selectedFileIds = useMemo(() => {
-        const ids: string[] = [];
-        files.forEach((f, idx) => {
-            const rowId = String(f.id ?? idx);
-            if (rowSelection[rowId] && f.id) ids.push(String(f.id));
+    const checkedIds = useMemo(() => {
+        const selectedIds: string[] = [];
+        rows.forEach((item, idx) => {
+            const key = String(item.id ?? idx);
+            if (rowSelection[key] && item.id) selectedIds.push(String(item.id));
         });
-        return ids;
-    }, [files, rowSelection]);
+        return selectedIds;
+    }, [rows, rowSelection]);
 
     const copyToClipboard = useCallback(async (text: string) => {
         try {
@@ -253,62 +242,62 @@ export default function FilesList({
         }
     }, []);
 
-    // Download a single file
-    const handleDownloadFile = useCallback(
-        (file: FileReferenceWithNote) => {
-            if (!file.id) {
+    const download = useCallback(
+        (item: FileRow) => {
+            if (!item.id) {
                 toast.error('File download information is missing.');
                 return;
             }
-            downloadFileMutation.mutate(file.id);
+            downloadFile.mutate(item.id);
         },
-        [downloadFileMutation],
+        [downloadFile],
     );
 
-    // Download selected files
-    const handleDownloadSelected = useCallback(async () => {
-        if (selectedFileIds.length === 0) return;
+    const reprocess = useCallback(
+        (item: FileRow) => {
+            if (!item.id) return;
+            reprocessFile.mutate(item.id);
+        },
+        [reprocessFile],
+    );
+
+    const downloadAll = useCallback(async () => {
+        if (checkedIds.length === 0) return;
 
         try {
             await Promise.all(
-                selectedFileIds
-                    .filter((fileId) => fileId)
-                    .map((fileId) => downloadFileMutation.mutateAsync(fileId)),
+                checkedIds.filter((id) => id).map((id) => downloadFile.mutateAsync(id)),
             );
             toast.info(
-                `Attempted to download ${selectedFileIds.length} file(s). Your browser may block some.`,
+                `Attempted to download ${checkedIds.length} file(s). Your browser may block some.`,
             );
         } catch {
             // Error toast shown by global mutation handler
         }
-    }, [selectedFileIds, downloadFileMutation]);
+    }, [checkedIds, downloadFile]);
 
-    const handleReprocessSelected = useCallback(async () => {
-        if (selectedFileIds.length === 0) return;
+    const reprocessAll = useCallback(async () => {
+        if (checkedIds.length === 0) return;
 
         try {
-            await Promise.all(
-                selectedFileIds.map((fileId) =>
-                    reprocessFileMutation.mutateAsync(fileId),
-                ),
-            );
+            await Promise.all(checkedIds.map((id) => reprocessFile.mutateAsync(id)));
             toast.success(
-                `Queued ${selectedFileIds.length} file${selectedFileIds.length > 1 ? 's' : ''} for reprocessing`,
+                `Queued ${checkedIds.length} file${checkedIds.length > 1 ? 's' : ''} for reprocessing`,
             );
             setRowSelection({});
         } catch (_error) {
             // Error handled by mutation
         }
-    }, [selectedFileIds, reprocessFileMutation]);
+    }, [checkedIds, reprocessFile]);
 
-    const deleteMutation = useMutation({
-        mutationFn: async (fileId: string) => {
+    const deleteFile = useMutation({
+        mutationFn: async (id: string) => {
             const { error, response } = await fetchClient.DELETE(
                 '/file-transfer/delete/',
                 {
                     params: {
                         query: {
-                            file_id: fileId,
+                            file_id: id,
                         },
                     },
                 },
@@ -323,9 +312,7 @@ export default function FilesList({
 
     const deleteFiles = async (fileIds: string[]) => {
         try {
-            await Promise.all(
-                fileIds.map((fileId) => deleteMutation.mutateAsync(fileId)),
-            );
+            await Promise.all(fileIds.map((id) => deleteFile.mutateAsync(id)));
             toast.success(
                 `Deleted ${fileIds.length} file${fileIds.length > 1 ? 's' : ''}`,
             );
@@ -336,83 +323,90 @@ export default function FilesList({
         }
     };
 
-    const handleDeleteSelected = useCallback(async () => {
-        if (selectedFileIds.length === 0) return;
-        setBulkDeleteFileIds(selectedFileIds);
-        setBulkDeleteDialogOpen(true);
-    }, [selectedFileIds]);
+    const confirmDelete = useCallback(
+        (item?: FileRow) => {
+            if (item?.id) {
+                setPendingDeleteIds([item.id]);
+                setIsDeleteOpen(true);
+                return;
+            }
+            if (checkedIds.length === 0) return;
+            setPendingDeleteIds(checkedIds);
+            setIsDeleteOpen(true);
+        },
+        [checkedIds],
+    );
 
-    const resetToFirstPage = useCallback(() => {
-        router.navigate({
-            to: location.pathname as any,
-            search: { ...searchAny, files_page: 1 } as any,
-            replace: true,
-        });
-    }, [router, location.pathname, searchAny]);
+    const goTo = useCallback(
+        (target: number) => {
+            router.navigate({
+                to: location.pathname as any,
+                search: ((prev: any) => ({ ...prev, files_page: target })) as any,
+                replace: true,
+            });
+        },
+        [router, location.pathname],
+    );
 
-    const handleStatusFilterChange = useCallback(
+    const applySearch = useCallback(
         (value: string) => {
-            const next = (value || 'all') as 'all' | 'healthy' | 'warning';
-            const nextSearch: any = { ...searchAny, files_page: 1 };
-            if (next === 'all') {
-                delete nextSearch.files_status;
+            setAppliedSearch(value);
+            goTo(1);
+        },
+        [goTo],
+    );
+
+    const clearSelection = useCallback(() => {
+        setRowSelection({});
+    }, []);
+
+    const updateStatus = useCallback(
+        (value: string) => {
+            const next: any = { ...search, files_page: 1 };
+            const parsed = (value || 'all') as 'all' | 'healthy' | 'warning';
+            if (parsed === 'all') {
+                delete next.files_status;
             } else {
-                nextSearch.files_status = next;
+                next.files_status = parsed;
             }
             router.navigate({
                 to: location.pathname as any,
-                search: nextSearch as any,
+                search: next as any,
                 replace: true,
             });
         },
-        [searchAny, router, location.pathname],
+        [search, router, location.pathname],
     );
 
-    const handlePageChange = useCallback(
-        (newPage: number) => {
-            router.navigate({
-                to: location.pathname as any,
-                search: { ...searchAny, files_page: newPage } as any,
-                replace: true,
-            });
-        },
-        [searchAny, router, location.pathname],
-    );
-
-    const handlePageSizeChange = useCallback(
-        (newSize: number) => {
+    const changePageSize = useCallback(
+        (size: number) => {
             router.navigate({
                 to: location.pathname as any,
                 search: {
-                    ...searchAny,
+                    ...search,
                     files_page: 1,
-                    files_pagesize: newSize,
+                    files_pagesize: size,
                 } as any,
                 replace: true,
             });
         },
-        [searchAny, router, location.pathname],
+        [search, router, location.pathname],
     );
 
-    // Handle pagination changes from DataTable
-    const handlePaginationChange = useCallback(
-        (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+    const paginate = useCallback(
+        (pageIndex: number, size: number) => {
+            const target = pageIndex + 1;
 
-            // Handle page size change
-            if (newPageSize !== pageSize) {
-                handlePageSizeChange(newPageSize);
-            }
-            // Handle page change
-            else if (newPage !== page) {
-                handlePageChange(newPage);
+            if (size !== pageSize) {
+                changePageSize(size);
+            } else if (target !== page) {
+                goTo(target);
             }
         },
-        [page, pageSize, handlePageChange, handlePageSizeChange],
+        [page, pageSize, goTo, changePageSize],
     );
 
-    // Memoize columns to prevent recreation on every render
-    const columns = useMemo<ColumnDef<FileReferenceWithNote>[]>(
+    const columns = useMemo<ColumnDef<FileRow>[]>(
         () => [
             {
                 id: 'select',
@@ -445,135 +439,156 @@ export default function FilesList({
             {
                 accessorKey: 'file_name',
                 id: 'file_name',
+                meta: { label: 'Name' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Name' />
                 ),
-                cell: ({ row }) => (
-                    <div
-                        className='truncate w-32 cursor-pointer'
-                        onClick={(event) => {
-                            event.stopPropagation();
-                            router.navigate({
-                                to: `/notes/${row.original.note_id}` as any,
-                            });
-                        }}
-                    >
-                        <span className='truncate'>
-                            {truncateText(row.original.file_name, 32)}
-                        </span>
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div
+                            className='truncate w-32 cursor-pointer'
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                router.navigate({
+                                    to: `/notes/${item.note_id}` as any,
+                                });
+                            }}
+                        >
+                            <span className='truncate'>
+                                {truncateText(item.file_name, 32)}
+                            </span>
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: 'entities',
                 id: 'entities',
+                meta: { label: 'Entities' },
                 header: 'Entities',
-                cell: ({ row }) => (
-                    <div className='flex flex-wrap gap-1'>
-                        {row.original.entities?.slice(0, 3).map((entity) => (
-                            <div
-                                key={entity.name}
-                                className='cursor-pointer'
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.navigate({
-                                        to: '/dashboards/$subtype/$name',
-                                        params: {
-                                            subtype: entity.subtype || 'unknown',
-                                            name: entity.name,
-                                        },
-                                    });
-                                }}
-                                title={`View ${entity.subtype || 'entity'}: ${entity.name}`}
-                            >
-                                <Badge
-                                    className={`rounded-full ${!entity.color ? 'bg-muted' : ''}`}
-                                    style={
-                                        entity.color
-                                            ? { backgroundColor: entity.color }
-                                            : undefined
-                                    }
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='flex flex-wrap gap-1'>
+                            {item.entities?.slice(0, 3).map((entity) => (
+                                <div
+                                    key={entity.name}
+                                    className='cursor-pointer'
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        router.navigate({
+                                            to: '/dashboards/$subtype/$name',
+                                            params: {
+                                                subtype: entity.subtype || 'unknown',
+                                                name: entity.name,
+                                            },
+                                        });
+                                    }}
+                                    title={`View ${entity.subtype || 'entity'}: ${entity.name}`}
                                 >
-                                    {entity.name}
-                                </Badge>
-                            </div>
-                        ))}
-                    </div>
-                ),
+                                    <Badge
+                                        className={`rounded-full ${!entity.color ? 'bg-muted' : ''}`}
+                                        style={
+                                            entity.color
+                                                ? { backgroundColor: entity.color }
+                                                : undefined
+                                        }
+                                    >
+                                        {entity.name}
+                                    </Badge>
+                                </div>
+                            ))}
+                        </div>
+                    );
+                },
                 enableSorting: false,
             },
             {
                 accessorKey: 'mimetype',
                 id: 'mimetype',
+                meta: { label: 'MimeType' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='MimeType' />
                 ),
-                cell: ({ row }) => (
-                    <div className='truncate w-32'>
-                        {truncateText(row.original.mimetype, 32)}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='truncate w-32'>
+                            {truncateText(item.mimetype, 32)}
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: 'file_size',
                 id: 'file_size',
+                meta: { label: 'Size' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Size' />
                 ),
-                cell: ({ row }) => (
-                    <div className='w-24'>
-                        {row.original.file_size != null
-                            ? bytes.format(row.original.file_size, {
-                                  unitSeparator: ' ',
-                              })
-                            : '-'}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='w-24'>
+                            {item.file_size != null
+                                ? bytes.format(item.file_size, {
+                                      unitSeparator: ' ',
+                                  })
+                                : '-'}
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: 'sha256',
                 id: 'sha256',
+                meta: { label: 'SHA256' },
                 header: 'SHA256',
-                cell: ({ row }) => (
-                    <div className='w-48'>
-                        {row.original.sha256_hash ? (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <span
-                                        className='cursor-pointer hover:bg-muted px-1 rounded truncate block'
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            copyToClipboard(row.original.sha256_hash!);
-                                        }}
-                                    >
-                                        {row.original.sha256_hash!.substring(0, 48)}...
-                                    </span>
-                                </TooltipTrigger>
-                                <TooltipContent>Click to copy</TooltipContent>
-                            </Tooltip>
-                        ) : (
-                            '-'
-                        )}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='w-48'>
+                            {item.sha256_hash ? (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <span
+                                            className='cursor-pointer hover:bg-muted px-1 rounded truncate block'
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                copyToClipboard(item.sha256_hash!);
+                                            }}
+                                        >
+                                            {item.sha256_hash!.substring(0, 48)}...
+                                        </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Click to copy</TooltipContent>
+                                </Tooltip>
+                            ) : (
+                                '-'
+                            )}
+                        </div>
+                    );
+                },
                 enableSorting: false,
             },
             {
                 accessorKey: 'timestamp',
                 id: 'timestamp',
+                meta: { label: 'Uploaded At' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Uploaded At' />
                 ),
-                cell: ({ row }) => (
-                    <div className='w-32'>
-                        {row.original.timestamp
-                            ? format(
-                                  new Date(row.original.timestamp),
-                                  'dd/MM/yyyy, HH:mm',
-                              )
-                            : '-'}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='w-32'>
+                            {item.timestamp
+                                ? format(new Date(item.timestamp), 'dd/MM/yyyy, HH:mm')
+                                : '-'}
+                        </div>
+                    );
+                },
             },
             {
                 id: 'actions',
@@ -582,13 +597,13 @@ export default function FilesList({
                 minSize: 40,
                 maxSize: 40,
                 cell: ({ row }) => {
-                    const file = row.original;
+                    const item = row.original;
                     return (
                         <div
                             className='text-right flex justify-end'
                             onClick={(e) => e.stopPropagation()}
                         >
-                            {file.id && (
+                            {item.id && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button
@@ -606,7 +621,7 @@ export default function FilesList({
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align='end'>
                                         <DropdownMenuItem
-                                            onClick={() => handleDownloadFile(file)}
+                                            onClick={() => download(item)}
                                         >
                                             <DownloadSimpleIcon
                                                 size={16}
@@ -615,9 +630,7 @@ export default function FilesList({
                                             Download
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
-                                            onClick={() =>
-                                                reprocessFileMutation.mutate(file.id!)
-                                            }
+                                            onClick={() => reprocess(item)}
                                         >
                                             <ArrowClockwiseIcon
                                                 size={16}
@@ -628,10 +641,7 @@ export default function FilesList({
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
                                             variant='destructive'
-                                            onClick={() => {
-                                                setDeletingFileId(file.id!);
-                                                setDeleteDialogOpen(true);
-                                            }}
+                                            onClick={() => confirmDelete(item)}
                                         >
                                             <TrashIcon size={16} weight='bold' />
                                             Delete
@@ -645,19 +655,10 @@ export default function FilesList({
                 enableSorting: false,
             },
         ],
-        [
-            copyToClipboard,
-            router,
-            handleDownloadFile,
-            reprocessFileMutation,
-            setDeletingFileId,
-            setDeleteDialogOpen,
-        ],
+        [copyToClipboard, router, download, reprocess, confirmDelete],
     );
 
-    // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
-        // Find the column id that matches the sortField
         const columnId =
             Object.keys(SORT_FIELD_MAPPING).find(
                 (key) => SORT_FIELD_MAPPING[key] === sortField,
@@ -673,21 +674,16 @@ export default function FilesList({
             : [];
     }, [sortField, sortDirection]);
 
-    const onTableSortingChange = useCallback(
+    const applySorting = useCallback(
         (updater: SortingState | ((prev: SortingState) => SortingState)) => {
-            const nextSorting =
-                typeof updater === 'function' ? updater(sorting) : updater;
-            handleSortingChange(nextSorting);
+            const next = typeof updater === 'function' ? updater(sorting) : updater;
+            applySort(next);
         },
-        [handleSortingChange, sorting],
+        [applySort, sorting],
     );
 
-    const clearSelection = useCallback(() => {
-        setRowSelection({});
-    }, []);
-
     const table = useReactTable({
-        data: files,
+        data: rows,
         columns,
         state: {
             sorting,
@@ -701,16 +697,15 @@ export default function FilesList({
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
-        onSortingChange: onTableSortingChange,
+        onSortingChange: applySorting,
         onRowSelectionChange: setRowSelection,
         onPaginationChange: (updater) => {
-            const currentPagination = {
+            const current = {
                 pageIndex: page - 1,
                 pageSize,
             };
-            const nextPagination =
-                typeof updater === 'function' ? updater(currentPagination) : updater;
-            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+            const next = typeof updater === 'function' ? updater(current) : updater;
+            paginate(next.pageIndex, next.pageSize);
         },
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
@@ -740,13 +735,11 @@ export default function FilesList({
                     <DataTable table={table} showViewOptions isLoading={isLoading}>
                         <ActionBarSearch
                             placeholder='Search files...'
+                            value={appliedSearch}
                             debounceMs={300}
-                            onDebouncedChange={(v) => {
-                                setSearchQuery(v);
-                                resetToFirstPage();
-                            }}
-                            onSubmit={() => resetToFirstPage()}
-                            onClear={() => resetToFirstPage()}
+                            onDebouncedChange={applySearch}
+                            onSubmit={applySearch}
+                            onClear={() => applySearch('')}
                         />
                         <Popover>
                             <PopoverTrigger asChild>
@@ -763,7 +756,7 @@ export default function FilesList({
                                             className='rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleStatusFilterChange('all');
+                                                updateStatus('all');
                                             }}
                                         >
                                             <XCircle />
@@ -813,7 +806,7 @@ export default function FilesList({
                                                         <CommandItem
                                                             key={option.value}
                                                             onSelect={() =>
-                                                                handleStatusFilterChange(
+                                                                updateStatus(
                                                                     isSelected
                                                                         ? 'all'
                                                                         : option.value,
@@ -844,9 +837,7 @@ export default function FilesList({
                                                 <CommandGroup>
                                                     <CommandItem
                                                         onSelect={() =>
-                                                            handleStatusFilterChange(
-                                                                'all',
-                                                            )
+                                                            updateStatus('all')
                                                         }
                                                         className='justify-center text-center'
                                                     >
@@ -863,45 +854,39 @@ export default function FilesList({
                 </div>
             </div>
             <ActionBar
-                open={selectedFileIds.length > 0}
+                open={checkedIds.length > 0}
                 onOpenChange={(open) => {
                     if (!open) clearSelection();
                 }}
             >
                 <ActionBarSelection>
-                    {selectedFileIds.length} file
-                    {selectedFileIds.length !== 1 ? 's' : ''} selected
+                    {checkedIds.length} file
+                    {checkedIds.length !== 1 ? 's' : ''} selected
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
                     <ActionBarItem
-                        onClick={handleDownloadSelected}
+                        onClick={downloadAll}
                         disabled={
-                            isLoading ||
-                            files.length === 0 ||
-                            selectedFileIds.length === 0
+                            isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                     >
                         <DownloadSimpleIcon size={18} weight='bold' />
                         Download
                     </ActionBarItem>
                     <ActionBarItem
-                        onClick={handleReprocessSelected}
+                        onClick={reprocessAll}
                         disabled={
-                            isLoading ||
-                            files.length === 0 ||
-                            selectedFileIds.length === 0
+                            isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                     >
                         <ArrowClockwiseIcon size={18} weight='bold' />
                         Reprocess
                     </ActionBarItem>
                     <ActionBarItem
-                        onClick={handleDeleteSelected}
+                        onClick={() => confirmDelete()}
                         disabled={
-                            isLoading ||
-                            files.length === 0 ||
-                            selectedFileIds.length === 0
+                            isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                         className='text-destructive'
                     >
@@ -915,19 +900,19 @@ export default function FilesList({
                 </ActionBarClose>
             </ActionBar>
             <AlertDialog
-                open={bulkDeleteDialogOpen}
+                open={isDeleteOpen}
                 onOpenChange={(open) => {
-                    setBulkDeleteDialogOpen(open);
-                    if (!open) setBulkDeleteFileIds([]);
+                    setIsDeleteOpen(open);
+                    if (!open) setPendingDeleteIds([]);
                 }}
             >
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete {bulkDeleteFileIds.length}{' '}
+                            Are you sure you want to delete {pendingDeleteIds.length}{' '}
                             file
-                            {bulkDeleteFileIds.length > 1 ? 's' : ''}?
+                            {pendingDeleteIds.length > 1 ? 's' : ''}?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -938,8 +923,9 @@ export default function FilesList({
                             variant='destructive'
                             size='sm'
                             onClick={() => {
-                                deleteFiles(bulkDeleteFileIds);
-                                setBulkDeleteFileIds([]);
+                                deleteFiles(pendingDeleteIds);
+                                setPendingDeleteIds([]);
+                                setIsDeleteOpen(false);
                             }}
                         >
                             Delete
@@ -947,38 +933,6 @@ export default function FilesList({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            {deletingFileId && (
-                <AlertDialog
-                    open={deleteDialogOpen}
-                    onOpenChange={(open) => {
-                        setDeleteDialogOpen(open);
-                        if (!open) setDeletingFileId(null);
-                    }}
-                >
-                    <AlertDialogContent className='sm:max-w-md'>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Are you sure you want to delete this file?
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel variant='outline' size='sm'>
-                                Cancel
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                variant='destructive'
-                                size='sm'
-                                onClick={() => {
-                                    if (deletingFileId) deleteFiles([deletingFileId]);
-                                }}
-                            >
-                                Delete
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            )}
         </div>
     );
 }

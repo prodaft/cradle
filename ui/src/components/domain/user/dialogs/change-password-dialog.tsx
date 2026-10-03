@@ -68,11 +68,11 @@ export default function ChangePasswordDialog({
     open,
     onOpenChange,
 }: ChangePasswordDialogProps) {
-    const [showOldPassword, setShowOldPassword] = useState(false);
-    const [showNewPassword, setShowNewPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isOldPasswordVisible, setIsOldPasswordVisible] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
 
-    const changePasswordMutation = useMutation({
+    const changePassword = useMutation({
         mutationFn: async (data: { oldPassword: string; newPassword: string }) => {
             const { error, response } = await fetchClient.POST(
                 '/auth/change-password/',
@@ -103,7 +103,7 @@ export default function ChangePasswordDialog({
     });
 
     const onSubmit = async (data: FormData) => {
-        changePasswordMutation.mutate({
+        changePassword.mutate({
             oldPassword: data.oldPassword,
             newPassword: data.newPassword,
         });
@@ -133,30 +133,36 @@ export default function ChangePasswordDialog({
                                         <InputGroupInput
                                             {...field}
                                             id={field.name}
-                                            type={showOldPassword ? 'text' : 'password'}
+                                            type={
+                                                isOldPasswordVisible
+                                                    ? 'text'
+                                                    : 'password'
+                                            }
                                             placeholder='Enter current password'
                                             aria-invalid={fieldState.invalid}
-                                            disabled={changePasswordMutation.isPending}
+                                            disabled={changePassword.isPending}
                                             required
                                         />
                                         <InputGroupAddon align='inline-end'>
                                             <InputGroupButton
                                                 type='button'
                                                 onClick={() =>
-                                                    setShowOldPassword(!showOldPassword)
+                                                    setIsOldPasswordVisible(
+                                                        !isOldPasswordVisible,
+                                                    )
                                                 }
                                                 aria-label={
-                                                    showOldPassword
+                                                    isOldPasswordVisible
                                                         ? 'Hide password'
                                                         : 'Show password'
                                                 }
                                                 title={
-                                                    showOldPassword
+                                                    isOldPasswordVisible
                                                         ? 'Hide password'
                                                         : 'Show password'
                                                 }
                                             >
-                                                {showOldPassword ? (
+                                                {isOldPasswordVisible ? (
                                                     <EyeSlashIcon
                                                         className='size-4'
                                                         weight='bold'
@@ -190,30 +196,34 @@ export default function ChangePasswordDialog({
                                         <InputGroupInput
                                             {...field}
                                             id={field.name}
-                                            type={showNewPassword ? 'text' : 'password'}
+                                            type={
+                                                isPasswordVisible ? 'text' : 'password'
+                                            }
                                             placeholder='Enter new password'
                                             aria-invalid={fieldState.invalid}
-                                            disabled={changePasswordMutation.isPending}
+                                            disabled={changePassword.isPending}
                                             required
                                         />
                                         <InputGroupAddon align='inline-end'>
                                             <InputGroupButton
                                                 type='button'
                                                 onClick={() =>
-                                                    setShowNewPassword(!showNewPassword)
+                                                    setIsPasswordVisible(
+                                                        !isPasswordVisible,
+                                                    )
                                                 }
                                                 aria-label={
-                                                    showNewPassword
+                                                    isPasswordVisible
                                                         ? 'Hide password'
                                                         : 'Show password'
                                                 }
                                                 title={
-                                                    showNewPassword
+                                                    isPasswordVisible
                                                         ? 'Hide password'
                                                         : 'Show password'
                                                 }
                                             >
-                                                {showNewPassword ? (
+                                                {isPasswordVisible ? (
                                                     <EyeSlashIcon
                                                         className='size-4'
                                                         weight='bold'
@@ -253,35 +263,35 @@ export default function ChangePasswordDialog({
                                             {...field}
                                             id={field.name}
                                             type={
-                                                showConfirmPassword
+                                                isConfirmPasswordVisible
                                                     ? 'text'
                                                     : 'password'
                                             }
                                             placeholder='Re-enter new password'
                                             aria-invalid={fieldState.invalid}
-                                            disabled={changePasswordMutation.isPending}
+                                            disabled={changePassword.isPending}
                                             required
                                         />
                                         <InputGroupAddon align='inline-end'>
                                             <InputGroupButton
                                                 type='button'
                                                 onClick={() =>
-                                                    setShowConfirmPassword(
-                                                        !showConfirmPassword,
+                                                    setIsConfirmPasswordVisible(
+                                                        !isConfirmPasswordVisible,
                                                     )
                                                 }
                                                 aria-label={
-                                                    showConfirmPassword
+                                                    isConfirmPasswordVisible
                                                         ? 'Hide password'
                                                         : 'Show password'
                                                 }
                                                 title={
-                                                    showConfirmPassword
+                                                    isConfirmPasswordVisible
                                                         ? 'Hide password'
                                                         : 'Show password'
                                                 }
                                             >
-                                                {showConfirmPassword ? (
+                                                {isConfirmPasswordVisible ? (
                                                     <EyeSlashIcon
                                                         className='size-4'
                                                         weight='bold'
@@ -309,7 +319,7 @@ export default function ChangePasswordDialog({
                                 type='button'
                                 variant='outline'
                                 size='sm'
-                                disabled={changePasswordMutation.isPending}
+                                disabled={changePassword.isPending}
                             >
                                 Cancel
                             </Button>
@@ -318,11 +328,9 @@ export default function ChangePasswordDialog({
                             type='submit'
                             variant='default'
                             size='sm'
-                            disabled={changePasswordMutation.isPending}
+                            disabled={changePassword.isPending}
                         >
-                            {changePasswordMutation.isPending
-                                ? 'Updating...'
-                                : 'Change'}
+                            {changePassword.isPending ? 'Updating...' : 'Change'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

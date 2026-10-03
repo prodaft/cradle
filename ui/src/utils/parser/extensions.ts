@@ -1,9 +1,8 @@
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import matter from 'gray-matter';
-import jsYaml from 'js-yaml';
-import type MarkdownIt from 'markdown-it';
-import type { Token } from 'markdown-it/index.js';
+import { load as loadYaml } from 'js-yaml';
+import type { MarkdownIt, Token } from 'markdown-it';
 import { prependLinks } from '../links';
 
 type FileDownload = components['schemas']['FileDownload'];
@@ -130,7 +129,7 @@ async function resolveMinioLinks(token: Token): Promise<void> {
         if (!attrs || hrefIndex >= attrs.length) return;
         const hrefTuple = attrs[hrefIndex];
         if (!hrefTuple || hrefTuple.length < 2) return;
-        const href = hrefTuple[1];
+        const href = String(hrefTuple[1] ?? '');
         if (!href || !href.includes('/file-transfer/download/')) return;
 
         let url: URL;
@@ -188,9 +187,9 @@ export async function parseWithExtensions(
     md.renderer.rules.image = (tokens: Token[], idx: number) => {
         const token = tokens[idx];
         if (!token) return '';
-        const src = token.attrGet('src') || '';
-        const alt = token.attrGet('alt') || '';
-        const title = token.attrGet('title') || '';
+        const src = String(token.attrGet('src') ?? '');
+        const alt = String(token.attrGet('alt') ?? '');
+        const title = String(token.attrGet('title') ?? '');
 
         let attrs = `src="${escapeHtml(src)}" alt="${escapeHtml(alt)}"`;
         if (title) {
@@ -209,7 +208,7 @@ export async function parseWithExtensions(
             engines: {
                 yaml: (data) => {
                     try {
-                        return jsYaml.load(data) as Record<string, any>;
+                        return loadYaml(data) as Record<string, any>;
                     } catch {
                         return {};
                     }

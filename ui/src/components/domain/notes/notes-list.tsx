@@ -5,17 +5,18 @@ import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query/query-keys';
-import { DateRangeFilter } from '@components/base/list-view/types';
+import { DateRangeFilter } from '@/types/list-view';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { FilePlus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DeleteNote from './delete-note';
+import type { StatusSlug } from './note-list-status';
 import NotesTable, { type NotesTableQueryInput } from './notes-table';
 
 /** `/notes` route and dashboard notes tab: header + URL state + `NotesTable`. */
-interface SearchFilters {
+interface Draft {
     any_field?: string;
     content: string;
     author__username?: string;
@@ -26,8 +27,8 @@ interface SearchFilters {
     updated_date_to?: string;
 }
 
-function filtersFromSearch(search: Record<string, unknown>): SearchFilters {
-    const get = (key: keyof SearchFilters) =>
+function draftFromSearch(search: Record<string, unknown>): Draft {
+    const get = (key: keyof Draft) =>
         typeof search[key as string] === 'string'
             ? (search[key as string] as string)
             : '';
@@ -66,7 +67,13 @@ export default function NotesList({
     const search = useSearch({ strict: false }) as Record<string, unknown>;
     const pathname = location.pathname;
 
-    const createNoteMutation = useMutation({
+    const applied = useMemo(() => draftFromSearch(search), [search]);
+
+    const [draft, setDraft] = useState<Draft>(() => ({
+        ...applied,
+    }));
+
+    const createNote = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST('/notes/', {
                 body: { content: '' },
@@ -82,95 +89,92 @@ export default function NotesList({
         },
     });
 
-    const [searchFilters, setSearchFilters] = useState<SearchFilters>(() =>
-        filtersFromSearch(search),
-    );
-    const listQuery = useMemo(
-        (): NotesTableQueryInput => ({
-            ...filtersFromSearch(search),
+    const scope = useMemo((): NotesTableQueryInput => {
+        const statuses =
+            Array.isArray(search.status) && search.status.length > 0
+                ? (search.status as StatusSlug[])
+                : undefined;
+
+        return {
+            ...applied,
+            ...(statuses ? { status: statuses } : {}),
             ...(linkedToEntryId != null
                 ? {
                       linked_to: linkedToEntryId,
                       linked_to_exact_match: true as const,
                   }
                 : {}),
-        }),
-        [search, linkedToEntryId],
-    );
+        };
+    }, [applied, search.status, linkedToEntryId]);
 
-    const updateSearchParams = useCallback(
-        (filters: SearchFilters) => {
-            const nextSearch: Record<string, unknown> = { ...search };
-            (Object.keys(filters) as (keyof SearchFilters)[]).forEach((key) => {
-                const value = filters[key];
-                if (value) {
-                    nextSearch[key as string] = value;
-                } else {
-                    delete nextSearch[key as string];
-                }
-            });
-
-            nextSearch.notes_page = 1;
-
+    const applyFilters = useCallback(
+        (filters: Partial<Draft>) => {
             router.navigate({
                 to: pathname as any,
-                search: nextSearch as any,
+                search: ((prev: Record<string, unknown>) => {
+                    const next: Record<string, unknown> = { ...prev };
+                    (Object.keys(filters) as (keyof Draft)[]).forEach((key) => {
+                        const value = filters[key];
+                        if (value) {
+                            next[key as string] = value;
+                        } else {
+                            delete next[key as string];
+                        }
+                    });
+                    next.notes_page = 1;
+                    return next;
+                }) as any,
                 replace: true,
             });
         },
-        [router, pathname, search],
+        [router, pathname],
     );
 
-    const handleCreateNewNote = () => {
-        createNoteMutation.mutate();
-    };
-
-    const columnFilterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
         return () => {
-            if (columnFilterTimeoutRef.current) {
-                clearTimeout(columnFilterTimeoutRef.current);
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
             }
         };
     }, []);
 
-    const handleColumnFilterChange = (
-        column: string,
-        value: string | DateRangeFilter,
-    ) => {
-        const updatedFilters = { ...searchFilters };
+    const pendingFiltersRef = useRef<Partial<Draft>>({});
+
+    const updateColumnFilter = (column: string, value: string | DateRangeFilter) => {
+        const changes: Partial<Draft> = {};
 
         if (column === 'timestamp' && typeof value === 'object') {
-            updatedFilters.created_date_from = value.from || '';
-            updatedFilters.created_date_to = value.to || '';
+            changes.created_date_from = value.from || '';
+            changes.created_date_to = value.to || '';
         } else if (column === 'edit_timestamp' && typeof value === 'object') {
-            updatedFilters.updated_date_from = value.from || '';
-            updatedFilters.updated_date_to = value.to || '';
+            changes.updated_date_from = value.from || '';
+            changes.updated_date_to = value.to || '';
         } else if (typeof value === 'string') {
-            const filterFieldMap: Record<string, keyof SearchFilters> = {
-                author: 'author__username',
-                editor: 'editor__username',
-            };
-            const fieldName = filterFieldMap[column];
-            if (fieldName) {
-                updatedFilters[fieldName] = value;
+            if (column === 'author') {
+                changes.author__username = value;
+            } else if (column === 'editor') {
+                changes.editor__username = value;
             }
         }
 
-        setSearchFilters(updatedFilters);
-        if (columnFilterTimeoutRef.current) {
-            clearTimeout(columnFilterTimeoutRef.current);
+        setDraft((prev) => ({ ...prev, ...changes }));
+        pendingFiltersRef.current = { ...pendingFiltersRef.current, ...changes };
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
         }
-        columnFilterTimeoutRef.current = setTimeout(() => {
-            updateSearchParams(updatedFilters);
+        timeoutRef.current = setTimeout(() => {
+            const pending = pendingFiltersRef.current;
+            pendingFiltersRef.current = {};
+            applyFilters(pending);
         }, 500);
     };
 
     useEffect(() => {
-        setSearchFilters(filtersFromSearch(search));
-    }, [search]);
+        setDraft({ ...applied });
+    }, [applied]);
 
-    const isCreatingNote = createNoteMutation.isPending;
+    const isCreating = createNote.isPending;
 
     return (
         <div className='w-full h-full flex flex-col space-y-4'>
@@ -182,11 +186,11 @@ export default function NotesList({
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
-                                    onClick={handleCreateNewNote}
+                                    onClick={() => createNote.mutate()}
                                     variant='default'
-                                    disabled={isCreatingNote}
+                                    disabled={isCreating}
                                 >
-                                    {isCreatingNote ? (
+                                    {isCreating ? (
                                         <>
                                             <Spinner />
                                             New Note
@@ -214,23 +218,27 @@ export default function NotesList({
 
             <div className={hidePageHeader ? undefined : 'px-4'}>
                 <NotesTable
-                    query={listQuery}
+                    scope={scope}
                     noteActions={[{ Component: DeleteNote, props: {} }]}
-                    onFilterChange={handleColumnFilterChange}
-                    onCreateNote={hidePageHeader ? null : handleCreateNewNote}
+                    onFilterChange={updateColumnFilter}
+                    onCreateNote={hidePageHeader ? null : () => createNote.mutate()}
                     hideFleetingNotes={linkedToEntryId != null}
                     contentSearch={{
-                        value: searchFilters.any_field || '',
+                        value: draft.any_field || '',
                         onChange: (value: string) => {
-                            setSearchFilters((prev) => ({
+                            setDraft((prev) => ({
                                 ...prev,
                                 any_field: value,
                             }));
                         },
                         onSubmit: (value?: string) => {
-                            updateSearchParams({
-                                ...searchFilters,
-                                any_field: value ?? searchFilters.any_field,
+                            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                            const pending = pendingFiltersRef.current;
+                            pendingFiltersRef.current = {};
+                            applyFilters({
+                                ...draft,
+                                ...pending,
+                                any_field: value ?? draft.any_field,
                             });
                         },
                     }}

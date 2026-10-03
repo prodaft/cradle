@@ -1,3 +1,4 @@
+import { StatusIcon, type StatusType } from '@/components/base/status-icon/status-icon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,42 +10,71 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { StatusIcon, type StatusType } from '@components/domain/notes/status-icon';
 import { startCase } from 'lodash';
 import { Check, PlusCircle, XCircle } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
-type StatusOption = StatusType;
-
 interface StatusHeaderDropdownProps {
-    onStatusChange: (status: string) => void;
+    options: readonly StatusType[];
+    /** Single-select: current value or `all`. */
     status?: string | null;
-    statusOptions: StatusOption[];
+    onStatusChange?: (status: string) => void;
+    /** Multi-select (e.g. notes list): when set, toggles OR semantics and ignores `status` / `onStatusChange`. */
+    selected?: string[];
+    onSelectedChange?: (values: string[]) => void;
 }
 
 export default function StatusHeaderDropdown({
     onStatusChange,
     status = null,
-    statusOptions,
+    options,
+    selected,
+    onSelectedChange,
 }: StatusHeaderDropdownProps) {
     const [open, setOpen] = useState(false);
-    const currentStatus = status || 'all';
-    const isFiltered = currentStatus !== 'all';
+    const isMulti = Boolean(onSelectedChange);
 
-    const handleSelect = useCallback(
+    const activeStatus = status || 'all';
+    const isFiltered = isMulti ? (selected?.length ?? 0) > 0 : activeStatus !== 'all';
+
+    const handleSelectSingle = useCallback(
         (value: string) => {
-            onStatusChange(value);
+            onStatusChange?.(value);
             setOpen(false);
         },
         [onStatusChange],
     );
 
-    const handleReset = useCallback(
+    const handleResetSingle = useCallback(
         (e?: React.MouseEvent) => {
             e?.stopPropagation();
-            onStatusChange('all');
+            onStatusChange?.('all');
         },
         [onStatusChange],
+    );
+
+    const handleResetMulti = useCallback(
+        (e?: React.MouseEvent) => {
+            e?.stopPropagation();
+            onSelectedChange?.([]);
+        },
+        [onSelectedChange],
+    );
+
+    const toggleMulti = useCallback(
+        (opt: string) => {
+            if (!onSelectedChange) return;
+            const currentSelection = selected ?? [];
+            if (opt === 'all') {
+                onSelectedChange([]);
+                return;
+            }
+            const next = currentSelection.includes(opt)
+                ? currentSelection.filter((s) => s !== opt)
+                : [...currentSelection, opt];
+            onSelectedChange(next);
+        },
+        [onSelectedChange, selected],
     );
 
     return (
@@ -61,7 +91,7 @@ export default function StatusHeaderDropdown({
                             aria-label='Clear status filter'
                             tabIndex={0}
                             className='rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                            onClick={handleReset}
+                            onClick={isMulti ? handleResetMulti : handleResetSingle}
                         >
                             <XCircle />
                         </div>
@@ -69,7 +99,7 @@ export default function StatusHeaderDropdown({
                         <PlusCircle />
                     )}
                     Status
-                    {isFiltered && (
+                    {isFiltered && !isMulti && (
                         <>
                             <Separator
                                 orientation='vertical'
@@ -80,10 +110,34 @@ export default function StatusHeaderDropdown({
                                 className='rounded-sm px-1 font-normal'
                             >
                                 <StatusIcon
-                                    status={currentStatus as StatusType}
+                                    status={activeStatus as StatusType}
                                     size={14}
                                 />
-                                {startCase(currentStatus)}
+                                {startCase(activeStatus)}
+                            </Badge>
+                        </>
+                    )}
+                    {isFiltered && isMulti && (
+                        <>
+                            <Separator
+                                orientation='vertical'
+                                className='mx-0.5 data-[orientation=vertical]:h-4'
+                            />
+                            <Badge
+                                variant='secondary'
+                                className='rounded-sm px-1 font-normal'
+                            >
+                                {(selected?.length ?? 0) === 1 ? (
+                                    <>
+                                        <StatusIcon
+                                            status={selected![0] as StatusType}
+                                            size={14}
+                                        />
+                                        {startCase(selected![0])}
+                                    </>
+                                ) : (
+                                    <span>{selected?.length} selected</span>
+                                )}
                             </Badge>
                         </>
                     )}
@@ -93,12 +147,20 @@ export default function StatusHeaderDropdown({
                 <Command>
                     <CommandList className='max-h-full'>
                         <CommandGroup className='max-h-[300px] overflow-y-auto'>
-                            {statusOptions.map((opt) => {
-                                const isSelected = currentStatus === opt;
+                            {options.map((opt) => {
+                                const isSelected = isMulti
+                                    ? opt === 'all'
+                                        ? (selected?.length ?? 0) === 0
+                                        : (selected ?? []).includes(opt)
+                                    : activeStatus === opt;
                                 return (
                                     <CommandItem
                                         key={opt}
-                                        onSelect={() => handleSelect(opt)}
+                                        onSelect={() =>
+                                            isMulti
+                                                ? toggleMulti(opt)
+                                                : handleSelectSingle(opt)
+                                        }
                                     >
                                         <div
                                             className={cn(
@@ -110,7 +172,9 @@ export default function StatusHeaderDropdown({
                                         >
                                             <Check className='size-3 text-primary-foreground' />
                                         </div>
-                                        <StatusIcon status={opt} size={16} />
+                                        {opt !== 'all' && (
+                                            <StatusIcon status={opt} size={16} />
+                                        )}
                                         <span className='truncate'>
                                             {startCase(opt)}
                                         </span>

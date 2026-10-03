@@ -183,6 +183,7 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
 
     catalyst_api_key = serializers.SerializerMethodField()
     oauth_connections = serializers.SerializerMethodField()
+    has_password = serializers.SerializerMethodField()
 
     class Meta:
         model = CradleUser
@@ -199,7 +200,12 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "file_upload_limit_override",
             "theme",
             "oauth_connections",
+            "has_password",
         ]
+
+    def get_has_password(self, obj) -> bool:
+        """Return True if the user has a local password (vs OAuth-only)."""
+        return obj.has_usable_password()
 
     def get_catalyst_api_key(self, obj) -> bool:
         """Return True if user has Catalyst API key set (masked for security)."""
@@ -328,10 +334,37 @@ class Enable2FASerializer(serializers.Serializer):
     config_url = serializers.CharField(required=True, help_text="TOTP provisioning URL for authenticator apps")
 
 
-class Verify2FASerializer(serializers.Serializer):
-    """Serializer for 2FA token verification (enable or disable)."""
+class TwoFactorTokenSerializer(serializers.Serializer):
+    """Shared token field for 2FA verify/disable requests."""
 
     token = serializers.CharField(required=True, help_text="6-digit TOTP code from authenticator app")
+
+
+class Verify2FASerializer(TwoFactorTokenSerializer):
+    """Serializer for 2FA token verification during setup."""
+
+    class Meta:
+        ref_name = "Verify2FARequest"
+
+
+class StepUpSerializer(serializers.Serializer):
+    """Serializer for step-up password confirmation on sensitive actions."""
+
+    password = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Current password (required for password-based accounts)",
+    )
+
+    class Meta:
+        ref_name = "StepUpRequest"
+
+
+class Disable2FASerializer(StepUpSerializer, TwoFactorTokenSerializer):
+    """Serializer for disabling 2FA with step-up password confirmation."""
+
+    class Meta:
+        ref_name = "Disable2FARequest"
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):

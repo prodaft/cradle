@@ -3,8 +3,8 @@ import Dashboard from '@/components/domain/dashboard/dashboard';
 import KnowledgeGraphSearch from '@/components/domain/graph/knowledge-graph-search';
 import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
-import { fetchClient } from '@/services/openapi/client';
 import { isAdmin, isEntryManager } from '@/utils/auth';
+import { fetchClient } from '@services/openapi/client';
 import {
     createRootRoute,
     createRoute,
@@ -14,6 +14,14 @@ import {
 } from '@tanstack/react-router';
 import { lazy } from 'react';
 import * as z from 'zod';
+
+import { validateSearchSchema as digestsValidateSearchSchema } from '@/components/domain/digests/digests-list-search-schema';
+import { validateSearchSchema as enrichmentValidateSearchSchema } from '@/components/domain/enrichment/enrichment-list-search-schema';
+import {
+    dashboardValidateSearchSchema,
+    validateSearchSchema as notesValidateSearchSchema,
+} from '@/components/domain/notes/notes-list-search-schema';
+import { validateSearchSchema as reportsValidateSearchSchema } from '@/components/domain/reports/reports-list-search-schema';
 
 const AccountSettings = lazy(
     () => import('@/components/domain/user/account-settings-page'),
@@ -65,36 +73,10 @@ const tabSearch = z.object({
     tab: z.string().optional(),
 });
 
-const notesSearch = z.object({
-    notes_page: z.coerce.number().optional(),
-    notes_sort_field: z.string().optional(),
-    notes_sort_direction: z.enum(['asc', 'desc']).optional(),
-    notes_pagesize: z.coerce.number().optional(),
-    content: z.string().optional(),
-    author__username: z.string().optional(),
-    editor__username: z.string().optional(),
-    created_date_from: z.string().optional(),
-    created_date_to: z.string().optional(),
-    updated_date_from: z.string().optional(),
-    updated_date_to: z.string().optional(),
-});
-
 const noteSearch = z.object({
     heading: z.string().optional(),
     view: z.enum(['content', 'graph', 'history', 'files']).optional(),
     source: z.boolean().optional(),
-});
-
-const dashboardSearch = z.object({
-    heading: z.string().optional(),
-    tab: z.enum(['notes', 'relations', 'files', 'enrichment', 'eventlog']).optional(),
-});
-
-const reportsSearch = z.object({
-    reports_page: z.coerce.number().optional(),
-    reports_sort_field: z.string().optional(),
-    reports_sort_direction: z.enum(['asc', 'desc']).optional(),
-    reports_pagesize: z.coerce.number().optional(),
 });
 
 const filesSearch = z.object({
@@ -104,30 +86,10 @@ const filesSearch = z.object({
     files_pagesize: z.coerce.number().optional(),
 });
 
-const digestDataSearch = z.object({
-    digests_sort_field: z.string().optional(),
-    digests_sort_direction: z.enum(['asc', 'desc']).optional(),
-    digests_pagesize: z.coerce.number().optional(),
-    title: z.string().optional(),
-    author: z.string().optional(),
-    created_at_gte: z.string().optional(),
-    created_at_lte: z.string().optional(),
-    status: z.string().optional(),
-});
-
 const accountSettingsSearch = z.object({
     tab: z.string().optional(),
     sessions_page: z.coerce.number().optional(),
     sessions_pagesize: z.coerce.number().optional(),
-});
-
-const enrichmentRequestsSearch = z.object({
-    sort_field: z.string().optional(),
-    sort_direction: z.enum(['asc', 'desc']).optional(),
-    pagesize: z.coerce.number().optional(),
-    title: z.string().optional(),
-    user__username: z.string().optional(),
-    status: z.string().optional(),
 });
 
 const usersSearch = z.object({
@@ -169,7 +131,7 @@ const authenticatedRoute = createRoute({
 const notesRoute = createRoute({
     getParentRoute: () => authenticatedRoute,
     path: 'notes',
-    validateSearch: notesSearch,
+    validateSearch: notesValidateSearchSchema,
     component: NotesLayout,
 });
 
@@ -189,7 +151,7 @@ const noteRoute = createRoute({
 const reportsRoute = createRoute({
     getParentRoute: () => authenticatedRoute,
     path: 'reports',
-    validateSearch: reportsSearch,
+    validateSearch: reportsValidateSearchSchema,
     component: ReportsList,
 });
 
@@ -203,7 +165,7 @@ const filesRoute = createRoute({
 const digestDataRoute = createRoute({
     getParentRoute: () => authenticatedRoute,
     path: 'digest-data',
-    validateSearch: digestDataSearch,
+    validateSearch: digestsValidateSearchSchema,
     component: DigestsList,
 });
 
@@ -234,7 +196,7 @@ const enrichmentRoute = createRoute({
 const enrichmentIndexRoute = createRoute({
     getParentRoute: () => enrichmentRoute,
     path: '/',
-    validateSearch: enrichmentRequestsSearch,
+    validateSearch: enrichmentValidateSearchSchema,
     component: EnrichmentList,
 });
 
@@ -247,7 +209,7 @@ const enrichmentResultRoute = createRoute({
 const dashboardRoute = createRoute({
     getParentRoute: () => authenticatedRoute,
     path: 'dashboards/$subtype/$name',
-    validateSearch: dashboardSearch,
+    validateSearch: dashboardValidateSearchSchema,
     gcTime: 1000 * 60 * 5,
     staleTime: 1000 * 60,
     pendingComponent: () => <PageLoader fill='container' />,

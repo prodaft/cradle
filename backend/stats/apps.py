@@ -6,4 +6,5 @@ from django.apps import AppConfig
 class StatisticsConfig(AppConfig):
     """Django app config for statistics."""
 
-    name = "statistics"
+    name = "stats"
+    label = "statistics"

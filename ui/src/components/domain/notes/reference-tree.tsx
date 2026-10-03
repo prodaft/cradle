@@ -5,7 +5,7 @@ import {
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Spinner } from '@/components/ui/spinner';
-import { Entry, NoteRetrieve } from '@/types';
+import { Entry, NoteRetrieve } from '@/types/models';
 import { createDashboardLink, SubtypeHierarchy, truncateText } from '@/utils/dashboard';
 import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
@@ -35,7 +35,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
         Record<string, NextPageStatus>
     >({});
 
-    const fetchReferencesMutation = useMutation({
+    const fetchReferencePage = useMutation({
         mutationFn: async ({
             path,
             page,
@@ -73,9 +73,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
     const fetchReferences = async (path: string, nextPage: boolean) => {
         let page = 1;
 
-        // If we already have references for this path, try to load next page
         if (references[path]) {
-            // If we can't load more references or are already loading, stop
             if (
                 !nextPage ||
                 nextPageStatus[path] === 'loading' ||
@@ -90,7 +88,6 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
             return;
         }
 
-        // Mark the path as loading
         setNextPageStatus((prev) => ({
             ...prev,
             [path]: 'loading',
@@ -99,27 +96,23 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
         const noteId = note.id;
 
         try {
-            const response = await fetchReferencesMutation.mutateAsync({
+            const response = await fetchReferencePage.mutateAsync({
                 path,
                 page,
                 noteId,
             });
 
-            const responseData = response as any;
+            const batch = response as any;
             setReferences((prev) => ({
                 ...prev,
-                [path]: [...(prev[path] || []), ...responseData.results],
+                [path]: [...(prev[path] || []), ...batch.results],
             }));
 
             setNextPageStatus((prev) => ({
                 ...prev,
-                [path]:
-                    responseData.page === responseData.total_pages
-                        ? 'end'
-                        : responseData.page + 1,
+                [path]: batch.page === batch.total_pages ? 'end' : batch.page + 1,
             }));
         } catch (_error) {
-            // Error handled by mutation
             setNextPageStatus((prev) => ({
                 ...prev,
                 [path]: 'end',
@@ -152,7 +145,6 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                 <CollapsibleContent>
                     <div className='mt-4'>
                         {new SubtypeHierarchy(note.entries).convert(
-                            // --- Render for internal nodes (categories that have child categories) ---
                             (value, children) => (
                                 <div
                                     className='text-muted-foreground text-xs w-full pt-1'
@@ -184,7 +176,6 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                     </Collapsible>
                                 </div>
                             ),
-                            // --- Render for leaf nodes (concrete subtypes that reference actual entries) ---
                             (value, path) => {
                                 const fullPath = `${path}${value}`;
                                 return (

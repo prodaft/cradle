@@ -7,7 +7,7 @@ import {
     AuthStateContext,
     type AuthActionsValue,
     type AuthStateValue,
-} from '@/components/domain/auth/auth-context';
+} from '@/contexts/auth/auth-context';
 import { useContext, type Context } from 'react';
 
 const useRequiredContext = <T>(ctx: Context<T | undefined>, hookName: string): T => {

@@ -65,7 +65,6 @@ export function DateRangePicker({
                         onChange([range?.from ?? null, range?.to ?? null]);
                     }}
                     numberOfMonths={numberOfMonths}
-                    initialFocus
                 />
             </PopoverContent>
         </Popover>

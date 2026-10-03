@@ -1,4 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
+import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
 import PageHeader from '@/components/base/page-header';
 import {
     ActionBar,
@@ -33,7 +33,6 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
@@ -52,9 +51,9 @@ import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import AddUserForm from './add-user-form';
 
-type UserRetrieve = components['schemas']['UserRetrieve'];
+type UserRow = components['schemas']['UserRetrieve'];
 
-const getRoleBadgeVariant = (role?: string) => {
+const roleBadgeVariant = (role?: string) => {
     switch (role) {
         case 'admin':
             return 'destructive';
@@ -74,22 +73,20 @@ export default function UsersList() {
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ strict: false });
-
-    const searchAny = search as any;
-    const page = Number(searchAny?.users_page ?? 1) || 1;
-    const pageSize = Number(searchAny?.users_pagesize ?? 20) || 20;
-    const searchQuery = (searchAny?.users_search ?? '') as string;
+    const search = useSearch({ strict: false }) as any;
+    const page = Number(search?.users_page ?? 1) || 1;
+    const pageSize = Number(search?.users_pagesize ?? 20) || 20;
+    const applied = (search?.users_search ?? '') as string;
 
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const { userId: currentUserId } = useAuthState();
+    const { userId: selfId } = useAuthState();
     const queryClient = useQueryClient();
-    const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [deleteUserIds, setDeleteUserIds] = useState<string[]>([]);
-    const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+    const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
+    const [typed, setTyped] = useState('');
 
-    const selectedUserIds = useMemo(
+    const checkedIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
         [rowSelection],
     );
@@ -98,20 +95,19 @@ export default function UsersList() {
         setRowSelection({});
     }, []);
 
-    const searchTerm = searchQuery.trim() || undefined;
-    const usersListQuery = useMemo(
-        () => ({
+    const listQuery = useMemo(() => {
+        const trimmed = applied.trim();
+        return {
             page,
             page_size: pageSize,
-            ...(searchTerm ? { search: searchTerm } : {}),
-        }),
-        [page, pageSize, searchTerm],
-    );
-    const { data: usersData, isPending } = $api.useQuery(
+            ...(trimmed ? { search: trimmed } : {}),
+        };
+    }, [page, pageSize, applied]);
+    const { data: usersPage, isPending } = $api.useQuery(
         'get',
         '/users/',
         {
-            params: { query: usersListQuery },
+            params: { query: listQuery },
         },
         {
             meta: {
@@ -121,18 +117,18 @@ export default function UsersList() {
         },
     );
 
-    const users = useMemo(() => usersData?.results ?? [], [usersData]);
+    const rows = useMemo(() => usersPage?.results ?? [], [usersPage]);
 
-    const selectedHasOtherAdmin = useMemo(
+    const selectionHasOtherAdmin = useMemo(
         () =>
-            selectedUserIds.some((id) => {
-                const u = users.find((u) => String(u.id) === id);
-                return u?.role === 'admin' && u.id !== currentUserId;
+            checkedIds.some((id) => {
+                const row = rows.find((r) => String(r.id) === id);
+                return row?.role === 'admin' && row.id !== selfId;
             }),
-        [selectedUserIds, users, currentUserId],
+        [checkedIds, rows, selfId],
     );
 
-    const deleteUsersMutation = useMutation({
+    const deleteUsers = useMutation({
         mutationFn: async (userIds: string[]) => {
             await Promise.all(
                 userIds.map(async (userId) => {
@@ -155,87 +151,79 @@ export default function UsersList() {
         },
     });
 
-    const handleUserClick = useCallback(
-        (user: UserRetrieve) => {
-            router.navigate({ to: `/manage/users/${user.id}` as any });
+    const openUser = useCallback(
+        (item: UserRow) => {
+            router.navigate({ to: `/manage/users/${item.id}` as any });
         },
         [router],
     );
 
-    const handleAddUser = () => {
-        setAddUserDialogOpen(true);
+    const openAddUser = () => {
+        setIsAddUserOpen(true);
     };
 
-    const handleUserAdded = (newUser: UserRetrieve) => {
-        setAddUserDialogOpen(false);
+    const handleUserCreated = (newUser: UserRow) => {
+        setIsAddUserOpen(false);
         queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
         if (newUser.id) {
             router.navigate({ to: `/manage/users/${newUser.id}` as any });
         }
     };
 
-    const handleDeleteUsers = (userIds: string[]) => {
-        deleteUsersMutation.mutate(userIds, {
-            onSuccess: () => {
-                clearSelection();
-            },
-        });
-    };
+    const confirmDelete = useCallback(() => {
+        if (checkedIds.length === 0) return;
+        setPendingDeleteIds(checkedIds);
+        setIsDeleteOpen(true);
+    }, [checkedIds]);
 
-    const handleDeleteSelected = useCallback(() => {
-        if (selectedUserIds.length === 0) return;
-        setDeleteUserIds(selectedUserIds);
-        setDeleteDialogOpen(true);
-    }, [selectedUserIds]);
-
-    const handleEditSelected = useCallback(() => {
-        if (selectedUserIds.length !== 1) return;
-        const userId = selectedUserIds[0];
+    const editSelected = useCallback(() => {
+        if (checkedIds.length !== 1) return;
+        const userId = checkedIds[0];
         router.navigate({ to: `/manage/users/${userId}` as any });
-    }, [selectedUserIds, router]);
+    }, [checkedIds, router]);
 
-    const totalPages = Math.max(1, usersData?.total_pages ?? 1);
+    const totalPages = Math.max(1, usersPage?.total_pages ?? 1);
 
-    const handleSearchChange = useCallback(
+    const applySearch = useCallback(
         (value: string) => {
             router.navigate({
                 to: location.pathname as any,
                 search: {
-                    ...searchAny,
+                    ...search,
                     users_page: 1,
                     users_search: value.trim() || undefined,
                 } as any,
                 replace: true,
             });
         },
-        [searchAny, router, location.pathname],
+        [search, router, location.pathname],
     );
 
-    const handlePaginationChange = useCallback(
-        (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1;
-            if (newPageSize !== pageSize) {
+    const paginate = useCallback(
+        (pageIndex: number, size: number) => {
+            const target = pageIndex + 1;
+            if (size !== pageSize) {
                 router.navigate({
                     to: location.pathname as any,
                     search: {
-                        ...searchAny,
+                        ...search,
                         users_page: 1,
-                        users_pagesize: newPageSize,
+                        users_pagesize: size,
                     } as any,
                     replace: true,
                 });
-            } else if (newPage !== page) {
+            } else if (target !== page) {
                 router.navigate({
                     to: location.pathname as any,
-                    search: { ...searchAny, users_page: newPage } as any,
+                    search: ((prev: any) => ({ ...prev, users_page: target })) as any,
                     replace: true,
                 });
             }
         },
-        [page, pageSize, searchAny, router, location.pathname],
+        [page, pageSize, search, router, location.pathname],
     );
 
-    const columns = useMemo<ColumnDef<UserRetrieve>[]>(
+    const columns = useMemo<ColumnDef<UserRow>[]>(
         () => [
             {
                 id: 'select',
@@ -268,32 +256,38 @@ export default function UsersList() {
             {
                 accessorKey: 'username',
                 id: 'username',
+                meta: { label: 'Username' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Username' />
                 ),
-                cell: ({ row }) => (
-                    <div className='font-medium'>{row.original.username}</div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return <div className='font-medium'>{item.username}</div>;
+                },
             },
             {
                 accessorKey: 'email',
                 id: 'email',
+                meta: { label: 'Email' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Email' />
                 ),
-                cell: ({ row }) => (
-                    <div className='text-muted-foreground'>{row.original.email}</div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return <div className='text-muted-foreground'>{item.email}</div>;
+                },
             },
             {
                 accessorKey: 'role',
                 id: 'role',
+                meta: { label: 'Role' },
                 header: 'Role',
                 cell: ({ row }) => {
-                    const role = row.original.role;
+                    const item = row.original;
+                    const role = item.role;
                     if (!role) return <span className='text-muted-foreground'>-</span>;
                     return (
-                        <Badge variant={getRoleBadgeVariant(role)}>
+                        <Badge variant={roleBadgeVariant(role)}>
                             {role.charAt(0).toUpperCase() + role.slice(1)}
                         </Badge>
                     );
@@ -303,12 +297,14 @@ export default function UsersList() {
             {
                 accessorKey: 'is_active',
                 id: 'is_active',
+                meta: { label: 'Status' },
                 size: 28,
                 minSize: 28,
                 maxSize: 28,
                 header: 'Status',
                 cell: ({ row }) => {
-                    const isActive = row.original.is_active;
+                    const item = row.original;
+                    const isActive = item.is_active;
                     return (
                         <Badge variant={isActive ? 'default' : 'secondary'}>
                             {isActive ? 'Active' : 'Inactive'}
@@ -322,7 +318,7 @@ export default function UsersList() {
     );
 
     const table = useReactTable({
-        data: users,
+        data: rows,
         columns,
         state: {
             rowSelection,
@@ -334,13 +330,12 @@ export default function UsersList() {
         getRowId: (row, index) => String(row.id ?? index),
         onRowSelectionChange: setRowSelection,
         onPaginationChange: (updater) => {
-            const currentPagination = {
+            const current = {
                 pageIndex: page - 1,
                 pageSize,
             };
-            const nextPagination =
-                typeof updater === 'function' ? updater(currentPagination) : updater;
-            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+            const next = typeof updater === 'function' ? updater(current) : updater;
+            paginate(next.pageIndex, next.pageSize);
         },
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
@@ -348,14 +343,13 @@ export default function UsersList() {
         pageCount: totalPages,
     });
 
-    const deleteCount = deleteUserIds.length;
-    const deleteSingleUsername =
+    const deleteCount = pendingDeleteIds.length;
+    const username =
         deleteCount === 1
-            ? users.find((u) => u.id === deleteUserIds[0])?.username
+            ? rows.find((r) => r.id === pendingDeleteIds[0])?.username
             : undefined;
-    const deleteConfirmText =
-        deleteSingleUsername ?? (deleteCount > 1 ? `DELETE ${deleteCount}` : 'DELETE');
-    const deleteDialogText =
+    const phrase = username ?? (deleteCount > 1 ? `DELETE ${deleteCount}` : 'DELETE');
+    const message =
         deleteCount === 1
             ? 'Are you sure you want to delete this user? This action is irreversible.'
             : `Are you sure you want to delete ${deleteCount} user${deleteCount !== 1 ? 's' : ''}? This action is irreversible.`;
@@ -369,7 +363,7 @@ export default function UsersList() {
                     actions={
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button onClick={handleAddUser}>
+                                <Button onClick={openAddUser}>
                                     <UserPlusIcon size={18} weight='bold' />
                                     Add User
                                 </Button>
@@ -384,46 +378,46 @@ export default function UsersList() {
                             table={table}
                             showViewOptions
                             isLoading={isPending}
-                            onRowClick={handleUserClick}
-                            getRowHref={(user) => `/manage/users/${user.id}`}
+                            onRowClick={openUser}
+                            getRowHref={(item) => `/manage/users/${item.id}`}
                         >
                             <ActionBarSearch
                                 placeholder='Search users...'
-                                value={searchQuery}
+                                value={applied}
                                 debounceMs={300}
-                                onDebouncedChange={handleSearchChange}
-                                onSubmit={handleSearchChange}
-                                onClear={() => handleSearchChange('')}
+                                onDebouncedChange={applySearch}
+                                onSubmit={applySearch}
+                                onClear={() => applySearch('')}
                             />
                         </DataTable>
                     </div>
                 </div>
             </div>
             <ActionBar
-                open={selectedUserIds.length > 0}
+                open={checkedIds.length > 0}
                 onOpenChange={(open) => {
                     if (!open) clearSelection();
                 }}
             >
                 <ActionBarSelection>
-                    {selectedUserIds.length} user
-                    {selectedUserIds.length !== 1 ? 's' : ''} selected
+                    {checkedIds.length} user
+                    {checkedIds.length !== 1 ? 's' : ''} selected
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
                     <ActionBarItem
-                        onClick={handleEditSelected}
-                        disabled={isPending || selectedUserIds.length !== 1}
+                        onClick={editSelected}
+                        disabled={isPending || checkedIds.length !== 1}
                     >
                         <PencilIcon size={18} weight='bold' />
                         Edit
                     </ActionBarItem>
                     <ActionBarItem
-                        onClick={handleDeleteSelected}
+                        onClick={confirmDelete}
                         disabled={
                             isPending ||
-                            selectedUserIds.length === 0 ||
-                            selectedHasOtherAdmin
+                            checkedIds.length === 0 ||
+                            selectionHasOtherAdmin
                         }
                         className='text-destructive'
                     >
@@ -436,33 +430,29 @@ export default function UsersList() {
                     Clear
                 </ActionBarClose>
             </ActionBar>
-            <Dialog open={addUserDialogOpen} onOpenChange={setAddUserDialogOpen}>
+            <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
                 <DialogContent className='sm:max-w-md'>
                     <DialogHeader>
                         <DialogTitle>Add User</DialogTitle>
                         <DialogDescription>Create a new user account</DialogDescription>
                     </DialogHeader>
-                    <ScrollArea className='no-scrollbar -mx-4 max-h-[50vh] px-4'>
-                        <AddUserForm onAdd={handleUserAdded} />
-                    </ScrollArea>
+                    <AddUserForm onAdd={handleUserCreated} />
                 </DialogContent>
             </Dialog>
             <AlertDialog
-                open={deleteDialogOpen}
+                open={isDeleteOpen}
                 onOpenChange={(open) => {
-                    setDeleteDialogOpen(open);
+                    setIsDeleteOpen(open);
                     if (!open) {
-                        setDeleteUserIds([]);
-                        setDeleteConfirmInput('');
+                        setPendingDeleteIds([]);
+                        setTyped('');
                     }
                 }}
             >
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {deleteDialogText}
-                        </AlertDialogDescription>
+                        <AlertDialogDescription>{message}</AlertDialogDescription>
                     </AlertDialogHeader>
                     <FieldGroup className='gap-4'>
                         <Field>
@@ -472,9 +462,9 @@ export default function UsersList() {
                             <Input
                                 id='confirm-delete-users'
                                 type='text'
-                                placeholder={`Type "${deleteConfirmText}" to confirm`}
-                                value={deleteConfirmInput}
-                                onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                                placeholder={`Type "${phrase}" to confirm`}
+                                value={typed}
+                                onChange={(e) => setTyped(e.target.value)}
                             />
                         </Field>
                     </FieldGroup>
@@ -486,12 +476,15 @@ export default function UsersList() {
                             variant='destructive'
                             size='sm'
                             onClick={() => {
-                                if (deleteUserIds.length > 0)
-                                    handleDeleteUsers(deleteUserIds);
-                                setDeleteUserIds([]);
-                                setDeleteDialogOpen(false);
+                                if (pendingDeleteIds.length > 0) {
+                                    deleteUsers.mutate(pendingDeleteIds, {
+                                        onSuccess: () => clearSelection(),
+                                    });
+                                }
+                                setPendingDeleteIds([]);
+                                setIsDeleteOpen(false);
                             }}
-                            disabled={deleteConfirmInput !== deleteConfirmText}
+                            disabled={typed !== phrase}
                         >
                             Delete
                         </AlertDialogAction>

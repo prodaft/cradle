@@ -23,7 +23,12 @@ from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
-from core.validators import validate_choice_param, validate_int_list_param, validate_int_param
+from core.validators import (
+    validate_choice_list_param,
+    validate_choice_param,
+    validate_int_list_param,
+    validate_int_param,
+)
 from entries.enums import EntryType
 from entries.exceptions import EntriesErrorCodes, EntryNotFoundException
 from entries.models import Entry, Relation
@@ -61,6 +66,8 @@ from ..serializers import (
     NoteListSerializer,
     NoteRetrieveSerializer,
 )
+
+_NOTE_LIST_STATUS_QUERY_CHOICES: list[str] = ["fleeting", "finalized", *[c[0] for c in NoteStatus.choices]]
 
 
 @extend_schema_view(
@@ -100,8 +107,13 @@ from ..serializers import (
                 name="status",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter by note status, finalized covers all statuses except for fleeting",
+                description=(
+                    "Filter by note status (repeat for OR). "
+                    "`finalized` means non-fleeting notes; `fleeting` limits to the current user's fleeting notes. "
+                    "Omit this parameter for the default list (accessible notes plus your fleeting notes)."
+                ),
                 enum=list(map(lambda x: x[0], NoteStatus.choices)) + ["fleeting", "finalized"],
+                many=True,
             ),
             OpenApiParameter(
                 name="date",
@@ -207,18 +219,36 @@ class NoteList(APIView):
 
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
-        status_filter = validate_choice_param(
-            request.query_params.get("status"),
-            ["fleeting", "finalized"] + [c[0] for c in NoteStatus.choices],
-            param_name="status",
-        )
-        if status_filter == "fleeting":
-            queryset = Note.objects.filter(author=user, fleeting=True)
-        else:
+        status_tokens: list[str] | None = None
+        raw_status = request.query_params.getlist("status")
+        if raw_status:
+            stripped_status = [str(x).strip() for x in raw_status if str(x).strip()]
+            if stripped_status:
+                validated_status = validate_choice_list_param(
+                    stripped_status,
+                    _NOTE_LIST_STATUS_QUERY_CHOICES,
+                    param_name="status",
+                    max_length=20,
+                )
+                status_tokens = validated_status or None
+
+        if status_tokens is None:
             queryset = Note.objects.get_accessible_notes(user)
-            if status_filter is None:
-                author_fleeting = Note.objects.filter(author=user, fleeting=True).distinct()
-                queryset = (queryset | author_fleeting).distinct()
+            author_fleeting = Note.objects.filter(author=user, fleeting=True).distinct()
+            queryset = (queryset | author_fleeting).distinct()
+        else:
+            queryset = Note.objects.none()
+            for token in status_tokens:
+                if token == "fleeting":
+                    queryset = queryset | Note.objects.filter(author=user, fleeting=True)
+                elif token == "finalized":
+                    queryset = queryset | Note.objects.get_accessible_notes(user).filter(fleeting=False)
+                else:
+                    queryset = queryset | Note.objects.get_accessible_notes(user).filter(
+                        fleeting=False,
+                        status=token,
+                    )
+            queryset = queryset.distinct()
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
@@ -261,17 +291,13 @@ class NoteList(APIView):
                 aliasset = entry.aliasqs(user)
                 queryset = queryset.filter(entries__in=aliasset).distinct()
 
-        if status_filter == "finalized":
-            queryset = queryset.filter(fleeting=False)
-        elif status_filter and status_filter != "fleeting":
-            queryset = queryset.filter(status=status_filter, fleeting=False)
-
-        if "any_field" in request.query_params:
+        if request.query_params.get("any_field"):
+            any_field = request.query_params.get("any_field")
             queryset = queryset.filter(
-                Q(content__icontains=request.query_params.get("any_field"))
-                | Q(title__icontains=request.query_params.get("any_field"))
-                | Q(author__username__icontains=request.query_params.get("any_field"))
-                | Q(editor__username__icontains=request.query_params.get("any_field"))
+                Q(content__icontains=any_field)
+                | Q(title__icontains=any_field)
+                | Q(author__username__icontains=any_field)
+                | Q(editor__username__icontains=any_field)
             )
 
         filterset = NoteFilter(request.query_params, queryset=queryset)

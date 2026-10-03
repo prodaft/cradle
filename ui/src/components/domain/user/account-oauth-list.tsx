@@ -53,7 +53,7 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
         },
     );
 
-    const { data: userConfig } = $api.useQuery('get', '/auth/config/', undefined, {
+    const { data: authConfig } = $api.useQuery('get', '/auth/config/', undefined, {
         enabled: !!basePath,
         meta: { suppressNotification: true },
         select: (raw) => {
@@ -72,23 +72,23 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
 
     useEffect(() => {
         if (userData) {
-            const connections =
+            const serverConnections =
                 (userData as any).oauthConnections ||
                 (userData as any).oauth_connections ||
                 {};
-            setOauthConnections(connections);
+            setOauthConnections(serverConnections);
         }
     }, [userData]);
 
     useEffect(() => {
-        if (userConfig?.oauthMethods) {
+        if (authConfig?.oauthMethods) {
             setOauthMethods(
-                Array.isArray(userConfig.oauthMethods) ? userConfig.oauthMethods : [],
+                Array.isArray(authConfig.oauthMethods) ? authConfig.oauthMethods : [],
             );
         } else {
             setOauthMethods([]);
         }
-    }, [userConfig]);
+    }, [authConfig]);
 
     const getOAuthKey = (method: OAuthMethod) =>
         method.id ||
@@ -131,20 +131,20 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
         return connectUrl.toString();
     };
 
-    const mergedConnections = useMemo(() => {
-        const connections = { ...oauthConnections };
+    const connections = useMemo(() => {
+        const next = { ...oauthConnections };
         oauthMethods.forEach((method) => {
             const key = getOAuthKey(method);
-            if (key && connections[key] === undefined) {
-                connections[key] = false;
+            if (key && next[key] === undefined) {
+                next[key] = false;
             }
         });
-        return connections;
+        return next;
     }, [oauthConnections, oauthMethods]);
 
-    const connectionsList = useMemo(
+    const providerRows = useMemo(
         () =>
-            Object.entries(mergedConnections).map(([provider, connected]) => {
+            Object.entries(connections).map(([provider, connected]) => {
                 const method = oauthMethods.find((m) => getOAuthKey(m) === provider);
                 return {
                     provider,
@@ -152,10 +152,10 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
                     connected,
                 };
             }),
-        [mergedConnections, oauthMethods],
+        [connections, oauthMethods],
     );
 
-    const handleConnect = (provider: string) => {
+    const connect = (provider: string) => {
         const method = oauthMethods.find((m) => getOAuthKey(m) === provider);
         if (!method) {
             toast.error('OAuth provider configuration not found.');
@@ -171,7 +171,7 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
         window.location.href = url;
     };
 
-    const disconnectMutation = $api.useMutation(
+    const disconnectProvider = $api.useMutation(
         'delete',
         '/users/oauth/disconnect/{provider}/',
         {
@@ -183,10 +183,10 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
         },
     );
 
-    const handleDisconnect = async (provider: string) => {
+    const disconnect = async (provider: string) => {
         setBusyProvider(provider);
         try {
-            await disconnectMutation.mutateAsync({
+            await disconnectProvider.mutateAsync({
                 params: {
                     path: {
                         provider,
@@ -198,7 +198,7 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
         }
     };
 
-    if (connectionsList.length === 0) {
+    if (providerRows.length === 0) {
         return (
             <section id='oauth'>
                 <p className='text-sm text-muted-foreground'>
@@ -211,7 +211,7 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
     return (
         <section id='oauth'>
             <div className='flex flex-col gap-4'>
-                {connectionsList.map(({ provider, label, connected }, index) => (
+                {providerRows.map(({ provider, label, connected }, index) => (
                     <div key={provider}>
                         <Field orientation='horizontal' className='gap-2'>
                             <FieldContent className='flex-1'>
@@ -228,19 +228,17 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
                                 size='sm'
                                 className='self-center'
                                 onClick={() =>
-                                    connected
-                                        ? handleDisconnect(provider)
-                                        : handleConnect(provider)
+                                    connected ? disconnect(provider) : connect(provider)
                                 }
                                 disabled={
                                     busyProvider === provider ||
-                                    disconnectMutation.isPending
+                                    disconnectProvider.isPending
                                 }
                             >
                                 {connected ? 'Disconnect' : 'Connect'}
                             </Button>
                         </Field>
-                        {index < connectionsList.length - 1 && <Separator />}
+                        {index < providerRows.length - 1 && <Separator />}
                     </div>
                 ))}
             </div>

@@ -26,7 +26,7 @@ structure.
 - `query` for query logic.
 - `knowledge_graph` for graph retrieval.
 - `management` for settings and admin operations.
-- `statistics` for usage statistics.
+- `stats` for usage statistics (package named `stats` so it does not shadow the stdlib `statistics` module; the Django app label stays `statistics`).
 - `intelio` for enrichment orchestration.
 
 ### External service applications

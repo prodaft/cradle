@@ -41,7 +41,7 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
     const queryClient = useQueryClient();
     const { isInitializing } = useAuthState();
     const { isLoggedIn } = useAuthActions();
-    const { data: unreadSummary } = useQuery({
+    const { data: unreadCountResponse } = useQuery({
         queryKey: queryKeys.notifications.unreadCount(),
         enabled: !isInitializing && isLoggedIn(),
         queryFn: async () => {
@@ -52,7 +52,7 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
             return data!;
         },
     });
-    const unreadCountFromApi = unreadSummary?.count ?? 0;
+    const unreadCount = unreadCountResponse?.count ?? 0;
     const [filter, setFilter] = useState<FilterMode>('all');
     const scrollAreaContainerRef = useRef<HTMLDivElement>(null);
 
@@ -64,48 +64,48 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
         );
     }, []);
 
-    const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-        useInfiniteQuery({
-            queryKey: queryKeys.notifications.list(
-                filter === 'unread' ? 'unread' : 'all',
-            ),
-            queryFn: async ({ pageParam }) => {
-                const unreadOnly = filter === 'unread';
-                const { data, error, response } = await fetchClient.GET(
-                    '/notifications/',
-                    {
-                        params: {
-                            query: {
-                                page: pageParam,
-                                page_size: PAGE_SIZE,
-                                ...(unreadOnly ? { unread_only: true } : {}),
-                            },
-                        },
+    const {
+        data: notificationPages,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading,
+    } = useInfiniteQuery({
+        queryKey: queryKeys.notifications.list(filter === 'unread' ? 'unread' : 'all'),
+        queryFn: async ({ pageParam }) => {
+            const unreadOnly = filter === 'unread';
+            const { data, error, response } = await fetchClient.GET('/notifications/', {
+                params: {
+                    query: {
+                        page: pageParam,
+                        page_size: PAGE_SIZE,
+                        ...(unreadOnly ? { unread_only: true } : {}),
                     },
-                );
-                if (error) throw { response, error };
-                if (!unreadOnly) {
-                    void queryClient.invalidateQueries({
-                        queryKey: queryKeys.notifications.unreadCount(),
-                    });
-                }
-                return data!;
-            },
-            getNextPageParam: (lastPage) => {
-                if (lastPage.page < lastPage.total_pages) {
-                    return lastPage.page + 1;
-                }
-                return undefined;
-            },
-            initialPageParam: 1,
-            meta: {
-                showErrorToast: true,
-            },
-        });
+                },
+            });
+            if (error) throw { response, error };
+            if (!unreadOnly) {
+                void queryClient.invalidateQueries({
+                    queryKey: queryKeys.notifications.unreadCount(),
+                });
+            }
+            return data!;
+        },
+        getNextPageParam: (lastPage) => {
+            if (lastPage.page < lastPage.total_pages) {
+                return lastPage.page + 1;
+            }
+            return undefined;
+        },
+        initialPageParam: 1,
+        meta: {
+            showErrorToast: true,
+        },
+    });
 
     const notifications = useMemo(() => {
-        return data?.pages.flatMap((page) => page.results) ?? [];
-    }, [data]);
+        return notificationPages?.pages.flatMap((page) => page.results) ?? [];
+    }, [notificationPages]);
 
     const virtualizer = useVirtualizer({
         count: hasNextPage ? notifications.length + 1 : notifications.length,
@@ -116,7 +116,7 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
 
     const virtualItems = virtualizer.getVirtualItems();
 
-    const handleLoadMore = useCallback(() => {
+    const loadMore = useCallback(() => {
         if (hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
         }
@@ -131,22 +131,16 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
             hasNextPage &&
             !isFetchingNextPage
         ) {
-            handleLoadMore();
+            loadMore();
         }
-    }, [
-        virtualItems,
-        notifications.length,
-        hasNextPage,
-        isFetchingNextPage,
-        handleLoadMore,
-    ]);
+    }, [virtualItems, notifications.length, hasNextPage, isFetchingNextPage, loadMore]);
 
     useEffect(() => {
         getScrollElement()?.scrollTo({ top: 0 });
     }, [filter, getScrollElement]);
 
-    const isInitialLoading = isLoading && notifications.length === 0;
-    const isEmpty = !isInitialLoading && notifications.length === 0;
+    const isInitialLoad = isLoading && notifications.length === 0;
+    const isEmpty = !isInitialLoad && notifications.length === 0;
 
     return (
         <div
@@ -159,12 +153,12 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
                     <h2 className='text-base font-semibold text-foreground truncate'>
                         Notifications
                     </h2>
-                    {unreadCountFromApi > 0 && (
+                    {unreadCount > 0 && (
                         <Badge
                             variant='default'
                             className='h-5 min-w-5 px-1.5 tabular-nums'
                         >
-                            {unreadCountFromApi > 99 ? '99+' : unreadCountFromApi}
+                            {unreadCount > 99 ? '99+' : unreadCount}
                         </Badge>
                     )}
                 </div>
@@ -192,14 +186,12 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
                         <TabsTrigger value='all'>All</TabsTrigger>
                         <TabsTrigger value='unread'>
                             Unread
-                            {unreadCountFromApi > 0 && (
+                            {unreadCount > 0 && (
                                 <Badge
                                     variant='secondary'
                                     className='h-4 min-w-4 px-1 text-[10px] tabular-nums'
                                 >
-                                    {unreadCountFromApi > 99
-                                        ? '99+'
-                                        : unreadCountFromApi}
+                                    {unreadCount > 99 ? '99+' : unreadCount}
                                 </Badge>
                             )}
                         </TabsTrigger>
@@ -208,7 +200,7 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
             </div>
 
             {/* Body */}
-            {isInitialLoading ? (
+            {isInitialLoad ? (
                 <div className='flex-1 min-h-0 flex items-center justify-center p-3'>
                     <PageLoader fill='container' />
                 </div>

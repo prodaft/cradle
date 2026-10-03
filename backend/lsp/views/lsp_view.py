@@ -2,7 +2,6 @@
 
 from typing import cast
 
-from django.conf import settings
 from django.db.models import Q
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view, inline_serializer
 from rest_framework import serializers, status
@@ -14,6 +13,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import BadRequestException, CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
+from entries.constants import INTERNAL_SUBTYPES
 from entries.enums import EntryType
 from entries.models import EntryClass
 from user.models import CradleUser
@@ -49,7 +49,7 @@ class LspTypes(APIView):
 
     def get(self, request: Request) -> Response:
         """Return types grouped by subtype, excluding internal types."""
-        queryset = EntryClass.objects.filter(~Q(subtype__in=settings.INTERNAL_SUBTYPES))
+        queryset = EntryClass.objects.filter(~Q(subtype__in=INTERNAL_SUBTYPES))
         serializer = LspEntryClassSerializer(queryset, many=True)
         grouped_data = {item["subtype"]: item for item in serializer.data}
         return Response({"types": grouped_data}, status=status.HTTP_200_OK)
@@ -105,7 +105,7 @@ class CompletionTrie(APIView):
                 entry_class = EntryClass.objects.get(subtype=entry_type)
             except EntryClass.DoesNotExist:
                 raise BadRequestException(detail="That entry type could not be found.")
-            if entry_type in settings.INTERNAL_SUBTYPES:
+            if entry_type in INTERNAL_SUBTYPES:
                 raise BadRequestException(detail="That entry type could not be found.")
             if entry_class.format is not None:
                 raise BadRequestException(detail="That entry type could not be found.")
@@ -115,7 +115,7 @@ class CompletionTrie(APIView):
             )
 
         classes = EntryClass.objects.filter(
-            ~Q(subtype__in=settings.INTERNAL_SUBTYPES),
+            ~Q(subtype__in=INTERNAL_SUBTYPES),
             Q(type=EntryType.ENTITY) | ~Q(options=""),
         )
         return Response(

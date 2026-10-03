@@ -59,6 +59,7 @@ from ..serializers import (
     EmailConfirmSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    StepUpSerializer,
     UserConfigSerializer,
     UserCreateSerializer,
     UserCreateSerializerAdmin,
@@ -67,6 +68,7 @@ from ..serializers import (
     UserSessionSerializer,
     UserUpdateSerializer,
 )
+from ..utils.step_up import validate_step_up
 from .token_view import set_token_cookies
 
 
@@ -297,11 +299,14 @@ class UserConfigView(APIView):
                 description="UUID of the user, or 'me' to delete own account",
             )
         ],
+        request=StepUpSerializer,
         responses={
             204: {"description": "User successfully deleted"},
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
                 UserErrorCodes.ACTION_NOT_ALLOWED,
+                UserErrorCodes.CURRENT_PASSWORD_INCORRECT,
+                include_validation_error=True,
             ),
             **get_common_error_responses(),
         },
@@ -360,21 +365,22 @@ class UserDetail(APIView):
         return Response(json_user, status=status.HTTP_200_OK)
 
     def delete(self, request: Request, user_id: str | UUID) -> Response:
-        deleter = cast(CradleUser, request.user)
-        removed_user = None
+        user = cast(CradleUser, request.user)
         if user_id == "me":
-            removed_user = deleter
+            target = user
         else:
             try:
-                removed_user = CradleUser.objects.get(id=user_id)
+                target = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
                 raise UserNotFoundException(detail="That user could not be found.")
 
-        if not (deleter.pk == removed_user.pk or (deleter.is_cradle_admin and not removed_user.is_cradle_admin)):
+        if not (user.pk == target.pk or (user.is_cradle_admin and not target.is_cradle_admin)):
             raise ActionNotAllowedException(detail="You do not have permission to delete this user.")
 
+        validate_step_up(request, user, request.data, is_self=user.pk == target.pk)
+
         with transaction.atomic():
-            removed_user.delete()
+            target.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -411,11 +417,14 @@ class UserDetail(APIView):
         operation_id="users_me_destroy",
         summary="Delete current user account",
         description="Deletes the authenticated user's own account.",
+        request=StepUpSerializer,
         responses={
             204: {"description": "User successfully deleted"},
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
                 UserErrorCodes.ACTION_NOT_ALLOWED,
+                UserErrorCodes.CURRENT_PASSWORD_INCORRECT,
+                include_validation_error=True,
             ),
             **get_common_error_responses(),
         },
@@ -624,11 +633,14 @@ class UserMeManage(ManageUser):
                 description="UUID of the user, or 'me' to generate key for self",
             )
         ],
+        request=StepUpSerializer,
         responses={
             201: APIKeyResponseSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
                 UserErrorCodes.ACTION_NOT_ALLOWED,
+                UserErrorCodes.CURRENT_PASSWORD_INCORRECT,
+                include_validation_error=True,
             ),
             **get_common_error_responses(),
         },
@@ -660,31 +672,40 @@ class APIKey(APIView):
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def _get_user_and_check_permission(self, requesting_user: CradleUser, user_id: str | UUID) -> CradleUser:
+    def _get_user_and_check_permission(self, user: CradleUser, user_id: str | UUID) -> CradleUser:
         if user_id == "me":
-            user = requesting_user
+            target = user
         else:
             try:
-                user = CradleUser.objects.get(id=user_id)
+                target = CradleUser.objects.get(id=user_id)
             except CradleUser.DoesNotExist:
                 raise UserNotFoundException(detail="That user could not be found.")
 
-        if not (requesting_user.pk == user.pk or (requesting_user.is_cradle_admin and not user.is_cradle_admin)):
+        if not (user.pk == target.pk or (user.is_cradle_admin and not target.is_cradle_admin)):
             raise ActionNotAllowedException(detail="You do not have permission to manage access keys for this user.")
-        return user
+        return target
 
     def post(self, request: Request, user_id: str | UUID) -> Response:
-        user = self._get_user_and_check_permission(cast(CradleUser, request.user), user_id)
+        user = cast(CradleUser, request.user)
+        target = self._get_user_and_check_permission(user, user_id)
+        validate_step_up(
+            request,
+            user,
+            request.data,
+            is_self=user.pk == target.pk,
+        )
+
         key = secrets.token_hex(24)
         hashed_key = bcrypt.hashpw(key.encode(), bcrypt.gensalt()).decode()
-        user.api_key = hashed_key
-        user.save(update_fields=["api_key"])
+        target.api_key = hashed_key
+        target.save(update_fields=["api_key"])
         return Response({"api_key": key}, status=status.HTTP_201_CREATED)
 
     def delete(self, request: Request, user_id: str | UUID) -> Response:
-        user = self._get_user_and_check_permission(cast(CradleUser, request.user), user_id)
-        user.api_key = None
-        user.save(update_fields=["api_key"])
+        user = cast(CradleUser, request.user)
+        target = self._get_user_and_check_permission(user, user_id)
+        target.api_key = None
+        target.save(update_fields=["api_key"])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -693,11 +714,14 @@ class APIKey(APIView):
         operation_id="users_me_api_key_create",
         summary="Generate API key for current user",
         description="Generates a new API key for the authenticated user.",
+        request=StepUpSerializer,
         responses={
             201: APIKeyResponseSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
                 UserErrorCodes.ACTION_NOT_ALLOWED,
+                UserErrorCodes.CURRENT_PASSWORD_INCORRECT,
+                include_validation_error=True,
             ),
             **get_common_error_responses(),
         },

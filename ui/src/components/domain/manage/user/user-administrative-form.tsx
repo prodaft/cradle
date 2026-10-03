@@ -1,4 +1,5 @@
-import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
+import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
+import SetUserPasswordDialog from '@/components/domain/manage/user/dialogs/set-password-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -27,7 +28,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
-import SetUserPasswordDialog from './set-password-dialog';
 
 interface UserAdministrativeFormProps {
     userId: string;
@@ -66,16 +66,16 @@ export default function UserAdministrativeForm({
 }: UserAdministrativeFormProps) {
     const queryClient = useQueryClient();
     const previousValuesRef = useRef<Partial<FormData> | null>(null);
-    const [setPasswordDialogOpen, setSetPasswordDialogOpen] = useState(false);
+    const [isSetPasswordOpen, setIsSetPasswordOpen] = useState(false);
 
-    const { data: userData } = $api.useQuery(
+    const { data: user } = $api.useQuery(
         'get',
         '/users/{user_id}/',
         { params: { path: { user_id: userId } } },
         { enabled: !!userId, meta: { suppressNotification: true } },
     );
 
-    const saveMutation = useMutation({
+    const saveSettings = useMutation({
         mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
             const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
                 params: { path: { user_id: userId } },
@@ -108,37 +108,37 @@ export default function UserAdministrativeForm({
     });
 
     useEffect(() => {
-        if (!userData) return;
-        const fileUploadLimitBytes = (userData as any).file_upload_limit_override;
-        const data: FormData = {
-            id: userData.id,
-            emailConfirmed: userData.email_confirmed || false,
-            isActive: userData.is_active || false,
+        if (!user) return;
+        const fileUploadLimitBytes = (user as any).file_upload_limit_override;
+        const values: FormData = {
+            id: user.id,
+            emailConfirmed: user.email_confirmed || false,
+            isActive: user.is_active || false,
             fileUploadLimitOverride:
                 (fileUploadLimitBytes
                     ? bytes.format(fileUploadLimitBytes, { unitSeparator: ' ' })
                     : null) ?? undefined,
         };
-        reset(data);
-        previousValuesRef.current = data;
-    }, [userData, reset]);
+        reset(values);
+        previousValuesRef.current = values;
+    }, [user, reset]);
 
-    const handleSave = () => {
-        const data = getValues();
+    const save = () => {
+        const values = getValues();
         const prev = previousValuesRef.current;
-        if (!data.id) return;
+        if (!values.id) return;
 
         const payload: any = {};
-        if (data.emailConfirmed !== prev?.emailConfirmed)
-            payload.email_confirmed = data.emailConfirmed;
-        if (data.isActive !== prev?.isActive) payload.is_active = data.isActive;
-        if (data.fileUploadLimitOverride !== prev?.fileUploadLimitOverride) {
+        if (values.emailConfirmed !== prev?.emailConfirmed)
+            payload.email_confirmed = values.emailConfirmed;
+        if (values.isActive !== prev?.isActive) payload.is_active = values.isActive;
+        if (values.fileUploadLimitOverride !== prev?.fileUploadLimitOverride) {
             if (
-                data.fileUploadLimitOverride &&
-                data.fileUploadLimitOverride.trim() !== ''
+                values.fileUploadLimitOverride &&
+                values.fileUploadLimitOverride.trim() !== ''
             ) {
                 payload.file_upload_limit_override = bytes.parse(
-                    data.fileUploadLimitOverride,
+                    values.fileUploadLimitOverride,
                 );
             } else {
                 payload.file_upload_limit_override = null;
@@ -150,27 +150,27 @@ export default function UserAdministrativeForm({
             return;
         }
 
-        saveMutation.mutate(
-            { userId: data.id, payload },
+        saveSettings.mutate(
+            { userId: values.id, payload },
             {
                 onSuccess: () => {
-                    previousValuesRef.current = { ...prev, ...data };
+                    previousValuesRef.current = { ...prev, ...values };
                 },
             },
         );
     };
 
-    const handleRevert = () => {
+    const revert = () => {
         if (previousValuesRef.current) reset(previousValuesRef.current);
     };
-    const handleDefault = () => {
-        reset({ ...ADMIN_DEFAULTS, id: userData?.id }, { keepDefaultValues: true });
+    const resetToDefaults = () => {
+        reset({ ...ADMIN_DEFAULTS, id: user?.id }, { keepDefaultValues: true });
     };
     const isAtDefault =
-        !!userData &&
+        !!user &&
         isEqual({ ...watch(), id: undefined }, { ...ADMIN_DEFAULTS, id: undefined });
 
-    if (!userData) return null;
+    if (!user) return null;
 
     return (
         <>
@@ -182,7 +182,7 @@ export default function UserAdministrativeForm({
                             variant='outline'
                             size='icon'
                             disabled={!isDirty}
-                            onClick={handleRevert}
+                            onClick={revert}
                             title='Revert'
                         >
                             <ArrowCounterClockwiseIcon
@@ -195,7 +195,7 @@ export default function UserAdministrativeForm({
                             variant='outline'
                             size='icon'
                             disabled={isAtDefault}
-                            onClick={handleDefault}
+                            onClick={resetToDefaults}
                             title='Default'
                         >
                             <ClockCounterClockwiseIcon
@@ -207,11 +207,11 @@ export default function UserAdministrativeForm({
                             type='button'
                             variant='default'
                             size='icon'
-                            disabled={saveMutation.isPending || !isDirty}
-                            onClick={handleSave}
+                            disabled={saveSettings.isPending || !isDirty}
+                            onClick={save}
                             title='Save Settings'
                         >
-                            {saveMutation.isPending ? (
+                            {saveSettings.isPending ? (
                                 <Spinner className='size-4' />
                             ) : (
                                 <FloppyDiskIcon className='size-4' weight='bold' />
@@ -348,7 +348,7 @@ export default function UserAdministrativeForm({
                                 variant='outline'
                                 size='sm'
                                 className='self-start md:self-center'
-                                onClick={() => setSetPasswordDialogOpen(true)}
+                                onClick={() => setIsSetPasswordOpen(true)}
                                 disabled={isOtherAdmin}
                             >
                                 Set Password
@@ -357,11 +357,11 @@ export default function UserAdministrativeForm({
                     </FieldGroup>
                 </div>
             </section>
-            {userData.id && (
+            {user.id && (
                 <SetUserPasswordDialog
-                    open={setPasswordDialogOpen}
-                    onOpenChange={setSetPasswordDialogOpen}
-                    userId={userData.id}
+                    open={isSetPasswordOpen}
+                    onOpenChange={setIsSetPasswordOpen}
+                    userId={user.id}
                     onSuccess={() => {
                         queryClient.invalidateQueries({
                             queryKey: queryKeys.users.detail(userId),

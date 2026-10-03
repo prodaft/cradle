@@ -1,15 +1,15 @@
 export function getSaveStatus(
     markdownContent: string,
-    saving: boolean,
-    hasUnsavedChanges: boolean,
+    isSaving: boolean,
+    isDirty: boolean,
 ): 'empty' | 'saving' | 'unsaved' | 'saved' {
     if (!markdownContent || markdownContent.trim().length === 0) {
         return 'empty';
     }
-    if (saving) {
+    if (isSaving) {
         return 'saving';
     }
-    if (hasUnsavedChanges) {
+    if (isDirty) {
         return 'unsaved';
     }
     return 'saved';

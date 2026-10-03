@@ -13,6 +13,7 @@ import {
     ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTheme } from '@/contexts/ui';
 import { cn } from '@/lib/utils';
 import {
     createMemoryHistory,
@@ -39,7 +40,7 @@ import {
     type IDockviewPanelHeaderProps,
     type IDockviewPanelProps,
     type SerializedDockview,
-} from 'dockview';
+} from 'dockview-react';
 import {
     Archive,
     Building2,
@@ -64,7 +65,6 @@ import {
     X,
     type LucideIcon,
 } from 'lucide-react';
-import { useTheme } from 'next-themes';
 import React, {
     createContext,
     Suspense,
@@ -77,7 +77,7 @@ import React, {
 } from 'react';
 
 import '@styles/dockview.css';
-import 'dockview/dist/styles/dockview.css';
+import 'dockview-react/dist/styles/dockview.css';
 
 export type AppRouteTabParams = {
     href: string;
@@ -593,7 +593,7 @@ function AppDockviewTab(
         <ContextMenu>
             <ContextMenuTrigger asChild>
                 <div
-                    className='cradle-dockview-tab-title'
+                    className='cradle-dockview-tab-title bg-background'
                     onPointerDown={onTabPointerDown}
                     onPointerUp={onTabPointerUp}
                     onPointerLeave={onTabPointerLeave}
@@ -612,7 +612,7 @@ function AppDockviewTab(
                         size='icon-xs'
                         className={cn(
                             'cradle-dockview-tab-title-close',
-                            'size-[18px] min-h-0 min-w-0 rounded-[2px] p-0',
+                            'size-[18px] min-h-0 min-w-0 rounded-[2px] p-0 text-inherit focus-visible:ring-0',
                         )}
                         aria-label={`Close ${title || 'tab'}`}
                         onPointerDown={onCloseGlyphPointerDown}
@@ -712,7 +712,7 @@ export function useAppDockview(): AppDockviewContextValue {
 export function AppDockviewShell(): React.JSX.Element {
     const router = useRouter();
     const location = useLocation();
-    const { resolvedTheme } = useTheme();
+    const { isDarkMode } = useTheme();
     const [dockApi, setDockApi] = useState<DockviewApi | null>(null);
     const dockApiRef = useRef<DockviewApi | null>(null);
     const pendingOuterHrefRef = useRef<string | null>(null);
@@ -721,7 +721,7 @@ export function AppDockviewShell(): React.JSX.Element {
         dockApiRef.current = dockApi;
     }, [dockApi]);
 
-    const theme: DockviewTheme = resolvedTheme === 'dark' ? themeDark : themeLight;
+    const theme: DockviewTheme = isDarkMode ? themeDark : themeLight;
 
     const contextValue = useMemo(() => ({ api: dockApi }), [dockApi]);
 
@@ -796,7 +796,7 @@ export function AppDockviewShell(): React.JSX.Element {
         if (!api) {
             return;
         }
-        const sub = api.onDidActivePanelChange((panel) => {
+        const sub = api.onDidActivePanelChange(({ panel }) => {
             if (!panel) {
                 return;
             }
@@ -865,10 +865,7 @@ export function AppDockviewShell(): React.JSX.Element {
     return (
         <AppDockviewContext.Provider value={contextValue}>
             <DockviewReact
-                className={cn(
-                    'cradle-dockview absolute inset-0 h-full w-full min-h-0',
-                    '[&_.dv-content-container]:bg-background [&_.dv-react-part]:bg-background',
-                )}
+                className='cradle-dockview absolute inset-0 h-full w-full min-h-0'
                 theme={theme}
                 defaultRenderer='always'
                 components={components}

@@ -1,133 +1,99 @@
 import { Button } from '@/components/ui/button';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { HeaderNode } from '@/utils/editor/outline';
-import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';
-import React, { useState } from 'react';
+import { ChevronRightIcon } from 'lucide-react';
+import { Fragment } from 'react';
 
-interface TreeNodeProps {
-    nodeData: HeaderNode;
+interface NoteOutlineProps {
+    data: HeaderNode[];
     showSeparators?: boolean;
     currentLine?: number;
 }
 
-const TreeNode: React.FC<TreeNodeProps> = ({
+interface OutlineOptions {
+    showSeparators: boolean;
+    currentLine?: number;
+}
+
+function renderOutlineNodes(nodes: HeaderNode[], options: OutlineOptions) {
+    return nodes.map((node) => (
+        <Fragment key={`${node.startLine}-${node.nodeName}`}>
+            {options.showSeparators && node.separatorBefore && (
+                <Separator className='my-2 opacity-50' />
+            )}
+            <OutlineNode nodeData={node} options={options} />
+        </Fragment>
+    ));
+}
+
+function OutlineNode({
     nodeData,
-    showSeparators = false,
-    currentLine,
-}) => {
-    const [expanded, setExpanded] = useState(true);
-    const children = nodeData.children ?? [];
-    const hasChildren = children.length > 0;
+    options,
+}: {
+    nodeData: HeaderNode;
+    options: OutlineOptions;
+}) {
+    if (nodeData.children.length > 0) {
+        return (
+            <Collapsible defaultOpen>
+                <CollapsibleTrigger asChild>
+                    <Button
+                        variant='ghost'
+                        size='sm'
+                        className='group w-full justify-start transition-none'
+                        onClick={nodeData.onNodeClick}
+                    >
+                        <ChevronRightIcon className='transition-transform group-data-[state=open]:rotate-90' />
+                        <span className='truncate'>{nodeData.nodeName}</span>
+                    </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className='mt-1 ml-5 flex flex-col gap-1'>
+                    {renderOutlineNodes(nodeData.children, options)}
+                </CollapsibleContent>
+            </Collapsible>
+        );
+    }
 
-    const toggleExpand = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setExpanded((v) => !v);
-    };
-
-    const handleNodeClick = () => nodeData.onNodeClick?.();
-
-    // Check if this node is the current line
+    const { currentLine } = options;
     const isCurrent =
         currentLine !== undefined &&
         currentLine >= nodeData.startLine &&
         currentLine <= nodeData.endLine;
 
     return (
-        <div className='ml-4'>
-            <div
-                className='flex items-center py-1 rounded cursor-pointer hover:text-primary'
-                onClick={handleNodeClick}
+        <Button
+            variant='link'
+            size='sm'
+            className='w-full justify-start text-foreground no-underline hover:no-underline'
+            onClick={nodeData.onNodeClick}
+        >
+            <span className='flex size-4 shrink-0 items-center justify-center text-sm leading-none'>
+                #
+            </span>
+            <span
+                className={`truncate${isCurrent ? ' underline decoration-primary' : ''}`}
             >
-                {hasChildren ? (
-                    <Button
-                        variant='ghost'
-                        size='icon-sm'
-                        onClick={toggleExpand}
-                        className='w-4 h-4 flex items-center justify-center mr-2 text-primary p-0'
-                        title={expanded ? 'Collapse' : 'Expand'}
-                    >
-                        {expanded ? (
-                            <CaretDownIcon
-                                className='text-primary'
-                                size={14}
-                                weight='bold'
-                            />
-                        ) : (
-                            <CaretRightIcon
-                                className='text-primary'
-                                size={14}
-                                weight='bold'
-                            />
-                        )}
-                    </Button>
-                ) : (
-                    <span className='w-4 flex items-center justify-center mr-2 text-primary'>
-                        #
-                    </span>
-                )}
-                <span
-                    className={`font-medium ${isCurrent ? 'underline decoration-primary' : ''}`}
-                >
-                    {nodeData.nodeName}
-                </span>
-            </div>
-
-            {expanded && hasChildren && (
-                <div className='border-l border-border pl-1 ml-2'>
-                    {children.map((child) => (
-                        <React.Fragment key={`${child.startLine}-${child.nodeName}`}>
-                            {showSeparators && child.separatorBefore && (
-                                <Separator className='my-2 mx-2 opacity-70' />
-                            )}
-                            <TreeNode
-                                nodeData={child}
-                                showSeparators={showSeparators}
-                                currentLine={currentLine}
-                            />
-                        </React.Fragment>
-                    ))}
-                </div>
-            )}
-        </div>
+                {nodeData.nodeName}
+            </span>
+        </Button>
     );
-};
-
-interface NoteOutlineProps {
-    data: HeaderNode[];
-    showSeparators?: boolean;
-    title?: string;
-    currentLine?: number;
 }
 
-const NoteOutline: React.FC<NoteOutlineProps> = ({
+export default function NoteOutline({
     data,
     showSeparators = false,
-    title = 'Tree View',
     currentLine,
-}) => {
+}: NoteOutlineProps) {
+    const options = { showSeparators, currentLine };
+
     return (
-        <div className='pt-3'>
-            {title && (
-                <div className='px-1 pb-2 text-xs font-medium text-muted-foreground'>
-                    {title}
-                </div>
-            )}
-            <div className='text-muted-foreground text-sm'>
-                {data.map((node) => (
-                    <React.Fragment key={`${node.startLine}-${node.nodeName}`}>
-                        {showSeparators && node.separatorBefore && (
-                            <Separator className='my-2 mx-1 opacity-50' />
-                        )}
-                        <TreeNode
-                            nodeData={node}
-                            showSeparators={showSeparators}
-                            currentLine={currentLine}
-                        />
-                    </React.Fragment>
-                ))}
-            </div>
+        <div className='flex flex-col gap-1 p-3'>
+            {renderOutlineNodes(data, options)}
         </div>
     );
-};
-
-export default NoteOutline;
+}

@@ -110,8 +110,8 @@ interface RichEditorProps {
     noteid: string;
     markdownContent: string;
     setMarkdownContent: (content: string) => void;
-    fileData: FileReferenceWithNote[];
-    setFileData: (data: FileReferenceWithNote[]) => void;
+    files: FileReferenceWithNote[];
+    setFiles: (data: FileReferenceWithNote[]) => void;
     saveNote: () => void;
     additionalExtensions?: Extension[];
     enableEditing?: boolean;
@@ -119,8 +119,8 @@ interface RichEditorProps {
     setLineNumber: (lineNumber: number) => void;
     editorUtils: CradleEditor;
     referenceMappings?: Record<string, FileReferenceWithNote>;
-    saving?: boolean;
-    hasUnsavedChanges?: boolean;
+    isSaving?: boolean;
+    isDirty?: boolean;
     noteStatus?: NoteProcessingStatus;
     noteStatusMessage?: string | null;
     onEditorViewChange?: (view: EditorView | null) => void;
@@ -130,11 +130,8 @@ interface RichEditorRef {
     view: EditorView | null;
 }
 
-// Custom syntax highlighting for source mode - colors and text decorations
-// Uses Prosemark CSS variables which are now mapped to our theme colors in createCradleTheme
 const sourceModeSyntaxHighlighting = syntaxHighlighting(
     HighlightStyle.define([
-        // Markdown syntax elements
         { tag: markdownTags.headerMark, color: 'var(--pm-header-mark-color)' },
         { tag: markdownTags.listMark, color: 'var(--pm-header-mark-color)' },
         { tag: tags.strong, fontWeight: 'bold' },
@@ -149,7 +146,6 @@ const sourceModeSyntaxHighlighting = syntaxHighlighting(
             color: 'var(--pm-link-color)',
             textDecoration: 'underline',
         },
-        // Code block syntax highlighting
         { tag: tags.link, color: 'var(--pm-syntax-link)' },
         { tag: tags.keyword, color: 'var(--pm-syntax-keyword)' },
         {
@@ -193,16 +189,13 @@ const sourceModeSyntaxHighlighting = syntaxHighlighting(
     ]),
 );
 
-/**
- * RichEditor component that uses CodeMirror for markdown editing
- */
 const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEditor(
     {
         noteid,
         markdownContent,
         setMarkdownContent,
-        fileData,
-        setFileData,
+        files,
+        setFiles,
         saveNote,
         additionalExtensions = [],
         enableEditing = true,
@@ -210,18 +203,18 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         editorUtils,
         setLineNumber,
         referenceMappings: propReferenceMappings,
-        saving = false,
-        hasUnsavedChanges = false,
+        isSaving = false,
+        isDirty = false,
         noteStatus,
         noteStatusMessage,
         onEditorViewChange,
     },
     ref,
 ) {
-    const [showFileList, setShowFileList] = useState(false);
-    const [showFileUploadDialog, setShowFileUploadDialog] = useState(false);
-    const [clipboardFiles, setClipboardFiles] = useState<File[]>([]);
-    const [editorReady, setEditorReady] = useState(false);
+    const [isFileListOpen, setIsFileListOpen] = useState(false);
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [initialUploadFiles, setInitialUploadFiles] = useState<File[]>([]);
+    const [isEditorReady, setIsEditorReady] = useState(false);
     const { isLoggedIn } = useAuthActions();
     const { data: profile } = $api.useQuery(
         'get',
@@ -235,9 +228,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     routerRef.current = router;
     const onEditorViewChangeRef = useRef(onEditorViewChange);
     onEditorViewChangeRef.current = onEditorViewChange;
-    // Stable navigate function — uses ref to avoid invalidating extensions memo
     const navigate = useCallback((url: string) => {
-        // Parse dashboard URLs to extract params
         const dashboardMatch = url.match(/^\/dashboards\/([^/]+)\/([^/]+)\/?$/);
         if (dashboardMatch) {
             const subtype = dashboardMatch[1];
@@ -341,7 +332,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         [],
     );
 
-    const downloadFileMutation = useMutation({
+    const downloadFile = useMutation({
         mutationFn: async (fileId: string) => {
             const { data, error, response } = await fetchClient.GET(
                 '/file-transfer/download/',
@@ -364,7 +355,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         },
     });
 
-    const { data: entryClassesData } = useNdjsonQuery({
+    const { data: entryClasses } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'rich-editor'],
         refetchOnWindowFocus: false,
@@ -372,27 +363,27 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     });
 
     useEffect(() => {
-        if (entryClassesData == null) return;
-        const results = entryClassesData;
-        const colorMap = new Map<string, string>();
+        if (entryClasses == null) return;
+        const results = entryClasses;
+        const map = new Map<string, string>();
         for (const entry of results) {
             if (entry.color) {
-                colorMap.set(entry.subtype, entry.color);
+                map.set(entry.subtype, entry.color);
             }
         }
         setEntryColors((prev) => {
             if (
-                prev.size !== colorMap.size ||
-                [...prev.entries()].some(([k, v]) => colorMap.get(k) !== v) ||
-                [...colorMap.entries()].some(([k, v]) => prev.get(k) !== v)
+                prev.size !== map.size ||
+                [...prev.entries()].some(([k, v]) => map.get(k) !== v) ||
+                [...map.entries()].some(([k, v]) => prev.get(k) !== v)
             )
-                return colorMap;
+                return map;
             return prev;
         });
-    }, [entryClassesData]);
+    }, [entryClasses]);
 
-    const downloadMutateRef = useRef(downloadFileMutation.mutateAsync);
-    downloadMutateRef.current = downloadFileMutation.mutateAsync;
+    const downloadMutateRef = useRef(downloadFile.mutateAsync);
+    downloadMutateRef.current = downloadFile.mutateAsync;
 
     const fileDownloadFn = useCallback(
         async (file: { fileId: string }): Promise<FileDownload> => {
@@ -401,7 +392,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         [],
     );
 
-    // Theme uses CSS variables, so we only need to update when isDarkMode changes for the dark flag
     const cradleTheme = useMemo(() => createCradleTheme(isDarkMode), [isDarkMode]);
 
     useImperativeHandle(
@@ -424,7 +414,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         setLineNumberRef.current = setLineNumber;
     }, [setMarkdownContent, saveNote, setLineNumber]);
 
-    // Memoize code block copy handler
     const codeBlockCopyExtension = useMemo(() => {
         return EditorView.domEventHandlers({
             click: (event) => {
@@ -456,22 +445,27 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         });
     }, []);
 
-    // Handle paste events to detect files
-    const pasteHandler = useMemo(() => {
+    const openUploadDialog = useCallback((selectedFiles: File[]) => {
+        if (selectedFiles.length === 0) return;
+        setInitialUploadFiles(selectedFiles);
+        setIsUploadOpen(true);
+    }, []);
+
+    const fileUploadInteractionHandler = useMemo(() => {
         return Prec.high(
             EditorView.domEventHandlers({
                 paste: (event) => {
                     const items = event.clipboardData?.items;
                     if (!items) return false;
 
-                    const files: File[] = [];
+                    const pastedFiles: File[] = [];
                     let hasText = false;
                     for (let i = 0; i < items.length; i++) {
                         const item = items[i];
                         if (!item) continue;
                         if (item.kind === 'file') {
                             const file = item.getAsFile();
-                            if (file) files.push(file);
+                            if (file) pastedFiles.push(file);
                         } else if (
                             item.kind === 'string' &&
                             (item.type === 'text/plain' || item.type === 'text/html')
@@ -480,30 +474,50 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                         }
                     }
 
-                    if (files.length > 0 && !hasText) {
+                    if (pastedFiles.length > 0 && !hasText) {
                         event.preventDefault();
-                        setClipboardFiles(files);
-                        setShowFileUploadDialog(true);
+                        openUploadDialog(pastedFiles);
                         return true;
                     }
                     return false;
                 },
+                dragover: (event) => {
+                    const types = event.dataTransfer?.types;
+                    if (!types) return false;
+
+                    const includesFiles = Array.from(types).some(
+                        (type) => type === 'Files' || type === 'application/x-moz-file',
+                    );
+                    if (!includesFiles) return false;
+
+                    event.preventDefault();
+                    if (event.dataTransfer) {
+                        event.dataTransfer.dropEffect = 'copy';
+                    }
+                    return true;
+                },
+                drop: (event) => {
+                    const droppedFiles = Array.from(event.dataTransfer?.files ?? []);
+                    if (droppedFiles.length === 0) return false;
+
+                    event.preventDefault();
+                    openUploadDialog(droppedFiles);
+                    return true;
+                },
             }),
         );
-    }, []);
+    }, [openUploadDialog]);
 
-    // Use prop referenceMappings if provided, otherwise compute from fileData
     const referenceMappings = useMemo(() => {
         if (propReferenceMappings) return propReferenceMappings;
         const mappings: Record<string, FileReferenceWithNote> = {};
-        for (const file of fileData) {
+        for (const file of files) {
             if (file.id) mappings[file.id] = file;
             mappings[`${file.id}-${file.file_name}`] = file;
         }
         return mappings;
-    }, [fileData, propReferenceMappings]);
+    }, [files, propReferenceMappings]);
 
-    // Build extensions - only rebuild when actually necessary
     const extensions = useMemo(() => {
         let exts: Extension[] = [
             cradleLinksPlugin(entryColors, navigate, source),
@@ -533,11 +547,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                       clickLinkHandler.of((url: string) => {
                           window.open(url, '_blank', 'noopener,noreferrer');
                       }),
-                      // Syntax highlighting for both modes
                       baseSyntaxHighlights,
                   ]
                 : [sourceModeSyntaxHighlighting]),
-            pasteHandler,
+            fileUploadInteractionHandler,
             Prec.high(cradleTheme),
             EditorView.lineWrapping,
             history(),
@@ -593,7 +606,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         if (source) {
             exts.push(lineNumbers());
         } else {
-            // Hide gutters in Rich Editor mode
             exts.push(
                 EditorView.theme({
                     '.cm-gutters': { display: 'none' },
@@ -616,7 +628,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         enableEditing,
         cradleTheme,
         codeBlockCopyExtension,
-        pasteHandler,
+        fileUploadInteractionHandler,
         referenceMappings,
         navigate,
         fileDownloadFn,
@@ -640,7 +652,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         }
     }, [profile?.vim_mode]);
 
-    // Reconfigure extensions when they change
     useEffect(() => {
         if (editorViewRef.current) {
             editorViewRef.current.dispatch({
@@ -655,13 +666,12 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 onEditorViewChangeRef.current?.(null);
                 editorViewRef.current.destroy();
                 editorViewRef.current = null;
-                setEditorReady(false);
+                setIsEditorReady(false);
             }
             prevNoteIdRef.current = noteid;
         }
     }, [noteid]);
 
-    // Initialize editor
     useEffect(() => {
         if (!editorViewRef.current && editorRef.current && extensions.length > 0) {
             if (needsEditorSyncHydration && !editorSyncHydrated) return;
@@ -687,7 +697,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
                 editorViewRef.current = view;
                 onEditorViewChangeRef.current?.(view);
-                setEditorReady(true);
+                setIsEditorReady(true);
             } catch (error) {
                 logger.error('Editor init failed', error);
                 toast.error(
@@ -704,7 +714,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         editorSyncSession,
     ]);
 
-    // Cleanup on unmount
     useEffect(() => {
         return () => {
             if (editorViewRef.current) {
@@ -715,7 +724,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         };
     }, []);
 
-    // Sync external content changes
     useEffect(() => {
         const view = editorViewRef.current;
         if (!view) return;
@@ -737,9 +745,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         });
     }, [markdownContent, editorSyncSession, noteid]);
 
-    // Update search panel labels - only observe when editor exists
     useEffect(() => {
-        if (!editorReady) return;
+        if (!isEditorReady) return;
         const view = editorViewRef.current;
         if (!view) return;
 
@@ -775,7 +782,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         requestAnimationFrame(updateLabels);
 
         return () => observer.disconnect();
-    }, [editorReady]);
+    }, [isEditorReady]);
 
     const insertTextToCodeMirror = useCallback((text: string) => {
         const view = editorViewRef.current;
@@ -784,27 +791,20 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         }
     }, []);
 
-    const toggleFileList = useCallback(() => setShowFileList((prev) => !prev), []);
+    const toggleFileList = useCallback(() => setIsFileListOpen((prev) => !prev), []);
 
     const wordCount = useMemo(
         () => markdownContent.trim().split(/\s+/).filter(Boolean).length,
         [markdownContent],
     );
     const charCount = markdownContent.length;
-    const saveStatus = getSaveStatus(markdownContent, saving, hasUnsavedChanges);
+    const saveStatus = getSaveStatus(markdownContent, isSaving, isDirty);
 
     const noteStatusBadgeDescription =
         noteStatusMessage?.trim() ||
         (noteStatus
             ? `Note status: ${formatNoteStatusLabel(noteStatus)}`
             : 'Note status unavailable');
-
-    const handleFilesChange = useCallback(
-        (files: FileReferenceWithNote[]) => {
-            setFileData(files);
-        },
-        [setFileData],
-    );
 
     return (
         <div className='h-full w-full flex flex-col overflow-hidden'>
@@ -819,7 +819,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     tabIndex={0}
                 />
             </div>
-            {fileData && fileData.length > 0 && (
+            {files && files.length > 0 && (
                 <div className='flex-none max-h-[30%] flex flex-col z-30 border-t border-border bg-card'>
                     <button
                         type='button'
@@ -827,19 +827,19 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                         onClick={toggleFileList}
                     >
                         <CaretDownIcon
-                            className={`size-4 text-muted-foreground transition-transform duration-200 ${showFileList ? '' : '-rotate-90'}`}
+                            className={`size-4 text-muted-foreground transition-transform duration-200 ${isFileListOpen ? '' : '-rotate-90'}`}
                             weight='bold'
                         />
                         <span>Attached Files</span>
                         <span className='text-xs text-muted-foreground ml-1'>
-                            ({fileData.length})
+                            ({files.length})
                         </span>
                     </button>
-                    {showFileList && (
+                    {isFileListOpen && (
                         <ScrollArea className='flex-1 min-h-24 border-t border-border'>
                             <FileTable
-                                fileData={fileData}
-                                setFileData={setFileData}
+                                files={files}
+                                setFiles={setFiles}
                                 insertTextCallback={insertTextToCodeMirror}
                             />
                             <ScrollBar orientation='horizontal' />
@@ -932,14 +932,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
             {/* File Upload Dialog */}
             <FileUploadDialog
-                open={showFileUploadDialog}
+                open={isUploadOpen}
                 onOpenChange={(open) => {
-                    setShowFileUploadDialog(open);
-                    if (!open) setClipboardFiles([]);
+                    setIsUploadOpen(open);
+                    if (!open) setInitialUploadFiles([]);
                 }}
-                files={fileData}
-                onFilesChange={handleFilesChange}
-                initialFiles={clipboardFiles}
+                files={files}
+                onFilesChange={setFiles}
+                initialFiles={initialUploadFiles}
                 noteId={noteid}
             />
         </div>
@@ -950,18 +950,18 @@ export default memo(RichEditor, (prevProps, nextProps) => {
     return (
         prevProps.noteid === nextProps.noteid &&
         prevProps.markdownContent === nextProps.markdownContent &&
-        prevProps.fileData === nextProps.fileData &&
+        prevProps.files === nextProps.files &&
         prevProps.additionalExtensions === nextProps.additionalExtensions &&
         prevProps.source === nextProps.source &&
         prevProps.enableEditing === nextProps.enableEditing &&
         prevProps.editorUtils === nextProps.editorUtils &&
-        prevProps.setFileData === nextProps.setFileData &&
+        prevProps.setFiles === nextProps.setFiles &&
         prevProps.setMarkdownContent === nextProps.setMarkdownContent &&
         prevProps.saveNote === nextProps.saveNote &&
         prevProps.setLineNumber === nextProps.setLineNumber &&
         prevProps.referenceMappings === nextProps.referenceMappings &&
-        prevProps.saving === nextProps.saving &&
-        prevProps.hasUnsavedChanges === nextProps.hasUnsavedChanges &&
+        prevProps.isSaving === nextProps.isSaving &&
+        prevProps.isDirty === nextProps.isDirty &&
         prevProps.noteStatus === nextProps.noteStatus &&
         prevProps.noteStatusMessage === nextProps.noteStatusMessage
     );

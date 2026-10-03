@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { DialogFooter } from '@/components/ui/dialog';
 import {
     Field,
     FieldContent,
@@ -22,8 +23,9 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
+import { generatePassword } from '@/utils/password';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
+import { DiceSixIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
@@ -65,12 +67,13 @@ const addUserSchema = z.object({
 type FormData = z.infer<typeof addUserSchema>;
 
 export default function AddUserForm({ onAdd }: AddUserFormProps) {
-    const [showPassword, setShowPassword] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const {
         register,
         handleSubmit,
         control,
         reset,
+        setValue,
         formState: { errors },
     } = useForm<FormData>({
         resolver: zodResolver(addUserSchema) as any,
@@ -85,7 +88,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
         },
     });
 
-    const createUserMutation = useMutation({
+    const createUser = useMutation({
         mutationFn: async (data: FormData) => {
             const payload: any = {
                 username: data.username,
@@ -114,214 +117,253 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
             return newUser;
         },
         meta: {
-            suppressNotification: true, // Redirect is the feedback
+            suppressNotification: true,
         },
         onSuccess: (newUser) => {
             reset();
+            setIsPasswordVisible(false);
             if (newUser && onAdd) onAdd(newUser);
         },
     });
 
     const onSubmit = async (data: FormData) => {
-        createUserMutation.mutate(data);
+        createUser.mutate(data);
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className='w-full'>
-            <FieldGroup className='gap-4'>
-                <Field data-invalid={Boolean(errors.username)}>
-                    <FieldLabel htmlFor='username'>
-                        Username
-                        <span className='text-destructive ml-1'>*</span>
-                    </FieldLabel>
-                    <InputGroup>
-                        <InputGroupInput
-                            id='username'
-                            placeholder='Username'
-                            {...register('username')}
-                            aria-invalid={Boolean(errors.username)}
-                            required
-                        />
-                    </InputGroup>
-                    <FieldDescription>Unique identifier for this user</FieldDescription>
-                    {errors.username && (
-                        <FieldError>{errors.username.message}</FieldError>
-                    )}
-                </Field>
-
-                <Field data-invalid={Boolean(errors.email)}>
-                    <FieldLabel htmlFor='email'>
-                        Email
-                        <span className='text-destructive ml-1'>*</span>
-                    </FieldLabel>
-                    <InputGroup>
-                        <InputGroupInput
-                            id='email'
-                            type='email'
-                            placeholder='Email'
-                            {...register('email')}
-                            aria-invalid={Boolean(errors.email)}
-                            required
-                        />
-                    </InputGroup>
-                    <FieldDescription>
-                        Used for login and notifications
-                    </FieldDescription>
-                    {errors.email && <FieldError>{errors.email.message}</FieldError>}
-                </Field>
-
-                <Field data-invalid={Boolean(errors.password)}>
-                    <FieldLabel htmlFor='password'>
-                        Password
-                        <span className='text-destructive ml-1'>*</span>
-                    </FieldLabel>
-                    <InputGroup>
-                        <InputGroupInput
-                            id='password'
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder='Password'
-                            {...register('password')}
-                            aria-invalid={Boolean(errors.password)}
-                            required
-                        />
-                        <InputGroupAddon align='inline-end'>
-                            <InputGroupButton
-                                type='button'
-                                onClick={() => setShowPassword(!showPassword)}
-                                aria-label={
-                                    showPassword ? 'Hide password' : 'Show password'
-                                }
-                                title={showPassword ? 'Hide password' : 'Show password'}
-                            >
-                                {showPassword ? (
-                                    <EyeSlashIcon className='size-4' weight='bold' />
-                                ) : (
-                                    <EyeIcon className='size-4' weight='bold' />
-                                )}
-                            </InputGroupButton>
-                        </InputGroupAddon>
-                    </InputGroup>
-                    <FieldDescription>
-                        Minimum 8 characters recommended
-                    </FieldDescription>
-                    {errors.password && (
-                        <FieldError>{errors.password.message}</FieldError>
-                    )}
-                </Field>
-
-                <Field data-invalid={Boolean(errors.role)}>
-                    <FieldLabel htmlFor='role'>
-                        Role
-                        <span className='text-destructive ml-1'>*</span>
-                    </FieldLabel>
-                    <Controller
-                        name='role'
-                        control={control}
-                        render={({ field }) => (
-                            <Select value={field.value} onValueChange={field.onChange}>
-                                <SelectTrigger className='w-full' id='role'>
-                                    <SelectValue placeholder='Select a role' />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value='author'>User</SelectItem>
-                                    <SelectItem value='entrymanager'>
-                                        Entry Manager
-                                    </SelectItem>
-                                    <SelectItem value='admin'>Admin</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        )}
-                    />
-                    <FieldDescription>Determines access permissions</FieldDescription>
-                    {errors.role && <FieldError>{errors.role.message}</FieldError>}
-                </Field>
-
-                <Field
-                    orientation='horizontal'
-                    data-invalid={Boolean(errors.emailConfirmed)}
-                >
-                    <FieldContent>
-                        <FieldLabel htmlFor='emailConfirmed'>
-                            Email Confirmed
+        <form
+            onSubmit={handleSubmit(onSubmit)}
+            className='flex w-full min-h-0 flex-col gap-4'
+        >
+            <div className='-mx-4 no-scrollbar max-h-[50vh] overflow-y-auto px-4'>
+                <FieldGroup className='gap-4'>
+                    <Field data-invalid={Boolean(errors.username)}>
+                        <FieldLabel htmlFor='username'>
+                            Username
+                            <span className='text-destructive ml-1'>*</span>
                         </FieldLabel>
-                        <FieldDescription>
-                            Mark email as confirmed (skip verification)
-                        </FieldDescription>
-                        {errors.emailConfirmed && (
-                            <FieldError>{errors.emailConfirmed.message}</FieldError>
-                        )}
-                    </FieldContent>
-                    <Controller
-                        name='emailConfirmed'
-                        control={control}
-                        render={({ field }) => (
-                            <Switch
-                                id='emailConfirmed'
-                                name={field.name}
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                className='self-center'
+                        <InputGroup>
+                            <InputGroupInput
+                                id='username'
+                                placeholder='Username'
+                                {...register('username')}
+                                aria-invalid={Boolean(errors.username)}
+                                required
                             />
-                        )}
-                    />
-                </Field>
-
-                <Field orientation='horizontal' data-invalid={Boolean(errors.isActive)}>
-                    <FieldContent>
-                        <FieldLabel htmlFor='isActive'>Active</FieldLabel>
+                        </InputGroup>
                         <FieldDescription>
-                            Allow user to login and access the system
+                            Unique identifier for this user
                         </FieldDescription>
-                        {errors.isActive && (
-                            <FieldError>{errors.isActive.message}</FieldError>
+                        {errors.username && (
+                            <FieldError>{errors.username.message}</FieldError>
                         )}
-                    </FieldContent>
-                    <Controller
-                        name='isActive'
-                        control={control}
-                        render={({ field }) => (
-                            <Switch
-                                id='isActive'
-                                name={field.name}
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                className='self-center'
-                            />
-                        )}
-                    />
-                </Field>
+                    </Field>
 
-                <Field data-invalid={Boolean(errors.fileUploadLimitOverride)}>
-                    <FieldLabel htmlFor='fileUploadLimitOverride'>
-                        File Upload Limit Override
-                    </FieldLabel>
-                    <InputGroup>
-                        <InputGroupInput
-                            id='fileUploadLimitOverride'
-                            placeholder='e.g., 100MB, 1GB'
-                            {...register('fileUploadLimitOverride')}
-                            aria-invalid={Boolean(errors.fileUploadLimitOverride)}
+                    <Field data-invalid={Boolean(errors.email)}>
+                        <FieldLabel htmlFor='email'>
+                            Email
+                            <span className='text-destructive ml-1'>*</span>
+                        </FieldLabel>
+                        <InputGroup>
+                            <InputGroupInput
+                                id='email'
+                                type='email'
+                                placeholder='Email'
+                                {...register('email')}
+                                aria-invalid={Boolean(errors.email)}
+                                required
+                            />
+                        </InputGroup>
+                        <FieldDescription>
+                            Used for login and notifications
+                        </FieldDescription>
+                        {errors.email && (
+                            <FieldError>{errors.email.message}</FieldError>
+                        )}
+                    </Field>
+
+                    <Field data-invalid={Boolean(errors.password)}>
+                        <FieldLabel htmlFor='password'>
+                            Password
+                            <span className='text-destructive ml-1'>*</span>
+                        </FieldLabel>
+                        <InputGroup>
+                            <InputGroupInput
+                                id='password'
+                                type={isPasswordVisible ? 'text' : 'password'}
+                                placeholder='Password'
+                                {...register('password')}
+                                aria-invalid={Boolean(errors.password)}
+                                required
+                            />
+                            <InputGroupAddon align='inline-end'>
+                                <InputGroupButton
+                                    type='button'
+                                    onClick={() => {
+                                        setValue('password', generatePassword(), {
+                                            shouldValidate: true,
+                                            shouldDirty: true,
+                                        });
+                                        setIsPasswordVisible(true);
+                                    }}
+                                    aria-label='Generate password'
+                                    title='Generate password'
+                                >
+                                    <DiceSixIcon className='size-4' weight='bold' />
+                                </InputGroupButton>
+                                <InputGroupButton
+                                    type='button'
+                                    onClick={() =>
+                                        setIsPasswordVisible(!isPasswordVisible)
+                                    }
+                                    aria-label={
+                                        isPasswordVisible
+                                            ? 'Hide password'
+                                            : 'Show password'
+                                    }
+                                    title={
+                                        isPasswordVisible
+                                            ? 'Hide password'
+                                            : 'Show password'
+                                    }
+                                >
+                                    {isPasswordVisible ? (
+                                        <EyeSlashIcon
+                                            className='size-4'
+                                            weight='bold'
+                                        />
+                                    ) : (
+                                        <EyeIcon className='size-4' weight='bold' />
+                                    )}
+                                </InputGroupButton>
+                            </InputGroupAddon>
+                        </InputGroup>
+                        <FieldDescription>
+                            Minimum 8 characters recommended
+                        </FieldDescription>
+                        {errors.password && (
+                            <FieldError>{errors.password.message}</FieldError>
+                        )}
+                    </Field>
+
+                    <Field data-invalid={Boolean(errors.role)}>
+                        <FieldLabel htmlFor='role'>
+                            Role
+                            <span className='text-destructive ml-1'>*</span>
+                        </FieldLabel>
+                        <Controller
+                            name='role'
+                            control={control}
+                            render={({ field }) => (
+                                <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                >
+                                    <SelectTrigger className='w-full' id='role'>
+                                        <SelectValue placeholder='Select a role' />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value='author'>User</SelectItem>
+                                        <SelectItem value='entrymanager'>
+                                            Entry Manager
+                                        </SelectItem>
+                                        <SelectItem value='admin'>Admin</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            )}
                         />
-                    </InputGroup>
-                    <FieldDescription>
-                        Custom upload limit (e.g., 100MB, 1GB). Leave empty to use
-                        global default.
-                    </FieldDescription>
-                    {errors.fileUploadLimitOverride && (
-                        <FieldError>
-                            {errors.fileUploadLimitOverride.message}
-                        </FieldError>
-                    )}
-                </Field>
-            </FieldGroup>
+                        <FieldDescription>
+                            Determines access permissions
+                        </FieldDescription>
+                        {errors.role && <FieldError>{errors.role.message}</FieldError>}
+                    </Field>
 
-            <div className='flex justify-end mt-5'>
-                <Button
-                    type='submit'
-                    variant='default'
-                    disabled={createUserMutation.isPending}
-                >
-                    {createUserMutation.isPending ? (
+                    <Field
+                        orientation='horizontal'
+                        data-invalid={Boolean(errors.emailConfirmed)}
+                    >
+                        <FieldContent>
+                            <FieldLabel htmlFor='emailConfirmed'>
+                                Email Confirmed
+                            </FieldLabel>
+                            <FieldDescription>
+                                Mark email as confirmed (skip verification)
+                            </FieldDescription>
+                            {errors.emailConfirmed && (
+                                <FieldError>{errors.emailConfirmed.message}</FieldError>
+                            )}
+                        </FieldContent>
+                        <Controller
+                            name='emailConfirmed'
+                            control={control}
+                            render={({ field }) => (
+                                <Switch
+                                    id='emailConfirmed'
+                                    name={field.name}
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    className='self-center'
+                                />
+                            )}
+                        />
+                    </Field>
+
+                    <Field
+                        orientation='horizontal'
+                        data-invalid={Boolean(errors.isActive)}
+                    >
+                        <FieldContent>
+                            <FieldLabel htmlFor='isActive'>Active</FieldLabel>
+                            <FieldDescription>
+                                Allow user to login and access the system
+                            </FieldDescription>
+                            {errors.isActive && (
+                                <FieldError>{errors.isActive.message}</FieldError>
+                            )}
+                        </FieldContent>
+                        <Controller
+                            name='isActive'
+                            control={control}
+                            render={({ field }) => (
+                                <Switch
+                                    id='isActive'
+                                    name={field.name}
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    className='self-center'
+                                />
+                            )}
+                        />
+                    </Field>
+
+                    <Field data-invalid={Boolean(errors.fileUploadLimitOverride)}>
+                        <FieldLabel htmlFor='fileUploadLimitOverride'>
+                            File Upload Limit Override
+                        </FieldLabel>
+                        <InputGroup>
+                            <InputGroupInput
+                                id='fileUploadLimitOverride'
+                                placeholder='e.g., 100MB, 1GB'
+                                {...register('fileUploadLimitOverride')}
+                                aria-invalid={Boolean(errors.fileUploadLimitOverride)}
+                            />
+                        </InputGroup>
+                        <FieldDescription>
+                            Custom upload limit (e.g., 100MB, 1GB). Leave empty to use
+                            global default.
+                        </FieldDescription>
+                        {errors.fileUploadLimitOverride && (
+                            <FieldError>
+                                {errors.fileUploadLimitOverride.message}
+                            </FieldError>
+                        )}
+                    </Field>
+                </FieldGroup>
+            </div>
+
+            <DialogFooter className='shrink-0 sm:justify-end'>
+                <Button type='submit' variant='default' disabled={createUser.isPending}>
+                    {createUser.isPending ? (
                         <>
                             <Spinner className='size-4' />
                             Creating...
@@ -330,7 +372,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                         'Create User'
                     )}
                 </Button>
-            </div>
+            </DialogFooter>
         </form>
     );
 }

@@ -43,13 +43,12 @@ export default function FindReplace({
     initialReplace = false,
 }: FindReplaceProps) {
     const [searchTerm, setSearchTerm] = useState('');
-    const [replaceTerm, setReplaceTerm] = useState('');
+    const [replacement, setReplacement] = useState('');
     const [caseSensitive, setCaseSensitive] = useState(false);
     const [useRegex, setUseRegex] = useState(false);
     const [wholeWord, setWholeWord] = useState(false);
-    const [showReplace, setShowReplace] = useState(initialReplace);
+    const [isReplaceOpen, setIsReplaceOpen] = useState(initialReplace);
 
-    // Update CodeMirror search query whenever local state changes
     useEffect(() => {
         if (!view || typeof view.dispatch !== 'function') return;
 
@@ -58,13 +57,13 @@ export default function FindReplace({
             caseSensitive,
             regexp: useRegex,
             wholeWord,
-            replace: replaceTerm,
+            replace: replacement,
         });
 
         view.dispatch({ effects: setSearchQuery.of(query) });
-    }, [view, searchTerm, replaceTerm, caseSensitive, useRegex, wholeWord]);
+    }, [view, searchTerm, replacement, caseSensitive, useRegex, wholeWord]);
 
-    const handleNext = () => {
+    const findNext = () => {
         if (!view) return;
         const query = getSearchQuery(view.state);
         if (!query) return;
@@ -73,7 +72,6 @@ export default function FindReplace({
         let match = cursor.next();
 
         if (match.done) {
-            // Wrap around
             match = query.getCursor(view.state).next();
         }
 
@@ -88,13 +86,11 @@ export default function FindReplace({
         }
     };
 
-    const handlePrevious = () => {
+    const findPrevious = () => {
         if (!view) return;
         const query = getSearchQuery(view.state);
         if (!query) return;
 
-        // Search from 0 to current selection start
-        // We want the last match in this range.
         const rangeCursor = query.getCursor(
             view.state,
             0,
@@ -120,7 +116,6 @@ export default function FindReplace({
                 ),
             });
         } else {
-            // Wrap around: find the very last match in the document
             const allCursor = query.getCursor(view.state);
             let m = allCursor.next();
             let last: { from: number; to: number } | null = null;
@@ -138,12 +133,11 @@ export default function FindReplace({
         }
     };
 
-    const handleFindAll = () => {
+    const selectAllMatches = () => {
         if (!view) return;
         const query = getSearchQuery(view.state);
         if (!query || !searchTerm) return;
 
-        // Get all matches
         const ranges: { from: number; to: number }[] = [];
         const cursor = query.getCursor(view.state);
         let match = cursor.next();
@@ -153,7 +147,6 @@ export default function FindReplace({
         }
 
         if (ranges.length > 0) {
-            // Create multi-selection with all matches
             const selections = ranges.map((range) =>
                 EditorSelection.range(range.from, range.to),
             );
@@ -164,23 +157,23 @@ export default function FindReplace({
         }
     };
 
-    const handleReplace = () => {
+    const replaceOne = () => {
         if (!view || !searchTerm.trim()) return;
         replaceNext(view as never);
     };
 
-    const handleReplaceAll = () => {
+    const replaceAllMatches = () => {
         if (!view || !searchTerm.trim()) return;
         replaceAll(view as never);
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const onKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             if (e.shiftKey) {
-                handlePrevious();
+                findPrevious();
             } else {
-                handleNext();
+                findNext();
             }
         } else if (e.key === 'Escape') {
             onClose();
@@ -198,11 +191,11 @@ export default function FindReplace({
                         variant='ghost'
                         size='icon-sm'
                         className={`w-6 flex-shrink-0 text-foreground hover:bg-secondary hover:text-foreground ${
-                            showReplace ? 'self-stretch' : 'h-8 mt-0.5'
+                            isReplaceOpen ? 'self-stretch' : 'h-8 mt-0.5'
                         }`}
-                        onClick={() => setShowReplace(!showReplace)}
+                        onClick={() => setIsReplaceOpen(!isReplaceOpen)}
                     >
-                        {showReplace ? (
+                        {isReplaceOpen ? (
                             <VscChevronDown className='text-sm' />
                         ) : (
                             <VscChevronRight className='text-sm' />
@@ -228,7 +221,7 @@ export default function FindReplace({
                                         type='text'
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        onKeyDown={handleKeyDown}
+                                        onKeyDown={onKeyDown}
                                         placeholder='Find'
                                         className='min-w-0 px-2 py-1.5'
                                         autoFocus
@@ -279,7 +272,7 @@ export default function FindReplace({
                                     <Button
                                         variant='ghost'
                                         size='icon-sm'
-                                        onClick={handlePrevious}
+                                        onClick={findPrevious}
                                         className='w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground'
                                         title='Previous match (Shift+Enter)'
                                     >
@@ -288,7 +281,7 @@ export default function FindReplace({
                                     <Button
                                         variant='ghost'
                                         size='icon-sm'
-                                        onClick={handleNext}
+                                        onClick={findNext}
                                         className='w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground'
                                         title='Next match (Enter)'
                                     >
@@ -297,7 +290,7 @@ export default function FindReplace({
                                     <Button
                                         variant='ghost'
                                         size='icon-sm'
-                                        onClick={handleFindAll}
+                                        onClick={selectAllMatches}
                                         className='w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground'
                                         title='Find All'
                                     >
@@ -317,19 +310,19 @@ export default function FindReplace({
                         </div>
 
                         {/* Replace Input */}
-                        {showReplace && (
+                        {isReplaceOpen && (
                             <div className='flex flex-col gap-1'>
                                 <div className='flex items-center gap-1 min-w-0'>
                                     <Input
                                         type='text'
-                                        value={replaceTerm}
-                                        onChange={(e) => setReplaceTerm(e.target.value)}
+                                        value={replacement}
+                                        onChange={(e) => setReplacement(e.target.value)}
                                         onKeyDown={(e) => {
                                             if (
                                                 e.key === 'Enter' &&
                                                 searchTerm.trim()
                                             ) {
-                                                handleReplace();
+                                                replaceOne();
                                             }
                                         }}
                                         placeholder='Replace'
@@ -339,7 +332,7 @@ export default function FindReplace({
                                         <Button
                                             variant='ghost'
                                             size='icon-sm'
-                                            onClick={handleReplace}
+                                            onClick={replaceOne}
                                             disabled={!searchTerm.trim()}
                                             className='text-primary hover:bg-muted hover:text-primary'
                                             title='Replace'
@@ -349,7 +342,7 @@ export default function FindReplace({
                                         <Button
                                             variant='ghost'
                                             size='icon-sm'
-                                            onClick={handleReplaceAll}
+                                            onClick={replaceAllMatches}
                                             disabled={!searchTerm.trim()}
                                             className='text-primary hover:bg-muted hover:text-primary'
                                             title='Replace All'

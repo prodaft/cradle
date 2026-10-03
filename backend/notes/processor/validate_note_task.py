@@ -3,9 +3,9 @@
 from collections import defaultdict
 from typing import Iterable, Tuple
 
-from django.conf import settings
 from django.db.models import Q
 
+from entries.constants import INTERNAL_SUBTYPES
 from entries.enums import EntryType
 from entries.exceptions import InvalidEntryException, NoteReferenceNotAllowedException
 from entries.models import Entry, EntryClass
@@ -46,7 +46,7 @@ class ValidateNoteTask(BaseTask):
         unique_subtypes = {r.key for r in links}
 
         # Check if the note tries to link to an internal subtype (e.g. alias)
-        if unique_subtypes & settings.INTERNAL_SUBTYPES:
+        if unique_subtypes & INTERNAL_SUBTYPES:
             raise NoteReferenceNotAllowedException()
 
         # Prefetch all relevant EntryClass objects in one query

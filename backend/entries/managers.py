@@ -9,9 +9,9 @@ from django.db.models.expressions import RawSQL
 from django.db.models.query_utils import Q
 
 from core.fields import BitStringField
-from cradle.settings_common import INTERNAL_SUBTYPES
 from user.models import CradleUser
 
+from .constants import INTERNAL_SUBTYPES
 from .enums import EntryType, RelationReason
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)

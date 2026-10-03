@@ -8,30 +8,25 @@ import { useRouter, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 interface PreviewProps {
-    htmlContent: string;
+    html: string;
     currentLine?: number;
     setCurrentLine?: ((line: number) => void) | null;
     isLoading?: boolean;
 }
 
 export default function Preview({
-    htmlContent,
+    html,
     currentLine = 0,
     setCurrentLine = null,
     isLoading = false,
 }: PreviewProps) {
-    const sanitizedContent = useMemo(
-        () => DOMPurify.sanitize(htmlContent),
-        [htmlContent],
-    );
+    const sanitizedContent = useMemo(() => DOMPurify.sanitize(html), [html]);
     const router = useRouter();
-    // Preview can be used in multiple routes, so we'll use a flexible approach
     const search = useSearch({ strict: false });
     const headingId = (search as any).heading as string | undefined;
     const preventScrollRef = useRef(false);
     const previewRef = useRef<HTMLDivElement | null>(null);
 
-    // Create a NavigateHandler adapter for handleLinkClick
     const navigateHandler: NavigateHandler = useCallback(
         (path: string) => {
             router.navigate({ to: path as any });
@@ -56,7 +51,6 @@ export default function Preview({
             const lineAttr = targetElement.getAttribute('data-source-line');
             const line = parseInt(lineAttr || '0', 10);
             if (!isNaN(line)) {
-                // Prevent the scroll effect triggered by currentLine updates.
                 preventScrollRef.current = true;
                 setCurrentLine(line);
             }
@@ -71,13 +65,11 @@ export default function Preview({
         const previewElement = previewRef.current;
         if (!previewElement || currentLine === 0) return;
 
-        // Get all elements with data-source-line.
         const elements = Array.from(
             previewElement.querySelectorAll('[data-source-line]'),
         );
         if (elements.length === 0) return;
 
-        // Find the element whose data-source-line is closest to currentLine.
         const lineNumbers = elements.map((el) =>
             parseInt(el.getAttribute('data-source-line') || '0', 10),
         );
@@ -93,7 +85,6 @@ export default function Preview({
         }
     }, [currentLine]);
 
-    // Scroll to heading if heading parameter exists
     useEffect(() => {
         const previewElement = previewRef.current;
         if (!headingId || !previewElement) return;
@@ -103,7 +94,6 @@ export default function Preview({
             const escapedId = CSS.escape(headingId);
             const headingElement = previewElement.querySelector(`#${escapedId}`);
             if (headingElement) {
-                // Small delay to ensure content is fully rendered
                 timeoutId = window.setTimeout(() => {
                     headingElement.scrollIntoView({
                         behavior: 'smooth',

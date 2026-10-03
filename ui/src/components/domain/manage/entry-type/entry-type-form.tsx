@@ -1,3 +1,4 @@
+import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
 import {
     ColorPicker,
     ColorPickerArea,
@@ -10,7 +11,7 @@ import {
     ColorPickerTrigger,
 } from '@/components/custom/color-picker';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
-import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
+import OfflineIndicator from '@/components/feedback/offline-indicator';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -37,7 +38,7 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { queryKeys, useNdjsonQuery } from '@/hooks/query';
-import { SelectOption } from '@/types';
+import { SelectOption } from '@/types/models';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -52,7 +53,6 @@ import isEqual from 'lodash/isEqual';
 import { useEffect, useId, useMemo, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
-import OfflineIndicator from '../../../feedback/offline-indicator';
 
 type EntryClass = components['schemas']['EntryClass'];
 type EntryClassRequest = components['schemas']['EntryClassRequest'];
@@ -96,9 +96,9 @@ const entryTypeSchema = z.object({
         })
         .nullable()
         .refine((val) => val !== null, {
-            message: 'Class Type is required',
+            error: 'Class Type is required',
         }),
-    subtype: z.string().min(1, { message: 'Subtype is required' }),
+    subtype: z.string().min(1, { error: 'Subtype is required' }),
     description: z.string().default(''),
     prefix: z.string().default(''),
     typeFormat: z
@@ -108,7 +108,7 @@ const entryTypeSchema = z.object({
     regex: z.string().default(''),
     options: z.string().default(''),
     generativeRegex: z.string().default(''),
-    color: z.string().min(1, { message: 'Color is required' }),
+    color: z.string().min(1, { error: 'Color is required' }),
     children: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
 });
 
@@ -163,7 +163,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     const loadedValuesRef = useRef<EntryTypeFormValues | null>(null);
 
     const {
-        handleSubmit: handleFormSubmit,
+        handleSubmit,
         reset,
         watch,
         setValue,
@@ -175,9 +175,9 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     });
 
     const {
-        data: entryTypeData,
-        isLoading: isEntryTypeLoading,
-        isPaused: isEntryTypePaused,
+        data: entryClass,
+        isLoading: isEntryClassLoading,
+        isPaused: isEntryClassPaused,
     } = $api.useQuery(
         'get',
         '/entries/entry-classes/{class_subtype}/',
@@ -189,9 +189,9 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     );
 
     const {
-        data: entryClassesListData,
-        isLoading: isEntryTypesListLoading,
-        isPaused: isEntryTypesListPaused,
+        data: entryClasses,
+        isLoading: isClassesLoading,
+        isPaused: isClassesPaused,
     } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'entry-type-form'],
@@ -200,24 +200,24 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     });
 
     const entryTypes = useMemo<ChildOption[]>(() => {
-        const results = entryClassesListData ?? [];
+        const results = entryClasses ?? [];
         return results.map((entry) => ({
             value: entry.subtype,
             label: entry.subtype,
         }));
-    }, [entryClassesListData]);
+    }, [entryClasses]);
 
     useEffect(() => {
-        const values = getEntryTypeFormFromApi(entryTypeData, colorGenerator);
+        const values = getEntryTypeFormFromApi(entryClass, colorGenerator);
         if (!values) return;
         loadedValuesRef.current = values;
         reset(values);
-    }, [id, entryTypeData, colorGenerator, reset]);
+    }, [id, entryClass, colorGenerator, reset]);
 
-    const isLoading = isEntryTypesListLoading || isEntryTypeLoading;
-    const isOffline = (Boolean(id) && isEntryTypePaused) || isEntryTypesListPaused;
+    const isPageLoading = isClassesLoading || isEntryClassLoading;
+    const isOffline = (Boolean(id) && isEntryClassPaused) || isClassesPaused;
 
-    const updateEntryTypeMutation = useMutation({
+    const saveEntryClass = useMutation({
         mutationFn: async (payload: EntryClassRequest) => {
             const { data, error, response } = await fetchClient.POST(
                 '/entries/entry-classes/{class_subtype}/',
@@ -258,7 +258,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
             options: data.options,
             children: data.children.map((child) => child.value),
         };
-        updateEntryTypeMutation.mutate(payload);
+        saveEntryClass.mutate(payload);
     };
 
     if (isOffline) {
@@ -275,14 +275,14 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     const watchTypeFormat = watch('typeFormat');
     const isArtifact = watchType?.value === 'artifact';
     const isEntity = watchType?.value === 'entity';
-    const isOptions = watchTypeFormat?.value === 'options';
-    const isRegex = watchTypeFormat?.value === 'regex';
+    const isOptionsFormat = watchTypeFormat?.value === 'options';
+    const isRegexFormat = watchTypeFormat?.value === 'regex';
 
     const generateRandomColor = () => {
         setValue('color', colorGenerator.nextHexColor());
     };
 
-    if (isLoading) {
+    if (isPageLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen text-foreground'>
                 <Spinner className='size-10' />
@@ -290,10 +290,10 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         );
     }
 
-    const handleRevert = () => {
+    const revert = () => {
         if (loadedValuesRef.current) reset(loadedValuesRef.current);
     };
-    const handleDefault = () => reset(entryTypeDefaults, { keepDefaultValues: true });
+    const resetToDefaults = () => reset(entryTypeDefaults, { keepDefaultValues: true });
     const isAtDefault = isEqual(watch(), entryTypeDefaults);
 
     return (
@@ -305,7 +305,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                         variant='outline'
                         size='icon'
                         disabled={!isDirty}
-                        onClick={handleRevert}
+                        onClick={revert}
                         title='Revert'
                     >
                         <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
@@ -315,7 +315,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                         variant='outline'
                         size='icon'
                         disabled={isAtDefault}
-                        onClick={handleDefault}
+                        onClick={resetToDefaults}
                         title='Default'
                     >
                         <ClockCounterClockwiseIcon className='size-4' weight='bold' />
@@ -325,10 +325,10 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                         form={formId}
                         variant='default'
                         size='icon'
-                        disabled={updateEntryTypeMutation.isPending || !isDirty}
+                        disabled={saveEntryClass.isPending || !isDirty}
                         title='Save Changes'
                     >
-                        {updateEntryTypeMutation.isPending ? (
+                        {saveEntryClass.isPending ? (
                             <Spinner className='size-4' />
                         ) : (
                             <FloppyDiskIcon className='size-4' weight='bold' />
@@ -336,7 +336,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                     </Button>
                 </div>
             </SettingsHeaderActionsPortal>
-            <form id={formId} onSubmit={handleFormSubmit(onSubmit)}>
+            <form id={formId} onSubmit={handleSubmit(onSubmit)}>
                 <div className='flex flex-col gap-6'>
                     {/* Basic Section */}
                     <div className='flex flex-col gap-4'>
@@ -705,7 +705,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                     />
                                     <Separator />
 
-                                    {isOptions && (
+                                    {isOptionsFormat && (
                                         <>
                                             <Controller
                                                 name='options'
@@ -758,7 +758,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                         </>
                                     )}
 
-                                    {isRegex && (
+                                    {isRegexFormat && (
                                         <>
                                             <Controller
                                                 name='regex'
@@ -811,7 +811,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                         </>
                                     )}
 
-                                    {!isOptions && (
+                                    {!isOptionsFormat && (
                                         <>
                                             <Controller
                                                 name='generativeRegex'

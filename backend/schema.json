@@ -30221,17 +30221,20 @@
                         "in": "query",
                         "name": "status",
                         "schema": {
-                            "type": "string",
-                            "enum": [
-                                "finalized",
-                                "fleeting",
-                                "healthy",
-                                "invalid",
-                                "processing",
-                                "warning"
-                            ]
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "finalized",
+                                    "fleeting",
+                                    "healthy",
+                                    "invalid",
+                                    "processing",
+                                    "warning"
+                                ]
+                            }
                         },
-                        "description": "Filter by note status, finalized covers all statuses except for fleeting"
+                        "description": "Filter by note status (repeat for OR). `finalized` means non-fleeting notes; `fleeting` limits to the current user's fleeting notes. Omit this parameter for the default list (accessible notes plus your fleeting notes)."
                     },
                     {
                         "in": "query",
@@ -44466,6 +44469,114 @@
                         },
                         "description": "PERMISSION_DENIED"
                     },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "CURRENTPASSWORDINCORRECT": {
+                                        "value": {
+                                            "type": "/errors/current-password-incorrect",
+                                            "title": "Current Password Incorrect",
+                                            "status": 400,
+                                            "detail": "Current Password Incorrect",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "CURRENT_PASSWORD_INCORRECT"
+                                        },
+                                        "summary": "CURRENT_PASSWORD_INCORRECT"
+                                    },
+                                    "VALIDATIONERROR": {
+                                        "value": {
+                                            "type": "/errors/validation-error",
+                                            "title": "Validation Error",
+                                            "status": 400,
+                                            "detail": "Some values could not be accepted.",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "VALIDATION_ERROR",
+                                            "errors": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        },
+                                        "summary": "VALIDATION_ERROR"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR"
+                    },
                     "401": {
                         "content": {
                             "application/json": {
@@ -44667,11 +44778,10 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/APIKeyResponseRequest"
+                                "$ref": "#/components/schemas/StepUpRequestRequest"
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "security": [
                     {
@@ -44867,6 +44977,114 @@
                             }
                         },
                         "description": "PERMISSION_DENIED"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "CURRENTPASSWORDINCORRECT": {
+                                        "value": {
+                                            "type": "/errors/current-password-incorrect",
+                                            "title": "Current Password Incorrect",
+                                            "status": 400,
+                                            "detail": "Current Password Incorrect",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "CURRENT_PASSWORD_INCORRECT"
+                                        },
+                                        "summary": "CURRENT_PASSWORD_INCORRECT"
+                                    },
+                                    "VALIDATIONERROR": {
+                                        "value": {
+                                            "type": "/errors/validation-error",
+                                            "title": "Validation Error",
+                                            "status": 400,
+                                            "detail": "Some values could not be accepted.",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "VALIDATION_ERROR",
+                                            "errors": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        },
+                                        "summary": "VALIDATION_ERROR"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR"
                     },
                     "401": {
                         "content": {
@@ -47758,7 +47976,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/Verify2FARequest"
+                                "$ref": "#/components/schemas/Disable2FARequestRequest"
                             }
                         }
                     },
@@ -47863,6 +48081,18 @@
                                         },
                                         "summary": "TWO_FACTOR_NOT_ENABLED"
                                     },
+                                    "CURRENTPASSWORDINCORRECT": {
+                                        "value": {
+                                            "type": "/errors/current-password-incorrect",
+                                            "title": "Current Password Incorrect",
+                                            "status": 400,
+                                            "detail": "Current Password Incorrect",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "CURRENT_PASSWORD_INCORRECT"
+                                        },
+                                        "summary": "CURRENT_PASSWORD_INCORRECT"
+                                    },
                                     "VALIDATIONERROR": {
                                         "value": {
                                             "type": "/errors/validation-error",
@@ -47886,7 +48116,7 @@
                                 }
                             }
                         },
-                        "description": "TWO_FACTOR_NOT_ENABLED; VALIDATION_ERROR"
+                        "description": "TWO_FACTOR_NOT_ENABLED; CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR"
                     },
                     "401": {
                         "content": {
@@ -48162,6 +48392,15 @@
                 "tags": [
                     "users"
                 ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StepUpRequestRequest"
+                            }
+                        }
+                    }
+                },
                 "security": [
                     {
                         "JwtAuth": []
@@ -48260,11 +48499,43 @@
                                             "code": "TWO_FACTOR_ALREADY_ENABLED"
                                         },
                                         "summary": "TWO_FACTOR_ALREADY_ENABLED"
+                                    },
+                                    "CURRENTPASSWORDINCORRECT": {
+                                        "value": {
+                                            "type": "/errors/current-password-incorrect",
+                                            "title": "Current Password Incorrect",
+                                            "status": 400,
+                                            "detail": "Current Password Incorrect",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "CURRENT_PASSWORD_INCORRECT"
+                                        },
+                                        "summary": "CURRENT_PASSWORD_INCORRECT"
+                                    },
+                                    "VALIDATIONERROR": {
+                                        "value": {
+                                            "type": "/errors/validation-error",
+                                            "title": "Validation Error",
+                                            "status": 400,
+                                            "detail": "Some values could not be accepted.",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "VALIDATION_ERROR",
+                                            "errors": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        },
+                                        "summary": "VALIDATION_ERROR"
                                     }
                                 }
                             }
                         },
-                        "description": "TWO_FACTOR_ALREADY_ENABLED"
+                        "description": "TWO_FACTOR_ALREADY_ENABLED; CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR"
                     },
                     "401": {
                         "content": {
@@ -48544,7 +48815,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/Verify2FARequest"
+                                "$ref": "#/components/schemas/Verify2FARequestRequest"
                             }
                         }
                     },
@@ -50027,6 +50298,114 @@
                         },
                         "description": "PERMISSION_DENIED"
                     },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "CURRENTPASSWORDINCORRECT": {
+                                        "value": {
+                                            "type": "/errors/current-password-incorrect",
+                                            "title": "Current Password Incorrect",
+                                            "status": 400,
+                                            "detail": "Current Password Incorrect",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "CURRENT_PASSWORD_INCORRECT"
+                                        },
+                                        "summary": "CURRENT_PASSWORD_INCORRECT"
+                                    },
+                                    "VALIDATIONERROR": {
+                                        "value": {
+                                            "type": "/errors/validation-error",
+                                            "title": "Validation Error",
+                                            "status": 400,
+                                            "detail": "Some values could not be accepted.",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "VALIDATION_ERROR",
+                                            "errors": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        },
+                                        "summary": "VALIDATION_ERROR"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR"
+                    },
                     "401": {
                         "content": {
                             "application/json": {
@@ -50228,11 +50607,10 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/APIKeyResponseRequest"
+                                "$ref": "#/components/schemas/StepUpRequestRequest"
                             }
                         }
-                    },
-                    "required": true
+                    }
                 },
                 "security": [
                     {
@@ -50428,6 +50806,114 @@
                             }
                         },
                         "description": "PERMISSION_DENIED"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the problem type",
+                                            "example": "/errors/validation-error"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "description": "Short, human-readable summary of the problem type",
+                                            "example": "Validation Error"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "description": "HTTP status code",
+                                            "example": 400
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "description": "Human-readable explanation specific to this occurrence",
+                                            "example": "Some values could not be accepted."
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "URI reference identifying the specific occurrence",
+                                            "example": "/api/users/create"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "ISO 8601 timestamp when the error occurred",
+                                            "example": "2026-11-08T14:32:10.123456Z"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "description": "Machine-readable error code",
+                                            "example": "VALIDATION_ERROR"
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "description": "Validation messages by user-facing label (same keys as in API responses after key transformation)",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "example": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "timestamp",
+                                        "code"
+                                    ]
+                                },
+                                "examples": {
+                                    "CURRENTPASSWORDINCORRECT": {
+                                        "value": {
+                                            "type": "/errors/current-password-incorrect",
+                                            "title": "Current Password Incorrect",
+                                            "status": 400,
+                                            "detail": "Current Password Incorrect",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "CURRENT_PASSWORD_INCORRECT"
+                                        },
+                                        "summary": "CURRENT_PASSWORD_INCORRECT"
+                                    },
+                                    "VALIDATIONERROR": {
+                                        "value": {
+                                            "type": "/errors/validation-error",
+                                            "title": "Validation Error",
+                                            "status": 400,
+                                            "detail": "Some values could not be accepted.",
+                                            "instance": "/api/example",
+                                            "timestamp": "2025-11-08T14:32:10.123456Z",
+                                            "code": "VALIDATION_ERROR",
+                                            "errors": {
+                                                "Page number": [
+                                                    "This may not be less than 1."
+                                                ],
+                                                "Email": [
+                                                    "Enter a valid email address."
+                                                ]
+                                            }
+                                        },
+                                        "summary": "VALIDATION_ERROR"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR"
                     },
                     "401": {
                         "content": {
@@ -54099,20 +54585,6 @@
                     "api_key"
                 ]
             },
-            "APIKeyResponseRequest": {
-                "type": "object",
-                "description": "Serializer for API key generation response.",
-                "properties": {
-                    "api_key": {
-                        "type": "string",
-                        "minLength": 1,
-                        "description": "Generated API key"
-                    }
-                },
-                "required": [
-                    "api_key"
-                ]
-            },
             "Access": {
                 "type": "object",
                 "description": "Serializer for updating access privileges (none, read, or read-write).",
@@ -54580,6 +55052,24 @@
                     "object_key",
                     "presigned_url",
                     "upload_id"
+                ]
+            },
+            "Disable2FARequestRequest": {
+                "type": "object",
+                "description": "Serializer for disabling 2FA with step-up password confirmation.",
+                "properties": {
+                    "password": {
+                        "type": "string",
+                        "description": "Current password (required for password-based accounts)"
+                    },
+                    "token": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "6-digit TOTP code from authenticator app"
+                    }
+                },
+                "required": [
+                    "token"
                 ]
             },
             "EdgeRelation": {
@@ -55270,9 +55760,9 @@
                     }
                 },
                 "required": [
-                    "subtype",
                     "name",
-                    "type"
+                    "type",
+                    "subtype"
                 ]
             },
             "EntityRequest": {
@@ -55313,9 +55803,9 @@
                     }
                 },
                 "required": [
-                    "subtype",
                     "name",
-                    "type"
+                    "type",
+                    "subtype"
                 ]
             },
             "Entry": {
@@ -55865,9 +56355,9 @@
                     }
                 },
                 "required": [
-                    "subtype",
                     "name",
-                    "type"
+                    "type",
+                    "subtype"
                 ]
             },
             "EntrySerializerMinimal": {
@@ -57689,9 +58179,9 @@
                     }
                 },
                 "required": [
-                    "subtype",
                     "name",
-                    "type"
+                    "type",
+                    "subtype"
                 ]
             },
             "PatchedNoteEditRequest": {
@@ -58404,6 +58894,16 @@
                     "title"
                 ]
             },
+            "StepUpRequestRequest": {
+                "type": "object",
+                "description": "Serializer for step-up password confirmation on sensitive actions.",
+                "properties": {
+                    "password": {
+                        "type": "string",
+                        "description": "Current password (required for password-based accounts)"
+                    }
+                }
+            },
             "SubGraph": {
                 "type": "object",
                 "description": "Graph data with entries, relations, and colors keyed by subtype.",
@@ -58797,6 +59297,11 @@
                         "additionalProperties": {},
                         "description": "Return dict of provider -> connected for each configured OAuth provider.",
                         "readOnly": true
+                    },
+                    "has_password": {
+                        "type": "boolean",
+                        "description": "Return True if the user has a local password (vs OAuth-only).",
+                        "readOnly": true
                     }
                 },
                 "required": [
@@ -58916,9 +59421,9 @@
                     }
                 }
             },
-            "Verify2FARequest": {
+            "Verify2FARequestRequest": {
                 "type": "object",
-                "description": "Serializer for 2FA token verification (enable or disable).",
+                "description": "Serializer for 2FA token verification during setup.",
                 "properties": {
                     "token": {
                         "type": "string",

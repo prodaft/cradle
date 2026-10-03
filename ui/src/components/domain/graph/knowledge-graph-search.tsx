@@ -42,35 +42,35 @@ export default function KnowledgeGraphSearch({
         queryKey: [...queryKeys.knowledgeGraph.all, 'full'],
         queryFn: async () => {
             const {
-                data: responseData,
+                data: payload,
                 error,
                 response,
             } = await fetchClient.GET('/knowledge-graph/');
             if (error) throw { response, error };
 
-            const graphData = responseData!.results;
+            const graph = payload!.results;
 
-            if (!graphData?.entries) {
+            if (!graph?.entries) {
                 return { nodes: [], edges: [], colors: {} };
             }
 
-            const entries = graphData.entries;
-            const relations = graphData.relations;
-            const colors = (graphData.colors ?? {}) as Record<string, string>;
+            const entries = graph.entries;
+            const relations = graph.relations;
+            const colors = (graph.colors ?? {}) as Record<string, string>;
             let nodes: Node[] = [];
 
             try {
                 const flattenedEntries = LinkTreeFlattener.flatten(entries);
                 if (flattenedEntries?.length > 0) {
-                    const byId = new Map<string, Node>();
+                    const nodesById = new Map<string, Node>();
                     for (const e of flattenedEntries) {
                         const id = e.id != null ? String(e.id) : '';
-                        if (!id || byId.has(id)) continue;
+                        if (!id || nodesById.has(id)) continue;
                         const label =
                             e.subtype === 'note'
                                 ? `note: ${e.name || 'untitled'}`
                                 : `${e.subtype}: ${e.name || e.id}`;
-                        byId.set(id, {
+                        nodesById.set(id, {
                             id,
                             degree: e.degree,
                             type: e.type || e.subtype,
@@ -80,7 +80,7 @@ export default function KnowledgeGraphSearch({
                             location: e.location,
                         });
                     }
-                    nodes = Array.from(byId.values());
+                    nodes = Array.from(nodesById.values());
                 }
             } catch (e) {
                 logger.error('Knowledge graph: parse search entries failed', e);

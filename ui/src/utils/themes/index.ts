@@ -1,4 +1,4 @@
-import type { ThemeConfig } from '@/types/index';
+import type { ThemeConfig } from '@/types';
 import { ayuDark, ayuLight, ayuMirage } from './ayu';
 import {
     catppuccinFrappe,

@@ -82,8 +82,8 @@ export default function SetUserPasswordDialog({
     userId,
     onSuccess,
 }: SetUserPasswordDialogProps): React.JSX.Element {
-    const [showNewPassword, setShowNewPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
 
     const form = useForm<FormData>({
         resolver: zodResolver(adminSetPasswordSchema),
@@ -93,7 +93,7 @@ export default function SetUserPasswordDialog({
         },
     });
 
-    const setPasswordMutation = useMutation({
+    const setUserPassword = useMutation({
         mutationFn: async (password: string) => {
             const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
                 params: { path: { user_id: userId } },
@@ -118,7 +118,7 @@ export default function SetUserPasswordDialog({
     }, [open, form]);
 
     const onSubmit = async (data: FormData) => {
-        setPasswordMutation.mutate(data.newPassword);
+        setUserPassword.mutate(data.newPassword);
     };
 
     return (
@@ -145,29 +145,33 @@ export default function SetUserPasswordDialog({
                                         <InputGroupInput
                                             {...field}
                                             id={field.name}
-                                            type={showNewPassword ? 'text' : 'password'}
+                                            type={
+                                                isPasswordVisible ? 'text' : 'password'
+                                            }
                                             placeholder='Enter new password'
                                             aria-invalid={fieldState.invalid}
-                                            disabled={setPasswordMutation.isPending}
+                                            disabled={setUserPassword.isPending}
                                         />
                                         <InputGroupAddon align='inline-end'>
                                             <InputGroupButton
                                                 type='button'
                                                 onClick={() =>
-                                                    setShowNewPassword(!showNewPassword)
+                                                    setIsPasswordVisible(
+                                                        !isPasswordVisible,
+                                                    )
                                                 }
                                                 aria-label={
-                                                    showNewPassword
+                                                    isPasswordVisible
                                                         ? 'Hide password'
                                                         : 'Show password'
                                                 }
                                                 title={
-                                                    showNewPassword
+                                                    isPasswordVisible
                                                         ? 'Hide password'
                                                         : 'Show password'
                                                 }
                                             >
-                                                {showNewPassword ? (
+                                                {isPasswordVisible ? (
                                                     <EyeSlashIcon
                                                         className='size-4'
                                                         weight='bold'
@@ -205,34 +209,34 @@ export default function SetUserPasswordDialog({
                                             {...field}
                                             id={field.name}
                                             type={
-                                                showConfirmPassword
+                                                isConfirmPasswordVisible
                                                     ? 'text'
                                                     : 'password'
                                             }
                                             placeholder='Re-enter new password'
                                             aria-invalid={fieldState.invalid}
-                                            disabled={setPasswordMutation.isPending}
+                                            disabled={setUserPassword.isPending}
                                         />
                                         <InputGroupAddon align='inline-end'>
                                             <InputGroupButton
                                                 type='button'
                                                 onClick={() =>
-                                                    setShowConfirmPassword(
-                                                        !showConfirmPassword,
+                                                    setIsConfirmPasswordVisible(
+                                                        !isConfirmPasswordVisible,
                                                     )
                                                 }
                                                 aria-label={
-                                                    showConfirmPassword
+                                                    isConfirmPasswordVisible
                                                         ? 'Hide password'
                                                         : 'Show password'
                                                 }
                                                 title={
-                                                    showConfirmPassword
+                                                    isConfirmPasswordVisible
                                                         ? 'Hide password'
                                                         : 'Show password'
                                                 }
                                             >
-                                                {showConfirmPassword ? (
+                                                {isConfirmPasswordVisible ? (
                                                     <EyeSlashIcon
                                                         className='size-4'
                                                         weight='bold'
@@ -259,7 +263,7 @@ export default function SetUserPasswordDialog({
                                 type='button'
                                 variant='outline'
                                 size='sm'
-                                disabled={setPasswordMutation.isPending}
+                                disabled={setUserPassword.isPending}
                             >
                                 Cancel
                             </Button>
@@ -268,9 +272,9 @@ export default function SetUserPasswordDialog({
                             type='submit'
                             variant='default'
                             size='sm'
-                            disabled={setPasswordMutation.isPending}
+                            disabled={setUserPassword.isPending}
                         >
-                            {setPasswordMutation.isPending ? 'Setting...' : 'Confirm'}
+                            {setUserPassword.isPending ? 'Setting...' : 'Confirm'}
                         </Button>
                     </DialogFooter>
                 </form>

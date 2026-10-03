@@ -1,9 +1,9 @@
+import Preview from '@/components/base/preview/preview';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { parseContent } from '@/utils/editor/text-editor';
 import type { components } from '@services/openapi/schema';
 import { useQuery } from '@tanstack/react-query';
-import Preview from '../../base/preview/preview';
 
 type NoteForPreview = Pick<
     components['schemas']['NoteListResponse'],
@@ -23,7 +23,7 @@ interface NotePreviewContentProps {
 export const NotePreviewContent = ({ note }: NotePreviewContentProps) => {
     const baseURL = import.meta.env.VITE_API_BASE_URL ?? '';
 
-    const { data: parsedContent, isLoading } = useQuery({
+    const { data, isLoading } = useQuery({
         queryKey: ['parseNotePreview', note.content, note.files],
         queryFn: async () => {
             const result = await parseContent(
@@ -45,7 +45,7 @@ export const NotePreviewContent = ({ note }: NotePreviewContentProps) => {
                 </div>
             ) : (
                 <ScrollArea className='max-h-[450px]'>
-                    <Preview htmlContent={parsedContent ?? ''} />
+                    <Preview html={data ?? ''} />
                 </ScrollArea>
             )}
         </div>

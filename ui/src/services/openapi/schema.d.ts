@@ -2000,11 +2000,6 @@ export interface components {
             /** @description Generated API key */
             api_key: string;
         };
-        /** @description Serializer for API key generation response. */
-        APIKeyResponseRequest: {
-            /** @description Generated API key */
-            api_key: string;
-        };
         /** @description Serializer for updating access privileges (none, read, or read-write). */
         Access: {
             /**
@@ -2226,6 +2221,13 @@ export interface components {
             object_key: string;
             /** @description Expiration time in seconds */
             expires_in: number;
+        };
+        /** @description Serializer for disabling 2FA with step-up password confirmation. */
+        Disable2FARequestRequest: {
+            /** @description Current password (required for password-based accounts) */
+            password?: string;
+            /** @description 6-digit TOTP code from authenticator app */
+            token: string;
         };
         /** @description Edge between two entries for graph visualization. */
         EdgeRelation: {
@@ -3903,6 +3905,11 @@ export interface components {
             /** @description Note author. */
             author: components["schemas"]["EssentialUserRetrieve"] | null;
         };
+        /** @description Serializer for step-up password confirmation on sensitive actions. */
+        StepUpRequestRequest: {
+            /** @description Current password (required for password-based accounts) */
+            password?: string;
+        };
         /** @description Graph data with entries, relations, and colors keyed by subtype. */
         SubGraph: {
             /** @description Compressed tree of entries in the subgraph */
@@ -4091,6 +4098,8 @@ export interface components {
             readonly oauth_connections?: {
                 [key: string]: unknown;
             };
+            /** @description Return True if the user has a local password (vs OAuth-only). */
+            readonly has_password?: boolean;
         };
         /** @description Serializer for user detail response. Includes role, 2FA status, theme, OAuth connections. */
         UserRetrieveRequest: {
@@ -4154,8 +4163,8 @@ export interface components {
             /** @description Whether this is the current session */
             readonly is_current?: boolean;
         };
-        /** @description Serializer for 2FA token verification (enable or disable). */
-        Verify2FARequest: {
+        /** @description Serializer for 2FA token verification during setup. */
+        Verify2FARequestRequest: {
             /** @description 6-digit TOTP code from authenticator app */
             token: string;
         };
@@ -23697,8 +23706,8 @@ export interface operations {
                 page_size?: number;
                 /** @description Filter notes by referenced entry IDs */
                 references?: string[];
-                /** @description Filter by note status, finalized covers all statuses except for fleeting */
-                status?: "finalized" | "fleeting" | "healthy" | "invalid" | "processing" | "warning";
+                /** @description Filter by note status (repeat for OR). `finalized` means non-fleeting notes; `fleeting` limits to the current user's fleeting notes. Omit this parameter for the default list (accessible notes plus your fleeting notes). */
+                status?: ("finalized" | "fleeting" | "healthy" | "invalid" | "processing" | "warning")[];
                 /** @description Filter by timestamp greater than or equal to (ISO datetime format) */
                 timestamp_gte?: string;
                 /** @description Filter by timestamp less than or equal to (ISO datetime format) */
@@ -32528,6 +32537,66 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
             /** @description UNAUTHENTICATED */
             401: {
                 headers: {
@@ -33106,9 +33175,9 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["APIKeyResponseRequest"];
+                "application/json": components["schemas"]["StepUpRequestRequest"];
             };
         };
         responses: {
@@ -33118,6 +33187,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["APIKeyResponse"];
+                };
+            };
+            /** @description CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
                 };
             };
             /** @description UNAUTHENTICATED */
@@ -35140,7 +35269,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Verify2FARequest"];
+                "application/json": components["schemas"]["Disable2FARequestRequest"];
             };
         };
         responses: {
@@ -35152,7 +35281,7 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
-            /** @description TWO_FACTOR_NOT_ENABLED; VALIDATION_ERROR */
+            /** @description TWO_FACTOR_NOT_ENABLED; CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -35401,7 +35530,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StepUpRequestRequest"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -35411,7 +35544,7 @@ export interface operations {
                     "application/json": components["schemas"]["Enable2FA"];
                 };
             };
-            /** @description TWO_FACTOR_ALREADY_ENABLED */
+            /** @description TWO_FACTOR_ALREADY_ENABLED; CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -35662,7 +35795,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Verify2FARequest"];
+                "application/json": components["schemas"]["Verify2FARequestRequest"];
             };
         };
         responses: {
@@ -36196,6 +36329,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
                 };
             };
             /** @description UNAUTHENTICATED */
@@ -36776,9 +36969,9 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["APIKeyResponseRequest"];
+                "application/json": components["schemas"]["StepUpRequestRequest"];
             };
         };
         responses: {
@@ -36788,6 +36981,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["APIKeyResponse"];
+                };
+            };
+            /** @description CURRENT_PASSWORD_INCORRECT; VALIDATION_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
                 };
             };
             /** @description UNAUTHENTICATED */

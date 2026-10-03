@@ -19,24 +19,20 @@ import React, { Dispatch, SetStateAction, useMemo, useState } from 'react';
  * SearchFilterSection component props
  */
 interface SearchFilterSectionProps {
-    /** Available entry subtypes */
-    entrySubtypes: string[];
-    /** Current entry subtype filters */
-    entrySubtypeFilters: string[];
-    /** Function to update the entry subtype filters */
-    setEntrySubtypeFilters: Dispatch<SetStateAction<string[]>>;
-    /** Map of subtype to color */
-    entryClassColors: Map<string, string>;
+    subtypes: string[];
+    selectedSubtypes: string[];
+    setSelectedSubtypes: Dispatch<SetStateAction<string[]>>;
+    colors: Map<string, string>;
 }
 
 function resolveColor(
     subtype: string,
-    colorMap: Map<string, string>,
+    colors: Map<string, string>,
 ): string | undefined {
-    const direct = colorMap.get(subtype);
+    const direct = colors.get(subtype);
     if (direct) return direct;
     const parts = subtype.split('/');
-    if (parts.length > 1) return colorMap.get(parts.at(-1)!);
+    if (parts.length > 1) return colors.get(parts.at(-1)!);
     return undefined;
 }
 
@@ -46,49 +42,44 @@ function resolveColor(
  * for browsing/toggling from the full list.
  */
 export default function SearchFilterSection({
-    entrySubtypes,
-    entrySubtypeFilters,
-    setEntrySubtypeFilters,
-    entryClassColors,
+    subtypes,
+    selectedSubtypes,
+    setSelectedSubtypes,
+    colors,
 }: SearchFilterSectionProps): React.JSX.Element | null {
-    const [open, setOpen] = useState(false);
+    const [isPickerOpen, setIsPickerOpen] = useState(false);
 
-    const hasFilters = entrySubtypeFilters.length > 0;
-    const filterSet = useMemo(
-        () => new Set(entrySubtypeFilters),
-        [entrySubtypeFilters],
-    );
-    const sorted = useMemo(
-        () => [...entrySubtypes].sort((a, b) => a.localeCompare(b)),
-        [entrySubtypes],
+    const sortedSubtypes = useMemo(
+        () => [...subtypes].sort((a, b) => a.localeCompare(b)),
+        [subtypes],
     );
 
-    const handleToggle = (subtype: string) => {
-        setEntrySubtypeFilters((prev) =>
+    const toggleSubtype = (subtype: string) => {
+        setSelectedSubtypes((prev) =>
             prev.includes(subtype)
                 ? prev.filter((item) => item !== subtype)
                 : [...prev, subtype],
         );
     };
 
-    const handleRemove = (subtype: string, e: React.MouseEvent) => {
+    const removeSubtype = (subtype: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        handleToggle(subtype);
+        toggleSubtype(subtype);
     };
 
-    const handleClear = () => {
-        setEntrySubtypeFilters([]);
-        setOpen(false);
+    const clearSubtypes = () => {
+        setSelectedSubtypes([]);
+        setIsPickerOpen(false);
     };
 
-    if (sorted.length === 0) return null;
+    if (sortedSubtypes.length === 0) return null;
 
     return (
         <div className='flex items-center gap-2 border-b px-3 py-2'>
             <div className='flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted-foreground'>
                 <FunnelIcon
                     className='size-3.5'
-                    weight={hasFilters ? 'fill' : 'regular'}
+                    weight={selectedSubtypes.length > 0 ? 'fill' : 'regular'}
                 />
                 Type
             </div>
@@ -100,14 +91,14 @@ export default function SearchFilterSection({
 
             {/* Chips area - single line, no wrap */}
             <div className='flex flex-1 items-center gap-1 min-w-0 overflow-hidden'>
-                {hasFilters
-                    ? entrySubtypeFilters.map((subtype) => {
-                          const color = resolveColor(subtype, entryClassColors);
+                {selectedSubtypes.length > 0
+                    ? selectedSubtypes.map((subtype) => {
+                          const color = resolveColor(subtype, colors);
                           return (
                               <Badge
                                   key={subtype}
                                   variant='outline'
-                                  onClick={() => handleToggle(subtype)}
+                                  onClick={() => toggleSubtype(subtype)}
                                   className='shrink-0 cursor-pointer text-[11px] px-1.5 py-0 h-5 gap-0.5'
                                   style={
                                       color
@@ -123,18 +114,18 @@ export default function SearchFilterSection({
                                   <XIcon
                                       className='size-2.5 cursor-pointer opacity-70 hover:opacity-100'
                                       weight='bold'
-                                      onClick={(e) => handleRemove(subtype, e)}
+                                      onClick={(e) => removeSubtype(subtype, e)}
                                   />
                               </Badge>
                           );
                       })
-                    : sorted.map((subtype) => {
-                          const color = resolveColor(subtype, entryClassColors);
+                    : sortedSubtypes.map((subtype) => {
+                          const color = resolveColor(subtype, colors);
                           return (
                               <Badge
                                   key={subtype}
                                   variant='outline'
-                                  onClick={() => handleToggle(subtype)}
+                                  onClick={() => toggleSubtype(subtype)}
                                   className='shrink-0 cursor-pointer select-none text-[11px] px-1.5 py-0 h-5 opacity-50 hover:opacity-80 transition-opacity'
                                   style={
                                       color ? { borderColor: color, color } : undefined
@@ -147,14 +138,14 @@ export default function SearchFilterSection({
             </div>
 
             {/* Right side: popover trigger + clear */}
-            <Popover open={open} onOpenChange={setOpen}>
+            <Popover open={isPickerOpen} onOpenChange={setIsPickerOpen}>
                 <PopoverTrigger asChild>
                     <button
                         type='button'
                         className='shrink-0 inline-flex items-center gap-1 rounded-full border border-dashed px-2 h-5 text-[11px] text-muted-foreground hover:border-foreground/30 hover:text-foreground transition-colors'
                     >
                         <ChevronsUpDown className='size-2.5' />
-                        {hasFilters ? 'Edit' : 'Select'}
+                        {selectedSubtypes.length > 0 ? 'Edit' : 'Select'}
                     </button>
                 </PopoverTrigger>
                 <PopoverContent className='w-56 p-0' align='end'>
@@ -163,18 +154,15 @@ export default function SearchFilterSection({
                         <CommandList className='max-h-[240px]'>
                             <CommandEmpty>No types found.</CommandEmpty>
                             <CommandGroup>
-                                {sorted.map((subtype) => {
-                                    const color = resolveColor(
-                                        subtype,
-                                        entryClassColors,
-                                    );
-                                    const isActive = filterSet.has(subtype);
+                                {sortedSubtypes.map((subtype) => {
+                                    const color = resolveColor(subtype, colors);
+                                    const isActive = selectedSubtypes.includes(subtype);
 
                                     return (
                                         <CommandItem
                                             key={subtype}
                                             value={subtype}
-                                            onSelect={() => handleToggle(subtype)}
+                                            onSelect={() => toggleSubtype(subtype)}
                                             className='gap-2'
                                         >
                                             <div
@@ -203,14 +191,14 @@ export default function SearchFilterSection({
                                 })}
                             </CommandGroup>
                         </CommandList>
-                        {hasFilters && (
+                        {selectedSubtypes.length > 0 && (
                             <>
                                 <Separator />
                                 <div className='p-1'>
                                     <Button
                                         variant='ghost'
                                         size='sm'
-                                        onClick={handleClear}
+                                        onClick={clearSubtypes}
                                         className='w-full text-xs text-muted-foreground'
                                     >
                                         Clear all
@@ -222,7 +210,7 @@ export default function SearchFilterSection({
                 </PopoverContent>
             </Popover>
 
-            {hasFilters && (
+            {selectedSubtypes.length > 0 && (
                 <>
                     <Separator
                         orientation='vertical'
@@ -231,7 +219,7 @@ export default function SearchFilterSection({
                     <Button
                         variant='ghost'
                         size='xs'
-                        onClick={handleClear}
+                        onClick={clearSubtypes}
                         className='shrink-0 text-[11px] text-muted-foreground h-5 px-1'
                     >
                         Clear

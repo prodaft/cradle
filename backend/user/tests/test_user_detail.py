@@ -1,3 +1,4 @@
+import json
 import uuid
 
 from django.urls import reverse
@@ -53,6 +54,8 @@ class UserDetailTest(UserTestCase):
     def test_delete_user_authorized(self):
         response = self.client.delete(
             reverse("user_detail", kwargs={"user_id": self.user.id}),
+            data=json.dumps({"password": "user"}),
+            content_type="application/json",
             **self.headers_normal,
         )
 

@@ -827,6 +827,8 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
         (event: React.KeyboardEvent<HTMLDivElement>) => {
             propsRef.current.onKeyDown?.(event);
 
+            if (event.target !== event.currentTarget) return;
+
             if (
                 !event.defaultPrevented &&
                 (event.key === 'Enter' || event.key === ' ')

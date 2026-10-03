@@ -1,3 +1,4 @@
+import Logo from '@/components/base/logo/logo';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +15,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { cn } from '@/lib/utils';
 import { getDisplayMessage, getSuccessMessage, parseAPIError } from '@/utils/api';
-import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
@@ -43,7 +43,7 @@ export default function ForgotPassword() {
     const { role } = useAuthState();
     const { isLoggedIn } = useAuthActions();
 
-    const resetPasswordMutation = useMutation({
+    const requestReset = useMutation({
         mutationFn: async (email: string) => {
             const { data, error, response } = await fetchClient.POST(
                 '/auth/reset-password/',
@@ -57,7 +57,7 @@ export default function ForgotPassword() {
         },
         onError: async (error) => {
             const parsed = await parseAPIError(error);
-            setAlert({
+            setFormAlert({
                 show: true,
                 message: getDisplayMessage(parsed),
                 color: 'red',
@@ -65,7 +65,7 @@ export default function ForgotPassword() {
             });
         },
         onSuccess: (data) => {
-            setAlert({
+            setFormAlert({
                 show: true,
                 message: getSuccessMessage(data) ?? '',
                 color: 'green',
@@ -78,7 +78,7 @@ export default function ForgotPassword() {
                 Math.floor(Math.random() * FORGOT_PASSWORD_IMAGES.length)
             ],
     );
-    const [alert, setAlert] = useState<{
+    const [formAlert, setFormAlert] = useState<{
         show: boolean;
         message: string;
         color: string;
@@ -97,17 +97,15 @@ export default function ForgotPassword() {
     });
 
     useEffect(() => {
-        // If user is already logged in, redirect to dashboard
         if (isLoggedIn()) {
             router.navigate({ to: '/', replace: true });
         }
     }, [role, router, isLoggedIn]);
 
     const onSubmit = async (data: FormData) => {
-        resetPasswordMutation.mutate(data.email);
+        requestReset.mutate(data.email);
     };
 
-    // If user is logged in, don't render the forgot password form
     if (isLoggedIn()) {
         return null;
     }
@@ -177,11 +175,11 @@ export default function ForgotPassword() {
                                         </Field>
                                     )}
                                 />
-                                {alert.show && (
+                                {formAlert.show && (
                                     <Alert
                                         variant={
-                                            alert.color === 'red' ||
-                                            alert.color === 'error'
+                                            formAlert.color === 'red' ||
+                                            formAlert.color === 'error'
                                                 ? 'destructive'
                                                 : 'default'
                                         }
@@ -191,13 +189,13 @@ export default function ForgotPassword() {
                                             weight='bold'
                                         />
                                         <AlertTitle>
-                                            {alert.color === 'red' ||
-                                            alert.color === 'error'
-                                                ? alert.title || 'Error'
+                                            {formAlert.color === 'red' ||
+                                            formAlert.color === 'error'
+                                                ? formAlert.title || 'Error'
                                                 : 'Success'}
                                         </AlertTitle>
                                         <AlertDescription>
-                                            {alert.message}
+                                            {formAlert.message}
                                         </AlertDescription>
                                     </Alert>
                                 )}
@@ -207,10 +205,10 @@ export default function ForgotPassword() {
                                         variant='default'
                                         size='default'
                                         className='w-full'
-                                        disabled={resetPasswordMutation.isPending}
+                                        disabled={requestReset.isPending}
                                         data-testid='send-reset-link-button'
                                     >
-                                        {resetPasswordMutation.isPending && (
+                                        {requestReset.isPending && (
                                             <Spinner className='size-4' />
                                         )}
                                         Send Reset Link

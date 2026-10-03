@@ -1,7 +1,7 @@
-import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
+import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
-import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -54,7 +54,7 @@ export default function EntityPermissionsForm({
     entityId,
 }: EntityPermissionsFormProps) {
     const queryClient = useQueryClient();
-    const [searchVal, setSearchVal] = useState('');
+    const [appliedSearch, setAppliedSearch] = useState('');
     const [originalAccess, setOriginalAccess] = useState<Record<string, AccessLevel>>(
         {},
     );
@@ -71,18 +71,25 @@ export default function EntityPermissionsForm({
     accessMapsRef.current.original = originalAccess;
     accessMapsRef.current.current = currentAccess;
 
-    const hasLoadedListContextRef = useRef(false);
+    const hydratedRef = useRef(false);
 
-    const trimmedSearch = searchVal.trim();
+    const trimmed = appliedSearch.trim();
 
-    const permissionsQuery = useQuery({
+    const {
+        data: entityAccess,
+        isPending,
+        isFetching,
+        isError,
+        isSuccess,
+        refetch,
+    } = useQuery({
         queryKey: [
             'get',
             '/access/entity/{entity_id}/',
             entityId,
             pagination.pageIndex + 1,
             pagination.pageSize,
-            trimmedSearch,
+            trimmed,
         ],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
@@ -93,7 +100,7 @@ export default function EntityPermissionsForm({
                         query: {
                             page: pagination.pageIndex + 1,
                             page_size: pagination.pageSize,
-                            ...(trimmedSearch ? { search: trimmedSearch } : {}),
+                            ...(trimmed ? { search: trimmed } : {}),
                         },
                     },
                 },
@@ -106,11 +113,10 @@ export default function EntityPermissionsForm({
         refetchOnReconnect: false,
     });
 
-    const pageData = permissionsQuery.data;
-    const totalPages = Math.max(1, pageData?.total_pages ?? 1);
+    const totalPages = Math.max(1, entityAccess?.total_pages ?? 1);
 
     const userRows: EntityUserRow[] = useMemo(() => {
-        const results = pageData?.results ?? [];
+        const results = entityAccess?.results ?? [];
         return results
             .filter(
                 (
@@ -127,46 +133,46 @@ export default function EntityPermissionsForm({
                     description: '-',
                 };
             });
-    }, [pageData?.results]);
+    }, [entityAccess?.results]);
 
     useLayoutEffect(() => {
-        hasLoadedListContextRef.current = false;
+        hydratedRef.current = false;
         setOriginalAccess({});
         setCurrentAccess({});
-        setSearchVal('');
+        setAppliedSearch('');
         setPagination((p) => ({ pageIndex: 0, pageSize: p.pageSize }));
     }, [entityId]);
 
     useLayoutEffect(() => {
-        hasLoadedListContextRef.current = false;
+        hydratedRef.current = false;
         setOriginalAccess({});
         setCurrentAccess({});
         setPagination((p) => ({ pageIndex: 0, pageSize: p.pageSize }));
-    }, [trimmedSearch]);
+    }, [trimmed]);
 
     useEffect(() => {
-        if (permissionsQuery.isSuccess && permissionsQuery.data !== undefined) {
-            hasLoadedListContextRef.current = true;
+        if (isSuccess && entityAccess !== undefined) {
+            hydratedRef.current = true;
         }
-    }, [permissionsQuery.isSuccess, permissionsQuery.data]);
+    }, [isSuccess, entityAccess]);
 
     useEffect(() => {
-        if (!pageData) return;
-        const maxIndex = Math.max(0, (pageData.total_pages ?? 1) - 1);
+        if (!entityAccess) return;
+        const maxIndex = Math.max(0, (entityAccess.total_pages ?? 1) - 1);
         setPagination((p) =>
             p.pageIndex > maxIndex ? { ...p, pageIndex: maxIndex } : p,
         );
-    }, [pageData?.total_pages, pageData]);
+    }, [entityAccess?.total_pages, entityAccess]);
 
     useEffect(() => {
-        if (!pageData) return;
-        if (pageData.count === 0) {
+        if (!entityAccess) return;
+        if (entityAccess.count === 0) {
             setOriginalAccess({});
             setCurrentAccess({});
             return;
         }
 
-        const results = pageData.results;
+        const results = entityAccess.results;
         if (!results) return;
 
         const prevOriginal = accessMapsRef.current.original;
@@ -180,8 +186,8 @@ export default function EntityPermissionsForm({
             const server = access.access_type;
             const orig = prevOriginal[userId];
             const cur = prevCurrent[userId];
-            const dirty = orig !== undefined && cur !== undefined && orig !== cur;
-            if (dirty) {
+            const isRowDirty = orig !== undefined && cur !== undefined && orig !== cur;
+            if (isRowDirty) {
                 nextOriginal[userId] = orig;
                 nextCurrent[userId] = cur;
             } else {
@@ -192,16 +198,16 @@ export default function EntityPermissionsForm({
 
         setOriginalAccess(nextOriginal);
         setCurrentAccess(nextCurrent);
-    }, [pageData]);
+    }, [entityAccess]);
 
-    const handleAccessChange = useCallback((userId: string, newAccess: AccessLevel) => {
+    const updateAccess = useCallback((userId: string, access: AccessLevel) => {
         setCurrentAccess((prev) => ({
             ...prev,
-            [userId]: newAccess,
+            [userId]: access,
         }));
     }, []);
 
-    const hasUnsavedChanges = useMemo(() => {
+    const isDirty = useMemo(() => {
         const keys = new Set([
             ...Object.keys(originalAccess),
             ...Object.keys(currentAccess),
@@ -212,7 +218,7 @@ export default function EntityPermissionsForm({
         return false;
     }, [originalAccess, currentAccess]);
 
-    const saveChangesMutation = useMutation({
+    const saveAccess = useMutation({
         mutationFn: async () => {
             const keys = new Set([
                 ...Object.keys(originalAccess),
@@ -263,34 +269,33 @@ export default function EntityPermissionsForm({
         },
     });
 
-    const handleSave = () => {
-        if (!hasUnsavedChanges) return;
-        saveChangesMutation.mutate();
+    const save = () => {
+        if (!isDirty) return;
+        saveAccess.mutate();
     };
 
-    const handleRevert = () => {
+    const revert = () => {
         setCurrentAccess({ ...originalAccess });
     };
 
-    const handleDefault = () => {
-        const defaults: Record<string, AccessLevel> = { ...currentAccess };
+    const resetToNone = () => {
+        const nextAccess: Record<string, AccessLevel> = { ...currentAccess };
         userRows.forEach((row) => {
-            defaults[row.userId] = 'none';
+            nextAccess[row.userId] = 'none';
         });
-        setCurrentAccess(defaults);
+        setCurrentAccess(nextAccess);
     };
 
     const isAtDefault =
         userRows.length > 0 &&
         userRows.every((row) => (currentAccess[row.userId] ?? 'none') === 'none');
 
-    const emptyMessage = searchVal.trim()
+    const emptyMessage = appliedSearch.trim()
         ? 'No users found matching your search'
         : 'No users available';
 
-    const handleSearchChange = useCallback((value: string) => {
-        setSearchVal(value);
-        setPagination((p) => ({ ...p, pageIndex: 0 }));
+    const applySearch = useCallback((value: string) => {
+        setAppliedSearch(value);
     }, []);
 
     const columns = useMemo<ColumnDef<EntityUserRow>[]>(
@@ -338,9 +343,9 @@ export default function EntityPermissionsForm({
                             <Select
                                 value={value}
                                 onValueChange={(v) =>
-                                    handleAccessChange(userId, v as AccessLevel)
+                                    updateAccess(userId, v as AccessLevel)
                                 }
-                                disabled={saveChangesMutation.isPending}
+                                disabled={saveAccess.isPending}
                             >
                                 <SelectTrigger className='w-[140px]'>
                                     <SelectValue />
@@ -362,7 +367,7 @@ export default function EntityPermissionsForm({
                 size: 160,
             },
         ],
-        [currentAccess, handleAccessChange, saveChangesMutation.isPending],
+        [currentAccess, updateAccess, saveAccess.isPending],
     );
 
     const table = useReactTable({
@@ -376,7 +381,7 @@ export default function EntityPermissionsForm({
         getRowId: (row) => row.userId,
     });
 
-    if (permissionsQuery.isPending && !hasLoadedListContextRef.current) {
+    if (isPending && !hydratedRef.current) {
         return (
             <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                 <Spinner className='size-10' />
@@ -384,13 +389,13 @@ export default function EntityPermissionsForm({
         );
     }
 
-    if (permissionsQuery.isError) {
+    if (isError) {
         return (
             <div className='flex flex-col items-center justify-center min-h-[200px] gap-3 text-foreground'>
                 <p className='text-sm text-muted-foreground'>
                     Failed to load permissions.
                 </p>
-                <Button type='button' onClick={() => permissionsQuery.refetch()}>
+                <Button type='button' onClick={() => refetch()}>
                     Retry
                 </Button>
             </div>
@@ -405,8 +410,8 @@ export default function EntityPermissionsForm({
                         type='button'
                         variant='outline'
                         size='icon'
-                        disabled={!hasUnsavedChanges}
-                        onClick={handleRevert}
+                        disabled={!isDirty}
+                        onClick={revert}
                         title='Revert'
                     >
                         <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
@@ -416,7 +421,7 @@ export default function EntityPermissionsForm({
                         variant='outline'
                         size='icon'
                         disabled={isAtDefault}
-                        onClick={handleDefault}
+                        onClick={resetToNone}
                         title='Default'
                     >
                         <ClockCounterClockwiseIcon className='size-4' weight='bold' />
@@ -425,11 +430,11 @@ export default function EntityPermissionsForm({
                         type='button'
                         variant='default'
                         size='icon'
-                        disabled={saveChangesMutation.isPending || !hasUnsavedChanges}
-                        onClick={handleSave}
+                        disabled={saveAccess.isPending || !isDirty}
+                        onClick={save}
                         title='Save Settings'
                     >
-                        {saveChangesMutation.isPending ? (
+                        {saveAccess.isPending ? (
                             <Spinner className='size-4' />
                         ) : (
                             <FloppyDiskIcon className='size-4' weight='bold' />
@@ -443,12 +448,12 @@ export default function EntityPermissionsForm({
                         <ActionBarSearch
                             placeholder='Search users...'
                             name='entity-permissions-user-search'
-                            value={searchVal}
+                            value={appliedSearch}
                             debounceMs={300}
-                            onDebouncedChange={handleSearchChange}
-                            onSubmit={handleSearchChange}
-                            onClear={() => handleSearchChange('')}
-                            disabled={hasUnsavedChanges}
+                            onDebouncedChange={applySearch}
+                            onSubmit={applySearch}
+                            onClear={() => applySearch('')}
+                            disabled={isDirty}
                             className='w-72 max-w-full min-w-0'
                         />
                     </div>
@@ -460,15 +465,9 @@ export default function EntityPermissionsForm({
                     table={table}
                     density='compact'
                     emptyMessage={emptyMessage}
-                    showPagination={
-                        (pageData?.count ?? 0) > 0 || permissionsQuery.isFetching
-                    }
-                    paginationDisabled={hasUnsavedChanges}
-                    isLoading={
-                        hasLoadedListContextRef.current &&
-                        permissionsQuery.isFetching &&
-                        !pageData
-                    }
+                    showPagination={(entityAccess?.count ?? 0) > 0 || isFetching}
+                    paginationDisabled={isDirty}
+                    isLoading={hydratedRef.current && isFetching && !entityAccess}
                 />
             </div>
         </>

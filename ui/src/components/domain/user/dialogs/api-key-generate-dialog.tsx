@@ -1,4 +1,14 @@
+import PasswordConfirmField from '@/components/domain/user/password-confirm-field';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -16,6 +26,7 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import {
     CopyIcon,
     EyeIcon,
@@ -24,58 +35,40 @@ import {
 } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
 
-/**
- * ApiKeyGenerateDialog component props
- */
 interface ApiKeyGenerateDialogProps {
-    /** Whether the dialog is open */
     open: boolean;
-    /** Callback when dialog open state changes */
     onOpenChange: (open: boolean) => void;
-    /** User ID to generate API key for */
-    userId: string;
+    id: string;
+    passwordRequired?: boolean;
 }
 
-/**
- * ApiKeyGenerateDialog component - handles API key generation with copy and visibility toggle
- *
- * @example
- * ```tsx
- * const [open, setOpen] = useState(false);
- * <ApiKeyGenerateDialog
- *   open={open}
- *   onOpenChange={setOpen}
- *   userId="user-123"
- * />
- * ```
- */
 export default function ApiKeyGenerateDialog({
     open,
     onOpenChange,
-    userId,
+    id,
+    passwordRequired = false,
 }: ApiKeyGenerateDialogProps) {
-    const [apiKey, setApiKey] = useState<string | null>(null);
-    const [showApiKey, setShowApiKey] = useState(false);
-    const [generateError, setGenerateError] = useState<string | null>(null);
-    const apiKeyValueId = useId();
+    const [isRevealed, setIsRevealed] = useState(false);
+    const [password, setPassword] = useState('');
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const keyId = useId();
 
-    useEffect(() => {
-        if (!open) return;
-        setApiKey(null);
-        setShowApiKey(false);
-        setGenerateError(null);
-    }, [open]);
-
-    const generateMutation = useMutation({
-        mutationFn: async () => {
+    const {
+        mutate,
+        reset,
+        data: apiKey,
+        isPending,
+        isIdle,
+    } = useMutation({
+        mutationFn: async (confirmedPassword?: string) => {
             const { data, error, response } = await fetchClient.POST(
                 '/users/{user_id}/api-key/',
                 {
-                    params: { path: { user_id: userId } },
-                    body: { api_key: '' },
+                    params: { path: { user_id: id } },
+                    body: confirmedPassword ? { password: confirmedPassword } : {},
                 },
             );
             if (error) throw { response, error };
@@ -84,94 +77,107 @@ export default function ApiKeyGenerateDialog({
         meta: {
             suppressNotification: true,
         },
-        onMutate: () => {
-            setGenerateError(null);
+        onError: async (err) => {
+            const parsed = await parseAPIError(err);
+            setErrorMessage(getDisplayMessage(parsed));
         },
-        onSuccess: (apiKey) => {
-            setApiKey(apiKey);
-        },
-        onError: (err: unknown) => {
-            const e = err as {
-                detail?: string;
-                error?: { detail?: string };
-            };
-            setGenerateError(
-                e?.detail ??
-                    e?.error?.detail ??
-                    'An error occurred while generating the API key.',
-            );
-        },
+        onSuccess: () => setErrorMessage(null),
     });
 
-    const handleGenerate = () => {
-        generateMutation.mutate();
-    };
+    useEffect(() => {
+        if (open) return;
+        setIsRevealed(false);
+        setPassword('');
+        setErrorMessage(null);
+        reset();
+    }, [open, reset]);
 
-    const handleCopy = useCallback(async () => {
-        if (apiKey) {
-            await navigator.clipboard.writeText(apiKey);
-            toast.success('API key copied to clipboard!');
-        }
-    }, [apiKey]);
+    const isGenerateAllowed = !passwordRequired || password.length > 0;
+    const generate = () => mutate(passwordRequired ? password : undefined);
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='sm:max-w-md'>
-                <DialogHeader>
-                    <DialogTitle>Generate API Key</DialogTitle>
-                    <DialogDescription>
-                        {!apiKey
-                            ? 'Generating a new API key will invalidate your current key. Any applications using the old key will stop working.'
-                            : "API key has been generated. Copy it now as you won't be able to see it again."}
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            <AlertDialog
+                open={open && isIdle}
+                onOpenChange={(next) => {
+                    if (!next) onOpenChange(false);
+                }}
+            >
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>API Key</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Generating a new API key will invalidate your current key.
+                            Any applications using the old key will stop working.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    {passwordRequired ? (
+                        <PasswordConfirmField
+                            value={password}
+                            onChange={setPassword}
+                            disabled={isPending}
+                        />
+                    ) : null}
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <Button
+                            type='button'
+                            variant='default'
+                            size='sm'
+                            disabled={!isGenerateAllowed}
+                            onClick={generate}
+                        >
+                            Generate
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
-                {!apiKey ? (
-                    <>
-                        {generateError ? (
-                            <Alert variant='destructive'>
-                                <WarningCircleIcon />
-                                <AlertTitle>Could not generate API key</AlertTitle>
-                                <AlertDescription>{generateError}</AlertDescription>
-                            </Alert>
-                        ) : null}
+            <Dialog
+                open={open && !isIdle}
+                onOpenChange={(next) => {
+                    if (!next) onOpenChange(false);
+                }}
+            >
+                <DialogContent className='sm:max-w-md'>
+                    <DialogHeader>
+                        <DialogTitle>API Key</DialogTitle>
+                        {(apiKey || isPending) && (
+                            <DialogDescription>
+                                {apiKey
+                                    ? "API key has been generated. Copy it now as you won't be able to see it again."
+                                    : 'Generating your new API key...'}
+                            </DialogDescription>
+                        )}
+                    </DialogHeader>
 
-                        <DialogFooter>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                onClick={() => onOpenChange(false)}
-                                disabled={generateMutation.isPending}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type='button'
-                                variant='default'
-                                size='sm'
-                                onClick={handleGenerate}
-                                disabled={generateMutation.isPending}
-                            >
-                                {generateMutation.isPending
-                                    ? 'Generating...'
-                                    : 'Generate'}
-                            </Button>
-                        </DialogFooter>
-                    </>
-                ) : (
-                    <>
-                        {/* API Key Display */}
+                    {errorMessage ? (
+                        <Alert variant='destructive'>
+                            <WarningCircleIcon />
+                            <AlertTitle>Could not generate API key</AlertTitle>
+                            <AlertDescription>{errorMessage}</AlertDescription>
+                        </Alert>
+                    ) : null}
+
+                    {errorMessage && passwordRequired ? (
+                        <PasswordConfirmField
+                            value={password}
+                            onChange={setPassword}
+                            disabled={isPending}
+                        />
+                    ) : null}
+
+                    {apiKey ? (
                         <Field>
-                            <FieldLabel htmlFor={apiKeyValueId}>
-                                Your new API key
-                            </FieldLabel>
+                            <FieldLabel htmlFor={keyId}>Your new API key</FieldLabel>
                             <InputGroup>
                                 <InputGroupInput
-                                    id={apiKeyValueId}
-                                    name='api-key-generate-value'
+                                    id={keyId}
+                                    name='api-key-value'
                                     autoComplete='off'
-                                    type={showApiKey ? 'text' : 'password'}
+                                    type={isRevealed ? 'text' : 'password'}
                                     value={apiKey}
                                     readOnly
                                     className='font-mono'
@@ -182,15 +188,15 @@ export default function ApiKeyGenerateDialog({
                                 >
                                     <InputGroupButton
                                         type='button'
-                                        onClick={() => setShowApiKey(!showApiKey)}
+                                        onClick={() => setIsRevealed(!isRevealed)}
                                         aria-label={
-                                            showApiKey ? 'Hide API key' : 'Show API key'
+                                            isRevealed ? 'Hide API key' : 'Show API key'
                                         }
                                         title={
-                                            showApiKey ? 'Hide API key' : 'Show API key'
+                                            isRevealed ? 'Hide API key' : 'Show API key'
                                         }
                                     >
-                                        {showApiKey ? (
+                                        {isRevealed ? (
                                             <EyeSlashIcon
                                                 className='size-4'
                                                 weight='bold'
@@ -201,7 +207,12 @@ export default function ApiKeyGenerateDialog({
                                     </InputGroupButton>
                                     <InputGroupButton
                                         type='button'
-                                        onClick={handleCopy}
+                                        onClick={async () => {
+                                            await navigator.clipboard.writeText(apiKey);
+                                            toast.success(
+                                                'API key copied to clipboard!',
+                                            );
+                                        }}
                                         aria-label='Copy API key'
                                         title='Copy API key'
                                     >
@@ -210,16 +221,41 @@ export default function ApiKeyGenerateDialog({
                                 </InputGroupAddon>
                             </InputGroup>
                         </Field>
+                    ) : null}
+
+                    {(errorMessage || apiKey) && (
                         <DialogFooter>
-                            <DialogClose asChild>
-                                <Button type='button' variant='outline' size='sm'>
-                                    Close
-                                </Button>
-                            </DialogClose>
+                            {errorMessage ? (
+                                <>
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={() => onOpenChange(false)}
+                                    >
+                                        Close
+                                    </Button>
+                                    <Button
+                                        type='button'
+                                        variant='default'
+                                        size='sm'
+                                        onClick={generate}
+                                        disabled={isPending || !isGenerateAllowed}
+                                    >
+                                        {isPending ? 'Generating...' : 'Retry'}
+                                    </Button>
+                                </>
+                            ) : (
+                                <DialogClose asChild>
+                                    <Button type='button' variant='outline' size='sm'>
+                                        Close
+                                    </Button>
+                                </DialogClose>
+                            )}
                         </DialogFooter>
-                    </>
-                )}
-            </DialogContent>
-        </Dialog>
+                    )}
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

@@ -18,7 +18,8 @@ from ..exceptions import (
     TwoFactorNotEnabledException,
     UserErrorCodes,
 )
-from ..serializers import Enable2FASerializer, Verify2FASerializer
+from ..serializers import Disable2FASerializer, Enable2FASerializer, StepUpSerializer, Verify2FASerializer
+from ..utils.step_up import require_step_up, validate_step_up
 
 
 @extend_schema_view(
@@ -26,10 +27,14 @@ from ..serializers import Enable2FASerializer, Verify2FASerializer
         operation_id="users_2fa_enable_create",
         summary="Enable 2FA",
         description="Initiates 2FA setup for the user and returns a QR code URL",
-        request=None,
+        request=StepUpSerializer,
         responses={
             200: Enable2FASerializer,
-            **get_error_responses(UserErrorCodes.TWO_FACTOR_ALREADY_ENABLED),
+            **get_error_responses(
+                UserErrorCodes.TWO_FACTOR_ALREADY_ENABLED,
+                UserErrorCodes.CURRENT_PASSWORD_INCORRECT,
+                include_validation_error=True,
+            ),
             **get_common_error_responses(),
         },
     )
@@ -41,6 +46,8 @@ class Enable2FAView(APIView):
     def post(self, request: Request) -> Response:
         if request.user.two_factor_enabled:
             raise TwoFactorAlreadyEnabledException(detail="Two-factor authentication is already enabled.")
+
+        validate_step_up(request, request.user, request.data)
 
         config_url = request.user.enable_2fa()
         serializer = Enable2FASerializer(data={"config_url": config_url})
@@ -99,12 +106,13 @@ class Verify2FASetupView(APIView):
         operation_id="users_2fa_disable_create",
         summary="Disable 2FA",
         description="Disables 2FA for the user",
-        request=Verify2FASerializer,
+        request=Disable2FASerializer,
         responses={
             200: {"description": "Two-factor authentication disabled successfully"},
             **get_error_responses(
                 UserErrorCodes.TWO_FACTOR_NOT_ENABLED,
                 UserErrorCodes.INVALID_TWO_FACTOR_CODE,
+                UserErrorCodes.CURRENT_PASSWORD_INCORRECT,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -119,10 +127,14 @@ class Disable2FAView(APIView):
         if not request.user.two_factor_enabled:
             raise TwoFactorNotEnabledException(detail="Two-factor authentication is not enabled.")
 
-        serializer = Verify2FASerializer(data=request.data)
+        serializer = Disable2FASerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # The verify_2fa_token and disable_2fa methods now handle transactions internally
+        require_step_up(
+            request,
+            request.user,
+            serializer.validated_data.get("password") or None,
+        )
         if request.user.verify_2fa_token(serializer.validated_data["token"]):
             request.user.disable_2fa()
             return Response(

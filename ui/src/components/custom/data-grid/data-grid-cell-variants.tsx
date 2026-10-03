@@ -70,7 +70,6 @@ export function ShortTextCell<TData>({
     }
 
     const onBlur = React.useCallback(() => {
-        // Read the current value directly from the DOM to avoid stale state
         const currentValue = cellRef.current?.textContent ?? '';
         if (!readOnly && currentValue !== initialValue) {
             tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: currentValue });
@@ -78,7 +77,7 @@ export function ShortTextCell<TData>({
         tableMeta?.onCellEditingStop?.();
     }, [tableMeta, rowIndex, columnId, initialValue, readOnly]);
 
-    const onInput = React.useCallback((event: React.FormEvent<HTMLDivElement>) => {
+    const onInput = React.useCallback((event: React.InputEvent<HTMLDivElement>) => {
         const currentValue = event.currentTarget.textContent ?? '';
         setValue(currentValue);
     }, []);
@@ -568,7 +567,7 @@ export function UrlCell<TData>({
         tableMeta?.onCellEditingStop?.();
     }, [tableMeta, rowIndex, columnId, initialValue, readOnly]);
 
-    const onInput = React.useCallback((event: React.FormEvent<HTMLDivElement>) => {
+    const onInput = React.useCallback((event: React.InputEvent<HTMLDivElement>) => {
         const currentValue = event.currentTarget.textContent ?? '';
         setValue(currentValue);
     }, []);

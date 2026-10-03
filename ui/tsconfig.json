@@ -43,8 +43,6 @@
             "@services/*": ["./src/services/*"],
             "@utils": ["./src/utils"],
             "@utils/*": ["./src/utils/*"],
-            "@types": ["./src/types"],
-            "@types/*": ["./src/types/*"],
             "@styles": ["./styles"],
             "@styles/*": ["./styles/*"],
             "src/*": ["./src/*"]

@@ -1,4 +1,4 @@
-import type { DockviewPanelApi } from 'dockview';
+import type { DockviewPanelApi } from 'dockview-react';
 import {
     createContext,
     type ReactNode,

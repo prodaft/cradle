@@ -1,4 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
+import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import {
@@ -14,10 +14,11 @@ import { Spinner } from '@/components/ui/spinner';
 import { fetchClient } from '@services/openapi/client';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import EnrichmentSettingsForm from './enrichment-settings-form';
 
-/** Admin manage route for enricher settings (distinct from the app `EnrichmentList` index). */
+type EnricherItem = { class_name: string; name: string };
+
 export default function ManageEnrichmentList() {
     useDockPanelTab({ title: 'Manage: Enrichment', icon: 'manage-enrichment' });
     const router = useRouter();
@@ -26,19 +27,24 @@ export default function ManageEnrichmentList() {
     });
     const search = useSearch({
         from: '/_authenticated/manage/_manage-auth/enrichment',
-    });
-    const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    const { data: enrichmentTypesData, isPending } = useQuery({
-        queryKey: ['enrichmentTypes', debouncedSearch],
+    }) as Record<string, unknown>;
+    const [draft, setDraft] = useState('');
+    const [applied, setApplied] = useState('');
+
+    const applySearch = useCallback((value: string) => {
+        setApplied(value);
+    }, []);
+
+    const { data: enrichers = [], isPending } = useQuery({
+        queryKey: ['enrichmentTypes', applied],
         queryFn: async () => {
-            const query = {
-                ...(debouncedSearch ? { search: debouncedSearch } : {}),
+            const listQuery = {
+                ...(applied ? { search: applied } : {}),
             };
             const { data, error, response } = await fetchClient.GET(
                 '/intelio/enrichment/',
                 {
-                    params: { query },
+                    params: { query: listQuery },
                 },
             );
             if (error) throw { response, error };
@@ -50,33 +56,23 @@ export default function ManageEnrichmentList() {
         },
     });
 
-    const enrichmentTypes = (enrichmentTypesData ?? []) as Array<{
-        class_name: string;
-        name: string;
-    }>;
     const tab: string | undefined =
-        (search as any)?.tab ??
-        (enrichmentTypes.length > 0 ? enrichmentTypes[0]?.class_name : undefined);
+        (search.tab as string | undefined) ??
+        (enrichers.length > 0 ? enrichers[0]?.class_name : undefined);
 
-    const handleEnrichmentClick = (enrichment: {
-        class_name: string;
-        name: string;
-    }) => {
+    const selectEnricher = (item: EnricherItem) => {
         router.navigate({
             to: location.pathname as any,
-            search: { ...(search as any), tab: enrichment.class_name },
+            search: { ...search, tab: item.class_name } as any,
             replace: true,
         });
     };
 
-    const selectedEnrichment = tab
-        ? enrichmentTypes.find((e) => e.class_name === tab)
-        : null;
+    const activeEnricher = tab ? enrichers.find((e) => e.class_name === tab) : null;
 
     return (
         <div className='w-full h-full'>
             <div className='flex w-full h-full'>
-                {/* Enrichment Sidebar */}
                 <Sidebar
                     collapsible='none'
                     className='border-r bg-background text-foreground [&_[data-slot=sidebar-inner]]:bg-background [&_[data-slot=sidebar-inner]]:text-foreground'
@@ -85,12 +81,13 @@ export default function ManageEnrichmentList() {
                         <ActionBarSearch
                             placeholder='Search enrichment types...'
                             name='manage-enrichment-sidebar-search'
-                            value={searchQuery}
+                            value={draft}
                             debounceMs={300}
                             className='w-full min-w-0'
-                            onValueChange={setSearchQuery}
-                            onDebouncedChange={setDebouncedSearch}
-                            onClear={() => setDebouncedSearch('')}
+                            onValueChange={setDraft}
+                            onDebouncedChange={applySearch}
+                            onSubmit={applySearch}
+                            onClear={() => applySearch('')}
                         />
                     </SidebarHeader>
                     <SidebarContent>
@@ -100,12 +97,12 @@ export default function ManageEnrichmentList() {
                                     <div className='px-4 py-2 text-sm text-muted-foreground flex items-center gap-2'>
                                         <Spinner className='size-4' /> Loading...
                                     </div>
-                                ) : enrichmentTypes.length === 0 ? (
+                                ) : enrichers.length === 0 ? (
                                     <div className='p-2'>
                                         <Empty className='border-0 p-3'>
                                             <EmptyHeader className='max-w-none gap-0'>
                                                 <EmptyDescription>
-                                                    {searchQuery
+                                                    {draft
                                                         ? 'No enrichment types match your search'
                                                         : 'No enrichment types found'}
                                                 </EmptyDescription>
@@ -113,16 +110,14 @@ export default function ManageEnrichmentList() {
                                         </Empty>
                                     </div>
                                 ) : (
-                                    enrichmentTypes.map((enrichment) => (
-                                        <SidebarMenuItem key={enrichment.class_name}>
+                                    enrichers.map((item) => (
+                                        <SidebarMenuItem key={item.class_name}>
                                             <SidebarMenuButton
-                                                isActive={tab === enrichment.class_name}
-                                                onClick={() =>
-                                                    handleEnrichmentClick(enrichment)
-                                                }
-                                                tooltip={enrichment.name}
+                                                isActive={tab === item.class_name}
+                                                onClick={() => selectEnricher(item)}
+                                                tooltip={item.name}
                                             >
-                                                <span>{enrichment.name}</span>
+                                                <span>{item.name}</span>
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
                                     ))
@@ -132,9 +127,8 @@ export default function ManageEnrichmentList() {
                     </SidebarContent>
                 </Sidebar>
 
-                {/* Main Content Area */}
                 <div className='flex-1 flex flex-col'>
-                    {selectedEnrichment ? (
+                    {activeEnricher ? (
                         <EnrichmentSettingsForm enrichment_class={tab!} />
                     ) : (
                         <div className='flex-1 flex items-center justify-center'>

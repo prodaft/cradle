@@ -10,7 +10,7 @@ from access.enums import AccessType
 from access.models import Access
 from core.exceptions import PermissionDeniedException
 from core.utils import fields_to_form
-from cradle.settings_common import INTERNAL_SUBTYPES
+from entries.constants import INTERNAL_SUBTYPES
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass, Relation
 from entries.serializers import (

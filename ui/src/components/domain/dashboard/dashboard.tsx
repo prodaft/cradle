@@ -28,12 +28,11 @@ const DASHBOARD_ITEMS = [
 ];
 
 export default function Dashboard() {
-    const loaderData = useLoaderData({
+    const { entry } = useLoaderData({
         from: '/_authenticated/dashboards/$subtype/$name',
     }) as { entry: EntryResponse };
-    const contentObject = loaderData?.entry;
     useDockPanelTab({
-        title: contentObject?.name ? `Dashboard: ${contentObject.name}` : 'Dashboard',
+        title: entry?.name ? `Dashboard: ${entry.name}` : 'Dashboard',
         icon: 'dashboard',
     });
     const { isAdmin } = useAuthState();
@@ -47,7 +46,7 @@ export default function Dashboard() {
     const dashboard = useRef<HTMLDivElement>(null);
     const tab = search.tab ?? DASHBOARD_ITEMS[0]?.id ?? 'notes';
 
-    const handleTabChange = (tabId: string) => {
+    const changeTab = (tabId: string) => {
         router.navigate({
             to: location.pathname as any,
             search: { ...(search as any), tab: tabId },
@@ -61,15 +60,13 @@ export default function Dashboard() {
         ],
         [isAdmin],
     );
-    // Scroll to top on mount
     useEffect(() => {
         if (dashboard.current) {
             dashboard.current.scrollTo(0, 0);
         }
-    }, [contentObject]);
+    }, [entry]);
 
-    // Early return if no content object is available
-    if (!contentObject) {
+    if (!entry) {
         return null;
     }
 
@@ -80,26 +77,26 @@ export default function Dashboard() {
                 ref={dashboard}
             >
                 <div className='w-full min-h-full flex flex-col p-6 space-y-4 overflow-hidden'>
-                    {contentObject.name && (
+                    {entry.name && (
                         <div className='flex justify-between items-center w-full border-b border-border pr-4 pb-4'>
                             <div className='flex flex-col'>
                                 <h1 className='text-3xl font-medium break-all text-foreground tracking-tight'>
-                                    {contentObject.type && (
-                                        <span className='text-muted-foreground text-2xl mr-2'>{`${contentObject.subtype ?? contentObject.type}:`}</span>
+                                    {entry.type && (
+                                        <span className='text-muted-foreground text-2xl mr-2'>{`${entry.subtype ?? entry.type}:`}</span>
                                     )}
-                                    {contentObject.name}
+                                    {entry.name}
                                 </h1>
-                                {contentObject.description && (
+                                {entry.description && (
                                     <p className='text-sm text-foreground mt-2'>
-                                        {contentObject.description}
+                                        {entry.description}
                                     </p>
                                 )}
                             </div>
                         </div>
                     )}
-                    {contentObject.id && (
+                    {entry.id && (
                         <div className='flex flex-1 flex-col space-y-4 overflow-hidden'>
-                            <Tabs value={tab} onValueChange={handleTabChange}>
+                            <Tabs value={tab} onValueChange={changeTab}>
                                 <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
                                     {tabs.map((item) => {
                                         const Icon = item.icon;
@@ -116,29 +113,21 @@ export default function Dashboard() {
                                 {tab === 'notes' && (
                                     <NotesList
                                         hidePageHeader
-                                        linkedToEntryId={contentObject.id}
+                                        linkedToEntryId={entry.id}
                                     />
                                 )}
-                                {tab === 'relations' && (
-                                    <Relations obj={contentObject} />
-                                )}
+                                {tab === 'relations' && <Relations obj={entry} />}
                                 {tab === 'files' && (
                                     <FilesList
                                         hidePageHeader
-                                        query={{ linked_to: contentObject.id }}
+                                        scope={{ linked_to: entry.id }}
                                     />
                                 )}
                                 {tab === 'enrichment' && (
-                                    <EnrichmentList
-                                        hidePageHeader
-                                        entryId={contentObject.id}
-                                    />
+                                    <EnrichmentList hidePageHeader entryId={entry.id} />
                                 )}
                                 {tab === 'eventlog' && isAdmin && (
-                                    <ActivityList
-                                        name={contentObject.name}
-                                        objectId={contentObject.id?.toString()}
-                                    />
+                                    <ActivityList objectId={entry.id?.toString()} />
                                 )}
                                 <ScrollBar orientation='horizontal' />
                             </ScrollArea>

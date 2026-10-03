@@ -1,4 +1,4 @@
-import { SessionExpiredException } from '@/components/domain/auth/auth-exceptions';
+import { SessionExpiredException } from '@services/openapi/auth-exceptions';
 import createFetchClient from 'openapi-fetch';
 import createClient from 'openapi-react-query';
 import type { paths } from './schema';

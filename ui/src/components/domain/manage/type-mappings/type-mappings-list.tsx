@@ -1,4 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
+import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import {
@@ -15,8 +15,11 @@ import { fetchClient } from '@services/openapi/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { startCase } from 'lodash';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import TypeMappingsEditor from './type-mappings-editor';
+
+type Item = { class_name: string; name: string };
+
 export default function TypeMappingsList() {
     useDockPanelTab({
         title: 'Manage: Type mappings',
@@ -28,21 +31,26 @@ export default function TypeMappingsList() {
     });
     const search = useSearch({
         from: '/_authenticated/manage/_manage-auth/type-mappings',
-    });
-    const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
+    }) as Record<string, unknown>;
+
+    const [draft, setDraft] = useState('');
+    const [applied, setApplied] = useState('');
     const queryClient = useQueryClient();
 
-    const { data: mappingTypesData, isPending } = useQuery({
-        queryKey: ['typeMappings', debouncedSearch],
+    const applySearch = useCallback((value: string) => {
+        setApplied(value);
+    }, []);
+
+    const { data: mappings = [], isPending } = useQuery({
+        queryKey: ['typeMappings', applied],
         queryFn: async () => {
-            const query = {
-                ...(debouncedSearch ? { search: debouncedSearch } : {}),
+            const listQuery = {
+                ...(applied ? { search: applied } : {}),
             };
             const { data, error, response } = await fetchClient.GET(
                 '/intelio/mappings/',
                 {
-                    params: { query },
+                    params: { query: listQuery },
                 },
             );
             if (error) throw { response, error };
@@ -54,29 +62,23 @@ export default function TypeMappingsList() {
         },
     });
 
-    const mappingTypes = (mappingTypesData ?? []) as Array<{
-        class_name: string;
-        name: string;
-    }>;
-
     const tab: string | undefined =
-        (search as any)?.tab ??
-        (mappingTypes.length > 0 ? mappingTypes[0]?.class_name : undefined);
+        (search.tab as string | undefined) ??
+        (mappings.length > 0 ? mappings[0]?.class_name : undefined);
 
-    const handleMappingClick = (mapping: { class_name: string; name: string }) => {
+    const selectItem = (item: Item) => {
         router.navigate({
             to: location.pathname as any,
-            search: { ...(search as any), tab: mapping.class_name },
+            search: { ...search, tab: item.class_name } as any,
             replace: true,
         });
     };
 
-    const selectedMapping = tab ? mappingTypes.find((m) => m.class_name === tab) : null;
+    const activeMapping = tab ? mappings.find((m) => m.class_name === tab) : null;
 
     return (
         <div className='w-full h-full'>
             <div className='flex w-full h-full'>
-                {/* Type Mappings Sidebar */}
                 <Sidebar
                     collapsible='none'
                     className='border-r bg-background text-foreground [&_[data-slot=sidebar-inner]]:bg-background [&_[data-slot=sidebar-inner]]:text-foreground'
@@ -85,12 +87,13 @@ export default function TypeMappingsList() {
                         <ActionBarSearch
                             placeholder='Search mappings...'
                             name='type-mappings-sidebar-search'
-                            value={searchQuery}
+                            value={draft}
                             debounceMs={300}
                             className='w-full min-w-0'
-                            onValueChange={setSearchQuery}
-                            onDebouncedChange={setDebouncedSearch}
-                            onClear={() => setDebouncedSearch('')}
+                            onValueChange={setDraft}
+                            onDebouncedChange={applySearch}
+                            onSubmit={applySearch}
+                            onClear={() => applySearch('')}
                         />
                     </SidebarHeader>
                     <SidebarContent>
@@ -100,12 +103,12 @@ export default function TypeMappingsList() {
                                     <div className='px-4 py-2 text-sm text-muted-foreground flex items-center gap-2'>
                                         <Spinner className='size-4' /> Loading...
                                     </div>
-                                ) : mappingTypes.length === 0 ? (
+                                ) : mappings.length === 0 ? (
                                     <div className='p-2'>
                                         <Empty className='border-0 p-3'>
                                             <EmptyHeader className='max-w-none gap-0'>
                                                 <EmptyDescription>
-                                                    {searchQuery
+                                                    {draft
                                                         ? 'No mappings match your search'
                                                         : 'No type mappings found'}
                                                 </EmptyDescription>
@@ -113,16 +116,14 @@ export default function TypeMappingsList() {
                                         </Empty>
                                     </div>
                                 ) : (
-                                    mappingTypes.map((mapping) => (
-                                        <SidebarMenuItem key={mapping.class_name}>
+                                    mappings.map((item) => (
+                                        <SidebarMenuItem key={item.class_name}>
                                             <SidebarMenuButton
-                                                isActive={tab === mapping.class_name}
-                                                onClick={() =>
-                                                    handleMappingClick(mapping)
-                                                }
-                                                tooltip={startCase(mapping.name)}
+                                                isActive={tab === item.class_name}
+                                                onClick={() => selectItem(item)}
+                                                tooltip={startCase(item.name)}
                                             >
-                                                <span>{startCase(mapping.name)}</span>
+                                                <span>{startCase(item.name)}</span>
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
                                     ))
@@ -132,12 +133,11 @@ export default function TypeMappingsList() {
                     </SidebarContent>
                 </Sidebar>
 
-                {/* Main Content Area */}
                 <div className='flex-1 flex flex-col'>
-                    {selectedMapping ? (
+                    {activeMapping ? (
                         <TypeMappingsEditor
                             id={tab!}
-                            name={selectedMapping.name || tab!}
+                            name={activeMapping.name || tab!}
                             onSave={() => {
                                 queryClient.invalidateQueries({
                                     queryKey: ['typeMappings'],

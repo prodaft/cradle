@@ -40,7 +40,7 @@ import React, {
 } from 'react';
 import SearchFilterSection from './search-filter';
 
-type SearchResultEntry = components['schemas']['EntryResponse'];
+type EntryResult = components['schemas']['EntryResponse'];
 
 /**
  * SearchDialog component props
@@ -52,9 +52,9 @@ interface SearchDialogProps {
     onClose: () => void;
 }
 
-interface SearchState {
-    query: string;
-    filters: string[];
+interface AppliedSearch {
+    term: string;
+    subtypes: string[];
     page: number;
     pageSize: number;
 }
@@ -73,57 +73,61 @@ export default function SearchDialog({
     isOpen,
     onClose,
 }: SearchDialogProps): React.JSX.Element {
-    const [searchQuery, setSearchQuery] = useState('');
+    const [draft, setDraft] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
-    const [entrySubtypeFilters, setEntrySubtypeFilters] = useState<string[]>([]);
-    const [ready, setReady] = useState(false);
-    const [searchState, setSearchState] = useState<SearchState>({
-        query: '',
-        filters: [],
+    const [selectedSubtypes, setSelectedSubtypes] = useState<string[]>([]);
+    const [isReady, setIsReady] = useState(false);
+    const [appliedSearch, setAppliedSearch] = useState<AppliedSearch>({
+        term: '',
+        subtypes: [],
         page: 1,
         pageSize: 10,
     });
 
     const router = useRouter();
 
-    const entryClassesQuery = useNdjsonQuery({
+    const { data: entryClasses = [] } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'search-command'],
         enabled: isOpen,
         staleTime: 5 * 60_000,
     });
 
-    const entrySubtypes = useMemo(
-        () => [...new Set((entryClassesQuery.data ?? []).map((c) => c.subtype))],
-        [entryClassesQuery.data],
+    const subtypes = useMemo(
+        () => [...new Set(entryClasses.map((c) => c.subtype))],
+        [entryClasses],
     );
 
-    const entryClassColors = useMemo(() => {
-        const colorMap = new Map<string, string>();
-        (entryClassesQuery.data ?? []).forEach((ec) => {
+    const colors = useMemo(() => {
+        const map = new Map<string, string>();
+        entryClasses.forEach((ec) => {
             if (ec.color) {
-                colorMap.set(ec.subtype, ec.color);
+                map.set(ec.subtype, ec.color);
                 const parts = ec.subtype.split('/');
                 if (parts.length > 1) {
-                    colorMap.set(parts[parts.length - 1], ec.color);
+                    map.set(parts[parts.length - 1], ec.color);
                 }
             }
         });
-        return colorMap;
-    }, [entryClassesQuery.data]);
+        return map;
+    }, [entryClasses]);
 
-    const searchResults = useQuery({
-        queryKey: ['search', searchState] as const,
+    const {
+        data: searchResults,
+        isFetching,
+        isFetched,
+    } = useQuery({
+        queryKey: ['search', appliedSearch] as const,
         queryFn: async () => {
-            const trimmed = searchState.query.trim();
-            if (searchState.filters.length === 0) {
+            const trimmed = appliedSearch.term.trim();
+            if (appliedSearch.subtypes.length === 0) {
                 const { data, error, response } = await fetchClient.GET(
                     '/query/advanced/',
                     {
                         params: {
                             query: {
-                                page: searchState.page,
-                                page_size: searchState.pageSize,
+                                page: appliedSearch.page,
+                                page_size: appliedSearch.pageSize,
                                 ...(trimmed ? { query: [trimmed] } : {}),
                                 wildcard: true,
                             },
@@ -134,11 +138,11 @@ export default function SearchDialog({
                 return data;
             }
             const listQuery = {
-                page: searchState.page,
-                page_size: searchState.pageSize,
+                page: appliedSearch.page,
+                page_size: appliedSearch.pageSize,
                 ...(trimmed ? { name: trimmed } : {}),
-                ...(searchState.filters.length > 0
-                    ? { subtype: searchState.filters }
+                ...(appliedSearch.subtypes.length > 0
+                    ? { subtype: appliedSearch.subtypes }
                     : {}),
             } as NonNullable<operations['query_list']['parameters']['query']>;
             const { data, error, response } = await fetchClient.GET('/query/', {
@@ -147,60 +151,59 @@ export default function SearchDialog({
             if (error) throw { response, error };
             return data;
         },
-        enabled: isOpen && ready,
+        enabled: isOpen && isReady,
         meta: { showErrorToast: true },
     });
 
-    const results = searchResults.data?.results ?? [];
-    const hasResults = results.length > 0;
-    const totalPages = Math.max(1, searchResults.data?.total_pages ?? 1);
-    const { page, pageSize } = searchState;
+    const rows = searchResults?.results ?? [];
+    const totalPages = Math.max(1, searchResults?.total_pages ?? 1);
+    const { page, pageSize } = appliedSearch;
 
-    const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    const applyOnEnter = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            setSearchState((prev) => ({
+            setAppliedSearch((prev) => ({
                 ...prev,
-                query: searchQuery,
-                filters: entrySubtypeFilters,
+                term: draft,
+                subtypes: selectedSubtypes,
                 page: 1,
             }));
         }
     };
 
-    const handleSelectResult = useCallback(
-        (result: SearchResultEntry) => {
+    const openEntry = useCallback(
+        (item: EntryResult) => {
             onClose();
             router.navigate({
                 to: '/dashboards/$subtype/$name',
                 params: {
-                    subtype: result.subtype,
-                    name: result.name,
+                    subtype: item.subtype,
+                    name: item.name,
                 },
             });
         },
         [onClose, router],
     );
 
-    const setPage = (p: number) => setSearchState((prev) => ({ ...prev, page: p }));
+    const goToPage = (p: number) => setAppliedSearch((prev) => ({ ...prev, page: p }));
 
-    const setPageSize = (size: number) =>
-        setSearchState((prev) => ({ ...prev, pageSize: size, page: 1 }));
+    const changePageSize = (size: number) =>
+        setAppliedSearch((prev) => ({ ...prev, pageSize: size, page: 1 }));
 
     useEffect(() => {
         if (isOpen) {
-            setSearchQuery('');
-            setEntrySubtypeFilters([]);
-            setSearchState((prev) => ({
-                query: '',
-                filters: [],
+            setDraft('');
+            setSelectedSubtypes([]);
+            setAppliedSearch((prev) => ({
+                term: '',
+                subtypes: [],
                 page: 1,
                 pageSize: prev.pageSize,
             }));
-            setReady(true);
+            setIsReady(true);
             requestAnimationFrame(() => inputRef.current?.focus());
         } else {
-            setReady(false);
+            setIsReady(false);
         }
     }, [isOpen]);
 
@@ -219,37 +222,33 @@ export default function SearchDialog({
                     <CommandInput
                         ref={inputRef}
                         placeholder='Search entries...'
-                        value={searchQuery}
-                        onValueChange={setSearchQuery}
-                        onKeyDown={handleKeyDown}
+                        value={draft}
+                        onValueChange={setDraft}
+                        onKeyDown={applyOnEnter}
                     />
 
                     <SearchFilterSection
-                        entrySubtypes={entrySubtypes}
-                        entrySubtypeFilters={entrySubtypeFilters}
-                        setEntrySubtypeFilters={setEntrySubtypeFilters}
-                        entryClassColors={entryClassColors}
+                        subtypes={subtypes}
+                        selectedSubtypes={selectedSubtypes}
+                        setSelectedSubtypes={setSelectedSubtypes}
+                        colors={colors}
                     />
 
                     <ScrollArea className='min-h-0 flex-1 max-h-[50vh]'>
                         <CommandList className='max-h-none'>
-                            {searchResults.isFetching ? (
+                            {isFetching ? (
                                 <div className='flex items-center justify-center py-6'>
                                     <Spinner />
                                 </div>
-                            ) : hasResults ? (
+                            ) : rows.length > 0 ? (
                                 <CommandGroup>
-                                    {results.map((result) => {
-                                        const color = entryClassColors.get(
-                                            result.subtype,
-                                        );
+                                    {rows.map((item) => {
+                                        const color = colors.get(item.subtype);
                                         return (
                                             <CommandItem
-                                                key={`${result.subtype}:${result.id ?? result.name}`}
-                                                value={`${result.subtype}:${result.id ?? result.name}`}
-                                                onSelect={() =>
-                                                    handleSelectResult(result)
-                                                }
+                                                key={`${item.subtype}:${item.id ?? item.name}`}
+                                                value={`${item.subtype}:${item.id ?? item.name}`}
+                                                onSelect={() => openEntry(item)}
                                             >
                                                 {color && (
                                                     <span
@@ -259,17 +258,17 @@ export default function SearchDialog({
                                                         }}
                                                     />
                                                 )}
-                                                {result.name}
-                                                {result.subtype && (
+                                                {item.name}
+                                                {item.subtype && (
                                                     <CommandShortcut>
-                                                        {result.subtype}
+                                                        {item.subtype}
                                                     </CommandShortcut>
                                                 )}
                                             </CommandItem>
                                         );
                                     })}
                                 </CommandGroup>
-                            ) : searchResults.isFetched ? (
+                            ) : isFetched ? (
                                 <CommandEmpty>No results found.</CommandEmpty>
                             ) : null}
                         </CommandList>
@@ -285,11 +284,11 @@ export default function SearchDialog({
                                 <Kbd>esc</Kbd> close
                             </span>
                         </div>
-                        {hasResults && (
+                        {rows.length > 0 && (
                             <div className='flex items-center gap-1'>
                                 <Select
                                     value={`${pageSize}`}
-                                    onValueChange={(v) => setPageSize(Number(v))}
+                                    onValueChange={(v) => changePageSize(Number(v))}
                                 >
                                     <SelectTrigger className='h-4 w-auto gap-0.5 border-0 px-1 text-[10px] shadow-none focus:ring-0'>
                                         <SelectValue />
@@ -310,7 +309,7 @@ export default function SearchDialog({
                                             className='size-4'
                                             aria-label='First page'
                                             disabled={page <= 1}
-                                            onClick={() => setPage(1)}
+                                            onClick={() => goToPage(1)}
                                         >
                                             <ChevronsLeft className='size-2.5' />
                                         </Button>
@@ -320,7 +319,7 @@ export default function SearchDialog({
                                             className='size-4'
                                             aria-label='Previous page'
                                             disabled={page <= 1}
-                                            onClick={() => setPage(page - 1)}
+                                            onClick={() => goToPage(page - 1)}
                                         >
                                             <ChevronLeft className='size-2.5' />
                                         </Button>
@@ -333,7 +332,7 @@ export default function SearchDialog({
                                             className='size-4'
                                             aria-label='Next page'
                                             disabled={page >= totalPages}
-                                            onClick={() => setPage(page + 1)}
+                                            onClick={() => goToPage(page + 1)}
                                         >
                                             <ChevronRight className='size-2.5' />
                                         </Button>
@@ -343,7 +342,7 @@ export default function SearchDialog({
                                             className='size-4'
                                             aria-label='Last page'
                                             disabled={page >= totalPages}
-                                            onClick={() => setPage(totalPages)}
+                                            onClick={() => goToPage(totalPages)}
                                         >
                                             <ChevronsRight className='size-2.5' />
                                         </Button>

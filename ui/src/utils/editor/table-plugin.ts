@@ -3,10 +3,9 @@ import { EditorState, Range, StateField } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, WidgetType } from '@codemirror/view';
 import type { NavigateOptions } from '@tanstack/react-router';
 import DOMPurify from 'dompurify';
-import MarkdownIt from 'markdown-it';
+import MarkdownIt, { type MarkdownIt as MarkdownItInstance } from 'markdown-it';
 
-// Extend MarkdownIt type to include custom properties
-interface MarkdownItWithHandlers extends MarkdownIt {
+interface MarkdownItWithHandlers extends MarkdownItInstance {
     cradleLinkHandlers?: Array<{
         linkId: string;
         url: string;
@@ -23,11 +22,9 @@ function cradleLinksPlugin(
     entryColors: Map<string, string>,
     navigate: (url: string, options?: NavigateOptions) => void,
 ) {
-    // Inline rule for cradle links
     md.inline.ruler.before('link', 'cradle_link', (state, silent) => {
         const start = state.pos;
 
-        // Check if we start with [[
         if (
             state.src.charCodeAt(start) !== 0x5b ||
             state.src.charCodeAt(start + 1) !== 0x5b
@@ -35,7 +32,6 @@ function cradleLinksPlugin(
             return false;
         }
 
-        // Try to match the full pattern: [[type:value|alias]]@timestamp
         const match = state.src
             .substring(start)
             .match(/^\[\[([^:\]]+):([^\]|]+)(?:\|([^\]]+))?\]\](?:@(\S+))?/);
@@ -59,7 +55,6 @@ function cradleLinksPlugin(
         return true;
     });
 
-    // Renderer for cradle links
     md.renderer.rules.cradle_link = (tokens, idx) => {
         const token = tokens[idx];
         if (!token?.meta) return '';
@@ -73,8 +68,7 @@ function cradleLinksPlugin(
         const displayText = alias || value;
         const url = `/dashboards/${encodeURIComponent(linkType)}/${encodeURIComponent(value)}/`;
 
-        // Create a unique class name for this link
-        const linkId = `cradle-link-${Math.random().toString(36).substr(2, 9)}`;
+        const linkId = `cradle-link-${Math.random().toString(36).slice(2, 11)}`;
 
         let html = `<span class="${linkId}" style="color: ${color}; text-decoration: underline; cursor: pointer;">${md.utils.escapeHtml(displayText)}</span>`;
 
@@ -82,7 +76,6 @@ function cradleLinksPlugin(
             html += `<span style="color: ${color}; font-size: 0.85em; opacity: 0.7; margin-left: 0.2em;">@${md.utils.escapeHtml(timestamp)}</span>`;
         }
 
-        // Store the navigation handler for later attachment
         if (!md.cradleLinkHandlers) {
             md.cradleLinkHandlers = [];
         }
@@ -155,7 +148,6 @@ class TableWidget extends WidgetType {
         table.style.margin = '0';
         table.style.borderCollapse = 'collapse';
 
-        // Create markdown-it instance with cradle links plugin
         const md = new MarkdownIt({
             html: false,
             linkify: true,
@@ -163,7 +155,6 @@ class TableWidget extends WidgetType {
         md.cradleLinkHandlers = [];
         cradleLinksPlugin(md, this.entryColors, this.navigate);
 
-        // Create header
         if (this.headers.length > 0) {
             const thead = document.createElement('thead');
             const headerRow = document.createElement('tr');
@@ -185,7 +176,6 @@ class TableWidget extends WidgetType {
             table.appendChild(thead);
         }
 
-        // Create body
         if (this.rows.length > 0) {
             const tbody = document.createElement('tbody');
 
@@ -213,7 +203,6 @@ class TableWidget extends WidgetType {
 
         wrapper.appendChild(table);
 
-        // Attach event handlers for cradle links
         if (md.cradleLinkHandlers && md.cradleLinkHandlers.length > 0) {
             requestAnimationFrame(() => {
                 md.cradleLinkHandlers!.forEach(({ linkId, url, navigate }) => {
@@ -274,10 +263,8 @@ function parseTable(text: string): {
         .filter((h) => h.trim())
         .map((h) => h.trim());
 
-    // Parse alignment from delimiter row
     const alignments = parseAlignment(delimiterLine);
 
-    // Parse body rows
     const rows: string[][] = [];
     for (let i = 2; i < lines.length; i++) {
         const line = lines[i];
@@ -303,7 +290,6 @@ function buildTableDecorations(
     entryColors: Map<string, string>,
     navigate: (url: string, options?: NavigateOptions) => void,
 ): DecorationSet {
-    // Don't render widgets in source mode
     if (sourceMode) {
         return Decoration.none;
     }
@@ -321,7 +307,6 @@ function buildTableDecorations(
                 const from = node.from;
                 const to = node.to;
 
-                // Don't render widget if cursor is inside the table
                 if (cursorPos >= from && cursorPos <= to) {
                     return;
                 }

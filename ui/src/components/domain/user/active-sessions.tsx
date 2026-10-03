@@ -1,4 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
+import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
 import TableActionsButton from '@/components/base/table-actions-button';
 import {
     ActionBar,
@@ -28,7 +28,7 @@ import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { TrashIcon } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
     ColumnDef,
@@ -38,14 +38,13 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { useCallback, useMemo, useState, type MouseEvent } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 interface ActiveSessionsProps {
     userId: string;
 }
 
-/** Maps react-table accessorKeys (snake_case) to the API's order_by fields. */
 const COLUMN_TO_FIELD: Record<string, string> = {
     device_info: 'device_info',
     ip_address: 'ip_address',
@@ -62,25 +61,22 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ strict: false });
-    const searchAny = search as any;
-    const page = Number(searchAny?.sessions_page ?? 1) || 1;
-    const pageSize = Number(searchAny?.sessions_pagesize ?? 10) || 10;
+    const search = useSearch({ strict: false }) as any;
+    const page = Number(search?.sessions_page ?? 1) || 1;
+    const pageSize = Number(search?.sessions_pagesize ?? 10) || 10;
 
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchQuery, setSearchQuery] = useState('');
+    const [appliedSearch, setAppliedSearch] = useState('');
     const [sorting, setSorting] = useState<SortingState>([]);
-    const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
-    const [revokeSessionId, setRevokeSessionId] = useState<string | null>(null);
-    const [bulkRevokeDialogOpen, setBulkRevokeDialogOpen] = useState(false);
+    const [isRevokeOpen, setIsRevokeOpen] = useState(false);
+    const [pendingRevokeIds, setPendingRevokeIds] = useState<string[]>([]);
     const { logOut } = useAuthActions();
-    const queryClient = useQueryClient();
 
     const clearSelection = useCallback(() => {
         setRowSelection({});
     }, []);
 
-    const orderByParam = useMemo(() => {
+    const orderBy = useMemo(() => {
         if (!sorting.length) return undefined;
         return (
             sorting
@@ -94,50 +90,38 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         );
     }, [sorting]);
 
-    // Query for sessions (paginated)
-    const sessionsQuery = useMemo(
+    const listQuery = useMemo(
         () => ({
             page,
             page_size: pageSize,
-            ...(searchQuery ? { search: searchQuery } : {}),
-            ...(orderByParam ? { order_by: orderByParam } : {}),
+            ...(appliedSearch ? { search: appliedSearch } : {}),
+            ...(orderBy ? { order_by: orderBy } : {}),
         }),
-        [searchQuery, orderByParam, page, pageSize],
+        [appliedSearch, orderBy, page, pageSize],
     );
 
-    const sessionsInit = useMemo(
-        () => ({
-            params: {
-                path: { user_id: userId },
-                query: sessionsQuery,
-            },
-        }),
-        [userId, sessionsQuery],
-    );
-    const { data: sessionsResponse, isPending } = $api.useQuery(
+    const { data: sessions, isPending } = $api.useQuery(
         'get',
         '/users/{user_id}/sessions/',
-        sessionsInit,
+        {
+            params: {
+                path: { user_id: userId },
+                query: listQuery,
+            },
+        },
     );
-    type UserSession = components['schemas']['UserSession'];
-    const sessionsResponseData = sessionsResponse as
-        | { results?: UserSession[]; total_pages?: number; count?: number }
-        | undefined;
-    const sessions: UserSession[] = useMemo(
-        () => sessionsResponseData?.results ?? [],
-        [sessionsResponseData],
-    );
+    type SessionRow = components['schemas']['UserSession'];
+    const rows: SessionRow[] = useMemo(() => sessions?.results ?? [], [sessions]);
 
-    const selectedSessionIds = useMemo(
+    const checkedIds = useMemo(
         () =>
             Object.keys(rowSelection)
                 .filter((key) => rowSelection[key])
-                .filter((id) => sessions.some((s) => s.id === id)),
-        [rowSelection, sessions],
+                .filter((id) => rows.some((row) => row.id === id)),
+        [rowSelection, rows],
     );
 
-    // Revoke session mutation
-    const revokeSessionMutation = useMutation({
+    const { mutateAsync: revokeSession } = useMutation({
         mutationFn: async (sessionId: string) => {
             const { data, error, response } = await fetchClient.DELETE(
                 '/users/{user_id}/sessions/{session_id}/',
@@ -148,57 +132,32 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         },
         meta: {
             invalidateQueries: [{ queryKey: ['get', '/users/{user_id}/sessions/'] }],
-            successMessage: 'Session revoked successfully',
+            suppressNotification: true,
         },
     });
 
-    const revokeSession = useCallback(
-        async (sessionId: string) => {
+    const revoke = useCallback(
+        async (targetIds: string[]) => {
             try {
-                await revokeSessionMutation.mutateAsync(sessionId);
-
-                const session = sessions.find((s) => s.id === sessionId);
-
-                if (session?.is_current) {
-                    // Clear tokens and log out
-                    logOut();
-                } else {
-                    setRowSelection((prev) => {
-                        const next = { ...prev };
-                        delete next[sessionId];
-                        return next;
-                    });
-                }
-            } catch {
-                // Error already handled by mutation meta/toasts
-            }
-        },
-        [sessions, revokeSessionMutation, logOut],
-    );
-
-    const revokeSessions = useCallback(
-        async (sessionIds: string[]) => {
-            try {
-                const revokePromises = sessionIds.map(async (sessionId) => {
-                    const { data, error, response } = await fetchClient.DELETE(
-                        '/users/{user_id}/sessions/{session_id}/',
-                        {
-                            params: {
-                                path: { user_id: userId, session_id: sessionId },
-                            },
-                        },
-                    );
-                    if (error) throw { response, error };
-                    return data;
-                });
-
-                const results = await Promise.allSettled(revokePromises);
-                const successes = results.filter(
-                    (r) => r.status === 'fulfilled',
-                ).length;
+                const results = await Promise.allSettled(
+                    targetIds.map((id) => revokeSession(id)),
+                );
+                const succeededIds = targetIds.filter(
+                    (_, i) => results[i]?.status === 'fulfilled',
+                );
+                const successes = succeededIds.length;
                 const failures = results.length - successes;
 
-                if (failures === 0) {
+                if (targetIds.length === 1) {
+                    if (failures === 0) {
+                        toast.success('Session revoked successfully');
+                    } else {
+                        const parsed = await parseAPIError(
+                            (results[0] as PromiseRejectedResult).reason,
+                        );
+                        toast.error(getDisplayMessage(parsed));
+                    }
+                } else if (failures === 0) {
                     toast.success(
                         `Successfully revoked ${successes} session${successes > 1 ? 's' : ''}`,
                     );
@@ -214,35 +173,35 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     );
                 }
 
-                const revokedSessions = sessions.filter((s) =>
-                    sessionIds.includes(s.id || ''),
+                if (successes === 0) return;
+
+                const revoked = rows.filter((row) =>
+                    succeededIds.includes(row.id || ''),
                 );
-                const isCurrentSessionRevoked = revokedSessions.some(
-                    (s) => s.is_current,
-                );
+                const isCurrentSessionRevoked = revoked.some((row) => row.is_current);
 
                 if (isCurrentSessionRevoked) {
                     logOut();
                 } else {
-                    queryClient.invalidateQueries({
-                        queryKey: ['get', '/users/{user_id}/sessions/'],
+                    setRowSelection((prev) => {
+                        const next = { ...prev };
+                        for (const id of succeededIds) delete next[id];
+                        return next;
                     });
-                    clearSelection();
                 }
             } catch (error) {
                 const parsed = await parseAPIError(error);
                 toast.error(getDisplayMessage(parsed));
             }
         },
-        [userId, sessions, queryClient, logOut, clearSelection],
+        [rows, logOut, revokeSession],
     );
 
-    const openRevokeConfirmationDialog = useCallback((sessionId: string) => {
-        setRevokeSessionId(sessionId);
-        setRevokeDialogOpen(true);
+    const confirmRevoke = useCallback((target: string | string[]) => {
+        const list = Array.isArray(target) ? target : [target];
+        setPendingRevokeIds(list);
+        setIsRevokeOpen(true);
     }, []);
-
-    // Query automatically fetches on mount and when dependencies change
 
     const formatDate = useCallback((date: Date | string | undefined): string => {
         if (!date) return '';
@@ -252,71 +211,72 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
 
     const formatDeviceInfo = useCallback((deviceInfo: string | null): string => {
         if (!deviceInfo) return 'Unknown device';
-        // Truncate long device info
         return deviceInfo.length > 50
             ? deviceInfo.substring(0, 50) + '...'
             : deviceInfo;
     }, []);
 
-    // Total pages from API (server-side pagination)
-    const totalPages = Math.max(1, sessionsResponseData?.total_pages ?? 1);
+    const totalPages = Math.max(1, sessions?.total_pages ?? 1);
 
-    // Sessions are already paginated by the API
-    const paginatedSessions = sessions;
-
-    const handlePageChange = useCallback(
-        (newPage: number) => {
+    const goTo = useCallback(
+        (target: number) => {
             router.navigate({
                 to: location.pathname as any,
-                search: { ...searchAny, sessions_page: String(newPage) },
+                search: ((prev: any) => ({
+                    ...prev,
+                    sessions_page: String(target),
+                })) as any,
                 replace: true,
             });
         },
-        [searchAny, router, location.pathname],
+        [router, location.pathname],
     );
 
-    // Handle sorting change
-    const handleSortingChange = useCallback(
-        (newSorting: SortingState) => {
-            setSorting(newSorting);
-            handlePageChange(1);
+    const applySearch = useCallback(
+        (value: string) => {
+            setAppliedSearch(value);
+            goTo(1);
         },
-        [handlePageChange],
+        [goTo],
     );
 
-    const handlePageSizeChange = useCallback(
-        (newSize: number) => {
+    const sort = useCallback(
+        (next: SortingState) => {
+            setSorting(next);
+            goTo(1);
+        },
+        [goTo],
+    );
+
+    const changePageSize = useCallback(
+        (size: number) => {
             router.navigate({
                 to: location.pathname as any,
                 search: {
-                    ...searchAny,
-                    sessions_pagesize: String(newSize),
+                    ...search,
+                    sessions_pagesize: String(size),
                     sessions_page: '1',
                 },
                 replace: true,
             });
         },
-        [searchAny, router, location.pathname],
+        [search, router, location.pathname],
     );
 
-    // Handle pagination changes from DataTable
-    const handlePaginationChange = useCallback(
-        (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+    const paginate = useCallback(
+        (pageIndex: number, size: number) => {
+            const target = pageIndex + 1;
 
-            // Handle page size change
-            if (newPageSize !== pageSize) {
-                handlePageSizeChange(newPageSize);
-            }
-            // Handle page change
-            else if (newPage !== page) {
-                handlePageChange(newPage);
+            if (size !== pageSize) {
+                changePageSize(size);
+            } else if (target !== page) {
+                goTo(target);
             }
         },
-        [page, pageSize, handlePageChange, handlePageSizeChange],
+        [page, pageSize, goTo, changePageSize],
     );
 
-    const columns = useMemo<ColumnDef<NonNullable<typeof sessions>[number]>[]>(
+    const columns = useMemo<ColumnDef<SessionRow>[]>(
         () => [
             {
                 id: 'select',
@@ -348,17 +308,18 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             },
             {
                 accessorKey: 'device_info',
+                meta: { label: 'Device' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Device' />
                 ),
                 cell: ({ row }) => {
-                    const session = row.original;
+                    const item = row.original;
                     return (
                         <div className='flex items-center gap-2'>
                             <span className='text-sm'>
-                                {formatDeviceInfo(session.device_info || null)}
+                                {formatDeviceInfo(item.device_info || null)}
                             </span>
-                            {session.is_current && (
+                            {item.is_current && (
                                 <Badge variant='default' className='text-xs'>
                                     Current
                                 </Badge>
@@ -369,56 +330,69 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             },
             {
                 accessorKey: 'ip_address',
+                meta: { label: 'IP Address' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='IP Address' />
                 ),
                 cell: ({ row }) => {
-                    const ip = row.original.ip_address;
+                    const item = row.original;
                     return (
                         <span className='text-sm text-muted-foreground'>
-                            {ip || '-'}
+                            {item.ip_address || '-'}
                         </span>
                     );
                 },
             },
             {
                 accessorKey: 'created_at',
+                meta: { label: 'Created' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Created' />
                 ),
-                cell: ({ row }) => (
-                    <span className='text-sm text-muted-foreground'>
-                        {formatDate(row.original.created_at)}
-                    </span>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <span className='text-sm text-muted-foreground'>
+                            {formatDate(item.created_at)}
+                        </span>
+                    );
+                },
             },
             {
                 accessorKey: 'last_activity',
+                meta: { label: 'Last Activity' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Last Activity' />
                 ),
-                cell: ({ row }) => (
-                    <span className='text-sm text-muted-foreground'>
-                        {formatDate(row.original.last_activity)}
-                    </span>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <span className='text-sm text-muted-foreground'>
+                            {formatDate(item.last_activity)}
+                        </span>
+                    );
+                },
             },
             {
                 accessorKey: 'expires_at',
+                meta: { label: 'Expires' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Expires' />
                 ),
-                cell: ({ row }) => (
-                    <span className='text-sm text-muted-foreground'>
-                        {formatDate(row.original.expires_at)}
-                    </span>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <span className='text-sm text-muted-foreground'>
+                            {formatDate(item.expires_at)}
+                        </span>
+                    );
+                },
             },
             {
                 id: 'actions',
                 header: '',
                 cell: ({ row }) => {
-                    const session = row.original;
+                    const item = row.original;
                     return (
                         <div
                             className='w-12 text-right'
@@ -429,10 +403,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                                     <DropdownMenuItem
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            const sessionId = session.id;
-                                            if (sessionId) {
-                                                openRevokeConfirmationDialog(sessionId);
-                                            }
+                                            if (item.id) confirmRevoke(item.id);
                                         }}
                                         variant='destructive'
                                     >
@@ -447,11 +418,11 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 enableSorting: false,
             },
         ],
-        [openRevokeConfirmationDialog, formatDate, formatDeviceInfo],
+        [confirmRevoke, formatDate, formatDeviceInfo],
     );
 
     const table = useReactTable({
-        data: paginatedSessions,
+        data: rows,
         columns,
         state: {
             rowSelection,
@@ -464,15 +435,13 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         getRowId: (row, index) => row.id ?? String(index),
         onRowSelectionChange: setRowSelection,
         onSortingChange: (updater) => {
-            const newSorting =
-                typeof updater === 'function' ? updater(sorting) : updater;
-            handleSortingChange(newSorting);
+            const next = typeof updater === 'function' ? updater(sorting) : updater;
+            sort(next);
         },
         onPaginationChange: (updater) => {
-            const currentPagination = { pageIndex: page - 1, pageSize };
-            const nextPagination =
-                typeof updater === 'function' ? updater(currentPagination) : updater;
-            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+            const current = { pageIndex: page - 1, pageSize };
+            const next = typeof updater === 'function' ? updater(current) : updater;
+            paginate(next.pageIndex, next.pageSize);
         },
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
@@ -481,52 +450,40 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         pageCount: totalPages,
     });
 
-    const handleBulkRevoke = useCallback(
-        (event: MouseEvent<HTMLButtonElement>) => {
-            event.preventDefault();
-            if (selectedSessionIds.length > 0) {
-                setBulkRevokeDialogOpen(true);
-            }
-        },
-        [selectedSessionIds],
-    );
+    const revokeCount = pendingRevokeIds.length;
+    const targetSession = rows.find((row) => row.id === pendingRevokeIds[0]);
+    const isCurrentSession = targetSession?.is_current;
 
     return (
         <div className='w-full space-y-4'>
             <DataTable table={table} showViewOptions isLoading={isPending}>
                 <ActionBarSearch
                     placeholder='Search sessions...'
-                    value={searchQuery}
+                    value={appliedSearch}
                     debounceMs={300}
-                    onDebouncedChange={(v) => {
-                        setSearchQuery(v);
-                        handlePageChange(1);
-                    }}
-                    onSubmit={(v) => {
-                        setSearchQuery(v);
-                        handlePageChange(1);
-                    }}
-                    onClear={() => {
-                        setSearchQuery('');
-                        handlePageChange(1);
-                    }}
+                    onDebouncedChange={applySearch}
+                    onSubmit={applySearch}
+                    onClear={() => applySearch('')}
                 />
             </DataTable>
             <ActionBar
-                open={selectedSessionIds.length > 0}
+                open={checkedIds.length > 0}
                 onOpenChange={(open) => {
                     if (!open) clearSelection();
                 }}
             >
                 <ActionBarSelection>
-                    {selectedSessionIds.length} session
-                    {selectedSessionIds.length !== 1 ? 's' : ''} selected
+                    {checkedIds.length} session
+                    {checkedIds.length !== 1 ? 's' : ''} selected
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
                     <ActionBarItem
-                        onClick={handleBulkRevoke}
-                        disabled={isPending || selectedSessionIds.length === 0}
+                        onClick={(event) => {
+                            event.preventDefault();
+                            if (checkedIds.length > 0) confirmRevoke(checkedIds);
+                        }}
+                        disabled={isPending || checkedIds.length === 0}
                         className='text-destructive'
                     >
                         <TrashIcon size={18} weight='bold' />
@@ -538,59 +495,16 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     Clear
                 </ActionBarClose>
             </ActionBar>
-            {revokeSessionId !== null &&
-                (() => {
-                    const session = sessions.find((s) => s.id === revokeSessionId);
-                    const isCurrentSession = session?.is_current;
-                    return (
-                        <AlertDialog
-                            open={revokeDialogOpen}
-                            onOpenChange={(open) => {
-                                setRevokeDialogOpen(open);
-                                if (!open) setRevokeSessionId(null);
-                            }}
-                        >
-                            <AlertDialogContent className='sm:max-w-md'>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Confirm Action</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        {isCurrentSession
-                                            ? 'Are you sure you want to revoke this session? This is your current session and you will be logged out immediately.'
-                                            : 'Are you sure you want to revoke this session? The device will be signed out and will need to sign in again.'}
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel variant='outline' size='sm'>
-                                        Cancel
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction
-                                        variant='default'
-                                        size='sm'
-                                        onClick={() => {
-                                            if (revokeSessionId)
-                                                revokeSession(revokeSessionId);
-                                        }}
-                                    >
-                                        Confirm
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    );
-                })()}
-            <AlertDialog
-                open={bulkRevokeDialogOpen}
-                onOpenChange={setBulkRevokeDialogOpen}
-            >
+            <AlertDialog open={isRevokeOpen} onOpenChange={setIsRevokeOpen}>
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Action</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to revoke {selectedSessionIds.length}{' '}
-                            session
-                            {selectedSessionIds.length > 1 ? 's' : ''}? The device
-                            {selectedSessionIds.length > 1 ? 's' : ''} will be signed
-                            out and will need to sign in again.
+                            {revokeCount === 1
+                                ? isCurrentSession
+                                    ? 'Are you sure you want to revoke this session? This is your current session and you will be logged out immediately.'
+                                    : 'Are you sure you want to revoke this session? The device will be signed out and will need to sign in again.'
+                                : `Are you sure you want to revoke ${revokeCount} sessions? The devices will be signed out and will need to sign in again.`}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -600,7 +514,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                         <AlertDialogAction
                             variant='default'
                             size='sm'
-                            onClick={() => revokeSessions(selectedSessionIds)}
+                            onClick={() => revoke(pendingRevokeIds)}
                         >
                             Confirm
                         </AlertDialogAction>

@@ -39,12 +39,7 @@ export default function NoteGraphSearch(
         });
         const lastAppliedFetchAtRef = useRef<number>(0);
 
-        // Query for note graph data
-        const {
-            data: graphData,
-            isPending,
-            dataUpdatedAt,
-        } = $api.useQuery(
+        const { data, isPending, dataUpdatedAt } = $api.useQuery(
             'get',
             '/notes/{note_id}/graph/',
             { params: { path: { note_id: noteId } } },
@@ -60,33 +55,31 @@ export default function NoteGraphSearch(
             onLoadingChange?.(isPending);
         }, [isPending, onLoadingChange]);
 
-        // Process graph data when it loads (re-run on refetch / new dataUpdatedAt)
         useEffect(() => {
-            if (!graphData || dataUpdatedAt === 0) return;
+            if (!data || dataUpdatedAt === 0) return;
             if (lastAppliedFetchAtRef.current === dataUpdatedAt) return;
             lastAppliedFetchAtRef.current = dataUpdatedAt;
 
             try {
-                const { entries, relations, colors } = graphData;
+                const { entries, relations, colors } = data;
 
-                // Process nodes and edges together to avoid race conditions
                 let nodes: Node[] = [];
-                let hasData = false;
+                let hasGraphData = false;
 
                 if (entries) {
                     try {
                         const flattenedEntries = LinkTreeFlattener.flatten(entries);
 
                         if (flattenedEntries && flattenedEntries.length > 0) {
-                            const byId = new Map<string, Node>();
+                            const nodesById = new Map<string, Node>();
                             for (const e of flattenedEntries) {
                                 const id = e.id != null ? String(e.id) : '';
-                                if (!id || byId.has(id)) continue;
+                                if (!id || nodesById.has(id)) continue;
                                 const label =
                                     e.subtype === 'note'
                                         ? `note: ${e.name || 'untitled'}`
                                         : `${e.subtype}: ${e.name || e.id}`;
-                                byId.set(id, {
+                                nodesById.set(id, {
                                     id,
                                     degree: e.degree,
                                     type: e.type || e.subtype,
@@ -99,8 +92,8 @@ export default function NoteGraphSearch(
                                     location: e.location,
                                 });
                             }
-                            nodes = Array.from(byId.values());
-                            if (nodes.length > 0) hasData = true;
+                            nodes = Array.from(nodesById.values());
+                            if (nodes.length > 0) hasGraphData = true;
                         }
                     } catch (e) {
                         logger.error('Note graph: parse search entries failed', e);
@@ -112,10 +105,9 @@ export default function NoteGraphSearch(
                         ? (relations as unknown as EdgeRelation[])
                         : [];
                 if (edges.length > 0) {
-                    hasData = true;
+                    hasGraphData = true;
                 }
 
-                // Add nodes and edges together atomically using addBoth if available
                 if (nodes.length > 0 || edges.length > 0) {
                     if (addBoth) {
                         addBoth(nodes, edges);
@@ -125,8 +117,7 @@ export default function NoteGraphSearch(
                     }
                 }
 
-                // If no data was processed
-                if (!hasData) {
+                if (!hasGraphData) {
                     setAlert({
                         show: true,
                         message: 'No graph data available for this note.',
@@ -138,7 +129,7 @@ export default function NoteGraphSearch(
             } catch (e) {
                 logger.error('Note graph: apply graph data failed', e);
             }
-        }, [graphData, dataUpdatedAt, addBoth, addNodes, addEdges]);
+        }, [data, dataUpdatedAt, addBoth, addNodes, addEdges]);
 
         return (
             <div className='px-2 mt-2 w-full'>

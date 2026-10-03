@@ -1,3 +1,6 @@
+import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import StatusHeaderDropdown from '@/components/base/status-header-dropdown/status-header-dropdown';
+import { StatusIcon, type StatusType } from '@/components/base/status-icon/status-icon';
 import {
     ActionBar,
     ActionBarClose,
@@ -21,11 +24,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { DateRangeFilter } from '@/types/list-view';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBarSearch } from '@components/base/action-bar/action-bar';
-import { DateRangeFilter } from '@components/base/list-view/types';
-import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
 import { TrashIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
@@ -37,14 +38,12 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { StatusIcon, type StatusType } from '../notes/status-icon';
+import { FILTER_OPTIONS } from './digest-list-status';
 
-/** TanStack table + toolbars for digests; rendered by `DigestsList`. */
-type BaseDigest = components['schemas']['BaseDigest'];
+type DigestRow = components['schemas']['BaseDigest'];
 
-// Mapping of table columns to API field names (stable, avoids hook dep warnings)
 const SORT_FIELD_MAPPING: Record<string, string> = {
     title: 'title',
     type: 'digest_type',
@@ -59,24 +58,21 @@ interface DataTypeOption {
 }
 
 interface DigestsTableProps {
-    digests: BaseDigest[];
-    loading: boolean;
+    rows: DigestRow[];
+    isLoading: boolean;
     page: number;
     totalPages: number;
-    handlePageChange: (page: number) => void;
-    onDigestDelete?: () => void;
+    onPageChange: (page: number) => void;
+    onRefresh?: () => void;
     sortField?: string;
     sortDirection?: 'asc' | 'desc';
     onSort: (field: string, direction: 'asc' | 'desc') => void;
-    selectedDigests?: string[];
-    setSelectedDigests?: React.Dispatch<React.SetStateAction<string[]>>;
     pageSize?: number;
-    setPageSize?: (size: number) => void;
+    onPageSizeChange?: (size: number) => void;
     onColumnFilterChange?:
-        | ((column: string, value: string | DateRangeFilter) => void)
-        | null;
-    columnFilters?: Record<string, any>;
-    searchFilters?: Record<string, string>;
+        ((column: string, value: string | DateRangeFilter) => void) | null;
+    filters?: Record<string, any>;
+    draft?: Record<string, string>;
     onSearchChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSearchSubmit?: (e: React.SyntheticEvent) => void;
     dataTypeOptions?: DataTypeOption[];
@@ -84,73 +80,47 @@ interface DigestsTableProps {
 }
 
 export default function DigestsTable({
-    digests,
-    loading,
+    rows,
+    isLoading,
     page,
     totalPages,
-    handlePageChange,
-    onDigestDelete,
+    onPageChange,
+    onRefresh,
     sortField = 'created_at',
     sortDirection = 'desc',
     onSort,
-    selectedDigests: externalSelectedDigests,
-    setSelectedDigests: externalSetSelectedDigests,
     pageSize = 10,
-    setPageSize = () => {},
+    onPageSizeChange = () => {},
     onColumnFilterChange = null,
-    columnFilters = {},
-    searchFilters = {},
+    filters = {},
+    draft = {},
     onSearchChange = () => {},
     onSearchSubmit = () => {},
     dataTypeOptions: _dataTypeOptions = [],
     onUpload: _onUpload,
 }: DigestsTableProps) {
-    const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-    const [bulkDeleteDigestIds, setBulkDeleteDigestIds] = useState<string[]>([]);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
-    const selectedDigestIds = useMemo(
+    const checkedIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
         [rowSelection],
     );
 
-    useEffect(() => {
-        if (!externalSelectedDigests) return;
-        const selection: RowSelectionState = {};
-        externalSelectedDigests.forEach((id) => {
-            selection[String(id)] = true;
-        });
-        setRowSelection(selection);
-    }, [externalSelectedDigests]);
+    const paginate = useCallback(
+        (pageIndex: number, size: number) => {
+            const target = pageIndex + 1;
 
-    const handleStatusChange = useCallback(
-        (status: string) => {
-            if (onColumnFilterChange) {
-                onColumnFilterChange('status', status);
+            if (size !== pageSize) {
+                onPageSizeChange(size);
+            } else if (target !== page) {
+                onPageChange(target);
             }
         },
-        [onColumnFilterChange],
+        [page, pageSize, onPageChange, onPageSizeChange],
     );
 
-    // Handle pagination changes from DataTable
-    const handlePaginationChange = useCallback(
-        (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1; // Convert 0-based to 1-based
-
-            // Handle page size change
-            if (newPageSize !== pageSize) {
-                setPageSize(newPageSize);
-                handlePageChange(1);
-            }
-            // Handle page change
-            else if (newPage !== page) {
-                handlePageChange(newPage);
-            }
-        },
-        [page, pageSize, handlePageChange, setPageSize],
-    );
-
-    // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
         const columnId =
             Object.keys(SORT_FIELD_MAPPING).find(
@@ -167,37 +137,36 @@ export default function DigestsTable({
             : [];
     }, [sortField, sortDirection]);
 
-    const handleSortingChange = useCallback(
-        (newSorting: SortingState) => {
-            if (newSorting.length === 0) {
+    const applySort = useCallback(
+        (next: SortingState) => {
+            if (next.length === 0) {
                 onSort('created_at', 'desc');
             } else {
-                const sort = newSorting[0];
-                if (!sort) {
+                const entry = next[0];
+                if (!entry) {
                     onSort('created_at', 'desc');
                 } else {
-                    const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
-                    onSort(apiField, sort.desc ? 'desc' : 'asc');
+                    const apiField = SORT_FIELD_MAPPING[entry.id] || entry.id;
+                    onSort(apiField, entry.desc ? 'desc' : 'asc');
                 }
             }
         },
         [onSort],
     );
 
-    const onTableSortingChange = useCallback(
+    const applySorting = useCallback(
         (updater: SortingState | ((prev: SortingState) => SortingState)) => {
-            const nextSorting =
-                typeof updater === 'function' ? updater(sorting) : updater;
-            handleSortingChange(nextSorting);
+            const next = typeof updater === 'function' ? updater(sorting) : updater;
+            applySort(next);
         },
-        [handleSortingChange, sorting],
+        [applySort, sorting],
     );
 
-    const getStatusIcon = useCallback((status?: string, errorMessage?: string) => {
+    const statusIcon = useCallback((status?: string, detail?: string) => {
         if (!status) return null;
 
         const statusCapitalized = status.charAt(0).toUpperCase() + status.slice(1);
-        const tooltipContent = errorMessage || statusCapitalized;
+        const tooltipContent = detail || statusCapitalized;
         const tooltipColorClass =
             status === 'error'
                 ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
@@ -215,7 +184,7 @@ export default function DigestsTable({
                 <StatusIcon status={status as StatusType} />
             );
 
-        if ((status === 'error' || status === 'waiting') && errorMessage) {
+        if ((status === 'error' || status === 'waiting') && detail) {
             return (
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -242,8 +211,7 @@ export default function DigestsTable({
         );
     }, []);
 
-    // Memoize columns to prevent recreation on every render
-    const columns = useMemo<ColumnDef<BaseDigest>[]>(
+    const columns = useMemo<ColumnDef<DigestRow>[]>(
         () => [
             {
                 id: 'select',
@@ -276,137 +244,147 @@ export default function DigestsTable({
             {
                 accessorKey: 'title',
                 id: 'title',
+                meta: { label: 'Title' },
                 header: 'Title',
-                cell: ({ row }) => (
-                    <div className='truncate max-w-xs' title={row.original.title}>
-                        <div className='flex items-center gap-2 min-w-0'>
-                            <span className='inline-flex items-center flex-shrink-0'>
-                                {getStatusIcon(
-                                    row.original.status,
-                                    (row.original as any).errorMessage,
-                                )}
-                            </span>
-                            <span className='truncate'>{row.original.title}</span>
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='truncate max-w-xs' title={item.title}>
+                            <div className='flex items-center gap-2 min-w-0'>
+                                <span className='inline-flex items-center flex-shrink-0'>
+                                    {statusIcon(
+                                        item.status,
+                                        (item as any).errorMessage,
+                                    )}
+                                </span>
+                                <span className='truncate'>{item.title}</span>
+                            </div>
                         </div>
-                    </div>
-                ),
+                    );
+                },
             },
             {
                 accessorKey: 'type',
                 id: 'type',
+                meta: { label: 'Type' },
                 header: 'Type',
-                cell: ({ row }) => (
-                    <div className='truncate w-24' title={row.original.display_name}>
-                        {truncateText(row.original.display_name || '', 24)}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='truncate w-24' title={item.display_name}>
+                            {truncateText(item.display_name || '', 24)}
+                        </div>
+                    );
+                },
                 enableSorting: false,
             },
             {
                 accessorKey: 'user',
                 id: 'user',
-                header: ({ column }) => {
-                    const filterValue = columnFilters.user as string;
+                meta: { label: 'User' },
+                header: ({ column }) => (
+                    <div className='flex items-center gap-2'>
+                        <DataTableColumnHeader column={column} label='User' />
+                        {filters.user && <span className='text-xs text-accent'>●</span>}
+                    </div>
+                ),
+                cell: ({ row }) => {
+                    const item = row.original;
                     return (
-                        <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} label='User' />
-                            {filterValue && (
-                                <span className='text-xs text-accent'>●</span>
-                            )}
+                        <div
+                            className='truncate w-32'
+                            title={item.user_detail?.username}
+                        >
+                            {truncateText(item.user_detail?.username || '', 16)}
                         </div>
                     );
                 },
-                cell: ({ row }) => (
-                    <div
-                        className='truncate w-32'
-                        title={row.original.user_detail?.username}
-                    >
-                        {truncateText(row.original.user_detail?.username || '', 16)}
-                    </div>
-                ),
             },
             {
                 accessorKey: 'warnings',
                 id: 'warnings',
+                meta: { label: 'Warnings' },
                 header: 'Warnings',
-                cell: ({ row }) => (
-                    <div className='w-8'>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-foreground shadow-sm bg-[var(--chart-4)] dark:bg-[var(--chart-3)]'>
-                                    {(row.original.warnings as any[])?.length || 0}
-                                </span>
-                            </TooltipTrigger>
-                            {(row.original.warnings as any[])?.length > 0 && (
-                                <TooltipContent
-                                    side='bottom'
-                                    className='[--tooltip-bg:var(--chart-4)] dark:[--tooltip-bg:var(--chart-3)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
-                                >
-                                    {(row.original.warnings as any[])
-                                        .slice(0, 10)
-                                        .join('\n') +
-                                        ((row.original.warnings as any[]).length > 10
-                                            ? '...'
-                                            : '')}
-                                </TooltipContent>
-                            )}
-                        </Tooltip>
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    const warnings = (item.warnings as any[]) ?? [];
+                    return (
+                        <div className='w-8'>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-foreground shadow-sm bg-[var(--chart-4)] dark:bg-[var(--chart-3)]'>
+                                        {warnings.length || 0}
+                                    </span>
+                                </TooltipTrigger>
+                                {warnings.length > 0 && (
+                                    <TooltipContent
+                                        side='bottom'
+                                        className='[--tooltip-bg:var(--chart-4)] dark:[--tooltip-bg:var(--chart-3)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
+                                    >
+                                        {warnings.slice(0, 10).join('\n') +
+                                            (warnings.length > 10 ? '...' : '')}
+                                    </TooltipContent>
+                                )}
+                            </Tooltip>
+                        </div>
+                    );
+                },
                 enableSorting: false,
             },
             {
                 accessorKey: 'errors',
                 id: 'errors',
+                meta: { label: 'Errors' },
                 header: 'Errors',
-                cell: ({ row }) => (
-                    <div className='w-8'>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-destructive-foreground shadow-sm bg-destructive'>
-                                    {(row.original.errors as any[])?.length || 0}
-                                </span>
-                            </TooltipTrigger>
-                            {(row.original.errors as any[])?.length > 0 && (
-                                <TooltipContent
-                                    side='bottom'
-                                    className='[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
-                                >
-                                    {(row.original.errors as any[])
-                                        .slice(0, 10)
-                                        .join('\n') +
-                                        ((row.original.errors as any[]).length > 10
-                                            ? '\n...'
-                                            : '')}
-                                </TooltipContent>
-                            )}
-                        </Tooltip>
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    const errors = (item.errors as any[]) ?? [];
+                    return (
+                        <div className='w-8'>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-destructive-foreground shadow-sm bg-destructive'>
+                                        {errors.length || 0}
+                                    </span>
+                                </TooltipTrigger>
+                                {errors.length > 0 && (
+                                    <TooltipContent
+                                        side='bottom'
+                                        className='[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
+                                    >
+                                        {errors.slice(0, 10).join('\n') +
+                                            (errors.length > 10 ? '\n...' : '')}
+                                    </TooltipContent>
+                                )}
+                            </Tooltip>
+                        </div>
+                    );
+                },
                 enableSorting: false,
             },
             {
                 accessorKey: 'created_at',
                 id: 'created_at',
+                meta: { label: 'Created At' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Created At' />
                 ),
-                cell: ({ row }) => (
-                    <div className='w-36'>
-                        {row.original.created_at
-                            ? format(
-                                  new Date(row.original.created_at),
-                                  'dd/MM/yyyy, HH:mm',
-                              )
-                            : 'N/A'}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='w-36'>
+                            {item.created_at
+                                ? format(new Date(item.created_at), 'dd/MM/yyyy, HH:mm')
+                                : 'N/A'}
+                        </div>
+                    );
+                },
             },
         ],
-        [columnFilters, getStatusIcon],
+        [filters, statusIcon],
     );
     const table = useReactTable({
-        data: digests,
+        data: rows,
         columns,
         state: {
             sorting,
@@ -417,23 +395,15 @@ export default function DigestsTable({
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
-        onSortingChange: onTableSortingChange,
-        onRowSelectionChange: (updater) => {
-            setRowSelection((prev) => {
-                const next = typeof updater === 'function' ? updater(prev) : updater;
-                const selectedIds = Object.keys(next).filter((key) => next[key]);
-                externalSetSelectedDigests?.(selectedIds);
-                return next;
-            });
-        },
+        onSortingChange: applySorting,
+        onRowSelectionChange: setRowSelection,
         onPaginationChange: (updater) => {
-            const currentPagination = {
+            const current = {
                 pageIndex: page - 1,
                 pageSize,
             };
-            const nextPagination =
-                typeof updater === 'function' ? updater(currentPagination) : updater;
-            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+            const next = typeof updater === 'function' ? updater(current) : updater;
+            paginate(next.pageIndex, next.pageSize);
         },
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
@@ -444,11 +414,9 @@ export default function DigestsTable({
 
     const clearSelection = useCallback(() => {
         setRowSelection({});
-        externalSetSelectedDigests?.([]);
-    }, [externalSetSelectedDigests]);
+    }, []);
 
-    // Small helper to avoid duplicating the synthetic "title" search event shape
-    const makeTitleSearchEvent = useCallback(
+    const titleEvent = useCallback(
         (value: string) =>
             ({
                 preventDefault: () => {},
@@ -457,25 +425,24 @@ export default function DigestsTable({
         [],
     );
 
-    const handleDeleteSelected = async () => {
-        if (selectedDigestIds.length > 0) {
-            setBulkDeleteDigestIds(selectedDigestIds);
-            setBulkDeleteDialogOpen(true);
-        }
-    };
+    const confirmDelete = useCallback(() => {
+        if (checkedIds.length === 0) return;
+        setPendingDeleteIds(checkedIds);
+        setIsDeleteOpen(true);
+    }, [checkedIds]);
 
-    const executeBulkDelete = async (selectedIds: string[]) => {
+    const deleteDigests = async (digestIds: string[]) => {
         try {
-            const deletePromises = selectedIds.map(async (digestId) => {
-                const { error, response } = await fetchClient.DELETE(
-                    '/intelio/digest/{id}/',
-                    { params: { path: { id: digestId } } },
-                );
-                if (error) throw { response, error };
-            });
-            const results = await Promise.allSettled(deletePromises);
+            const results = await Promise.allSettled(
+                digestIds.map(async (id) => {
+                    const { error, response } = await fetchClient.DELETE(
+                        '/intelio/digest/{id}/',
+                        { params: { path: { id } } },
+                    );
+                    if (error) throw { response, error };
+                }),
+            );
 
-            // Count successes and failures
             const successes = results.filter((r) => r.status === 'fulfilled').length;
             const failures = results.filter((r) => r.status === 'rejected').length;
 
@@ -495,9 +462,8 @@ export default function DigestsTable({
                 );
             }
 
-            // Refresh the digests list
             clearSelection();
-            if (onDigestDelete) onDigestDelete();
+            if (onRefresh) onRefresh();
         } catch (error) {
             const parsed = await parseAPIError(error);
             toast.error(getDisplayMessage(parsed));
@@ -506,34 +472,36 @@ export default function DigestsTable({
 
     return (
         <>
-            <DataTable table={table} showViewOptions isLoading={loading}>
+            <DataTable table={table} showViewOptions isLoading={isLoading}>
                 <div className='flex items-center gap-2'>
                     <ActionBarSearch
                         placeholder='Search by title...'
-                        initialValue={searchFilters.title || ''}
+                        initialValue={draft.title || ''}
                         debounceMs={300}
                         onDebouncedChange={(value) => {
-                            onSearchChange(makeTitleSearchEvent(value));
+                            onSearchChange(titleEvent(value));
                         }}
                         onSubmit={(value) => {
-                            onSearchSubmit(makeTitleSearchEvent(value));
+                            onSearchSubmit(titleEvent(value));
                         }}
                         onClear={() => {
-                            const ev = makeTitleSearchEvent('');
+                            const ev = titleEvent('');
                             onSearchChange(ev);
                             onSearchSubmit(ev);
                         }}
                     />
                     <StatusHeaderDropdown
-                        onStatusChange={handleStatusChange}
-                        status={columnFilters.status || 'all'}
-                        statusOptions={['all', 'done', 'working', 'error']}
+                        onStatusChange={(status) =>
+                            onColumnFilterChange?.('status', status)
+                        }
+                        status={filters.status || 'all'}
+                        options={[...FILTER_OPTIONS]}
                     />
                     {onColumnFilterChange && (
                         <DateRangeFilterButton
                             title='Created At'
                             value={
-                                (columnFilters.created_at as DateRangeFilter) || {
+                                (filters.created_at as DateRangeFilter) || {
                                     from: '',
                                     to: '',
                                 }
@@ -544,23 +512,21 @@ export default function DigestsTable({
                 </div>
             </DataTable>
             <ActionBar
-                open={selectedDigestIds.length > 0}
+                open={checkedIds.length > 0}
                 onOpenChange={(open) => {
                     if (!open) clearSelection();
                 }}
             >
                 <ActionBarSelection>
-                    {selectedDigestIds.length} digest
-                    {selectedDigestIds.length !== 1 ? 's' : ''} selected
+                    {checkedIds.length} digest
+                    {checkedIds.length !== 1 ? 's' : ''} selected
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
                     <ActionBarItem
-                        onClick={handleDeleteSelected}
+                        onClick={confirmDelete}
                         disabled={
-                            loading ||
-                            digests.length === 0 ||
-                            selectedDigestIds.length === 0
+                            isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                         className='text-destructive'
                     >
@@ -572,19 +538,19 @@ export default function DigestsTable({
                 <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
             </ActionBar>
             <AlertDialog
-                open={bulkDeleteDialogOpen}
+                open={isDeleteOpen}
                 onOpenChange={(open) => {
-                    setBulkDeleteDialogOpen(open);
-                    if (!open) setBulkDeleteDigestIds([]);
+                    setIsDeleteOpen(open);
+                    if (!open) setPendingDeleteIds([]);
                 }}
             >
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete {bulkDeleteDigestIds.length}{' '}
+                            Are you sure you want to delete {pendingDeleteIds.length}{' '}
                             digest
-                            {bulkDeleteDigestIds.length > 1 ? 's' : ''}?
+                            {pendingDeleteIds.length > 1 ? 's' : ''}?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -595,9 +561,9 @@ export default function DigestsTable({
                             variant='destructive'
                             size='sm'
                             onClick={() => {
-                                if (bulkDeleteDigestIds.length > 0) {
-                                    executeBulkDelete(bulkDeleteDigestIds);
-                                    setBulkDeleteDigestIds([]);
+                                if (pendingDeleteIds.length > 0) {
+                                    deleteDigests(pendingDeleteIds);
+                                    setPendingDeleteIds([]);
                                 }
                             }}
                         >

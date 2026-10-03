@@ -1,3 +1,7 @@
+import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import PageHeader from '@/components/base/page-header';
+import StatusHeaderDropdown from '@/components/base/status-header-dropdown/status-header-dropdown';
+import { StatusIcon, type StatusType } from '@/components/base/status-icon/status-icon';
 import {
     ActionBar,
     ActionBarClose,
@@ -19,35 +23,45 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBarSearch } from '@components/base/action-bar/action-bar';
-import PageHeader from '@components/base/page-header';
-import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
-import { ArrowsClockwiseIcon, DownloadIcon, TrashIcon } from '@phosphor-icons/react';
+import {
+    ArrowsClockwiseIcon,
+    DotsThreeIcon,
+    DownloadIcon,
+    TrashIcon,
+} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components, operations } from '@services/openapi/schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
+    getCoreRowModel,
+    useReactTable,
     type ColumnDef,
     type RowSelectionState,
     type SortingState,
-    getCoreRowModel,
-    useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { startCase } from 'lodash';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { StatusIcon, type StatusType } from '../notes/status-icon';
+import { FILTER_OPTIONS, parseParam, toFilterValue } from './report-list-status';
 
-type ReportList = components['schemas']['ReportList'];
+type ReportRow = components['schemas']['ReportList'];
 
-type ReportsListQuery = NonNullable<operations['reports_list']['parameters']['query']>;
+type ListQuery = NonNullable<operations['reports_list']['parameters']['query']>;
 
 const SORT_FIELD_MAPPING: Record<string, string> = {
     title: 'title',
@@ -105,21 +119,36 @@ export default function ReportsList() {
         select: (state) => state.location,
     });
     const search = useSearch({ from: '/_authenticated/reports' });
-    const searchAny = search as any;
-    const page = Number(searchAny?.reports_page ?? 1) || 1;
-    const sortField = (searchAny?.reports_sort_field ?? 'created_at') as string;
-    const sortDirection: 'asc' | 'desc' = (searchAny?.reports_sort_direction ??
-        'desc') as 'asc' | 'desc';
-    const pageSize = Number(searchAny?.reports_pagesize ?? 20) || 20;
+    const statusFilter = parseParam(search.status);
+    const page = Number(search.reports_page ?? 1) || 1;
+    const sortField = search.reports_sort_field ?? 'created_at';
+    const sortDirection: 'asc' | 'desc' = search.reports_sort_direction ?? 'desc';
+    const pageSize = Number(search.reports_pagesize ?? 20) || 20;
+    const appliedSearch = search.search ?? '';
 
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('all');
     const queryClient = useQueryClient();
 
-    const fetchReportMutation = useMutation({
+    const applySearch = useCallback(
+        (value: string) => {
+            const next: Record<string, unknown> = { ...search, reports_page: 1 };
+            if (value) {
+                next.search = value;
+            } else {
+                delete next.search;
+            }
+            router.navigate({
+                to: location.pathname as any,
+                search: next as any,
+                replace: true,
+            });
+        },
+        [search, router, location.pathname],
+    );
+
+    const { mutateAsync: fetchReport } = useMutation({
         mutationFn: async ({
             id,
             downloadUrl,
@@ -143,7 +172,7 @@ export default function ReportsList() {
         },
     });
 
-    const selectedReportIds = useMemo(
+    const checkedIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
         [rowSelection],
     );
@@ -153,31 +182,24 @@ export default function ReportsList() {
         [sortDirection, sortField],
     );
 
-    const reportsListQuery = useMemo((): ReportsListQuery => {
+    const listQuery = useMemo((): ListQuery => {
         return Object.fromEntries(
             Object.entries({
                 page,
                 page_size: pageSize,
                 order_by: orderBy,
-                search: searchQuery || undefined,
-                status: statusFilter !== 'all' ? statusFilter : undefined,
+                search: appliedSearch || undefined,
+                status: statusFilter,
             }).filter(([, v]) => v !== undefined),
-        ) as ReportsListQuery;
-    }, [page, pageSize, orderBy, searchQuery, statusFilter]);
+        ) as ListQuery;
+    }, [page, pageSize, orderBy, appliedSearch, statusFilter]);
 
-    const { data: reportsData, isLoading } = useQuery({
-        queryKey: queryKeys.reports.list({
-            page,
-            pageSize,
-            sortField,
-            sortDirection,
-            statusFilter,
-            search: searchQuery || undefined,
-        }),
+    const { data: reports, isLoading } = useQuery({
+        queryKey: queryKeys.reports.list(listQuery),
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET('/reports/', {
                 params: {
-                    query: reportsListQuery,
+                    query: listQuery,
                 },
             });
             if (error) throw { response, error };
@@ -188,79 +210,89 @@ export default function ReportsList() {
         },
     });
 
-    const reports = reportsData?.results ?? [];
+    const rows = reports?.results ?? [];
 
-    const totalPages = reportsData?.total_pages || 1;
+    const totalPages = reports?.total_pages || 1;
 
-    const resetToFirstPage = useCallback(() => {
-        router.navigate({
-            to: location.pathname as any,
-            search: { ...searchAny, reports_page: 1 } as any,
-            replace: true,
-        });
-    }, [searchAny, router, location.pathname]);
-
-    const handlePageChange = useCallback(
-        (newPage: number) => {
+    const goTo = useCallback(
+        (target: number) => {
             router.navigate({
                 to: location.pathname as any,
-                search: { ...searchAny, reports_page: newPage } as any,
+                search: ((prev: any) => ({ ...prev, reports_page: target })) as any,
                 replace: true,
             });
         },
-        [searchAny, router, location.pathname],
+        [router, location.pathname],
     );
 
-    const handlePaginationChange = useCallback(
-        (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1;
-            if (newPageSize !== pageSize) {
+    const paginate = useCallback(
+        (pageIndex: number, size: number) => {
+            const target = pageIndex + 1;
+            if (size !== pageSize) {
                 router.navigate({
                     to: location.pathname as any,
                     search: {
-                        ...searchAny,
+                        ...search,
                         reports_page: 1,
-                        reports_pagesize: newPageSize,
+                        reports_pagesize: size,
                     } as any,
                     replace: true,
                 });
-            } else if (newPage !== page) {
-                handlePageChange(newPage);
+            } else if (target !== page) {
+                goTo(target);
             }
         },
-        [page, pageSize, searchAny, router, location.pathname, handlePageChange],
+        [page, pageSize, search, router, location.pathname, goTo],
     );
 
-    const handleSortingChange = useCallback(
+    const applySort = useCallback(
         (sorting: SortingState) => {
-            const newSearch: any = {
-                ...searchAny,
+            const next: Record<string, unknown> = {
+                ...search,
                 reports_page: 1,
             };
             if (sorting.length === 0) {
-                newSearch.reports_sort_field = 'created_at';
-                newSearch.reports_sort_direction = 'desc';
+                next.reports_sort_field = 'created_at';
+                next.reports_sort_direction = 'desc';
             } else {
-                const sort = sorting[0];
-                if (!sort) {
-                    newSearch.reports_sort_field = 'created_at';
-                    newSearch.reports_sort_direction = 'desc';
+                const entry = sorting[0];
+                if (!entry) {
+                    next.reports_sort_field = 'created_at';
+                    next.reports_sort_direction = 'desc';
                 } else {
-                    const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
-                    newSearch.reports_sort_field = apiField;
-                    newSearch.reports_sort_direction = sort.desc ? 'desc' : 'asc';
+                    const apiField = SORT_FIELD_MAPPING[entry.id] || entry.id;
+                    next.reports_sort_field = apiField;
+                    next.reports_sort_direction = entry.desc ? 'desc' : 'asc';
                 }
             }
             router.navigate({
                 to: location.pathname as any,
-                search: newSearch as any,
+                search: next as any,
                 replace: true,
             });
         },
-        [searchAny, router, location.pathname],
+        [search, router, location.pathname],
     );
 
-    const deleteMutation = useMutation({
+    const updateStatus = useCallback(
+        (value: string) => {
+            const next: Record<string, unknown> = { ...search, reports_page: 1 };
+            const parsed = parseParam(value);
+            if (parsed) {
+                next.status = parsed;
+            } else {
+                delete next.status;
+            }
+            router.navigate({
+                to: location.pathname as any,
+                search: next as any,
+                replace: true,
+            });
+        },
+        [search, router, location.pathname],
+    );
+
+    const { mutateAsync: deleteReport } = useMutation({
         mutationFn: async (id: string) => {
             const { error, response } = await fetchClient.DELETE('/reports/{id}/', {
                 params: { path: { id } },
@@ -270,16 +302,15 @@ export default function ReportsList() {
         meta: { suppressNotification: true },
     });
 
-    const handleDelete = async (reportIds: string | string[]) => {
-        const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
-        setDeletingReportIds(idsArray);
-        setDeleteDialogOpen(true);
-    };
+    const confirmDelete = useCallback((ids: string | string[]) => {
+        const list = Array.isArray(ids) ? ids : [ids];
+        setPendingDeleteIds(list);
+        setIsDeleteOpen(true);
+    }, []);
 
-    const executeDelete = async (idsArray: string[]) => {
+    const deleteReports = async (ids: string[]) => {
         try {
-            const deletePromises = idsArray.map((id) => deleteMutation.mutateAsync(id));
-            const results = await Promise.allSettled(deletePromises);
+            const results = await Promise.allSettled(ids.map((id) => deleteReport(id)));
 
             const successes = results.filter((r) => r.status === 'fulfilled').length;
             const failures = results.filter((r) => r.status === 'rejected').length;
@@ -307,12 +338,12 @@ export default function ReportsList() {
             const parsed = await parseAPIError(error);
             toast.error(getDisplayMessage(parsed));
         } finally {
-            setDeleteDialogOpen(false);
-            setDeletingReportIds([]);
+            setIsDeleteOpen(false);
+            setPendingDeleteIds([]);
         }
     };
 
-    const retryMutation = useMutation({
+    const { mutateAsync: retryReport } = useMutation({
         mutationFn: async (id: string) => {
             const { error, response } = await fetchClient.POST('/reports/{id}/retry/', {
                 params: { path: { id } },
@@ -324,45 +355,43 @@ export default function ReportsList() {
         },
     });
 
-    const handleRetry = async (reportIds: string | string[]) => {
-        const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
+    const retry = useCallback(
+        async (ids: string | string[]) => {
+            const list = Array.isArray(ids) ? ids : [ids];
 
-        if (idsArray.length === 0) return;
+            if (list.length === 0) return;
 
-        try {
-            const retryPromises = idsArray.map((id) => retryMutation.mutateAsync(id));
-            const results = await Promise.allSettled(retryPromises);
-
-            const successes = results.filter((r) => r.status === 'fulfilled').length;
-            const failures = results.filter((r) => r.status === 'rejected').length;
-
-            if (failures === 0) {
-                toast.success(
-                    `Retry requested for ${successes} report${successes > 1 ? 's' : ''}.`,
+            try {
+                const results = await Promise.allSettled(
+                    list.map((id) => retryReport(id)),
                 );
-            } else if (successes === 0) {
-                toast.error(
-                    `Failed to retry ${failures} report${failures > 1 ? 's' : ''}.`,
-                );
-            } else {
-                toast.info(
-                    `Retry requested for ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed.`,
-                );
+
+                const successes = results.filter(
+                    (r) => r.status === 'fulfilled',
+                ).length;
+                const failures = results.filter((r) => r.status === 'rejected').length;
+
+                if (failures === 0) {
+                    toast.success(
+                        `Retry requested for ${successes} report${successes > 1 ? 's' : ''}.`,
+                    );
+                } else if (successes === 0) {
+                    toast.error(
+                        `Failed to retry ${failures} report${failures > 1 ? 's' : ''}.`,
+                    );
+                } else {
+                    toast.info(
+                        `Retry requested for ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed.`,
+                    );
+                }
+
+                setRowSelection({});
+            } catch (error) {
+                const parsed = await parseAPIError(error);
+                toast.error(getDisplayMessage(parsed));
             }
-
-            setRowSelection({});
-        } catch (error) {
-            const parsed = await parseAPIError(error);
-            toast.error(getDisplayMessage(parsed));
-        }
-    };
-
-    const handleStatusChange = useCallback(
-        (status: string) => {
-            setStatusFilter(status);
-            resetToFirstPage();
         },
-        [resetToFirstPage],
+        [retryReport],
     );
 
     const sorting = useMemo<SortingState>(() => {
@@ -381,34 +410,34 @@ export default function ReportsList() {
             : [];
     }, [sortField, sortDirection]);
 
-    const handleDownload = async (reportIds: string | string[]) => {
-        const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
-        try {
-            const reports = await Promise.all(
-                idsArray.map((id) =>
-                    fetchReportMutation.mutateAsync({ id, downloadUrl: true }),
-                ),
-            );
+    const download = useCallback(
+        async (ids: string | string[]) => {
+            const list = Array.isArray(ids) ? ids : [ids];
+            try {
+                const fetched = await Promise.all(
+                    list.map((id) => fetchReport({ id, downloadUrl: true })),
+                );
 
-            reports.forEach((report) => {
-                if (report.report_url) {
-                    window.open(report.report_url, '_blank', 'noopener');
-                } else {
-                    toast.error('Report URL not found for report ' + report.title);
-                }
-            });
+                fetched.forEach((item) => {
+                    if (item.report_url) {
+                        window.open(item.report_url, '_blank', 'noopener');
+                    } else {
+                        toast.error('Report URL not found for report ' + item.title);
+                    }
+                });
 
-            toast.success(
-                `${idsArray.length > 1 ? 'Reports' : 'Report'} downloaded successfully`,
-            );
-        } catch (error) {
-            const parsed = await parseAPIError(error);
-            toast.error(getDisplayMessage(parsed));
-        }
-    };
+                toast.success(
+                    `${list.length > 1 ? 'Reports' : 'Report'} downloaded successfully`,
+                );
+            } catch (error) {
+                const parsed = await parseAPIError(error);
+                toast.error(getDisplayMessage(parsed));
+            }
+        },
+        [fetchReport],
+    );
 
-    // Memoize columns to prevent recreation on every render
-    const columns = useMemo<ColumnDef<ReportList>[]>(
+    const columns = useMemo<ColumnDef<ReportRow>[]>(
         () => [
             {
                 id: 'select',
@@ -441,77 +470,150 @@ export default function ReportsList() {
             {
                 accessorKey: 'title',
                 id: 'title',
+                meta: { label: 'Title' },
                 header: 'Title',
-                cell: ({ row }) => (
-                    <div className='flex items-center gap-2 min-w-0'>
-                        <span className='inline-flex items-center flex-shrink-0'>
-                            {renderStatusIcon(
-                                row.original.status,
-                                row.original.error_message || undefined,
-                            )}
-                        </span>
-                        <span className='truncate'>
-                            {truncateText(row.original.title, 50)}
-                        </span>
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='flex items-center gap-2 min-w-0'>
+                            <span className='inline-flex items-center flex-shrink-0'>
+                                {renderStatusIcon(
+                                    item.status,
+                                    item.error_message || undefined,
+                                )}
+                            </span>
+                            <span className='truncate'>
+                                {truncateText(item.title, 50)}
+                            </span>
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: 'strategy',
                 id: 'strategy',
+                meta: { label: 'Strategy' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Strategy' />
                 ),
-                cell: ({ row }) => (
-                    <div className='text-foreground'>
-                        {startCase(row.original.strategy || 'N/A')}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='text-foreground'>
+                            {startCase(item.strategy || 'N/A')}
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: 'anonymized',
                 id: 'anonymized',
+                meta: { label: 'Anonymized' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Anonymized' />
                 ),
-                cell: ({ row }) => (
-                    <div className='text-foreground'>
-                        {row.original.anonymized ? 'Yes' : 'No'}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='text-foreground'>
+                            {item.anonymized ? 'Yes' : 'No'}
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: 'created_at',
                 id: 'created_at',
+                meta: { label: 'Created At' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Created At' />
                 ),
-                cell: ({ row }) => (
-                    <div className='w-36'>
-                        {row.original.created_at
-                            ? format(
-                                  new Date(row.original.created_at),
-                                  'dd/MM/yyyy, HH:mm',
-                              )
-                            : 'N/A'}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='w-36'>
+                            {item.created_at
+                                ? format(new Date(item.created_at), 'dd/MM/yyyy, HH:mm')
+                                : 'N/A'}
+                        </div>
+                    );
+                },
+            },
+            {
+                id: 'actions',
+                header: '',
+                size: 40,
+                minSize: 40,
+                maxSize: 40,
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div
+                            className='text-right flex justify-end'
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {item.id && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            className='text-muted-foreground hover:text-foreground'
+                                            title='Actions'
+                                        >
+                                            <DotsThreeIcon
+                                                className='w-4 h-4'
+                                                weight='bold'
+                                                aria-hidden='true'
+                                            />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align='end'>
+                                        <DropdownMenuItem
+                                            onClick={() => download(item.id!)}
+                                        >
+                                            <DownloadIcon size={16} weight='bold' />
+                                            Download
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() => retry(item.id!)}
+                                        >
+                                            <ArrowsClockwiseIcon
+                                                size={16}
+                                                weight='bold'
+                                            />
+                                            Retry
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            variant='destructive'
+                                            onClick={() => confirmDelete(item.id!)}
+                                        >
+                                            <TrashIcon size={16} weight='bold' />
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                        </div>
+                    );
+                },
+                enableSorting: false,
             },
         ],
-        [],
+        [download, confirmDelete, retry],
     );
 
-    const onTableSortingChange = useCallback(
+    const applySorting = useCallback(
         (updater: SortingState | ((prev: SortingState) => SortingState)) => {
-            const nextSorting =
-                typeof updater === 'function' ? updater(sorting) : updater;
-            handleSortingChange(nextSorting);
+            const next = typeof updater === 'function' ? updater(sorting) : updater;
+            applySort(next);
         },
-        [handleSortingChange, sorting],
+        [applySort, sorting],
     );
 
-    const table = useReactTable<ReportList>({
-        data: reports,
+    const table = useReactTable<ReportRow>({
+        data: rows,
         columns,
         state: {
             sorting,
@@ -522,16 +624,15 @@ export default function ReportsList() {
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
-        onSortingChange: onTableSortingChange,
+        onSortingChange: applySorting,
         onRowSelectionChange: setRowSelection,
         onPaginationChange: (updater) => {
-            const currentPagination = {
+            const current = {
                 pageIndex: page - 1,
                 pageSize,
             };
-            const nextPagination =
-                typeof updater === 'function' ? updater(currentPagination) : updater;
-            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+            const next = typeof updater === 'function' ? updater(current) : updater;
+            paginate(next.pageIndex, next.pageSize);
         },
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
@@ -550,10 +651,10 @@ export default function ReportsList() {
                     table={table}
                     showViewOptions
                     isLoading={isLoading}
-                    onRowClick={async (report) => {
+                    onRowClick={async (row) => {
                         try {
-                            const details = await fetchReportMutation.mutateAsync({
-                                id: report.id!,
+                            const details = await fetchReport({
+                                id: row.id!,
                                 downloadUrl: false,
                             });
                             if (details.report_url) {
@@ -571,62 +672,54 @@ export default function ReportsList() {
                     <div className='flex items-center gap-2'>
                         <ActionBarSearch
                             placeholder='Search reports...'
+                            initialValue={appliedSearch}
                             debounceMs={300}
-                            onDebouncedChange={(v) => {
-                                setSearchQuery(v);
-                                resetToFirstPage();
-                            }}
-                            onSubmit={() => resetToFirstPage()}
-                            onClear={() => resetToFirstPage()}
+                            onDebouncedChange={applySearch}
+                            onSubmit={applySearch}
+                            onClear={() => applySearch('')}
                         />
                         <StatusHeaderDropdown
-                            onStatusChange={handleStatusChange}
-                            status={statusFilter}
-                            statusOptions={['all', 'done', 'working', 'error']}
+                            onStatusChange={updateStatus}
+                            status={toFilterValue(statusFilter)}
+                            options={[...FILTER_OPTIONS]}
                         />
                     </div>
                 </DataTable>
             </div>
             <ActionBar
-                open={selectedReportIds.length > 0}
+                open={checkedIds.length > 0}
                 onOpenChange={(open) => {
                     if (!open) setRowSelection({});
                 }}
             >
                 <ActionBarSelection>
-                    {selectedReportIds.length} report
-                    {selectedReportIds.length !== 1 ? 's' : ''} selected
+                    {checkedIds.length} report
+                    {checkedIds.length !== 1 ? 's' : ''} selected
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
                     <ActionBarItem
-                        onClick={() => handleDownload(selectedReportIds)}
+                        onClick={() => download(checkedIds)}
                         disabled={
-                            isLoading ||
-                            reports.length === 0 ||
-                            selectedReportIds.length === 0
+                            isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                     >
                         <DownloadIcon size={18} weight='bold' />
                         Download
                     </ActionBarItem>
                     <ActionBarItem
-                        onClick={() => handleRetry(selectedReportIds)}
+                        onClick={() => retry(checkedIds)}
                         disabled={
-                            isLoading ||
-                            reports.length === 0 ||
-                            selectedReportIds.length === 0
+                            isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                     >
                         <ArrowsClockwiseIcon size={18} weight='bold' />
                         Retry
                     </ActionBarItem>
                     <ActionBarItem
-                        onClick={() => handleDelete(selectedReportIds)}
+                        onClick={() => confirmDelete(checkedIds)}
                         disabled={
-                            isLoading ||
-                            reports.length === 0 ||
-                            selectedReportIds.length === 0
+                            isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                         className='text-destructive'
                     >
@@ -637,13 +730,13 @@ export default function ReportsList() {
                 <ActionBarSeparator />
                 <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
             </ActionBar>
-            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete {deletingReportIds.length}{' '}
-                            {deletingReportIds.length > 1 ? 'reports' : 'report'}? This
+                            Are you sure you want to delete {pendingDeleteIds.length}{' '}
+                            {pendingDeleteIds.length > 1 ? 'reports' : 'report'}? This
                             action is irreversible.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -654,7 +747,7 @@ export default function ReportsList() {
                         <AlertDialogAction
                             variant='destructive'
                             size='sm'
-                            onClick={() => executeDelete(deletingReportIds)}
+                            onClick={() => deleteReports(pendingDeleteIds)}
                         >
                             Delete
                         </AlertDialogAction>

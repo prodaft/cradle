@@ -91,7 +91,7 @@ export default function UploadDigestDialog({
     onUpload,
     dataTypeOptions: propDataTypeOptions,
 }: UploadDigestDialogProps): React.JSX.Element {
-    const { data: dataTypesResponse } = useQuery({
+    const { data: digestTypes } = useQuery({
         queryKey: [...queryKeys.digests.all, 'options'],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
@@ -110,13 +110,13 @@ export default function UploadDigestDialog({
         if (propDataTypeOptions && propDataTypeOptions.length > 0) {
             return propDataTypeOptions;
         }
-        if (!dataTypesResponse) return [];
-        return (dataTypesResponse as any[]).map((type: any) => ({
+        if (!digestTypes) return [];
+        return (digestTypes as any[]).map((type: any) => ({
             value: type.class_name,
             label: type.name,
             inferEntities: type.infer_entities,
         }));
-    }, [propDataTypeOptions, dataTypesResponse]);
+    }, [propDataTypeOptions, digestTypes]);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(UploadSchema) as any,
@@ -128,7 +128,7 @@ export default function UploadDigestDialog({
         },
     });
 
-    const uploadMutation = useMutation({
+    const uploadDigest = useMutation({
         mutationFn: async (values: FormValues) => {
             const file = values.files[0];
             if (!file) {
@@ -136,7 +136,7 @@ export default function UploadDigestDialog({
             }
 
             const {
-                data: initiateData,
+                data: init,
                 error: initError,
                 response: initResponse,
             } = await fetchClient.GET('/intelio/digest/upload/', {
@@ -149,11 +149,14 @@ export default function UploadDigestDialog({
             });
             if (initError) throw { response: initResponse, error: initError };
 
-            const initAny = initiateData as any;
-            await uploadFile(initAny.presigned_url, file);
+            const initPayload = init as {
+                presigned_url: string;
+                upload_id: string;
+            };
+            await uploadFile(initPayload.presigned_url, file);
 
             const entities = (values.associatedEntry || []).map((e) => e.value);
-            const uploadId = initAny.upload_id;
+            const uploadId = initPayload.upload_id;
 
             const { data, error, response } = await fetchClient.POST(
                 '/intelio/digest/upload/{upload_id}/finalize/',
@@ -177,7 +180,7 @@ export default function UploadDigestDialog({
 
     const onSubmit = async (values: FormValues) => {
         try {
-            await uploadMutation.mutateAsync(values);
+            await uploadDigest.mutateAsync(values);
             onUpload?.();
             onOpenChange(false);
         } catch {
@@ -186,7 +189,7 @@ export default function UploadDigestDialog({
     };
 
     const dataType = form.watch('dataType') as DataTypeOption | null;
-    const isUploading = uploadMutation.isPending;
+    const isUploading = uploadDigest.isPending;
 
     useEffect(() => {
         if (!open) {
@@ -248,7 +251,10 @@ export default function UploadDigestDialog({
                         <Controller
                             name='dataType'
                             control={form.control}
-                            render={({ field: { onChange, value }, fieldState }) => {
+                            render={({
+                                field: { onChange, value: selectedType },
+                                fieldState,
+                            }) => {
                                 const isInvalid =
                                     fieldState.invalid && fieldState.isTouched;
                                 return (
@@ -265,11 +271,10 @@ export default function UploadDigestDialog({
                                             }
                                         >
                                             <Select
-                                                value={value?.value || ''}
-                                                onValueChange={(selectedValue) => {
+                                                value={selectedType?.value || ''}
+                                                onValueChange={(value) => {
                                                     const option = dataTypeOptions.find(
-                                                        (opt) =>
-                                                            opt.value === selectedValue,
+                                                        (opt) => opt.value === value,
                                                     );
                                                     onChange(option ?? null);
                                                 }}
@@ -316,11 +321,14 @@ export default function UploadDigestDialog({
                         <Controller
                             name='files'
                             control={form.control}
-                            render={({ field: { onChange, value }, fieldState }) => {
+                            render={({
+                                field: { onChange, value: fileValue },
+                                fieldState,
+                            }) => {
                                 const isInvalid =
                                     fieldState.invalid && fieldState.isTouched;
-                                const files = value || [];
-                                const hasSelectedFile = files.length > 0;
+                                const files = fileValue || [];
+                                const hasFile = files.length > 0;
 
                                 return (
                                     <Field data-invalid={isInvalid}>
@@ -343,7 +351,7 @@ export default function UploadDigestDialog({
                                                 disabled={isUploading}
                                             >
                                                 {/* Only show dropzone if no file selected */}
-                                                {!hasSelectedFile && (
+                                                {!hasFile && (
                                                     <FileUploadDropzone className='min-h-[100px]'>
                                                         <div className='flex flex-col items-center gap-2 text-center'>
                                                             <CloudArrowUpIcon
@@ -431,7 +439,10 @@ export default function UploadDigestDialog({
                         <Controller
                             name='associatedEntry'
                             control={form.control}
-                            render={({ field: { onChange, value }, fieldState }) => {
+                            render={({
+                                field: { onChange, value: associatedEntries },
+                                fieldState,
+                            }) => {
                                 const isInvalid =
                                     fieldState.invalid && fieldState.isTouched;
                                 return (
@@ -449,7 +460,7 @@ export default function UploadDigestDialog({
                                         >
                                             <MultipleSelector
                                                 value={
-                                                    (value?.map((e) => ({
+                                                    (associatedEntries?.map((e) => ({
                                                         value: String(e.value),
                                                         label: e.label,
                                                     })) || []) as Option[]

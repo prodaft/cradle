@@ -6,14 +6,7 @@ import { fetchClient } from './client';
 import type { paths } from './schema';
 
 type HttpMethod =
-    | 'get'
-    | 'put'
-    | 'post'
-    | 'delete'
-    | 'patch'
-    | 'options'
-    | 'head'
-    | 'trace';
+    'get' | 'put' | 'post' | 'delete' | 'patch' | 'options' | 'head' | 'trace';
 
 /** Paths whose OpenAPI object has a real GET operation (excludes ``get?: never`` stubs). */
 type PathsWithMethod<M extends HttpMethod> = {

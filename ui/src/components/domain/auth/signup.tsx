@@ -1,3 +1,4 @@
+import Logo from '@/components/base/logo/logo';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +20,6 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { getDisplayMessage, getSuccessMessage, parseAPIError } from '@/utils/api';
-import Logo from '@components/base/logo/logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
     ArrowUUpLeftIcon,
@@ -79,8 +79,8 @@ const signupSchema = z
  * On success, redirects to login. On error, displays an error message.
  */
 export default function Signup() {
-    const [showPassword, setShowPassword] = useState(false);
-    const [showPasswordCheck, setShowPasswordCheck] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
     const [signupImage] = useState(
         () => SIGNUP_IMAGES[Math.floor(Math.random() * SIGNUP_IMAGES.length)],
     );
@@ -100,9 +100,9 @@ export default function Signup() {
     });
     const { basePath } = useAuthState();
     const { isLoggedIn } = useAuthActions();
-    const loggedIn = isLoggedIn();
+    const isAlreadyLoggedIn = isLoggedIn();
 
-    const signupMutation = useMutation({
+    const createAccount = useMutation({
         mutationFn: async (data: {
             username: string;
             email: string;
@@ -161,10 +161,10 @@ export default function Signup() {
             passwordCheck: '',
         },
     });
+    const { isSubmitting } = form.formState;
 
-    // Query for OAuth configuration
-    const { data: userConfig } = $api.useQuery('get', '/auth/config/', undefined, {
-        enabled: !!basePath && !loggedIn,
+    const { data: authConfig } = $api.useQuery('get', '/auth/config/', undefined, {
+        enabled: !!basePath && !isAlreadyLoggedIn,
         meta: {
             suppressNotification: true,
         },
@@ -187,16 +187,14 @@ export default function Signup() {
         },
     });
 
-    const oauthMethods = userConfig?.oauthMethods || [];
-    const signup = userConfig?.signup ?? null;
-    const isSignupDisabled = signup === false;
+    const oauthMethods = authConfig?.oauthMethods || [];
+    const isRegistrationClosed = authConfig?.signup === false;
 
     useEffect(() => {
-        // If user is already logged in, redirect to dashboard
-        if (loggedIn) {
+        if (isAlreadyLoggedIn) {
             router.navigate({ to: '/', replace: true });
         }
-    }, [loggedIn, router]);
+    }, [isAlreadyLoggedIn, router]);
 
     const apiRoot = (basePath ?? '').replace(/\/api\/?$/, '');
 
@@ -266,7 +264,6 @@ export default function Signup() {
             redirectUrl.searchParams.set('state', `oauth_login:${provider}`);
             return redirectUrl.toString();
         } catch {
-            // Invalid URL, return empty string
             return '';
         }
     };
@@ -278,8 +275,8 @@ export default function Signup() {
         })
         .filter(Boolean) as Array<{ method: OAuthMethod; redirectUrl: string }>;
 
-    const onSubmit = async (data: FormData) => {
-        if (isSignupDisabled) {
+    const onSubmit = async (values: FormData) => {
+        if (isRegistrationClosed) {
             setAlert({
                 show: true,
                 message: 'Registration is disabled. Contact an administrator.',
@@ -288,15 +285,14 @@ export default function Signup() {
             return;
         }
 
-        await signupMutation.mutateAsync({
-            username: data.username,
-            email: data.email,
-            password: data.password,
+        await createAccount.mutateAsync({
+            username: values.username,
+            email: values.email,
+            password: values.password,
         });
     };
 
-    // If user is logged in, don't render the signup form
-    if (loggedIn) {
+    if (isAlreadyLoggedIn) {
         return null;
     }
 
@@ -337,7 +333,7 @@ export default function Signup() {
                                         Enter your information to create your account
                                     </p>
                                 </div>
-                                {isSignupDisabled && (
+                                {isRegistrationClosed && (
                                     <Alert>
                                         <WarningCircleIcon
                                             className='size-4'
@@ -366,7 +362,7 @@ export default function Signup() {
                                                     aria-invalid={fieldState.invalid}
                                                     autoComplete='username'
                                                     required
-                                                    disabled={isSignupDisabled}
+                                                    disabled={isRegistrationClosed}
                                                 />
                                                 {fieldState.invalid && (
                                                     <FieldError
@@ -393,7 +389,7 @@ export default function Signup() {
                                                     aria-invalid={fieldState.invalid}
                                                     autoComplete='email'
                                                     required
-                                                    disabled={isSignupDisabled}
+                                                    disabled={isRegistrationClosed}
                                                 />
                                                 {fieldState.invalid && (
                                                     <FieldError
@@ -418,7 +414,7 @@ export default function Signup() {
                                                         {...field}
                                                         id={field.name}
                                                         type={
-                                                            showPassword
+                                                            isPasswordVisible
                                                                 ? 'text'
                                                                 : 'password'
                                                         }
@@ -427,28 +423,28 @@ export default function Signup() {
                                                         }
                                                         autoComplete='new-password'
                                                         required
-                                                        disabled={isSignupDisabled}
+                                                        disabled={isRegistrationClosed}
                                                     />
                                                     <InputGroupAddon align='inline-end'>
                                                         <InputGroupButton
                                                             type='button'
                                                             onClick={() =>
-                                                                setShowPassword(
-                                                                    !showPassword,
+                                                                setIsPasswordVisible(
+                                                                    !isPasswordVisible,
                                                                 )
                                                             }
                                                             aria-label={
-                                                                showPassword
+                                                                isPasswordVisible
                                                                     ? 'Hide password'
                                                                     : 'Show password'
                                                             }
                                                             title={
-                                                                showPassword
+                                                                isPasswordVisible
                                                                     ? 'Hide password'
                                                                     : 'Show password'
                                                             }
                                                         >
-                                                            {showPassword ? (
+                                                            {isPasswordVisible ? (
                                                                 <EyeSlashIcon
                                                                     className='size-4'
                                                                     weight='bold'
@@ -485,7 +481,7 @@ export default function Signup() {
                                                         {...field}
                                                         id={field.name}
                                                         type={
-                                                            showPasswordCheck
+                                                            isConfirmPasswordVisible
                                                                 ? 'text'
                                                                 : 'password'
                                                         }
@@ -494,28 +490,28 @@ export default function Signup() {
                                                         }
                                                         autoComplete='new-password'
                                                         required
-                                                        disabled={isSignupDisabled}
+                                                        disabled={isRegistrationClosed}
                                                     />
                                                     <InputGroupAddon align='inline-end'>
                                                         <InputGroupButton
                                                             type='button'
                                                             onClick={() =>
-                                                                setShowPasswordCheck(
-                                                                    !showPasswordCheck,
+                                                                setIsConfirmPasswordVisible(
+                                                                    !isConfirmPasswordVisible,
                                                                 )
                                                             }
                                                             aria-label={
-                                                                showPasswordCheck
+                                                                isConfirmPasswordVisible
                                                                     ? 'Hide password'
                                                                     : 'Show password'
                                                             }
                                                             title={
-                                                                showPasswordCheck
+                                                                isConfirmPasswordVisible
                                                                     ? 'Hide password'
                                                                     : 'Show password'
                                                             }
                                                         >
-                                                            {showPasswordCheck ? (
+                                                            {isConfirmPasswordVisible ? (
                                                                 <EyeSlashIcon
                                                                     className='size-4'
                                                                     weight='bold'
@@ -568,17 +564,13 @@ export default function Signup() {
                                         variant='default'
                                         size='default'
                                         className='w-full'
-                                        disabled={
-                                            form.formState.isSubmitting ||
-                                            isSignupDisabled
-                                        }
+                                        disabled={isSubmitting || isRegistrationClosed}
                                         data-testid='login-register-button'
                                     >
-                                        {!isSignupDisabled &&
-                                            form.formState.isSubmitting && (
-                                                <Spinner className='size-4' />
-                                            )}
-                                        {isSignupDisabled
+                                        {!isRegistrationClosed && isSubmitting && (
+                                            <Spinner className='size-4' />
+                                        )}
+                                        {isRegistrationClosed
                                             ? 'Registration Disabled'
                                             : 'Sign Up'}
                                     </Button>

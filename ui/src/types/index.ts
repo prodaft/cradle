@@ -1,4 +1,4 @@
-// Common type definitions (theme + graph). Consumed via @/types/index.
+// Common type definitions (theme + graph). Consumed via @/types; generated API model aliases live in @/types/models.
 
 // ============================================================================
 // Theme Types

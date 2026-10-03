@@ -1,3 +1,4 @@
+import PasswordConfirmField from '@/components/domain/user/password-confirm-field';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -20,96 +21,102 @@ import { Spinner } from '@/components/ui/spinner';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { CopyIcon, QrCodeIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
-import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-/**
- * TwoFactorSetupDialog component props
- */
 interface TwoFactorSetupDialogProps {
-    /** Whether the dialog is open */
     open: boolean;
-    /** Callback when dialog open state changes */
     onOpenChange: (open: boolean) => void;
-    /** Optional callback to execute on successful setup/disable */
     onSuccess?: () => void;
-    /** If true, disables 2FA instead of enabling it */
     isDisabling?: boolean;
+    passwordRequired?: boolean;
 }
 
-/**
- * TwoFactorSetupDialog component - handles two-factor authentication setup and disabling
- *
- * When enabling 2FA, displays a QR code and secret key for authenticator app setup.
- * When disabling 2FA, prompts for verification code.
- *
- * @example
- * ```tsx
- * const [open, setOpen] = useState(false);
- * <TwoFactorSetupDialog
- *   open={open}
- *   onOpenChange={setOpen}
- *   onSuccess={() => console.log('2FA setup complete')}
- *   isDisabling={false}
- * />
- * ```
- */
+type Phase = 'password' | 'loading' | 'form';
+
+function getPhase(
+    isDisabling: boolean,
+    passwordRequired: boolean,
+    configUrl: string,
+    isPending: boolean,
+): Phase {
+    if (!isDisabling && passwordRequired && !configUrl && !isPending) return 'password';
+    if (!isDisabling && isPending) return 'loading';
+    return 'form';
+}
+
 export default function TwoFactorSetupDialog({
     open,
     onOpenChange,
     onSuccess,
     isDisabling = false,
+    passwordRequired = false,
 }: TwoFactorSetupDialogProps): React.JSX.Element {
-    const [verificationCode, setVerificationCode] = useState('');
+    const [otp, setOtp] = useState('');
+    const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const twoFactorOtpId = useId();
-    const twoFactorSecretKeyId = useId();
+    const otpId = useId();
+    const secretId = useId();
+    const startedRef = useRef(false);
 
-    // Query for 2FA setup data (only when enabling) - POST to enable returns config
-    const { data: twoFactorData, isLoading } = useQuery({
-        queryKey: ['2fa', 'setup'],
-        queryFn: async () => {
-            const { data, error, response } =
-                await fetchClient.POST('/users/2fa/enable/');
+    const {
+        mutate: startSetup,
+        reset,
+        data: setup,
+        isPending,
+    } = useMutation({
+        mutationFn: async (confirmedPassword?: string) => {
+            const { data, error, response } = await fetchClient.POST(
+                '/users/2fa/enable/',
+                {
+                    body: confirmedPassword ? { password: confirmedPassword } : {},
+                },
+            );
             if (error) throw { response, error };
             return data;
         },
-        enabled: open && !isDisabling,
         meta: { showErrorToast: true },
     });
 
-    // Reset state when dialog opens
     useEffect(() => {
-        if (open) {
-            setVerificationCode('');
-        }
-    }, [open]);
+        if (open) return;
+        startedRef.current = false;
+        setOtp('');
+        setPassword('');
+        reset();
+    }, [open, reset]);
 
-    const otpAuthUrl = twoFactorData?.config_url || '';
+    useEffect(() => {
+        if (!open || isDisabling || passwordRequired || startedRef.current) return;
+        startedRef.current = true;
+        startSetup(undefined);
+    }, [open, isDisabling, passwordRequired, startSetup]);
+
+    const configUrl = setup?.config_url || '';
+    const phase = getPhase(isDisabling, passwordRequired, configUrl, isPending);
     const secret = useMemo(() => {
-        if (!otpAuthUrl) return '';
+        if (!configUrl) return '';
         try {
-            return new URL(otpAuthUrl).searchParams.get('secret') || '';
+            return new URL(configUrl).searchParams.get('secret') || '';
         } catch {
             return '';
         }
-    }, [otpAuthUrl]);
+    }, [configUrl]);
 
-    const handleCopySecret = useCallback(async () => {
-        if (secret) {
-            try {
-                await navigator.clipboard.writeText(secret);
-                toast.success('Secret key copied to clipboard');
-            } catch (_err) {
-                toast.error('Failed to copy to clipboard');
-            }
+    const copySecret = useCallback(async () => {
+        if (!secret) return;
+        try {
+            await navigator.clipboard.writeText(secret);
+            toast.success('Secret key copied to clipboard');
+        } catch {
+            toast.error('Failed to copy to clipboard');
         }
     }, [secret]);
 
-    const handleSubmit = useCallback(
-        async (e: React.FormEvent<HTMLFormElement>) => {
+    const submit = useCallback(
+        async (e: React.SubmitEvent<HTMLFormElement>) => {
             e.preventDefault();
             setIsSubmitting(true);
             try {
@@ -118,7 +125,8 @@ export default function TwoFactorSetupDialog({
                         '/users/2fa/disable/',
                         {
                             body: {
-                                token: verificationCode,
+                                token: otp,
+                                ...(passwordRequired ? { password } : {}),
                             },
                         },
                     );
@@ -126,11 +134,7 @@ export default function TwoFactorSetupDialog({
                 } else {
                     const { error, response } = await fetchClient.POST(
                         '/users/2fa/verify/',
-                        {
-                            body: {
-                                token: verificationCode,
-                            },
-                        },
+                        { body: { token: otp } },
                     );
                     if (error) throw { response, error };
                 }
@@ -143,148 +147,195 @@ export default function TwoFactorSetupDialog({
                 setIsSubmitting(false);
             }
         },
-        [verificationCode, isDisabling, onSuccess, onOpenChange],
+        [otp, password, isDisabling, passwordRequired, onSuccess, onOpenChange],
     );
 
-    if (!isDisabling && isLoading) {
-        return (
-            <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className='sm:max-w-sm'>
-                    <DialogHeader>
-                        <DialogTitle>Setting up Two-Factor Auth</DialogTitle>
-                        <DialogDescription>
-                            Initializing two-factor authentication setup
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className='flex justify-center py-12'>
-                        <Spinner className='size-8' />
-                    </div>
-                </DialogContent>
-            </Dialog>
-        );
-    }
+    const isSubmitAllowed =
+        otp.length === 6 && (!isDisabling || !passwordRequired || password.length > 0);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className='sm:max-w-sm'>
-                <form onSubmit={handleSubmit} className='grid gap-4'>
-                    <DialogHeader>
-                        <DialogTitle>
-                            {isDisabling ? 'Disable' : 'Set up'} Two-Factor Auth
-                        </DialogTitle>
-                        <DialogDescription>
-                            {isDisabling
-                                ? 'Enter the 6-digit code from your authenticator app to disable 2FA'
-                                : 'Enter the 6-digit code from your authenticator app'}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {!isDisabling && !otpAuthUrl && !isLoading && (
-                        <p className='text-sm text-muted-foreground'>
-                            QR code setup data isn't available right now. Close this
-                            dialog and try again.
-                        </p>
-                    )}
-
-                    {!isDisabling && !!otpAuthUrl && (
-                        <>
-                            {/* QR Code Section */}
-                            <div className='flex justify-center'>
-                                <div className='p-4 bg-card rounded-lg border border-border'>
-                                    <QRCodeSVG
-                                        value={otpAuthUrl}
-                                        size={180}
-                                        level='H'
-                                    />
-                                </div>
-                            </div>
-
-                            <Field>
-                                <FieldLabel htmlFor={twoFactorSecretKeyId}>
-                                    Manual Entry
-                                </FieldLabel>
-                                <InputGroup>
-                                    <InputGroupAddon align='inline-start'>
-                                        <QrCodeIcon className='size-4' />
-                                    </InputGroupAddon>
-                                    <InputGroupInput
-                                        id={twoFactorSecretKeyId}
-                                        type='text'
-                                        value={secret}
-                                        readOnly
-                                    />
-                                    <InputGroupAddon align='inline-end'>
-                                        <InputGroupButton
-                                            type='button'
-                                            onClick={handleCopySecret}
-                                            aria-label='Copy secret key'
-                                        >
-                                            <CopyIcon className='size-4' />
-                                        </InputGroupButton>
-                                    </InputGroupAddon>
-                                </InputGroup>
-                                <FieldDescription>
-                                    Can't scan the QR code? Enter this secret key
-                                    manually in your authenticator app.
-                                </FieldDescription>
-                            </Field>
-                        </>
-                    )}
-
-                    <Field>
-                        <FieldLabel htmlFor={twoFactorOtpId}>
-                            Verification code
-                        </FieldLabel>
-                        <InputOTP
-                            id={twoFactorOtpId}
-                            name='two-factor-setup-otp'
-                            autoComplete='one-time-code'
-                            maxLength={6}
-                            value={verificationCode}
-                            onChange={(value) => setVerificationCode(value)}
-                            containerClassName='w-full'
-                        >
-                            <InputOTPGroup className='w-full'>
-                                <InputOTPSlot index={0} className='flex-1 h-12' />
-                                <InputOTPSlot index={1} className='flex-1 h-12' />
-                                <InputOTPSlot index={2} className='flex-1 h-12' />
-                                <InputOTPSlot index={3} className='flex-1 h-12' />
-                                <InputOTPSlot index={4} className='flex-1 h-12' />
-                                <InputOTPSlot index={5} className='flex-1 h-12' />
-                            </InputOTPGroup>
-                        </InputOTP>
-                    </Field>
-
-                    <DialogFooter>
-                        <DialogClose asChild>
+                {phase === 'password' ? (
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            startSetup(password);
+                        }}
+                        className='grid gap-4'
+                    >
+                        <DialogHeader>
+                            <DialogTitle>Two-Factor Auth</DialogTitle>
+                            <DialogDescription>
+                                Confirm your password to begin two-factor authentication
+                                setup.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <PasswordConfirmField
+                            value={password}
+                            onChange={setPassword}
+                            disabled={isPending}
+                        />
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={isPending}
+                                >
+                                    Cancel
+                                </Button>
+                            </DialogClose>
                             <Button
-                                type='button'
-                                variant='outline'
+                                type='submit'
                                 size='sm'
-                                disabled={isSubmitting}
+                                disabled={!password || isPending}
+                                aria-busy={isPending}
                             >
-                                Cancel
+                                {isPending ? 'Loading...' : 'Continue'}
                             </Button>
-                        </DialogClose>
-                        <Button
-                            type='submit'
-                            variant={isDisabling ? 'destructive' : 'default'}
-                            size='sm'
-                            disabled={
-                                verificationCode.length !== 6 ||
-                                isSubmitting ||
-                                (!isDisabling && !otpAuthUrl)
-                            }
-                            aria-busy={isSubmitting}
-                        >
-                            {isSubmitting
-                                ? 'Loading...'
-                                : isDisabling
-                                  ? 'Disable'
-                                  : 'Enable'}
-                        </Button>
-                    </DialogFooter>
-                </form>
+                        </DialogFooter>
+                    </form>
+                ) : phase === 'loading' ? (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle>Two-Factor Auth</DialogTitle>
+                            <DialogDescription>
+                                Initializing two-factor authentication setup
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className='flex justify-center py-12'>
+                            <Spinner className='size-8' />
+                        </div>
+                    </>
+                ) : (
+                    <form onSubmit={submit} className='grid gap-4'>
+                        <DialogHeader>
+                            <DialogTitle>
+                                {isDisabling
+                                    ? 'Disable Two-Factor Auth'
+                                    : 'Two-Factor Auth'}
+                            </DialogTitle>
+                            <DialogDescription>
+                                {isDisabling
+                                    ? 'Enter the 6-digit code from your authenticator app to disable 2FA'
+                                    : 'Enter the 6-digit code from your authenticator app'}
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        {!isDisabling && !configUrl && (
+                            <p className='text-sm text-muted-foreground'>
+                                QR code setup data isn't available right now. Close this
+                                dialog and try again.
+                            </p>
+                        )}
+
+                        {!isDisabling && !!configUrl && (
+                            <>
+                                <div className='flex justify-center'>
+                                    <div className='p-4 bg-card rounded-lg border border-border'>
+                                        <QRCodeSVG
+                                            value={configUrl}
+                                            size={180}
+                                            level='H'
+                                        />
+                                    </div>
+                                </div>
+
+                                <Field>
+                                    <FieldLabel htmlFor={secretId}>
+                                        Manual Entry
+                                    </FieldLabel>
+                                    <InputGroup>
+                                        <InputGroupAddon align='inline-start'>
+                                            <QrCodeIcon className='size-4' />
+                                        </InputGroupAddon>
+                                        <InputGroupInput
+                                            id={secretId}
+                                            type='text'
+                                            value={secret}
+                                            readOnly
+                                        />
+                                        <InputGroupAddon align='inline-end'>
+                                            <InputGroupButton
+                                                type='button'
+                                                onClick={copySecret}
+                                                aria-label='Copy secret key'
+                                            >
+                                                <CopyIcon className='size-4' />
+                                            </InputGroupButton>
+                                        </InputGroupAddon>
+                                    </InputGroup>
+                                    <FieldDescription>
+                                        Can't scan the QR code? Enter this secret key
+                                        manually in your authenticator app.
+                                    </FieldDescription>
+                                </Field>
+                            </>
+                        )}
+
+                        {isDisabling && passwordRequired ? (
+                            <PasswordConfirmField
+                                value={password}
+                                onChange={setPassword}
+                                disabled={isSubmitting}
+                            />
+                        ) : null}
+
+                        <Field>
+                            <FieldLabel htmlFor={otpId}>Verification code</FieldLabel>
+                            <InputOTP
+                                id={otpId}
+                                name='otp'
+                                autoComplete='one-time-code'
+                                maxLength={6}
+                                value={otp}
+                                onChange={(value) => setOtp(value)}
+                                containerClassName='w-full'
+                            >
+                                <InputOTPGroup className='w-full'>
+                                    <InputOTPSlot index={0} className='flex-1 h-12' />
+                                    <InputOTPSlot index={1} className='flex-1 h-12' />
+                                    <InputOTPSlot index={2} className='flex-1 h-12' />
+                                    <InputOTPSlot index={3} className='flex-1 h-12' />
+                                    <InputOTPSlot index={4} className='flex-1 h-12' />
+                                    <InputOTPSlot index={5} className='flex-1 h-12' />
+                                </InputOTPGroup>
+                            </InputOTP>
+                        </Field>
+
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={isSubmitting}
+                                >
+                                    Cancel
+                                </Button>
+                            </DialogClose>
+                            <Button
+                                type='submit'
+                                variant={isDisabling ? 'destructive' : 'default'}
+                                size='sm'
+                                disabled={
+                                    !isSubmitAllowed ||
+                                    isSubmitting ||
+                                    (!isDisabling && !configUrl)
+                                }
+                                aria-busy={isSubmitting}
+                            >
+                                {isSubmitting
+                                    ? 'Loading...'
+                                    : isDisabling
+                                      ? 'Disable'
+                                      : 'Enable'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                )}
             </DialogContent>
         </Dialog>
     );

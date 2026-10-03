@@ -8,7 +8,7 @@
  */
 
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
-import type { ThemeConfig, ThemeContextValue } from '@/types/index';
+import type { ThemeConfig, ThemeContextValue } from '@/types';
 import { darkTheme, lightTheme } from '@/utils/themes';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';

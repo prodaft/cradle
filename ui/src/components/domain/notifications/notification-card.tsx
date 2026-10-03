@@ -112,7 +112,7 @@ export default function NotificationCard({
         DEFAULT_VISUAL;
     const Icon = visual.icon;
 
-    const markUnreadMutation = useMutation({
+    const updateUnreadStatus = useMutation({
         mutationFn: async ({
             id,
             is_marked_unread,
@@ -143,7 +143,7 @@ export default function NotificationCard({
         },
     });
 
-    const changeAccessMutation = useMutation({
+    const updateAccess = useMutation({
         mutationFn: async ({
             userId,
             entityId,
@@ -167,7 +167,7 @@ export default function NotificationCard({
         },
     });
 
-    const activateUserMutation = useMutation({
+    const activateUser = useMutation({
         mutationFn: async (userId: string) => {
             const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
                 params: { path: { user_id: userId } },
@@ -180,7 +180,7 @@ export default function NotificationCard({
         },
     });
 
-    const viewReportMutation = useMutation({
+    const fetchReportUrl = useMutation({
         mutationFn: async (reportId: string) => {
             const { data, error, response } = await fetchClient.GET('/reports/{id}/', {
                 params: {
@@ -205,32 +205,32 @@ export default function NotificationCard({
         },
     });
 
-    const handleMarkUnread = () => {
+    const toggleUnread = () => {
         if (!id) return;
         const next = !unreadStatus;
-        markUnreadMutation.mutate({ id, is_marked_unread: next });
+        updateUnreadStatus.mutate({ id, is_marked_unread: next });
     };
 
-    const handleChangeAccess = (newAccess: 'none' | 'read' | 'read-write') => () => {
+    const grantAccess = (access: 'read' | 'read-write') => () => {
         const notif = notification as AccessRequestNotification;
         if (!notif.requesting_user_id || !notif.entity_id) return;
-        changeAccessMutation.mutate({
+        updateAccess.mutate({
             userId: notif.requesting_user_id,
             entityId: notif.entity_id,
-            accessType: newAccess,
+            accessType: access,
         });
     };
 
-    const handleActivateUser = () => {
+    const activateNewUser = () => {
         const notif = notification as NewUserNotification;
         if (!notif.new_user?.id) return;
-        activateUserMutation.mutate(notif.new_user.id);
+        activateUser.mutate(notif.new_user.id);
     };
 
-    const handleViewReport = () => {
+    const viewReport = () => {
         const notif = notification as ReportRenderNotification;
         if (!notif.published_report_id) return;
-        viewReportMutation.mutate(notif.published_report_id);
+        fetchReportUrl.mutate(notif.published_report_id);
     };
 
     const timestampDate = timestamp ? new Date(timestamp) : null;
@@ -241,7 +241,7 @@ export default function NotificationCard({
         ? format(timestampDate, 'dd MMM yyyy, HH:mm')
         : 'N/A';
 
-    const hasActions = !!(
+    const isActionable = !!(
         notification.notification_type === 'request_access_notification' ||
         notification.notification_type === 'new_user_notification' ||
         notification.notification_type === 'report_render_notification' ||
@@ -269,11 +269,7 @@ export default function NotificationCard({
             <div className='absolute top-2 right-2'>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button
-                            variant='ghost'
-                            size='icon-xs'
-                            onClick={handleMarkUnread}
-                        >
+                        <Button variant='ghost' size='icon-xs' onClick={toggleUnread}>
                             {unreadStatus ? (
                                 <EnvelopeIcon weight='bold' data-testid='mark-read' />
                             ) : (
@@ -293,32 +289,29 @@ export default function NotificationCard({
             <AlertDescription>
                 <p>{message}</p>
 
-                {hasActions && (
+                {isActionable && (
                     <div className='flex flex-wrap gap-2 pt-2'>
                         {notification.notification_type ===
                             'request_access_notification' && (
                             <>
-                                <Button size='xs' onClick={handleChangeAccess('read')}>
+                                <Button size='xs' onClick={grantAccess('read')}>
                                     Read
                                 </Button>
-                                <Button
-                                    size='xs'
-                                    onClick={handleChangeAccess('read-write')}
-                                >
+                                <Button size='xs' onClick={grantAccess('read-write')}>
                                     Read/Write
                                 </Button>
                             </>
                         )}
 
                         {notification.notification_type === 'new_user_notification' && (
-                            <Button size='xs' onClick={handleActivateUser}>
+                            <Button size='xs' onClick={activateNewUser}>
                                 Activate user
                             </Button>
                         )}
 
                         {notification.notification_type ===
                             'report_render_notification' && (
-                            <Button size='xs' onClick={handleViewReport}>
+                            <Button size='xs' onClick={viewReport}>
                                 View report
                             </Button>
                         )}

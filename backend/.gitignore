@@ -17,3 +17,6 @@ deploy/inventory.yml
 
 .vscode
 IntelOwl
+
+# Local scratch file for the markdown pipeline
+notes/markdown/example_note.md

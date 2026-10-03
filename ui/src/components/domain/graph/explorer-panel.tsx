@@ -32,7 +32,6 @@ export default function ExplorerPanel({
         new Set(),
     );
 
-    // Create a map from node id to node for quick lookup
     const nodeMap = useMemo(() => {
         const map = new Map<string, Node>();
         allNodes.forEach((node) => map.set(node.id, node));
@@ -154,10 +153,10 @@ export default function ExplorerPanel({
                         {(() => {
                             const connectedNodes = connectionsMap.get(node.id) ?? [];
                             if (connectedNodes.length === 0) return null;
-                            const isExpanded = expandedConnections.has(node.id);
-                            const showCollapse = connectedNodes.length > 5;
+                            const expanded = expandedConnections.has(node.id);
+                            const collapsible = connectedNodes.length > 5;
                             const displayedNodes =
-                                showCollapse && !isExpanded
+                                collapsible && !expanded
                                     ? connectedNodes.slice(0, 5)
                                     : connectedNodes;
 
@@ -167,7 +166,7 @@ export default function ExplorerPanel({
                                         <span className='text-xs text-muted-foreground'>
                                             Connections ({connectedNodes.length}):
                                         </span>
-                                        {showCollapse && (
+                                        {collapsible && (
                                             <Button
                                                 variant='link'
                                                 size='sm'
@@ -177,7 +176,7 @@ export default function ExplorerPanel({
                                                 }
                                                 className='text-xs h-auto p-0'
                                             >
-                                                {isExpanded
+                                                {expanded
                                                     ? 'Show less'
                                                     : `Show all (${connectedNodes.length})`}
                                             </Button>

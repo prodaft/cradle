@@ -1,4 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
+import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
 import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
@@ -42,12 +42,12 @@ interface ActivityEvent {
     type: string;
     contentType: string;
     objectId: string;
-    objectRepr: string;
+    repr: string;
     details?: string | null;
     srcLog?: SrcLog | null;
 }
 
-const getTypeBadgeVariant = (type: string) => {
+const typeBadgeVariant = (type: string) => {
     switch (type.toLowerCase()) {
         case 'create':
             return 'default';
@@ -62,33 +62,33 @@ const getTypeBadgeVariant = (type: string) => {
     }
 };
 
-const formatObjectRepr = (
-    repr: string,
-    objectId: string,
-): { text: string; fullId: string; isDeleted: boolean } => {
-    if (!repr) return { text: '-', fullId: '', isDeleted: false };
+const parseRepr = (
+    value: string,
+    id: string,
+): { label: string; fullId: string; isDeleted: boolean } => {
+    if (!value) return { label: '-', fullId: '', isDeleted: false };
 
-    if (repr === 'DELETED') {
-        return { text: 'Deleted', fullId: objectId, isDeleted: true };
+    if (value === 'DELETED') {
+        return { label: 'Deleted', fullId: id, isDeleted: true };
     }
 
-    const bracketMatch = repr.match(/^\[\[([^:]+):([^\]]+)\]\]$/);
+    const bracketMatch = value.match(/^\[\[([^:]+):([^\]]+)\]\]$/);
     if (bracketMatch) {
         return {
-            text: `${bracketMatch[1]}:${bracketMatch[2]}`,
-            fullId: objectId,
+            label: `${bracketMatch[1]}:${bracketMatch[2]}`,
+            fullId: id,
             isDeleted: false,
         };
     }
 
-    const angleMatch = repr.match(/^<(\w+):([^>]+)>$/);
+    const angleMatch = value.match(/^<(\w+):([^>]+)>$/);
     if (angleMatch) {
-        const text = angleMatch[1] ?? '';
+        const label = angleMatch[1] ?? '';
         const fullId = angleMatch[2] ?? '';
-        return { text, fullId, isDeleted: false };
+        return { label, fullId, isDeleted: false };
     }
 
-    return { text: repr, fullId: objectId, isDeleted: false };
+    return { label: value, fullId: id, isDeleted: false };
 };
 
 const formatDiff = (diffTxt: string): string => {
@@ -142,11 +142,11 @@ const formatDiff = (diffTxt: string): string => {
     }
 };
 
-function ExpandedRowDetail({ event }: { event: ActivityEvent }) {
-    const hasDetails = !!event.details;
-    const hasSrcLog = !!event.srcLog;
-    const srcLogFormatted = event.srcLog
-        ? formatObjectRepr(event.srcLog.object_repr, event.srcLog.object_id)
+function ExpandedRowDetail({ item }: { item: ActivityEvent }) {
+    const hasDetails = !!item.details;
+    const hasSource = !!item.srcLog;
+    const source = item.srcLog
+        ? parseRepr(item.srcLog.object_repr, item.srcLog.object_id)
         : null;
 
     return (
@@ -158,12 +158,12 @@ function ExpandedRowDetail({ event }: { event: ActivityEvent }) {
                     </div>
                     <div
                         dangerouslySetInnerHTML={{
-                            __html: formatDiff(event.details!),
+                            __html: formatDiff(item.details!),
                         }}
                     />
                 </div>
             )}
-            {hasSrcLog && srcLogFormatted && (
+            {hasSource && source && (
                 <div className='space-y-1.5'>
                     <div className='flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2'>
                         <GitForkIcon className='size-3.5' />
@@ -173,34 +173,34 @@ function ExpandedRowDetail({ event }: { event: ActivityEvent }) {
                         <div className='bg-background rounded-md border border-border p-3'>
                             <div className='flex flex-wrap items-baseline gap-2 mb-2'>
                                 <Badge
-                                    variant={getTypeBadgeVariant(event.srcLog!.type)}
+                                    variant={typeBadgeVariant(item.srcLog!.type)}
                                     className='capitalize text-xs'
                                 >
-                                    {event.srcLog!.type}
+                                    {item.srcLog!.type}
                                 </Badge>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <span
-                                            className={`text-xs cursor-help ${srcLogFormatted.isDeleted ? 'text-muted-foreground line-through' : ''}`}
+                                            className={`text-xs cursor-help ${source.isDeleted ? 'text-muted-foreground line-through' : ''}`}
                                         >
-                                            {srcLogFormatted.text}
+                                            {source.label}
                                         </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <span className='font-mono text-xs'>
-                                            {srcLogFormatted.fullId}
+                                            {source.fullId}
                                         </span>
                                     </TooltipContent>
                                 </Tooltip>
                             </div>
-                            {event.srcLog!.details && (
+                            {item.srcLog!.details && (
                                 <>
                                     <div className='text-xs font-medium text-muted-foreground mt-2 mb-1'>
                                         Changes
                                     </div>
                                     <div
                                         dangerouslySetInnerHTML={{
-                                            __html: formatDiff(event.srcLog!.details),
+                                            __html: formatDiff(item.srcLog!.details),
                                         }}
                                     />
                                 </>
@@ -216,35 +216,30 @@ function ExpandedRowDetail({ event }: { event: ActivityEvent }) {
 export default function UserActivityList({ username }: UserActivityListProps) {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
-    const [search, setSearch] = useState('');
+    const [appliedSearch, setAppliedSearch] = useState('');
     const [expanded, setExpanded] = useState<ExpandedState>({});
 
-    const queryParams = useMemo((): EventLogsListQuery => {
+    const listQuery = useMemo((): EventLogsListQuery => {
         return Object.fromEntries(
             Object.entries({
                 page,
                 page_size: pageSize,
                 username: username || undefined,
-                search: search.trim() || undefined,
+                search: appliedSearch.trim() || undefined,
             }).filter(([, v]) => v !== undefined),
         ) as EventLogsListQuery;
-    }, [page, pageSize, username, search]);
+    }, [page, pageSize, username, appliedSearch]);
 
-    const handleSearchDebounced = useCallback((value: string) => {
-        setSearch(value);
+    const applySearch = useCallback((value: string) => {
+        setAppliedSearch(value);
         setPage(1);
     }, []);
 
-    const handleSearchClear = useCallback(() => {
-        setSearch('');
-        setPage(1);
-    }, []);
-
-    const { data: logsData, isLoading } = $api.useQuery(
+    const { data: logsPage, isLoading } = $api.useQuery(
         'get',
         '/logs/',
         {
-            params: { query: queryParams },
+            params: { query: listQuery },
         },
         {
             enabled: !!username,
@@ -254,37 +249,35 @@ export default function UserActivityList({ username }: UserActivityListProps) {
         },
     );
 
-    const totalPages = logsData?.total_pages || 1;
-    const totalCount = logsData?.count || 0;
+    const totalPages = logsPage?.total_pages || 1;
+    const totalCount = logsPage?.count || 0;
 
-    const events = useMemo(() => {
-        if (!logsData?.results) return [];
+    const rows = useMemo(() => {
+        if (!logsPage?.results) return [];
 
-        return logsData.results.map(
-            (log: any): ActivityEvent => ({
-                id: log.id || '',
-                timestamp:
-                    typeof log.timestamp === 'string'
-                        ? log.timestamp
-                        : new Date().toISOString(),
-                type: log.type,
-                contentType: log.content_type || 'unknown',
-                objectId: log.object_id || '',
-                objectRepr: log.object_repr || '',
-                details: log.details || undefined,
-                srcLog: log.src_log
-                    ? {
-                          id: log.src_log.id,
-                          type: log.src_log.type,
-                          details: log.src_log.details,
-                          content_type: log.src_log.content_type,
-                          object_id: log.src_log.object_id,
-                          object_repr: log.src_log.object_repr,
-                      }
-                    : undefined,
-            }),
-        );
-    }, [logsData?.results]);
+        return logsPage.results.map((log: any): ActivityEvent => ({
+            id: log.id || '',
+            timestamp:
+                typeof log.timestamp === 'string'
+                    ? log.timestamp
+                    : new Date().toISOString(),
+            type: log.type,
+            contentType: log.content_type || 'unknown',
+            objectId: log.object_id || '',
+            repr: log.object_repr || '',
+            details: log.details || undefined,
+            srcLog: log.src_log
+                ? {
+                      id: log.src_log.id,
+                      type: log.src_log.type,
+                      details: log.src_log.details,
+                      content_type: log.src_log.content_type,
+                      object_id: log.src_log.object_id,
+                      object_repr: log.src_log.object_repr,
+                  }
+                : undefined,
+        }));
+    }, [logsPage?.results]);
 
     const columns = useMemo<ColumnDef<ActivityEvent>[]>(
         () => [
@@ -295,17 +288,17 @@ export default function UserActivityList({ username }: UserActivityListProps) {
                 meta: { label: 'Type' },
                 size: 80,
                 cell: ({ row }) => {
-                    const event = row.original;
-                    const hasSrcLog = !!event.srcLog;
+                    const item = row.original;
+                    const hasSource = !!item.srcLog;
                     return (
                         <div className='flex items-center gap-1.5'>
                             <Badge
-                                variant={getTypeBadgeVariant(event.type)}
+                                variant={typeBadgeVariant(item.type)}
                                 className='capitalize'
                             >
-                                {event.type}
+                                {item.type}
                             </Badge>
-                            {hasSrcLog && (
+                            {hasSource && (
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <span className='text-muted-foreground'>
@@ -330,23 +323,26 @@ export default function UserActivityList({ username }: UserActivityListProps) {
                 header: 'Content type',
                 meta: { label: 'Content type' },
                 size: 100,
-                cell: ({ row }) => (
-                    <span className='text-muted-foreground capitalize'>
-                        {row.original.contentType}
-                    </span>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <span className='text-muted-foreground capitalize'>
+                            {item.contentType}
+                        </span>
+                    );
+                },
                 enableSorting: false,
             },
             {
-                accessorKey: 'objectRepr',
+                accessorKey: 'repr',
                 id: 'object',
                 header: 'Object',
                 meta: { label: 'Object' },
                 cell: ({ row }) => {
-                    const event = row.original;
-                    const { text, fullId, isDeleted } = formatObjectRepr(
-                        event.objectRepr,
-                        event.objectId,
+                    const item = row.original;
+                    const { label, fullId, isDeleted } = parseRepr(
+                        item.repr,
+                        item.objectId,
                     );
                     return (
                         <Tooltip>
@@ -354,7 +350,7 @@ export default function UserActivityList({ username }: UserActivityListProps) {
                                 <span
                                     className={`cursor-help ${isDeleted ? 'text-muted-foreground line-through' : ''}`}
                                 >
-                                    {text}
+                                    {label}
                                 </span>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -371,11 +367,14 @@ export default function UserActivityList({ username }: UserActivityListProps) {
                 header: () => <span className='block text-right'>Date</span>,
                 meta: { label: 'Date' },
                 size: 140,
-                cell: ({ row }) => (
-                    <div className='text-right text-muted-foreground text-sm'>
-                        {format(new Date(row.original.timestamp), 'dd/MM/yyyy HH:mm')}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='text-right text-muted-foreground text-sm'>
+                            {format(new Date(item.timestamp), 'dd/MM/yyyy HH:mm')}
+                        </div>
+                    );
+                },
                 enableSorting: false,
             },
             {
@@ -400,21 +399,21 @@ export default function UserActivityList({ username }: UserActivityListProps) {
         [],
     );
 
-    const handlePaginationChange = useCallback(
-        (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1;
-            if (newPageSize !== pageSize) {
-                setPageSize(newPageSize);
+    const paginate = useCallback(
+        (pageIndex: number, size: number) => {
+            const target = pageIndex + 1;
+            if (size !== pageSize) {
+                setPageSize(size);
                 setPage(1);
-            } else if (newPage !== page) {
-                setPage(newPage);
+            } else if (target !== page) {
+                setPage(target);
             }
         },
         [page, pageSize],
     );
 
     const table = useReactTable({
-        data: events,
+        data: rows,
         columns,
         state: {
             expanded,
@@ -427,7 +426,7 @@ export default function UserActivityList({ username }: UserActivityListProps) {
         onPaginationChange: (updater) => {
             const current = { pageIndex: page - 1, pageSize };
             const next = typeof updater === 'function' ? updater(current) : updater;
-            handlePaginationChange(next.pageIndex, next.pageSize);
+            paginate(next.pageIndex, next.pageSize);
         },
         getCoreRowModel: getCoreRowModel(),
         getExpandedRowModel: getExpandedRowModel(),
@@ -438,12 +437,12 @@ export default function UserActivityList({ username }: UserActivityListProps) {
         rowCount: totalCount,
     });
 
-    const onRowClickRow = useCallback((row: Row<ActivityEvent>) => {
+    const toggleRow = useCallback((row: Row<ActivityEvent>) => {
         if (row.getCanExpand()) row.toggleExpanded();
     }, []);
 
-    const renderSubRow = useCallback(
-        (row: Row<ActivityEvent>) => <ExpandedRowDetail event={row.original} />,
+    const renderExpandedRow = useCallback(
+        (row: Row<ActivityEvent>) => <ExpandedRowDetail item={row.original} />,
         [],
     );
 
@@ -461,19 +460,19 @@ export default function UserActivityList({ username }: UserActivityListProps) {
                 }
                 showPagination={!isLoading}
                 toolbarEnd={<DataTableViewOptions table={table} />}
-                onRowClickRow={onRowClickRow}
+                onRowClickRow={toggleRow}
                 interactiveRow={(row) => row.getCanExpand()}
-                renderSubRow={renderSubRow}
+                renderSubRow={renderExpandedRow}
                 emptyMessage='No activity found for this user.'
             >
                 <ActionBarSearch
                     placeholder='Search object id, type, details...'
                     name='user_activity_search'
-                    value={search}
+                    value={appliedSearch}
                     debounceMs={300}
-                    onDebouncedChange={handleSearchDebounced}
-                    onSubmit={handleSearchDebounced}
-                    onClear={handleSearchClear}
+                    onDebouncedChange={applySearch}
+                    onSubmit={applySearch}
+                    onClear={() => applySearch('')}
                     className='w-full min-w-[12rem] max-w-md sm:w-72'
                 />
             </DataTable>

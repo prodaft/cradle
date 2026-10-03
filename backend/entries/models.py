@@ -8,16 +8,17 @@ import re
 import uuid
 from typing import Optional
 
+from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models as gis_models
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone
 from django_lifecycle import AFTER_UPDATE, LifecycleModel, hook
 from django_lifecycle.conditions import WhenFieldHasChanged
-from django_lifecycle.mixins import LifecycleModelMixin, transaction
+from django_lifecycle.mixins import LifecycleModelMixin
 
 from core.fields import BitStringField
 from file_transfer.storage import RelationStorage
@@ -26,6 +27,7 @@ from logs.models import LoggableModelMixin
 from .enums import EntryType, EntryTypeFormat, RelationReason
 from .exceptions import (
     EntityLimitExceededException,
+    EntryTypeRequiredException,
     InvalidEntryException,
     InvalidEntryHierarchyException,
     InvalidEntryTypeSettingsException,
@@ -109,6 +111,10 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
     )
 
     @classmethod
+    def normalize_subtype(cls, subtype: str) -> str:
+        return subtype.strip().strip("/")
+
+    @classmethod
     def get_default_pk(cls):
         """Return the primary key of the default 'thunk' entry class, creating it if needed."""
         eclass, created = cls.objects.get_or_create(
@@ -119,35 +125,45 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
 
     def rename(self, new_subtype: Optional[str], user_id: str = None):
         """Rename this entry class to new_subtype, updating all entries and notes."""
-        if new_subtype == self.subtype:
-            return None
-
-        from django.db import transaction
-
         from entries.tasks import remap_notes_task
 
         old_subtype = self.subtype
+
+        if new_subtype is not None:
+            new_subtype = self.normalize_subtype(new_subtype)
+            if new_subtype == old_subtype:
+                return self
+            if not new_subtype:
+                raise EntryTypeRequiredException(detail="Entry type name is required.")
+            if EntryClass.objects.filter(subtype=new_subtype).exists():
+                raise InvalidEntryTypeSettingsException(detail="An entry type with this name already exists.")
 
         notes = []
         for e in self.entries.all():
             notes.extend(e.notes.all())
         unique_note_ids = list({note.id for note in notes})
 
-        if new_subtype is not None:
-            entries = self.entries.all()
-            for entry in entries:
-                entry.entry_class_id = new_subtype
-            Entry.objects.bulk_update(entries, ["entry_class_id"])
+        with transaction.atomic():
+            renamed = None
+            if new_subtype is not None:
+                field_values = {
+                    field.attname: getattr(self, field.attname)
+                    for field in self._meta.concrete_fields
+                    if field.attname != self._meta.pk.attname
+                }
+                renamed = EntryClass.objects.create(subtype=new_subtype, **field_values)
+                _update_entry_class_references(old_subtype, new_subtype)
+                self.delete()
+            else:
+                self.delete()
 
-            self.subtype = new_subtype
-            self.save()
-        else:
-            EntryClass.objects.get(subtype=old_subtype).delete()
+            transaction.on_commit(
+                lambda note_ids=unique_note_ids, old=old_subtype, new=new_subtype, uid=user_id: remap_notes_task.delay(
+                    note_ids, {old: new}, {}, uid
+                )
+            )
 
-        # Schedule remapping to update notes' content asynchronously.
-        transaction.on_commit(lambda: remap_notes_task.delay(unique_note_ids, {old_subtype: new_subtype}, {}, user_id))
-
-        return self
+        return renamed if renamed is not None else self
 
     def validate_text(self, t: str):
         """Validate entry text against this class's regex, options, or prefix."""
@@ -189,7 +205,7 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         return False
 
     def save(self, *args, **kwargs):
-        self.subtype = self.subtype.strip().strip("/")
+        self.subtype = self.normalize_subtype(self.subtype)
 
         if conflict := self.does_entryclass_violate_hierarchy():
             raise InvalidEntryHierarchyException(conflict.subtype)
@@ -240,6 +256,30 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
     def update_access_level_of_children(self):
         for i in self.entries.all():
             i.save()
+
+
+def _update_entry_class_references(old_subtype: str, new_subtype: str) -> None:
+    """Repoint every FK and M2M reference to EntryClass from old_subtype to new_subtype."""
+    registered_models = set(apps.get_models())
+
+    for model in registered_models:
+        for field in model._meta.local_concrete_fields:
+            remote_field = getattr(field, "remote_field", None)
+            if remote_field and remote_field.model == EntryClass:
+                model.objects.filter(**{field.attname: old_subtype}).update(**{field.attname: new_subtype})
+
+        for field in model._meta.many_to_many:
+            if getattr(field, "related_model", None) != EntryClass:
+                continue
+            through = field.remote_field.through
+            if through in registered_models:
+                continue
+            for through_field in through._meta.local_concrete_fields:
+                remote_field = getattr(through_field, "remote_field", None)
+                if remote_field and remote_field.model == EntryClass:
+                    through.objects.filter(**{through_field.attname: old_subtype}).update(
+                        **{through_field.attname: new_subtype}
+                    )
 
 
 class Entry(LifecycleModel, LoggableModelMixin):

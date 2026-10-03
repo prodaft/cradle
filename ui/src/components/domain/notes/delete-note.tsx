@@ -33,9 +33,9 @@ interface DeleteNoteProps {
  * @param classNames - Optional class names for the icon
  */
 export default function DeleteNote({ note, setHidden, classNames }: DeleteNoteProps) {
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-    const deleteMutation = useMutation({
+    const deleteNote = useMutation({
         mutationFn: async () => {
             const { error, response } = await fetchClient.DELETE('/notes/{note_id}/', {
                 params: { path: { note_id: String(note.id) } },
@@ -49,10 +49,10 @@ export default function DeleteNote({ note, setHidden, classNames }: DeleteNotePr
         },
     });
 
-    const handleDelete = async () => {
+    const confirmAndDelete = async () => {
         try {
-            await deleteMutation.mutateAsync();
-            setDeleteDialogOpen(false);
+            await deleteNote.mutateAsync();
+            setIsDeleteOpen(false);
         } catch {
             // Error toast handled by mutation cache
         }
@@ -69,13 +69,13 @@ export default function DeleteNote({ note, setHidden, classNames }: DeleteNotePr
                     onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        setDeleteDialogOpen(true);
+                        setIsDeleteOpen(true);
                     }}
                 >
                     <TrashIcon className={classNames} weight='bold' />
                 </Button>
             </span>
-            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
@@ -88,17 +88,17 @@ export default function DeleteNote({ note, setHidden, classNames }: DeleteNotePr
                         <AlertDialogCancel
                             variant='outline'
                             size='sm'
-                            disabled={deleteMutation.isPending}
+                            disabled={deleteNote.isPending}
                         >
                             Cancel
                         </AlertDialogCancel>
                         <Button
                             variant='destructive'
                             size='sm'
-                            onClick={handleDelete}
-                            disabled={deleteMutation.isPending}
+                            onClick={confirmAndDelete}
+                            disabled={deleteNote.isPending}
                         >
-                            {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                            {deleteNote.isPending ? 'Deleting...' : 'Delete'}
                         </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>

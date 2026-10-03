@@ -10,13 +10,11 @@ import { debounce } from 'lodash';
 import { FilePlus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import UploadDigestDialog from './dialogs/upload-digest-dialog';
+import { parseParam, toFilterValue } from './digest-list-status';
 import DigestsTable from './digests-table';
 
-type DigestListQuery = NonNullable<
-    operations['intelio_digest_list']['parameters']['query']
->;
+type ListQuery = NonNullable<operations['intelio_digest_list']['parameters']['query']>;
 
-/** `/digests` route: header + URL state + `DigestsTable`. */
 const toYmd = (iso?: string): string => {
     if (!iso) return '';
     const part = new Date(iso).toISOString().split('T')[0];
@@ -33,12 +31,12 @@ const toEndIso = (ymd?: string | null) => {
     return endDate.toISOString();
 };
 
-interface SearchFilters {
+interface Draft {
     title: string;
     author: string;
 }
 
-interface SubmittedFilters extends SearchFilters {
+interface Applied extends Draft {
     created_at_gte: string;
     created_at_lte?: string;
 }
@@ -48,7 +46,7 @@ interface DateRange {
     endDate: string | null;
 }
 
-interface ColumnFilters {
+interface Filters {
     status: string;
     user: string;
     created_at: {
@@ -64,44 +62,40 @@ export default function DigestsList() {
         select: (state) => state.location,
     });
     const search = useSearch({ from: '/_authenticated/digest-data' });
-    const searchAny = search as any;
-    const sortField = searchAny?.digests_sort_field || 'created_at';
-    const sortDirection: 'asc' | 'desc' = searchAny?.digests_sort_direction || 'desc';
+    const statusSlug = parseParam(search.status);
+    const page = Number(search.digests_page ?? 1) || 1;
+    const sortField = search.digests_sort_field || 'created_at';
+    const sortDirection: 'asc' | 'desc' = search.digests_sort_direction || 'desc';
     const pageSize = (() => {
-        const parsed = Number(searchAny?.digests_pagesize);
+        const parsed = Number(search.digests_pagesize);
         return Number.isFinite(parsed) && parsed > 0 ? parsed : 20;
     })();
 
-    const [uploadDigestDialogOpen, setUploadDigestDialogOpen] = useState(false);
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
     const queryClient = useQueryClient();
-    const [page, setPage] = useState(1);
 
-    const [searchFilters, setSearchFilters] = useState<SearchFilters>({
-        title: (search as any)?.title || '',
-        author: (search as any)?.author || '',
+    const [draft, setDraft] = useState<Draft>({
+        title: search.title || '',
+        author: search.author || '',
     });
 
-    const [submittedFilters, setSubmittedFilters] = useState<SubmittedFilters>({
-        title: (search as any)?.title || '',
-        author: (search as any)?.author || '',
-        created_at_gte: (search as any)?.created_at_gte || '',
+    const [applied, setApplied] = useState<Applied>({
+        title: search.title || '',
+        author: search.author || '',
+        created_at_gte: search.created_at_gte || '',
     });
 
     const [dateRange, setDateRange] = useState<DateRange>({
-        startDate: (search as any)?.created_at_gte
-            ? toYmd((search as any).created_at_gte)
-            : null,
-        endDate: (search as any)?.created_at_lte
-            ? toYmd((search as any).created_at_lte)
-            : null,
+        startDate: search.created_at_gte ? toYmd(search.created_at_gte) : null,
+        endDate: search.created_at_lte ? toYmd(search.created_at_lte) : null,
     });
 
-    const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
-        status: (search as any)?.status || 'all',
-        user: (search as any)?.author || '',
+    const [filters, setFilters] = useState<Filters>({
+        status: toFilterValue(statusSlug),
+        user: search.author || '',
         created_at: {
-            from: toYmd((search as any)?.created_at_gte),
-            to: toYmd((search as any)?.created_at_lte),
+            from: toYmd(search.created_at_gte),
+            to: toYmd(search.created_at_lte),
         },
     });
 
@@ -110,55 +104,45 @@ export default function DigestsList() {
         searchRef.current = search;
     }, [search]);
 
-    const queryParams = useMemo((): DigestListQuery => {
-        const searchQueryParams: Record<string, unknown> = {
+    const listQuery = useMemo((): ListQuery => {
+        const entries: Record<string, unknown> = {
             page,
             page_size: pageSize,
-            title: submittedFilters.title || undefined,
-            author: submittedFilters.author || undefined,
-            created_at_gte: submittedFilters.created_at_gte || undefined,
-            created_at_lte: submittedFilters.created_at_lte || undefined,
+            title: applied.title || undefined,
+            author: applied.author || undefined,
+            created_at_gte: applied.created_at_gte || undefined,
+            created_at_lte: applied.created_at_lte || undefined,
         };
 
-        if (columnFilters.user) {
-            searchQueryParams.author = columnFilters.user;
+        if (filters.user) {
+            entries.author = filters.user;
         }
 
-        if (columnFilters.status !== 'all') {
-            const allowed: DigestListQuery['status'][] = [
-                'done',
-                'error',
-                'warning',
-                'working',
-            ];
-            if (allowed.includes(columnFilters.status as DigestListQuery['status'])) {
-                searchQueryParams.status = columnFilters.status;
-            }
+        if (statusSlug) {
+            entries.status = statusSlug;
         }
 
-        if (columnFilters.created_at.from) {
-            searchQueryParams.created_at_gte = toStartIso(
-                columnFilters.created_at.from,
-            );
+        if (filters.created_at.from) {
+            entries.created_at_gte = toStartIso(filters.created_at.from);
         }
-        if (columnFilters.created_at.to) {
-            searchQueryParams.created_at_lte = toEndIso(columnFilters.created_at.to);
+        if (filters.created_at.to) {
+            entries.created_at_lte = toEndIso(filters.created_at.to);
         }
 
         const order_by = sortDirection === 'desc' ? `-${sortField}` : sortField;
-        searchQueryParams.order_by = order_by;
+        entries.order_by = order_by;
 
         return Object.fromEntries(
-            Object.entries(searchQueryParams).filter(([, v]) => v !== undefined),
-        ) as DigestListQuery;
-    }, [page, pageSize, sortField, sortDirection, columnFilters, submittedFilters]);
+            Object.entries(entries).filter(([, v]) => v !== undefined),
+        ) as ListQuery;
+    }, [page, pageSize, sortField, sortDirection, filters, applied, statusSlug]);
 
-    const { data: digestsData, isLoading } = useQuery({
-        queryKey: ['digests', queryParams],
+    const { data: digests, isLoading } = useQuery({
+        queryKey: ['digests', listQuery],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
                 '/intelio/digest/',
-                { params: { query: queryParams } },
+                { params: { query: listQuery } },
             );
             if (error) throw { response, error };
             return data;
@@ -168,69 +152,71 @@ export default function DigestsList() {
         },
     });
 
-    const digests = digestsData?.results ?? [];
-    const totalPages = digestsData?.total_pages ?? 1;
+    const rows = digests?.results ?? [];
+    const totalPages = digests?.total_pages ?? 1;
 
     useEffect(() => {
-        const searchAny = search as any;
-        const initialFilters: SearchFilters = {
-            title: searchAny?.title || '',
-            author: searchAny?.author || '',
+        const searchDraft: Draft = {
+            title: search.title || '',
+            author: search.author || '',
         };
 
-        const initialDateRange: DateRange = {
-            startDate: searchAny?.created_at_gte
-                ? toYmd(searchAny.created_at_gte as string)
-                : null,
-            endDate: searchAny?.created_at_lte
-                ? toYmd(searchAny.created_at_lte as string)
-                : null,
+        const range: DateRange = {
+            startDate: search.created_at_gte ? toYmd(search.created_at_gte) : null,
+            endDate: search.created_at_lte ? toYmd(search.created_at_lte) : null,
         };
 
-        setSearchFilters(initialFilters);
-        setDateRange(initialDateRange);
+        setDraft(searchDraft);
+        setDateRange(range);
+        setFilters((prev) => ({
+            ...prev,
+            status: toFilterValue(statusSlug),
+            user: search.author || '',
+            created_at: {
+                from: toYmd(search.created_at_gte),
+                to: toYmd(search.created_at_lte),
+            },
+        }));
 
         if (
-            searchAny?.title ||
-            searchAny?.author ||
-            searchAny?.created_at_gte ||
-            searchAny?.created_at_lte
+            search.title ||
+            search.author ||
+            search.created_at_gte ||
+            search.created_at_lte
         ) {
-            setSubmittedFilters({
-                ...initialFilters,
-                created_at_gte: searchAny?.created_at_gte || '',
-                created_at_lte: searchAny?.created_at_lte || '',
+            setApplied({
+                ...searchDraft,
+                created_at_gte: search.created_at_gte || '',
+                created_at_lte: search.created_at_lte || '',
             });
         }
-    }, [search]);
+    }, [search, statusSlug]);
 
-    const updateSearchParams = useCallback(
-        (filters: SearchFilters, dateRangeValue: DateRange) => {
-            setPage(1);
-            const currentSearch = searchRef.current as any;
-            const newSearch: any = {
-                ...currentSearch,
-                title: filters.title || undefined,
-                author: filters.author || undefined,
+    const applyFilters = useCallback(
+        (nextDraft: Draft, dateRangeValue: DateRange) => {
+            const next: any = {
+                ...searchRef.current,
+                digests_page: 1,
+                title: nextDraft.title || undefined,
+                author: nextDraft.author || undefined,
                 created_at_gte: toStartIso(dateRangeValue.startDate),
                 created_at_lte: toEndIso(dateRangeValue.endDate),
             };
 
-            // Remove undefined values
-            Object.keys(newSearch).forEach((key) => {
-                if (newSearch[key] === undefined || newSearch[key] === '') {
-                    delete newSearch[key];
+            Object.keys(next).forEach((key) => {
+                if (next[key] === undefined || next[key] === '') {
+                    delete next[key];
                 }
             });
 
             router.navigate({
                 to: location.pathname as any,
-                search: newSearch,
+                search: next,
                 replace: true,
             });
 
-            setSubmittedFilters({
-                ...filters,
+            setApplied({
+                ...nextDraft,
                 created_at_gte: toStartIso(dateRangeValue.startDate) ?? '',
                 created_at_lte: toEndIso(dateRangeValue.endDate) ?? '',
             });
@@ -238,98 +224,158 @@ export default function DigestsList() {
         [router, location.pathname],
     );
 
-    const debouncedUpdateSearchParams = useMemo(
-        () => debounce(updateSearchParams, 300),
-        [updateSearchParams],
+    const debouncedApplyFilters = useMemo(
+        () => debounce(applyFilters, 300),
+        [applyFilters],
     );
 
     useEffect(() => {
         const expectedCreatedAtGte = toStartIso(dateRange.startDate) ?? '';
         const expectedCreatedAtLte = toEndIso(dateRange.endDate) ?? '';
 
-        const matchesSubmitted =
-            submittedFilters.title === (searchFilters.title || '') &&
-            submittedFilters.author === (searchFilters.author || '') &&
-            submittedFilters.created_at_gte === expectedCreatedAtGte &&
-            (submittedFilters.created_at_lte || '') === expectedCreatedAtLte;
+        const matchesApplied =
+            applied.title === (draft.title || '') &&
+            applied.author === (draft.author || '') &&
+            applied.created_at_gte === expectedCreatedAtGte &&
+            (applied.created_at_lte || '') === expectedCreatedAtLte;
 
-        if (matchesSubmitted) return;
+        if (matchesApplied) return;
 
-        debouncedUpdateSearchParams(searchFilters, dateRange);
-        return () => debouncedUpdateSearchParams.cancel();
-    }, [searchFilters, dateRange, debouncedUpdateSearchParams, submittedFilters]);
+        debouncedApplyFilters(draft, dateRange);
+        return () => debouncedApplyFilters.cancel();
+    }, [draft, dateRange, debouncedApplyFilters, applied]);
 
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const updateDraft = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setSearchFilters((prev) => ({
+        setDraft((prev) => ({
             ...prev,
             [name]: value,
         }));
     };
 
-    const handleSearchSubmit = (e: React.FormEvent | React.MouseEvent) => {
+    const applySearch = (e: React.SyntheticEvent | React.MouseEvent) => {
         (e as any).preventDefault?.();
 
         const target = (e as any).target as
-            | { name?: string; value?: string }
-            | undefined;
-        const hasOverride = Boolean(target?.name && typeof target?.value === 'string');
+            { name?: string; value?: string } | undefined;
+        const fromTarget = Boolean(target?.name && typeof target?.value === 'string');
 
-        const nextFilters = hasOverride
-            ? { ...searchFilters, [target!.name!]: target!.value! }
-            : searchFilters;
+        const next = fromTarget ? { ...draft, [target!.name!]: target!.value! } : draft;
 
-        if (hasOverride) {
-            setSearchFilters(nextFilters);
+        if (fromTarget) {
+            setDraft(next);
         }
 
-        debouncedUpdateSearchParams.cancel();
-        updateSearchParams(nextFilters, dateRange);
+        debouncedApplyFilters.cancel();
+        applyFilters(next, dateRange);
     };
 
-    const invalidateDigests = useCallback(() => {
+    const invalidate = useCallback(() => {
         queryClient.invalidateQueries({ queryKey: ['digests'] });
     }, [queryClient]);
 
-    const handlePageChange = (newPage: number) => {
-        setPage(newPage);
-    };
-
-    const handleSort = (newSortField: string, newSortDirection: 'asc' | 'desc') => {
-        setPage(1);
+    const goTo = (target: number) => {
         router.navigate({
             to: location.pathname as any,
-            search: {
-                ...searchAny,
-                digests_sort_field: newSortField,
-                digests_sort_direction: newSortDirection,
-            },
+            search: ((prev: any) => ({ ...prev, digests_page: target })) as any,
             replace: true,
         });
     };
 
-    const handlePageSizeChange = (newSize: number) => {
-        setPage(1);
+    const applySort = (field: string, direction: 'asc' | 'desc') => {
         router.navigate({
             to: location.pathname as any,
             search: {
-                ...searchAny,
-                digests_pagesize: String(newSize),
-            },
+                ...search,
+                digests_page: 1,
+                digests_sort_field: field,
+                digests_sort_direction: direction,
+            } as any,
             replace: true,
         });
     };
 
-    const handleColumnFilterChange = (column: string, value: any) => {
-        setColumnFilters((prev) => ({
+    const changePageSize = (size: number) => {
+        router.navigate({
+            to: location.pathname as any,
+            search: {
+                ...search,
+                digests_page: 1,
+                digests_pagesize: size,
+            } as any,
+            replace: true,
+        });
+    };
+
+    const applyColumnFilter = (column: string, value: any) => {
+        if (column === 'status') {
+            const next: Record<string, unknown> = { ...search, digests_page: 1 };
+            const parsed = parseParam(value);
+            if (parsed) {
+                next.status = parsed;
+            } else {
+                delete next.status;
+            }
+            router.navigate({
+                to: location.pathname as any,
+                search: next as any,
+                replace: true,
+            });
+            setFilters((prev) => ({
+                ...prev,
+                status: toFilterValue(parsed),
+            }));
+            return;
+        }
+
+        if (column === 'created_at') {
+            const range = value as { from?: string; to?: string };
+            const next: Record<string, unknown> = { ...search, digests_page: 1 };
+            const gte = toStartIso(range.from || null);
+            const lte = toEndIso(range.to || null);
+            if (gte) next.created_at_gte = gte;
+            else delete next.created_at_gte;
+            if (lte) next.created_at_lte = lte;
+            else delete next.created_at_lte;
+            router.navigate({
+                to: location.pathname as any,
+                search: next as any,
+                replace: true,
+            });
+            setFilters((prev) => ({
+                ...prev,
+                created_at: {
+                    from: range.from || '',
+                    to: range.to || '',
+                },
+            }));
+            return;
+        }
+
+        if (column === 'user') {
+            const next: Record<string, unknown> = { ...search, digests_page: 1 };
+            if (value) {
+                next.author = value;
+            } else {
+                delete next.author;
+            }
+            router.navigate({
+                to: location.pathname as any,
+                search: next as any,
+                replace: true,
+            });
+            setFilters((prev) => ({
+                ...prev,
+                user: value || '',
+            }));
+            return;
+        }
+
+        setFilters((prev) => ({
             ...prev,
             [column]: value,
         }));
-        setPage(1); // Reset to first page when filters change
-    };
-
-    const handleCreateDigest = () => {
-        setUploadDigestDialogOpen(true);
+        goTo(1);
     };
 
     return (
@@ -345,7 +391,10 @@ export default function DigestsList() {
                 <div className='flex gap-2'>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button onClick={handleCreateDigest} variant='default'>
+                            <Button
+                                onClick={() => setIsUploadOpen(true)}
+                                variant='default'
+                            >
                                 <FilePlus />
                                 New Digest
                             </Button>
@@ -366,32 +415,32 @@ export default function DigestsList() {
             <div className='flex flex-col space-y-4 p-4'>
                 {/* Digest List */}
                 <DigestsTable
-                    digests={digests}
-                    loading={isLoading}
+                    rows={rows}
+                    isLoading={isLoading}
                     page={page}
                     totalPages={totalPages}
-                    handlePageChange={handlePageChange}
-                    onDigestDelete={invalidateDigests}
+                    onPageChange={goTo}
+                    onRefresh={invalidate}
                     sortField={sortField}
                     sortDirection={sortDirection}
-                    onSort={handleSort}
+                    onSort={applySort}
                     pageSize={pageSize}
-                    setPageSize={handlePageSizeChange}
-                    onColumnFilterChange={handleColumnFilterChange}
-                    columnFilters={columnFilters}
-                    searchFilters={{
-                        title: searchFilters.title,
-                        author: searchFilters.author,
+                    onPageSizeChange={changePageSize}
+                    onColumnFilterChange={applyColumnFilter}
+                    filters={filters}
+                    draft={{
+                        title: draft.title,
+                        author: draft.author,
                     }}
-                    onSearchChange={handleSearchChange}
-                    onSearchSubmit={handleSearchSubmit}
+                    onSearchChange={updateDraft}
+                    onSearchSubmit={applySearch}
                 />
             </div>
             <UploadDigestDialog
-                open={uploadDigestDialogOpen}
-                onOpenChange={setUploadDigestDialogOpen}
+                open={isUploadOpen}
+                onOpenChange={setIsUploadOpen}
                 onUpload={() => {
-                    invalidateDigests();
+                    invalidate();
                 }}
             />
         </div>

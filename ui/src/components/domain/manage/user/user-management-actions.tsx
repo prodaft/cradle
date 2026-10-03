@@ -33,17 +33,17 @@ interface UserManagementActionsProps {
 export default function UserManagementActions({ userId }: UserManagementActionsProps) {
     const router = useRouter();
     const { setTokensDirectly } = useAuthActions();
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [typed, setTyped] = useState('');
 
-    const { data: userData } = $api.useQuery(
+    const { data: user } = $api.useQuery(
         'get',
         '/users/{user_id}/',
         { params: { path: { user_id: userId } } },
         { enabled: !!userId, meta: { suppressNotification: true } },
     );
 
-    const simulateSessionMutation = useMutation({
+    const simulateSession = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/users/{user_id}/manage/{action_name}/',
@@ -69,7 +69,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
         },
     });
 
-    const sendEmailConfirmationMutation = useMutation({
+    const sendConfirmationEmail = useMutation({
         mutationFn: async () => {
             const { error, response } = await fetchClient.POST(
                 '/users/{user_id}/manage/{action_name}/',
@@ -87,7 +87,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
         meta: { successMessage: 'Email confirmation sent successfully' },
     });
 
-    const sendPasswordResetEmailMutation = useMutation({
+    const sendPasswordReset = useMutation({
         mutationFn: async () => {
             const { error, response } = await fetchClient.POST(
                 '/users/{user_id}/manage/{action_name}/',
@@ -105,7 +105,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
         meta: { successMessage: 'Password reset email sent successfully' },
     });
 
-    const deleteUserMutation = useMutation({
+    const deleteUser = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.DELETE(
                 '/users/{user_id}/',
@@ -140,7 +140,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                                 variant='outline'
                                 size='sm'
                                 className='self-start md:self-center'
-                                onClick={() => simulateSessionMutation.mutate()}
+                                onClick={() => simulateSession.mutate()}
                             >
                                 Simulate
                             </Button>
@@ -162,7 +162,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                                 variant='outline'
                                 size='sm'
                                 className='self-start md:self-center'
-                                onClick={() => sendEmailConfirmationMutation.mutate()}
+                                onClick={() => sendConfirmationEmail.mutate()}
                             >
                                 Send Email
                             </Button>
@@ -184,7 +184,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                                 variant='outline'
                                 size='sm'
                                 className='self-start md:self-center'
-                                onClick={() => sendPasswordResetEmailMutation.mutate()}
+                                onClick={() => sendPasswordReset.mutate()}
                             >
                                 Send Reset
                             </Button>
@@ -206,7 +206,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                                 variant='destructive'
                                 size='sm'
                                 className='self-start md:self-center'
-                                onClick={() => setDeleteDialogOpen(true)}
+                                onClick={() => setIsDeleteOpen(true)}
                             >
                                 Delete
                             </Button>
@@ -215,10 +215,10 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                 </div>
             </section>
             <AlertDialog
-                open={deleteDialogOpen}
+                open={isDeleteOpen}
                 onOpenChange={(open) => {
-                    setDeleteDialogOpen(open);
-                    if (!open) setDeleteConfirmInput('');
+                    setIsDeleteOpen(open);
+                    if (!open) setTyped('');
                 }}
             >
                 <AlertDialogContent className='sm:max-w-md'>
@@ -238,9 +238,9 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                             <Input
                                 id='confirm-delete-user'
                                 type='text'
-                                placeholder={`Type "${userData?.username || 'DELETE'}" to confirm`}
-                                value={deleteConfirmInput}
-                                onChange={(e) => setDeleteConfirmInput(e.target.value)}
+                                placeholder={`Type "${user?.username || 'DELETE'}" to confirm`}
+                                value={typed}
+                                onChange={(e) => setTyped(e.target.value)}
                             />
                         </Field>
                     </FieldGroup>
@@ -251,10 +251,8 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                         <AlertDialogAction
                             variant='destructive'
                             size='sm'
-                            onClick={() => deleteUserMutation.mutate()}
-                            disabled={
-                                deleteConfirmInput !== (userData?.username || 'DELETE')
-                            }
+                            onClick={() => deleteUser.mutate()}
+                            disabled={typed !== (user?.username || 'DELETE')}
                         >
                             Delete
                         </AlertDialogAction>

@@ -1,4 +1,5 @@
 import { PageLoader } from '@/components/base/page-loader';
+import { NotificationsPanel } from '@/components/domain/notifications';
 import { AppDockviewShell } from '@/components/layout/app-dockview-shell';
 import { AppSidebar } from '@/components/layout/sidebar/app-sidebar';
 import {
@@ -9,7 +10,6 @@ import {
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
-import { NotificationsPanel } from '@components/domain/notifications';
 import { fetchClient } from '@services/openapi/client';
 import { useQuery } from '@tanstack/react-query';
 import React, { useState } from 'react';

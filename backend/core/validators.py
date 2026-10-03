@@ -196,6 +196,40 @@ def validate_choice_param(
     raise InvalidRequestException(detail=f'Query parameter "{param_name}" must be one of: {allowed}.')
 
 
+def validate_choice_list_param(
+    values: list[str],
+    choices: list[str],
+    *,
+    param_name: str = "parameter",
+    max_length: int = 20,
+) -> list[str]:
+    """Validate each string against allowed choices; deduplicate while preserving order.
+
+    Args:
+        values: Raw query values (e.g. from ``request.query_params.getlist``).
+        choices: Allowed canonical values (same contract as :func:`validate_choice_param`).
+        param_name: Name for error messages.
+        max_length: Maximum number of values after stripping empties.
+
+    Returns:
+        Non-empty list of validated choices, or an empty list if ``values`` had no usable entries.
+
+    Raises:
+        InvalidRequestException: When the list is too long or any value is not a valid choice.
+    """
+    cleaned = validate_str_list_param(values, param_name=param_name, max_length=max_length)
+    if not cleaned:
+        return []
+    seen: set[str] = set()
+    out: list[str] = []
+    for item in cleaned:
+        v = validate_choice_param(item, choices, param_name=param_name, allow_none=False)
+        if v not in seen:
+            seen.add(v)
+            out.append(v)
+    return out
+
+
 def validate_str_list_param(
     values: list[str],
     param_name: str = "parameter",

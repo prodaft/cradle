@@ -3,7 +3,7 @@
  * Holds theme context instance and access hook.
  */
 
-import type { ThemeContextValue } from '@/types/index';
+import type { ThemeContextValue } from '@/types';
 import { createContext, useContext } from 'react';
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);

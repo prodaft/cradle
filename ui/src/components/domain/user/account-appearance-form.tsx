@@ -1,4 +1,4 @@
-import { SettingsHeaderActionsPortal } from '@/components/domain/settings-header-actions';
+import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Command,
@@ -43,22 +43,22 @@ export default function AccountAppearanceForm({
 
     const [selectedThemeType, setSelectedThemeType] = useState<string>('dark');
     const [customThemeJSON, setCustomThemeJSON] = useState<string>('');
-    const [themePopoverOpen, setThemePopoverOpen] = useState(false);
+    const [isThemePickerOpen, setIsThemePickerOpen] = useState(false);
     const [pendingTheme, setPendingTheme] = useState<Record<string, any> | null>(null);
     const loadedThemeRef = useRef<Record<string, any> | null>(null);
 
-    const { data: userData } = $api.useQuery(
+    const { data: targetUser } = $api.useQuery(
         'get',
         '/users/{user_id}/',
         { params: { path: { user_id: target } } },
         { enabled: !!target, meta: { suppressNotification: true } },
     );
 
-    const saveMutation = useMutation({
+    const saveTheme = useMutation({
         mutationFn: async (theme: Record<string, any>) => {
-            if (!userData?.id) return;
+            if (!targetUser?.id) return;
             const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
-                params: { path: { user_id: userData.id } },
+                params: { path: { user_id: targetUser.id } },
                 body: { theme },
             });
             if (error) throw { response, error };
@@ -76,9 +76,9 @@ export default function AccountAppearanceForm({
     });
 
     useEffect(() => {
-        if (!userData?.theme) return;
+        if (!targetUser?.theme) return;
 
-        const theme = userData.theme as Record<string, any>;
+        const theme = targetUser.theme as Record<string, any>;
         loadedThemeRef.current = theme;
 
         const themeName = theme?.name;
@@ -101,13 +101,13 @@ export default function AccountAppearanceForm({
                 JSON.stringify(Object.keys(rest).length > 0 ? rest : theme, null, 2),
             );
         }
-    }, [userData]);
+    }, [targetUser]);
 
-    const handleThemeTypeChange = (themeType: string) => {
+    const changeThemeType = (themeType: string) => {
         setSelectedThemeType(themeType);
 
         if (themeType === 'custom') {
-            const currentTheme = userData?.theme || DEFAULT_PRESET.theme;
+            const currentTheme = targetUser?.theme || DEFAULT_PRESET.theme;
             const { name: _name, ...rest } = currentTheme as any;
             setCustomThemeJSON(JSON.stringify(rest, null, 2));
             setPendingTheme(null);
@@ -129,7 +129,7 @@ export default function AccountAppearanceForm({
         }
     };
 
-    const handleApplyCustomTheme = () => {
+    const applyCustom = () => {
         try {
             const parsed = JSON.parse(customThemeJSON);
             if (
@@ -147,15 +147,15 @@ export default function AccountAppearanceForm({
         }
     };
 
-    const handleSave = () => {
+    const save = () => {
         if (!pendingTheme) {
             toast.info('No changes to save');
             return;
         }
-        saveMutation.mutate(pendingTheme);
+        saveTheme.mutate(pendingTheme);
     };
 
-    const handleRevert = () => {
+    const revert = () => {
         if (loadedThemeRef.current) {
             setPendingTheme(null);
             const themeName = (loadedThemeRef.current as any)?.name;
@@ -170,7 +170,7 @@ export default function AccountAppearanceForm({
         }
     };
 
-    const handleDefault = () => {
+    const resetToDefaults = () => {
         const preset = DEFAULT_PRESET;
         const themeWithName =
             preset.theme &&
@@ -195,7 +195,7 @@ export default function AccountAppearanceForm({
                         variant='outline'
                         size='icon'
                         disabled={!pendingTheme}
-                        onClick={handleRevert}
+                        onClick={revert}
                         title='Revert'
                     >
                         <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
@@ -205,7 +205,7 @@ export default function AccountAppearanceForm({
                         variant='outline'
                         size='icon'
                         disabled={isAtDefault}
-                        onClick={handleDefault}
+                        onClick={resetToDefaults}
                         title='Default'
                     >
                         <ClockCounterClockwiseIcon className='size-4' weight='bold' />
@@ -214,11 +214,11 @@ export default function AccountAppearanceForm({
                         type='button'
                         variant='default'
                         size='icon'
-                        disabled={saveMutation.isPending || !pendingTheme}
-                        onClick={handleSave}
+                        disabled={saveTheme.isPending || !pendingTheme}
+                        onClick={save}
                         title='Save Settings'
                     >
-                        {saveMutation.isPending ? (
+                        {saveTheme.isPending ? (
                             <Spinner className='size-4' />
                         ) : (
                             <FloppyDiskIcon className='size-4' weight='bold' />
@@ -239,14 +239,14 @@ export default function AccountAppearanceForm({
                                 </FieldDescription>
                             </FieldContent>
                             <Popover
-                                open={themePopoverOpen}
-                                onOpenChange={setThemePopoverOpen}
+                                open={isThemePickerOpen}
+                                onOpenChange={setIsThemePickerOpen}
                             >
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant='outline'
                                         role='combobox'
-                                        aria-expanded={themePopoverOpen}
+                                        aria-expanded={isThemePickerOpen}
                                         className='w-full sm:w-64 justify-between self-center'
                                     >
                                         <span className='truncate'>
@@ -275,10 +275,8 @@ export default function AccountAppearanceForm({
                                                         key={preset.id}
                                                         value={preset.label}
                                                         onSelect={() => {
-                                                            handleThemeTypeChange(
-                                                                preset.id,
-                                                            );
-                                                            setThemePopoverOpen(false);
+                                                            changeThemeType(preset.id);
+                                                            setIsThemePickerOpen(false);
                                                         }}
                                                     >
                                                         <Check
@@ -296,8 +294,8 @@ export default function AccountAppearanceForm({
                                                 <CommandItem
                                                     value='Custom'
                                                     onSelect={() => {
-                                                        handleThemeTypeChange('custom');
-                                                        setThemePopoverOpen(false);
+                                                        changeThemeType('custom');
+                                                        setIsThemePickerOpen(false);
                                                     }}
                                                 >
                                                     <Check
@@ -338,10 +336,7 @@ export default function AccountAppearanceForm({
                                     onChange={(e) => setCustomThemeJSON(e.target.value)}
                                 />
                                 <div className='flex justify-end'>
-                                    <Button
-                                        type='button'
-                                        onClick={handleApplyCustomTheme}
-                                    >
+                                    <Button type='button' onClick={applyCustom}>
                                         Apply Custom Theme
                                     </Button>
                                 </div>

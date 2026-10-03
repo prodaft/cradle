@@ -11,16 +11,16 @@
     --dv-icon-hover-background-color: var(--accent);
     --dv-floating-box-shadow: var(--shadow-lg);
     --dv-group-view-background-color: var(--background);
-    --dv-tabs-and-actions-container-background-color: var(--muted);
+    --dv-tabs-and-actions-container-background-color: var(--background);
     --dv-activegroup-visiblepanel-tab-background-color: var(--background);
     --dv-activegroup-hiddenpanel-tab-background-color: var(--background);
     --dv-inactivegroup-visiblepanel-tab-background-color: var(--background);
     --dv-inactivegroup-hiddenpanel-tab-background-color: var(--background);
-    --dv-tab-divider-color: var(--border);
     --dv-activegroup-visiblepanel-tab-color: var(--foreground);
     --dv-activegroup-hiddenpanel-tab-color: var(--muted-foreground);
     --dv-inactivegroup-visiblepanel-tab-color: var(--muted-foreground);
     --dv-inactivegroup-hiddenpanel-tab-color: var(--muted-foreground);
+    --dv-tab-divider-color: var(--border);
     --dv-separator-border: var(--border);
     --dv-paneview-header-border-color: var(--border);
     --dv-scrollbar-background-color: color-mix(
@@ -41,10 +41,64 @@
     border-bottom: 1px solid var(--border);
 }
 
+.cradle-dockview
+    .dv-groupview.dv-active-group
+    > .dv-tabs-and-actions-container
+    .dv-tabs-container
+    > .dv-tab.dv-active-tab,
+.cradle-dockview
+    .dv-groupview.dv-active-group
+    > .dv-tabs-and-actions-container
+    .dv-tabs-container
+    > .dv-tab.dv-inactive-tab,
+.cradle-dockview
+    .dv-groupview.dv-inactive-group
+    > .dv-tabs-and-actions-container
+    .dv-tabs-container
+    > .dv-tab.dv-active-tab,
+.cradle-dockview
+    .dv-groupview.dv-inactive-group
+    > .dv-tabs-and-actions-container
+    .dv-tabs-container
+    > .dv-tab.dv-inactive-tab {
+    background-color: var(--background);
+}
+
+.cradle-dockview
+    .dv-groupview.dv-active-group
+    > .dv-tabs-and-actions-container
+    .dv-tabs-container
+    > .dv-tab.dv-active-tab,
+.cradle-dockview
+    .dv-groupview.dv-inactive-group
+    > .dv-tabs-and-actions-container
+    .dv-tabs-container
+    > .dv-tab.dv-active-tab {
+    color: var(--foreground);
+}
+
+.cradle-dockview
+    .dv-groupview.dv-active-group
+    > .dv-tabs-and-actions-container
+    .dv-tabs-container
+    > .dv-tab.dv-inactive-tab,
+.cradle-dockview
+    .dv-groupview.dv-inactive-group
+    > .dv-tabs-and-actions-container
+    .dv-tabs-container
+    > .dv-tab.dv-inactive-tab {
+    color: var(--muted-foreground);
+}
+
 .cradle-dockview .dv-void-container,
-.cradle-dockview .dv-right-actions-container,
-.cradle-dockview .dv-right-actions-container > .dv-react-part {
+.cradle-dockview .dv-right-actions-container {
     background-color: var(--sidebar);
+}
+
+.cradle-dockview .dv-right-actions-container > .dv-react-part {
+    height: 100%;
+    width: 100%;
+    background: transparent;
 }
 
 .cradle-dockview .dv-right-actions-container,
@@ -79,14 +133,40 @@
     opacity: 1;
 }
 
+.cradle-dockview
+    .dv-inactive-group
+    .cradle-dockview-header-actions
+    .dockview-header-toolbar-btn {
+    color: var(--dv-inactivegroup-visiblepanel-tab-color);
+}
+
+.cradle-dockview .dv-tab {
+    position: relative;
+    border: none;
+    border-right: 1px solid var(--border);
+    box-shadow: none;
+    outline: none;
+    padding: 0;
+}
+
+.cradle-dockview .dv-tabs-container.dv-horizontal .dv-tab:not(:first-child)::before {
+    display: none;
+}
+
+.cradle-dockview .dv-tab .dv-react-part {
+    height: 100%;
+    width: 100%;
+    background: transparent;
+}
+
 .cradle-dockview-tab-title {
     display: flex;
     height: 100%;
     min-width: 0;
     align-items: center;
     gap: 6px;
-    padding-left: 4px;
-    padding-right: 6px;
+    padding: 0.25rem 0.5rem;
+    color: inherit;
 }
 
 .cradle-dockview-tab-title-icon {
@@ -112,7 +192,29 @@
     align-items: center;
     justify-content: center;
     border-radius: 2px;
+    color: inherit;
     opacity: 0.7;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.cradle-dockview .dv-tab.dv-active-tab .cradle-dockview-tab-title-close {
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.cradle-dockview .dv-tab.dv-inactive-tab:hover .cradle-dockview-tab-title-close,
+.cradle-dockview .dv-tab.dv-inactive-tab:focus-within .cradle-dockview-tab-title-close,
+.cradle-dockview
+    .dv-tab.dv-inactive-tab
+    .cradle-dockview-tab-title-close:focus-visible {
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.cradle-dockview-tab-title-close:focus-visible {
+    outline: none;
+    box-shadow: none;
 }
 
 .cradle-dockview-tab-title-close:hover {
@@ -120,11 +222,11 @@
     opacity: 1;
 }
 
-.cradle-dockview .dv-tab {
-    border-right: 1px solid var(--border);
-}
-
-.cradle-dockview .dv-inactive-tab {
-    box-shadow: none;
-    outline: none;
+/* Dockview v6 draws a 1px focus ring via ::after; suppress for custom tab chrome. */
+.cradle-dockview .dv-tab::after,
+.cradle-dockview .dv-tab:focus-within::after,
+.cradle-dockview .dv-tab:focus::after,
+.cradle-dockview .dv-tab-ghost-drag::after {
+    outline: none !important;
+    display: none !important;
 }

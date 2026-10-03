@@ -53,7 +53,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         populate_existing = options["populate_existing"] or options["overwrite"]
         overwrite = options["overwrite"]
-        data_file = options["data_file"] or str(Path(__file__).with_name("entries_seed.json"))
+        data_file = options["data_file"] or str(Path(__file__).resolve().parents[2] / "fixtures" / "entries_seed.json")
 
         data = self._load_seed_data(data_file)
         entry_classes = data.get("entry_classes")

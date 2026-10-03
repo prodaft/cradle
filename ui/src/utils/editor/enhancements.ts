@@ -12,7 +12,7 @@ import type { MarkdownExtension } from '@lezer/markdown';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import dayjs from 'dayjs';
-import jsyaml from 'js-yaml';
+import { load as loadYaml } from 'js-yaml';
 import { DynamicTrie } from './trie';
 
 type Snippet = components['schemas']['Snippet'];
@@ -109,7 +109,7 @@ export class CradleEditor {
     private snippets: Snippet[] | null;
     private _ready: Promise<boolean>;
     private _onError: ((error: Error) => void) | null;
-    private _onLspLoaded: (bool: boolean) => void;
+    private _onLspLoaded: ((bool: boolean) => void) | null;
 
     private combinedRegex: RegExp | null = null; // for scanning large text
     private combinedWordRegex: RegExp | null = null; // for whole-word matching
@@ -118,7 +118,7 @@ export class CradleEditor {
     Constructor & Initialization
   ---------------------------------------------------------------------------*/
     constructor(
-        onLspLoaded: (bool: boolean) => void,
+        onLspLoaded: ((bool: boolean) => void) | null,
         onError: ((error: Error) => void) | null = null,
     ) {
         this.entryClasses = null;
@@ -128,7 +128,7 @@ export class CradleEditor {
         this._onError = onError;
         this._onLspLoaded = onLspLoaded;
         this._ready = this.initializeEntryClassesTriesAndSnippets().then((ready) => {
-            this._onLspLoaded(ready);
+            this._onLspLoaded?.(ready);
             return ready;
         });
     }
@@ -1015,7 +1015,7 @@ export class CradleEditor {
                             .substring(3, frontmatter.length - 4)
                             .trim();
                         try {
-                            const parsedYaml = jsyaml.load(yml) as {
+                            const parsedYaml = loadYaml(yml) as {
                                 entries: { [key: string]: any };
                             };
 

@@ -31,14 +31,8 @@ export const queryKeys = {
     reports: {
         all: ['reports'] as const,
         lists: () => [...queryKeys.reports.all, 'list'] as const,
-        list: (filters?: {
-            page?: number;
-            pageSize?: number;
-            sortField?: string;
-            sortDirection?: 'asc' | 'desc';
-            statusFilter?: string;
-            search?: string;
-        }) => [...queryKeys.reports.lists(), filters] as const,
+        list: (params?: Record<string, unknown>) =>
+            [...queryKeys.reports.lists(), params] as const,
         details: () => [...queryKeys.reports.all, 'detail'] as const,
         detail: (id: string) => [...queryKeys.reports.details(), id] as const,
     },
@@ -62,15 +56,8 @@ export const queryKeys = {
         requests: {
             all: ['enrichment', 'requests'] as const,
             lists: () => ['enrichment', 'requests', 'list'] as const,
-            list: (filters?: {
-                page?: number;
-                pageSize?: number;
-                entryId?: string;
-                title?: string;
-                userUsername?: string;
-                status?: string;
-                orderBy?: string;
-            }) => ['enrichment', 'requests', 'list', filters] as const,
+            list: (params?: Record<string, unknown>) =>
+                ['enrichment', 'requests', 'list', params] as const,
             details: () => ['enrichment', 'requests', 'detail'] as const,
             detail: (id: string) => ['enrichment', 'requests', 'detail', id] as const,
         },

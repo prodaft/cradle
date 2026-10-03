@@ -83,7 +83,7 @@ interface ColumnDefinitions {
     [key: string]: ColumnDefinition;
 }
 
-interface RowData {
+interface MappingRow {
     id: string | null;
     edited: boolean;
     [key: string]: any;
@@ -112,25 +112,20 @@ const InternalClassCombobox = ({
     placeholder,
     onChange,
 }: InternalClassComboboxProps) => {
-    const [open, setOpen] = useState(false);
-    const selectedLabel = value?.label ?? '';
+    const [isClassPickerOpen, setIsClassPickerOpen] = useState(false);
+    const label = value?.label ?? '';
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={isClassPickerOpen} onOpenChange={setIsClassPickerOpen}>
             <PopoverTrigger asChild>
                 <Button
                     variant='outline'
                     role='combobox'
-                    aria-expanded={open}
+                    aria-expanded={isClassPickerOpen}
                     className='w-full justify-between'
                 >
-                    <span
-                        className={cn(
-                            'truncate',
-                            !selectedLabel && 'text-muted-foreground',
-                        )}
-                    >
-                        {selectedLabel || placeholder}
+                    <span className={cn('truncate', !label && 'text-muted-foreground')}>
+                        {label || placeholder}
                     </span>
                     <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
                 </Button>
@@ -150,7 +145,7 @@ const InternalClassCombobox = ({
                                     value={option.label || option.value}
                                     onSelect={() => {
                                         onChange(option);
-                                        setOpen(false);
+                                        setIsClassPickerOpen(false);
                                     }}
                                 >
                                     <CheckIcon
@@ -173,11 +168,11 @@ const InternalClassCombobox = ({
 };
 
 const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
-    const [rows, setRows] = useState<RowData[]>([]);
+    const [rows, setRows] = useState<MappingRow[]>([]);
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
-    const rowsInitializedForId = useRef<string | null>(null);
+    const initializedRef = useRef<string | null>(null);
 
-    const mappingKeysQuery = useQuery({
+    const { data: mappingKeys, isLoading: isKeysLoading } = useQuery({
         queryKey: ['mappings', 'keys', id],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
@@ -190,13 +185,13 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         meta: { showErrorToast: true },
     });
 
-    const entryClassesQuery = useNdjsonQuery({
+    const { data: entryClasses, isLoading: isClassesLoading } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'type-mappings'],
         meta: { showErrorToast: true },
     });
 
-    const mappingsQuery = useQuery({
+    const { data: mappings, isLoading: isMappingsLoading } = useQuery({
         queryKey: ['mappings', 'schema', id],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
@@ -209,19 +204,15 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         meta: { showErrorToast: true },
     });
 
-    const isLoading =
-        mappingKeysQuery.isLoading ||
-        entryClassesQuery.isLoading ||
-        mappingsQuery.isLoading;
+    const isPageLoading = isKeysLoading || isClassesLoading || isMappingsLoading;
 
     const columnDefinitions = useMemo<ColumnDefinitions | null>(() => {
-        if (!mappingKeysQuery.data || !entryClassesQuery.data) return null;
+        if (!mappingKeys || !entryClasses) return null;
 
-        const mappingKeys = mappingKeysQuery.data as unknown as ColumnDefinitions;
-        const entryClasses = entryClassesQuery.data ?? [];
+        const mappingKeyDefs = mappingKeys as unknown as ColumnDefinitions;
 
         const transformedMappingKeys: ColumnDefinitions = {};
-        for (const [key, colDef] of Object.entries(mappingKeys)) {
+        for (const [key, colDef] of Object.entries(mappingKeyDefs)) {
             if (colDef.type === 'options' && colDef.options) {
                 const firstOption = colDef.options[0];
                 if (typeof firstOption === 'string') {
@@ -251,10 +242,9 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                 required: true,
             },
         };
-    }, [mappingKeysQuery.data, entryClassesQuery.data]);
+    }, [mappingKeys, entryClasses]);
 
-    // Mutations for saving/deleting
-    const deleteMappingMutation = useMutation({
+    const deleteMapping = useMutation({
         mutationFn: async (mappingId: string) => {
             const { error, response } = await fetchClient.DELETE(
                 '/intelio/mappings/{class_name}/',
@@ -274,13 +264,13 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         },
     });
 
-    const saveMappingMutation = useMutation({
-        mutationFn: async (rowData: Record<string, any>) => {
+    const saveMapping = useMutation({
+        mutationFn: async (body: Record<string, any>) => {
             const { data, error, response } = await fetchClient.POST(
                 '/intelio/mappings/{class_name}/',
                 {
                     params: { path: { class_name: id } },
-                    body: rowData satisfies Record<string, unknown>,
+                    body: body satisfies Record<string, unknown>,
                 },
             );
             if (error) throw { response, error };
@@ -291,14 +281,14 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         },
     });
 
-    const saveAllMappingsMutation = useMutation({
+    const saveAllMappings = useMutation({
         mutationFn: async (dataToSave: Record<string, any>[]) => {
-            const promises = dataToSave.map(async (rowData) => {
+            const promises = dataToSave.map(async (body) => {
                 const { data, error, response } = await fetchClient.POST(
                     '/intelio/mappings/{class_name}/',
                     {
                         params: { path: { class_name: id } },
-                        body: rowData satisfies Record<string, unknown>,
+                        body: body satisfies Record<string, unknown>,
                     },
                 );
                 if (error) throw { response, error };
@@ -320,8 +310,8 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
           ]
         : [];
 
-    const buildEmptyRow = (definitions: ColumnDefinitions): RowData => {
-        const emptyRow: RowData = { id: null, edited: false };
+    const buildEmptyRow = (definitions: ColumnDefinitions): MappingRow => {
+        const emptyRow: MappingRow = { id: null, edited: false };
         const columns = [
             'internal_class',
             ...Object.keys(definitions).filter((col) => col !== 'internal_class'),
@@ -340,7 +330,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     };
 
     const buildRequestBody = (
-        row: RowData,
+        row: MappingRow,
         opts: { omitId?: boolean } = {},
     ): Record<string, any> => {
         if (!columnDefinitions) return {};
@@ -358,14 +348,13 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     };
 
     useEffect(() => {
-        if (!columnDefinitions || !mappingsQuery.data) return;
-        if (rowsInitializedForId.current === id) return;
+        if (!columnDefinitions || !mappings) return;
+        if (initializedRef.current === id) return;
 
-        rowsInitializedForId.current = id;
-        const mappings = mappingsQuery.data as any[];
+        initializedRef.current = id;
+        const items = mappings as any[];
 
-        // Transform option values in existing data to {value, label} format
-        const mappedRows = mappings.map((mapping) => {
+        const mappedRows = items.map((mapping) => {
             const transformedMapping: any = {
                 id: mapping.id,
                 edited: false,
@@ -399,19 +388,16 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         let initialRows = mappedRows.length > 0 ? mappedRows : [];
         initialRows = [...initialRows, buildEmptyRow(columnDefinitions)];
         setRows(initialRows);
-    }, [id, columnDefinitions, mappingsQuery.data]);
+    }, [id, columnDefinitions, mappings]);
 
-    // Validate a single cell
     const validateCell = (column: string, value: any, rowIndex: number) => {
         if (!columnDefinitions) return null;
         const colDef = columnDefinitions[column];
         if (!colDef) return null;
 
-        // Skip validation for the last empty row
         const rowAt = rows[rowIndex];
         if (rowIndex === rows.length - 1 && rowAt && !rowAt.edited) return null;
 
-        // Required field validation
         if (
             colDef.required &&
             (value === null || value === undefined || value === '')
@@ -419,7 +405,6 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             return `${startCase(column)} is required`;
         }
 
-        // Type-specific validations
         switch (colDef.type) {
             case 'options':
                 if (colDef.required && !value?.value) {
@@ -461,27 +446,24 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         return null;
     };
 
-    // Validate an entire row
-    const validateRow = (row: RowData, rowIndex: number) => {
+    const validateRow = (row: MappingRow, rowIndex: number) => {
         const errors: ValidationErrors = {};
-        let hasError = false;
+        let isInvalid = false;
 
-        // Skip validation for the last empty row
-        if (rowIndex === rows.length - 1 && !row.edited) return { errors, hasError };
+        if (rowIndex === rows.length - 1 && !row.edited) return { errors, isInvalid };
 
         allColumns.forEach((column) => {
             const error = validateCell(column, row[column], rowIndex);
             if (error) {
                 errors[`${rowIndex}-${column}`] = error;
-                hasError = true;
+                isInvalid = true;
             }
         });
 
-        return { errors, hasError };
+        return { errors, isInvalid };
     };
 
-    // Use the row index to update the row.
-    const handleCellChange = (rowIndex: number, column: string, value: any) => {
+    const updateCell = (rowIndex: number, column: string, value: any) => {
         setRows((prevRows) => {
             const nextRows = prevRows.map((row, idx) =>
                 idx === rowIndex ? { ...row, [column]: value, edited: true } : row,
@@ -498,7 +480,6 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             return nextRows;
         });
 
-        // Validate the changed cell
         const error = validateCell(column, value, rowIndex);
         setValidationErrors((prev) => {
             const newErrors = { ...prev };
@@ -511,7 +492,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         });
     };
 
-    const handleDeleteRow = (rowIndex: number) => {
+    const removeRow = (rowIndex: number) => {
         const row = rows[rowIndex];
         setRows((prevRows) => {
             const filtered = prevRows.filter((_, idx) => idx !== rowIndex);
@@ -521,7 +502,6 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                 : [{ id: null, edited: false }];
         });
 
-        // Clear validation errors for deleted row
         setValidationErrors((prev) => {
             const newErrors = { ...prev };
             Object.keys(newErrors).forEach((key) => {
@@ -533,43 +513,38 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         });
 
         if (row?.id) {
-            deleteMappingMutation.mutate(row.id);
+            deleteMapping.mutate(row.id);
         }
     };
 
-    const handleDiscardChanges = () => {
-        // Reset all edited rows to their original state
+    const discard = () => {
         setRows((prevRows) =>
             prevRows
-                .filter((row) => row.id !== null || !row.edited) // Remove new unsaved rows
+                .filter((row) => row.id !== null || !row.edited)
                 .map((row) => ({ ...row, edited: false })),
         );
         setValidationErrors({});
         toast.info('Changes discarded');
     };
 
-    // Calculate stats
     const totalMappings = rows.filter((row) => row.id !== null).length;
     const unsavedChanges = rows.filter((row) => row.edited).length;
 
-    const handleSaveRow = (rowIndex: number) => {
+    const saveRow = (rowIndex: number) => {
         const row = rows[rowIndex];
         if (!row || !row.edited) return;
         if (!columnDefinitions) return;
 
-        const { errors: rowErrors, hasError } = validateRow(row, rowIndex);
+        const { errors: rowErrors, isInvalid } = validateRow(row, rowIndex);
 
-        // Update validation errors state with new errors
         const newValidationErrors = { ...validationErrors };
 
-        // Remove old errors for this row
         Object.keys(newValidationErrors).forEach((key) => {
             if (key.startsWith(`${rowIndex}-`)) {
                 delete newValidationErrors[key];
             }
         });
 
-        // Add new errors
         Object.keys(rowErrors).forEach((key) => {
             const msg = rowErrors[key];
             if (msg !== undefined) {
@@ -579,14 +554,14 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
         setValidationErrors(newValidationErrors);
 
-        if (hasError) {
+        if (isInvalid) {
             toast.error('Please fix validation errors before saving');
             return;
         }
 
-        const rowData = buildRequestBody(row);
+        const body = buildRequestBody(row);
 
-        saveMappingMutation.mutate(rowData, {
+        saveMapping.mutate(body, {
             onSuccess: () => {
                 setRows((prevRows) =>
                     prevRows.map((r, idx) =>
@@ -598,25 +573,23 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         });
     };
 
-    const handleSaveAll = () => {
+    const saveAll = () => {
         if (!columnDefinitions) return;
 
-        // Validate all edited rows
         const allErrors: ValidationErrors = {};
-        let hasErrors = false;
+        let anyInvalid = false;
 
         rows.forEach((row, rowIndex) => {
-            // Skip validation for the last empty row or non-edited rows
             if ((rowIndex === rows.length - 1 && !row.edited) || !row.edited) return;
 
-            const { errors, hasError } = validateRow(row, rowIndex);
+            const { errors, isInvalid } = validateRow(row, rowIndex);
             Object.assign(allErrors, errors);
-            if (hasError) hasErrors = true;
+            if (isInvalid) anyInvalid = true;
         });
 
         setValidationErrors(allErrors);
 
-        if (hasErrors) {
+        if (anyInvalid) {
             toast.error('Please fix validation errors before saving');
             return;
         }
@@ -630,7 +603,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             return;
         }
 
-        saveAllMappingsMutation.mutate(dataToSave, {
+        saveAllMappings.mutate(dataToSave, {
             onSuccess: () => {
                 setRows((prevRows) =>
                     prevRows.map((r) => (r.edited ? { ...r, edited: false } : r)),
@@ -640,7 +613,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         });
     };
 
-    if (isLoading || !columnDefinitions) {
+    if (isPageLoading || !columnDefinitions) {
         return (
             <div className='flex items-center justify-center h-full'>
                 <Spinner className='size-10' />
@@ -735,7 +708,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                             onChange={(
                                                                 selectedOption,
                                                             ) => {
-                                                                handleCellChange(
+                                                                updateCell(
                                                                     index,
                                                                     column,
                                                                     selectedOption,
@@ -756,7 +729,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                             option.value ===
                                                                             value,
                                                                     );
-                                                                handleCellChange(
+                                                                updateCell(
                                                                     index,
                                                                     column,
                                                                     selectedOption ?? {
@@ -804,7 +777,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                         type='number'
                                                         value={row[column] ?? ''}
                                                         onChange={(e) =>
-                                                            handleCellChange(
+                                                            updateCell(
                                                                 index,
                                                                 column,
                                                                 e.target.value,
@@ -828,7 +801,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                         type='text'
                                                         value={row[column] ?? ''}
                                                         onChange={(e) =>
-                                                            handleCellChange(
+                                                            updateCell(
                                                                 index,
                                                                 column,
                                                                 e.target.value,
@@ -870,7 +843,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                         <>
                                                             <DropdownMenuItem
                                                                 onClick={() =>
-                                                                    handleSaveRow(index)
+                                                                    saveRow(index)
                                                                 }
                                                             >
                                                                 <Save className='size-4' />
@@ -909,9 +882,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                 </AlertDialogCancel>
                                                                 <AlertDialogAction
                                                                     onClick={() =>
-                                                                        handleDeleteRow(
-                                                                            index,
-                                                                        )
+                                                                        removeRow(index)
                                                                     }
                                                                     className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
                                                                 >
@@ -933,14 +904,14 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                 {/* Action buttons at the bottom */}
                 <div className='flex justify-end gap-2 mt-4'>
                     {unsavedChanges > 0 && (
-                        <Button variant='outline' onClick={handleDiscardChanges}>
+                        <Button variant='outline' onClick={discard}>
                             <Undo2 className='size-4' />
                             Discard Changes
                         </Button>
                     )}
                     <Button
                         variant='default'
-                        onClick={handleSaveAll}
+                        onClick={saveAll}
                         disabled={!rows.some((row) => row.edited)}
                     >
                         <Save className='size-4' />

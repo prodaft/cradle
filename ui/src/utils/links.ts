@@ -2,7 +2,7 @@
  * Link utilities for handling URLs and redirects
  */
 
-import type { FileReferenceWithNote } from '@/types';
+import type { FileReferenceWithNote } from '@/types/models';
 
 /**
  * Creates a download path for a file. This path corresponds to the download endpoint in the backend.

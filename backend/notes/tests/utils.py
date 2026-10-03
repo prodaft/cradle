@@ -12,7 +12,13 @@ class NotesTestCase(TestCase):
         self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
         self.patcher.start()
 
-        self.user = CradleUser.objects.create_user(username="user", password="user", email="alabala@gmail.com")
+        self.user = CradleUser.objects.create_user(
+            username="user",
+            password="user",
+            email="alabala@gmail.com",
+            is_active=True,
+            email_confirmed=True,
+        )
 
         self.entryclass_ip = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype="ip")
 

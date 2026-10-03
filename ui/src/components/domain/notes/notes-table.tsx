@@ -1,4 +1,11 @@
 import {
+    ActionBarButton,
+    ActionBarSearch,
+} from '@/components/base/action-bar-controls/action-bar-controls';
+import PreviewTip from '@/components/base/preview/preview-tip';
+import StatusHeaderDropdown from '@/components/base/status-header-dropdown/status-header-dropdown';
+import { StatusIcon, type StatusType } from '@/components/base/status-icon/status-icon';
+import {
     ActionBar,
     ActionBarClose,
     ActionBarGroup,
@@ -11,6 +18,7 @@ import { DataTableColumnHeader } from '@/components/custom/data-table/data-table
 import { DateRangeFilterButton } from '@/components/custom/data-table/data-table-date-range-filter';
 import EnrichmentRequestDialog from '@/components/domain/enrichment/dialogs/enrichment-request-dialog';
 import ReportGenerationDialog from '@/components/domain/reports/dialogs/report-generation-dialog';
+import OfflineIndicator from '@/components/feedback/offline-indicator';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -35,6 +43,7 @@ import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
+import { DateRangeFilter, type SortDirection } from '@/types/list-view';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { parseMarkdownInline } from '@/utils/parser';
@@ -61,26 +70,29 @@ import { format } from 'date-fns';
 import { startCase } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { ActionBarButton, ActionBarSearch } from '../../base/action-bar/action-bar';
-import { DateRangeFilter, type SortDirection } from '../../base/list-view/types';
-import PreviewTip from '../../base/preview/preview-tip';
-import StatusHeaderDropdown from '../../base/status-header-dropdown/status-header-dropdown';
-import OfflineIndicator from '../../feedback/offline-indicator';
+import type { StatusSlug } from './note-list-status';
 import { NotePreviewContent } from './note-preview-content';
-import { StatusIcon, type StatusType } from './status-icon';
 
-/** TanStack table + toolbars for notes; rendered by `NotesList`. */
-type NoteListResponse = components['schemas']['NoteListResponse'];
+type NoteRow = components['schemas']['NoteListResponse'];
 type NoteMetadata = { title?: string; description?: string };
 type OptimizedEntryResponse = components['schemas']['OptimizedEntryResponse'];
 
-type NotesListQuery = NonNullable<operations['notes_list']['parameters']['query']>;
+type ListQuery = NonNullable<operations['notes_list']['parameters']['query']>;
+
+const SORT_FIELD_MAPPING: Record<string, string> = {
+    title: 'title',
+    description: 'timestamp',
+    author: 'author__username',
+    editor: 'editor__username',
+    timestamp: 'timestamp',
+    edit_timestamp: 'edit_timestamp',
+};
 
 /**
- * Props/query for `NotesTable`: fields sent to GET `/notes/` plus URL-scoped keys
+ * Props for `NotesTable`: fields sent to GET `/notes/` plus URL-scoped keys
  * not present on the generated `notes_list` operation (until OpenAPI is updated).
  */
-export type NotesTableQueryInput = Partial<Omit<NotesListQuery, 'linked_to'>> & {
+export type NotesTableQueryInput = Partial<Omit<ListQuery, 'linked_to'>> & {
     linked_to?: number | string;
     editor__username?: string;
     linked_to_exact_match?: boolean;
@@ -90,7 +102,7 @@ export type NotesTableQueryInput = Partial<Omit<NotesListQuery, 'linked_to'>> & 
     updated_date_to?: string;
 };
 
-interface ColumnFilters {
+interface Filters {
     [key: string]: string | DateRangeFilter | undefined;
     status: string;
     author: string;
@@ -99,26 +111,26 @@ interface ColumnFilters {
     edit_timestamp: DateRangeFilter;
 }
 
-interface ContentSearch {
+interface SearchField {
     value: string;
     onChange?: (value: string) => void;
     onSubmit?: (value?: string) => void;
 }
 
 interface NotesTableProps {
-    query: NotesTableQueryInput | null;
+    scope: NotesTableQueryInput | null;
     hideFleetingNotes?: boolean;
     noteActions?: unknown[];
     hideActionBar?: boolean;
     references?: unknown;
     onFilterChange?: ((column: string, value: string | DateRangeFilter) => void) | null;
-    contentSearch?: ContentSearch | null;
+    contentSearch?: SearchField | null;
     onCreateNote?: (() => void) | null;
-    onTotalCountChange?: ((count: { current: number; total: number }) => void) | null;
+    onCount?: ((count: { current: number; total: number }) => void) | null;
 }
 
 export default function NotesTable({
-    query,
+    scope,
     hideFleetingNotes = false,
     noteActions: _noteActions = [],
     hideActionBar = false,
@@ -126,36 +138,32 @@ export default function NotesTable({
     onFilterChange = null,
     contentSearch = null,
     onCreateNote = null,
-    onTotalCountChange = null,
+    onCount = null,
 }: NotesTableProps) {
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ strict: false });
+    const search = useSearch({ strict: false }) as any;
     const { isAdmin } = useAuthState();
-
-    const searchAny = search as any;
-    const page = Number(searchAny?.notes_page ?? 1) || 1;
-    const sortField = (searchAny?.notes_sort_field ?? 'timestamp') as string;
-    const sortDirection: SortDirection = (searchAny?.notes_sort_direction ??
+    const page = Number(search?.notes_page ?? 1) || 1;
+    const sortField = (search?.notes_sort_field ?? 'timestamp') as string;
+    const sortDirection: SortDirection = (search?.notes_sort_direction ??
         'desc') as SortDirection;
-    const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-    const [bulkDeleteNoteIds, setBulkDeleteNoteIds] = useState<string[]>([]);
-    const [singleDeleteDialogOpen, setSingleDeleteDialogOpen] = useState(false);
-    const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
-    const [reportDialogOpen, setReportDialogOpen] = useState(false);
-    const [reportSelectedNotes, setReportSelectedNotes] = useState<
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
+    const [isReportOpen, setIsReportOpen] = useState(false);
+    const [reportNotes, setReportNotes] = useState<
         Array<{ id: string; title: string }>
     >([]);
-    const [enrichmentDialogOpen, setEnrichmentDialogOpen] = useState(false);
-    const [enrichmentNotesList, setEnrichmentNotesList] = useState<
+    const [isEnrichOpen, setIsEnrichOpen] = useState(false);
+    const [enrichNotes, setEnrichNotes] = useState<
         Array<{ id: string; title: string; entities: OptimizedEntryResponse[] }>
     >([]);
-    const [relinkDialogOpen, setRelinkDialogOpen] = useState(false);
+    const [isRelinkOpen, setIsRelinkOpen] = useState(false);
     const queryClient = useQueryClient();
 
-    const relinkAllNotesMutation = useMutation({
+    const relinkNotes = useMutation({
         mutationFn: async () => {
             const { error, response } = await fetchClient.POST('/notes/relink/', {
                 body: undefined,
@@ -168,79 +176,67 @@ export default function NotesTable({
         },
     });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const pageSize = Number(searchAny?.notes_pagesize ?? 20) || 20;
-    const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
+    const pageSize = Number(search?.notes_pagesize ?? 20) || 20;
+    const [filters, setFilters] = useState<Filters>({
         status: 'all',
-        any_field: query?.any_field || '',
-        author: query?.author__username || '',
-        editor: query?.editor__username || '',
+        any_field: scope?.any_field || '',
+        author: scope?.author__username || '',
+        editor: scope?.editor__username || '',
         timestamp: {
             from:
-                query?.created_date_from && query?.created_date_to
-                    ? query.created_date_from
+                scope?.created_date_from && scope?.created_date_to
+                    ? scope.created_date_from
                     : '',
             to:
-                query?.created_date_from && query?.created_date_to
-                    ? query.created_date_to
+                scope?.created_date_from && scope?.created_date_to
+                    ? scope.created_date_to
                     : '',
         },
         edit_timestamp: {
             from:
-                query?.updated_date_from && query?.updated_date_to
-                    ? query.updated_date_from
+                scope?.updated_date_from && scope?.updated_date_to
+                    ? scope.updated_date_from
                     : '',
             to:
-                query?.updated_date_from && query?.updated_date_to
-                    ? query.updated_date_to
+                scope?.updated_date_from && scope?.updated_date_to
+                    ? scope.updated_date_to
                     : '',
         },
     });
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const sortFieldMapping = useMemo<Record<string, string>>(
-        () => ({
-            title: 'title',
-            description: 'timestamp',
-            author: 'author__username',
-            editor: 'editor__username',
-            timestamp: 'timestamp',
-            edit_timestamp: 'edit_timestamp',
-        }),
-        [],
-    );
-
-    const handleSortingChange = useCallback(
+    const applySort = useCallback(
         (sorting: SortingState) => {
-            const newSearch: any = {
-                ...searchAny,
+            const next: any = {
+                ...search,
                 notes_page: 1,
             };
             if (sorting.length === 0) {
-                delete newSearch.notes_sort_field;
-                delete newSearch.notes_sort_direction;
+                delete next.notes_sort_field;
+                delete next.notes_sort_direction;
             } else {
                 const sort = sorting[0];
                 if (!sort) {
-                    delete newSearch.notes_sort_field;
-                    delete newSearch.notes_sort_direction;
+                    delete next.notes_sort_field;
+                    delete next.notes_sort_direction;
                 } else {
-                    const apiField = sortFieldMapping[sort.id] || sort.id;
-                    newSearch.notes_sort_field = apiField;
-                    newSearch.notes_sort_direction = sort.desc ? 'desc' : 'asc';
+                    const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
+                    next.notes_sort_field = apiField;
+                    next.notes_sort_direction = sort.desc ? 'desc' : 'asc';
                 }
             }
             router.navigate({
                 to: location.pathname as any,
-                search: newSearch as any,
+                search: next as any,
                 replace: true,
             });
         },
-        [searchAny, router, location.pathname, sortFieldMapping],
+        [search, router, location.pathname],
     );
 
-    const handleColumnFilter = useCallback(
+    const applyFilter = useCallback(
         (column: string, value: string | DateRangeFilter) => {
-            setColumnFilters((prev) => ({
+            setFilters((prev) => ({
                 ...prev,
                 [column]: value,
             }));
@@ -252,125 +248,117 @@ export default function NotesTable({
         [onFilterChange],
     );
 
-    const handleStatusChange = useCallback(
+    const updateStatus = useCallback(
         (status: string) => {
-            setColumnFilters((prev) => ({
+            setFilters((prev) => ({
                 ...prev,
                 status,
             }));
             router.navigate({
                 to: location.pathname as any,
-                search: { ...searchAny, notes_page: 1 } as any,
+                search: { ...search, notes_page: 1 } as any,
                 replace: true,
             });
         },
-        [router, location.pathname, searchAny],
+        [router, location.pathname, search],
     );
 
     useEffect(() => {
-        setColumnFilters({
-            any_field: query?.any_field || '',
-            author: query?.author__username || '',
-            editor: query?.editor__username || '',
+        setFilters({
+            any_field: scope?.any_field || '',
+            author: scope?.author__username || '',
+            editor: scope?.editor__username || '',
             timestamp: {
                 from:
-                    query?.created_date_from && query?.created_date_to
-                        ? query.created_date_from
+                    scope?.created_date_from && scope?.created_date_to
+                        ? scope.created_date_from
                         : '',
                 to:
-                    query?.created_date_from && query?.created_date_to
-                        ? query.created_date_to
+                    scope?.created_date_from && scope?.created_date_to
+                        ? scope.created_date_to
                         : '',
             },
             edit_timestamp: {
                 from:
-                    query?.updated_date_from && query?.updated_date_to
-                        ? query.updated_date_from
+                    scope?.updated_date_from && scope?.updated_date_to
+                        ? scope.updated_date_from
                         : '',
                 to:
-                    query?.updated_date_from && query?.updated_date_to
-                        ? query.updated_date_to
+                    scope?.updated_date_from && scope?.updated_date_to
+                        ? scope.updated_date_to
                         : '',
             },
             status: 'all',
         });
     }, [
-        query?.any_field,
-        query?.author__username,
-        query?.editor__username,
-        query?.created_date_from,
-        query?.created_date_to,
-        query?.updated_date_from,
-        query?.updated_date_to,
+        scope?.any_field,
+        scope?.author__username,
+        scope?.editor__username,
+        scope?.created_date_from,
+        scope?.created_date_to,
+        scope?.updated_date_from,
+        scope?.updated_date_to,
     ]);
 
     const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-    const hasCompleteCreatedRange =
-        Boolean(columnFilters.timestamp?.from) && Boolean(columnFilters.timestamp?.to);
-    const hasCompleteUpdatedRange =
-        Boolean(columnFilters.edit_timestamp?.from) &&
-        Boolean(columnFilters.edit_timestamp?.to);
+    const createdRange =
+        Boolean(filters.timestamp?.from) && Boolean(filters.timestamp?.to);
+    const updatedRange =
+        Boolean(filters.edit_timestamp?.from) && Boolean(filters.edit_timestamp?.to);
 
-    const queryParams = useMemo((): NotesListQuery | null => {
-        if (!query) return null;
+    const listQuery = useMemo((): ListQuery | null => {
+        if (!scope) return null;
 
-        const statusExclusive: NotesListQuery['status'][] = [
+        const exclusiveStatuses: StatusSlug[] = [
             'fleeting',
             'healthy',
             'warning',
             'invalid',
             'processing',
         ];
-        const statusForApi: NotesListQuery['status'] | undefined =
-            columnFilters.status === 'all'
+        const apiStatus: ListQuery['status'] | undefined =
+            filters.status === 'all'
                 ? hideFleetingNotes
-                    ? 'finalized'
+                    ? ['finalized']
                     : undefined
-                : statusExclusive.includes(
-                        columnFilters.status as NotesListQuery['status'],
-                    )
-                  ? (columnFilters.status as NotesListQuery['status'])
+                : exclusiveStatuses.includes(filters.status as StatusSlug)
+                  ? [filters.status as StatusSlug]
                   : undefined;
 
-        const params: NotesListQuery = {
-            page,
-            page_size: pageSize,
-            order_by: orderBy,
-            linked_to: query.linked_to != null ? String(query.linked_to) : undefined,
-            status: statusForApi,
-            any_field: query.any_field,
-            content: query.content,
-            author__username: query.author__username,
-            date: query.date,
-            references: query.references,
-            timestamp_gte: hasCompleteCreatedRange
-                ? columnFilters.timestamp.from
-                : undefined,
-            timestamp_lte: hasCompleteCreatedRange
-                ? columnFilters.timestamp.to
-                : undefined,
-            edit_timestamp_gte: hasCompleteUpdatedRange
-                ? columnFilters.edit_timestamp.from
-                : undefined,
-            edit_timestamp_lte: hasCompleteUpdatedRange
-                ? columnFilters.edit_timestamp.to
-                : undefined,
-            truncate: query.truncate,
-        };
-
         return Object.fromEntries(
-            Object.entries(params).filter(([, v]) => v !== undefined),
-        ) as NotesListQuery;
+            Object.entries({
+                page,
+                page_size: pageSize,
+                order_by: orderBy,
+                linked_to:
+                    scope.linked_to != null ? String(scope.linked_to) : undefined,
+                status: apiStatus,
+                any_field: scope.any_field,
+                content: scope.content,
+                author__username: scope.author__username,
+                date: scope.date,
+                references: scope.references,
+                timestamp_gte: createdRange ? filters.timestamp.from : undefined,
+                timestamp_lte: createdRange ? filters.timestamp.to : undefined,
+                edit_timestamp_gte: updatedRange
+                    ? filters.edit_timestamp.from
+                    : undefined,
+                edit_timestamp_lte: updatedRange
+                    ? filters.edit_timestamp.to
+                    : undefined,
+                truncate: scope.truncate,
+            }).filter(([, v]) => v !== undefined),
+        ) as ListQuery;
     }, [
         page,
         pageSize,
-        query,
-        columnFilters.status,
+        scope,
+        filters.status,
         hideFleetingNotes,
-        columnFilters.timestamp,
-        columnFilters.edit_timestamp,
-        hasCompleteCreatedRange,
-        hasCompleteUpdatedRange,
+        filters.timestamp,
+        filters.edit_timestamp,
+        createdRange,
+        updatedRange,
         orderBy,
     ]);
 
@@ -381,73 +369,73 @@ export default function NotesTable({
     } = $api.useQuery(
         'get',
         '/notes/',
-        queryParams != null ? { params: { query: queryParams } } : undefined,
+        listQuery != null ? { params: { query: listQuery } } : undefined,
         {
-            enabled: query != null && queryParams != null,
+            enabled: scope != null && listQuery != null,
             meta: {
                 showErrorToast: true,
             },
         },
     );
 
-    const notes = useMemo(() => notesData?.results ?? [], [notesData]);
+    const rows = useMemo(() => notesData?.results ?? [], [notesData]);
     const totalPages = notesData?.total_pages || 1;
     const totalCount = notesData?.count || 0;
 
     useEffect(() => {
-        if (onTotalCountChange) {
-            onTotalCountChange({ current: notes.length, total: totalCount });
+        if (onCount) {
+            onCount({ current: rows.length, total: totalCount });
         }
-    }, [notes.length, totalCount, onTotalCountChange]);
+    }, [rows.length, totalCount, onCount]);
 
-    const handleRelinkAll = useCallback(() => {
-        setRelinkDialogOpen(true);
+    const confirmRelink = useCallback(() => {
+        setIsRelinkOpen(true);
     }, []);
 
     const executeRelink = useCallback(async () => {
-        await relinkAllNotesMutation.mutateAsync();
+        await relinkNotes.mutateAsync();
         toast.success('Relinking all notes...');
         setRowSelection({});
         queryClient.invalidateQueries({ queryKey: queryKeys.notes.apiList() });
-    }, [relinkAllNotesMutation, queryClient]);
+    }, [relinkNotes, queryClient]);
 
-    const handlePageChange = useCallback(
-        (newPage: number) => {
+    const goTo = useCallback(
+        (target: number) => {
             router.navigate({
                 to: location.pathname as any,
-                search: { ...searchAny, notes_page: newPage } as any,
+                search: ((prev: any) => ({ ...prev, notes_page: target })) as any,
                 replace: true,
             });
         },
-        [searchAny, router, location.pathname],
+        [router, location.pathname],
     );
 
-    const handlePaginationChange = useCallback(
-        (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+    const paginate = useCallback(
+        (pageIndex: number, size: number) => {
+            const target = pageIndex + 1;
 
-            if (newPageSize !== pageSize) {
-                const newSearch: any = {
-                    ...searchAny,
+            if (size !== pageSize) {
+                const next: any = {
+                    ...search,
                     notes_page: 1,
-                    notes_pagesize: newPageSize,
+                    notes_pagesize: size,
                 };
                 router.navigate({
                     to: location.pathname as any,
-                    search: newSearch as any,
+                    search: next as any,
                     replace: true,
                 });
-            } else if (newPage !== page) {
-                handlePageChange(newPage);
+            } else if (target !== page) {
+                goTo(target);
             }
         },
-        [page, pageSize, searchAny, router, location.pathname, handlePageChange],
+        [page, pageSize, search, router, location.pathname, goTo],
     );
 
-    const deleteMutation = useMutation({
-        mutationFn: async (noteId: string) => {
+    const deleteNote = useMutation({
+        mutationFn: async (id: string) => {
             const { error, response } = await fetchClient.DELETE('/notes/{note_id}/', {
-                params: { path: { note_id: noteId } },
+                params: { path: { note_id: id } },
             });
             if (error) throw { response, error };
         },
@@ -457,12 +445,11 @@ export default function NotesTable({
         },
     });
 
-    const executeBulkDelete = async (selectedIds: string[]) => {
+    const deleteNotes = async (noteIds: string[]) => {
         try {
-            const deletePromises = selectedIds.map((id) =>
-                deleteMutation.mutateAsync(id),
+            const results = await Promise.allSettled(
+                noteIds.map((id) => deleteNote.mutateAsync(id)),
             );
-            const results = await Promise.allSettled(deletePromises);
 
             const successes = results.filter((r) => r.status === 'fulfilled').length;
             const failures = results.filter((r) => r.status === 'rejected').length;
@@ -492,8 +479,8 @@ export default function NotesTable({
 
     const sorting = useMemo<SortingState>(() => {
         const columnId =
-            Object.keys(sortFieldMapping).find(
-                (key) => sortFieldMapping[key] === sortField,
+            Object.keys(SORT_FIELD_MAPPING).find(
+                (key) => SORT_FIELD_MAPPING[key] === sortField,
             ) || sortField;
 
         return columnId
@@ -504,27 +491,40 @@ export default function NotesTable({
                   },
               ]
             : [];
-    }, [sortField, sortDirection, sortFieldMapping]);
+    }, [sortField, sortDirection]);
 
-    const onTableSortingChange = useCallback(
+    const applySorting = useCallback(
         (updater: SortingState | ((prev: SortingState) => SortingState)) => {
-            const nextSorting =
-                typeof updater === 'function' ? updater(sorting) : updater;
-            handleSortingChange(nextSorting);
+            const next = typeof updater === 'function' ? updater(sorting) : updater;
+            applySort(next);
         },
-        [handleSortingChange, sorting],
+        [applySort, sorting],
     );
 
-    const selectedNoteIds = useMemo(
+    const checkedIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
         [rowSelection],
     );
 
-    const renderNotePreview = useCallback((note: NoteListResponse) => {
-        return <NotePreviewContent note={note} />;
+    const confirmDelete = useCallback(
+        (item?: NoteRow) => {
+            if (item?.id) {
+                setPendingDeleteIds([String(item.id)]);
+                setIsDeleteOpen(true);
+                return;
+            }
+            if (checkedIds.length === 0) return;
+            setPendingDeleteIds(checkedIds);
+            setIsDeleteOpen(true);
+        },
+        [checkedIds],
+    );
+
+    const renderPreview = useCallback((item: NoteRow) => {
+        return <NotePreviewContent note={item} />;
     }, []);
 
-    const columns = useMemo<ColumnDef<NoteListResponse>[]>(
+    const columns = useMemo<ColumnDef<NoteRow>[]>(
         () => [
             {
                 id: 'select',
@@ -558,13 +558,10 @@ export default function NotesTable({
                 id: 'status',
                 header: 'Status',
                 cell: ({ row }) => {
-                    const status = row.original.fleeting
-                        ? 'fleeting'
-                        : row.original.status;
+                    const item = row.original;
+                    const status = item.fleeting ? 'fleeting' : item.status;
                     if (!status) return null;
-                    const label = row.original.fleeting
-                        ? 'Fleeting'
-                        : startCase(status);
+                    const label = item.fleeting ? 'Fleeting' : startCase(status);
                     return (
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -579,10 +576,8 @@ export default function NotesTable({
                                     <span>{label}</span>
                                 </Badge>
                             </TooltipTrigger>
-                            {row.original.status_message && (
-                                <TooltipContent>
-                                    {row.original.status_message}
-                                </TooltipContent>
+                            {item.status_message && (
+                                <TooltipContent>{item.status_message}</TooltipContent>
                             )}
                         </Tooltip>
                     );
@@ -593,129 +588,142 @@ export default function NotesTable({
             {
                 accessorKey: 'title',
                 id: 'title',
+                meta: { label: 'Title' },
                 header: 'Title',
-                cell: ({ row }) => (
-                    <PreviewTip
-                        content={renderNotePreview(row.original)}
-                        side='top'
-                        align='start'
-                        sideOffset={32}
-                        size='lg'
-                        openDelay={800}
-                    >
-                        <div
-                            className='truncate w-64 cursor-pointer'
-                            onClick={() => {
-                                if (row.original.id) {
-                                    router.navigate({
-                                        to: '/notes/$id',
-                                        params: { id: row.original.id.toString() },
-                                    });
-                                }
-                            }}
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <PreviewTip
+                            content={renderPreview(item)}
+                            side='top'
+                            align='start'
+                            sideOffset={32}
+                            size='lg'
+                            openDelay={800}
                         >
-                            <span className='truncate'>
-                                {truncateText(
-                                    parseMarkdownInline(
-                                        (row.original.metadata as NoteMetadata)
-                                            ?.title || '',
-                                    ),
-                                    64,
-                                )}
-                            </span>
-                        </div>
-                    </PreviewTip>
-                ),
+                            <div
+                                className='truncate w-64 cursor-pointer'
+                                onClick={() => {
+                                    if (item.id) {
+                                        router.navigate({
+                                            to: '/notes/$id',
+                                            params: { id: item.id.toString() },
+                                        });
+                                    }
+                                }}
+                            >
+                                <span className='truncate'>
+                                    {truncateText(
+                                        parseMarkdownInline(
+                                            (item.metadata as NoteMetadata)?.title ||
+                                                '',
+                                        ),
+                                        64,
+                                    )}
+                                </span>
+                            </div>
+                        </PreviewTip>
+                    );
+                },
             },
             {
                 accessorKey: 'description',
                 id: 'description',
+                meta: { label: 'Description' },
                 header: 'Description',
-                cell: ({ row }) => (
-                    <div className='truncate max-w-xs'>
-                        {(row.original.metadata as NoteMetadata)?.description
-                            ? parseMarkdownInline(
-                                  (row.original.metadata as NoteMetadata)
-                                      ?.description ?? '',
-                              )
-                            : '-'}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    const meta = item.metadata as NoteMetadata;
+                    return (
+                        <div className='truncate max-w-xs'>
+                            {meta?.description
+                                ? parseMarkdownInline(meta.description ?? '')
+                                : '-'}
+                        </div>
+                    );
+                },
                 enableSorting: false,
             },
             {
                 accessorKey: 'author',
                 id: 'author',
-                header: ({ column }) => {
-                    const filterValue = columnFilters.author as string;
+                meta: { label: 'Author' },
+                header: ({ column }) => (
+                    <div className='flex items-center gap-2'>
+                        <DataTableColumnHeader column={column} label='Author' />
+                        {filters.author && (
+                            <span className='text-xs text-accent'>●</span>
+                        )}
+                    </div>
+                ),
+                cell: ({ row }) => {
+                    const item = row.original;
                     return (
-                        <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} label='Author' />
-                            {filterValue && (
-                                <span className='text-xs text-accent'>●</span>
-                            )}
+                        <div className='truncate w-32'>
+                            {truncateText(item.author?.username || '', 16)}
                         </div>
                     );
                 },
-                cell: ({ row }) => (
-                    <div className='truncate w-32'>
-                        {truncateText(row.original.author?.username || '', 16)}
-                    </div>
-                ),
             },
             {
                 accessorKey: 'editor',
                 id: 'editor',
-                header: ({ column }) => {
-                    const filterValue = columnFilters.editor as string;
+                meta: { label: 'Editor' },
+                header: ({ column }) => (
+                    <div className='flex items-center gap-2'>
+                        <DataTableColumnHeader column={column} label='Editor' />
+                        {filters.editor && (
+                            <span className='text-xs text-accent'>●</span>
+                        )}
+                    </div>
+                ),
+                cell: ({ row }) => {
+                    const item = row.original;
                     return (
-                        <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} label='Editor' />
-                            {filterValue && (
-                                <span className='text-xs text-accent'>●</span>
-                            )}
+                        <div className='truncate w-32'>
+                            {truncateText(item.editor?.username || '', 16)}
                         </div>
                     );
                 },
-                cell: ({ row }) => (
-                    <div className='truncate w-32'>
-                        {truncateText(row.original.editor?.username || '', 16)}
-                    </div>
-                ),
             },
             {
                 accessorKey: 'timestamp',
                 id: 'timestamp',
+                meta: { label: 'Created At' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Created At' />
                 ),
-                cell: ({ row }) => (
-                    <div className='w-36'>
-                        {row.original.timestamp
-                            ? format(
-                                  new Date(row.original.timestamp),
-                                  'dd/MM/yyyy, HH:mm',
-                              )
-                            : 'N/A'}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='w-36'>
+                            {item.timestamp
+                                ? format(new Date(item.timestamp), 'dd/MM/yyyy, HH:mm')
+                                : 'N/A'}
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: 'edit_timestamp',
                 id: 'edit_timestamp',
+                meta: { label: 'Updated At' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Updated At' />
                 ),
-                cell: ({ row }) => (
-                    <div className='w-36'>
-                        {row.original.edit_timestamp
-                            ? format(
-                                  new Date(row.original.edit_timestamp),
-                                  'dd/MM/yyyy, HH:mm',
-                              )
-                            : '-'}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='w-36'>
+                            {item.edit_timestamp
+                                ? format(
+                                      new Date(item.edit_timestamp),
+                                      'dd/MM/yyyy, HH:mm',
+                                  )
+                                : '-'}
+                        </div>
+                    );
+                },
             },
             {
                 id: 'actions',
@@ -724,13 +732,13 @@ export default function NotesTable({
                 minSize: 40,
                 maxSize: 40,
                 cell: ({ row }) => {
-                    const note = row.original;
+                    const item = row.original;
                     return (
                         <div
                             className='text-right flex justify-end'
                             onClick={(e) => e.stopPropagation()}
                         >
-                            {note.id && (
+                            {item.id && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button
@@ -748,7 +756,7 @@ export default function NotesTable({
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align='end'>
                                         {isAdmin && (
-                                            <DropdownMenuItem onClick={handleRelinkAll}>
+                                            <DropdownMenuItem onClick={confirmRelink}>
                                                 <ArrowClockwiseIcon
                                                     size={16}
                                                     weight='bold'
@@ -758,18 +766,18 @@ export default function NotesTable({
                                         )}
                                         <DropdownMenuItem
                                             onClick={() => {
-                                                setReportSelectedNotes([
+                                                setReportNotes([
                                                     {
-                                                        id: String(note.id),
+                                                        id: String(item.id),
                                                         title:
                                                             (
-                                                                note.metadata as NoteMetadata
+                                                                item.metadata as NoteMetadata
                                                             )?.title ||
-                                                            note.title ||
+                                                            item.title ||
                                                             'Untitled',
                                                     },
                                                 ]);
-                                                setReportDialogOpen(true);
+                                                setIsReportOpen(true);
                                             }}
                                         >
                                             <ChartBarIcon size={16} weight='bold' />
@@ -777,19 +785,19 @@ export default function NotesTable({
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onClick={() => {
-                                                setEnrichmentNotesList([
+                                                setEnrichNotes([
                                                     {
-                                                        id: String(note.id),
+                                                        id: String(item.id),
                                                         title: ((
-                                                            note.metadata as NoteMetadata
+                                                            item.metadata as NoteMetadata
                                                         )?.title ||
-                                                            note.title ||
+                                                            item.title ||
                                                             'Untitled') as string,
-                                                        entities: (note.entities ||
+                                                        entities: (item.entities ||
                                                             []) as OptimizedEntryResponse[],
                                                     },
                                                 ]);
-                                                setEnrichmentDialogOpen(true);
+                                                setIsEnrichOpen(true);
                                             }}
                                         >
                                             <SparkleIcon size={16} weight='bold' />
@@ -798,10 +806,7 @@ export default function NotesTable({
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
                                             variant='destructive'
-                                            onClick={() => {
-                                                setDeletingNoteId(String(note.id));
-                                                setSingleDeleteDialogOpen(true);
-                                            }}
+                                            onClick={() => confirmDelete(item)}
                                         >
                                             <TrashIcon size={16} weight='bold' />
                                             Delete
@@ -816,22 +821,21 @@ export default function NotesTable({
             },
         ],
         [
-            columnFilters,
+            filters,
             router,
-            handleRelinkAll,
-            setReportSelectedNotes,
-            setReportDialogOpen,
-            setEnrichmentNotesList,
-            setEnrichmentDialogOpen,
-            setDeletingNoteId,
-            setSingleDeleteDialogOpen,
-            renderNotePreview,
+            confirmRelink,
+            setReportNotes,
+            setIsReportOpen,
+            setEnrichNotes,
+            setIsEnrichOpen,
+            confirmDelete,
+            renderPreview,
             isAdmin,
         ],
     );
 
     const table = useReactTable({
-        data: notes,
+        data: rows,
         columns,
         state: {
             sorting,
@@ -845,16 +849,15 @@ export default function NotesTable({
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
-        onSortingChange: onTableSortingChange,
+        onSortingChange: applySorting,
         onRowSelectionChange: setRowSelection,
         onPaginationChange: (updater) => {
-            const currentPagination = {
+            const current = {
                 pageIndex: page - 1,
                 pageSize,
             };
-            const nextPagination =
-                typeof updater === 'function' ? updater(currentPagination) : updater;
-            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+            const next = typeof updater === 'function' ? updater(current) : updater;
+            paginate(next.pageIndex, next.pageSize);
         },
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
@@ -863,48 +866,47 @@ export default function NotesTable({
         pageCount: totalPages,
     });
 
-    // Memoize notes map to avoid recreating it on every render
     const noteById = useMemo(() => {
-        const map = new Map<string, NoteListResponse>();
-        for (const note of notes) {
-            if (note.id) {
-                map.set(String(note.id), note);
+        const map = new Map<string, NoteRow>();
+        for (const item of rows) {
+            if (item.id) {
+                map.set(String(item.id), item);
             }
         }
         return map;
-    }, [notes]);
+    }, [rows]);
 
-    const handleReportSelected = useCallback(() => {
-        if (selectedNoteIds.length === 0) return;
-        const selectedNoteObjects = selectedNoteIds.map((id) => {
-            const note = noteById.get(id);
+    const report = useCallback(() => {
+        if (checkedIds.length === 0) return;
+        const items = checkedIds.map((id) => {
+            const item = noteById.get(id);
             return {
                 id,
                 title:
-                    (note?.metadata as NoteMetadata)?.title ||
-                    note?.title ||
+                    (item?.metadata as NoteMetadata)?.title ||
+                    item?.title ||
                     'Untitled',
             };
         });
-        setReportSelectedNotes(selectedNoteObjects);
-        setReportDialogOpen(true);
-    }, [noteById, selectedNoteIds]);
+        setReportNotes(items);
+        setIsReportOpen(true);
+    }, [noteById, checkedIds]);
 
-    const handleEnrichSelected = useCallback(() => {
-        if (selectedNoteIds.length === 0) return;
-        const selectedNoteObjects = selectedNoteIds.map((id) => {
-            const note = noteById.get(id);
+    const enrich = useCallback(() => {
+        if (checkedIds.length === 0) return;
+        const items = checkedIds.map((id) => {
+            const item = noteById.get(id);
             return {
                 id,
-                title: ((note?.metadata as NoteMetadata)?.title ||
-                    note?.title ||
+                title: ((item?.metadata as NoteMetadata)?.title ||
+                    item?.title ||
                     'Untitled') as string,
-                entities: (note?.entities || []) as OptimizedEntryResponse[],
+                entities: (item?.entities || []) as OptimizedEntryResponse[],
             };
         });
-        setEnrichmentNotesList(selectedNoteObjects);
-        setEnrichmentDialogOpen(true);
-    }, [noteById, selectedNoteIds]);
+        setEnrichNotes(items);
+        setIsEnrichOpen(true);
+    }, [noteById, checkedIds]);
 
     return (
         <>
@@ -920,10 +922,10 @@ export default function NotesTable({
                         table={table}
                         showViewOptions
                         isLoading={isLoading}
-                        onRowClick={(note) =>
-                            router.navigate({ to: `/notes/${note.id}` as any })
+                        onRowClick={(item) =>
+                            router.navigate({ to: `/notes/${item.id}` as any })
                         }
-                        getRowHref={(note) => `/notes/${note.id}`}
+                        getRowHref={(item) => `/notes/${item.id}`}
                     >
                         <div className='flex items-center gap-2'>
                             {onCreateNote && hideActionBar && (
@@ -953,7 +955,10 @@ export default function NotesTable({
                                         contentSearch.onChange?.(v);
                                         contentSearch.onSubmit?.(v);
                                     }}
-                                    onSubmit={(v) => contentSearch.onSubmit?.(v)}
+                                    onSubmit={(v) => {
+                                        contentSearch.onChange?.(v);
+                                        contentSearch.onSubmit?.(v);
+                                    }}
                                     onClear={() => {
                                         contentSearch.onChange?.('');
                                         contentSearch.onSubmit?.('');
@@ -961,9 +966,9 @@ export default function NotesTable({
                                 />
                             )}
                             <StatusHeaderDropdown
-                                onStatusChange={handleStatusChange}
-                                status={columnFilters.status}
-                                statusOptions={[
+                                onStatusChange={updateStatus}
+                                status={filters.status}
+                                options={[
                                     'all',
                                     'fleeting',
                                     'healthy',
@@ -974,74 +979,61 @@ export default function NotesTable({
                             />
                             <DateRangeFilterButton
                                 title='Created At'
-                                value={columnFilters.timestamp}
-                                onChange={(v) => handleColumnFilter('timestamp', v)}
+                                value={filters.timestamp}
+                                onChange={(v) => applyFilter('timestamp', v)}
                             />
                             <DateRangeFilterButton
                                 title='Updated At'
-                                value={columnFilters.edit_timestamp}
-                                onChange={(v) =>
-                                    handleColumnFilter('edit_timestamp', v)
-                                }
+                                value={filters.edit_timestamp}
+                                onChange={(v) => applyFilter('edit_timestamp', v)}
                             />
                         </div>
                     </DataTable>
                 </div>
             </div>
             <ActionBar
-                open={selectedNoteIds.length > 0}
+                open={checkedIds.length > 0}
                 onOpenChange={(open) => {
                     if (!open) setRowSelection({});
                 }}
             >
                 <ActionBarSelection>
-                    {selectedNoteIds.length} note
-                    {selectedNoteIds.length !== 1 ? 's' : ''} selected
+                    {checkedIds.length} note
+                    {checkedIds.length !== 1 ? 's' : ''} selected
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
                     {isAdmin && (
                         <ActionBarItem
-                            onClick={handleRelinkAll}
-                            disabled={isLoading || notes.length === 0}
+                            onClick={confirmRelink}
+                            disabled={isLoading || rows.length === 0}
                         >
                             <ArrowClockwiseIcon width={18} height={18} />
                             Relink
                         </ActionBarItem>
                     )}
                     <ActionBarItem
-                        onClick={handleReportSelected}
+                        onClick={report}
                         disabled={
-                            isLoading ||
-                            notes.length === 0 ||
-                            selectedNoteIds.length === 0
+                            isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                     >
                         <ChartBarIcon width={18} height={18} />
                         Report
                     </ActionBarItem>
                     <ActionBarItem
-                        onClick={handleEnrichSelected}
+                        onClick={enrich}
                         disabled={
-                            isLoading ||
-                            notes.length === 0 ||
-                            selectedNoteIds.length === 0
+                            isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                     >
                         <SparkleIcon width={18} height={18} />
                         Enrich
                     </ActionBarItem>
                     <ActionBarItem
-                        onClick={() => {
-                            if (selectedNoteIds.length > 0) {
-                                setBulkDeleteNoteIds(selectedNoteIds);
-                                setBulkDeleteDialogOpen(true);
-                            }
-                        }}
+                        onClick={() => confirmDelete()}
                         disabled={
-                            isLoading ||
-                            notes.length === 0 ||
-                            selectedNoteIds.length === 0
+                            isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                         className='text-destructive'
                     >
@@ -1053,19 +1045,19 @@ export default function NotesTable({
                 <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
             </ActionBar>
             <AlertDialog
-                open={bulkDeleteDialogOpen}
+                open={isDeleteOpen}
                 onOpenChange={(open) => {
-                    setBulkDeleteDialogOpen(open);
-                    if (!open) setBulkDeleteNoteIds([]);
+                    setIsDeleteOpen(open);
+                    if (!open) setPendingDeleteIds([]);
                 }}
             >
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete {bulkDeleteNoteIds.length}{' '}
+                            Are you sure you want to delete {pendingDeleteIds.length}{' '}
                             note
-                            {bulkDeleteNoteIds.length > 1 ? 's' : ''}? This action is
+                            {pendingDeleteIds.length > 1 ? 's' : ''}? This action is
                             irreversible.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -1077,9 +1069,9 @@ export default function NotesTable({
                             variant='destructive'
                             size='sm'
                             onClick={async () => {
-                                if (bulkDeleteNoteIds.length > 0) {
-                                    await executeBulkDelete(bulkDeleteNoteIds);
-                                    setBulkDeleteNoteIds([]);
+                                if (pendingDeleteIds.length > 0) {
+                                    await deleteNotes(pendingDeleteIds);
+                                    setPendingDeleteIds([]);
                                 }
                             }}
                         >
@@ -1088,60 +1080,17 @@ export default function NotesTable({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            {deletingNoteId && (
-                <AlertDialog
-                    open={singleDeleteDialogOpen}
-                    onOpenChange={(open) => {
-                        setSingleDeleteDialogOpen(open);
-                        if (!open) setDeletingNoteId(null);
-                    }}
-                >
-                    <AlertDialogContent className='sm:max-w-md'>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Are you sure you want to delete this note? This action
-                                is irreversible.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel variant='outline' size='sm'>
-                                Cancel
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                variant='destructive'
-                                size='sm'
-                                onClick={async () => {
-                                    if (deletingNoteId) {
-                                        try {
-                                            await deleteMutation.mutateAsync(
-                                                deletingNoteId,
-                                            );
-                                            toast.success('Note deleted successfully');
-                                        } catch (_error) {
-                                            const parsed = await parseAPIError(_error);
-                                            toast.error(getDisplayMessage(parsed));
-                                        }
-                                    }
-                                }}
-                            >
-                                Delete
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            )}
             <ReportGenerationDialog
-                open={reportDialogOpen}
-                onOpenChange={setReportDialogOpen}
-                selectedNotes={reportSelectedNotes}
+                open={isReportOpen}
+                onOpenChange={setIsReportOpen}
+                notes={reportNotes}
             />
             <EnrichmentRequestDialog
-                open={enrichmentDialogOpen}
-                onOpenChange={setEnrichmentDialogOpen}
-                notesList={enrichmentNotesList}
+                open={isEnrichOpen}
+                onOpenChange={setIsEnrichOpen}
+                notes={enrichNotes}
             />
-            <AlertDialog open={relinkDialogOpen} onOpenChange={setRelinkDialogOpen}>
+            <AlertDialog open={isRelinkOpen} onOpenChange={setIsRelinkOpen}>
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Relinking</AlertDialogTitle>
@@ -1160,7 +1109,7 @@ export default function NotesTable({
                             onClick={async () => {
                                 try {
                                     await executeRelink();
-                                    setRelinkDialogOpen(false);
+                                    setIsRelinkOpen(false);
                                 } catch (error) {
                                     const parsed = await parseAPIError(error);
                                     toast.error(getDisplayMessage(parsed));

@@ -1,7 +1,9 @@
 import {
     SettingsHeaderActionsProvider,
     SettingsHeaderActionsTarget,
-} from '@/components/domain/settings-header-actions';
+} from '@/components/base/settings-header-actions/settings-header-actions';
+import ActivityList from '@/components/domain/activity/activity-list';
+import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,8 +22,6 @@ import {
     useSearch,
 } from '@tanstack/react-router';
 import { useMemo } from 'react';
-import NotFound from '../../../feedback/not-found';
-import ActivityList from '../../activity/activity-list';
 import EntryTypeForm from './entry-type-form';
 
 type EntryClass = components['schemas']['EntryClass'];
@@ -55,7 +55,7 @@ export default function EntryTypeSettingsPage() {
     const queryClient = useQueryClient();
 
     const {
-        data: entryTypeData,
+        data: entryType,
         isLoading,
         isError,
     } = $api.useQuery(
@@ -76,17 +76,17 @@ export default function EntryTypeSettingsPage() {
         () =>
             isError
                 ? 'Not found'
-                : entryTypeData?.subtype
-                  ? `Manage: ${entryTypeData.subtype}`
+                : entryType?.subtype
+                  ? `Manage: ${entryType.subtype}`
                   : `Manage: ${subtype}`,
-        [entryTypeData?.subtype, isError, subtype],
+        [entryType?.subtype, isError, subtype],
     );
     useDockPanelTab({
         title: dockPanelTitle,
         icon: isError ? 'not-found' : 'manage-entry-types',
     });
 
-    const handleTabChange = (tabId: string) => {
+    const changeTab = (tabId: string) => {
         router.navigate({
             to: location.pathname as any,
             search: { ...(search as any), tab: tabId },
@@ -127,7 +127,7 @@ export default function EntryTypeSettingsPage() {
                     <div className='flex flex-wrap items-end justify-between gap-2'>
                         <div className='space-y-1'>
                             <h2 className='text-2xl font-bold tracking-tight'>
-                                {entryTypeData?.subtype || subtype}
+                                {entryType?.subtype || subtype}
                             </h2>
                             <p className='text-muted-foreground'>
                                 {currentDescription || 'Manage entry type'}
@@ -136,7 +136,7 @@ export default function EntryTypeSettingsPage() {
                         <SettingsHeaderActionsTarget />
                     </div>
                     <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
-                        <Tabs value={tab} onValueChange={handleTabChange}>
+                        <Tabs value={tab} onValueChange={changeTab}>
                             <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
                                 {ENTRY_TYPE_SETTINGS_ITEMS.map((item) => {
                                     const Icon = item.icon;
@@ -168,9 +168,8 @@ export default function EntryTypeSettingsPage() {
                                                 className='bg-border mb-4 flex-none'
                                             />
                                             <ActivityList
-                                                content_type='entryclass'
+                                                contentType='entryclass'
                                                 objectId={subtype}
-                                                name={entryTypeData?.subtype}
                                             />
                                         </CardContent>
                                     </ScrollArea>

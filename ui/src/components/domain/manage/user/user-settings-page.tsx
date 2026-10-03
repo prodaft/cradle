@@ -1,7 +1,9 @@
 import {
     SettingsHeaderActionsProvider,
     SettingsHeaderActionsTarget,
-} from '@/components/domain/settings-header-actions';
+} from '@/components/base/settings-header-actions/settings-header-actions';
+import ActiveSessions from '@/components/domain/user/active-sessions';
+import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -24,8 +26,6 @@ import {
     useSearch,
 } from '@tanstack/react-router';
 import { useMemo } from 'react';
-import NotFound from '../../../feedback/not-found';
-import ActiveSessions from '../../user/active-sessions';
 import UserAccountForm from './user-account-form';
 import UserActivityList from './user-activity-list';
 import UserAdministrativeForm from './user-administrative-form';
@@ -84,11 +84,7 @@ export default function UserSettingsPage() {
     const tab = (search as any)?.tab ?? defaultUserSettingsTabId;
     const { userId: currentUserId } = useAuthState();
 
-    const {
-        data: userData,
-        isLoading,
-        isError,
-    } = $api.useQuery(
+    const { data, isLoading, isError } = $api.useQuery(
         'get',
         '/users/{user_id}/',
         { params: { path: { user_id: userId } } },
@@ -102,7 +98,7 @@ export default function UserSettingsPage() {
         },
     );
 
-    const isOtherAdmin = userData?.role === 'admin' && userData?.id !== currentUserId;
+    const isOtherAdmin = data?.role === 'admin' && data?.id !== currentUserId;
 
     const visibleTabs = useMemo(
         () =>
@@ -116,10 +112,10 @@ export default function UserSettingsPage() {
         () =>
             isError
                 ? 'Not found'
-                : userData?.username
-                  ? `Manage: ${userData.username}`
+                : data?.username
+                  ? `Manage: ${data.username}`
                   : 'Manage: User',
-        [isError, userData?.username],
+        [isError, data?.username],
     );
     useDockPanelTab({
         title: dockPanelTitle,
@@ -163,7 +159,7 @@ export default function UserSettingsPage() {
                     <div className='flex flex-wrap items-end justify-between gap-2'>
                         <div className='space-y-1'>
                             <h2 className='text-2xl font-bold tracking-tight'>
-                                {userData?.username}
+                                {data?.username}
                             </h2>
                             <p className='text-muted-foreground'>
                                 Manage user account and administrative settings.
@@ -222,7 +218,7 @@ export default function UserSettingsPage() {
                                         )}
                                         {tab === 'activity' && (
                                             <UserActivityList
-                                                username={userData?.username || ''}
+                                                username={data?.username || ''}
                                             />
                                         )}
                                         {tab === 'sessions' && (

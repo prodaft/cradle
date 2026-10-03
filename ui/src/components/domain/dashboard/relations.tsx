@@ -1,4 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar/action-bar';
+import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
 import { TableSkeleton } from '@/components/base/table-skeleton';
 import {
     ActionBar,
@@ -73,7 +73,6 @@ interface RelationsProps {
     };
 }
 
-// Expanded row detail — fetches path data and renders stepper
 function ExpandedRowContent({
     srcId,
     result,
@@ -81,11 +80,11 @@ function ExpandedRowContent({
     srcId: number;
     result: RelationEntry;
 }) {
-    const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
+    const [stepId, setStepId] = useState<string | null>(null);
 
-    const canExpand = result.id !== undefined && result.id !== srcId;
+    const isExpandable = result.id !== undefined && result.id !== srcId;
 
-    const { data: pathData, isLoading } = useQuery({
+    const { data: paths, isLoading } = useQuery({
         queryKey: ['graph', 'paths', { src: String(srcId), dst: result.id }],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
@@ -102,11 +101,11 @@ function ExpandedRowContent({
             if (error) throw { response, error };
             return data;
         },
-        enabled: canExpand,
+        enabled: isExpandable,
     });
 
     const pathSteps = useMemo(() => {
-        if (!pathData) return [];
+        if (!paths) return [];
 
         const nodes = new Map<
             number,
@@ -121,18 +120,18 @@ function ExpandedRowContent({
                             id: entry.id,
                             name: entry.name,
                             subtype: subtype,
-                            color: (pathData.colors as Record<string, string>)[subtype],
+                            color: (paths.colors as Record<string, string>)[subtype],
                         });
                     }
                 });
             });
         };
 
-        processEntries(pathData.entries.entities);
-        processEntries(pathData.entries.artifacts);
+        processEntries(paths.entries.entities);
+        processEntries(paths.entries.artifacts);
 
         const adj = new Map<number, number[]>();
-        pathData.relations.forEach((rel: any) => {
+        paths.relations.forEach((rel: any) => {
             if (!adj.has(rel.src)) adj.set(rel.src, []);
             if (!adj.has(rel.dst)) adj.set(rel.dst, []);
             adj.get(rel.src)!.push(rel.dst);
@@ -187,9 +186,9 @@ function ExpandedRowContent({
                 };
             })
             .filter(Boolean) as any[];
-    }, [pathData, srcId, result.id]);
+    }, [paths, srcId, result.id]);
 
-    const activeStepId = selectedStepId ?? pathSteps[0]?.id ?? null;
+    const activeStepId = stepId ?? pathSteps[0]?.id ?? null;
     const activeStep = pathSteps.find((s) => s.id === activeStepId) ?? null;
 
     return (
@@ -206,8 +205,8 @@ function ExpandedRowContent({
                     <>
                         <PathStepper
                             steps={pathSteps}
-                            activeStepId={activeStepId || pathSteps[0].id}
-                            onStepClick={setSelectedStepId}
+                            value={activeStepId || pathSteps[0].id}
+                            onStepClick={setStepId}
                         />
                         {activeStep && (
                             <div className='pt-4 border-t flex flex-col gap-2'>
@@ -245,19 +244,19 @@ function ExpandedRowContent({
 
 function PathStepper({
     steps,
-    activeStepId,
+    value,
     onStepClick,
 }: {
     steps: any[];
-    activeStepId: string;
+    value: string;
     onStepClick: (id: string) => void;
 }) {
     return (
         <Stepper
-            value={activeStepId}
+            value={value}
             onValueChange={onStepClick}
             orientation='horizontal'
-            key={activeStepId}
+            key={value}
         >
             <StepperList>
                 {steps.map((step) => (
@@ -287,48 +286,47 @@ function PathStepper({
 
 function SubtypeFilter({
     options,
-    selected,
-    onSelectedChange,
-    colorMap,
+    types,
+    setTypes,
+    colors,
 }: {
     options: string[];
-    selected: string[];
-    onSelectedChange: React.Dispatch<React.SetStateAction<string[]>>;
-    colorMap: Map<string, string>;
+    types: string[];
+    setTypes: React.Dispatch<React.SetStateAction<string[]>>;
+    colors: Map<string, string>;
 }) {
-    const [open, setOpen] = React.useState(false);
-    const selectedSet = useMemo(() => new Set(selected), [selected]);
+    const [isTypePickerOpen, setIsTypePickerOpen] = React.useState(false);
     const sorted = useMemo(
         () => [...options].sort((a, b) => a.localeCompare(b)),
         [options],
     );
 
-    const toggle = (value: string) => {
-        onSelectedChange((prev) =>
+    const toggleType = (value: string) => {
+        setTypes((prev) =>
             prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
         );
     };
 
-    const clear = (e?: React.MouseEvent) => {
+    const clearTypes = (e?: React.MouseEvent) => {
         e?.stopPropagation();
-        onSelectedChange([]);
+        setTypes([]);
     };
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={isTypePickerOpen} onOpenChange={setIsTypePickerOpen}>
             <PopoverTrigger asChild>
                 <Button
                     variant='outline'
                     size='sm'
                     className='border-dashed font-normal'
                 >
-                    {selected.length > 0 ? (
+                    {types.length > 0 ? (
                         <div
                             role='button'
                             aria-label='Clear type filter'
                             tabIndex={0}
                             className='rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                            onClick={clear}
+                            onClick={clearTypes}
                         >
                             <XCircle />
                         </div>
@@ -336,7 +334,7 @@ function SubtypeFilter({
                         <PlusCircle />
                     )}
                     Type
-                    {selected.length > 0 && (
+                    {types.length > 0 && (
                         <>
                             <Separator
                                 orientation='vertical'
@@ -346,18 +344,18 @@ function SubtypeFilter({
                                 variant='secondary'
                                 className='rounded-sm px-1 font-normal lg:hidden'
                             >
-                                {selected.length}
+                                {types.length}
                             </Badge>
                             <div className='hidden items-center gap-1 lg:flex'>
-                                {selected.length > 2 ? (
+                                {types.length > 2 ? (
                                     <Badge
                                         variant='secondary'
                                         className='rounded-sm px-1 font-normal'
                                     >
-                                        {selected.length} selected
+                                        {types.length} selected
                                     </Badge>
                                 ) : (
-                                    selected.map((s) => (
+                                    types.map((s) => (
                                         <Badge
                                             key={s}
                                             variant='secondary'
@@ -380,13 +378,13 @@ function SubtypeFilter({
                         <ScrollArea className='max-h-[300px]'>
                             <CommandGroup className='scroll-py-1'>
                                 {sorted.map((subtype) => {
-                                    const isSelected = selectedSet.has(subtype);
-                                    const color = colorMap.get(subtype);
+                                    const isSelected = types.includes(subtype);
+                                    const color = colors.get(subtype);
                                     return (
                                         <CommandItem
                                             key={subtype}
                                             value={subtype}
-                                            onSelect={() => toggle(subtype)}
+                                            onSelect={() => toggleType(subtype)}
                                         >
                                             <div
                                                 className={cn(
@@ -410,12 +408,12 @@ function SubtypeFilter({
                                 })}
                             </CommandGroup>
                         </ScrollArea>
-                        {selected.length > 0 && (
+                        {types.length > 0 && (
                             <>
                                 <CommandSeparator />
                                 <CommandGroup>
                                     <CommandItem
-                                        onSelect={() => clear()}
+                                        onSelect={() => clearTypes()}
                                         className='justify-center text-center'
                                     >
                                         Clear filters
@@ -439,15 +437,15 @@ function MaxStepsFilter({
     value: number;
     onChange: (value: string) => void;
 }) {
-    const [open, setOpen] = useState(false);
+    const [isStepsPickerOpen, setIsStepsPickerOpen] = useState(false);
 
-    const handleSelect = (depth: (typeof DEPTH_OPTIONS)[number]) => {
+    const selectDepth = (depth: (typeof DEPTH_OPTIONS)[number]) => {
         onChange(String(depth));
-        setOpen(false);
+        setIsStepsPickerOpen(false);
     };
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={isStepsPickerOpen} onOpenChange={setIsStepsPickerOpen}>
             <PopoverTrigger asChild>
                 <Button
                     variant='outline'
@@ -476,7 +474,7 @@ function MaxStepsFilter({
                                 return (
                                     <CommandItem
                                         key={d}
-                                        onSelect={() => handleSelect(d)}
+                                        onSelect={() => selectDepth(d)}
                                     >
                                         <div
                                             className={cn(
@@ -503,20 +501,19 @@ function MaxStepsFilter({
 }
 
 export default function Relations({ obj }: RelationsProps) {
-    const [searchQuery, setSearchQuery] = useState('');
+    const [appliedSearch, setAppliedSearch] = useState('');
     const [depth, setDepth] = useState(2);
-    const [entrySubtypeFilters, setEntrySubtypeFilters] = useState<string[]>([]);
+    const [types, setTypes] = useState<string[]>([]);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
-    // TanStack Table state
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
     const [expanded, setExpanded] = useState<ExpandedState>({});
 
     const router = useRouter();
 
-    const requestAccessMutation = useMutation({
+    const requestAccess = useMutation({
         mutationFn: async (entities: string[]) => {
             await Promise.all(
                 entities.map(async (entity) => {
@@ -537,27 +534,27 @@ export default function Relations({ obj }: RelationsProps) {
         },
     });
 
-    const { data: entrySubtypesData } = useNdjsonQuery({
+    const { data: entryClasses } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
         queryKey: ['entry_classes', 'relations'],
         meta: { showErrorToast: true },
     });
 
     const entrySubtypes = useMemo(() => {
-        const results = entrySubtypesData ?? [];
+        const results = entryClasses ?? [];
         return results.map((c: any) => c.subtype);
-    }, [entrySubtypesData]);
+    }, [entryClasses]);
 
     const entryClassColors = useMemo(() => {
         const colors = new Map<string, string>();
-        const results = entrySubtypesData ?? [];
+        const results = entryClasses ?? [];
         results.forEach((c: any) => {
             if (c.color) colors.set(c.subtype, c.color);
         });
         return colors;
-    }, [entrySubtypesData]);
+    }, [entryClasses]);
 
-    const { data: relationsData, isLoading } = useQuery({
+    const { data: neighbors, isLoading } = useQuery({
         queryKey: [
             'graph',
             'neighbors',
@@ -566,8 +563,8 @@ export default function Relations({ obj }: RelationsProps) {
                 depth,
                 page,
                 pageSize,
-                query: searchQuery,
-                subtype: entrySubtypeFilters,
+                query: appliedSearch,
+                subtype: types,
             },
         ],
         queryFn: async () => {
@@ -580,10 +577,8 @@ export default function Relations({ obj }: RelationsProps) {
                             depth,
                             page,
                             page_size: pageSize,
-                            ...(searchQuery ? { name: [searchQuery] } : {}),
-                            ...(entrySubtypeFilters.length > 0
-                                ? { subtype: entrySubtypeFilters }
-                                : {}),
+                            ...(appliedSearch ? { name: [appliedSearch] } : {}),
+                            ...(types.length > 0 ? { subtype: types } : {}),
                         },
                     },
                 },
@@ -595,14 +590,14 @@ export default function Relations({ obj }: RelationsProps) {
         meta: { showErrorToast: true },
     });
 
-    const hasNextPage = relationsData?.has_next ?? false;
+    const hasNextPage = neighbors?.has_next ?? false;
 
     const results = useMemo(() => {
-        if (!relationsData) return [];
-        return relationsData.results ?? [];
-    }, [relationsData]);
+        if (!neighbors) return [];
+        return neighbors.results ?? [];
+    }, [neighbors]);
 
-    const { data: inaccessibleData } = useQuery({
+    const { data: inaccessibleIds = [] } = useQuery({
         queryKey: [
             'graph',
             'inaccessible',
@@ -628,19 +623,23 @@ export default function Relations({ obj }: RelationsProps) {
         },
         enabled: !!obj.id && depth > 0,
         meta: { suppressNotification: true },
+        select: (response) => response?.inaccessible ?? [],
     });
 
-    const inaccessibleEntities = inaccessibleData?.inaccessible ?? [];
-    const hasInaccessible = inaccessibleEntities.length > 0;
+    const hasInaccessible = inaccessibleIds.length > 0;
 
-    const handleDepthChange = (value: string) => {
+    const applySearch = useCallback((value: string) => {
+        setAppliedSearch(value);
+        setPage(1);
+    }, []);
+
+    const changeDepth = (value: string) => {
         setDepth(parseInt(value, 10));
         setPage(1);
     };
 
-    const calculatedTotalPages = hasNextPage ? page + 1 : page;
+    const totalPages = hasNextPage ? page + 1 : page;
 
-    // Column definitions
     const columns = useMemo<ColumnDef<RelationEntry>[]>(
         () => [
             {
@@ -723,8 +722,8 @@ export default function Relations({ obj }: RelationsProps) {
                 cell: ({ row }) => {
                     const isSameEntry =
                         row.original.id !== undefined && row.original.id === obj.id;
-                    const canExpand = !isSameEntry && row.original.id !== undefined;
-                    return canExpand ? (
+                    const isExpandable = !isSameEntry && row.original.id !== undefined;
+                    return isExpandable ? (
                         <div className='flex items-center justify-end'>
                             <CaretDownIcon
                                 className={`size-4 text-muted-foreground transition-transform ${row.getIsExpanded() ? 'rotate-180' : ''}`}
@@ -767,18 +766,18 @@ export default function Relations({ obj }: RelationsProps) {
         getCoreRowModel: getCoreRowModel(),
         getExpandedRowModel: getExpandedRowModel(),
         manualPagination: true,
-        pageCount: calculatedTotalPages,
+        pageCount: totalPages,
         enableRowSelection: true,
     });
 
     const selectedCount = table.getFilteredSelectedRowModel().rows.length;
 
     const copyToCSV = useCallback(() => {
-        const selectedRows = table.getFilteredSelectedRowModel().rows;
-        if (selectedRows.length === 0) return;
+        const selection = table.getFilteredSelectedRowModel().rows;
+        if (selection.length === 0) return;
 
         let csvContent = '"type","name"\n';
-        selectedRows.forEach((row) => {
+        selection.forEach((row) => {
             const type = String(row.original.subtype).replace(/"/g, '""');
             const name = String(row.original.name).replace(/"/g, '""');
             csvContent += `"${type}","${name}"\n`;
@@ -788,7 +787,7 @@ export default function Relations({ obj }: RelationsProps) {
             .writeText(csvContent)
             .then(() => {
                 toast.success(
-                    `Copied ${selectedRows.length} relation${selectedRows.length > 1 ? 's' : ''} to clipboard`,
+                    `Copied ${selection.length} relation${selection.length > 1 ? 's' : ''} to clipboard`,
                 );
             })
             .catch(() => {
@@ -800,12 +799,12 @@ export default function Relations({ obj }: RelationsProps) {
         table.toggleAllRowsSelected(false);
     }, [table]);
 
-    const onRowClickRow = useCallback(
+    const toggleRow = useCallback(
         (row: Row<RelationEntry>) => {
             const result = row.original;
             const isSameEntry = result.id !== undefined && result.id === obj.id;
-            const canExpand = !isSameEntry && result.id !== undefined;
-            if (canExpand) row.toggleExpanded();
+            const isExpandable = !isSameEntry && result.id !== undefined;
+            if (isExpandable) row.toggleExpanded();
         },
         [obj.id],
     );
@@ -814,8 +813,8 @@ export default function Relations({ obj }: RelationsProps) {
         (row: Row<RelationEntry>) => {
             const result = row.original;
             const isSameEntry = result.id !== undefined && result.id === obj.id;
-            const canExpand = !isSameEntry && result.id !== undefined;
-            return !canExpand ? 'opacity-70' : undefined;
+            const isExpandable = !isSameEntry && result.id !== undefined;
+            return !isExpandable ? 'opacity-70' : undefined;
         },
         [obj.id],
     );
@@ -854,10 +853,8 @@ export default function Relations({ obj }: RelationsProps) {
                 <AlertComponent variant='default'>
                     <WarningCircleIcon size={18} weight='bold' />
                     <AlertDescription>
-                        {inaccessibleEntities.length} related{' '}
-                        {inaccessibleEntities.length === 1
-                            ? 'entity is'
-                            : 'entities are'}{' '}
+                        {inaccessibleIds.length} related{' '}
+                        {inaccessibleIds.length === 1 ? 'entity is' : 'entities are'}{' '}
                         not accessible
                     </AlertDescription>
                     <Button
@@ -865,9 +862,7 @@ export default function Relations({ obj }: RelationsProps) {
                         size='sm'
                         className='ml-auto'
                         onClick={() =>
-                            requestAccessMutation.mutate(
-                                inaccessibleEntities.map(String),
-                            )
+                            requestAccess.mutate(inaccessibleIds.map(String))
                         }
                     >
                         Request Access
@@ -882,7 +877,7 @@ export default function Relations({ obj }: RelationsProps) {
                     <TableSkeleton showToolbar={false} rows={8} columns={5} />
                 }
                 showPagination={!isLoading}
-                onRowClickRow={onRowClickRow}
+                onRowClickRow={toggleRow}
                 getRowClassName={getRowClassName}
                 getCellProps={getCellProps}
                 renderSubRow={renderSubRow}
@@ -921,28 +916,19 @@ export default function Relations({ obj }: RelationsProps) {
             >
                 <ActionBarSearch
                     placeholder='Search relations...'
-                    value={searchQuery}
+                    value={appliedSearch}
                     debounceMs={300}
-                    onDebouncedChange={(v) => {
-                        setSearchQuery(v);
-                        setPage(1);
-                    }}
-                    onSubmit={(v) => {
-                        setSearchQuery(v);
-                        setPage(1);
-                    }}
-                    onClear={() => {
-                        setSearchQuery('');
-                        setPage(1);
-                    }}
+                    onDebouncedChange={applySearch}
+                    onSubmit={applySearch}
+                    onClear={() => applySearch('')}
                 />
                 <SubtypeFilter
                     options={entrySubtypes}
-                    selected={entrySubtypeFilters}
-                    onSelectedChange={setEntrySubtypeFilters}
-                    colorMap={entryClassColors}
+                    types={types}
+                    setTypes={setTypes}
+                    colors={entryClassColors}
                 />
-                <MaxStepsFilter value={depth} onChange={handleDepthChange} />
+                <MaxStepsFilter value={depth} onChange={changeDepth} />
             </DataTable>
             <ScrollBar orientation='horizontal' />
         </ScrollArea>

@@ -151,7 +151,6 @@ function ContextMenuImpl<TData>({
         for (const cellKey of selectionState.selectedCells) {
             const { rowIndex, columnId } = parseCellKey(cellKey);
 
-            // Get column from columns array
             const column = columns.find((col) => {
                 if (col.id) return col.id === columnId;
                 if ('accessorKey' in col) return col.accessorKey === columnId;

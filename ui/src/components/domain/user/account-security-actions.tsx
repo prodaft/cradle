@@ -1,6 +1,7 @@
 import ApiKeyGenerateDialog from '@/components/domain/user/dialogs/api-key-generate-dialog';
 import ChangePasswordDialog from '@/components/domain/user/dialogs/change-password-dialog';
 import TwoFactorSetupDialog from '@/components/domain/user/dialogs/two-factor-setup-dialog';
+import PasswordConfirmField from '@/components/domain/user/password-confirm-field';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -22,6 +23,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAuthActions } from '@/hooks/auth/use-auth';
+import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -38,21 +40,22 @@ export default function AccountSecurityActions({
     const { logOut } = useAuthActions();
     const router = useRouter();
 
-    const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-    const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
-    const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
-    const [twoFactorDialogOpen, setTwoFactorDialogOpen] = useState(false);
-    const [twoFactorDisabling, setTwoFactorDisabling] = useState(false);
-    const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
-    const [deleteAccountConfirmInput, setDeleteAccountConfirmInput] = useState('');
+    const [isTwoFactorEnabled, setIsTwoFactorEnabled] = useState(false);
+    const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+    const [isApiKeyOpen, setIsApiKeyOpen] = useState(false);
+    const [isTwoFactorOpen, setIsTwoFactorOpen] = useState(false);
+    const [isDisableMode, setIsDisableMode] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [confirmText, setConfirmText] = useState('');
+    const [password, setPassword] = useState('');
 
-    const passwordActionId = useId();
-    const apiKeyActionId = useId();
-    const twoFactorActionId = useId();
-    const deleteAccountActionId = useId();
-    const confirmDeleteAccountId = useId();
+    const changeId = useId();
+    const apiKeyId = useId();
+    const twoFactorId = useId();
+    const deleteId = useId();
+    const confirmId = useId();
 
-    const { data: userData } = $api.useQuery(
+    const { data: currentUser } = $api.useQuery(
         'get',
         '/users/{user_id}/',
         { params: { path: { user_id: target } } },
@@ -60,26 +63,36 @@ export default function AccountSecurityActions({
     );
 
     useEffect(() => {
-        if (userData) {
-            setTwoFactorEnabled(userData.two_factor_enabled || false);
+        if (currentUser) {
+            setIsTwoFactorEnabled(currentUser.two_factor_enabled || false);
         }
-    }, [userData]);
+    }, [currentUser]);
 
-    const deleteAccountMutation = useMutation({
-        mutationFn: async (userId: string) => {
+    const { mutate: deleteAccount, isPending } = useMutation({
+        mutationFn: async ({ id, password }: { id: string; password?: string }) => {
             const { error, response } = await fetchClient.DELETE('/users/{user_id}/', {
-                params: { path: { user_id: userId } },
-            });
+                params: { path: { user_id: id } },
+                ...(password && { body: { password } }),
+            } as { params: { path: { user_id: string } } });
             if (error) throw { response, error };
         },
         meta: { suppressNotification: true },
+        onError: async (err) => {
+            const parsed = await parseAPIError(err);
+            toast.error(getDisplayMessage(parsed));
+        },
         onSuccess: async () => {
             await logOut();
             router.navigate({ to: '/login', replace: true });
         },
     });
 
-    if (!userData) return null;
+    if (!currentUser) return null;
+
+    const passwordRequired = currentUser.has_password ?? false;
+    const isDeleteAllowed = passwordRequired
+        ? password.length > 0
+        : confirmText === 'DELETE';
 
     return (
         <>
@@ -90,7 +103,7 @@ export default function AccountSecurityActions({
                             <FieldContent className='flex-1'>
                                 <FieldLabel
                                     className='text-sm block mb-0.5'
-                                    htmlFor={passwordActionId}
+                                    htmlFor={changeId}
                                 >
                                     Password
                                 </FieldLabel>
@@ -99,12 +112,12 @@ export default function AccountSecurityActions({
                                 </FieldDescription>
                             </FieldContent>
                             <Button
-                                id={passwordActionId}
+                                id={changeId}
                                 type='button'
                                 variant='outline'
                                 size='sm'
                                 className='self-center'
-                                onClick={() => setChangePasswordDialogOpen(true)}
+                                onClick={() => setIsChangePasswordOpen(true)}
                                 title='Change Password'
                             >
                                 Change
@@ -117,7 +130,7 @@ export default function AccountSecurityActions({
                             <FieldContent className='flex-1'>
                                 <FieldLabel
                                     className='text-sm block mb-0.5'
-                                    htmlFor={apiKeyActionId}
+                                    htmlFor={apiKeyId}
                                 >
                                     API Key
                                 </FieldLabel>
@@ -126,13 +139,13 @@ export default function AccountSecurityActions({
                                 </FieldDescription>
                             </FieldContent>
                             <Button
-                                id={apiKeyActionId}
+                                id={apiKeyId}
                                 type='button'
                                 variant='outline'
                                 size='sm'
                                 className='self-center'
-                                onClick={() => setApiKeyDialogOpen(true)}
-                                title='Generate API Key'
+                                onClick={() => setIsApiKeyOpen(true)}
+                                title='API Key'
                             >
                                 Generate
                             </Button>
@@ -144,7 +157,7 @@ export default function AccountSecurityActions({
                             <FieldContent className='flex-1'>
                                 <FieldLabel
                                     className='text-sm block mb-0.5'
-                                    htmlFor={twoFactorActionId}
+                                    htmlFor={twoFactorId}
                                 >
                                     Two-Factor Auth
                                 </FieldLabel>
@@ -154,17 +167,17 @@ export default function AccountSecurityActions({
                                 </FieldDescription>
                             </FieldContent>
                             <Button
-                                id={twoFactorActionId}
+                                id={twoFactorId}
                                 type='button'
-                                variant={twoFactorEnabled ? 'destructive' : 'outline'}
+                                variant={isTwoFactorEnabled ? 'destructive' : 'outline'}
                                 size='sm'
                                 className='self-center'
                                 onClick={() => {
-                                    setTwoFactorDisabling(twoFactorEnabled);
-                                    setTwoFactorDialogOpen(true);
+                                    setIsDisableMode(isTwoFactorEnabled);
+                                    setIsTwoFactorOpen(true);
                                 }}
                             >
-                                {twoFactorEnabled ? 'Disable' : 'Enable'}
+                                {isTwoFactorEnabled ? 'Disable' : 'Enable'}
                             </Button>
                         </Field>
 
@@ -174,7 +187,7 @@ export default function AccountSecurityActions({
                             <FieldContent className='flex-1'>
                                 <FieldLabel
                                     className='text-sm block mb-0.5'
-                                    htmlFor={deleteAccountActionId}
+                                    htmlFor={deleteId}
                                 >
                                     Delete Account
                                 </FieldLabel>
@@ -183,12 +196,12 @@ export default function AccountSecurityActions({
                                 </FieldDescription>
                             </FieldContent>
                             <Button
-                                id={deleteAccountActionId}
+                                id={deleteId}
                                 type='button'
                                 variant='destructive'
                                 size='sm'
                                 className='self-center'
-                                onClick={() => setDeleteAccountDialogOpen(true)}
+                                onClick={() => setIsDeleteOpen(true)}
                             >
                                 Delete
                             </Button>
@@ -198,39 +211,44 @@ export default function AccountSecurityActions({
             </section>
 
             <ChangePasswordDialog
-                open={changePasswordDialogOpen}
-                onOpenChange={setChangePasswordDialogOpen}
+                open={isChangePasswordOpen}
+                onOpenChange={setIsChangePasswordOpen}
             />
-            {userData.id && (
+            {currentUser.id && (
                 <ApiKeyGenerateDialog
-                    open={apiKeyDialogOpen}
-                    onOpenChange={setApiKeyDialogOpen}
-                    userId={userData.id}
+                    open={isApiKeyOpen}
+                    onOpenChange={setIsApiKeyOpen}
+                    id={currentUser.id}
+                    passwordRequired={passwordRequired}
                 />
             )}
             <TwoFactorSetupDialog
-                open={twoFactorDialogOpen}
-                onOpenChange={setTwoFactorDialogOpen}
-                isDisabling={twoFactorDisabling}
+                open={isTwoFactorOpen}
+                onOpenChange={setIsTwoFactorOpen}
+                isDisabling={isDisableMode}
+                passwordRequired={passwordRequired}
                 onSuccess={() => {
-                    setTwoFactorEnabled((prev) => !prev);
+                    setIsTwoFactorEnabled((prev) => !prev);
                     toast.success(
-                        twoFactorDisabling
+                        isDisableMode
                             ? 'Two-Factor Auth has been disabled.'
                             : 'Two-Factor Auth has been enabled.',
                     );
                 }}
             />
             <AlertDialog
-                open={deleteAccountDialogOpen}
+                open={isDeleteOpen}
                 onOpenChange={(open) => {
-                    setDeleteAccountDialogOpen(open);
-                    if (!open) setDeleteAccountConfirmInput('');
+                    setIsDeleteOpen(open);
+                    if (!open) {
+                        setConfirmText('');
+                        setPassword('');
+                    }
                 }}
             >
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogTitle>Delete Account</AlertDialogTitle>
                         <AlertDialogDescription>
                             Deleting your account will permanently remove all your data,
                             including notes, entries, and settings. This action cannot
@@ -238,20 +256,27 @@ export default function AccountSecurityActions({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <FieldGroup className='gap-4'>
-                        <Field>
-                            <FieldLabel htmlFor={confirmDeleteAccountId}>
-                                Type below to confirm
-                            </FieldLabel>
-                            <Input
-                                id={confirmDeleteAccountId}
-                                type='text'
-                                placeholder='Type "DELETE" to confirm'
-                                value={deleteAccountConfirmInput}
-                                onChange={(e) =>
-                                    setDeleteAccountConfirmInput(e.target.value)
-                                }
+                        {passwordRequired ? (
+                            <PasswordConfirmField
+                                value={password}
+                                onChange={setPassword}
+                                disabled={isPending}
                             />
-                        </Field>
+                        ) : (
+                            <Field>
+                                <FieldLabel htmlFor={confirmId}>
+                                    Type below to confirm
+                                </FieldLabel>
+                                <Input
+                                    id={confirmId}
+                                    type='text'
+                                    placeholder='Type "DELETE" to confirm'
+                                    value={confirmText}
+                                    onChange={(e) => setConfirmText(e.target.value)}
+                                    disabled={isPending}
+                                />
+                            </Field>
+                        )}
                     </FieldGroup>
                     <AlertDialogFooter>
                         <AlertDialogCancel variant='outline' size='sm'>
@@ -260,11 +285,17 @@ export default function AccountSecurityActions({
                         <AlertDialogAction
                             variant='destructive'
                             size='sm'
-                            onClick={() => {
-                                if (userData.id)
-                                    deleteAccountMutation.mutate(userData.id);
+                            onClick={(event) => {
+                                event.preventDefault();
+                                if (currentUser.id)
+                                    deleteAccount({
+                                        id: currentUser.id,
+                                        password: passwordRequired
+                                            ? password
+                                            : undefined,
+                                    });
                             }}
-                            disabled={deleteAccountConfirmInput !== 'DELETE'}
+                            disabled={!isDeleteAllowed || isPending}
                         >
                             Delete
                         </AlertDialogAction>

@@ -1,3 +1,6 @@
+import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import StatusHeaderDropdown from '@/components/base/status-header-dropdown/status-header-dropdown';
+import { StatusIcon, type StatusType } from '@/components/base/status-icon/status-icon';
 import {
     ActionBar,
     ActionBarClose,
@@ -21,8 +24,6 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBarSearch } from '@components/base/action-bar/action-bar';
-import StatusHeaderDropdown from '@components/base/status-header-dropdown/status-header-dropdown';
 import { ArrowsClockwiseIcon, TrashIcon } from '@phosphor-icons/react';
 import type { components } from '@services/openapi/schema';
 import { useRouter } from '@tanstack/react-router';
@@ -35,17 +36,10 @@ import {
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { capitalize } from 'lodash';
-import {
-    type ChangeEvent,
-    type SyntheticEvent,
-    useCallback,
-    useEffect,
-    useMemo,
-    useState,
-} from 'react';
-import { StatusIcon, type StatusType } from '../notes/status-icon';
+import { useCallback, useMemo, useState } from 'react';
+import { FILTER_OPTIONS } from './enrichment-list-status';
 
-type EnrichmentRequestList = components['schemas']['EnrichmentRequestList'];
+type EnrichmentRow = components['schemas']['EnrichmentRequestList'];
 
 const SORT_FIELD_MAPPING: Record<string, string> = {
     title: 'title',
@@ -53,117 +47,75 @@ const SORT_FIELD_MAPPING: Record<string, string> = {
     user: 'user__username',
 };
 
-type EnrichmentRequest = EnrichmentRequestList;
-
-interface ColumnFilter {
+interface Filters {
     status: string;
     user: string;
 }
 
-interface SearchFilters {
-    title?: string;
-}
-
 interface EnrichmentTableProps {
-    enrichmentRequests: EnrichmentRequest[];
-    loading: boolean;
+    rows: EnrichmentRow[];
+    isLoading: boolean;
     page: number;
     totalPages: number;
-    handlePageChange: (page: number) => void;
-    setAlert?: (alert: any) => void;
-    onRequestDelete?: () => void;
+    onPageChange: (page: number) => void;
     sortField?: string;
     sortDirection?: 'asc' | 'desc';
     onSort?: (field: string, direction: 'asc' | 'desc') => void;
     pageSize?: number;
-    setPageSize?: (size: number) => void;
-    onColumnFilterChange?: ((column: keyof ColumnFilter, value: string) => void) | null;
-    columnFilters?: ColumnFilter;
-    searchFilters?: SearchFilters;
-    onSearchChange?: (e: ChangeEvent<HTMLInputElement>) => void;
-    onSearchSubmit?: (e: SyntheticEvent) => void;
-    selectedRequests?: string[];
-    setSelectedRequests?: (ids: string[]) => void;
-    onDeleteSelected?: (ids: string[]) => void;
-    onRerunSelected?: () => void;
-    onCreateRequest?: () => void;
+    onPageSizeChange?: (size: number) => void;
+    onColumnFilterChange?: ((column: keyof Filters, value: string) => void) | null;
+    filters?: Filters;
+    initialSearch?: string;
+    onSearchSubmit?: (value: string) => void;
+    onDelete?: (ids: string[]) => Promise<boolean> | void;
+    onRerun?: (ids: string[]) => Promise<boolean> | void;
 }
 
 export default function EnrichmentTable({
-    enrichmentRequests,
-    loading,
+    rows,
+    isLoading,
     page,
     totalPages,
-    handlePageChange,
+    onPageChange,
     sortField = 'created_at',
     sortDirection = 'desc',
     onSort,
     pageSize = 20,
-    setPageSize = () => {},
+    onPageSizeChange = () => {},
     onColumnFilterChange = null,
-    columnFilters = { status: 'all', user: '' },
-    searchFilters = {},
-    onSearchChange = () => {},
+    filters = { status: 'all', user: '' },
+    initialSearch = '',
     onSearchSubmit = () => {},
-    selectedRequests = [],
-    setSelectedRequests = () => {},
-    onDeleteSelected,
-    onRerunSelected = () => {},
-    onCreateRequest: _onCreateRequest = () => {},
+    onDelete,
+    onRerun = () => {},
 }: EnrichmentTableProps) {
     const router = useRouter();
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [deleteRequestIds, setDeleteRequestIds] = useState<string[]>([]);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
-    const selectedRequestIds = useMemo(
+    const checkedIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
         [rowSelection],
     );
 
     const clearSelection = useCallback(() => {
         setRowSelection({});
-        setSelectedRequests?.([]);
-    }, [setSelectedRequests]);
+    }, []);
 
-    useEffect(() => {
-        if (!selectedRequests || selectedRequests.length === 0) {
-            setRowSelection({});
-            return;
-        }
-        const selection: RowSelectionState = {};
-        selectedRequests.forEach((id) => {
-            selection[String(id)] = true;
-        });
-        setRowSelection(selection);
-    }, [selectedRequests]);
+    const paginate = useCallback(
+        (pageIndex: number, size: number) => {
+            const target = pageIndex + 1;
 
-    const handleStatusChange = useCallback(
-        (status: string) => onColumnFilterChange?.('status', status),
-        [onColumnFilterChange],
-    );
-
-    // Handle pagination changes from DataTable
-    const handlePaginationChange = useCallback(
-        (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1; // Convert 0-based to 1-based
-
-            // Handle page size change
-            if (newPageSize !== (pageSize || 20)) {
-                if (setPageSize) {
-                    setPageSize(newPageSize);
-                }
-                handlePageChange(1);
-            }
-            // Handle page change
-            else if (newPage !== page) {
-                handlePageChange(newPage);
+            if (size !== (pageSize || 20)) {
+                onPageSizeChange(size);
+            } else if (target !== page) {
+                onPageChange(target);
             }
         },
-        [handlePageChange, page, pageSize, setPageSize],
+        [onPageChange, page, pageSize, onPageSizeChange],
     );
 
-    // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
         const columnId =
             Object.keys(SORT_FIELD_MAPPING).find(
@@ -180,63 +132,64 @@ export default function EnrichmentTable({
             : [];
     }, [sortField, sortDirection]);
 
-    const handleSortingChange = useCallback(
-        (newSorting: SortingState) => {
-            if (onSort) {
-                if (newSorting.length === 0) {
-                    onSort('created_at', 'desc');
-                } else {
-                    const sort = newSorting[0];
-                    if (!sort) {
-                        onSort('created_at', 'desc');
-                    } else {
-                        const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
-                        onSort(apiField, sort.desc ? 'desc' : 'asc');
-                    }
-                }
+    const applySort = useCallback(
+        (next: SortingState) => {
+            if (!onSort) return;
+
+            if (next.length === 0) {
+                onSort('created_at', 'desc');
+                return;
             }
+
+            const entry = next[0];
+            if (!entry) {
+                onSort('created_at', 'desc');
+                return;
+            }
+
+            const apiField = SORT_FIELD_MAPPING[entry.id] || entry.id;
+            onSort(apiField, entry.desc ? 'desc' : 'asc');
         },
         [onSort],
     );
 
-    const onTableSortingChange = useCallback(
+    const applySorting = useCallback(
         (updater: SortingState | ((prev: SortingState) => SortingState)) => {
-            const nextSorting =
-                typeof updater === 'function' ? updater(sorting) : updater;
-            handleSortingChange(nextSorting);
+            const next = typeof updater === 'function' ? updater(sorting) : updater;
+            applySort(next);
         },
-        [handleSortingChange, sorting],
+        [applySort, sorting],
     );
 
-    const errorMsg = useCallback((request: EnrichmentRequest) => {
+    const statusDetail = useCallback((item: EnrichmentRow) => {
         const msgs: string[] = [];
-        if (request.ignored_count && request.ignored_count > 0) {
+        if (item.ignored_count && item.ignored_count > 0) {
             msgs.push(
-                `Ignored ${request.ignored_count} artifact${request.ignored_count > 1 ? 's' : ''}`,
+                `Ignored ${item.ignored_count} artifact${item.ignored_count > 1 ? 's' : ''}`,
             );
         }
-        const warn_count =
-            request.enrichers?.filter((enricher) => enricher.status === 'warning')
+        const warnCount =
+            item.enrichers?.filter((enricher) => enricher.status === 'warning')
                 .length || 0;
-        if (warn_count > 0) {
-            msgs.push(`Warnings in ${warn_count} enricher${warn_count > 1 ? 's' : ''}`);
+        if (warnCount > 0) {
+            msgs.push(`Warnings in ${warnCount} enricher${warnCount > 1 ? 's' : ''}`);
         }
-        const error_count =
-            request.enrichers?.filter((enricher) => enricher.status === 'error')
-                .length || 0;
-        if (error_count > 0) {
-            msgs.push(`Errors in ${error_count} enricher${error_count > 1 ? 's' : ''}`);
+        const errorCount =
+            item.enrichers?.filter((enricher) => enricher.status === 'error').length ||
+            0;
+        if (errorCount > 0) {
+            msgs.push(`Errors in ${errorCount} enricher${errorCount > 1 ? 's' : ''}`);
         }
 
         return msgs.join(', ');
     }, []);
 
-    const getStatusIcon = useCallback((status?: string, errorMessage?: string) => {
+    const statusIcon = useCallback((status?: string, detail?: string) => {
         if (!status) return null;
 
-        const tooltipContent = errorMessage || capitalize(status);
+        const tooltipContent = detail || capitalize(status);
         const tooltipClassName =
-            (status === 'error' || status === 'waiting') && errorMessage
+            (status === 'error' || status === 'waiting') && detail
                 ? status === 'error'
                     ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
                     : '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
@@ -256,8 +209,7 @@ export default function EnrichmentTable({
         );
     }, []);
 
-    // Memoize columns to prevent recreation on every render
-    const columns = useMemo<ColumnDef<EnrichmentRequest>[]>(
+    const columns = useMemo<ColumnDef<EnrichmentRow>[]>(
         () => [
             {
                 id: 'select',
@@ -290,77 +242,85 @@ export default function EnrichmentTable({
             {
                 accessorKey: 'title',
                 id: 'title',
+                meta: { label: 'Title' },
                 header: 'Title',
-                cell: ({ row }) => (
-                    <div
-                        className='truncate max-w-xs cursor-pointer'
-                        title={row.original.title}
-                        onClick={(event) => {
-                            event.stopPropagation();
-                            if (row.original.id) {
-                                router.navigate({
-                                    to: '/enrichment/$id',
-                                    params: { id: row.original.id.toString() },
-                                });
-                            }
-                        }}
-                    >
-                        <div className='flex items-center gap-2 min-w-0'>
-                            <span className='inline-flex items-center flex-shrink-0'>
-                                {getStatusIcon(
-                                    row.original.status,
-                                    errorMsg(row.original),
-                                )}
-                            </span>
-                            <span className='truncate'>
-                                {truncateText(row.original.title, 50)}
-                            </span>
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div
+                            className='truncate max-w-xs cursor-pointer'
+                            title={item.title}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                if (item.id) {
+                                    router.navigate({
+                                        to: '/enrichment/$id',
+                                        params: { id: item.id.toString() },
+                                    });
+                                }
+                            }}
+                        >
+                            <div className='flex items-center gap-2 min-w-0'>
+                                <span className='inline-flex items-center flex-shrink-0'>
+                                    {statusIcon(item.status, statusDetail(item))}
+                                </span>
+                                <span className='truncate'>
+                                    {truncateText(item.title, 50)}
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                ),
+                    );
+                },
             },
             {
                 accessorKey: 'user',
                 id: 'user',
-                header: ({ column }) => {
-                    const filterValue = columnFilters.user;
+                meta: { label: 'User' },
+                header: ({ column }) => (
+                    <div className='flex items-center gap-2'>
+                        <DataTableColumnHeader column={column} label='User' />
+                        {filters.user && <span className='text-xs text-accent'>●</span>}
+                    </div>
+                ),
+                cell: ({ row }) => {
+                    const item = row.original;
                     return (
-                        <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} label='User' />
-                            {filterValue && (
-                                <span className='text-xs text-accent'>●</span>
-                            )}
+                        <div className='w-32'>
+                            {item.user_detail?.username || 'N/A'}
                         </div>
                     );
                 },
-                cell: ({ row }) => (
-                    <div className='w-32'>
-                        {row.original.user_detail?.username || 'N/A'}
-                    </div>
-                ),
             },
             {
                 accessorKey: 'created_at',
                 id: 'created_at',
+                meta: { label: 'Created At' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Created At' />
                 ),
-                cell: ({ row }) => (
-                    <div className='w-40'>
-                        {row.original.created_at
-                            ? format(
-                                  new Date(row.original.created_at),
-                                  'dd/MM/yyyy, HH:mm',
-                              )
-                            : 'N/A'}
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className='w-40'>
+                            {item.created_at
+                                ? format(new Date(item.created_at), 'dd/MM/yyyy, HH:mm')
+                                : 'N/A'}
+                        </div>
+                    );
+                },
             },
         ],
-        [columnFilters.user, getStatusIcon, errorMsg, router],
+        [filters.user, statusIcon, statusDetail, router],
     );
+
+    const confirmDelete = useCallback(() => {
+        if (checkedIds.length === 0) return;
+        setPendingDeleteIds(checkedIds);
+        setIsDeleteOpen(true);
+    }, [checkedIds]);
+
     const table = useReactTable({
-        data: enrichmentRequests,
+        data: rows,
         columns,
         state: {
             sorting,
@@ -371,23 +331,15 @@ export default function EnrichmentTable({
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
-        onSortingChange: onTableSortingChange,
-        onRowSelectionChange: (updater) => {
-            setRowSelection((prev) => {
-                const next = typeof updater === 'function' ? updater(prev) : updater;
-                const selectedIds = Object.keys(next).filter((key) => next[key]);
-                setSelectedRequests?.(selectedIds);
-                return next;
-            });
-        },
+        onSortingChange: applySorting,
+        onRowSelectionChange: setRowSelection,
         onPaginationChange: (updater) => {
-            const currentPagination = {
+            const current = {
                 pageIndex: page - 1,
                 pageSize: pageSize || 20,
             };
-            const nextPagination =
-                typeof updater === 'function' ? updater(currentPagination) : updater;
-            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+            const next = typeof updater === 'function' ? updater(current) : updater;
+            paginate(next.pageIndex, next.pageSize);
         },
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
@@ -398,67 +350,41 @@ export default function EnrichmentTable({
 
     return (
         <div className='flex flex-col space-y-4'>
-            {/* Table */}
-            <DataTable table={table} showViewOptions isLoading={loading}>
+            <DataTable table={table} showViewOptions isLoading={isLoading}>
                 <div className='flex items-center gap-2'>
                     <ActionBarSearch
                         placeholder='Search requests...'
-                        initialValue={searchFilters?.title || ''}
+                        initialValue={initialSearch}
                         debounceMs={300}
-                        onDebouncedChange={(value) => {
-                            const event = {
-                                preventDefault: () => {},
-                                target: { name: 'title', value },
-                            } as ChangeEvent<HTMLInputElement>;
-                            onSearchChange(event);
-                            // Some parents only fetch on submit; trigger submit on debounce too.
-                            onSearchSubmit(event as any);
-                        }}
-                        onSubmit={(value) => {
-                            const event = {
-                                preventDefault: () => {},
-                                target: { name: 'title', value },
-                            } as any;
-                            onSearchSubmit(event);
-                        }}
-                        onClear={() => {
-                            const event = {
-                                preventDefault: () => {},
-                                target: { name: 'title', value: '' },
-                            } as ChangeEvent<HTMLInputElement>;
-                            onSearchChange(event);
-                            onSearchSubmit(event as any);
-                        }}
+                        onDebouncedChange={onSearchSubmit}
+                        onSubmit={onSearchSubmit}
+                        onClear={() => onSearchSubmit('')}
                     />
                     <StatusHeaderDropdown
-                        onStatusChange={handleStatusChange}
-                        status={columnFilters.status}
-                        statusOptions={['all', 'done', 'waiting', 'error', 'info']}
+                        onStatusChange={(status) =>
+                            onColumnFilterChange?.('status', status)
+                        }
+                        status={filters.status}
+                        options={[...FILTER_OPTIONS]}
                     />
                 </div>
             </DataTable>
             <ActionBar
-                open={selectedRequestIds.length > 0}
+                open={checkedIds.length > 0}
                 onOpenChange={(open) => {
                     if (!open) clearSelection();
                 }}
             >
                 <ActionBarSelection>
-                    {selectedRequestIds.length} request
-                    {selectedRequestIds.length !== 1 ? 's' : ''} selected
+                    {checkedIds.length} request
+                    {checkedIds.length !== 1 ? 's' : ''} selected
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
                     <ActionBarItem
-                        onClick={() => {
-                            if (selectedRequestIds.length === 0) return;
-                            setDeleteRequestIds(selectedRequestIds);
-                            setDeleteDialogOpen(true);
-                        }}
+                        onClick={confirmDelete}
                         disabled={
-                            loading ||
-                            enrichmentRequests.length === 0 ||
-                            selectedRequestIds.length === 0
+                            isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                         className='text-destructive'
                     >
@@ -466,11 +392,11 @@ export default function EnrichmentTable({
                         Delete
                     </ActionBarItem>
                     <ActionBarItem
-                        onClick={onRerunSelected}
+                        onClick={async () => {
+                            if (await onRerun(checkedIds)) clearSelection();
+                        }}
                         disabled={
-                            loading ||
-                            enrichmentRequests.length === 0 ||
-                            selectedRequestIds.length === 0
+                            isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                     >
                         <ArrowsClockwiseIcon size={18} weight='bold' />
@@ -481,19 +407,19 @@ export default function EnrichmentTable({
                 <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
             </ActionBar>
             <AlertDialog
-                open={deleteDialogOpen}
+                open={isDeleteOpen}
                 onOpenChange={(open) => {
-                    setDeleteDialogOpen(open);
-                    if (!open) setDeleteRequestIds([]);
+                    setIsDeleteOpen(open);
+                    if (!open) setPendingDeleteIds([]);
                 }}
             >
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete {deleteRequestIds.length}{' '}
+                            Are you sure you want to delete {pendingDeleteIds.length}{' '}
                             request
-                            {deleteRequestIds.length > 1 ? 's' : ''}? This action is
+                            {pendingDeleteIds.length > 1 ? 's' : ''}? This action is
                             irreversible.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -504,11 +430,12 @@ export default function EnrichmentTable({
                         <AlertDialogAction
                             variant='destructive'
                             size='sm'
-                            onClick={() => {
-                                if (deleteRequestIds.length > 0) {
-                                    onDeleteSelected?.(deleteRequestIds);
+                            onClick={async () => {
+                                const target = pendingDeleteIds;
+                                setPendingDeleteIds([]);
+                                if (target.length > 0 && (await onDelete?.(target))) {
+                                    clearSelection();
                                 }
-                                setDeleteRequestIds([]);
                             }}
                         >
                             Delete

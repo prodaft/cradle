@@ -7,7 +7,7 @@ from rest_framework import serializers
 
 from access.enums import AccessType
 from core.exceptions import InvalidRequestException
-from cradle.settings_common import INTERNAL_SUBTYPES
+from entries.constants import INTERNAL_SUBTYPES
 from entries.enums import EntryType
 from entries.models import Entry
 from entries.serializers import (

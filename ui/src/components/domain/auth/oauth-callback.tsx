@@ -1,7 +1,7 @@
+import Logo from '@/components/base/logo/logo';
 import { Button } from '@/components/ui/button';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
-import Logo from '@components/base/logo/logo';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -39,7 +39,7 @@ export default function OAuthCallback() {
     const { basePath } = useAuthState();
     const { isLoggedIn, setTokensDirectly } = useAuthActions();
     const router = useRouter();
-    const hasExchangedRef = useRef(false);
+    const exchangedRef = useRef(false);
     const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
     const [callbackImage] = useState(
         () =>
@@ -73,7 +73,7 @@ export default function OAuthCallback() {
         return { code, provider, action } as const;
     }, []);
 
-    const oauthMutation = useMutation({
+    const oauth = useMutation({
         mutationFn: async ({ code, provider, action }: OAuthParams) => {
             if (!basePath) throw new Error('Backend URL is not configured.');
 
@@ -155,17 +155,17 @@ export default function OAuthCallback() {
     });
 
     useEffect(() => {
-        if (hasExchangedRef.current) return;
+        if (exchangedRef.current) return;
         if ('error' in urlParams) return;
-        hasExchangedRef.current = true;
-        oauthMutation.mutate(urlParams);
+        exchangedRef.current = true;
+        oauth.mutate(urlParams);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const errorMessage =
         'error' in urlParams
             ? urlParams.error
-            : oauthMutation.isError
+            : oauth.isError
               ? (apiErrorMessage ?? 'OAuth flow failed. Please try again.')
               : null;
     const statusMessage = errorMessage
