@@ -143,7 +143,6 @@
         "@tailwindcss/postcss": "^4.3.3",
         "@tailwindcss/typography": "^0.5.20",
         "@tailwindcss/vite": "^4.3.3",
-        "@types/bun": "^1.4.0",
         "@types/bytes": "^3.1.6",
         "@types/diff": "^8.0.0",
         "@types/diff-match-patch": "^1.0.36",

@@ -4,6 +4,7 @@
         "useDefineForClassFields": true,
         "incremental": true,
         "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "types": ["node"],
         "module": "ESNext",
         "skipLibCheck": true,
         "skipDefaultLibCheck": true,

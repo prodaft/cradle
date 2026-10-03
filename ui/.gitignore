@@ -14,9 +14,6 @@ dist-ssr
 
 coverage
 
-out
-docs
-
 # Editor directories and files
 .vscode/*
 !.vscode/launch.json
@@ -28,10 +25,6 @@ docs
 *.sln
 *.sw?
 
-# Tailwind CSS
-src/styles/output.css
-
-.env
 stats.html
 CLAUDE.md
 tsconfig.tsbuildinfo

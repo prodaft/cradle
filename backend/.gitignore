@@ -1,22 +1,8 @@
 db.sqlite3
 .vscode
-env
-.env
 .coverage
 reports
 exceptions.log
 .idea
 /static
 **/__pycache__
-
-/docs/_build
-/docs/api_reference/*
-!/docs/api_reference/index.rst
-*.env
-deploy/inventory.yml
-
-.vscode
-IntelOwl
-
-# Local scratch file for the markdown pipeline
-notes/markdown/example_note.md
