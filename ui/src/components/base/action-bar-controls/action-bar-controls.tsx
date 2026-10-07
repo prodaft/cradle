@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
-import { debounce } from 'lodash';
+import debounce from 'lodash/debounce';
 import React, {
     memo,
     useCallback,
@@ -44,23 +44,23 @@ export const ActionBarButton = memo(function ActionBarButton({
 
     return (
         <Tooltip>
-            <TooltipTrigger asChild>
-                <Button
-                    type='button'
-                    onClick={onClick}
-                    disabled={disabled}
-                    variant='outline'
-                    size={variant === 'circle' ? 'icon' : 'default'}
-                    className={className}
-                    title={title}
-                >
-                    <span className={iconWrapperClass}>{icon}</span>
-                    {typeof count === 'number' && count > 0 && (
-                        <span className='text-sm text-foreground font-mono'>
-                            {count}
-                        </span>
-                    )}
-                </Button>
+            <TooltipTrigger
+                render={
+                    <Button
+                        type='button'
+                        onClick={onClick}
+                        disabled={disabled}
+                        variant='outline'
+                        size={variant === 'circle' ? 'icon' : 'default'}
+                        className={className}
+                        title={title}
+                    />
+                }
+            >
+                <span className={iconWrapperClass}>{icon}</span>
+                {typeof count === 'number' && count > 0 && (
+                    <span className='text-sm text-foreground font-mono'>{count}</span>
+                )}
             </TooltipTrigger>
             <TooltipContent>{tooltip}</TooltipContent>
         </Tooltip>
@@ -188,7 +188,7 @@ export const ActionBarSearch = memo(function ActionBarSearch({
     );
 
     return (
-        <div className={cn('relative', className ?? 'w-40 lg:w-56')}>
+        <div className={cn('relative', className ?? 'min-w-40 flex-1')}>
             <span
                 className='pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-muted-foreground'
                 aria-hidden

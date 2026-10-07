@@ -98,6 +98,22 @@ function renderCradleLink(
 
 let DownloadLinkPromiseCache: Record<string, Promise<FileDownload>> = {};
 const MinioCache: Record<string, FileDownload> = {};
+// Normalized presigned URLs handed out by the backend, so links to attachments can be told
+// apart from arbitrary external links pointing at the same host.
+const issuedDownloadUrls = new Set<string>();
+
+function normalizeUrl(url: string): string | null {
+    try {
+        return new URL(url, window.location.href).href;
+    } catch {
+        return null;
+    }
+}
+
+export function isFileDownloadUrl(url: string): boolean {
+    const normalized = normalizeUrl(url);
+    return normalized !== null && issuedDownloadUrls.has(normalized);
+}
 
 function fetchMinioDownloadLink(fileId: string): Promise<FileDownload> {
     if (!DownloadLinkPromiseCache[fileId]) {
@@ -111,9 +127,11 @@ function fetchMinioDownloadLink(fileId: string): Promise<FileDownload> {
             })
             .then(({ data, error, response }) => {
                 if (error) throw { response, error };
+                const normalized = normalizeUrl(data!.presigned_url);
+                if (normalized) issuedDownloadUrls.add(normalized);
                 return {
                     presigned_url: data!.presigned_url,
-                    expires_in: Date.now() + data!.expires_in,
+                    expires_at: data!.expires_at,
                 } satisfies FileDownload;
             });
     }
@@ -145,8 +163,8 @@ async function resolveMinioLinks(token: Token): Promise<void> {
 
         const cached = MinioCache[fileId];
         let presigned: string | undefined = cached?.presigned_url;
-        const cachedExpiry = cached?.expires_in;
-        if (!presigned || Date.now() > (cachedExpiry || 0)) {
+        const cachedExpiry = cached ? Date.parse(cached.expires_at) : 0;
+        if (!presigned || !(Date.now() < cachedExpiry)) {
             const result = await fetchMinioDownloadLink(fileId);
             presigned = result.presigned_url;
             MinioCache[fileId] = result;

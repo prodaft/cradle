@@ -4,8 +4,11 @@ import uuid
 from unittest.mock import patch
 
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from rest_framework_simplejwt.tokens import AccessToken
 
+from file_transfer.constants import FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS
 from file_transfer.models import FileReference
 from user.models import CradleUser
 
@@ -50,6 +53,9 @@ class TestFileDownload(FileTransferTestCase):
             )
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()["presigned_url"], "https://example.com/download")
+            expires_at = parse_datetime(response.json()["expires_at"])
+            remaining = (expires_at - timezone.now()).total_seconds()
+            self.assertTrue(0 < remaining <= FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS)
 
     def test_download_not_authenticated(self):
         """Download returns 401 when not authenticated."""

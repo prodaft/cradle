@@ -78,9 +78,8 @@ def _get_notification_or_404(user: CradleUser, notification_id: UUID) -> Message
                 type=bool,
                 location=OpenApiParameter.QUERY,
                 description=(
-                    "If true, return only notifications that are unread "
-                    "(``is_unread`` or ``is_marked_unread``). Does not mark natural unreads as read; "
-                    "use the default list without this flag to clear ``is_unread`` for all notifications."
+                    "If true, return only unread notifications (``is_unread``). Does not mark them as seen; "
+                    "the default list without this flag marks all notifications as seen."
                 ),
                 required=False,
             ),
@@ -104,7 +103,7 @@ def _get_notification_or_404(user: CradleUser, notification_id: UUID) -> Message
                             EnrichmentCompleteNotificationSerializer,
                             EnrichmentErrorNotificationSerializer,
                         ],
-                        resource_type_field_name="notification_type",
+                        resource_type_field_name="type",
                         many=True,
                     ),
                 },

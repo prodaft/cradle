@@ -1,6 +1,7 @@
 """Mapping API views: subclasses, schema, keys."""
 
 import uuid
+from contextlib import contextmanager
 
 from django.apps import apps
 from django.db import IntegrityError, transaction
@@ -15,6 +16,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.openapi import get_common_error_responses, get_error_responses
+from core.query_lang import matches_text, parse_search
 from core.utils import fields_to_form
 from user.authentication import APIKeyAuthentication
 from user.permissions import HasEntryManagerRole
@@ -46,6 +48,32 @@ def _get_mapping_class(class_name: str):
     return mapping_class
 
 
+def _get_mapping_or_404(mapping_class, mapping_id):
+    """Fetch a mapping by id; raise MappingRequired/InvalidMapping/MappingNotFound on failure."""
+    if not mapping_id:
+        raise MappingRequiredException(detail="A mapping is required.")
+
+    try:
+        uuid.UUID(str(mapping_id))
+    except ValueError, TypeError, AttributeError:
+        raise InvalidMappingException(detail="That mapping is not valid.")
+
+    mapping = mapping_class.objects.filter(id=mapping_id).first()
+    if mapping is None:
+        raise MappingNotFoundException(detail="That mapping could not be found.")
+    return mapping
+
+
+@contextmanager
+def _mapping_conflict_guard():
+    """Run a mapping write atomically, translating integrity errors into DataConflictException."""
+    try:
+        with transaction.atomic():
+            yield
+    except IntegrityError:
+        raise DataConflictException(detail="This could not be saved because it conflicts with existing information.")
+
+
 @extend_schema_view(
     get=extend_schema(
         operation_id="mappings_subclasses_list",
@@ -56,12 +84,16 @@ def _get_mapping_class(class_name: str):
                 name="search",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Search mapping types by name or class name",
+                description=(
+                    "Search mapping types by display name or class name. Supports the search syntax: "
+                    'AND/OR/NOT (or -term), "quoted phrases", =exact, and * wildcards.'
+                ),
                 required=False,
             ),
         ],
         responses={
             200: MappingSubclassSerializer(many=True),
+            **get_error_responses(include_validation_error=True),
             **get_common_error_responses(),
         },
     )
@@ -81,12 +113,9 @@ class ClassMappingSubclassesAPIView(APIView):
             if hasattr(subclass, "display_name")
         ]
 
-        search = request.query_params.get("search")
-        if search:
-            search_lower = search.lower()
-            subclass_data = [
-                s for s in subclass_data if search_lower in s["name"].lower() or search_lower in s["class"].lower()
-            ]
+        node = parse_search(request.query_params.get("search"))
+        if node is not None:
+            subclass_data = [s for s in subclass_data if matches_text(node, [s["name"], s["class"]])]
 
         serializer = MappingSubclassSerializer(subclass_data, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -144,9 +173,29 @@ class MappingKeysSchemaView(APIView):
         },
     ),
     post=extend_schema(
-        operation_id="mappings_schema_create_or_update",
-        summary="Create or update mapping",
-        description="Create a new mapping or update an existing one for a given class.",
+        operation_id="mappings_schema_create",
+        summary="Create mapping",
+        description="Create a new mapping for a given class.",
+        request=OpenApiTypes.OBJECT,
+        responses={
+            201: {
+                "type": "object",
+                "description": "Mapping instance data",
+            },
+            **get_error_responses(
+                IntelIOErrorCodes.UNKNOWN_MAPPING,
+                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
+                IntelIOErrorCodes.TARGET_TYPE_REQUIRED,
+                IntelIOErrorCodes.DATA_CONFLICT,
+                include_validation_error=True,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+    patch=extend_schema(
+        operation_id="mappings_schema_partial_update",
+        summary="Update mapping",
+        description="Update an existing mapping for a given class. The body must include the mapping `id`.",
         request=OpenApiTypes.OBJECT,
         responses={
             200: {
@@ -156,8 +205,9 @@ class MappingKeysSchemaView(APIView):
             **get_error_responses(
                 IntelIOErrorCodes.UNKNOWN_MAPPING,
                 IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
-                IntelIOErrorCodes.TARGET_TYPE_REQUIRED,
+                IntelIOErrorCodes.MAPPING_REQUIRED,
                 IntelIOErrorCodes.INVALID_MAPPING,
+                IntelIOErrorCodes.MAPPING_NOT_FOUND,
                 IntelIOErrorCodes.DATA_CONFLICT,
                 include_validation_error=True,
             ),
@@ -204,69 +254,37 @@ class MappingSchemaView(APIView):
 
     def post(self, request: Request, class_name: str) -> Response:
         mapping_class = _get_mapping_class(class_name)
-        serializer = ClassMappingSerializer.get_serializer(mapping_class)(data=request.data, partial=True)
+        serializer_class = ClassMappingSerializer.get_serializer(mapping_class)
+        serializer = serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        validated_data = dict(serializer.validated_data)
 
-        mapping_id = validated_data.pop("id", None) or request.data.get("id")
-        if mapping_id is not None:
-            try:
-                uuid.UUID(str(mapping_id))
-            except ValueError, TypeError, AttributeError:
-                raise InvalidMappingException(detail="That mapping is not valid.")
-
-        if mapping_id is None and "internal_class" not in validated_data:
+        if "internal_class" not in serializer.validated_data:
             raise TargetTypeRequiredException(detail="Select which entry type this mapping applies to.")
 
-        if "internal_class" in validated_data:
-            validated_data["internal_class_id"] = validated_data.pop("internal_class").pk
+        with _mapping_conflict_guard():
+            mapping = serializer.save()
 
-        existing_mapping = mapping_class.objects.filter(id=mapping_id)
-        response_serializer = ClassMappingSerializer.get_serializer(mapping_class)
+        mapping_url = reverse("mapping_schema", kwargs={"class_name": class_name})
+        location = request.build_absolute_uri(f"{mapping_url}?mapping_id={mapping.id}")
+        return Response(
+            serializer_class(mapping).data,
+            status=status.HTTP_201_CREATED,
+            headers={"Location": location},
+        )
 
-        try:
-            with transaction.atomic():
-                if existing_mapping.exists():
-                    existing_mapping.update(**validated_data)
-                    updated = mapping_class.objects.get(id=mapping_id)
-                    return Response(response_serializer(updated).data, status=status.HTTP_200_OK)
-                elif mapping_id is not None:
-                    raise MappingNotFoundException(detail="That mapping could not be found.")
-                else:
-                    mapping = mapping_class.objects.create(**validated_data)
-                    mapping_url = reverse(
-                        "mapping_schema",
-                        kwargs={"class_name": class_name},
-                    )
-                    location = request.build_absolute_uri(f"{mapping_url}?mapping_id={mapping.id}")
-                    return Response(
-                        response_serializer(mapping).data,
-                        status=status.HTTP_201_CREATED,
-                        headers={"Location": location},
-                    )
-        except mapping_class.DoesNotExist:
-            raise MappingNotFoundException(detail="That mapping could not be found.")
-        except IntegrityError:
-            raise DataConflictException(
-                detail="This could not be saved because it conflicts with existing information."
-            )
+    def patch(self, request: Request, class_name: str) -> Response:
+        mapping_class = _get_mapping_class(class_name)
+        mapping = _get_mapping_or_404(mapping_class, request.data.get("id"))
+
+        serializer_class = ClassMappingSerializer.get_serializer(mapping_class)
+        serializer = serializer_class(mapping, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        with _mapping_conflict_guard():
+            serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request: Request, class_name: str) -> Response:
-        mapping_class = _get_mapping_class(class_name)
-        mapping_id = request.query_params.get("mapping_id")
-
-        if not mapping_id:
-            raise MappingRequiredException(detail="A mapping is required.")
-
-        try:
-            uuid.UUID(str(mapping_id))
-        except ValueError, TypeError, AttributeError:
-            raise InvalidMappingException(detail="That mapping is not valid.")
-
-        try:
-            mapping = mapping_class.objects.get(id=mapping_id)
-        except mapping_class.DoesNotExist:
-            raise MappingNotFoundException(detail="That mapping could not be found.")
-
+        mapping = _get_mapping_or_404(_get_mapping_class(class_name), request.query_params.get("mapping_id"))
         mapping.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

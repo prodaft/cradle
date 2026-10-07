@@ -1,4 +1,5 @@
 import FileUploadDialog from '@/components/domain/notes/dialogs/file-upload-dialog';
+import RestrictedNote from '@/components/domain/notes/restricted-note';
 import ReportGenerationDialog from '@/components/domain/reports/dialogs/report-generation-dialog';
 import NotFound from '@/components/feedback/not-found';
 import {
@@ -40,6 +41,7 @@ import { cn } from '@/lib/utils';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import extractHeaderHierarchy, { HeaderNode } from '@/utils/editor/outline';
+import type { LiveNoteSession, LiveStatus } from '@/utils/editor/sync/live-connection';
 import { parseMarkdownInline } from '@/utils/parser';
 import { Prec } from '@codemirror/state';
 import { keymap, type EditorView } from '@codemirror/view';
@@ -49,7 +51,6 @@ import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useParams, useRouter, useSearch } from '@tanstack/react-router';
 import { format } from 'date-fns';
-import { debounce } from 'lodash';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
@@ -68,6 +69,8 @@ import StaticRender from './static-render';
 
 type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 type NoteRetrieve = components['schemas']['NoteRetrieve'];
+
+const CONFLICT_MESSAGE = 'This note was changed by someone else since you loaded it.';
 type NoteMetadata = { title?: string; description?: string };
 
 interface LocationState {
@@ -132,6 +135,11 @@ export default function NoteViewer() {
     const [enableEditing, setEnableEditing] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
+    const [isConflictOpen, setIsConflictOpen] = useState(false);
+    const [liveSession, setLiveSession] = useState<LiveNoteSession | null>(null);
+    const liveSessionRef = useRef<LiveNoteSession | null>(null);
+    const liveUnsentRef = useRef(false);
     const [isFindOpen, setIsFindOpen] = useState(false);
     const [isReplaceMode, setIsReplaceMode] = useState(false);
     const [isOutlineOpen, setIsOutlineOpen] = useState(() => {
@@ -291,7 +299,7 @@ export default function NoteViewer() {
                 from,
                 to,
                 onlyTimestamps,
-                new Date(note?.edit_timestamp || note?.timestamp || new Date()),
+                new Date(note?.updated_at || note?.created_at || new Date()),
             );
 
             view.dispatch({
@@ -309,7 +317,7 @@ export default function NoteViewer() {
                 );
             }
         },
-        [editorUtils, note?.edit_timestamp, note?.timestamp],
+        [editorUtils, note?.updated_at, note?.created_at],
     );
 
     const enrich = useCallback(async () => {
@@ -342,6 +350,7 @@ export default function NoteViewer() {
         data: noteData,
         isLoading,
         isError,
+        error: noteError,
     } = $api.useQuery(
         'get',
         '/notes/{note_id}/',
@@ -359,9 +368,14 @@ export default function NoteViewer() {
         },
     );
 
+    const isRestricted = (noteError as { status?: number } | null)?.status === 403;
+
     const dockPanelTab = useMemo((): DockPanelTabMetadata => {
         if (isError) {
-            return { title: 'Not found', icon: 'not-found' };
+            return {
+                title: isRestricted ? 'Restricted note' : 'Not found',
+                icon: 'not-found',
+            };
         }
         const src = noteData ?? note;
         const isSourceFleeting = Boolean(src?.fleeting);
@@ -389,7 +403,7 @@ export default function NoteViewer() {
                 ? `${prefix}: ${parsedTitle.slice(0, 53)}...`
                 : `${prefix}: ${parsedTitle}`;
         return { title, icon };
-    }, [isError, note, noteData]);
+    }, [isError, isRestricted, note, noteData]);
     useDockPanelTab(dockPanelTab);
 
     const permissionSource = noteData ?? note;
@@ -408,6 +422,7 @@ export default function NoteViewer() {
     editorDraftRef.current = { markdownContent, initialMarkdown };
 
     const prevNoteIdForDetailRef = useRef<string | null>(null);
+    const wasEditableFleetingRef = useRef(false);
 
     useEffect(() => {
         if (!noteData) {
@@ -426,17 +441,27 @@ export default function NoteViewer() {
         const nextIsFleeting = Boolean(noteData.fleeting);
         setIsFleeting(nextIsFleeting);
         const nextCanWrite = noteData.permission === 'read-write';
+        const isEditableFleeting = nextIsFleeting && nextCanWrite;
+        const becameEditableFleeting =
+            isEditableFleeting && !wasEditableFleetingRef.current;
+        wasEditableFleetingRef.current = isEditableFleeting;
         if (switchedNote) {
-            setEnableEditing(nextCanWrite && nextIsFleeting);
+            setEnableEditing(isEditableFleeting);
         } else if (!nextCanWrite && enableEditingRef.current) {
             setEnableEditing(false);
-        } else if (nextIsFleeting && nextCanWrite && !enableEditingRef.current) {
+        } else if (becameEditableFleeting && !enableEditingRef.current) {
             setEnableEditing(true);
         }
 
         const { markdownContent: md, initialMarkdown: init } = editorDraftRef.current;
         const applyServerBody =
-            switchedNote || (md === init && noteData.content !== md);
+            switchedNote ||
+            (!liveSessionRef.current && md === init && noteData.content !== md);
+
+        if (switchedNote) {
+            setSaveError(null);
+            setIsConflictOpen(false);
+        }
 
         if (applyServerBody) {
             setMarkdownContent(noteData.content);
@@ -463,56 +488,90 @@ export default function NoteViewer() {
         },
     });
 
-    const lastSaveFailedRef = useRef(false);
+    const saveNow = useCallback(() => {
+        liveSessionRef.current?.saveNow();
+    }, []);
 
     useEffect(() => {
-        lastSaveFailedRef.current = false;
-    }, [noteId]);
+        liveSessionRef.current = liveSession;
+        if (!liveSession) return;
 
-    const saveNoteMutation = useMutation({
-        mutationFn: async ({ content }: { content: string }) => {
-            const { data, error, response } = await fetchClient.PATCH(
-                '/notes/{note_id}/',
-                {
-                    params: { path: { note_id: noteId || '' } },
-                    body: { content },
-                },
+        let previous = liveSession.getStatus().saveState;
+        let lostAccess = false;
+        const apply = ({
+            saveState,
+            message,
+            dirty,
+            accessLost,
+            unsent,
+        }: LiveStatus) => {
+            liveUnsentRef.current = unsent;
+            if (accessLost && !lostAccess) {
+                lostAccess = true;
+                toast.error('You can no longer edit this note.');
+                queryClient.invalidateQueries({
+                    queryKey: queryKeys.notes.apiDetail(noteId),
+                });
+            }
+            setIsDirty(dirty);
+            setIsSaving(saveState === 'saving');
+            setSaveError(
+                saveState === 'conflict'
+                    ? CONFLICT_MESSAGE
+                    : saveState === 'error'
+                      ? message || 'The note could not be saved.'
+                      : null,
             );
-            if (error) throw { response, error };
-            return data;
-        },
-        meta: {
-            invalidateQueries: [
-                { queryKey: queryKeys.notes.apiDetail(noteId || '') },
-                { queryKey: queryKeys.notes.apiList() },
-            ],
-        },
-    });
-
-    const save = useCallback(async () => {
-        if (!noteId) return;
-
-        const content = editorDraftRef.current.markdownContent;
-
-        if (!content || content.trim().length === 0) {
-            toast.error('Cannot save empty note.');
-            return;
-        }
-
-        setIsSaving(true);
-
-        try {
-            await saveNoteMutation.mutateAsync({ content });
-            lastSaveFailedRef.current = false;
-            setInitialMarkdown(content);
-            setIsDirty(false);
-        } catch {
-            lastSaveFailedRef.current = true;
-            // Error toast handled by global mutation handler
-        } finally {
+            if (saveState === 'conflict' && previous !== 'conflict')
+                setIsConflictOpen(true);
+            if (saveState === 'saved' && previous !== 'saved') {
+                queryClient.invalidateQueries({
+                    queryKey: queryKeys.notes.apiDetail(noteId),
+                });
+                queryClient.invalidateQueries({ queryKey: queryKeys.notes.apiList() });
+            }
+            previous = saveState;
+        };
+        apply(liveSession.getStatus());
+        const unsubscribe = liveSession.subscribe(apply);
+        return () => {
+            unsubscribe();
             setIsSaving(false);
-        }
-    }, [noteId, saveNoteMutation]);
+            setIsDirty(false);
+            setSaveError(null);
+            if (!liveUnsentRef.current) {
+                setInitialMarkdown(editorDraftRef.current.markdownContent);
+                return;
+            }
+            // The session ended before the server got the latest edits, so they're lost:
+            // show the saved note again rather than text that will never be saved.
+            liveUnsentRef.current = false;
+            toast.warning('Your latest changes to this note could not be saved.');
+            const saved = queryClient.getQueryData<NoteRetrieve>(
+                queryKeys.notes.apiDetail(noteId),
+            )?.content;
+            if (saved !== undefined) {
+                setMarkdownContent(saved);
+                setInitialMarkdown(saved);
+            }
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.notes.apiDetail(noteId),
+            });
+        };
+    }, [liveSession, noteId, queryClient]);
+
+    const openSaveError = useCallback(() => {
+        if (saveError === CONFLICT_MESSAGE) setIsConflictOpen(true);
+        else saveNow();
+    }, [saveError, saveNow]);
+
+    const overwriteWithMine = useCallback(() => {
+        liveSessionRef.current?.resolveConflict('mine');
+    }, []);
+
+    const loadLatest = useCallback(() => {
+        liveSessionRef.current?.resolveConflict('theirs');
+    }, []);
 
     const deleteCurrentNote = useCallback(async () => {
         if (!noteId) return;
@@ -591,7 +650,7 @@ export default function NoteViewer() {
                 {
                     key: 'Mod-s',
                     run: () => {
-                        save();
+                        saveNow();
                         return true;
                     },
                 },
@@ -605,32 +664,16 @@ export default function NoteViewer() {
             );
         }
         return [Prec.highest(keymap.of(bindings))];
-    }, [find, replace, save, isWritable]);
-
-    const debouncedSave = useMemo(() => debounce(save, 1500), [save]);
+    }, [find, replace, saveNow, isWritable]);
 
     useEffect(() => {
-        if (
-            !enableEditing ||
-            !isWritable ||
-            !markdownContent ||
-            markdownContent === initialMarkdown
-        ) {
-            debouncedSave.cancel();
-            return;
-        }
-
-        setIsDirty(true);
-        if (lastSaveFailedRef.current) {
-            debouncedSave.cancel();
-            return;
-        }
-        debouncedSave();
-
-        return () => {
-            debouncedSave.cancel();
+        if (!isDirty && !isSaving) return;
+        const warn = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
         };
-    }, [enableEditing, isWritable, markdownContent, initialMarkdown, debouncedSave]);
+        window.addEventListener('beforeunload', warn);
+        return () => window.removeEventListener('beforeunload', warn);
+    }, [isDirty, isSaving]);
 
     useEffect(() => {
         const content = markdownContent || '';
@@ -687,6 +730,7 @@ export default function NoteViewer() {
     }
 
     if (isError) {
+        if (isRestricted) return <RestrictedNote noteId={noteId} />;
         return <NotFound message='The note you are looking for does not exist.' />;
     }
 
@@ -699,36 +743,40 @@ export default function NoteViewer() {
                     <>
                         {note && (
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant='ghost'
-                                        size='icon'
-                                        onClick={() => setIsAboutOpen(true)}
-                                        className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
-                                        data-testid='about-note-btn'
-                                    >
-                                        <InfoIcon size={20} weight='bold' />
-                                    </Button>
+                                <TooltipTrigger
+                                    render={
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            onClick={() => setIsAboutOpen(true)}
+                                            className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                            data-testid='about-note-btn'
+                                        />
+                                    }
+                                >
+                                    <InfoIcon size={20} weight='bold' />
                                 </TooltipTrigger>
                                 <TooltipContent>About</TooltipContent>
                             </Tooltip>
                         )}
                         {isWritable && (
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant='ghost'
-                                        size='icon'
-                                        onClick={() => toggleEditing()}
-                                        className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
-                                        data-testid='edit-mode-toggle-btn'
-                                    >
-                                        {enableEditing ? (
-                                            <PencilSimpleIcon size={20} weight='bold' />
-                                        ) : (
-                                            <BookOpenIcon size={20} weight='bold' />
-                                        )}
-                                    </Button>
+                                <TooltipTrigger
+                                    render={
+                                        <Button
+                                            variant='ghost'
+                                            size='icon'
+                                            onClick={() => toggleEditing()}
+                                            className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                            data-testid='edit-mode-toggle-btn'
+                                        />
+                                    }
+                                >
+                                    {enableEditing ? (
+                                        <PencilSimpleIcon size={20} weight='bold' />
+                                    ) : (
+                                        <BookOpenIcon size={20} weight='bold' />
+                                    )}
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     {enableEditing ? 'Editing view' : 'Reading view'}
@@ -826,7 +874,7 @@ export default function NoteViewer() {
                                                                 files={files}
                                                                 setFiles={setFiles}
                                                                 source={!richEditor}
-                                                                saveNote={save}
+                                                                saveNote={saveNow}
                                                                 enableEditing={
                                                                     enableEditing
                                                                 }
@@ -835,6 +883,13 @@ export default function NoteViewer() {
                                                                 }
                                                                 isSaving={isSaving}
                                                                 isDirty={isDirty}
+                                                                saveError={saveError}
+                                                                onSaveErrorClick={
+                                                                    openSaveError
+                                                                }
+                                                                onLiveSessionChange={
+                                                                    setLiveSession
+                                                                }
                                                                 noteStatus={
                                                                     note?.status
                                                                 }
@@ -926,11 +981,16 @@ export default function NoteViewer() {
                                                         files={files}
                                                         setFiles={setFiles}
                                                         source={!richEditor}
-                                                        saveNote={save}
+                                                        saveNote={saveNow}
                                                         enableEditing={enableEditing}
                                                         setLineNumber={setLineNumber}
                                                         isSaving={isSaving}
                                                         isDirty={isDirty}
+                                                        saveError={saveError}
+                                                        onSaveErrorClick={openSaveError}
+                                                        onLiveSessionChange={
+                                                            setLiveSession
+                                                        }
                                                         noteStatus={note?.status}
                                                         noteStatusMessage={
                                                             note?.status_message
@@ -976,9 +1036,9 @@ export default function NoteViewer() {
                         />
                     )}
 
-                    {isAdmin && activeView === ViewMode.HISTORY && noteId && (
+                    {activeView === ViewMode.HISTORY && noteId && (
                         <div className='py-4 px-4'>
-                            <ActivityList contentType='note' objectId={noteId} />
+                            <ActivityList noteId={noteId} />
                         </div>
                     )}
                 </div>
@@ -995,6 +1055,39 @@ export default function NoteViewer() {
                 noteId={noteId}
                 noteTitle={note?.title}
             />
+            <AlertDialog open={isConflictOpen} onOpenChange={setIsConflictOpen}>
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            This note was changed elsewhere
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Someone else saved this note after you opened it, so your
+                            latest edits have not been saved. Autosave is paused until
+                            you choose which version to keep.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Decide later
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='outline'
+                            size='sm'
+                            onClick={loadLatest}
+                        >
+                            Discard mine and load theirs
+                        </AlertDialogAction>
+                        <AlertDialogAction
+                            variant='destructive'
+                            size='sm'
+                            onClick={overwriteWithMine}
+                        >
+                            Overwrite with mine
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <AlertDialogContent className='sm:max-w-md'>
                     <AlertDialogHeader>
@@ -1046,9 +1139,9 @@ export default function NoteViewer() {
                                         readOnly
                                         className='text-muted-foreground bg-muted/50'
                                         value={
-                                            note.timestamp
+                                            note.created_at
                                                 ? format(
-                                                      new Date(note.timestamp),
+                                                      new Date(note.created_at),
                                                       'dd/MM/yyyy, HH:mm',
                                                   )
                                                 : 'N/A'
@@ -1083,11 +1176,9 @@ export default function NoteViewer() {
                                                 readOnly
                                                 className='text-muted-foreground bg-muted/50'
                                                 value={
-                                                    note.edit_timestamp
+                                                    note.updated_at
                                                         ? format(
-                                                              new Date(
-                                                                  note.edit_timestamp,
-                                                              ),
+                                                              new Date(note.updated_at),
                                                               'dd/MM/yyyy, HH:mm',
                                                           )
                                                         : 'N/A'
@@ -1111,7 +1202,7 @@ export default function NoteViewer() {
                                         </Field>
                                     </>
                                 )}
-                                {note.last_linked && (
+                                {note.linked_at && (
                                     <Field>
                                         <FieldLabel htmlFor='about-last-linked'>
                                             Last linked
@@ -1121,7 +1212,7 @@ export default function NoteViewer() {
                                             readOnly
                                             className='text-muted-foreground bg-muted/50'
                                             value={format(
-                                                new Date(note.last_linked),
+                                                new Date(note.linked_at),
                                                 'dd/MM/yyyy, HH:mm',
                                             )}
                                         />

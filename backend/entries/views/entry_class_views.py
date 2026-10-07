@@ -178,7 +178,7 @@ class EntryClassList(ListCreateAPIView):
             **get_common_error_responses(),
         },
     ),
-    post=extend_schema(
+    put=extend_schema(
         operation_id="entry_classes_update",
         summary="Update entry class",
         description="Updates an existing entry class. Cannot edit the 'alias' entry class.",
@@ -226,7 +226,7 @@ class EntryClassDetail(APIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def post(self, request: Request, class_subtype: str) -> Response:
+    def put(self, request: Request, class_subtype: str) -> Response:
         """Update entry class; cannot edit alias class."""
         if class_subtype in INTERNAL_SUBTYPES:
             raise CannotEditAliasEntryTypeException(detail="This entry type is an alias and cannot be edited.")

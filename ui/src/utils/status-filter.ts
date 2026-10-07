@@ -7,17 +7,10 @@ export function createStatusFilter<const T extends readonly string[]>(slugs: T) 
     const slugSet = new Set<string>(slugs);
 
     return {
-        /** Dropdown options for the status filter (includes `all`). */
-        FILTER_OPTIONS: ['all', ...slugs] as const,
-
         parseParam(raw: unknown): Slug | undefined {
             if (typeof raw !== 'string') return undefined;
             const trimmed = raw.trim();
             return slugSet.has(trimmed) ? (trimmed as Slug) : undefined;
-        },
-
-        toFilterValue(status?: Slug): string {
-            return status ?? 'all';
         },
     };
 }

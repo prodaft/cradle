@@ -158,6 +158,22 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         """True if user has admin role."""
         return self.role == UserRoles.ADMIN
 
+    @property
+    def can_see_restricted_notes(self) -> bool:
+        """Whether this user may learn that published notes they cannot read exist.
+
+        Off unless enabled in the search settings; admins can read every note, so it never applies to them.
+        """
+        return not self.is_cradle_admin and cradle_settings.search.reveal_restricted_matches
+
+    def can_view(self, other: "CradleUser") -> bool:
+        """Whether this user may view ``other``'s account data (themselves, or any user if admin)."""
+        return self.pk == other.pk or self.is_cradle_admin
+
+    def can_manage(self, other: "CradleUser") -> bool:
+        """Whether this user may change ``other``'s account (themselves, or a non-admin if admin)."""
+        return self.pk == other.pk or (self.is_cradle_admin and not other.is_cradle_admin)
+
     def _compute_access_bitmask(self) -> int:
         """Compute the access bitmask from user's entity accesses."""
         acvec = 1
@@ -212,15 +228,15 @@ class CradleUser(AbstractUser, LoggableModelMixin):
                 return device.config_url
         return None
 
-    def verify_2fa_token(self, token):
-        """Verify a 2FA token."""
+    def verify_otp(self, otp: str) -> bool:
+        """Verify a 2FA one-time password against the user's TOTP devices."""
         from django.db import transaction
 
         with transaction.atomic():
             unconfirmed_devices = TOTPDevice.objects.select_for_update().filter(user=self, confirmed=False)
 
             for device in unconfirmed_devices:
-                if device.verify_token(token):
+                if device.verify_token(otp):
                     device.confirmed = True
                     device.save()
 
@@ -228,7 +244,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
                     return True
 
             for device in TOTPDevice.objects.filter(user=self, confirmed=True):
-                if device.verify_token(token):
+                if device.verify_token(otp):
                     return True
 
         return False

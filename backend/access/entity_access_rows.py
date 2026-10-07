@@ -6,6 +6,7 @@ from uuid import UUID
 
 from django.db.models import Q
 
+from core.query_lang import parse_search, to_q
 from entries.exceptions import EntityNotFoundException
 from entries.models import Entry
 from user.models import CradleUser, UserRoles
@@ -27,16 +28,17 @@ def build_entity_access_user_rows(entity_id: int, search: str | None) -> list[di
         ~Q(id__in=accesses.values_list("user_id", flat=True)) & ~Q(role=UserRoles.ADMIN)
     )
 
-    if search:
+    node = parse_search(search)
+    if node is not None:
         try:
-            search_uuid = UUID(search)
+            search_uuid = UUID((search or "").strip())
         except ValueError, TypeError:
             search_uuid = None
-        search_filter = Q(user__username__icontains=search)
+        search_filter = to_q(node, ["user__username"])
         if search_uuid is not None:
             search_filter |= Q(user__id=search_uuid)
         accesses = accesses.filter(search_filter)
-        none_search_filter = Q(username__icontains=search)
+        none_search_filter = to_q(node, ["username"])
         if search_uuid is not None:
             none_search_filter |= Q(id=search_uuid)
         none_users = none_users.filter(none_search_filter)

@@ -17,6 +17,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.exceptions import CoreErrorCodes, PermissionDeniedException
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
+from core.query_lang import matches_text, parse_search, search_q
 from core.utils import validate_order_by
 from core.validators import validate_choice_param, validate_optional_int_param
 from entries.models import Entry
@@ -48,6 +49,14 @@ from ..serializers import (
 )
 from ..utils import get_or_default_enricher
 
+RELATION_SEARCH_FIELDS = (
+    "e1__name",
+    "e2__name",
+    "e1__entry_class__subtype",
+    "e2__entry_class__subtype",
+    "details",
+)
+
 
 class EnrichmentRequestObjectMixin:
     """Mixin for views that need to fetch EnrichmentRequest by pk with access control."""
@@ -56,10 +65,7 @@ class EnrichmentRequestObjectMixin:
 
     def get_enrichment_request(self, pk, user):
         """Return EnrichmentRequest by pk if user has access, else None."""
-        if user.is_cradle_admin:
-            queryset = EnrichmentRequest.objects.all()
-        else:
-            queryset = EnrichmentRequest.objects.get_accessible_by(user)
+        queryset = EnrichmentRequest.objects.get_accessible_by(user)
         try:
             return queryset.prefetch_related(*self.enrichment_prefetch).get(pk=pk)
         except EnrichmentRequest.DoesNotExist:
@@ -91,12 +97,16 @@ class EnrichmentRequestObjectMixin:
                 name="search",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Search enrichment types by name or class name",
+                description=(
+                    "Search enrichment types by display name or class name. Supports the search syntax: "
+                    'AND/OR/NOT (or -term), "quoted phrases", =exact, and * wildcards.'
+                ),
                 required=False,
             ),
         ],
         responses={
             200: EnrichmentSubclassSerializer(many=True),
+            **get_error_responses(include_validation_error=True),
             **get_common_error_responses(),
         },
     )
@@ -122,12 +132,9 @@ class EnrichmentSubclassesAPIView(APIView):
             if hasattr(subclass, "display_name")
         ]
 
-        search = request.query_params.get("search")
-        if search:
-            search_lower = search.lower()
-            subclass_data = [
-                s for s in subclass_data if search_lower in s["name"].lower() or search_lower in s["class"].lower()
-            ]
+        node = parse_search(request.query_params.get("search"))
+        if node is not None:
+            subclass_data = [s for s in subclass_data if matches_text(node, [s["name"], s["class"]])]
 
         serializer = EnrichmentSubclassSerializer(subclass_data, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -144,7 +151,7 @@ class EnrichmentSubclassesAPIView(APIView):
             **get_common_error_responses(),
         },
     ),
-    post=extend_schema(
+    patch=extend_schema(
         operation_id="enrichment_settings_update",
         summary="Update enrichment settings",
         description="Create or update enrichment settings for a specific enricher type.",
@@ -174,7 +181,7 @@ class EnrichmentSettingsAPIView(GenericAPIView):
 
         return Response(self.get_serializer(enricher).data, status=status.HTTP_200_OK)
 
-    def post(self, request: Request, enricher_type: str) -> Response:
+    def patch(self, request: Request, enricher_type: str) -> Response:
         enricher = get_or_default_enricher(enricher_type)
         if enricher is None:
             raise UnknownEnrichmentOptionException(detail="That enrichment option could not be found.")
@@ -192,7 +199,7 @@ class EnrichmentSettingsAPIView(GenericAPIView):
         description="Returns a paginated list of enrichment requests for the current user. Can filter by user and title. Results are ordered by created_at descending.",
         parameters=[
             OpenApiParameter(
-                name="user__username",
+                name="user",
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description="Filter by user username (case-insensitive partial match)",
@@ -202,14 +209,17 @@ class EnrichmentSettingsAPIView(GenericAPIView):
                 name="title",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter by title (case-insensitive partial match)",
+                description=(
+                    "Search titles (case-insensitive). Supports the search syntax: AND/OR/NOT (or -term), "
+                    '"quoted phrases", =exact, and * wildcards.'
+                ),
                 required=False,
             ),
             OpenApiParameter(
                 name="any_value",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter by title and username (case-insensitive partial match)",
+                description="Search titles and usernames, with the same syntax as `title`",
                 required=False,
             ),
             OpenApiParameter(
@@ -244,7 +254,7 @@ class EnrichmentSettingsAPIView(GenericAPIView):
                 name="order_by",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Order enrichment requests by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, title, user__username, status. Default: -created_at",
+                description="Order enrichment requests by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, title, user, status. Default: -created_at",
                 required=False,
                 default="-created_at",
             ),
@@ -255,6 +265,7 @@ class EnrichmentSettingsAPIView(GenericAPIView):
                 CoreErrorCodes.INVALID_PAGE_SIZE,
                 CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
                 CoreErrorCodes.INVALID_REQUEST,
+                include_validation_error=True,
             ),
             **get_common_error_responses(),
         },
@@ -289,43 +300,38 @@ class EnrichmentAPIView(APIView):
 
     def get(self, request: Request) -> Response:
         """List enrichment requests with optional filters, sorting, and pagination."""
-        if request.user.is_cradle_admin:
-            queryset = EnrichmentRequest.objects.all()
-        else:
-            queryset = EnrichmentRequest.objects.get_accessible_by(request.user)
+        queryset = EnrichmentRequest.objects.get_accessible_by(request.user)
 
-        # Filter by user username
-        user_username = request.query_params.get("user__username")
+        user_username = request.query_params.get("user")
         if user_username:
             queryset = queryset.filter(user__username__icontains=user_username)
 
-        # Filter by title
-        title = request.query_params.get("title")
-        if title:
-            queryset = queryset.filter(title__icontains=title)
+        title_q = search_q(request.query_params.get("title"), ["title"], param="title")
+        if title_q is not None:
+            queryset = queryset.filter(title_q)
 
-        any_value = request.query_params.get("any_value")
-        if any_value:
-            queryset = queryset.filter(Q(title__icontains=any_value) | Q(user__username__icontains=any_value))
+        any_value_q = search_q(request.query_params.get("any_value"), ["title", "user__username"], param="any_value")
+        if any_value_q is not None:
+            queryset = queryset.filter(any_value_q)
 
         entry_id = validate_optional_int_param(request.query_params.get("entry_id"), param_name="entry_id")
         if entry_id is not None:
             try:
                 entry = Entry.objects.get(id=entry_id)
-                queryset = queryset.filter(Q(relations__e1=entry) | Q(relations__e2=entry))
+                related = Q(relations__e1=entry) | Q(relations__e2=entry)
+                related_ids = EnrichmentRequest.objects.filter(related).values("id")
+                queryset = queryset.filter(id__in=related_ids)
             except Entry.DoesNotExist:
                 queryset = queryset.filter(id__in=[])
 
-        # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
-        valid_order_fields = [
-            "created_at",
-            "title",
-            "user__username",
-            "status",
-        ]
+        valid_order_fields = {
+            "created_at": "created_at",
+            "title": "title",
+            "user": "user__username",
+            "status": "status",
+        }
 
-        # Parse and validate order_by parameter
         order_fields = validate_order_by(order_by, valid_order_fields)
         if order_fields:
             queryset = queryset.order_by(*order_fields)
@@ -342,7 +348,6 @@ class EnrichmentAPIView(APIView):
 
         queryset = queryset.select_related("user").prefetch_related("enrichers_settings")
 
-        # Apply pagination (max 100 for enrichment)
         paginator = self.pagination_class(max_page_size=100)
         page = paginator.paginate_queryset(queryset, request)
 
@@ -355,7 +360,9 @@ class EnrichmentAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         with transaction.atomic():
             enrichment_request = serializer.save()
-        location = request.build_absolute_uri(reverse("enrichment_detail", kwargs={"pk": enrichment_request.id}))
+        location = request.build_absolute_uri(
+            reverse("enrichment_detail", kwargs={"enrichment_id": enrichment_request.id})
+        )
         return Response(
             EnrichmentRequestSerializer(enrichment_request, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
@@ -401,9 +408,9 @@ class EnrichmentDetailAPIView(EnrichmentRequestObjectMixin, APIView):
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request, pk: uuid.UUID) -> Response:
+    def get(self, request: Request, enrichment_id: uuid.UUID) -> Response:
         """Retrieve enrichment request details."""
-        enrichment_request = self.get_enrichment_request(pk, request.user)
+        enrichment_request = self.get_enrichment_request(enrichment_id, request.user)
 
         if enrichment_request is None:
             raise EnrichmentNotFoundException(detail="That enrichment could not be found.")
@@ -412,9 +419,9 @@ class EnrichmentDetailAPIView(EnrichmentRequestObjectMixin, APIView):
         serializer = EnrichmentRequestDetailSerializer(enrichment_request)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def delete(self, request: Request, pk: uuid.UUID) -> Response:
+    def delete(self, request: Request, enrichment_id: uuid.UUID) -> Response:
         """Delete an enrichment request."""
-        enrichment_request = self.get_enrichment_request(pk, request.user)
+        enrichment_request = self.get_enrichment_request(enrichment_id, request.user)
 
         if enrichment_request is None:
             raise EnrichmentNotFoundException(detail="That enrichment could not be found.")
@@ -450,16 +457,15 @@ class EnrichmentRestartAPIView(EnrichmentRequestObjectMixin, APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = EnrichmentRequestDetailSerializer
 
-    def post(self, request: Request, pk: uuid.UUID) -> Response:
+    def post(self, request: Request, enrichment_id: uuid.UUID) -> Response:
         """Restart an enrichment request."""
-        enrichment_request = self.get_enrichment_request(pk, request.user)
+        enrichment_request = self.get_enrichment_request(enrichment_id, request.user)
 
         if enrichment_request is None:
             raise EnrichmentNotFoundException(detail="That enrichment could not be found.")
 
         self._check_owner_or_admin(enrichment_request, request.user, "restart")
         with transaction.atomic():
-            # Reset the enrichment request state
             enrichment_request.status = EnrichmentStatus.WAITING
             enrichment_request.errors = {}
             enrichment_request.warnings = {}
@@ -474,10 +480,8 @@ class EnrichmentRestartAPIView(EnrichmentRequestObjectMixin, APIView):
                     "completed_at",
                 ]
             )
-            # Start the enrichment process
             enrichment_request.start_enrichment()
 
-        # Return the updated enrichment request
         serializer = EnrichmentRequestDetailSerializer(enrichment_request)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -509,9 +513,9 @@ class EnrichmentRequestEnricherAPIView(EnrichmentRequestObjectMixin, APIView):
     serializer_class = EnrichmentRequestEnricherSerializer
     enrichment_prefetch = ("enrichers_settings",)
 
-    def get(self, request: Request, pk: uuid.UUID, enricher_type: str) -> Response:
+    def get(self, request: Request, enrichment_id: uuid.UUID, enricher_type: str) -> Response:
         """Retrieve enrichment request enricher information."""
-        enrichment_request = self.get_enrichment_request(pk, request.user)
+        enrichment_request = self.get_enrichment_request(enrichment_id, request.user)
 
         if enrichment_request is None:
             raise EnrichmentNotFoundException(detail="That enrichment could not be found.")
@@ -519,7 +523,6 @@ class EnrichmentRequestEnricherAPIView(EnrichmentRequestObjectMixin, APIView):
         self._check_owner_or_admin(enrichment_request, request.user, "view")
         self._verify_enricher_type(enrichment_request, enricher_type)
 
-        # Get enricher information
         serializer = EnrichmentRequestEnricherSerializer.for_enrichment(enrichment_request, enricher_type)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -569,8 +572,9 @@ class EnrichmentRequestEnricherAPIView(EnrichmentRequestObjectMixin, APIView):
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description=(
-                    "Substring match on either endpoint's name or subtype, or on JSON `details` "
-                    "(case-insensitive). When set, `query` and `details` are ignored."
+                    "Search either endpoint's name or subtype, or the JSON `details` (case-insensitive). "
+                    'Supports the search syntax: AND/OR/NOT (or -term), "quoted phrases", =exact, and * '
+                    "wildcards. When set, `query` and `details` are ignored."
                 ),
                 required=False,
             ),
@@ -585,6 +589,7 @@ class EnrichmentRequestEnricherAPIView(EnrichmentRequestObjectMixin, APIView):
                 CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
                 CoreErrorCodes.INVALID_REQUEST,
                 QueryErrorCodes.INVALID_SEARCH_SYNTAX,
+                include_validation_error=True,
             ),
             **get_common_error_responses(),
         },
@@ -601,9 +606,9 @@ class EnrichmentRelationsAPIView(EnrichmentRequestObjectMixin, APIView):
     pagination_class = TotalPagesPagination
     enrichment_prefetch = ("enrichers_settings",)
 
-    def get(self, request: Request, pk: uuid.UUID, enricher_type: str) -> Response:
+    def get(self, request: Request, enrichment_id: uuid.UUID, enricher_type: str) -> Response:
         """Retrieve relations created by an enrichment request filtered by enricher type."""
-        enrichment_request = self.get_enrichment_request(pk, request.user)
+        enrichment_request = self.get_enrichment_request(enrichment_id, request.user)
 
         if enrichment_request is None:
             raise EnrichmentNotFoundException(detail="That enrichment could not be found.")
@@ -611,22 +616,15 @@ class EnrichmentRelationsAPIView(EnrichmentRequestObjectMixin, APIView):
         self._check_owner_or_admin(enrichment_request, request.user, "view")
         self._verify_enricher_type(enrichment_request, enricher_type)
 
-        # Get relations associated with this enrichment request and enricher type
         relations = enrichment_request.relations.filter(reason_context=enricher_type)
 
         entry_id = validate_optional_int_param(request.query_params.get("entry_id"), param_name="entry_id")
         if entry_id is not None:
             relations = relations.filter(Q(e1__id=entry_id) | Q(e2__id=entry_id))
 
-        search = (request.query_params.get("search") or "").strip()
-        if search:
-            relations = relations.filter(
-                Q(e1__name__icontains=search)
-                | Q(e2__name__icontains=search)
-                | Q(e1__entry_class__subtype__icontains=search)
-                | Q(e2__entry_class__subtype__icontains=search)
-                | Q(details__icontains=search),
-            )
+        search = search_q(request.query_params.get("search"), RELATION_SEARCH_FIELDS)
+        if search is not None:
+            relations = relations.filter(search)
         else:
             query_str = request.query_params.get("query")
             if query_str:
@@ -645,10 +643,8 @@ class EnrichmentRelationsAPIView(EnrichmentRequestObjectMixin, APIView):
                 relations = relations.filter(details__icontains=details)
 
         relations = relations.order_by("id")
-        # Optimize query
         relations = relations.select_related("e1", "e2")
 
-        # Apply pagination (max 100 for enrichment)
         paginator = self.pagination_class(max_page_size=100)
         page = paginator.paginate_queryset(relations, request)
 

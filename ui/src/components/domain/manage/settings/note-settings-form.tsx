@@ -103,7 +103,7 @@ export default function NoteSettingsForm() {
 
     const saveSettings = useMutation({
         mutationFn: async (values: NoteSettingsFormData) => {
-            const { error, response } = await fetchClient.POST(
+            const { error, response } = await fetchClient.PATCH(
                 '/management/settings/',
                 {
                     body: {

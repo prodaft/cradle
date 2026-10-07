@@ -15,6 +15,14 @@ files appear in the attachments table below the editor, where you can insert a
 reference into the note, copy a reference, or delete the file. All uploaded
 files can also be browsed in the `Files` panel.
 
+## File dashboards
+Click a file in the `Files` panel, or in a dashboard's `Files` tab, to open its
+dashboard. It shows the file's size, type and hashes, and has a download button.
+The `Notes` tab lists the notes holding the file or a copy of it (same SHA-256),
+and `Linked Entries` lists the entities and artifacts referenced in those notes.
+To jump straight to the note a file was uploaded to, use `Open note` in the
+row's actions menu.
+
 ## Files in the graph
 Every uploaded file is automatically linked in the graph as an entry. Files
 below a configured size threshold are automatically hashed and linked to their

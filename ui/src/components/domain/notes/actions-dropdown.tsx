@@ -86,17 +86,21 @@ export default function ActionsDropdown({
     return (
         <DropdownMenu>
             <Tooltip>
-                <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant='ghost'
-                            size='icon'
-                            className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
-                            data-testid='actions-dropdown-btn'
-                        >
-                            <DotsThreeVerticalIcon size={20} weight='bold' />
-                        </Button>
-                    </DropdownMenuTrigger>
+                <TooltipTrigger
+                    render={
+                        <DropdownMenuTrigger
+                            render={
+                                <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                    data-testid='actions-dropdown-btn'
+                                />
+                            }
+                        />
+                    }
+                >
+                    <DotsThreeVerticalIcon size={20} weight='bold' />
                 </TooltipTrigger>
                 <TooltipContent>Actions</TooltipContent>
             </Tooltip>
@@ -142,18 +146,16 @@ export default function ActionsDropdown({
                                 <CheckIcon size={16} weight='bold' />
                             )}
                         </DropdownMenuItem>
-                        {isAdmin && (
-                            <DropdownMenuItem
-                                onClick={() => setActiveView(ViewMode.HISTORY)}
-                                data-testid='history-view-menu-item'
-                            >
-                                <ClockCounterClockwiseIcon size={16} weight='bold' />
-                                <span className='flex-1'>History</span>
-                                {activeView === ViewMode.HISTORY && (
-                                    <CheckIcon size={16} weight='bold' />
-                                )}
-                            </DropdownMenuItem>
-                        )}
+                        <DropdownMenuItem
+                            onClick={() => setActiveView(ViewMode.HISTORY)}
+                            data-testid='history-view-menu-item'
+                        >
+                            <ClockCounterClockwiseIcon size={16} weight='bold' />
+                            <span className='flex-1'>History</span>
+                            {activeView === ViewMode.HISTORY && (
+                                <CheckIcon size={16} weight='bold' />
+                            )}
+                        </DropdownMenuItem>
                     </>
                 )}
                 {hasFiles && (

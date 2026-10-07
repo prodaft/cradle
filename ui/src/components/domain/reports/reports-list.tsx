@@ -1,6 +1,5 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
 import PageHeader from '@/components/base/page-header';
-import StatusHeaderDropdown from '@/components/base/status-header-dropdown/status-header-dropdown';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import { StatusIcon, type StatusType } from '@/components/base/status-icon/status-icon';
 import {
     ActionBar,
@@ -34,6 +33,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
+import {
+    sortFromUrl,
+    sortToOrderBy,
+    sortToUrl,
+    type SearchState,
+} from '@/lib/search-query/search-schema';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import {
@@ -51,25 +56,19 @@ import {
     useReactTable,
     type ColumnDef,
     type RowSelectionState,
-    type SortingState,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { startCase } from 'lodash';
+import startCase from 'lodash/startCase';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { FILTER_OPTIONS, parseParam, toFilterValue } from './report-list-status';
+import { parseParam } from './report-list-status';
+import { SEARCH_SCHEMA } from './reports-list-search-schema';
 
 type ReportRow = components['schemas']['ReportList'];
 
 type ListQuery = NonNullable<operations['reports_list']['parameters']['query']>;
 
-const SORT_FIELD_MAPPING: Record<string, string> = {
-    title: 'title',
-    strategy: 'strategy',
-    anonymized: 'anonymized',
-    created_at: 'created_at',
-    user: 'user__username',
-};
+const DEFAULT_ORDER_BY = '-created_at';
 
 const renderStatusIcon = (status?: string, errorMessage?: string) => {
     if (!status) return null;
@@ -85,10 +84,10 @@ const renderStatusIcon = (status?: string, errorMessage?: string) => {
     if ((status === 'error' || status === 'warning') && errorMessage) {
         return (
             <Tooltip>
-                <TooltipTrigger asChild>
-                    <span className='inline-flex items-center flex-shrink-0'>
-                        <StatusIcon status={status as StatusType} />
-                    </span>
+                <TooltipTrigger
+                    render={<span className='inline-flex items-center flex-shrink-0' />}
+                >
+                    <StatusIcon status={status as StatusType} />
                 </TooltipTrigger>
                 <TooltipContent side='right' className={tooltipColorClass}>
                     {tooltipContent}
@@ -99,10 +98,10 @@ const renderStatusIcon = (status?: string, errorMessage?: string) => {
 
     return (
         <Tooltip>
-            <TooltipTrigger asChild>
-                <span className='inline-flex items-center flex-shrink-0'>
-                    <StatusIcon status={status as StatusType} />
-                </span>
+            <TooltipTrigger
+                render={<span className='inline-flex items-center flex-shrink-0' />}
+            >
+                <StatusIcon status={status as StatusType} />
             </TooltipTrigger>
             <TooltipContent side='right'>{tooltipContent}</TooltipContent>
         </Tooltip>
@@ -121,8 +120,6 @@ export default function ReportsList() {
     const search = useSearch({ from: '/_authenticated/reports' });
     const statusFilter = parseParam(search.status);
     const page = Number(search.reports_page ?? 1) || 1;
-    const sortField = search.reports_sort_field ?? 'created_at';
-    const sortDirection: 'asc' | 'desc' = search.reports_sort_direction ?? 'desc';
     const pageSize = Number(search.reports_pagesize ?? 20) || 20;
     const appliedSearch = search.search ?? '';
 
@@ -131,17 +128,39 @@ export default function ReportsList() {
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const queryClient = useQueryClient();
 
+    const searchState = useMemo<SearchState>(() => {
+        const values: Record<string, string[]> = {};
+        if (statusFilter) values.status = [statusFilter];
+        return {
+            q: appliedSearch || undefined,
+            values,
+            dates: {},
+            sort: sortFromUrl(
+                search.reports_sort_field,
+                search.reports_sort_direction,
+                SEARCH_SCHEMA,
+            ),
+        };
+    }, [
+        appliedSearch,
+        statusFilter,
+        search.reports_sort_field,
+        search.reports_sort_direction,
+    ]);
+
     const applySearch = useCallback(
-        (value: string) => {
-            const next: Record<string, unknown> = { ...search, reports_page: 1 };
-            if (value) {
-                next.search = value;
-            } else {
-                delete next.search;
-            }
+        (state: SearchState) => {
+            const sort = sortToUrl(state.sort, SEARCH_SCHEMA);
             router.navigate({
                 to: location.pathname as any,
-                search: next as any,
+                search: {
+                    ...search,
+                    reports_page: 1,
+                    search: state.q || undefined,
+                    status: parseParam(state.values.status?.[0]),
+                    reports_sort_field: sort.field,
+                    reports_sort_direction: sort.direction,
+                } as any,
                 replace: true,
             });
         },
@@ -156,14 +175,17 @@ export default function ReportsList() {
             id: string;
             downloadUrl: boolean;
         }) => {
-            const { data, error, response } = await fetchClient.GET('/reports/{id}/', {
-                params: {
-                    path: { id },
-                    query: {
-                        download_url: downloadUrl,
+            const { data, error, response } = await fetchClient.GET(
+                '/reports/{report_id}/',
+                {
+                    params: {
+                        path: { report_id: id },
+                        query: {
+                            download_url: downloadUrl,
+                        },
                     },
                 },
-            });
+            );
             if (error) throw { response, error };
             return data!;
         },
@@ -177,10 +199,7 @@ export default function ReportsList() {
         [rowSelection],
     );
 
-    const orderBy = useMemo(
-        () => (sortDirection === 'desc' ? `-${sortField}` : sortField),
-        [sortDirection, sortField],
-    );
+    const orderBy = sortToOrderBy(searchState.sort, SEARCH_SCHEMA) ?? DEFAULT_ORDER_BY;
 
     const listQuery = useMemo((): ListQuery => {
         return Object.fromEntries(
@@ -245,58 +264,14 @@ export default function ReportsList() {
         [page, pageSize, search, router, location.pathname, goTo],
     );
 
-    const applySort = useCallback(
-        (sorting: SortingState) => {
-            const next: Record<string, unknown> = {
-                ...search,
-                reports_page: 1,
-            };
-            if (sorting.length === 0) {
-                next.reports_sort_field = 'created_at';
-                next.reports_sort_direction = 'desc';
-            } else {
-                const entry = sorting[0];
-                if (!entry) {
-                    next.reports_sort_field = 'created_at';
-                    next.reports_sort_direction = 'desc';
-                } else {
-                    const apiField = SORT_FIELD_MAPPING[entry.id] || entry.id;
-                    next.reports_sort_field = apiField;
-                    next.reports_sort_direction = entry.desc ? 'desc' : 'asc';
-                }
-            }
-            router.navigate({
-                to: location.pathname as any,
-                search: next as any,
-                replace: true,
-            });
-        },
-        [search, router, location.pathname],
-    );
-
-    const updateStatus = useCallback(
-        (value: string) => {
-            const next: Record<string, unknown> = { ...search, reports_page: 1 };
-            const parsed = parseParam(value);
-            if (parsed) {
-                next.status = parsed;
-            } else {
-                delete next.status;
-            }
-            router.navigate({
-                to: location.pathname as any,
-                search: next as any,
-                replace: true,
-            });
-        },
-        [search, router, location.pathname],
-    );
-
     const { mutateAsync: deleteReport } = useMutation({
         mutationFn: async (id: string) => {
-            const { error, response } = await fetchClient.DELETE('/reports/{id}/', {
-                params: { path: { id } },
-            });
+            const { error, response } = await fetchClient.DELETE(
+                '/reports/{report_id}/',
+                {
+                    params: { path: { report_id: id } },
+                },
+            );
             if (error) throw { response, error };
         },
         meta: { suppressNotification: true },
@@ -345,9 +320,12 @@ export default function ReportsList() {
 
     const { mutateAsync: retryReport } = useMutation({
         mutationFn: async (id: string) => {
-            const { error, response } = await fetchClient.POST('/reports/{id}/retry/', {
-                params: { path: { id } },
-            });
+            const { error, response } = await fetchClient.POST(
+                '/reports/{report_id}/retry/',
+                {
+                    params: { path: { report_id: id } },
+                },
+            );
             if (error) throw { response, error };
         },
         meta: {
@@ -394,22 +372,6 @@ export default function ReportsList() {
         [retryReport],
     );
 
-    const sorting = useMemo<SortingState>(() => {
-        const columnId =
-            Object.keys(SORT_FIELD_MAPPING).find(
-                (key) => SORT_FIELD_MAPPING[key] === sortField,
-            ) || sortField;
-
-        return columnId
-            ? [
-                  {
-                      id: columnId,
-                      desc: sortDirection === 'desc',
-                  },
-              ]
-            : [];
-    }, [sortField, sortDirection]);
-
     const download = useCallback(
         async (ids: string | string[]) => {
             const list = Array.isArray(ids) ? ids : [ids];
@@ -446,9 +408,10 @@ export default function ReportsList() {
                 maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        checked={table.getIsAllPageRowsSelected()}
+                        indeterminate={
+                            table.getIsSomePageRowsSelected() &&
+                            !table.getIsAllPageRowsSelected()
                         }
                         onCheckedChange={(value) =>
                             table.toggleAllPageRowsSelected(!!value)
@@ -554,19 +517,21 @@ export default function ReportsList() {
                         >
                             {item.id && (
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon-sm'
-                                            className='text-muted-foreground hover:text-foreground'
-                                            title='Actions'
-                                        >
-                                            <DotsThreeIcon
-                                                className='w-4 h-4'
-                                                weight='bold'
-                                                aria-hidden='true'
+                                    <DropdownMenuTrigger
+                                        render={
+                                            <Button
+                                                variant='ghost'
+                                                size='icon-sm'
+                                                className='text-muted-foreground hover:text-foreground'
+                                                title='Actions'
                                             />
-                                        </Button>
+                                        }
+                                    >
+                                        <DotsThreeIcon
+                                            className='w-4 h-4'
+                                            weight='bold'
+                                            aria-hidden='true'
+                                        />
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align='end'>
                                         <DropdownMenuItem
@@ -604,19 +569,10 @@ export default function ReportsList() {
         [download, confirmDelete, retry],
     );
 
-    const applySorting = useCallback(
-        (updater: SortingState | ((prev: SortingState) => SortingState)) => {
-            const next = typeof updater === 'function' ? updater(sorting) : updater;
-            applySort(next);
-        },
-        [applySort, sorting],
-    );
-
     const table = useReactTable<ReportRow>({
         data: rows,
         columns,
         state: {
-            sorting,
             rowSelection,
             pagination: {
                 pageIndex: page - 1,
@@ -624,7 +580,6 @@ export default function ReportsList() {
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
-        onSortingChange: applySorting,
         onRowSelectionChange: setRowSelection,
         onPaginationChange: (updater) => {
             const current = {
@@ -637,8 +592,9 @@ export default function ReportsList() {
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
         manualPagination: true,
-        manualSorting: true,
+        enableSorting: false,
         pageCount: totalPages,
+        rowCount: reports?.count,
     });
 
     return (
@@ -669,19 +625,12 @@ export default function ReportsList() {
                         }
                     }}
                 >
-                    <div className='flex items-center gap-2'>
-                        <ActionBarSearch
+                    <div className='flex min-w-0 flex-1 items-center gap-2'>
+                        <SearchInput
+                            schema={SEARCH_SCHEMA}
+                            value={searchState}
+                            onApply={applySearch}
                             placeholder='Search reports...'
-                            initialValue={appliedSearch}
-                            debounceMs={300}
-                            onDebouncedChange={applySearch}
-                            onSubmit={applySearch}
-                            onClear={() => applySearch('')}
-                        />
-                        <StatusHeaderDropdown
-                            onStatusChange={updateStatus}
-                            status={toFilterValue(statusFilter)}
-                            options={[...FILTER_OPTIONS]}
                         />
                     </div>
                 </DataTable>

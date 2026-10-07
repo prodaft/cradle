@@ -314,15 +314,17 @@ export default function ChangePasswordDialog({
                     </FieldGroup>
 
                     <DialogFooter>
-                        <DialogClose asChild>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                disabled={changePassword.isPending}
-                            >
-                                Cancel
-                            </Button>
+                        <DialogClose
+                            render={
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={changePassword.isPending}
+                                />
+                            }
+                        >
+                            Cancel
                         </DialogClose>
                         <Button
                             type='submit'

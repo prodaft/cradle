@@ -139,14 +139,16 @@ export default function SearchFilterSection({
 
             {/* Right side: popover trigger + clear */}
             <Popover open={isPickerOpen} onOpenChange={setIsPickerOpen}>
-                <PopoverTrigger asChild>
-                    <button
-                        type='button'
-                        className='shrink-0 inline-flex items-center gap-1 rounded-full border border-dashed px-2 h-5 text-[11px] text-muted-foreground hover:border-foreground/30 hover:text-foreground transition-colors'
-                    >
-                        <ChevronsUpDown className='size-2.5' />
-                        {selectedSubtypes.length > 0 ? 'Edit' : 'Select'}
-                    </button>
+                <PopoverTrigger
+                    render={
+                        <button
+                            type='button'
+                            className='shrink-0 inline-flex items-center gap-1 border border-dashed px-2 h-5 text-[11px] text-muted-foreground hover:border-foreground/30 hover:text-foreground transition-colors'
+                        />
+                    }
+                >
+                    <ChevronsUpDown className='size-2.5' />
+                    {selectedSubtypes.length > 0 ? 'Edit' : 'Select'}
                 </PopoverTrigger>
                 <PopoverContent className='w-56 p-0' align='end'>
                     <Command>

@@ -58,17 +58,17 @@ Django-based backend providing core functionality for CRADLE including:
    - Update database credentials in `cradle/settings.py`
    ```python
    DATABASES = {
-       'default': {
-           'ENGINE': 'django.db.backends.postgresql',
-           'NAME': 'cradledb',
-           'USER': '[your_user]',
-           'PASSWORD': '[your_password]',
-           'HOST': 'localhost',
-           'PORT': '5432',
+       "default": {
+           "ENGINE": "django.db.backends.postgresql",
+           "NAME": "cradledb",
+           "USER": "[your_user]",
+           "PASSWORD": "[your_password]",
+           "HOST": "localhost",
+           "PORT": "5432",
        }
    }
 
-   CELERY_BROKER_URL = 'redis://localhost:6379/0'
+   CELERY_BROKER_URL = "redis://localhost:6379/0"
    ```
 
 5. **Install Dependencies**

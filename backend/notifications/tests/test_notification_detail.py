@@ -42,7 +42,7 @@ class NotificationDetailTest(NotificationsTestCase):
     def test_update_notifications_not_authenticated(self):
         response = self.client.put(
             reverse("notification_detail", kwargs={"notification_id": self.message_user.id}),
-            {"is_marked_unread": True},
+            {"is_unread": True},
             format="json",
         )
 
@@ -51,7 +51,7 @@ class NotificationDetailTest(NotificationsTestCase):
     def test_update_notifications_bad_request(self):
         response = self.client.put(
             reverse("notification_detail", kwargs={"notification_id": self.message_user.id}),
-            {"is_marked_unread": "blabla"},
+            {"is_unread": "blabla"},
             format="json",
             **self.headers,
         )
@@ -61,7 +61,7 @@ class NotificationDetailTest(NotificationsTestCase):
     def test_update_notifications_not_found(self):
         response = self.client.put(
             reverse("notification_detail", kwargs={"notification_id": UUID(int=0)}),
-            {"is_marked_unread": True},
+            {"is_unread": True},
             format="json",
             **self.headers,
         )
@@ -83,7 +83,7 @@ class NotificationDetailTest(NotificationsTestCase):
 
         response = self.client.put(
             reverse("notification_detail", kwargs={"notification_id": other_notification.id}),
-            {"is_marked_unread": True},
+            {"is_unread": True},
             format="json",
             **self.headers,
         )
@@ -93,7 +93,7 @@ class NotificationDetailTest(NotificationsTestCase):
     def test_update_notifications_updated_message_notification(self):
         response = self.client.put(
             reverse("notification_detail", kwargs={"notification_id": self.message_user.id}),
-            {"is_marked_unread": True},
+            {"is_unread": True},
             format="json",
             **self.headers,
         )
@@ -109,7 +109,7 @@ class NotificationDetailTest(NotificationsTestCase):
                 "notification_detail",
                 kwargs={"notification_id": self.access_request_user.id},
             ),
-            {"is_marked_unread": True},
+            {"is_unread": True},
             format="json",
             **self.headers,
         )
@@ -118,3 +118,20 @@ class NotificationDetailTest(NotificationsTestCase):
 
         self.access_request_user.refresh_from_db()
         self.assertTrue(self.access_request_user.is_marked_unread)
+
+    def test_mark_read_clears_unseen_and_marked_unread(self):
+        self.message_user.is_unread = True
+        self.message_user.is_marked_unread = True
+        self.message_user.save(update_fields=["is_unread", "is_marked_unread"])
+
+        response = self.client.put(
+            reverse("notification_detail", kwargs={"notification_id": self.message_user.id}),
+            {"is_unread": False},
+            format="json",
+            **self.headers,
+        )
+
+        self.assertEqual(response.status_code, 204)
+        self.message_user.refresh_from_db()
+        self.assertFalse(self.message_user.is_unread)
+        self.assertFalse(self.message_user.is_marked_unread)

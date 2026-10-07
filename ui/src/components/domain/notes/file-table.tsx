@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { queryKeys } from '@/hooks/query/query-keys';
 import type { FileReferenceWithNote } from '@/types/models';
-import { createDownloadPath } from '@/utils/links';
 import {
     ClipboardTextIcon,
     DownloadSimpleIcon,
@@ -26,10 +26,10 @@ import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table
 import { useCallback, useMemo, useState } from 'react';
 
 const buildReferenceTag = (file: FileReferenceWithNote) =>
-    file.id && file.file_name ? `${file.id}-${file.file_name}` : (file.id ?? '');
+    file.id && file.name ? `${file.id}-${file.name}` : (file.id ?? '');
 
 const buildMarkdownReference = (file: FileReferenceWithNote) => {
-    const name = file.file_name ?? 'file';
+    const name = file.name ?? 'file';
     const tag = buildReferenceTag(file);
     return `[${name}][${tag}]`;
 };
@@ -37,14 +37,15 @@ interface FileTableProps {
     files: FileReferenceWithNote[];
     setFiles: (data: FileReferenceWithNote[]) => void;
     insertTextCallback: (text: string) => void;
+    canRemove?: boolean;
 }
 
 export default function FileTable({
     files,
     setFiles,
     insertTextCallback,
+    canRemove = true,
 }: FileTableProps) {
-    const basePath = import.meta.env.VITE_API_BASE_URL ?? '';
     const [pendingRemoveFile, setPendingRemoveFile] =
         useState<FileReferenceWithNote | null>(null);
 
@@ -72,20 +73,32 @@ export default function FileTable({
         await navigator.clipboard.writeText(text);
     }, []);
 
+    const { mutate: deleteFile } = useMutation({
+        mutationFn: async (id: string) => {
+            const { error, response } = await fetchClient.DELETE(
+                '/file-transfer/delete/',
+                { params: { query: { file_id: id } } },
+            );
+            if (error) throw { response, error };
+        },
+        meta: {
+            invalidateQueries: [
+                { queryKey: queryKeys.notes.apiDetails() },
+                { queryKey: queryKeys.files.apiList() },
+                { queryKey: queryKeys.files.apiDetails() },
+            ],
+            successMessage: 'File deleted.',
+        },
+    });
+
     const removeFile = useCallback(
         (row: FileReferenceWithNote) => {
-            setFiles(files.filter((d) => d.id !== row.id));
-            try {
-                const raw = localStorage.getItem('minio-cache');
-                if (!raw) return;
-                const minioCache = JSON.parse(raw) as Record<string, unknown>;
-                delete minioCache[createDownloadPath(row, basePath)];
-                localStorage.setItem('minio-cache', JSON.stringify(minioCache));
-            } catch {
-                // Ignore cache corruption / JSON parse errors
-            }
+            if (!row.id) return;
+            deleteFile(row.id, {
+                onSuccess: () => setFiles(files.filter((d) => d.id !== row.id)),
+            });
         },
-        [basePath, files, setFiles],
+        [deleteFile, files, setFiles],
     );
 
     const download = useCallback(
@@ -94,7 +107,7 @@ export default function FileTable({
             const presignedUrl = await fetchDownloadUrl(item.id);
             const link = document.createElement('a');
             link.href = presignedUrl;
-            link.download = item.file_name || 'data';
+            link.download = item.name || 'data';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -105,8 +118,8 @@ export default function FileTable({
     const columns = useMemo<ColumnDef<FileReferenceWithNote>[]>(
         () => [
             {
-                accessorKey: 'file_name',
-                id: 'file_name',
+                accessorKey: 'name',
+                id: 'name',
                 meta: { label: 'File' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='File' />
@@ -117,9 +130,9 @@ export default function FileTable({
                         <div className='text-foreground flex items-center'>
                             <span
                                 className='truncate max-w-[200px]'
-                                title={item.file_name ?? undefined}
+                                title={item.name ?? undefined}
                             >
-                                {item.file_name}
+                                {item.name}
                             </span>
                         </div>
                     );
@@ -156,90 +169,100 @@ export default function FileTable({
                     return (
                         <div className='flex items-center justify-end gap-1'>
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        id={`insert-${row.index}`}
-                                        data-testid={`insert-${row.index}`}
-                                        variant='ghost'
-                                        size='icon-sm'
-                                        className='size-7 text-muted-foreground hover:text-foreground'
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            insertTextCallback(reference);
-                                        }}
-                                    >
-                                        <TextboxIcon className='size-4' weight='bold' />
-                                    </Button>
+                                <TooltipTrigger
+                                    render={
+                                        <Button
+                                            id={`insert-${row.index}`}
+                                            data-testid={`insert-${row.index}`}
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            className='size-7 text-muted-foreground hover:text-foreground'
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                insertTextCallback(reference);
+                                            }}
+                                        />
+                                    }
+                                >
+                                    <TextboxIcon className='size-4' weight='bold' />
                                 </TooltipTrigger>
                                 <TooltipContent>Insert into editor</TooltipContent>
                             </Tooltip>
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        id={`copy-${row.index}`}
-                                        data-testid={`copy-${row.index}`}
-                                        variant='ghost'
-                                        size='icon-sm'
-                                        className='size-7 text-muted-foreground hover:text-foreground'
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            copyToClipboard(reference);
-                                        }}
-                                    >
-                                        <ClipboardTextIcon
-                                            className='size-4'
-                                            weight='bold'
+                                <TooltipTrigger
+                                    render={
+                                        <Button
+                                            id={`copy-${row.index}`}
+                                            data-testid={`copy-${row.index}`}
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            className='size-7 text-muted-foreground hover:text-foreground'
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                copyToClipboard(reference);
+                                            }}
                                         />
-                                    </Button>
+                                    }
+                                >
+                                    <ClipboardTextIcon
+                                        className='size-4'
+                                        weight='bold'
+                                    />
                                 </TooltipTrigger>
                                 <TooltipContent>Copy reference</TooltipContent>
                             </Tooltip>
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        id={`download-${row.index}`}
-                                        data-testid={`download-${row.index}`}
-                                        variant='ghost'
-                                        size='icon-sm'
-                                        className='size-7 text-muted-foreground hover:text-foreground'
-                                        onClick={async (e) => {
-                                            e.stopPropagation();
-                                            await download(item);
-                                        }}
-                                    >
-                                        <DownloadSimpleIcon
-                                            className='size-4'
-                                            weight='bold'
+                                <TooltipTrigger
+                                    render={
+                                        <Button
+                                            id={`download-${row.index}`}
+                                            data-testid={`download-${row.index}`}
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            className='size-7 text-muted-foreground hover:text-foreground'
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await download(item);
+                                            }}
                                         />
-                                    </Button>
+                                    }
+                                >
+                                    <DownloadSimpleIcon
+                                        className='size-4'
+                                        weight='bold'
+                                    />
                                 </TooltipTrigger>
                                 <TooltipContent>Download</TooltipContent>
                             </Tooltip>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        id={`delete-${row.index}`}
-                                        data-testid={`delete-${row.index}`}
-                                        variant='ghost'
-                                        size='icon-sm'
-                                        className='size-7 text-muted-foreground hover:text-destructive'
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setPendingRemoveFile(item);
-                                        }}
+                            {canRemove && (
+                                <Tooltip>
+                                    <TooltipTrigger
+                                        render={
+                                            <Button
+                                                id={`delete-${row.index}`}
+                                                data-testid={`delete-${row.index}`}
+                                                variant='ghost'
+                                                size='icon-sm'
+                                                className='size-7 text-muted-foreground hover:text-destructive'
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setPendingRemoveFile(item);
+                                                }}
+                                            />
+                                        }
                                     >
                                         <TrashIcon className='size-4' weight='bold' />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Remove</TooltipContent>
-                            </Tooltip>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Delete</TooltipContent>
+                                </Tooltip>
+                            )}
                         </div>
                     );
                 },
                 enableSorting: false,
             },
         ],
-        [copyToClipboard, download, insertTextCallback],
+        [canRemove, copyToClipboard, download, insertTextCallback],
     );
 
     const table = useReactTable({
@@ -268,7 +291,12 @@ export default function FileTable({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Remove this file from the list?
+                            Permanently delete{' '}
+                            <span className='font-medium text-foreground break-all'>
+                                {pendingRemoveFile?.name ?? 'this file'}
+                            </span>
+                            ? This cannot be undone, and any references to it in notes
+                            will stop working.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -279,9 +307,7 @@ export default function FileTable({
                             variant='destructive'
                             size='sm'
                             onClick={() => {
-                                if (!pendingRemoveFile) return;
-                                removeFile(pendingRemoveFile);
-                                setPendingRemoveFile(null);
+                                if (pendingRemoveFile) removeFile(pendingRemoveFile);
                             }}
                         >
                             Delete

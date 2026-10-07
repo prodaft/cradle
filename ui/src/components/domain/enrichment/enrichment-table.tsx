@@ -1,5 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
-import StatusHeaderDropdown from '@/components/base/status-header-dropdown/status-header-dropdown';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import { StatusIcon, type StatusType } from '@/components/base/status-icon/status-icon';
 import {
     ActionBar,
@@ -23,6 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { SearchState } from '@/lib/search-query/search-schema';
 import { truncateText } from '@/utils/dashboard';
 import { ArrowsClockwiseIcon, TrashIcon } from '@phosphor-icons/react';
 import type { components } from '@services/openapi/schema';
@@ -30,43 +30,27 @@ import { useRouter } from '@tanstack/react-router';
 import {
     type ColumnDef,
     type RowSelectionState,
-    type SortingState,
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { capitalize } from 'lodash';
+import capitalize from 'lodash/capitalize';
 import { useCallback, useMemo, useState } from 'react';
-import { FILTER_OPTIONS } from './enrichment-list-status';
+import { SEARCH_SCHEMA } from './enrichment-list-search-schema';
 
 type EnrichmentRow = components['schemas']['EnrichmentRequestList'];
-
-const SORT_FIELD_MAPPING: Record<string, string> = {
-    title: 'title',
-    created_at: 'created_at',
-    user: 'user__username',
-};
-
-interface Filters {
-    status: string;
-    user: string;
-}
 
 interface EnrichmentTableProps {
     rows: EnrichmentRow[];
     isLoading: boolean;
     page: number;
     totalPages: number;
+    totalCount?: number;
     onPageChange: (page: number) => void;
-    sortField?: string;
-    sortDirection?: 'asc' | 'desc';
-    onSort?: (field: string, direction: 'asc' | 'desc') => void;
     pageSize?: number;
     onPageSizeChange?: (size: number) => void;
-    onColumnFilterChange?: ((column: keyof Filters, value: string) => void) | null;
-    filters?: Filters;
-    initialSearch?: string;
-    onSearchSubmit?: (value: string) => void;
+    searchState: SearchState;
+    onSearchApply: (state: SearchState) => void;
     onDelete?: (ids: string[]) => Promise<boolean> | void;
     onRerun?: (ids: string[]) => Promise<boolean> | void;
 }
@@ -76,16 +60,12 @@ export default function EnrichmentTable({
     isLoading,
     page,
     totalPages,
+    totalCount,
     onPageChange,
-    sortField = 'created_at',
-    sortDirection = 'desc',
-    onSort,
     pageSize = 20,
     onPageSizeChange = () => {},
-    onColumnFilterChange = null,
-    filters = { status: 'all', user: '' },
-    initialSearch = '',
-    onSearchSubmit = () => {},
+    searchState,
+    onSearchApply,
     onDelete,
     onRerun = () => {},
 }: EnrichmentTableProps) {
@@ -114,51 +94,6 @@ export default function EnrichmentTable({
             }
         },
         [onPageChange, page, pageSize, onPageSizeChange],
-    );
-
-    const sorting = useMemo<SortingState>(() => {
-        const columnId =
-            Object.keys(SORT_FIELD_MAPPING).find(
-                (key) => SORT_FIELD_MAPPING[key] === sortField,
-            ) || sortField;
-
-        return columnId
-            ? [
-                  {
-                      id: columnId,
-                      desc: sortDirection === 'desc',
-                  },
-              ]
-            : [];
-    }, [sortField, sortDirection]);
-
-    const applySort = useCallback(
-        (next: SortingState) => {
-            if (!onSort) return;
-
-            if (next.length === 0) {
-                onSort('created_at', 'desc');
-                return;
-            }
-
-            const entry = next[0];
-            if (!entry) {
-                onSort('created_at', 'desc');
-                return;
-            }
-
-            const apiField = SORT_FIELD_MAPPING[entry.id] || entry.id;
-            onSort(apiField, entry.desc ? 'desc' : 'asc');
-        },
-        [onSort],
-    );
-
-    const applySorting = useCallback(
-        (updater: SortingState | ((prev: SortingState) => SortingState)) => {
-            const next = typeof updater === 'function' ? updater(sorting) : updater;
-            applySort(next);
-        },
-        [applySort, sorting],
     );
 
     const statusDetail = useCallback((item: EnrichmentRow) => {
@@ -197,10 +132,12 @@ export default function EnrichmentTable({
 
         return (
             <Tooltip>
-                <TooltipTrigger asChild>
-                    <span className='inline-flex items-center align-middle flex-shrink-0'>
-                        <StatusIcon status={status as StatusType} />
-                    </span>
+                <TooltipTrigger
+                    render={
+                        <span className='inline-flex items-center align-middle flex-shrink-0' />
+                    }
+                >
+                    <StatusIcon status={status as StatusType} />
                 </TooltipTrigger>
                 <TooltipContent className={tooltipClassName}>
                     {tooltipContent}
@@ -218,9 +155,10 @@ export default function EnrichmentTable({
                 maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        checked={table.getIsAllPageRowsSelected()}
+                        indeterminate={
+                            table.getIsSomePageRowsSelected() &&
+                            !table.getIsAllPageRowsSelected()
                         }
                         onCheckedChange={(value) =>
                             table.toggleAllPageRowsSelected(!!value)
@@ -277,10 +215,7 @@ export default function EnrichmentTable({
                 id: 'user',
                 meta: { label: 'User' },
                 header: ({ column }) => (
-                    <div className='flex items-center gap-2'>
-                        <DataTableColumnHeader column={column} label='User' />
-                        {filters.user && <span className='text-xs text-accent'>●</span>}
-                    </div>
+                    <DataTableColumnHeader column={column} label='User' />
                 ),
                 cell: ({ row }) => {
                     const item = row.original;
@@ -310,7 +245,7 @@ export default function EnrichmentTable({
                 },
             },
         ],
-        [filters.user, statusIcon, statusDetail, router],
+        [statusIcon, statusDetail, router],
     );
 
     const confirmDelete = useCallback(() => {
@@ -323,7 +258,6 @@ export default function EnrichmentTable({
         data: rows,
         columns,
         state: {
-            sorting,
             rowSelection,
             pagination: {
                 pageIndex: page - 1,
@@ -331,7 +265,6 @@ export default function EnrichmentTable({
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
-        onSortingChange: applySorting,
         onRowSelectionChange: setRowSelection,
         onPaginationChange: (updater) => {
             const current = {
@@ -344,28 +277,20 @@ export default function EnrichmentTable({
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
         manualPagination: true,
-        manualSorting: true,
+        enableSorting: false,
         pageCount: totalPages,
+        rowCount: totalCount,
     });
 
     return (
         <div className='flex flex-col space-y-4'>
             <DataTable table={table} showViewOptions isLoading={isLoading}>
-                <div className='flex items-center gap-2'>
-                    <ActionBarSearch
+                <div className='flex min-w-0 flex-1 items-center gap-2'>
+                    <SearchInput
+                        schema={SEARCH_SCHEMA}
+                        value={searchState}
+                        onApply={onSearchApply}
                         placeholder='Search requests...'
-                        initialValue={initialSearch}
-                        debounceMs={300}
-                        onDebouncedChange={onSearchSubmit}
-                        onSubmit={onSearchSubmit}
-                        onClear={() => onSearchSubmit('')}
-                    />
-                    <StatusHeaderDropdown
-                        onStatusChange={(status) =>
-                            onColumnFilterChange?.('status', status)
-                        }
-                        status={filters.status}
-                        options={[...FILTER_OPTIONS]}
                     />
                 </div>
             </DataTable>

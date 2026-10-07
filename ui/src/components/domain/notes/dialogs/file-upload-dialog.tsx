@@ -201,12 +201,10 @@ export default function FileUploadDialog({
                             data: uploadData,
                             error: uploadError,
                             response: uploadResp,
-                        } = await fetchClient.GET('/file-transfer/upload/', {
-                            params: {
-                                query: {
-                                    file_name: file.name,
-                                    file_size: file.size,
-                                },
+                        } = await fetchClient.POST('/file-transfer/upload/', {
+                            body: {
+                                file_name: file.name,
+                                file_size: file.size,
                             },
                         });
                         if (uploadError)
@@ -233,7 +231,7 @@ export default function FileUploadDialog({
                         updateEntry(file, 'success', 100);
                         uploadedRefs.push({
                             id: finalizeData.file_id,
-                            file_name: finalizeData.file_name,
+                            name: finalizeData.file_name,
                         } as FileReferenceWithNote);
                     } catch (error) {
                         const parsed = await parseAPIError(error);
@@ -446,15 +444,15 @@ export default function FileUploadDialog({
                                                                 (error ? (
                                                                     <Tooltip>
                                                                         <TooltipTrigger
-                                                                            asChild
+                                                                            render={
+                                                                                <Badge
+                                                                                    variant='destructive'
+                                                                                    className='cursor-help text-xs font-normal'
+                                                                                />
+                                                                            }
                                                                         >
-                                                                            <Badge
-                                                                                variant='destructive'
-                                                                                className='cursor-help text-xs font-normal'
-                                                                            >
-                                                                                <CircleX data-icon='inline-start' />
-                                                                                Failed
-                                                                            </Badge>
+                                                                            <CircleX data-icon='inline-start' />
+                                                                            Failed
                                                                         </TooltipTrigger>
                                                                         <TooltipContent
                                                                             side='top'
@@ -489,28 +487,28 @@ export default function FileUploadDialog({
                                                                         'error') && (
                                                                     <Tooltip>
                                                                         <TooltipTrigger
-                                                                            asChild
-                                                                        >
-                                                                            <Button
-                                                                                type='button'
-                                                                                variant='ghost'
-                                                                                size='icon'
-                                                                                className='size-8'
-                                                                                onClick={() =>
-                                                                                    uploadOne(
-                                                                                        file,
-                                                                                    )
-                                                                                }
-                                                                                disabled={
-                                                                                    isUploading
-                                                                                }
-                                                                                aria-label={`Upload ${file.name}`}
-                                                                            >
-                                                                                <UploadSimpleIcon
-                                                                                    className='h-4 w-4'
-                                                                                    weight='bold'
+                                                                            render={
+                                                                                <Button
+                                                                                    type='button'
+                                                                                    variant='ghost'
+                                                                                    size='icon'
+                                                                                    className='size-8'
+                                                                                    onClick={() =>
+                                                                                        uploadOne(
+                                                                                            file,
+                                                                                        )
+                                                                                    }
+                                                                                    disabled={
+                                                                                        isUploading
+                                                                                    }
+                                                                                    aria-label={`Upload ${file.name}`}
                                                                                 />
-                                                                            </Button>
+                                                                            }
+                                                                        >
+                                                                            <UploadSimpleIcon
+                                                                                className='h-4 w-4'
+                                                                                weight='bold'
+                                                                            />
                                                                         </TooltipTrigger>
                                                                         <TooltipContent side='top'>
                                                                             Upload
@@ -519,28 +517,28 @@ export default function FileUploadDialog({
                                                                 )}
                                                                 <Tooltip>
                                                                     <TooltipTrigger
-                                                                        asChild
-                                                                    >
-                                                                        <Button
-                                                                            type='button'
-                                                                            variant='ghost'
-                                                                            size='icon'
-                                                                            className='size-8'
-                                                                            onClick={() =>
-                                                                                removeFile(
-                                                                                    file,
-                                                                                )
-                                                                            }
-                                                                            disabled={
-                                                                                isUploading
-                                                                            }
-                                                                            aria-label={`Remove ${file.name}`}
-                                                                        >
-                                                                            <TrashIcon
-                                                                                className='h-4 w-4'
-                                                                                weight='bold'
+                                                                        render={
+                                                                            <Button
+                                                                                type='button'
+                                                                                variant='ghost'
+                                                                                size='icon'
+                                                                                className='size-8'
+                                                                                onClick={() =>
+                                                                                    removeFile(
+                                                                                        file,
+                                                                                    )
+                                                                                }
+                                                                                disabled={
+                                                                                    isUploading
+                                                                                }
+                                                                                aria-label={`Remove ${file.name}`}
                                                                             />
-                                                                        </Button>
+                                                                        }
+                                                                    >
+                                                                        <TrashIcon
+                                                                            className='h-4 w-4'
+                                                                            weight='bold'
+                                                                        />
                                                                     </TooltipTrigger>
                                                                     <TooltipContent side='top'>
                                                                         Remove
@@ -600,10 +598,12 @@ export default function FileUploadDialog({
                                     )}
                                 </Button>
                             )}
-                            <DialogClose asChild>
-                                <Button type='button' variant='outline' size='sm'>
-                                    Close
-                                </Button>
+                            <DialogClose
+                                render={
+                                    <Button type='button' variant='outline' size='sm' />
+                                }
+                            >
+                                Close
                             </DialogClose>
                         </DialogFooter>
                     </FileUploadDropzone>

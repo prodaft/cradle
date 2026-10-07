@@ -3,7 +3,7 @@ import {
     HoverCardContent,
     HoverCardTrigger,
 } from '@/components/ui/hover-card';
-import { ReactNode } from 'react';
+import { isValidElement, ReactNode } from 'react';
 
 type Side = 'top' | 'bottom' | 'left' | 'right';
 type Align = 'start' | 'center' | 'end';
@@ -47,8 +47,12 @@ const PreviewTip = ({
     const sizeClass = sizeClasses[size] ?? sizeClasses.lg;
 
     return (
-        <HoverCard openDelay={openDelay} closeDelay={closeDelay}>
-            <HoverCardTrigger asChild>{children}</HoverCardTrigger>
+        <HoverCard>
+            <HoverCardTrigger
+                delay={openDelay}
+                closeDelay={closeDelay}
+                render={isValidElement(children) ? children : <span>{children}</span>}
+            />
             <HoverCardContent
                 side={side}
                 align={align}

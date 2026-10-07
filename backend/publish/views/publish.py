@@ -79,7 +79,7 @@ class PublishReportAPIView(APIView):
         user = request.user
 
         notes = Note.objects.get_accessible_notes(user).filter(id__in=note_ids)
-        if notes.count() != len(note_ids):
+        if notes.count() != len(set(note_ids)):
             raise NotesNotFoundException(detail="Some of the selected notes could not be found.")
 
         if (strategy_key or "").lower() not in PUBLISH_STRATEGIES:
@@ -97,7 +97,7 @@ class PublishReportAPIView(APIView):
 
         generate_report.delay(report.id)
 
-        location = request.build_absolute_uri(reverse("report_detail", kwargs={"pk": report.id}))
+        location = request.build_absolute_uri(reverse("report_detail", kwargs={"report_id": report.id}))
         return Response(
             ReportListSerializer(report).data,
             status=status.HTTP_201_CREATED,

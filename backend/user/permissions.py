@@ -9,16 +9,14 @@ class HasAdminRole(BasePermission):
     """Allow only users with admin role."""
 
     def has_permission(self, request, view):
-        return bool(request.user and request.user.role == UserRoles.ADMIN)
+        return bool(request.user and request.user.is_cradle_admin)
 
 
 class HasEntryManagerRole(BasePermission):
     """Allow users with entry manager or admin role."""
 
     def has_permission(self, request, view):
-        return bool(
-            request.user and (request.user.role == UserRoles.ENTRY_MANAGER or request.user.role == UserRoles.ADMIN)
-        )
+        return bool(request.user and (request.user.role == UserRoles.ENTRY_MANAGER or request.user.is_cradle_admin))
 
 
 class EntryClassListPermission(BasePermission):
@@ -61,7 +59,7 @@ class EntityDetailPermission(BasePermission):
 
 
 class EntryClassDetailPermission(BasePermission):
-    """GET: any authenticated. DELETE: HasAdminRole. POST/PATCH: HasEntryManagerRole."""
+    """GET: any authenticated. DELETE: HasAdminRole. PUT: HasEntryManagerRole."""
 
     message = "You do not have permission to perform this action."
 

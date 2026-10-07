@@ -22,6 +22,18 @@ from ..models import Access
 from ..serializers import RequestAccessSerializer
 
 
+def notify_access_request(user: CradleUser, entity: Entry, message: str) -> None:
+    """Notify every user who can grant access to ``entity`` that ``user`` asked for it."""
+    with transaction.atomic():
+        for notified_user_id in Access.objects.get_users_with_access(entity.id):
+            AccessRequestNotification.objects.create(
+                user_id=notified_user_id,
+                requesting_user=user,
+                entity=entity,
+                message=message,
+            )
+
+
 @extend_schema_view(
     post=extend_schema(
         operation_id="access_request_create",
@@ -77,20 +89,9 @@ class RequestAccess(APIView):
         except Entry.DoesNotExist:
             raise EntityNotFoundException(detail="That entity could not be found.")
 
-        if (
-            user.is_cradle_admin
-            or Access.objects.filter(user=user, entity=entity, access_type=AccessType.READ_WRITE).exists()
-        ):
+        if Access.objects.has_access_to_entities(user, {entity}, {AccessType.READ_WRITE}):
             return Response({"detail": "Access request sent successfully."}, status=status.HTTP_201_CREATED)
 
-        notified_user_ids = Access.objects.get_users_with_access(entity.id)
-        with transaction.atomic():
-            for notified_user_id in notified_user_ids:
-                AccessRequestNotification.objects.create(
-                    user_id=notified_user_id,
-                    requesting_user=user,
-                    entity=entity,
-                    message=f"User {user.username} has requested access for entity {entity.name}",
-                )
+        notify_access_request(user, entity, f"User {user.username} has requested access for entity {entity.name}")
 
         return Response({"detail": "Access request sent successfully."}, status=status.HTTP_201_CREATED)

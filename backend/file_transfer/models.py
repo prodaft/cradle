@@ -121,11 +121,16 @@ class FileReference(models.Model, LifecycleModelMixin):
             return self.user_id == user.id
         return False
 
+    def has_write_access(self, user: CradleUser) -> bool:
+        """Whether the user may delete this file reference (note files need note write access)."""
+        if self.note_id:
+            return self.note.has_write_access(user)
+        return self.has_access(user)
+
     @property
     def entities(self) -> list[Entry]:
         """Entity entries linked to this file's note (for relation creation)."""
         if self.note:
-            # Use prefetched data if available to avoid N+1 queries
             if hasattr(self.note, "_prefetched_objects_cache") and "entries" in self.note._prefetched_objects_cache:
                 return [entry for entry in self.note.entries.all() if entry.entry_class.type == EntryType.ENTITY]
             return list(self.note.entries.filter(entry_class__type=EntryType.ENTITY).all())

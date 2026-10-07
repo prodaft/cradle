@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from access.enums import AccessType
 from access.models import Access
 from core.exceptions import CoreErrorCodes, PermissionDeniedException
 from core.openapi import get_common_error_responses, get_error_responses
@@ -116,9 +117,10 @@ class EntryDetailView(APIView):
         except Entry.DoesNotExist:
             raise EntryNotFoundException(detail="That entry could not be found.")
 
-        # Access control for entities
         if entry.entry_class.type == EntryType.ENTITY:
-            if not (request.user.is_cradle_admin or Access.objects.user_has_entity_access(request.user.id, entry_id)):
+            if not Access.objects.has_access_to_entities(
+                request.user, {entry}, {AccessType.READ, AccessType.READ_WRITE}
+            ):
                 raise PermissionDeniedException(detail="You do not have access to this entity.")
 
         serializer = EntrySerializer(entry)

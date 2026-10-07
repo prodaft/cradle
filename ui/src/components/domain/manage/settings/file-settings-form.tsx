@@ -178,7 +178,7 @@ export default function FileSettingsForm() {
 
     const saveSettings = useMutation({
         mutationFn: async (values: FileSettingsFormValues) => {
-            const { error, response } = await fetchClient.POST(
+            const { error, response } = await fetchClient.PATCH(
                 '/management/settings/',
                 {
                     body: {
@@ -385,6 +385,7 @@ export default function FileSettingsForm() {
                                             )}
                                         </FieldContent>
                                         <Select
+                                            items={subtypes}
                                             value={field.value?.value || ''}
                                             onValueChange={(value) => {
                                                 const option = subtypes.find(
@@ -453,6 +454,7 @@ export default function FileSettingsForm() {
                                             )}
                                         </FieldContent>
                                         <Select
+                                            items={subtypes}
                                             value={field.value?.value || ''}
                                             onValueChange={(value) => {
                                                 const option = subtypes.find(
@@ -521,6 +523,7 @@ export default function FileSettingsForm() {
                                             )}
                                         </FieldContent>
                                         <Select
+                                            items={subtypes}
                                             value={field.value?.value || ''}
                                             onValueChange={(value) => {
                                                 const option = subtypes.find(

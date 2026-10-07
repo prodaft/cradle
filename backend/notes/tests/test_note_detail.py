@@ -7,6 +7,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from access.enums import AccessType
 from access.models import Access
 from entries.models import Entry
+from file_transfer.models import FileReference
 from user.models import CradleUser
 
 from ..models import Note
@@ -221,3 +222,106 @@ class DeleteNoteTest(NotesTestCase):
             **self.headers,
         ).json()
         self.assertEqual(get_body["permission"], AccessType.READ)
+
+
+class NoteEditConflictTest(NotesTestCase):
+    def setUp(self):
+        super().setUp()
+        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(self.user)}"}
+        self.note = Note.objects.create(author=self.user, fleeting=True, content="original")
+        self.url = reverse("note_detail", kwargs={"note_id": self.note.id})
+
+    def test_get_returns_content_hash(self):
+        response = self.client.get(self.url, **self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["content_hash"], self.note.content_hash)
+
+    def test_patch_with_current_hash_succeeds(self):
+        response = self.client.patch(
+            self.url,
+            {"content": "edited", "base_content_hash": self.note.content_hash},
+            content_type="application/json",
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.content, "edited")
+        self.assertEqual(response.json()["content_hash"], self.note.content_hash)
+
+    def test_patch_with_stale_hash_conflicts(self):
+        stale_hash = self.note.content_hash
+        Note.objects.filter(id=self.note.id).update(content="changed elsewhere")
+
+        response = self.client.patch(
+            self.url,
+            {"content": "edited", "base_content_hash": stale_hash},
+            content_type="application/json",
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()["code"], "NOTE_EDIT_CONFLICT")
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.content, "changed elsewhere")
+
+    def test_patch_with_stale_hash_and_same_content_succeeds(self):
+        stale_hash = self.note.content_hash
+        Note.objects.filter(id=self.note.id).update(content="edited")
+
+        response = self.client.patch(
+            self.url,
+            {"content": "edited", "base_content_hash": stale_hash},
+            content_type="application/json",
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_patch_without_hash_overwrites(self):
+        Note.objects.filter(id=self.note.id).update(content="changed elsewhere")
+
+        response = self.client.patch(self.url, {"content": "edited"}, content_type="application/json", **self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.content, "edited")
+
+
+class NoteWritePermissionTest(NotesTestCase):
+    """Note write access follows entity access only; authorship does not matter."""
+
+    def setUp(self):
+        super().setUp()
+        self.entity = Entry.objects.create(name="shared-case", entry_class=self.entryclass1)
+        self.note = Note.objects.create(author=self.user, fleeting=False, content="hello")
+        self.note.entries.add(self.entity)
+        self.other = CradleUser.objects.create_user(
+            username="other", password="pass", email="o@c.d", is_active=True, email_confirmed=True
+        )
+        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(self.other)}"}
+        self.url = reverse("note_detail", kwargs={"note_id": self.note.id})
+
+    def grant(self, access_type):
+        Access.objects.create(user_id=self.other.id, entity_id=self.entity.id, access_type=access_type)
+
+    def test_read_write_non_author_can_edit(self):
+        self.grant(AccessType.READ_WRITE)
+        self.assertEqual(self.client.get(self.url, **self.headers).json()["permission"], AccessType.READ_WRITE)
+        self.assertEqual(self.client.delete(self.url, **self.headers).status_code, 204)
+
+    def test_read_only_non_author_cannot_edit(self):
+        self.grant(AccessType.READ)
+        self.assertEqual(self.client.get(self.url, **self.headers).json()["permission"], AccessType.READ)
+        response = self.client.patch(self.url, {"content": "changed"}, content_type="application/json", **self.headers)
+        self.assertEqual(response.status_code, 403)
+
+    def test_note_file_delete_requires_write(self):
+        file = FileReference.objects.create(
+            note=self.note, file_name="a.txt", minio_file_name="a.txt", bucket_name="bucket"
+        )
+        url = f"{reverse('file_delete')}?file_id={file.id}"
+
+        self.grant(AccessType.READ)
+        self.assertEqual(self.client.delete(url, **self.headers).status_code, 403)
+        self.assertTrue(FileReference.objects.filter(id=file.id).exists())
+
+        Access.objects.filter(user_id=self.other.id).update(access_type=AccessType.READ_WRITE)
+        self.assertEqual(self.client.delete(url, **self.headers).status_code, 204)
+        self.assertFalse(FileReference.objects.filter(id=file.id).exists())

@@ -5,6 +5,8 @@ from django.urls import path
 from .views import entity_views, entry_class_views, entry_view, list_stream_views, relation_view
 
 urlpatterns = [
+    path("", entry_view.EntryView.as_view(), name="entry_create"),
+    path("<int:entry_id>/", entry_view.EntryDetailView.as_view(), name="entry_detail"),
     path(
         "entry-classes/stream/",
         list_stream_views.EntryClassListStreamView.as_view(),
@@ -36,8 +38,6 @@ urlpatterns = [
         entry_class_views.NextName.as_view(),
         name="next_name",
     ),
-    path("entries/", entry_view.EntryView.as_view(), name="entry_create"),
-    path("entries/<int:entry_id>/", entry_view.EntryDetailView.as_view(), name="entry_detail"),
     path("relations/", relation_view.RelationListView.as_view(), name="relation_list"),
     path(
         "relations/<uuid:relation_id>/",

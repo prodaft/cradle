@@ -5,6 +5,7 @@ from uuid import UUID
 from django.db import models
 from django.db.models import F, FilteredRelation, Q, QuerySet
 
+from core.query_lang import search_q
 from entries.enums import EntryType
 from entries.models import Entry
 from user.models import CradleUser, UserRoles
@@ -92,37 +93,14 @@ class AccessManager(models.Manager):
 
         return Entry.entities.filter(pk__in=ids).values_list("pk", flat=True)
 
-    def user_has_entity_access(self, user_id: UUID, entity_id: int) -> bool:
-        """Check if user has access to entity (read or read_write).
-
-        Do not use for admin users - check is_cradle_admin first.
-
-        Args:
-            user_id: UUID of the user.
-            entity_id: ID of the entity.
-
-        Returns:
-            True if the user has READ or READ_WRITE access; False otherwise.
-        """
-        if (
-            self.get_queryset()
-            .filter(
-                user_id=user_id,
-                entity_id=entity_id,
-                access_type__in=[AccessType.READ, AccessType.READ_WRITE],
-            )
-            .exists()
-        ):
-            return True
-        return Entry.entities.filter(pk=entity_id, is_public=True).exists()
-
     def get_accesses(self, user_id: UUID, search: str | None = None) -> QuerySet:
         """Retrieves access_type of all entities for a given user id.
 
         Args:
             user_id: ID of the user whose access is to be retrieved.
-            search: Optional case-insensitive substring match on entity name or description,
-                or exact match on entity id when ``search`` is numeric.
+            search: Optional query (AND/OR/NOT, -term, "phrases", =exact, * wildcards) over
+                entity name and description, or exact match on entity id when ``search`` is
+                numeric.
 
         Returns:
             QuerySet of dicts with keys: id, name, access_type, description.
@@ -135,9 +113,9 @@ class AccessManager(models.Manager):
             .annotate(access_type=F("access_type__access_type"))  # rename obscure field
             .order_by("name")
         )
-        term = (search or "").strip()
-        if term:
-            q = Q(name__icontains=term) | Q(description__icontains=term)
+        q = search_q(search, ["name", "description"])
+        if q is not None:
+            term = (search or "").strip()
             if term.isdigit():
                 try:
                     q |= Q(id=int(term))

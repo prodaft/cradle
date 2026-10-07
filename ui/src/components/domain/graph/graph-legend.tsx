@@ -65,22 +65,24 @@ const GraphLegend = ({
         <div className='px-4 pt-2'>
             <Collapsible defaultOpen={true}>
                 <div className='flex justify-between items-center'>
-                    <CollapsibleTrigger asChild>
-                        <Button
-                            variant='ghost'
-                            size='sm'
-                            className='group hover:text-border-primary'
-                        >
-                            <CaretRightIcon
-                                className='w-4 h-4 group-data-[state=open]:hidden'
-                                weight='bold'
+                    <CollapsibleTrigger
+                        render={
+                            <Button
+                                variant='ghost'
+                                size='sm'
+                                className='group hover:text-border-primary'
                             />
-                            <CaretDownIcon
-                                className='w-4 h-4 hidden group-data-[state=open]:block'
-                                weight='bold'
-                            />
-                            Legend
-                        </Button>
+                        }
+                    >
+                        <CaretRightIcon
+                            className='w-4 h-4 group-data-panel-open:hidden'
+                            weight='bold'
+                        />
+                        <CaretDownIcon
+                            className='w-4 h-4 hidden group-data-panel-open:block'
+                            weight='bold'
+                        />
+                        Legend
                     </CollapsibleTrigger>
                     <Button
                         variant='ghost'
@@ -128,22 +130,24 @@ const GraphLegend = ({
                                         <div className='pl-4'>
                                             <Collapsible>
                                                 <div className='flex justify-between items-center'>
-                                                    <CollapsibleTrigger asChild>
-                                                        <Button
-                                                            variant='ghost'
-                                                            size='sm'
-                                                            className='group hover:text-border-primary'
-                                                        >
-                                                            <CaretRightIcon
-                                                                className='w-4 h-4 group-data-[state=open]:hidden'
-                                                                weight='bold'
+                                                    <CollapsibleTrigger
+                                                        render={
+                                                            <Button
+                                                                variant='ghost'
+                                                                size='sm'
+                                                                className='group hover:text-border-primary'
                                                             />
-                                                            <CaretDownIcon
-                                                                className='w-4 h-4 hidden group-data-[state=open]:block'
-                                                                weight='bold'
-                                                            />
-                                                            <span>{value}</span>
-                                                        </Button>
+                                                        }
+                                                    >
+                                                        <CaretRightIcon
+                                                            className='w-4 h-4 group-data-panel-open:hidden'
+                                                            weight='bold'
+                                                        />
+                                                        <CaretDownIcon
+                                                            className='w-4 h-4 hidden group-data-panel-open:block'
+                                                            weight='bold'
+                                                        />
+                                                        <span>{value}</span>
                                                     </CollapsibleTrigger>
                                                     <Button
                                                         variant='ghost'

@@ -71,7 +71,7 @@ urlpatterns = [
         name="digest_upload_finalize",
     ),
     path(
-        "digest/<uuid:pk>/",
+        "digest/<uuid:digest_id>/",
         DigestDetailAPIView.as_view(),
         name="digest_detail",
     ),
@@ -81,22 +81,22 @@ urlpatterns = [
         name="enrichment_requests",
     ),
     path(
-        "enrich/<uuid:pk>/",
+        "enrich/<uuid:enrichment_id>/",
         EnrichmentDetailAPIView.as_view(),
         name="enrichment_detail",
     ),
     path(
-        "enrich/<uuid:pk>/restart/",
+        "enrich/<uuid:enrichment_id>/restart/",
         EnrichmentRestartAPIView.as_view(),
         name="enrichment_restart",
     ),
     path(
-        "enrich/<uuid:pk>/<str:enricher_type>/relations/",
+        "enrich/<uuid:enrichment_id>/<str:enricher_type>/relations/",
         EnrichmentRelationsAPIView.as_view(),
         name="enrichment_relations",
     ),
     path(
-        "enrich/<uuid:pk>/<str:enricher_type>/",
+        "enrich/<uuid:enrichment_id>/<str:enricher_type>/",
         EnrichmentRequestEnricherAPIView.as_view(),
         name="enrichment_enricher",
     ),

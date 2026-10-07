@@ -39,6 +39,7 @@ AWS_S3_SIGNATURE_VERSION = "s3v4"
 
 # Application definition
 INSTALLED_APPS = [
+    "daphne",
     "corsheaders",
     "storages",
     "knowledge_graph.apps.KnowledgeGraphConfig",
@@ -229,6 +230,14 @@ CACHES = {
 }
 
 ROOT_URLCONF = "cradle.urls"
+ASGI_APPLICATION = "cradle.asgi.application"
+
+
+def channel_layers(redis_url: str | None) -> dict:
+    """Channels layer for live note editing; Redis is required with more than one process."""
+    if not redis_url:
+        return {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+    return {"default": {"BACKEND": "channels_redis.core.RedisChannelLayer", "CONFIG": {"hosts": [redis_url]}}}
 
 CSRF_COOKIE_NAME = "csrf_token"
 CSRF_COOKIE_SECURE = True

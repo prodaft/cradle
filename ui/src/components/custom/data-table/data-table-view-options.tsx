@@ -10,9 +10,8 @@ import {
     CommandList,
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
 import type { Table } from '@tanstack/react-table';
-import { Check, Settings2 } from 'lucide-react';
+import { Settings2 } from 'lucide-react';
 import * as React from 'react';
 
 interface DataTableViewOptionsProps<TData> extends React.ComponentProps<
@@ -38,17 +37,19 @@ export function DataTableViewOptions<TData>({
 
     return (
         <Popover>
-            <PopoverTrigger asChild>
-                <Button
-                    aria-label='Toggle columns'
-                    role='combobox'
-                    variant='outline'
-                    size='sm'
-                    className='ml-auto hidden h-8 font-normal lg:flex'
-                >
-                    <Settings2 className='text-muted-foreground' />
-                    View
-                </Button>
+            <PopoverTrigger
+                render={
+                    <Button
+                        aria-label='Toggle columns'
+                        role='combobox'
+                        variant='outline'
+                        size='sm'
+                        className='ml-auto h-8 font-normal max-sm:w-8 max-sm:px-0'
+                    />
+                }
+            >
+                <Settings2 className='text-muted-foreground' />
+                <span className='max-sm:sr-only'>View</span>
             </PopoverTrigger>
             <PopoverContent className='w-44 p-0' {...props}>
                 <Command>
@@ -59,6 +60,7 @@ export function DataTableViewOptions<TData>({
                             {columns.map((column) => (
                                 <CommandItem
                                     key={column.id}
+                                    data-checked={column.getIsVisible()}
                                     onSelect={() =>
                                         column.toggleVisibility(!column.getIsVisible())
                                     }
@@ -66,14 +68,6 @@ export function DataTableViewOptions<TData>({
                                     <span className='truncate'>
                                         {column.columnDef.meta?.label ?? column.id}
                                     </span>
-                                    <Check
-                                        className={cn(
-                                            'ml-auto size-4 shrink-0',
-                                            column.getIsVisible()
-                                                ? 'opacity-100'
-                                                : 'opacity-0',
-                                        )}
-                                    />
                                 </CommandItem>
                             ))}
                         </CommandGroup>

@@ -25,7 +25,7 @@ from file_transfer.storage import DigestStorage
 from user.models import CradleUser
 
 from ..enums import DigestStatus, EnrichmentStatus
-from ..managers import EnrichmentRequestManager
+from ..managers import BaseDigestQuerySet, EnrichmentRequestManager
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,8 @@ class BaseDigest(LifecycleModel):
     user = models.ForeignKey(
         "user.CradleUser", on_delete=models.CASCADE, related_name="digests", help_text="User who created the digest"
     )
+
+    objects = BaseDigestQuerySet.as_manager()
 
     # Digest file stored in S3
     file: models.FileField = models.FileField(

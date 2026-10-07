@@ -122,15 +122,10 @@ function ContextMenuImpl<TData>({
         [contextMenu.x, contextMenu.y],
     );
 
-    const onCloseAutoFocus: NonNullable<
-        React.ComponentProps<typeof DropdownMenuContent>['onCloseAutoFocus']
-    > = React.useCallback(
-        (event) => {
-            event.preventDefault();
-            propsRef.current.dataGridRef?.current?.focus();
-        },
-        [propsRef],
-    );
+    // Base UI calls this when the menu closes; returning nothing tells it not to move focus.
+    const onFinalFocus = React.useCallback((): void => {
+        propsRef.current.dataGridRef?.current?.focus();
+    }, [propsRef]);
 
     const onCopy = React.useCallback(() => {
         propsRef.current.onCellsCopy?.();
@@ -204,24 +199,24 @@ function ContextMenuImpl<TData>({
                 data-grid-popover=''
                 align='start'
                 className='w-48'
-                onCloseAutoFocus={onCloseAutoFocus}
+                finalFocus={onFinalFocus}
             >
-                <DropdownMenuItem onSelect={onCopy}>
+                <DropdownMenuItem onClick={onCopy}>
                     <CopyIcon />
                     Copy
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={onCut} disabled={tableMeta?.readOnly}>
+                <DropdownMenuItem onClick={onCut} disabled={tableMeta?.readOnly}>
                     <ScissorsIcon />
                     Cut
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={onClear} disabled={tableMeta?.readOnly}>
+                <DropdownMenuItem onClick={onClear} disabled={tableMeta?.readOnly}>
                     <EraserIcon />
                     Clear
                 </DropdownMenuItem>
                 {onRowsDelete && (
                     <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem variant='destructive' onSelect={onDelete}>
+                        <DropdownMenuItem variant='destructive' onClick={onDelete}>
                             <Trash2Icon />
                             Delete rows
                         </DropdownMenuItem>

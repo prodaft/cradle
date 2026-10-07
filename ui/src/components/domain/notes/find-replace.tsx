@@ -186,14 +186,13 @@ export default function FindReplace({
         <div className='absolute top-2 right-4 z-50 w-[28rem] bg-card border border-border shadow-lg rounded-md p-2 text-sm'>
             <div className='flex flex-col gap-2'>
                 <div className='flex gap-1 items-start'>
-                    {/* Toggle Button - Height matches two fields when replace is shown */}
+                    {/* Toggle Button - h-auto so self-stretch can span the visible rows */}
                     <Button
                         variant='ghost'
                         size='icon-sm'
-                        className={`w-6 flex-shrink-0 text-foreground hover:bg-secondary hover:text-foreground ${
-                            isReplaceOpen ? 'self-stretch' : 'h-8 mt-0.5'
-                        }`}
+                        className='h-auto w-6 self-stretch text-foreground hover:bg-secondary hover:text-foreground'
                         onClick={() => setIsReplaceOpen(!isReplaceOpen)}
+                        title={isReplaceOpen ? 'Hide replace' : 'Show replace'}
                     >
                         {isReplaceOpen ? (
                             <VscChevronDown className='text-sm' />
@@ -228,7 +227,8 @@ export default function FindReplace({
                                     />
                                     <InputGroupAddon align='inline-end'>
                                         <ToggleGroup
-                                            type='multiple'
+                                            multiple
+                                            spacing={0}
                                             value={[
                                                 ...(caseSensitive ? ['case'] : []),
                                                 ...(wholeWord ? ['word'] : []),
@@ -247,21 +247,21 @@ export default function FindReplace({
                                             <ToggleGroupItem
                                                 value='case'
                                                 title='Match Case'
-                                                className='size-6 rounded-[calc(var(--radius)-5px)] p-0 text-muted-foreground hover:bg-background hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground'
+                                                className='size-6 rounded-[calc(var(--radius)-5px)] p-0 text-muted-foreground hover:bg-background hover:text-foreground data-pressed:bg-background data-pressed:text-foreground'
                                             >
                                                 <VscTextSize className='text-xs' />
                                             </ToggleGroupItem>
                                             <ToggleGroupItem
                                                 value='word'
                                                 title='Match Whole Word'
-                                                className='size-6 rounded-[calc(var(--radius)-5px)] p-0 text-muted-foreground hover:bg-background hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground'
+                                                className='size-6 rounded-[calc(var(--radius)-5px)] p-0 text-muted-foreground hover:bg-background hover:text-foreground data-pressed:bg-background data-pressed:text-foreground'
                                             >
                                                 <VscWholeWord className='text-xs' />
                                             </ToggleGroupItem>
                                             <ToggleGroupItem
                                                 value='regex'
                                                 title='Use Regular Expression'
-                                                className='size-6 rounded-[calc(var(--radius)-5px)] p-0 text-muted-foreground hover:bg-background hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground'
+                                                className='size-6 rounded-[calc(var(--radius)-5px)] p-0 text-muted-foreground hover:bg-background hover:text-foreground data-pressed:bg-background data-pressed:text-foreground'
                                             >
                                                 <VscRegex className='text-xs' />
                                             </ToggleGroupItem>
@@ -271,36 +271,36 @@ export default function FindReplace({
                                 <div className='flex gap-0.5 flex-shrink-0'>
                                     <Button
                                         variant='ghost'
-                                        size='icon-sm'
+                                        size='icon'
                                         onClick={findPrevious}
-                                        className='w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground'
+                                        className='text-foreground hover:bg-secondary hover:text-foreground'
                                         title='Previous match (Shift+Enter)'
                                     >
                                         <VscArrowUp className='text-lg' />
                                     </Button>
                                     <Button
                                         variant='ghost'
-                                        size='icon-sm'
+                                        size='icon'
                                         onClick={findNext}
-                                        className='w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground'
+                                        className='text-foreground hover:bg-secondary hover:text-foreground'
                                         title='Next match (Enter)'
                                     >
                                         <VscArrowDown className='text-lg' />
                                     </Button>
                                     <Button
                                         variant='ghost'
-                                        size='icon-sm'
+                                        size='icon'
                                         onClick={selectAllMatches}
-                                        className='w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground'
+                                        className='text-foreground hover:bg-secondary hover:text-foreground'
                                         title='Find All'
                                     >
                                         <VscListSelection className='text-lg' />
                                     </Button>
                                     <Button
                                         variant='ghost'
-                                        size='icon-sm'
+                                        size='icon'
                                         onClick={onClose}
-                                        className='w-8 h-8 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                        className='text-muted-foreground hover:bg-secondary hover:text-foreground'
                                         aria-label='Close'
                                     >
                                         <XIcon size={18} weight='bold' />
@@ -318,33 +318,32 @@ export default function FindReplace({
                                         value={replacement}
                                         onChange={(e) => setReplacement(e.target.value)}
                                         onKeyDown={(e) => {
-                                            if (
-                                                e.key === 'Enter' &&
-                                                searchTerm.trim()
-                                            ) {
+                                            if (e.key === 'Enter') {
                                                 replaceOne();
+                                            } else if (e.key === 'Escape') {
+                                                onClose();
                                             }
                                         }}
                                         placeholder='Replace'
-                                        className='flex-1 min-w-0 bg-muted border border-border rounded-md px-2 py-1.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground text-sm'
+                                        className='flex-1 bg-muted px-2 py-1.5'
                                     />
                                     <div className='flex gap-0.5 flex-shrink-0'>
                                         <Button
                                             variant='ghost'
-                                            size='icon-sm'
+                                            size='icon'
                                             onClick={replaceOne}
                                             disabled={!searchTerm.trim()}
-                                            className='text-primary hover:bg-muted hover:text-primary'
+                                            className='text-primary hover:bg-secondary hover:text-primary'
                                             title='Replace'
                                         >
                                             <VscReplace className='text-lg' />
                                         </Button>
                                         <Button
                                             variant='ghost'
-                                            size='icon-sm'
+                                            size='icon'
                                             onClick={replaceAllMatches}
                                             disabled={!searchTerm.trim()}
-                                            className='text-primary hover:bg-muted hover:text-primary'
+                                            className='text-primary hover:bg-secondary hover:text-primary'
                                             title='Replace All'
                                         >
                                             <VscReplaceAll className='text-lg' />

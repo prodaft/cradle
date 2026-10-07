@@ -152,7 +152,7 @@ export default function ResetPassword() {
                             </Link>
                             <div className='mt-6 text-center'>
                                 <span className='text-xs text-muted-foreground font-mono tracking-wider'>
-                                    v2.10.2-beta.a070af1b
+                                    {__APP_VERSION_LABEL__}
                                 </span>
                             </div>
                         </div>
@@ -405,7 +405,7 @@ export default function ResetPassword() {
                         {/* Version/Status Indicator */}
                         <div className='mt-6 text-center'>
                             <span className='text-xs text-muted-foreground font-mono tracking-wider'>
-                                v2.10.2-beta.a070af1b
+                                {__APP_VERSION_LABEL__}
                             </span>
                         </div>
                     </div>

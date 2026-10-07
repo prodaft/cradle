@@ -10,7 +10,7 @@ import * as React from 'react';
 
 interface RouterSheetProps {
     children: React.ReactNode;
-    trigger: React.ReactNode;
+    trigger: React.ReactElement;
     title: string;
     description?: string;
     onOpenChange?: (open: boolean) => void;
@@ -38,7 +38,7 @@ export function RouterSheet({
 
     return (
         <Sheet open={open} onOpenChange={handleOpenChange}>
-            <SheetTrigger asChild>{trigger}</SheetTrigger>
+            <SheetTrigger render={trigger} />
             <SheetContent side={side}>
                 <SheetHeader>
                     <SheetTitle>{title}</SheetTitle>

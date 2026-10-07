@@ -1,6 +1,6 @@
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
 import { Button } from '@/components/ui/button';
-import { DialogFooter } from '@/components/ui/dialog';
+import { DialogClose, DialogFooter } from '@/components/ui/dialog';
 import {
     Field,
     FieldContent,
@@ -29,6 +29,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
+import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -123,10 +124,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
 
     const { data: entryClasses } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
-        params: {
-            query: { show_count: true },
-        },
-        queryKey: ['entry_classes', 'add-entity', 'show_count'],
+        queryKey: ['entry_classes', 'add-entity'],
         refetchOnWindowFocus: false,
         meta: {
             showErrorToast: false,
@@ -263,6 +261,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                                         <span className='text-destructive ml-1'>*</span>
                                     </FieldLabel>
                                     <Select
+                                        items={subtypeOptions}
                                         value={field.value?.value || ''}
                                         onValueChange={(value) => {
                                             const option = subtypeOptions.find(
@@ -281,6 +280,11 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                                             <SelectValue placeholder='Select subtype' />
                                         </SelectTrigger>
                                         <SelectContent>
+                                            {subtypeOptions.length === 0 && (
+                                                <div className='flex h-8 items-center px-2.5 text-xs text-muted-foreground'>
+                                                    No entity types defined
+                                                </div>
+                                            )}
                                             {subtypeOptions.map((option) => (
                                                 <SelectItem
                                                     key={option.value}
@@ -371,6 +375,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                                         Aliases
                                     </FieldLabel>
                                     <MultipleSelector
+                                        inlineDropdown
                                         value={
                                             (field.value?.map((a) => ({
                                                 value: String(a.value),
@@ -396,11 +401,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                                                 })),
                                             );
                                         }}
-                                        emptyIndicator={
-                                            <p className='text-center text-sm'>
-                                                No aliases found
-                                            </p>
-                                        }
+                                        emptyIndicator={<p>No aliases found</p>}
                                     />
                                     <FieldDescription>
                                         Alternate names or references for this entity
@@ -416,14 +417,28 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
             </div>
 
             <DialogFooter className='shrink-0 sm:justify-end'>
+                <DialogClose
+                    render={
+                        <Button
+                            type='button'
+                            variant='outline'
+                            disabled={isSubmitting}
+                        />
+                    }
+                >
+                    Cancel
+                </DialogClose>
                 <Button type='submit' variant='default' disabled={isSubmitting}>
                     {isSubmitting ? (
                         <>
-                            <Spinner className='size-4' />
+                            <Spinner />
                             Creating...
                         </>
                     ) : (
-                        'Create Entity'
+                        <>
+                            <Plus data-icon='inline-start' />
+                            Create
+                        </>
                     )}
                 </Button>
             </DialogFooter>

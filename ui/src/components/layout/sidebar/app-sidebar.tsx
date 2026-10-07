@@ -141,14 +141,14 @@ export function AppSidebar({
                                       isActive: isManageActive,
                                       items: [
                                           {
-                                              title: 'Entities',
-                                              url: '/manage/entities',
-                                              icon: Building2,
-                                          },
-                                          {
                                               title: 'Entry Types',
                                               url: '/manage/entry-types',
                                               icon: Layers,
+                                          },
+                                          {
+                                              title: 'Entities',
+                                              url: '/manage/entities',
+                                              icon: Building2,
                                           },
                                           {
                                               title: 'Type Mappings',

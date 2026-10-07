@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import {
+    ChartBarIcon,
     CodeIcon,
     DownloadSimpleIcon,
     EyeIcon,
@@ -47,6 +48,42 @@ type ReportFormat = 'html' | 'json' | 'plain';
  * Report mode types
  */
 type ReportMode = 'anonymized' | 'transparent';
+
+const FORMAT_ITEMS: Record<ReportFormat, React.ReactNode> = {
+    html: (
+        <>
+            <FileTextIcon className='size-4' weight='bold' />
+            <span>HTML</span>
+        </>
+    ),
+    json: (
+        <>
+            <CodeIcon className='size-4' weight='bold' />
+            <span>JSON</span>
+        </>
+    ),
+    plain: (
+        <>
+            <DownloadSimpleIcon className='size-4' weight='bold' />
+            <span>Plain Text</span>
+        </>
+    ),
+};
+
+const MODE_ITEMS: Record<ReportMode, React.ReactNode> = {
+    anonymized: (
+        <>
+            <EyeSlashIcon className='size-4' weight='bold' />
+            <span>Anonymized</span>
+        </>
+    ),
+    transparent: (
+        <>
+            <EyeIcon className='size-4' weight='bold' />
+            <span>Transparent</span>
+        </>
+    ),
+};
 
 /**
  * ReportGenerationDialog component props
@@ -249,29 +286,24 @@ export default function ReportGenerationDialog({
                     <Field>
                         <FieldLabel htmlFor='format-select'>Format</FieldLabel>
                         <Select
+                            items={FORMAT_ITEMS}
                             value={format}
-                            onValueChange={(value) => setFormat(value as ReportFormat)}
+                            onValueChange={(value) => {
+                                if (value) setFormat(value as ReportFormat);
+                            }}
                             disabled={generateReport.isPending}
                         >
                             <SelectTrigger id='format-select' className='w-full'>
                                 <SelectValue placeholder='Select format' />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value='html'>
-                                    <FileTextIcon className='size-4' weight='bold' />
-                                    <span>HTML</span>
-                                </SelectItem>
-                                <SelectItem value='json'>
-                                    <CodeIcon className='size-4' weight='bold' />
-                                    <span>JSON</span>
-                                </SelectItem>
-                                <SelectItem value='plain'>
-                                    <DownloadSimpleIcon
-                                        className='size-4'
-                                        weight='bold'
-                                    />
-                                    <span>Plain Text</span>
-                                </SelectItem>
+                                {(Object.keys(FORMAT_ITEMS) as ReportFormat[]).map(
+                                    (value) => (
+                                        <SelectItem key={value} value={value}>
+                                            {FORMAT_ITEMS[value]}
+                                        </SelectItem>
+                                    ),
+                                )}
                             </SelectContent>
                         </Select>
                     </Field>
@@ -280,37 +312,41 @@ export default function ReportGenerationDialog({
                     <Field>
                         <FieldLabel htmlFor='mode-select'>Mode</FieldLabel>
                         <Select
+                            items={MODE_ITEMS}
                             value={mode}
-                            onValueChange={(value) => setMode(value as ReportMode)}
+                            onValueChange={(value) => {
+                                if (value) setMode(value as ReportMode);
+                            }}
                             disabled={generateReport.isPending}
                         >
                             <SelectTrigger id='mode-select' className='w-full'>
                                 <SelectValue placeholder='Select mode' />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value='anonymized'>
-                                    <EyeSlashIcon className='size-4' weight='bold' />
-                                    <span>Anonymized</span>
-                                </SelectItem>
-                                <SelectItem value='transparent'>
-                                    <EyeIcon className='size-4' weight='bold' />
-                                    <span>Transparent</span>
-                                </SelectItem>
+                                {(Object.keys(MODE_ITEMS) as ReportMode[]).map(
+                                    (value) => (
+                                        <SelectItem key={value} value={value}>
+                                            {MODE_ITEMS[value]}
+                                        </SelectItem>
+                                    ),
+                                )}
                             </SelectContent>
                         </Select>
                     </Field>
                 </FieldGroup>
 
                 <DialogFooter>
-                    <DialogClose asChild>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            disabled={generateReport.isPending}
-                        >
-                            Cancel
-                        </Button>
+                    <DialogClose
+                        render={
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                disabled={generateReport.isPending}
+                            />
+                        }
+                    >
+                        Cancel
                     </DialogClose>
                     <Button
                         onClick={submit}
@@ -319,8 +355,17 @@ export default function ReportGenerationDialog({
                         variant='default'
                         size='sm'
                     >
-                        {generateReport.isPending && <Spinner />}
-                        {generateReport.isPending ? 'Generating...' : 'Generate Report'}
+                        {generateReport.isPending ? (
+                            <>
+                                <Spinner />
+                                Generating...
+                            </>
+                        ) : (
+                            <>
+                                <ChartBarIcon weight='bold' data-icon='inline-start' />
+                                Generate
+                            </>
+                        )}
                     </Button>
                 </DialogFooter>
             </DialogContent>

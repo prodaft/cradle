@@ -8,6 +8,16 @@ from entries.enums import EntryType
 from user.models import CradleUser
 
 
+class BaseDigestQuerySet(models.QuerySet):
+    """QuerySet for BaseDigest with access control filtering."""
+
+    def accessible_by(self, user: CradleUser) -> models.QuerySet:
+        """Return digests the user can access (admin sees all, others their own)."""
+        if user.is_cradle_admin:
+            return self
+        return self.filter(user=user)
+
+
 class EnrichmentRequestQuerySet(models.QuerySet):
     """QuerySet for EnrichmentRequest with access control filtering."""
 

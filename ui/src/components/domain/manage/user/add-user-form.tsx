@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { DialogFooter } from '@/components/ui/dialog';
+import { DialogClose, DialogFooter } from '@/components/ui/dialog';
 import {
     Field,
     FieldContent,
@@ -23,9 +23,15 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
+import { USER_ROLE_OPTIONS } from '@/utils/auth';
 import { generatePassword } from '@/utils/password';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { DiceSixIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
+import {
+    DiceSixIcon,
+    EyeIcon,
+    EyeSlashIcon,
+    UserPlusIcon,
+} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
@@ -256,6 +262,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                             control={control}
                             render={({ field }) => (
                                 <Select
+                                    items={USER_ROLE_OPTIONS}
                                     value={field.value}
                                     onValueChange={field.onChange}
                                 >
@@ -263,11 +270,14 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                                         <SelectValue placeholder='Select a role' />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value='author'>User</SelectItem>
-                                        <SelectItem value='entrymanager'>
-                                            Entry Manager
-                                        </SelectItem>
-                                        <SelectItem value='admin'>Admin</SelectItem>
+                                        {USER_ROLE_OPTIONS.map((role) => (
+                                            <SelectItem
+                                                key={role.value}
+                                                value={role.value}
+                                            >
+                                                {role.label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             )}
@@ -362,14 +372,28 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
             </div>
 
             <DialogFooter className='shrink-0 sm:justify-end'>
+                <DialogClose
+                    render={
+                        <Button
+                            type='button'
+                            variant='outline'
+                            disabled={createUser.isPending}
+                        />
+                    }
+                >
+                    Cancel
+                </DialogClose>
                 <Button type='submit' variant='default' disabled={createUser.isPending}>
                     {createUser.isPending ? (
                         <>
-                            <Spinner className='size-4' />
+                            <Spinner />
                             Creating...
                         </>
                     ) : (
-                        'Create User'
+                        <>
+                            <UserPlusIcon weight='bold' data-icon='inline-start' />
+                            Create
+                        </>
                     )}
                 </Button>
             </DialogFooter>

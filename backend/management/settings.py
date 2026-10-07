@@ -89,6 +89,17 @@ class FileSettings(BaseSettingsSection):
         return self.get("max_file_size_for_hashing", 10 * 1024 * 1024)  # 10MB
 
 
+class SearchSettings(BaseSettingsSection):
+    """Search settings."""
+
+    prefix = "search"
+
+    @property
+    def reveal_restricted_matches(self):
+        """Whether note search also lists, redacted to their id, published notes the user cannot access."""
+        return self.get("reveal_restricted_matches", False)
+
+
 class CradleSettings:
     """Aggregate of all settings sections."""
 
@@ -96,6 +107,7 @@ class CradleSettings:
         self.notes = NotesSettings()
         self.users = UserSettings()
         self.files = FileSettings()
+        self.search = SearchSettings()
 
 
 cradle_settings = CradleSettings()

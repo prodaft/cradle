@@ -242,25 +242,27 @@ export default function AccountAppearanceForm({
                                 open={isThemePickerOpen}
                                 onOpenChange={setIsThemePickerOpen}
                             >
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant='outline'
-                                        role='combobox'
-                                        aria-expanded={isThemePickerOpen}
-                                        className='w-full sm:w-64 justify-between self-center'
-                                    >
-                                        <span className='truncate'>
-                                            {selectedThemeType === 'custom'
-                                                ? 'Custom'
-                                                : PRESET_THEMES.find(
-                                                      (p) => p.id === selectedThemeType,
-                                                  )?.label || 'Select theme...'}
-                                        </span>
-                                        <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
-                                    </Button>
+                                <PopoverTrigger
+                                    render={
+                                        <Button
+                                            variant='outline'
+                                            role='combobox'
+                                            aria-expanded={isThemePickerOpen}
+                                            className='w-full sm:w-64 justify-between self-center'
+                                        />
+                                    }
+                                >
+                                    <span className='truncate'>
+                                        {selectedThemeType === 'custom'
+                                            ? 'Custom'
+                                            : PRESET_THEMES.find(
+                                                  (p) => p.id === selectedThemeType,
+                                              )?.label || 'Select theme...'}
+                                    </span>
+                                    <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
                                 </PopoverTrigger>
                                 <PopoverContent
-                                    className='w-[var(--radix-popover-trigger-width)] p-0'
+                                    className='w-(--anchor-width) p-0'
                                     align='start'
                                 >
                                     <Command>

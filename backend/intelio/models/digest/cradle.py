@@ -37,15 +37,15 @@ class CradleDigest(BaseDigest):
         valid_entryclass_fields = {f.name for f in EntryClass._meta.fields}
 
         try:
-            # Import or create entry classes
             for eclass in report_data.get("entry_classes", []):
                 if not EntryClass.objects.filter(subtype=eclass["subtype"]).exists():
-                    EntryClass.objects.create(**{k: v for k, v in eclass.items() if k in valid_entryclass_fields})
+                    fields = {k: v for k, v in eclass.items() if k in valid_entryclass_fields}
+                    if isinstance(fields.get("options"), list):
+                        fields["options"] = "\n".join(fields["options"])
+                    EntryClass.objects.create(**fields)
 
-            # Cache existing entity subtypes
             entity_subtypes = set(EntryClass.objects.filter(type=EntryType.ENTITY).values_list("subtype", flat=True))
 
-            # Create new entries if needed
             for entry in report_data.get("entries", []):
                 if (
                     entry["subtype"] in entity_subtypes

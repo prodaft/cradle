@@ -1,5 +1,5 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
 import PageHeader from '@/components/base/page-header';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import {
     ActionBar,
     ActionBarClose,
@@ -36,6 +36,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
+import { FREE_TEXT_SCHEMA, type SearchState } from '@/lib/search-query/search-schema';
 import {
     ClockCounterClockwiseIcon,
     PencilIcon,
@@ -192,14 +193,18 @@ export default function EntryTypesList() {
         [entryClasses?.total_pages],
     );
 
+    const searchState = useMemo<SearchState>(
+        () => ({ q: applied.trim() || undefined, values: {}, dates: {} }),
+        [applied],
+    );
     const applySearch = useCallback(
-        (value: string) => {
+        (state: SearchState) => {
             router.navigate({
                 to: location.pathname as any,
                 search: {
                     ...search,
                     entry_types_page: 1,
-                    entry_types_search: value.trim() || undefined,
+                    entry_types_search: state.q || undefined,
                 } as any,
                 replace: true,
             });
@@ -249,9 +254,10 @@ export default function EntryTypesList() {
                 maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        checked={table.getIsAllPageRowsSelected()}
+                        indeterminate={
+                            table.getIsSomePageRowsSelected() &&
+                            !table.getIsAllPageRowsSelected()
                         }
                         onCheckedChange={(value) =>
                             table.toggleAllPageRowsSelected(!!value)
@@ -321,9 +327,11 @@ export default function EntryTypesList() {
             paginate(next.pageIndex, next.pageSize);
         },
         getCoreRowModel: getCoreRowModel(),
+        enableSorting: false,
         enableRowSelection: true,
         manualPagination: true,
         pageCount: totalPages,
+        rowCount: entryClasses?.count,
     });
 
     const openAddDialog = () => {
@@ -351,11 +359,11 @@ export default function EntryTypesList() {
                     actions={
                         isAdmin ? (
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button onClick={openAddDialog}>
-                                        <Plus />
-                                        Add Entry
-                                    </Button>
+                                <TooltipTrigger
+                                    render={<Button onClick={openAddDialog} />}
+                                >
+                                    <Plus />
+                                    Add Entry
                                 </TooltipTrigger>
                                 <TooltipContent>Create a new entry type</TooltipContent>
                             </Tooltip>
@@ -373,13 +381,11 @@ export default function EntryTypesList() {
                                 `/manage/entry-types/${encodeURIComponent(item.subtype)}`
                             }
                         >
-                            <ActionBarSearch
+                            <SearchInput
+                                schema={FREE_TEXT_SCHEMA}
+                                value={searchState}
+                                onApply={applySearch}
                                 placeholder='Search entry types...'
-                                value={applied}
-                                debounceMs={300}
-                                onDebouncedChange={applySearch}
-                                onSubmit={applySearch}
-                                onClear={() => applySearch('')}
                             />
                         </DataTable>
                     </div>

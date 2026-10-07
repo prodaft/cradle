@@ -125,22 +125,24 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
             className={`text-muted-foreground text-xs w-full pt-1 pl-3 ${className ?? ''}`}
         >
             <Collapsible defaultOpen={false}>
-                <CollapsibleTrigger asChild>
-                    <Button
-                        variant='ghost'
-                        size='sm'
-                        className='group hover:text-border-primary'
-                    >
-                        <CaretRightIcon
-                            className='w-4 h-4 group-data-[state=open]:hidden'
-                            weight='bold'
+                <CollapsibleTrigger
+                    render={
+                        <Button
+                            variant='ghost'
+                            size='sm'
+                            className='group hover:text-border-primary'
                         />
-                        <CaretDownIcon
-                            className='w-4 h-4 hidden group-data-[state=open]:block'
-                            weight='bold'
-                        />
-                        <span>References</span>
-                    </Button>
+                    }
+                >
+                    <CaretRightIcon
+                        className='w-4 h-4 group-data-panel-open:hidden'
+                        weight='bold'
+                    />
+                    <CaretDownIcon
+                        className='w-4 h-4 hidden group-data-panel-open:block'
+                        weight='bold'
+                    />
+                    <span>References</span>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <div className='mt-4'>
@@ -151,22 +153,24 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                     key={value}
                                 >
                                     <Collapsible>
-                                        <CollapsibleTrigger asChild>
-                                            <Button
-                                                variant='ghost'
-                                                size='sm'
-                                                className='group hover:text-border-primary'
-                                            >
-                                                <CaretRightIcon
-                                                    className='w-4 h-4 group-data-[state=open]:hidden'
-                                                    weight='bold'
+                                        <CollapsibleTrigger
+                                            render={
+                                                <Button
+                                                    variant='ghost'
+                                                    size='sm'
+                                                    className='group hover:text-border-primary'
                                                 />
-                                                <CaretDownIcon
-                                                    className='w-4 h-4 hidden group-data-[state=open]:block'
-                                                    weight='bold'
-                                                />
-                                                <span>{value}</span>
-                                            </Button>
+                                            }
+                                        >
+                                            <CaretRightIcon
+                                                className='w-4 h-4 group-data-panel-open:hidden'
+                                                weight='bold'
+                                            />
+                                            <CaretDownIcon
+                                                className='w-4 h-4 hidden group-data-panel-open:block'
+                                                weight='bold'
+                                            />
+                                            <span>{value}</span>
                                         </CollapsibleTrigger>
                                         <CollapsibleContent>
                                             <div className='text-muted-foreground text-xs w-full break-all flex flex-wrap justify-start items-center mt-4'>
@@ -190,22 +194,24 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                 }
                                             }}
                                         >
-                                            <CollapsibleTrigger asChild>
-                                                <Button
-                                                    variant='ghost'
-                                                    size='sm'
-                                                    className='group hover:text-border-primary'
-                                                >
-                                                    <CaretRightIcon
-                                                        className='w-4 h-4 group-data-[state=open]:hidden'
-                                                        weight='bold'
+                                            <CollapsibleTrigger
+                                                render={
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='sm'
+                                                        className='group hover:text-border-primary'
                                                     />
-                                                    <CaretDownIcon
-                                                        className='w-4 h-4 hidden group-data-[state=open]:block'
-                                                        weight='bold'
-                                                    />
-                                                    <span>{value}</span>
-                                                </Button>
+                                                }
+                                            >
+                                                <CaretRightIcon
+                                                    className='w-4 h-4 group-data-panel-open:hidden'
+                                                    weight='bold'
+                                                />
+                                                <CaretDownIcon
+                                                    className='w-4 h-4 hidden group-data-panel-open:block'
+                                                    weight='bold'
+                                                />
+                                                <span>{value}</span>
                                             </CollapsibleTrigger>
                                             <CollapsibleContent>
                                                 <div className='text-muted-foreground text-xs w-full break-all flex flex-wrap justify-start items-center mt-4'>

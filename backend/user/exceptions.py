@@ -162,7 +162,7 @@ class AccountNotActivatedException(CradleAPIException):
 
 
 class TwoFactorRequiredException(CradleAPIException):
-    """Exception raised when 2FA token is required but not provided."""
+    """Exception raised when a 2FA OTP is required but not provided."""
 
     error_code = UserErrorCodes.TWO_FACTOR_REQUIRED
 

@@ -110,12 +110,12 @@ class EntryClassRenameAPITestCase(EntriesTestCase):
             "color": "#00ff00",
             "prefix": "",
             "regex": "",
-            "options": "",
+            "options": [],
             "generative_regex": "",
             "format": None,
             "children": [],
         }
-        response = self.client.post(
+        response = self.client.put(
             reverse("entry_class_detail", kwargs={"class_subtype": "PTI"}),
             payload,
             format="json",

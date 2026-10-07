@@ -12,7 +12,7 @@ class StatisticsNoteSerializer(serializers.Serializer):
     id = serializers.UUIDField(help_text="Note UUID.")
     content = serializers.SerializerMethodField(help_text="Note body; truncated when longer than truncate limit.")
     title = serializers.CharField(help_text="Note title.")
-    timestamp = serializers.DateTimeField(help_text="When the note was last modified.")
+    created_at = serializers.DateTimeField(source="timestamp", help_text="When the note was created.")
     author = EssentialUserRetrieveSerializer(allow_null=True, help_text="Note author.")
 
     def __init__(self, *args, truncate=150, **kwargs):

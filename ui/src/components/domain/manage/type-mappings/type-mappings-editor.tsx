@@ -22,6 +22,7 @@ import {
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -50,7 +51,7 @@ import { useNdjsonQuery } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { startCase } from 'lodash';
+import startCase from 'lodash/startCase';
 import {
     CheckIcon,
     ChevronsUpDown,
@@ -117,23 +118,22 @@ const InternalClassCombobox = ({
 
     return (
         <Popover open={isClassPickerOpen} onOpenChange={setIsClassPickerOpen}>
-            <PopoverTrigger asChild>
-                <Button
-                    variant='outline'
-                    role='combobox'
-                    aria-expanded={isClassPickerOpen}
-                    className='w-full justify-between'
-                >
-                    <span className={cn('truncate', !label && 'text-muted-foreground')}>
-                        {label || placeholder}
-                    </span>
-                    <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent
-                className='w-[var(--radix-popover-trigger-width)] p-0'
-                align='start'
+            <PopoverTrigger
+                render={
+                    <Button
+                        variant='outline'
+                        role='combobox'
+                        aria-expanded={isClassPickerOpen}
+                        className='w-full justify-between'
+                    />
+                }
             >
+                <span className={cn('truncate', !label && 'text-muted-foreground')}>
+                    {label || placeholder}
+                </span>
+                <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
+            </PopoverTrigger>
+            <PopoverContent className='w-(--anchor-width) p-0' align='start'>
                 <Command>
                     <CommandInput placeholder='Search class...' />
                     <CommandList>
@@ -264,18 +264,20 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         },
     });
 
+    const sendMapping = async (body: Record<string, any>) => {
+        const init = {
+            params: { path: { class_name: id } },
+            body: body satisfies Record<string, unknown>,
+        };
+        const { data, error, response } = body.id
+            ? await fetchClient.PATCH('/intelio/mappings/{class_name}/', init)
+            : await fetchClient.POST('/intelio/mappings/{class_name}/', init);
+        if (error) throw { response, error };
+        return data;
+    };
+
     const saveMapping = useMutation({
-        mutationFn: async (body: Record<string, any>) => {
-            const { data, error, response } = await fetchClient.POST(
-                '/intelio/mappings/{class_name}/',
-                {
-                    params: { path: { class_name: id } },
-                    body: body satisfies Record<string, unknown>,
-                },
-            );
-            if (error) throw { response, error };
-            return data;
-        },
+        mutationFn: sendMapping,
         meta: {
             successMessage: 'Mapping saved successfully',
         },
@@ -283,17 +285,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
     const saveAllMappings = useMutation({
         mutationFn: async (dataToSave: Record<string, any>[]) => {
-            const promises = dataToSave.map(async (body) => {
-                const { data, error, response } = await fetchClient.POST(
-                    '/intelio/mappings/{class_name}/',
-                    {
-                        params: { path: { class_name: id } },
-                        body: body satisfies Record<string, unknown>,
-                    },
-                );
-                if (error) throw { response, error };
-                return data;
-            });
+            const promises = dataToSave.map(sendMapping);
             return await Promise.all(promises);
         },
         meta: {
@@ -717,12 +709,15 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                         />
                                                     ) : (
                                                         <Select
+                                                            items={options}
                                                             value={
                                                                 selectedValue
                                                                     ? selectedValue
-                                                                    : undefined
+                                                                    : null
                                                             }
                                                             onValueChange={(value) => {
+                                                                if (value === null)
+                                                                    return;
                                                                 const selectedOption =
                                                                     options.find(
                                                                         (option) =>
@@ -824,21 +819,25 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                     <TableCell>
                                         {index !== rows.length - 1 ? (
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant='ghost'
-                                                        className='size-8 p-0'
-                                                    >
-                                                        <span className='sr-only'>
-                                                            Open menu
-                                                        </span>
-                                                        <MoreHorizontal className='size-4' />
-                                                    </Button>
+                                                <DropdownMenuTrigger
+                                                    render={
+                                                        <Button
+                                                            variant='ghost'
+                                                            className='size-8 p-0'
+                                                        />
+                                                    }
+                                                >
+                                                    <span className='sr-only'>
+                                                        Open menu
+                                                    </span>
+                                                    <MoreHorizontal className='size-4' />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align='end'>
-                                                    <DropdownMenuLabel>
-                                                        Actions
-                                                    </DropdownMenuLabel>
+                                                    <DropdownMenuGroup>
+                                                        <DropdownMenuLabel>
+                                                            Actions
+                                                        </DropdownMenuLabel>
+                                                    </DropdownMenuGroup>
                                                     {row.edited && (
                                                         <>
                                                             <DropdownMenuItem
@@ -853,16 +852,17 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                         </>
                                                     )}
                                                     <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem
-                                                                className='text-destructive focus:text-destructive'
-                                                                onSelect={(e) =>
-                                                                    e.preventDefault()
-                                                                }
-                                                            >
-                                                                <Trash2 className='size-4' />
-                                                                Delete mapping
-                                                            </DropdownMenuItem>
+                                                        <AlertDialogTrigger
+                                                            render={
+                                                                <DropdownMenuItem
+                                                                    className='text-destructive focus:text-destructive'
+                                                                    closeOnClick={false}
+                                                                />
+                                                            }
+                                                            nativeButton={false}
+                                                        >
+                                                            <Trash2 className='size-4' />
+                                                            Delete mapping
                                                         </AlertDialogTrigger>
                                                         <AlertDialogContent>
                                                             <AlertDialogHeader>

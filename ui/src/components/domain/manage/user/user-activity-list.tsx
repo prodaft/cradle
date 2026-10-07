@@ -1,9 +1,14 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
+import {
+    USER_SCOPED_ACTIVITY_SEARCH_SCHEMA,
+    activitySearchParams,
+} from '@/components/domain/activity/activity-search-schema';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { EMPTY_SEARCH_STATE, type SearchState } from '@/lib/search-query/search-schema';
 import { CaretDownIcon, GitForkIcon } from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
 import type { operations } from '@services/openapi/schema';
@@ -179,12 +184,14 @@ function ExpandedRowDetail({ item }: { item: ActivityEvent }) {
                                     {item.srcLog!.type}
                                 </Badge>
                                 <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <span
-                                            className={`text-xs cursor-help ${source.isDeleted ? 'text-muted-foreground line-through' : ''}`}
-                                        >
-                                            {source.label}
-                                        </span>
+                                    <TooltipTrigger
+                                        render={
+                                            <span
+                                                className={`text-xs cursor-help ${source.isDeleted ? 'text-muted-foreground line-through' : ''}`}
+                                            />
+                                        }
+                                    >
+                                        {source.label}
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <span className='font-mono text-xs'>
@@ -216,7 +223,7 @@ function ExpandedRowDetail({ item }: { item: ActivityEvent }) {
 export default function UserActivityList({ username }: UserActivityListProps) {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
-    const [appliedSearch, setAppliedSearch] = useState('');
+    const [searchState, setSearchState] = useState<SearchState>(EMPTY_SEARCH_STATE);
     const [expanded, setExpanded] = useState<ExpandedState>({});
 
     const listQuery = useMemo((): EventLogsListQuery => {
@@ -224,14 +231,14 @@ export default function UserActivityList({ username }: UserActivityListProps) {
             Object.entries({
                 page,
                 page_size: pageSize,
-                username: username || undefined,
-                search: appliedSearch.trim() || undefined,
+                user: username || undefined,
+                ...activitySearchParams(searchState),
             }).filter(([, v]) => v !== undefined),
         ) as EventLogsListQuery;
-    }, [page, pageSize, username, appliedSearch]);
+    }, [page, pageSize, username, searchState]);
 
-    const applySearch = useCallback((value: string) => {
-        setAppliedSearch(value);
+    const applySearch = useCallback((state: SearchState) => {
+        setSearchState(state);
         setPage(1);
     }, []);
 
@@ -250,7 +257,6 @@ export default function UserActivityList({ username }: UserActivityListProps) {
     );
 
     const totalPages = logsPage?.total_pages || 1;
-    const totalCount = logsPage?.count || 0;
 
     const rows = useMemo(() => {
         if (!logsPage?.results) return [];
@@ -258,8 +264,8 @@ export default function UserActivityList({ username }: UserActivityListProps) {
         return logsPage.results.map((log: any): ActivityEvent => ({
             id: log.id || '',
             timestamp:
-                typeof log.timestamp === 'string'
-                    ? log.timestamp
+                typeof log.created_at === 'string'
+                    ? log.created_at
                     : new Date().toISOString(),
             type: log.type,
             contentType: log.content_type || 'unknown',
@@ -300,10 +306,12 @@ export default function UserActivityList({ username }: UserActivityListProps) {
                             </Badge>
                             {hasSource && (
                                 <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <span className='text-muted-foreground'>
-                                            <GitForkIcon className='size-3.5' />
-                                        </span>
+                                    <TooltipTrigger
+                                        render={
+                                            <span className='text-muted-foreground' />
+                                        }
+                                    >
+                                        <GitForkIcon className='size-3.5' />
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <span className='text-xs'>
@@ -346,12 +354,14 @@ export default function UserActivityList({ username }: UserActivityListProps) {
                     );
                     return (
                         <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span
-                                    className={`cursor-help ${isDeleted ? 'text-muted-foreground line-through' : ''}`}
-                                >
-                                    {label}
-                                </span>
+                            <TooltipTrigger
+                                render={
+                                    <span
+                                        className={`cursor-help ${isDeleted ? 'text-muted-foreground line-through' : ''}`}
+                                    />
+                                }
+                            >
+                                {label}
                             </TooltipTrigger>
                             <TooltipContent>
                                 <span className='font-mono text-xs'>{fullId}</span>
@@ -434,7 +444,7 @@ export default function UserActivityList({ username }: UserActivityListProps) {
         getRowId: (row) => row.id,
         manualPagination: true,
         pageCount: totalPages,
-        rowCount: totalCount,
+        rowCount: logsPage?.count,
     });
 
     const toggleRow = useCallback((row: Row<ActivityEvent>) => {
@@ -465,15 +475,11 @@ export default function UserActivityList({ username }: UserActivityListProps) {
                 renderSubRow={renderExpandedRow}
                 emptyMessage='No activity found for this user.'
             >
-                <ActionBarSearch
-                    placeholder='Search object id, type, details...'
-                    name='user_activity_search'
-                    value={appliedSearch}
-                    debounceMs={300}
-                    onDebouncedChange={applySearch}
-                    onSubmit={applySearch}
-                    onClear={() => applySearch('')}
-                    className='w-full min-w-[12rem] max-w-md sm:w-72'
+                <SearchInput
+                    schema={USER_SCOPED_ACTIVITY_SEARCH_SCHEMA}
+                    value={searchState}
+                    onApply={applySearch}
+                    placeholder='Search object id, type, details... (type:edit)'
                 />
             </DataTable>
         </div>

@@ -4,6 +4,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
 
+from core.pagination import TotalPagesPagination
 from user.serializers import EssentialUserRetrieveSerializer
 
 from .models import EventLog
@@ -20,11 +21,13 @@ class EventLogSerializer(serializers.ModelSerializer):
 
     object_repr = SerializerMethodField()
 
+    created_at = serializers.DateTimeField(source="timestamp", read_only=True, help_text="When the event was recorded")
+
     class Meta:
         model = EventLog
         fields = [
             "id",
-            "timestamp",
+            "created_at",
             "type",
             "user",
             "details",
@@ -34,9 +37,11 @@ class EventLogSerializer(serializers.ModelSerializer):
             "object_repr",
         ]
         extra_kwargs = {
-            "timestamp": {"help_text": "When the event was recorded"},
             "type": {"help_text": "Event type (create, edit, delete, fetch, login)"},
-            "details": {"help_text": "Optional JSON-serialized extra context"},
+            "details": {
+                "help_text": "Optional extra context: a diff-match-patch patch for note create/edit events, "
+                "otherwise free text (some events store a JSON string)"
+            },
         }
 
     @extend_schema_field(serializers.DictField(allow_null=True))
@@ -56,3 +61,6 @@ class EventLogSerializer(serializers.ModelSerializer):
             return "DELETED"
 
         return obj.content_object.__repr__()
+
+
+EVENT_LOG_PAGE_RESPONSE = TotalPagesPagination().get_paginated_response_serializer(EventLogSerializer)

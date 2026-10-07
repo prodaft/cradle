@@ -14,6 +14,7 @@ export const queryKeys = {
                 '/notes/{note_id}/',
                 { params: { path: { note_id: id } } },
             ] as const,
+        apiDetails: () => ['get', '/notes/{note_id}/'] as const,
         lists: () => [...queryKeys.notes.all, 'list'] as const,
         list: (filters?: {
             page?: number;
@@ -39,15 +40,8 @@ export const queryKeys = {
 
     // Files
     files: {
-        all: ['files'] as const,
-        lists: () => [...queryKeys.files.all, 'list'] as const,
-        list: (filters?: {
-            page?: number;
-            pageSize?: number;
-            query?: Record<string, any>;
-        }) => [...queryKeys.files.lists(), filters] as const,
-        details: () => [...queryKeys.files.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.files.details(), id] as const,
+        apiList: () => ['get', '/notes/files/'] as const,
+        apiDetails: () => ['get', '/notes/files/{file_id}/'] as const,
     },
 
     // Enrichment

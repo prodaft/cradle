@@ -42,6 +42,17 @@ export function setClientAuthCallbacks(
     _refreshAccessToken = refreshAccessToken;
 }
 
+export async function getClientAccessToken(): Promise<string | null> {
+    if (_getAccessToken) {
+        try {
+            return await _getAccessToken();
+        } catch {
+            return null;
+        }
+    }
+    return _accessToken;
+}
+
 function isAuthPath(url: string): boolean {
     try {
         const path = new URL(url, baseUrl).pathname;

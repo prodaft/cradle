@@ -250,12 +250,14 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                                         {label}
                                                     </FieldLabel>
                                                     <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <InfoIcon
-                                                                className='size-3 text-muted-foreground cursor-help'
-                                                                weight='bold'
-                                                            />
-                                                        </TooltipTrigger>
+                                                        <TooltipTrigger
+                                                            render={
+                                                                <InfoIcon
+                                                                    className='size-3 text-muted-foreground cursor-help'
+                                                                    weight='bold'
+                                                                />
+                                                            }
+                                                        />
                                                         <TooltipContent side='right'>
                                                             <p className='text-xs'>
                                                                 {description}
@@ -302,12 +304,14 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                         Random Seed
                                     </FieldLabel>
                                     <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <InfoIcon
-                                                className='size-3 text-muted-foreground cursor-help'
-                                                weight='bold'
-                                            />
-                                        </TooltipTrigger>
+                                        <TooltipTrigger
+                                            render={
+                                                <InfoIcon
+                                                    className='size-3 text-muted-foreground cursor-help'
+                                                    weight='bold'
+                                                />
+                                            }
+                                        />
                                         <TooltipContent side='right'>
                                             <p className='text-xs'>
                                                 Set a seed for consistent layouts
@@ -342,12 +346,14 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                             Cluster Separation
                                         </FieldLabel>
                                         <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <InfoIcon
-                                                    className='size-3 text-muted-foreground cursor-help'
-                                                    weight='bold'
-                                                />
-                                            </TooltipTrigger>
+                                            <TooltipTrigger
+                                                render={
+                                                    <InfoIcon
+                                                        className='size-3 text-muted-foreground cursor-help'
+                                                        weight='bold'
+                                                    />
+                                                }
+                                            />
                                             <TooltipContent side='right'>
                                                 <p className='text-xs'>
                                                     Force separating node clusters

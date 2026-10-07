@@ -125,7 +125,7 @@ export default function TwoFactorSetupDialog({
                         '/users/2fa/disable/',
                         {
                             body: {
-                                token: otp,
+                                otp,
                                 ...(passwordRequired ? { password } : {}),
                             },
                         },
@@ -134,7 +134,7 @@ export default function TwoFactorSetupDialog({
                 } else {
                     const { error, response } = await fetchClient.POST(
                         '/users/2fa/verify/',
-                        { body: { token: otp } },
+                        { body: { otp } },
                     );
                     if (error) throw { response, error };
                 }
@@ -177,15 +177,17 @@ export default function TwoFactorSetupDialog({
                             disabled={isPending}
                         />
                         <DialogFooter>
-                            <DialogClose asChild>
-                                <Button
-                                    type='button'
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={isPending}
-                                >
-                                    Cancel
-                                </Button>
+                            <DialogClose
+                                render={
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='sm'
+                                        disabled={isPending}
+                                    />
+                                }
+                            >
+                                Cancel
                             </DialogClose>
                             <Button
                                 type='submit'
@@ -306,15 +308,17 @@ export default function TwoFactorSetupDialog({
                         </Field>
 
                         <DialogFooter>
-                            <DialogClose asChild>
-                                <Button
-                                    type='button'
-                                    variant='outline'
-                                    size='sm'
-                                    disabled={isSubmitting}
-                                >
-                                    Cancel
-                                </Button>
+                            <DialogClose
+                                render={
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='sm'
+                                        disabled={isSubmitting}
+                                    />
+                                }
+                            >
+                                Cancel
                             </DialogClose>
                             <Button
                                 type='submit'

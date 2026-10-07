@@ -41,16 +41,18 @@ function OutlineNode({
     if (nodeData.children.length > 0) {
         return (
             <Collapsible defaultOpen>
-                <CollapsibleTrigger asChild>
-                    <Button
-                        variant='ghost'
-                        size='sm'
-                        className='group w-full justify-start transition-none'
-                        onClick={nodeData.onNodeClick}
-                    >
-                        <ChevronRightIcon className='transition-transform group-data-[state=open]:rotate-90' />
-                        <span className='truncate'>{nodeData.nodeName}</span>
-                    </Button>
+                <CollapsibleTrigger
+                    render={
+                        <Button
+                            variant='ghost'
+                            size='sm'
+                            className='group w-full justify-start transition-none'
+                            onClick={nodeData.onNodeClick}
+                        />
+                    }
+                >
+                    <ChevronRightIcon className='transition-transform group-data-panel-open:rotate-90' />
+                    <span className='truncate'>{nodeData.nodeName}</span>
                 </CollapsibleTrigger>
                 <CollapsibleContent className='mt-1 ml-5 flex flex-col gap-1'>
                     {renderOutlineNodes(nodeData.children, options)}

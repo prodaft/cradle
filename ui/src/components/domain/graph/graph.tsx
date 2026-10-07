@@ -42,6 +42,7 @@ import {
 } from 'react-icons/ai';
 import { MdFilterCenterFocus } from 'react-icons/md';
 import type Sigma from 'sigma';
+import { drawDiscNodeLabel, type NodeHoverDrawingFunction } from 'sigma/rendering';
 import { Edge, Node } from './graph-filter-utils';
 
 interface GraphConfig {
@@ -220,48 +221,86 @@ interface SigmaGraphBindingsProps {
     activePanel: 'explorer' | 'display' | 'filters' | null;
 }
 
+// Sigma's WebGL color parser only understands hex/rgb()/named colors (anything
+// else renders black), so CSS colors (var(), oklch, ...) are resolved to rgba.
+let colorCtx: CanvasRenderingContext2D | null = null;
+function toSigmaColor(color: string): string {
+    const probe = document.createElement('span');
+    probe.style.color = color;
+    document.body.appendChild(probe);
+    const computed = getComputedStyle(probe).color;
+    probe.remove();
+    colorCtx ??= document
+        .createElement('canvas')
+        .getContext('2d', { willReadFrequently: true });
+    if (!colorCtx) return computed;
+    colorCtx.clearRect(0, 0, 1, 1);
+    colorCtx.fillStyle = computed;
+    colorCtx.fillRect(0, 0, 1, 1);
+    const [r = 0, g = 0, b = 0, a = 255] = colorCtx.getImageData(0, 0, 1, 1).data;
+    return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
+}
+
+// Sigma's built-in hover renderer hardcodes a white label box, which hides the
+// label on dark themes. Same shape, but painted with the theme's popover colors.
+function createNodeHoverRenderer(
+    background: string,
+    foreground: string,
+): NodeHoverDrawingFunction {
+    return (context, data, settings) => {
+        const size = settings.labelSize;
+        context.font = `${settings.labelWeight} ${size}px ${settings.labelFont}`;
+        context.fillStyle = background;
+        context.shadowBlur = 8;
+        context.shadowColor = 'rgba(0, 0, 0, 0.5)';
+
+        const PADDING = 2;
+        context.beginPath();
+        if (typeof data.label === 'string') {
+            const boxWidth = Math.round(context.measureText(data.label).width + 5);
+            const boxHeight = Math.round(size + 2 * PADDING);
+            const radius = Math.max(data.size, size / 2) + PADDING;
+            const angle = Math.asin(boxHeight / 2 / radius);
+            const xDelta = Math.sqrt(Math.abs(radius ** 2 - (boxHeight / 2) ** 2));
+            context.moveTo(data.x + xDelta, data.y + boxHeight / 2);
+            context.lineTo(data.x + radius + boxWidth, data.y + boxHeight / 2);
+            context.lineTo(data.x + radius + boxWidth, data.y - boxHeight / 2);
+            context.lineTo(data.x + xDelta, data.y - boxHeight / 2);
+            context.arc(data.x, data.y, radius, angle, -angle);
+        } else {
+            context.arc(data.x, data.y, data.size + PADDING, 0, Math.PI * 2);
+        }
+        context.closePath();
+        context.fill();
+        context.shadowBlur = 0;
+
+        drawDiscNodeLabel(context, data, {
+            ...settings,
+            labelColor: { color: foreground },
+        });
+    };
+}
+
 function SigmaGraphThemeColors() {
     const setSettings = useSetSettings();
-    const edgeColorRef = useRef<HTMLDivElement | null>(null);
-    const labelColorRef = useRef<HTMLDivElement | null>(null);
-    const { isDarkMode } = useTheme();
+    const { activeTheme } = useTheme();
 
     useEffect(() => {
-        const edgeEl = edgeColorRef.current;
-        const labelEl = labelColorRef.current;
-        const edgeColor = edgeEl
-            ? getComputedStyle(edgeEl).color
-            : isDarkMode
-              ? 'rgba(200, 200, 200, 0.9)'
-              : 'rgba(100, 100, 100, 0.9)';
-        const labelColor = labelEl
-            ? getComputedStyle(labelEl).color
-            : isDarkMode
-              ? 'rgb(240, 240, 240)'
-              : 'rgb(20, 20, 20)';
+        const mutedColor = toSigmaColor('var(--color-muted-foreground)');
         setSettings({
             enableEdgeEvents: true,
-            defaultEdgeColor: edgeColor,
-            defaultNodeColor: 'var(--color-primary)',
-            labelColor: { color: labelColor },
-            edgeLabelColor: { color: 'var(--color-muted-foreground)' },
+            defaultEdgeColor: mutedColor,
+            defaultNodeColor: toSigmaColor('var(--color-primary)'),
+            labelColor: { color: toSigmaColor('var(--color-foreground)') },
+            edgeLabelColor: { color: mutedColor },
+            defaultDrawNodeHover: createNodeHoverRenderer(
+                toSigmaColor('var(--color-popover)'),
+                toSigmaColor('var(--color-popover-foreground)'),
+            ),
         });
-    }, [setSettings, isDarkMode]);
+    }, [setSettings, activeTheme]);
 
-    return (
-        <>
-            <div
-                ref={edgeColorRef}
-                aria-hidden
-                className='pointer-events-none absolute opacity-0 text-muted-foreground'
-            />
-            <div
-                ref={labelColorRef}
-                aria-hidden
-                className='pointer-events-none absolute opacity-0 text-foreground'
-            />
-        </>
-    );
+    return null;
 }
 
 function SigmaGraphologyLoader({
@@ -289,6 +328,15 @@ function SigmaGraphologyLoader({
         const sizeCoef = config.nodeRadiusCoefficient ?? 1;
         const rnd = createSeededRng(config.randomSeed);
         const g = new MultiDirectedGraph();
+        const sigmaColors = new Map<string, string>();
+        const resolveColor = (color: string) => {
+            let resolved = sigmaColors.get(color);
+            if (!resolved) {
+                resolved = toSigmaColor(color);
+                sigmaColors.set(color, resolved);
+            }
+            return resolved;
+        };
         validNodes.forEach((node) => {
             const saved = positionsRef.current.get(node.id);
             const x = saved?.x ?? rnd() * 100 - 50;
@@ -299,7 +347,10 @@ function SigmaGraphologyLoader({
                 y,
                 size: 10 * sizeCoef,
                 label: node.label || node.id,
-                color: node.color || 'var(--color-primary)',
+                color:
+                    node.color && !node.color.startsWith('var(')
+                        ? resolveColor(node.color)
+                        : undefined,
             });
         });
         if (config.showLinks !== false) {

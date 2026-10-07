@@ -171,15 +171,17 @@ export default function MarkdownEditorDialog({
                 )}
 
                 <DialogFooter>
-                    <DialogClose asChild>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            disabled={isSubmitting}
-                        >
-                            Cancel
-                        </Button>
+                    <DialogClose
+                        render={
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                disabled={isSubmitting}
+                            />
+                        }
+                    >
+                        Cancel
                     </DialogClose>
                     <Button
                         type='button'

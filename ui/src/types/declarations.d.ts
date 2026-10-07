@@ -72,4 +72,7 @@ interface ImportMeta {
     readonly env: ImportMetaEnv;
 }
 
+// Build info injected via `define` in vite.config.ts
+declare const __APP_VERSION_LABEL__: string;
+
 declare module 'y-websocket';

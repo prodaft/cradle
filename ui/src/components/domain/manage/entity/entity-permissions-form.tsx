@@ -1,4 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
@@ -11,6 +11,11 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import {
+    EMPTY_SEARCH_STATE,
+    FREE_TEXT_SCHEMA,
+    type SearchState,
+} from '@/lib/search-query/search-schema';
 import {
     ArrowCounterClockwiseIcon,
     ClockCounterClockwiseIcon,
@@ -73,8 +78,6 @@ export default function EntityPermissionsForm({
 
     const hydratedRef = useRef(false);
 
-    const trimmed = appliedSearch.trim();
-
     const {
         data: entityAccess,
         isPending,
@@ -89,7 +92,7 @@ export default function EntityPermissionsForm({
             entityId,
             pagination.pageIndex + 1,
             pagination.pageSize,
-            trimmed,
+            appliedSearch,
         ],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
@@ -100,7 +103,7 @@ export default function EntityPermissionsForm({
                         query: {
                             page: pagination.pageIndex + 1,
                             page_size: pagination.pageSize,
-                            ...(trimmed ? { search: trimmed } : {}),
+                            ...(appliedSearch ? { search: appliedSearch } : {}),
                         },
                     },
                 },
@@ -144,11 +147,8 @@ export default function EntityPermissionsForm({
     }, [entityId]);
 
     useLayoutEffect(() => {
-        hydratedRef.current = false;
-        setOriginalAccess({});
-        setCurrentAccess({});
         setPagination((p) => ({ pageIndex: 0, pageSize: p.pageSize }));
-    }, [trimmed]);
+    }, [appliedSearch]);
 
     useEffect(() => {
         if (isSuccess && entityAccess !== undefined) {
@@ -166,11 +166,6 @@ export default function EntityPermissionsForm({
 
     useEffect(() => {
         if (!entityAccess) return;
-        if (entityAccess.count === 0) {
-            setOriginalAccess({});
-            setCurrentAccess({});
-            return;
-        }
 
         const results = entityAccess.results;
         if (!results) return;
@@ -290,12 +285,19 @@ export default function EntityPermissionsForm({
         userRows.length > 0 &&
         userRows.every((row) => (currentAccess[row.userId] ?? 'none') === 'none');
 
-    const emptyMessage = appliedSearch.trim()
+    const emptyMessage = appliedSearch
         ? 'No users found matching your search'
         : 'No users available';
 
-    const applySearch = useCallback((value: string) => {
-        setAppliedSearch(value);
+    const searchState = useMemo<SearchState>(
+        () =>
+            appliedSearch
+                ? { ...EMPTY_SEARCH_STATE, q: appliedSearch }
+                : EMPTY_SEARCH_STATE,
+        [appliedSearch],
+    );
+    const applySearch = useCallback((state: SearchState) => {
+        setAppliedSearch(state.q ?? '');
     }, []);
 
     const columns = useMemo<ColumnDef<EntityUserRow>[]>(
@@ -341,9 +343,10 @@ export default function EntityPermissionsForm({
                     return (
                         <div onClick={(e) => e.stopPropagation()}>
                             <Select
+                                items={ACCESS_OPTIONS}
                                 value={value}
                                 onValueChange={(v) =>
-                                    updateAccess(userId, v as AccessLevel)
+                                    v !== null && updateAccess(userId, v as AccessLevel)
                                 }
                                 disabled={saveAccess.isPending}
                             >
@@ -378,6 +381,7 @@ export default function EntityPermissionsForm({
         getCoreRowModel: getCoreRowModel(),
         manualPagination: true,
         pageCount: totalPages,
+        rowCount: entityAccess?.count,
         getRowId: (row) => row.userId,
     });
 
@@ -445,16 +449,11 @@ export default function EntityPermissionsForm({
             <div className='flex w-full h-full flex-col space-y-4'>
                 <div className='flex w-full min-w-0 shrink-0 items-start justify-between gap-2 py-1'>
                     <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
-                        <ActionBarSearch
+                        <SearchInput
+                            schema={FREE_TEXT_SCHEMA}
+                            value={searchState}
+                            onApply={applySearch}
                             placeholder='Search users...'
-                            name='entity-permissions-user-search'
-                            value={appliedSearch}
-                            debounceMs={300}
-                            onDebouncedChange={applySearch}
-                            onSubmit={applySearch}
-                            onClear={() => applySearch('')}
-                            disabled={isDirty}
-                            className='w-72 max-w-full min-w-0'
                         />
                     </div>
                     <div className='flex shrink-0 items-center gap-2'>
@@ -466,7 +465,6 @@ export default function EntityPermissionsForm({
                     density='compact'
                     emptyMessage={emptyMessage}
                     showPagination={(entityAccess?.count ?? 0) > 0 || isFetching}
-                    paginationDisabled={isDirty}
                     isLoading={hydratedRef.current && isFetching && !entityAccess}
                 />
             </div>

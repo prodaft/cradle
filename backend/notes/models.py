@@ -1,5 +1,6 @@
 """Note and snippet models for the notes app."""
 
+import hashlib
 import uuid
 
 from django.contrib.contenttypes.fields import GenericRelation
@@ -137,6 +138,11 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
 
         return self._reference_tree
 
+    @property
+    def content_hash(self) -> str:
+        """SHA-256 of the content; clients send it back on edit to detect concurrent changes."""
+        return hashlib.sha256(self.content.encode()).hexdigest()
+
     def propagate_from(self, _log):
         """No-op: Note does not propagate logs to related objects."""
         return
@@ -164,7 +170,10 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         )
 
     def has_write_access(self, user: CradleUser) -> bool:
-        """Return whether the user may edit, upload files to, or delete this note."""
+        """Return whether the user may edit, upload files to, or delete this note.
+
+        Read-write access to every linked entity grants it, whoever wrote the note.
+        """
         if user.is_cradle_admin:
             return True
 
@@ -175,12 +184,7 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         if not entities:
             return self.author_id == user.id
 
-        has_entity_write = Access.objects.has_access_to_entities(
-            user,
-            entities,
-            {AccessType.READ_WRITE},
-        )
-        return has_entity_write and self.author_id == user.id
+        return Access.objects.has_access_to_entities(user, entities, {AccessType.READ_WRITE})
 
     def get_user_permission(self, user: CradleUser) -> AccessType:
         """Return the user's effective permission for this note."""

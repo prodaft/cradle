@@ -61,7 +61,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
             if (!file.id) return;
             requestDownload({
                 fileId: file.id,
-                fileName: file.file_name ?? undefined,
+                fileName: file.name ?? undefined,
             });
         },
         [requestDownload],
@@ -70,14 +70,14 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
     const columns = useMemo<ColumnDef<FileReferenceWithNote>[]>(
         () => [
             {
-                accessorKey: 'file_name',
+                accessorKey: 'name',
                 meta: { label: 'Name' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Name' />
                 ),
                 cell: ({ row }) => (
                     <div className='truncate w-32'>
-                        {truncateText((row.getValue('file_name') as string) ?? '-', 32)}
+                        {truncateText((row.getValue('name') as string) ?? '-', 32)}
                     </div>
                 ),
             },
@@ -109,42 +109,44 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                 enableSorting: false,
             },
             {
-                accessorKey: 'mimetype',
+                accessorKey: 'mime_type',
                 meta: { label: 'MimeType' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='MimeType' />
                 ),
                 cell: ({ row }) => (
                     <div className='truncate w-32'>
-                        {row.original.mimetype
-                            ? truncateText(row.original.mimetype, 32)
+                        {row.original.mime_type
+                            ? truncateText(row.original.mime_type, 32)
                             : '-'}
                     </div>
                 ),
                 enableSorting: false,
             },
             {
-                accessorKey: 'sha256_hash',
+                accessorKey: 'sha256',
                 meta: { label: 'SHA256' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='SHA256' />
                 ),
                 cell: ({ row }) => {
-                    const hash = row.original.sha256_hash;
+                    const hash = row.original.sha256;
                     if (!hash) return '-';
 
                     return (
                         <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span
-                                    className='cursor-pointer hover:bg-muted px-1 rounded'
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        copyToClipboard(hash);
-                                    }}
-                                >
-                                    {hash.substring(0, 21)}...
-                                </span>
+                            <TooltipTrigger
+                                render={
+                                    <span
+                                        className='cursor-pointer hover:bg-muted px-1 rounded'
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            copyToClipboard(hash);
+                                        }}
+                                    />
+                                }
+                            >
+                                {hash.substring(0, 21)}...
                             </TooltipTrigger>
                             <TooltipContent>Click to copy</TooltipContent>
                         </Tooltip>
@@ -153,14 +155,14 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                 enableSorting: false,
             },
             {
-                accessorKey: 'timestamp',
+                accessorKey: 'created_at',
                 meta: { label: 'Uploaded At' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Uploaded At' />
                 ),
                 cell: ({ row }) =>
-                    row.original.timestamp
-                        ? format(new Date(row.original.timestamp), 'dd/MM/yyyy, HH:mm')
+                    row.original.created_at
+                        ? format(new Date(row.original.created_at), 'dd/MM/yyyy, HH:mm')
                         : 'N/A',
                 enableSorting: false,
             },

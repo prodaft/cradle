@@ -1,4 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import {
@@ -11,11 +11,16 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
+import {
+    EMPTY_SEARCH_STATE,
+    FREE_TEXT_SCHEMA,
+    type SearchState,
+} from '@/lib/search-query/search-schema';
 import { fetchClient } from '@services/openapi/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { startCase } from 'lodash';
-import { useCallback, useState } from 'react';
+import startCase from 'lodash/startCase';
+import { useState } from 'react';
 import TypeMappingsEditor from './type-mappings-editor';
 
 type Item = { class_name: string; name: string };
@@ -33,13 +38,9 @@ export default function TypeMappingsList() {
         from: '/_authenticated/manage/_manage-auth/type-mappings',
     }) as Record<string, unknown>;
 
-    const [draft, setDraft] = useState('');
-    const [applied, setApplied] = useState('');
+    const [searchState, setSearchState] = useState<SearchState>(EMPTY_SEARCH_STATE);
+    const applied = searchState.q ?? '';
     const queryClient = useQueryClient();
-
-    const applySearch = useCallback((value: string) => {
-        setApplied(value);
-    }, []);
 
     const { data: mappings = [], isPending } = useQuery({
         queryKey: ['typeMappings', applied],
@@ -84,16 +85,12 @@ export default function TypeMappingsList() {
                     className='border-r bg-background text-foreground [&_[data-slot=sidebar-inner]]:bg-background [&_[data-slot=sidebar-inner]]:text-foreground'
                 >
                     <SidebarHeader className='flex flex-col p-4 gap-2 border-b border-border'>
-                        <ActionBarSearch
+                        <SearchInput
+                            schema={FREE_TEXT_SCHEMA}
+                            value={searchState}
+                            onApply={setSearchState}
                             placeholder='Search mappings...'
-                            name='type-mappings-sidebar-search'
-                            value={draft}
-                            debounceMs={300}
                             className='w-full min-w-0'
-                            onValueChange={setDraft}
-                            onDebouncedChange={applySearch}
-                            onSubmit={applySearch}
-                            onClear={() => applySearch('')}
                         />
                     </SidebarHeader>
                     <SidebarContent>
@@ -108,7 +105,7 @@ export default function TypeMappingsList() {
                                         <Empty className='border-0 p-3'>
                                             <EmptyHeader className='max-w-none gap-0'>
                                                 <EmptyDescription>
-                                                    {draft
+                                                    {applied
                                                         ? 'No mappings match your search'
                                                         : 'No type mappings found'}
                                                 </EmptyDescription>

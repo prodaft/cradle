@@ -164,15 +164,17 @@ export default function NotificationsPanel({ onClose }: NotificationsPanelProps)
                 </div>
                 {onClose && (
                     <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant='ghost'
-                                size='icon-sm'
-                                onClick={onClose}
-                                aria-label='Close notifications'
-                            >
-                                <XIcon size={16} weight='bold' />
-                            </Button>
+                        <TooltipTrigger
+                            render={
+                                <Button
+                                    variant='ghost'
+                                    size='icon-sm'
+                                    onClick={onClose}
+                                    aria-label='Close notifications'
+                                />
+                            }
+                        >
+                            <XIcon size={16} weight='bold' />
                         </TooltipTrigger>
                         <TooltipContent>Close</TooltipContent>
                     </Tooltip>

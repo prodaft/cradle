@@ -94,7 +94,7 @@ class SettingsView(APIView):
         },
         examples=[
             OpenApiExample(
-                name="Example POST",
+                name="Example PATCH",
                 request_only=True,
                 value={
                     "notes": {"min_entries": 2, "allow_dynamic_entry_class_creation": True},
@@ -103,7 +103,7 @@ class SettingsView(APIView):
             )
         ],
     )
-    def post(self, request: Request, *args, **kwargs) -> Response:
+    def patch(self, request: Request, *args, **kwargs) -> Response:
         updated = []
         errors = []
 

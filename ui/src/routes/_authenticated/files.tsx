@@ -1,6 +1,6 @@
+import { validateSearchSchema } from '@/components/domain/files/files-list-search-schema';
 import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
-import * as z from 'zod';
 
 const FilesList = lazy(() => import('@/components/domain/files/files-list'));
 
@@ -8,11 +8,6 @@ export const Route = createFileRoute('/_authenticated/files')({
     staticData: {
         breadcrumb: 'Files',
     },
-    validateSearch: z.object({
-        files_page: z.coerce.number().optional(),
-        files_sort_field: z.string().optional(),
-        files_sort_direction: z.enum(['asc', 'desc']).optional(),
-        files_pagesize: z.coerce.number().optional(),
-    }),
+    validateSearch: validateSearchSchema,
     component: FilesList,
 });

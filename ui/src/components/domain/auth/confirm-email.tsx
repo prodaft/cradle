@@ -198,7 +198,7 @@ export default function ConfirmEmail() {
                         )}
                         <div className='mt-6 text-center'>
                             <span className='text-xs text-muted-foreground font-mono tracking-wider'>
-                                v2.10.2-beta.a070af1b
+                                {__APP_VERSION_LABEL__}
                             </span>
                         </div>
                     </div>

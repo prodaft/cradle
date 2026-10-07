@@ -14,7 +14,7 @@ from user.permissions import HasAdminRole
 
 from .filters import EventLogFilter
 from .models import EventLog
-from .serializers import EventLogSerializer
+from .serializers import EVENT_LOG_PAGE_RESPONSE, EventLogSerializer
 
 
 @extend_schema_view(
@@ -27,7 +27,7 @@ from .serializers import EventLogSerializer
             "the propagated copy is listed instead."
         ),
         responses={
-            200: TotalPagesPagination().get_paginated_response_serializer(EventLogSerializer),
+            200: EVENT_LOG_PAGE_RESPONSE,
             **get_error_responses(
                 CoreErrorCodes.INVALID_PAGE_SIZE,
                 CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
@@ -39,7 +39,6 @@ from .serializers import EventLogSerializer
 class EventLogListView(ListAPIView):
     """List event logs with filtering and pagination. Admin only."""
 
-    queryset = EventLog.objects.select_related("user", "content_type", "src_log").all()
     serializer_class = EventLogSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = EventLogFilter

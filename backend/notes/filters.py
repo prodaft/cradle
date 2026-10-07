@@ -1,55 +1,70 @@
-"""Filters for note list and file list views."""
+"""Filters for note list, file list and note history views."""
 
 import django_filters
+
+from logs.filters import EventLogFilter
 
 from .models import Note
 
 
 class NoteFilter(django_filters.FilterSet):
-    """Filter notes by content, timestamp, edit_timestamp, date, and author."""
+    """Filter notes by content, created_at, updated_at, date, author, and editor."""
 
     content = django_filters.CharFilter(lookup_expr="icontains", help_text="Filter by content (case-insensitive).")
-    timestamp = django_filters.DateTimeFilter(help_text="Filter by exact timestamp.")
-    timestamp_gte = django_filters.DateTimeFilter(
+    created_at = django_filters.DateTimeFilter(field_name="timestamp", help_text="Filter by exact creation time.")
+    created_at_gte = django_filters.DateTimeFilter(
         field_name="timestamp",
         lookup_expr="gte",
-        help_text="Filter by timestamp greater than or equal.",
+        help_text="Filter by creation time greater than or equal.",
     )
-    timestamp_lte = django_filters.DateTimeFilter(
+    created_at_lte = django_filters.DateTimeFilter(
         field_name="timestamp",
         lookup_expr="lte",
-        help_text="Filter by timestamp less than or equal.",
+        help_text="Filter by creation time less than or equal.",
     )
-    edit_timestamp_gte = django_filters.DateTimeFilter(
+    updated_at_gte = django_filters.DateTimeFilter(
         field_name="edit_timestamp",
         lookup_expr="gte",
-        help_text="Filter by edit_timestamp greater than or equal.",
+        help_text="Filter by last edit time greater than or equal.",
     )
-    edit_timestamp_lte = django_filters.DateTimeFilter(
+    updated_at_lte = django_filters.DateTimeFilter(
         field_name="edit_timestamp",
         lookup_expr="lte",
-        help_text="Filter by edit_timestamp less than or equal.",
+        help_text="Filter by last edit time less than or equal.",
     )
     date = django_filters.DateFilter(
         field_name="timestamp",
         lookup_expr="date",
         help_text="Filter by date (YYYY-MM-DD).",
     )
-    author__username = django_filters.CharFilter(
+    author = django_filters.CharFilter(
+        field_name="author__username",
         lookup_expr="icontains",
         help_text="Filter by author username (case-insensitive).",
+    )
+    editor = django_filters.CharFilter(
+        field_name="editor__username",
+        lookup_expr="icontains",
+        help_text="Filter by last editor username (case-insensitive).",
     )
 
     class Meta:
         model = Note
         fields = [
             "content",
-            "timestamp",
-            "timestamp_gte",
-            "timestamp_lte",
-            "edit_timestamp_gte",
-            "edit_timestamp_lte",
+            "created_at",
+            "created_at_gte",
+            "created_at_lte",
+            "updated_at_gte",
+            "updated_at_lte",
             "date",
             "author",
             "editor",
         ]
+
+
+class NoteHistoryFilter(EventLogFilter):
+    """EventLogFilter for a single note's history; the object is fixed by the URL."""
+
+    content_type = None
+    object_id = None

@@ -84,6 +84,7 @@ class ClassMappingSerializer(serializers.ModelSerializer):
             class Meta:
                 model = subclass
                 fields = [field.name for field in subclass._meta.fields]
+                read_only_fields = ["id"]
 
         return DynamicSerializer
 
@@ -224,7 +225,6 @@ class BaseDigestCreateSerializer(serializers.ModelSerializer):
         return super().to_internal_value(data)
 
     def create(self, validated_data):
-        # Remove file from validated_data as it's handled separately in the view
         validated_data.pop("file", None)
         return super().create(validated_data)
 
@@ -235,7 +235,7 @@ class DigestUploadResponseSerializer(serializers.Serializer):
     upload_id = serializers.UUIDField(help_text="UUID for this upload session")
     presigned_url = serializers.CharField(help_text="URL to upload the file to")
     object_key = serializers.CharField(help_text="S3 object key for the uploaded file")
-    expires_in = serializers.IntegerField(help_text="Expiration time in seconds")
+    expires_at = serializers.DateTimeField(help_text="When the presigned URL expires")
 
 
 class DigestUploadFinalizeCreateSerializer(serializers.ModelSerializer):
@@ -490,12 +490,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request and request.user:
             user = request.user
-            if user.is_cradle_admin:
-                self.fields["entities"].queryset = Entry.entities.all()
-            else:
-                self.fields["entities"].queryset = Entry.entities.filter(
-                    id__in=Access.objects.get_accessible_entity_ids(user.id)
-                )
+            self.fields["entities"].queryset = Entry.entities.readable_entities(user)
             self.fields["notes"].child.queryset = Note.objects.get_accessible_notes(user)
 
     class Meta:
@@ -662,6 +657,7 @@ class EnrichmentRelationSerializer(serializers.ModelSerializer):
 
     e1 = EntrySerializerMinimal(read_only=True)
     e2 = EntrySerializerMinimal(read_only=True)
+    last_seen_at = serializers.DateTimeField(source="last_seen", read_only=True, help_text="Last observation")
 
     class Meta:
         model = Relation
@@ -670,9 +666,9 @@ class EnrichmentRelationSerializer(serializers.ModelSerializer):
             "e1",
             "e2",
             "created_at",
-            "last_seen",
+            "last_seen_at",
             "reason",
             "details",
         ]
-        read_only_fields = ["created_at", "last_seen", "id"]
+        read_only_fields = ["created_at", "id"]
         ref_name = "EnrichmentRelation"

@@ -214,6 +214,16 @@ class GraphPathFindView(APIView):
             required=False,
             explode=True,
         ),
+        OpenApiParameter(
+            name="search",
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description=(
+                "Free-text search across entry name, subtype and description (ignored when `query` is set). "
+                'Supports AND/OR/NOT (or -term), "quoted phrases", =exact matches and * wildcards.'
+            ),
+            required=False,
+        ),
     ],
     responses={
         200: LazyPaginator().get_paginated_response_serializer(EntryWithDepthSerializer),

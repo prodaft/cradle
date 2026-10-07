@@ -98,7 +98,7 @@ def create_or_update_session(request: Request, user, refresh_token: RefreshToken
 @extend_schema_view(
     post=extend_schema(
         operation_id="auth_login_create",
-        description="Obtain a new pair of access and refresh tokens by providing valid user credentials. If 2FA is enabled for the user, a two_factor_token must be provided.",  # noqa: E501
+        description="Obtain a new pair of access and refresh tokens by providing valid user credentials. If 2FA is enabled for the user, an otp must be provided.",  # noqa: E501
         request=TokenObtainSerializer,
         auth=[],
         responses={
@@ -140,31 +140,24 @@ class TokenObtainPairLogView(TokenObtainPairView):
         if not user.is_active:
             raise AccountNotActivatedException(detail="Your account is not activated.")
 
-        # Check if 2FA is enabled
         if user.two_factor_enabled:
-            # If no 2FA token provided, return a special response
-            if "two_factor_token" not in request.data:
+            if "otp" not in request.data:
                 raise TwoFactorRequiredException(detail="A two-factor authentication code is required.")
 
-            # Verify 2FA token
-            if not user.verify_2fa_token(request.data["two_factor_token"]):
+            if not user.verify_otp(request.data["otp"]):
                 raise InvalidTwoFactorCodeException(detail="The two-factor authentication code is invalid.")
 
-        # Add role and token expiry times to response
         response_data = serializer.validated_data.copy()
         response_data["role"] = user.role
 
-        # Decode access token to get expiry time
         access_token = AccessToken(serializer.validated_data["access"])
         access_expires_at = datetime.fromtimestamp(access_token["exp"], tz=timezone.utc)
         response_data["access_expires_at"] = access_expires_at
 
-        # Decode refresh token to get expiry time
         refresh_token = RefreshToken(serializer.validated_data["refresh"])
         refresh_expires_at = datetime.fromtimestamp(refresh_token["exp"], tz=timezone.utc)
         response_data["refresh_expires_at"] = refresh_expires_at
 
-        # Create session record
         create_or_update_session(request, user, refresh_token, refresh_expires_at)
 
         response = Response(response_data, status=status.HTTP_200_OK)
@@ -205,16 +198,13 @@ class TokenRefreshLogView(TokenRefreshView):
     throttle_classes = [AuthRateThrottle]
 
     def post(self, request: Request, *args, **kwargs) -> Response:
-        # Fall back to the refresh cookie if the body doesn't contain a token
         refresh_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
         refresh_token_str = request.data.get("refresh") or request.COOKIES.get(refresh_name)
         if not refresh_token_str:
             raise UnauthenticatedException(detail="Your session could not be renewed. Please sign in again.")
 
-        # Inject into request data so the parent serializer sees it
         request._full_data = {**request.data, "refresh": refresh_token_str}
 
-        # Check if the refresh token is blacklisted before processing
         try:
             old_refresh_token = RefreshToken(refresh_token_str)
             jti = old_refresh_token.get("jti")
@@ -245,7 +235,6 @@ class TokenRefreshLogView(TokenRefreshView):
             response.data["access_expires_at"] = access_expires_at
             response.data["refresh_expires_at"] = refresh_expires_at
 
-            # Set updated cookies
             access_max_age = int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
             refresh_max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
             set_token_cookies(

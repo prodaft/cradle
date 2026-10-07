@@ -64,15 +64,15 @@ def fields_to_form(fields):
     return field_mapping
 
 
-def validate_order_by(order_by: str | None, valid_fields: list[str]) -> list[str]:
+def validate_order_by(order_by: str | None, valid_fields: list[str] | dict[str, str]) -> list[str]:
     """Validate and parse the order_by parameter.
 
     Args:
         order_by: The order_by string from query parameters (None or empty returns []).
-        valid_fields: List of valid field names for ordering.
+        valid_fields: Valid field names for ordering, or a mapping of API field name to model field name.
 
     Returns:
-        List of validated order fields. Empty list if order_by is None/empty/whitespace.
+        List of validated (and mapped) order fields. Empty list if order_by is None/empty/whitespace.
 
     Raises:
         InvalidRequestException: When an invalid field is specified.
@@ -85,13 +85,13 @@ def validate_order_by(order_by: str | None, valid_fields: list[str]) -> list[str
         field = field.strip()
         if not field:
             continue
-        if field.startswith("-"):
-            base_field = field[1:]
-        else:
-            base_field = field
+        prefix = "-" if field.startswith("-") else ""
+        base_field = field.removeprefix("-")
 
         if base_field in valid_fields:
-            order_fields.append(field)
+            if isinstance(valid_fields, dict):
+                base_field = valid_fields[base_field]
+            order_fields.append(prefix + base_field)
         else:
             raise InvalidRequestException(
                 detail=f"That sort order is not recognized. Use one of: {', '.join(valid_fields)}."

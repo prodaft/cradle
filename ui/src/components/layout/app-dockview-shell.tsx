@@ -1,4 +1,5 @@
 import { PageLoader } from '@/components/base/page-loader';
+import NotFound from '@/components/feedback/not-found';
 import { panelRouteTree } from '@/components/layout/dock-panel-route-tree';
 import {
     DockPanelActiveProvider,
@@ -221,7 +222,7 @@ function flushPersistDockviewLayout(api: DockviewApi): void {
     writeDockviewLayout(api);
 }
 
-function restoreDockviewLayout(api: DockviewApi): boolean {
+function restoreDockviewLayout(api: DockviewApi, router: AnyRouter): boolean {
     const layout = readStoredDockviewLayout();
     if (!layout) {
         return false;
@@ -237,7 +238,9 @@ function restoreDockviewLayout(api: DockviewApi): boolean {
 
     const brokenPanels = api.panels.filter((panel) => {
         const href = panelHref(panel);
-        return typeof href !== 'string' || href.length === 0;
+        return (
+            typeof href !== 'string' || href.length === 0 || !isPanelHref(router, href)
+        );
     });
     for (const panel of brokenPanels) {
         api.removePanel(panel);
@@ -303,6 +306,20 @@ function parseAppHref(href: string): { to: string; search?: Record<string, unkno
         return { to: pathname };
     }
     return { to: pathname, search: defaultParseSearch(searchStr) };
+}
+
+/**
+ * Whether `href` is an app page that belongs in a tab. Auth pages (`/login`, `/signup`, ...)
+ * render outside the dock and would bounce a logged-in user to `/notes`.
+ */
+function isPanelHref(router: AnyRouter, href: string): boolean {
+    const [matchedRoutes, , foundRoute] = router.getMatchedRoutes(
+        parseAppHref(href).to,
+    );
+    return (
+        foundRoute?.id === '/' ||
+        matchedRoutes.some((route) => route.id === '/_authenticated')
+    );
 }
 
 function navigateToHref(router: AnyRouter, href: string, replace = true): void {
@@ -451,6 +468,7 @@ function createPanelRouter(href: string) {
         history,
         defaultPreload: false,
         scrollRestoration: false,
+        defaultNotFoundComponent: () => <NotFound />,
     });
 }
 
@@ -471,7 +489,7 @@ function PanelRouteSync({
 
     useEffect(() => {
         const currentParams = panelApi.getParameters<AppRouteTabParams>();
-        if (currentParams?.href !== href) {
+        if (currentParams?.href !== href && isPanelHref(outerRouter, href)) {
             updatePanelParams(panelApi, hrefOnlyTabParams(href));
             schedulePersistDockviewLayout(containerApi);
         }
@@ -591,50 +609,52 @@ function AppDockviewTab(
 
     return (
         <ContextMenu>
-            <ContextMenuTrigger asChild>
-                <div
-                    className='cradle-dockview-tab-title bg-background'
-                    onPointerDown={onTabPointerDown}
-                    onPointerUp={onTabPointerUp}
-                    onPointerLeave={onTabPointerLeave}
+            <ContextMenuTrigger
+                render={
+                    <div
+                        className='cradle-dockview-tab-title bg-background'
+                        onPointerDown={onTabPointerDown}
+                        onPointerUp={onTabPointerUp}
+                        onPointerLeave={onTabPointerLeave}
+                    />
+                }
+            >
+                {Icon ? (
+                    <Icon
+                        className='cradle-dockview-tab-title-icon'
+                        aria-hidden
+                        strokeWidth={2}
+                    />
+                ) : null}
+                <span className='cradle-dockview-tab-title-text'>{title}</span>
+                <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon-xs'
+                    className={cn(
+                        'cradle-dockview-tab-title-close',
+                        'size-[18px] min-h-0 min-w-0 rounded-[2px] p-0 text-inherit focus-visible:ring-0',
+                    )}
+                    aria-label={`Close ${title || 'tab'}`}
+                    onPointerDown={onCloseGlyphPointerDown}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        api.close();
+                    }}
                 >
-                    {Icon ? (
-                        <Icon
-                            className='cradle-dockview-tab-title-icon'
-                            aria-hidden
-                            strokeWidth={2}
-                        />
-                    ) : null}
-                    <span className='cradle-dockview-tab-title-text'>{title}</span>
-                    <Button
-                        type='button'
-                        variant='ghost'
-                        size='icon-xs'
-                        className={cn(
-                            'cradle-dockview-tab-title-close',
-                            'size-[18px] min-h-0 min-w-0 rounded-[2px] p-0 text-inherit focus-visible:ring-0',
-                        )}
-                        aria-label={`Close ${title || 'tab'}`}
-                        onPointerDown={onCloseGlyphPointerDown}
-                        onClick={(event) => {
-                            event.stopPropagation();
-                            api.close();
-                        }}
-                    >
-                        <X aria-hidden className='size-3' strokeWidth={2.2} />
-                    </Button>
-                </div>
+                    <X aria-hidden className='size-3' strokeWidth={2.2} />
+                </Button>
             </ContextMenuTrigger>
             <ContextMenuContent className={cn('w-52', 'z-[10050]')}>
-                <ContextMenuItem onSelect={onCloseTab}>
+                <ContextMenuItem onClick={onCloseTab}>
                     <X aria-hidden className='size-4' strokeWidth={2} />
                     Close
                 </ContextMenuItem>
-                <ContextMenuItem onSelect={onCloseOtherTabs} disabled={!canCloseOthers}>
+                <ContextMenuItem onClick={onCloseOtherTabs} disabled={!canCloseOthers}>
                     <ListMinus aria-hidden className='size-4' strokeWidth={2} />
                     Close others
                 </ContextMenuItem>
-                <ContextMenuItem variant='destructive' onSelect={onCloseAllTabs}>
+                <ContextMenuItem variant='destructive' onClick={onCloseAllTabs}>
                     <ListX aria-hidden className='size-4' strokeWidth={2} />
                     Close all
                 </ContextMenuItem>
@@ -653,43 +673,47 @@ function DockviewGroupHeaderActions(props: IDockviewHeaderActionsProps) {
     return (
         <div className='cradle-dockview-header-actions'>
             <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        type='button'
-                        variant='ghost'
-                        size='icon-sm'
-                        className='dockview-header-toolbar-btn'
-                        aria-label='Split right'
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            splitPanelRight(api, router, refPanel);
-                        }}
-                    >
-                        <Columns2 className='size-4' strokeWidth={2} />
-                    </Button>
+                <TooltipTrigger
+                    render={
+                        <Button
+                            type='button'
+                            variant='ghost'
+                            size='icon-sm'
+                            className='dockview-header-toolbar-btn'
+                            aria-label='Split right'
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                splitPanelRight(api, router, refPanel);
+                            }}
+                        />
+                    }
+                >
+                    <Columns2 className='size-4' strokeWidth={2} />
                 </TooltipTrigger>
                 <TooltipContent side='bottom' className='z-[10050]'>
                     Split right
                 </TooltipContent>
             </Tooltip>
             <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        type='button'
-                        variant='ghost'
-                        size='icon-sm'
-                        className='dockview-header-toolbar-btn'
-                        aria-label='New tab'
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            const href =
-                                panelHref(refPanel) ??
-                                locationHref(router.state.location);
-                            addTabInGroup(api, href, refPanel);
-                        }}
-                    >
-                        <Plus className='size-4' strokeWidth={2} />
-                    </Button>
+                <TooltipTrigger
+                    render={
+                        <Button
+                            type='button'
+                            variant='ghost'
+                            size='icon-sm'
+                            className='dockview-header-toolbar-btn'
+                            aria-label='New tab'
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const href =
+                                    panelHref(refPanel) ??
+                                    locationHref(router.state.location);
+                                addTabInGroup(api, href, refPanel);
+                            }}
+                        />
+                    }
+                >
+                    <Plus className='size-4' strokeWidth={2} />
                 </TooltipTrigger>
                 <TooltipContent side='bottom' className='z-[10050]'>
                     New tab
@@ -750,7 +774,7 @@ export function AppDockviewShell(): React.JSX.Element {
                 return;
             }
 
-            if (restoreDockviewLayout(api)) {
+            if (restoreDockviewLayout(api, router)) {
                 reconcileDockviewWithOuterLocation(
                     api,
                     router,
@@ -829,13 +853,13 @@ export function AppDockviewShell(): React.JSX.Element {
             }
         }
 
-        if (panelHref(panel) === href) {
+        if (panelHref(panel) === href || !isPanelHref(router, href)) {
             return;
         }
 
         updatePanelParams(panel.api, hrefOnlyTabParams(href));
         schedulePersistDockviewLayout(api);
-    }, [dockApi, location]);
+    }, [dockApi, location, router]);
 
     useEffect(() => {
         const api = dockApi;

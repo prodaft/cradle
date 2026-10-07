@@ -1,30 +1,3 @@
-const commonVars = {
-    '--font-sans':
-        "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
-    '--font-serif': "ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif",
-    '--font-mono':
-        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-    '--radius': '0.625rem',
-    '--shadow-x': '0',
-    '--shadow-y': '1px',
-    '--shadow-blur': '3px',
-    '--shadow-spread': '0px',
-    '--shadow-opacity': '0.1',
-    '--shadow-color': 'oklch(0 0 0)',
-    '--shadow-2xs': '0 1px 3px 0px hsl(0 0% 0% / 0.05)',
-    '--shadow-xs': '0 1px 3px 0px hsl(0 0% 0% / 0.05)',
-    '--shadow-sm':
-        '0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow': '0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow-md':
-        '0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow-lg':
-        '0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow-xl':
-        '0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow-2xl': '0 1px 3px 0px hsl(0 0% 0% / 0.25)',
-};
-
 export const catppuccinLatte = {
     name: 'catppuccin-latte',
     '--background': '#eff1f5',
@@ -59,7 +32,6 @@ export const catppuccinLatte = {
     '--sidebar-accent-foreground': '#4c4f69',
     '--sidebar-border': '#bcc0cc',
     '--sidebar-ring': '#1e66f5',
-    ...commonVars,
 };
 
 export const catppuccinFrappe = {
@@ -96,7 +68,6 @@ export const catppuccinFrappe = {
     '--sidebar-accent-foreground': '#c6d0f5',
     '--sidebar-border': '#51576d',
     '--sidebar-ring': '#8caaee',
-    ...commonVars,
 };
 
 export const catppuccinMacchiato = {
@@ -133,7 +104,6 @@ export const catppuccinMacchiato = {
     '--sidebar-accent-foreground': '#cad3f5',
     '--sidebar-border': '#494d64',
     '--sidebar-ring': '#8aadf4',
-    ...commonVars,
 };
 
 export const catppuccinMocha = {
@@ -170,5 +140,4 @@ export const catppuccinMocha = {
     '--sidebar-accent-foreground': '#cdd6f4',
     '--sidebar-border': '#45475a',
     '--sidebar-ring': '#89b4fa',
-    ...commonVars,
 };

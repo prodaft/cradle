@@ -20,13 +20,12 @@ from core.exceptions import CoreErrorCodes, InvalidRequestException
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
+from file_transfer.serializers import FileUploadInitiateSerializer
 from file_transfer.storage import DigestStorage
-from file_transfer.uploads import PresignedUploadFlow, UploadConfig
+from file_transfer.uploads import PresignedUploadFlow, UploadConfig, parse_initiate_request
 from file_transfer.uploads.exceptions import (
     AlreadyUploadingException,
     FileNotUploadedException,
-    InvalidFileNameException,
-    InvalidFileSizeException,
     UploadErrorCodes,
     UploadExpiredException,
     UploadNotFoundException,
@@ -58,9 +57,7 @@ from ..tasks import start_digest
 def _get_digest_or_404(request: Request, pk: uuid.UUID) -> BaseDigest:
     """Get digest by pk, raising DigestNotFoundException if not found or not permitted."""
     try:
-        if request.user.is_cradle_admin:
-            return BaseDigest.objects.get(id=pk)
-        return BaseDigest.objects.get(id=pk, user=request.user)
+        return BaseDigest.objects.accessible_by(request.user).get(id=pk)
     except BaseDigest.DoesNotExist:
         raise DigestNotFoundException(detail="That digest could not be found.")
 
@@ -87,25 +84,20 @@ class DigestUploadCallbacks:
         digest_data = validated_data.copy()
         entities = digest_data.pop("entities", [])
 
-        # Get the digest model class (BaseDigest or subclass)
         digest_model = digest_data.pop("_digest_model", BaseDigest)
 
-        # Create digest instance
         digest = digest_model(
             id=pending_upload.id,
             user=pending_upload.user,
             **digest_data,
         )
 
-        # Set the file field to point to the already-uploaded object
         digest.file.name = pending_upload.object_key
         digest.save()
 
-        # Set entities if provided
         if entities:
             digest.entities.set(entities)
 
-        # Trigger digest processing
         transaction.on_commit(lambda: start_digest.delay(digest.id))
 
         return {"digest": digest}
@@ -125,25 +117,10 @@ digest_upload_flow = PresignedUploadFlow(
 
 @extend_schema(
     summary="Initiate digest file upload",
-    description="Generates a presigned URL for uploading a digest file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.",
-    parameters=[
-        OpenApiParameter(
-            name="file_name",
-            type=str,
-            location=OpenApiParameter.QUERY,
-            description="Name of the file to be uploaded",
-            required=True,
-        ),
-        OpenApiParameter(
-            name="file_size",
-            type=int,
-            location=OpenApiParameter.QUERY,
-            description="Size of the file to be uploaded in bytes",
-            required=True,
-        ),
-    ],
+    description="Generates a presigned URL for uploading a digest file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_at. The upload must be finalized within the expiration time.",
+    request=FileUploadInitiateSerializer,
     responses={
-        200: DigestUploadResponseSerializer,
+        201: DigestUploadResponseSerializer,
         **get_error_responses(
             UploadErrorCodes.INVALID_FILE_NAME,
             UploadErrorCodes.ALREADY_UPLOADING,
@@ -152,36 +129,24 @@ digest_upload_flow = PresignedUploadFlow(
         ),
         **get_common_error_responses(),
     },
-    methods=["GET"],
+    methods=["POST"],
 )
 class DigestUploadAPIView(APIView):
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request) -> Response:
-        file_name = request.query_params.get("file_name")
-        if not file_name:
-            raise InvalidFileNameException(detail="A file name is required.")
-
-        # Get and validate file size
-        file_size_str = request.query_params.get("file_size")
-        if not file_size_str:
-            raise InvalidFileSizeException(detail="The file size is required.")
-
-        try:
-            file_size = int(file_size_str)
-        except ValueError:
-            raise InvalidFileSizeException(detail="Use a whole number for the file size.")
+    def post(self, request: Request) -> Response:
+        file_name, file_size = parse_initiate_request(request.data)
 
         # Non-admin users cannot have concurrent uploads
         # (admins can have multiple pending uploads)
-        if PendingDigestUpload.objects.filter(user=request.user).exists() and not request.user.is_cradle_admin:
+        if not request.user.is_cradle_admin and PendingDigestUpload.objects.filter(user=request.user).exists():
             raise AlreadyUploadingException(
                 detail="You already have an open upload session. Please finalize the previous upload before starting a new one."
             )
 
         response_data = digest_upload_flow.initiate(request.user, file_name, file_size)
-        return Response(DigestUploadResponseSerializer(response_data).data, status=status.HTTP_200_OK)
+        return Response(DigestUploadResponseSerializer(response_data).data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(
@@ -216,15 +181,12 @@ class DigestUploadFinalizeAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, upload_id: str) -> Response:
-        # Validate request body
         serializer = DigestUploadFinalizeCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
-        # Get digest model from serializer
         validated_data = serializer.validated_data.copy()
         validated_data["_digest_model"] = serializer.Meta.model or BaseDigest
 
-        # Validate upload_id format before calling finalize
         try:
             upload_uuid = uuid.UUID(upload_id)
         except ValueError:
@@ -239,9 +201,8 @@ class DigestUploadFinalizeAPIView(APIView):
         except FileNotUploadedException as exc:
             raise DigestUploadIncompleteException(detail=exc.detail) from exc
 
-        # Extract digest from response
         digest = response_data["digest"]
-        location = request.build_absolute_uri(reverse("digest_detail", kwargs={"pk": digest.id}))
+        location = request.build_absolute_uri(reverse("digest_detail", kwargs={"digest_id": digest.id}))
         return Response(
             BaseDigestSerializer(digest).data,
             status=status.HTTP_201_CREATED,
@@ -288,13 +249,16 @@ class DigestSubclassesAPIView(APIView):
         parameters=[
             OpenApiParameter(
                 name="title",
-                description="Filter by title (case-insensitive partial match)",
+                description=(
+                    "Search query over the title. Supports AND/OR/NOT (or -term), "
+                    '"quoted phrases", =exact matches and * wildcards.'
+                ),
                 required=False,
                 type=str,
             ),
             OpenApiParameter(
-                name="author",
-                description="Filter by author username (case-insensitive partial match)",
+                name="user",
+                description="Filter by username (case-insensitive partial match)",
                 required=False,
                 type=str,
             ),
@@ -340,7 +304,7 @@ class DigestSubclassesAPIView(APIView):
                 name="order_by",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Order digests by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, title, user__username, status, digest_type. Default: -created_at",  # noqa: E501
+                description="Order digests by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, title, user, status, digest_type. Default: -created_at",  # noqa: E501
                 required=False,
                 default="-created_at",
             ),
@@ -382,36 +346,29 @@ class DigestAPIView(GenericAPIView):
 
     def get(self, request: Request) -> Response:
         """Fetch all digests for the current user with optional filtering."""
-        if request.user.is_cradle_admin:
-            queryset = BaseDigest.objects.all()
-        else:
-            queryset = BaseDigest.objects.filter(user=request.user)
+        queryset = BaseDigest.objects.accessible_by(request.user)
 
-        # Apply filters
         filterset = self.filterset_class(request.GET, queryset=queryset)
         if filterset.is_valid():
             queryset = filterset.qs
         else:
             raise DRFValidationError(filterset.errors)
 
-        # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
-        valid_order_fields = [
-            "created_at",
-            "title",
-            "user__username",
-            "status",
-            "digest_type",
-        ]
+        valid_order_fields = {
+            "created_at": "created_at",
+            "title": "title",
+            "user": "user__username",
+            "status": "status",
+            "digest_type": "digest_type",
+        }
 
-        # Parse and validate order_by parameter
         order_fields = validate_order_by(order_by, valid_order_fields)
         if order_fields:
             queryset = queryset.order_by(*order_fields)
         else:
             queryset = queryset.order_by("-created_at")
 
-        # Apply pagination
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
 
@@ -422,14 +379,12 @@ class DigestAPIView(GenericAPIView):
         """Create a new digest for the current user."""
         data = request.data.copy()
 
-        # Use the create serializer for validation
         create_serializer = BaseDigestCreateSerializer(data=data, context={"request": request})
         create_serializer.is_valid(raise_exception=True)
 
-        # Create the digest and assign the current user
         digest_data = create_serializer.validated_data.copy()
-        digest_data.pop("file", None)  # Remove file from digest creation data
-        digest_data["user"] = request.user  # Assign the current user
+        digest_data.pop("file", None)
+        digest_data["user"] = request.user
 
         digest = BaseDigest(**digest_data)
 
@@ -438,13 +393,12 @@ class DigestAPIView(GenericAPIView):
         if not file:
             raise MissingFileException(detail="Upload a file to create a digest.")
 
-        # Assign file to FileField - Django handles storage automatically
         with transaction.atomic():
             digest.file = file
             digest.save()
 
         transaction.on_commit(lambda: start_digest.delay(digest.id))
-        location = request.build_absolute_uri(reverse("digest_detail", kwargs={"pk": digest.id}))
+        location = request.build_absolute_uri(reverse("digest_detail", kwargs={"digest_id": digest.id}))
         return Response(
             self.get_serializer(digest).data,
             status=status.HTTP_201_CREATED,
@@ -478,18 +432,18 @@ class DigestDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = BaseDigestSerializer
 
-    def get(self, request: Request, pk: uuid.UUID) -> Response:
-        digest = _get_digest_or_404(request, pk)
+    def get(self, request: Request, digest_id: uuid.UUID) -> Response:
+        digest = _get_digest_or_404(request, digest_id)
         return Response(
             BaseDigestSerializer(digest).data,
             status=status.HTTP_200_OK,
         )
 
-    def delete(self, request: Request, pk: uuid.UUID) -> Response:
+    def delete(self, request: Request, digest_id: uuid.UUID) -> Response:
         """Delete a specific digest by ID."""
         from entries.tasks import refresh_edges_materialized_view
 
-        digest = _get_digest_or_404(request, pk)
+        digest = _get_digest_or_404(request, digest_id)
         with transaction.atomic():
             digest.delete()
 

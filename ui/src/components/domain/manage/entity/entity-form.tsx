@@ -402,6 +402,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                                 )}
                                             </FieldContent>
                                             <Select
+                                                items={resolvedSubtypeOptions}
                                                 value={field.value ?? ''}
                                                 onValueChange={field.onChange}
                                             >
@@ -586,11 +587,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                                         })),
                                                     );
                                                 }}
-                                                emptyIndicator={
-                                                    <p className='text-center text-sm'>
-                                                        No aliases found
-                                                    </p>
-                                                }
+                                                emptyIndicator={<p>No aliases found</p>}
                                             />
                                         </div>
                                     </Field>

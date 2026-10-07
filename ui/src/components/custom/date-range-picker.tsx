@@ -42,20 +42,22 @@ export function DateRangePicker({
 
     return (
         <Popover>
-            <PopoverTrigger asChild>
-                <Button
-                    type='button'
-                    variant='outline'
-                    disabled={disabled}
-                    className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !selected?.from && 'text-muted-foreground',
-                        className,
-                    )}
-                >
-                    <CalendarIcon className='mr-2 size-4' />
-                    {label}
-                </Button>
+            <PopoverTrigger
+                render={
+                    <Button
+                        type='button'
+                        variant='outline'
+                        disabled={disabled}
+                        className={cn(
+                            'w-full justify-start text-left font-normal',
+                            !selected?.from && 'text-muted-foreground',
+                            className,
+                        )}
+                    />
+                }
+            >
+                <CalendarIcon className='mr-2 size-4' />
+                {label}
             </PopoverTrigger>
             <PopoverContent className='w-auto p-0' align='start'>
                 <Calendar

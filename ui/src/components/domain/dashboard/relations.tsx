@@ -1,4 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import { TableSkeleton } from '@/components/base/table-skeleton';
 import {
     ActionBar,
@@ -24,21 +24,14 @@ import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-    CommandSeparator,
-} from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNdjsonQuery } from '@/hooks/query';
-import { cn } from '@/lib/utils';
+import type {
+    QualifierSpec,
+    SearchSchema,
+    SearchState,
+} from '@/lib/search-query/search-schema';
 import { createDashboardLink } from '@/utils/dashboard';
 import { CaretDownIcon, CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
@@ -56,7 +49,6 @@ import {
     getExpandedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { Check, CirclePlus, PlusCircle, XCircle } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -284,225 +276,24 @@ function PathStepper({
     );
 }
 
-function SubtypeFilter({
-    options,
-    types,
-    setTypes,
-    colors,
-}: {
-    options: string[];
-    types: string[];
-    setTypes: React.Dispatch<React.SetStateAction<string[]>>;
-    colors: Map<string, string>;
-}) {
-    const [isTypePickerOpen, setIsTypePickerOpen] = React.useState(false);
-    const sorted = useMemo(
-        () => [...options].sort((a, b) => a.localeCompare(b)),
-        [options],
-    );
-
-    const toggleType = (value: string) => {
-        setTypes((prev) =>
-            prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
-        );
-    };
-
-    const clearTypes = (e?: React.MouseEvent) => {
-        e?.stopPropagation();
-        setTypes([]);
-    };
-
-    return (
-        <Popover open={isTypePickerOpen} onOpenChange={setIsTypePickerOpen}>
-            <PopoverTrigger asChild>
-                <Button
-                    variant='outline'
-                    size='sm'
-                    className='border-dashed font-normal'
-                >
-                    {types.length > 0 ? (
-                        <div
-                            role='button'
-                            aria-label='Clear type filter'
-                            tabIndex={0}
-                            className='rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                            onClick={clearTypes}
-                        >
-                            <XCircle />
-                        </div>
-                    ) : (
-                        <PlusCircle />
-                    )}
-                    Type
-                    {types.length > 0 && (
-                        <>
-                            <Separator
-                                orientation='vertical'
-                                className='mx-0.5 data-[orientation=vertical]:h-4'
-                            />
-                            <Badge
-                                variant='secondary'
-                                className='rounded-sm px-1 font-normal lg:hidden'
-                            >
-                                {types.length}
-                            </Badge>
-                            <div className='hidden items-center gap-1 lg:flex'>
-                                {types.length > 2 ? (
-                                    <Badge
-                                        variant='secondary'
-                                        className='rounded-sm px-1 font-normal'
-                                    >
-                                        {types.length} selected
-                                    </Badge>
-                                ) : (
-                                    types.map((s) => (
-                                        <Badge
-                                            key={s}
-                                            variant='secondary'
-                                            className='rounded-sm px-1 font-normal'
-                                        >
-                                            {s}
-                                        </Badge>
-                                    ))
-                                )}
-                            </div>
-                        </>
-                    )}
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className='w-50 p-0' align='start'>
-                <Command>
-                    <CommandInput placeholder='Search types...' />
-                    <CommandList className='max-h-full'>
-                        <CommandEmpty>No types found.</CommandEmpty>
-                        <ScrollArea className='max-h-[300px]'>
-                            <CommandGroup className='scroll-py-1'>
-                                {sorted.map((subtype) => {
-                                    const isSelected = types.includes(subtype);
-                                    const color = colors.get(subtype);
-                                    return (
-                                        <CommandItem
-                                            key={subtype}
-                                            value={subtype}
-                                            onSelect={() => toggleType(subtype)}
-                                        >
-                                            <div
-                                                className={cn(
-                                                    'flex size-4 items-center justify-center rounded-sm border border-primary',
-                                                    isSelected
-                                                        ? 'bg-primary'
-                                                        : 'opacity-50 [&_svg]:invisible',
-                                                )}
-                                            >
-                                                <Check />
-                                            </div>
-                                            {color && (
-                                                <span
-                                                    className='size-2 rounded-full shrink-0'
-                                                    style={{ backgroundColor: color }}
-                                                />
-                                            )}
-                                            <span className='truncate'>{subtype}</span>
-                                        </CommandItem>
-                                    );
-                                })}
-                            </CommandGroup>
-                        </ScrollArea>
-                        {types.length > 0 && (
-                            <>
-                                <CommandSeparator />
-                                <CommandGroup>
-                                    <CommandItem
-                                        onSelect={() => clearTypes()}
-                                        className='justify-center text-center'
-                                    >
-                                        Clear filters
-                                    </CommandItem>
-                                </CommandGroup>
-                            </>
-                        )}
-                    </CommandList>
-                </Command>
-            </PopoverContent>
-        </Popover>
-    );
-}
-
 const DEPTH_OPTIONS = [1, 2, 3, 4, 5] as const;
+const DEFAULT_DEPTH = 2;
 
-function MaxStepsFilter({
-    value,
-    onChange,
-}: {
-    value: number;
-    onChange: (value: string) => void;
-}) {
-    const [isStepsPickerOpen, setIsStepsPickerOpen] = useState(false);
-
-    const selectDepth = (depth: (typeof DEPTH_OPTIONS)[number]) => {
-        onChange(String(depth));
-        setIsStepsPickerOpen(false);
-    };
-
-    return (
-        <Popover open={isStepsPickerOpen} onOpenChange={setIsStepsPickerOpen}>
-            <PopoverTrigger asChild>
-                <Button
-                    variant='outline'
-                    size='sm'
-                    className='border-dashed font-normal'
-                    aria-label={`Max steps, currently ${value}`}
-                >
-                    <CirclePlus />
-                    Max. steps
-                    <Separator
-                        orientation='vertical'
-                        className='mx-0.5 data-[orientation=vertical]:h-4'
-                    />
-                    <Badge variant='secondary' className='rounded-sm px-1 font-normal'>
-                        {value}
-                    </Badge>
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className='w-44 p-0' align='start'>
-                <Command>
-                    <CommandList className='max-h-full'>
-                        <CommandEmpty>No steps.</CommandEmpty>
-                        <CommandGroup>
-                            {DEPTH_OPTIONS.map((d) => {
-                                const isSelected = value === d;
-                                return (
-                                    <CommandItem
-                                        key={d}
-                                        onSelect={() => selectDepth(d)}
-                                    >
-                                        <div
-                                            className={cn(
-                                                'flex size-4 items-center justify-center rounded-sm border border-primary',
-                                                isSelected
-                                                    ? 'bg-primary'
-                                                    : 'opacity-50 [&_svg]:invisible',
-                                            )}
-                                        >
-                                            <Check className='size-3 text-primary-foreground' />
-                                        </div>
-                                        <span>
-                                            {d} step{d !== 1 ? 's' : ''}
-                                        </span>
-                                    </CommandItem>
-                                );
-                            })}
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
-            </PopoverContent>
-        </Popover>
-    );
-}
+const DEPTH_QUALIFIER: QualifierSpec = {
+    key: 'depth',
+    aliases: ['steps'],
+    description: 'max. steps',
+    kind: 'enum',
+    values: DEPTH_OPTIONS.map((d) => ({
+        value: String(d),
+        label: `${d} step${d !== 1 ? 's' : ''}`,
+    })),
+};
 
 export default function Relations({ obj }: RelationsProps) {
     const [appliedSearch, setAppliedSearch] = useState('');
-    const [depth, setDepth] = useState(2);
+    const [depthValue, setDepthValue] = useState<string>();
+    const depth = depthValue ? Number(depthValue) : DEFAULT_DEPTH;
     const [types, setTypes] = useState<string[]>([]);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
@@ -542,17 +333,34 @@ export default function Relations({ obj }: RelationsProps) {
 
     const entrySubtypes = useMemo(() => {
         const results = entryClasses ?? [];
-        return results.map((c: any) => c.subtype);
+        return results.map((c: any) => c.subtype as string);
     }, [entryClasses]);
 
-    const entryClassColors = useMemo(() => {
-        const colors = new Map<string, string>();
-        const results = entryClasses ?? [];
-        results.forEach((c: any) => {
-            if (c.color) colors.set(c.subtype, c.color);
-        });
-        return colors;
-    }, [entryClasses]);
+    const searchSchema = useMemo<SearchSchema>(
+        () => ({
+            qualifiers: [
+                {
+                    key: 'type',
+                    aliases: ['subtype'],
+                    description: 'entry type',
+                    kind: 'enum',
+                    multiple: true,
+                    values: [...entrySubtypes]
+                        .sort((a, b) => a.localeCompare(b))
+                        .map((value) => ({ value })),
+                },
+                DEPTH_QUALIFIER,
+            ],
+        }),
+        [entrySubtypes],
+    );
+
+    const searchState = useMemo<SearchState>(() => {
+        const values: Record<string, string[]> = {};
+        if (types.length > 0) values.type = types;
+        if (depthValue) values.depth = [depthValue];
+        return { q: appliedSearch || undefined, values, dates: {} };
+    }, [appliedSearch, types, depthValue]);
 
     const { data: neighbors, isLoading } = useQuery({
         queryKey: [
@@ -577,8 +385,8 @@ export default function Relations({ obj }: RelationsProps) {
                             depth,
                             page,
                             page_size: pageSize,
-                            ...(appliedSearch ? { name: [appliedSearch] } : {}),
                             ...(types.length > 0 ? { subtype: types } : {}),
+                            ...(appliedSearch ? { search: appliedSearch } : {}),
                         },
                     },
                 },
@@ -628,15 +436,12 @@ export default function Relations({ obj }: RelationsProps) {
 
     const hasInaccessible = inaccessibleIds.length > 0;
 
-    const applySearch = useCallback((value: string) => {
-        setAppliedSearch(value);
+    const applySearch = useCallback((state: SearchState) => {
+        setAppliedSearch(state.q ?? '');
+        setTypes(state.values.type ?? []);
+        setDepthValue(state.values.depth?.[0]);
         setPage(1);
     }, []);
-
-    const changeDepth = (value: string) => {
-        setDepth(parseInt(value, 10));
-        setPage(1);
-    };
 
     const totalPages = hasNextPage ? page + 1 : page;
 
@@ -646,9 +451,10 @@ export default function Relations({ obj }: RelationsProps) {
                 id: 'select',
                 header: ({ table }) => (
                     <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        checked={table.getIsAllPageRowsSelected()}
+                        indeterminate={
+                            table.getIsSomePageRowsSelected() &&
+                            !table.getIsAllPageRowsSelected()
                         }
                         onCheckedChange={(checked) =>
                             table.toggleAllPageRowsSelected(!!checked)
@@ -914,21 +720,12 @@ export default function Relations({ obj }: RelationsProps) {
                     </ActionBar>
                 }
             >
-                <ActionBarSearch
+                <SearchInput
+                    schema={searchSchema}
+                    value={searchState}
+                    onApply={applySearch}
                     placeholder='Search relations...'
-                    value={appliedSearch}
-                    debounceMs={300}
-                    onDebouncedChange={applySearch}
-                    onSubmit={applySearch}
-                    onClear={() => applySearch('')}
                 />
-                <SubtypeFilter
-                    options={entrySubtypes}
-                    types={types}
-                    setTypes={setTypes}
-                    colors={entryClassColors}
-                />
-                <MaxStepsFilter value={depth} onChange={changeDepth} />
             </DataTable>
             <ScrollBar orientation='horizontal' />
         </ScrollArea>

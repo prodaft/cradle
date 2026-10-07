@@ -29,6 +29,7 @@ import { queryKeys, useNdjsonQuery } from '@/hooks/query';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { Sparkles } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -421,7 +422,7 @@ export default function EnrichmentRequestDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
-                <form onSubmit={submit}>
+                <form onSubmit={submit} className='contents'>
                     <DialogHeader>
                         <DialogTitle>Enrichment Request</DialogTitle>
                         <DialogDescription>
@@ -544,43 +545,39 @@ export default function EnrichmentRequestDialog({
                         <Field>
                             <FieldTitle>Entities</FieldTitle>
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div className='w-full'>
-                                        <MultipleSelector
-                                            inputProps={{
-                                                'aria-label': 'Entities',
-                                                'aria-describedby': entitiesDescId,
-                                            }}
-                                            value={
-                                                selectedEntities.map((e) => ({
-                                                    value: String(e.value),
-                                                    label: e.label,
-                                                })) as Option[]
-                                            }
-                                            defaultOptions={
-                                                ((allEntities ?? [])
-                                                    .filter(
-                                                        (e) => typeof e.id === 'number',
-                                                    )
-                                                    .map((e) => ({
-                                                        value: String(e.id),
-                                                        label: e.name,
-                                                    })) as Option[]) || []
-                                            }
-                                            placeholder='Select entities for access scope...'
-                                            disabled={checkedIds.size > 0}
-                                            onChange={updateEntities}
-                                            emptyIndicator={
-                                                <Empty className='min-h-0 border-0 p-4 shadow-none'>
-                                                    <EmptyHeader className='max-w-none gap-0'>
-                                                        <EmptyDescription>
-                                                            No entities found
-                                                        </EmptyDescription>
-                                                    </EmptyHeader>
-                                                </Empty>
-                                            }
-                                        />
-                                    </div>
+                                <TooltipTrigger render={<div className='w-full' />}>
+                                    <MultipleSelector
+                                        inputProps={{
+                                            'aria-label': 'Entities',
+                                            'aria-describedby': entitiesDescId,
+                                        }}
+                                        value={
+                                            selectedEntities.map((e) => ({
+                                                value: String(e.value),
+                                                label: e.label,
+                                            })) as Option[]
+                                        }
+                                        defaultOptions={
+                                            ((allEntities ?? [])
+                                                .filter((e) => typeof e.id === 'number')
+                                                .map((e) => ({
+                                                    value: String(e.id),
+                                                    label: e.name,
+                                                })) as Option[]) || []
+                                        }
+                                        placeholder='Select entities for access scope...'
+                                        disabled={checkedIds.size > 0}
+                                        onChange={updateEntities}
+                                        emptyIndicator={
+                                            <Empty className='min-h-0 border-0 p-4 shadow-none'>
+                                                <EmptyHeader className='max-w-none gap-0'>
+                                                    <EmptyDescription>
+                                                        No entities found
+                                                    </EmptyDescription>
+                                                </EmptyHeader>
+                                            </Empty>
+                                        }
+                                    />
                                 </TooltipTrigger>
                                 {checkedIds.size > 0 && (
                                     <TooltipContent className='[--tooltip-bg:var(--primary)] [--tooltip-fg:var(--primary-foreground)]'>
@@ -611,17 +608,19 @@ export default function EnrichmentRequestDialog({
                         </Field>
                     </FieldGroup>
                     <DialogFooter>
-                        <DialogClose asChild>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                disabled={
-                                    createRequest.isPending || isInitialDataLoading
-                                }
-                            >
-                                Cancel
-                            </Button>
+                        <DialogClose
+                            render={
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={
+                                        createRequest.isPending || isInitialDataLoading
+                                    }
+                                />
+                            }
+                        >
+                            Cancel
                         </DialogClose>
                         <Button
                             type='submit'
@@ -630,13 +629,20 @@ export default function EnrichmentRequestDialog({
                             disabled={createRequest.isPending || isInitialDataLoading}
                         >
                             {createRequest.isPending ? (
-                                'Creating...'
+                                <>
+                                    <Spinner />
+                                    Creating...
+                                </>
                             ) : isInitialDataLoading ? (
                                 <>
-                                    <Spinner className='mr-2' /> Loading...
+                                    <Spinner />
+                                    Loading...
                                 </>
                             ) : (
-                                'Create Request'
+                                <>
+                                    <Sparkles data-icon='inline-start' />
+                                    Create
+                                </>
                             )}
                         </Button>
                     </DialogFooter>

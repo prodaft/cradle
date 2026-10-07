@@ -1,5 +1,3 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
-import StatusHeaderDropdown from '@/components/base/status-header-dropdown/status-header-dropdown';
 import { StatusIcon, type StatusType } from '@/components/base/status-icon/status-icon';
 import {
     ActionBar,
@@ -11,7 +9,6 @@ import {
 } from '@/components/custom/action-bar';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
-import { DateRangeFilterButton } from '@/components/custom/data-table/data-table-date-range-filter';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,59 +21,34 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { DateRangeFilter } from '@/types/list-view';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { TrashIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import {
-    type ColumnDef,
-    type RowSelectionState,
-    type SortingState,
     getCoreRowModel,
     useReactTable,
+    type ColumnDef,
+    type RowSelectionState,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import React, { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
-import { FILTER_OPTIONS } from './digest-list-status';
 
 type DigestRow = components['schemas']['BaseDigest'];
-
-const SORT_FIELD_MAPPING: Record<string, string> = {
-    title: 'title',
-    type: 'digest_type',
-    created_at: 'created_at',
-    user: 'user__username',
-};
-
-interface DataTypeOption {
-    value: string;
-    label: string;
-    inferEntities: boolean;
-}
 
 interface DigestsTableProps {
     rows: DigestRow[];
     isLoading: boolean;
     page: number;
     totalPages: number;
+    totalCount?: number;
     onPageChange: (page: number) => void;
     onRefresh?: () => void;
-    sortField?: string;
-    sortDirection?: 'asc' | 'desc';
-    onSort: (field: string, direction: 'asc' | 'desc') => void;
     pageSize?: number;
     onPageSizeChange?: (size: number) => void;
-    onColumnFilterChange?:
-        ((column: string, value: string | DateRangeFilter) => void) | null;
-    filters?: Record<string, any>;
-    draft?: Record<string, string>;
-    onSearchChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onSearchSubmit?: (e: React.SyntheticEvent) => void;
-    dataTypeOptions?: DataTypeOption[];
-    onUpload?: () => void;
+    toolbar?: ReactNode;
 }
 
 export default function DigestsTable({
@@ -84,20 +56,12 @@ export default function DigestsTable({
     isLoading,
     page,
     totalPages,
+    totalCount,
     onPageChange,
     onRefresh,
-    sortField = 'created_at',
-    sortDirection = 'desc',
-    onSort,
     pageSize = 10,
     onPageSizeChange = () => {},
-    onColumnFilterChange = null,
-    filters = {},
-    draft = {},
-    onSearchChange = () => {},
-    onSearchSubmit = () => {},
-    dataTypeOptions: _dataTypeOptions = [],
-    onUpload: _onUpload,
+    toolbar,
 }: DigestsTableProps) {
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
@@ -119,47 +83,6 @@ export default function DigestsTable({
             }
         },
         [page, pageSize, onPageChange, onPageSizeChange],
-    );
-
-    const sorting = useMemo<SortingState>(() => {
-        const columnId =
-            Object.keys(SORT_FIELD_MAPPING).find(
-                (key) => SORT_FIELD_MAPPING[key] === sortField,
-            ) || sortField;
-
-        return columnId
-            ? [
-                  {
-                      id: columnId,
-                      desc: sortDirection === 'desc',
-                  },
-              ]
-            : [];
-    }, [sortField, sortDirection]);
-
-    const applySort = useCallback(
-        (next: SortingState) => {
-            if (next.length === 0) {
-                onSort('created_at', 'desc');
-            } else {
-                const entry = next[0];
-                if (!entry) {
-                    onSort('created_at', 'desc');
-                } else {
-                    const apiField = SORT_FIELD_MAPPING[entry.id] || entry.id;
-                    onSort(apiField, entry.desc ? 'desc' : 'asc');
-                }
-            }
-        },
-        [onSort],
-    );
-
-    const applySorting = useCallback(
-        (updater: SortingState | ((prev: SortingState) => SortingState)) => {
-            const next = typeof updater === 'function' ? updater(sorting) : updater;
-            applySort(next);
-        },
-        [applySort, sorting],
     );
 
     const statusIcon = useCallback((status?: string, detail?: string) => {
@@ -187,10 +110,12 @@ export default function DigestsTable({
         if ((status === 'error' || status === 'waiting') && detail) {
             return (
                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <span className='inline-flex items-center align-middle flex-shrink-0'>
-                            {iconElement}
-                        </span>
+                    <TooltipTrigger
+                        render={
+                            <span className='inline-flex items-center align-middle flex-shrink-0' />
+                        }
+                    >
+                        {iconElement}
                     </TooltipTrigger>
                     <TooltipContent className={tooltipColorClass}>
                         {tooltipContent}
@@ -201,10 +126,12 @@ export default function DigestsTable({
 
         return (
             <Tooltip>
-                <TooltipTrigger asChild>
-                    <span className='inline-flex items-center align-middle flex-shrink-0'>
-                        {iconElement}
-                    </span>
+                <TooltipTrigger
+                    render={
+                        <span className='inline-flex items-center align-middle flex-shrink-0' />
+                    }
+                >
+                    {iconElement}
                 </TooltipTrigger>
                 <TooltipContent>{tooltipContent}</TooltipContent>
             </Tooltip>
@@ -220,9 +147,10 @@ export default function DigestsTable({
                 maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        checked={table.getIsAllPageRowsSelected()}
+                        indeterminate={
+                            table.getIsSomePageRowsSelected() &&
+                            !table.getIsAllPageRowsSelected()
                         }
                         onCheckedChange={(value) =>
                             table.toggleAllPageRowsSelected(!!value)
@@ -283,10 +211,7 @@ export default function DigestsTable({
                 id: 'user',
                 meta: { label: 'User' },
                 header: ({ column }) => (
-                    <div className='flex items-center gap-2'>
-                        <DataTableColumnHeader column={column} label='User' />
-                        {filters.user && <span className='text-xs text-accent'>●</span>}
-                    </div>
+                    <DataTableColumnHeader column={column} label='User' />
                 ),
                 cell: ({ row }) => {
                     const item = row.original;
@@ -311,10 +236,12 @@ export default function DigestsTable({
                     return (
                         <div className='w-8'>
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-foreground shadow-sm bg-[var(--chart-4)] dark:bg-[var(--chart-3)]'>
-                                        {warnings.length || 0}
-                                    </span>
+                                <TooltipTrigger
+                                    render={
+                                        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-foreground shadow-sm bg-[var(--chart-4)] dark:bg-[var(--chart-3)]' />
+                                    }
+                                >
+                                    {warnings.length || 0}
                                 </TooltipTrigger>
                                 {warnings.length > 0 && (
                                     <TooltipContent
@@ -342,10 +269,12 @@ export default function DigestsTable({
                     return (
                         <div className='w-8'>
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-destructive-foreground shadow-sm bg-destructive'>
-                                        {errors.length || 0}
-                                    </span>
+                                <TooltipTrigger
+                                    render={
+                                        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-destructive-foreground shadow-sm bg-destructive' />
+                                    }
+                                >
+                                    {errors.length || 0}
                                 </TooltipTrigger>
                                 {errors.length > 0 && (
                                     <TooltipContent
@@ -381,13 +310,12 @@ export default function DigestsTable({
                 },
             },
         ],
-        [filters, statusIcon],
+        [statusIcon],
     );
     const table = useReactTable({
         data: rows,
         columns,
         state: {
-            sorting,
             rowSelection,
             pagination: {
                 pageIndex: page - 1,
@@ -395,7 +323,6 @@ export default function DigestsTable({
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
-        onSortingChange: applySorting,
         onRowSelectionChange: setRowSelection,
         onPaginationChange: (updater) => {
             const current = {
@@ -408,22 +335,14 @@ export default function DigestsTable({
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
         manualPagination: true,
-        manualSorting: true,
+        enableSorting: false,
         pageCount: totalPages,
+        rowCount: totalCount,
     });
 
     const clearSelection = useCallback(() => {
         setRowSelection({});
     }, []);
-
-    const titleEvent = useCallback(
-        (value: string) =>
-            ({
-                preventDefault: () => {},
-                target: { name: 'title', value },
-            }) as React.ChangeEvent<HTMLInputElement>,
-        [],
-    );
 
     const confirmDelete = useCallback(() => {
         if (checkedIds.length === 0) return;
@@ -436,8 +355,8 @@ export default function DigestsTable({
             const results = await Promise.allSettled(
                 digestIds.map(async (id) => {
                     const { error, response } = await fetchClient.DELETE(
-                        '/intelio/digest/{id}/',
-                        { params: { path: { id } } },
+                        '/intelio/digest/{digest_id}/',
+                        { params: { path: { digest_id: id } } },
                     );
                     if (error) throw { response, error };
                 }),
@@ -473,43 +392,7 @@ export default function DigestsTable({
     return (
         <>
             <DataTable table={table} showViewOptions isLoading={isLoading}>
-                <div className='flex items-center gap-2'>
-                    <ActionBarSearch
-                        placeholder='Search by title...'
-                        initialValue={draft.title || ''}
-                        debounceMs={300}
-                        onDebouncedChange={(value) => {
-                            onSearchChange(titleEvent(value));
-                        }}
-                        onSubmit={(value) => {
-                            onSearchSubmit(titleEvent(value));
-                        }}
-                        onClear={() => {
-                            const ev = titleEvent('');
-                            onSearchChange(ev);
-                            onSearchSubmit(ev);
-                        }}
-                    />
-                    <StatusHeaderDropdown
-                        onStatusChange={(status) =>
-                            onColumnFilterChange?.('status', status)
-                        }
-                        status={filters.status || 'all'}
-                        options={[...FILTER_OPTIONS]}
-                    />
-                    {onColumnFilterChange && (
-                        <DateRangeFilterButton
-                            title='Created At'
-                            value={
-                                (filters.created_at as DateRangeFilter) || {
-                                    from: '',
-                                    to: '',
-                                }
-                            }
-                            onChange={(v) => onColumnFilterChange('created_at', v)}
-                        />
-                    )}
-                </div>
+                <div className='flex min-w-0 flex-1 items-center gap-2'>{toolbar}</div>
             </DataTable>
             <ActionBar
                 open={checkedIds.length > 0}

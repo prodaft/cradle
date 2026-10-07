@@ -65,8 +65,8 @@ export default function Pagination({
     totalRows,
     ...props
 }: PaginationProps): React.ReactElement {
-    const handlePageSizeChange = (value: string) => {
-        if (!onPageSizeChange) return;
+    const handlePageSizeChange = (value: string | null) => {
+        if (!onPageSizeChange || value === null) return;
         const newSize = Number(value);
         if (!isNaN(newSize) && newSize > 0) {
             onPageSizeChange(newSize);

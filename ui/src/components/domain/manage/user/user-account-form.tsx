@@ -19,6 +19,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { queryKeys } from '@/hooks/query';
+import { USER_ROLE_OPTIONS } from '@/utils/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
     ArrowCounterClockwiseIcon,
@@ -323,6 +324,7 @@ export default function UserAccountForm({
                                     </FieldContent>
                                     <div className='w-64 shrink-0 self-start md:self-center'>
                                         <Select
+                                            items={USER_ROLE_OPTIONS}
                                             value={field.value}
                                             onValueChange={field.onChange}
                                             disabled={isOtherAdmin}
@@ -334,15 +336,14 @@ export default function UserAccountForm({
                                                 <SelectValue placeholder='Select a role' />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value='author'>
-                                                    User
-                                                </SelectItem>
-                                                <SelectItem value='entrymanager'>
-                                                    Entry Manager
-                                                </SelectItem>
-                                                <SelectItem value='admin'>
-                                                    Admin
-                                                </SelectItem>
+                                                {USER_ROLE_OPTIONS.map((role) => (
+                                                    <SelectItem
+                                                        key={role.value}
+                                                        value={role.value}
+                                                    >
+                                                        {role.label}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </div>

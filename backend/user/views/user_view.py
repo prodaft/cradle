@@ -9,7 +9,6 @@ from uuid import UUID
 import bcrypt
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
 from django.db.utils import IntegrityError
 from django.urls import reverse
 from django.utils import timezone
@@ -28,6 +27,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
+from core.query_lang import search_q
 from core.throttling import AuthRateThrottle
 from core.utils import validate_order_by
 from management.settings import cradle_settings
@@ -70,6 +70,16 @@ from ..serializers import (
 )
 from ..utils.step_up import validate_step_up
 from .token_view import set_token_cookies
+
+
+def _resolve_user(initiator: CradleUser, user_id: str | UUID) -> CradleUser:
+    """Return ``initiator`` for "me", else the user with ``user_id``."""
+    if user_id == "me":
+        return initiator
+    try:
+        return CradleUser.objects.get(id=user_id)
+    except CradleUser.DoesNotExist:
+        raise UserNotFoundException(detail="That user could not be found.")
 
 
 @extend_schema_view(
@@ -318,16 +328,9 @@ class UserDetail(APIView):
 
     def get(self, request: Request, user_id: str | UUID) -> Response:
         initiator = cast(CradleUser, request.user)
-        user = None
-        if user_id == "me":
-            user = initiator
-        else:
-            try:
-                user = CradleUser.objects.get(id=user_id)
-            except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="That user could not be found.")
+        user = _resolve_user(initiator, user_id)
 
-        if not (initiator.pk == user.pk or initiator.is_cradle_admin):
+        if not initiator.can_view(user):
             raise ActionNotAllowedException(detail="You do not have permission to view this user.")
 
         json_user = UserRetrieveSerializer(user).data
@@ -335,17 +338,9 @@ class UserDetail(APIView):
 
     def patch(self, request: Request, user_id: str | UUID) -> Response:
         editor = cast(CradleUser, request.user)
-        edited = None
+        edited = _resolve_user(editor, user_id)
 
-        if user_id == "me":
-            edited = editor
-        else:
-            try:
-                edited = CradleUser.objects.get(id=user_id)
-            except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="That user could not be found.")
-
-        if not (editor.pk == edited.pk or (editor.is_cradle_admin and not edited.is_cradle_admin)):
+        if not editor.can_manage(edited):
             raise ActionNotAllowedException(detail="You do not have permission to edit this user.")
 
         data = dict(request.data)
@@ -366,15 +361,9 @@ class UserDetail(APIView):
 
     def delete(self, request: Request, user_id: str | UUID) -> Response:
         user = cast(CradleUser, request.user)
-        if user_id == "me":
-            target = user
-        else:
-            try:
-                target = CradleUser.objects.get(id=user_id)
-            except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="That user could not be found.")
+        target = _resolve_user(user, user_id)
 
-        if not (user.pk == target.pk or (user.is_cradle_admin and not target.is_cradle_admin)):
+        if not user.can_manage(target):
             raise ActionNotAllowedException(detail="You do not have permission to delete this user.")
 
         validate_step_up(request, user, request.data, is_self=user.pk == target.pk)
@@ -464,11 +453,9 @@ class ChangePasswordView(APIView):
         old_password = serializer.validated_data["old_password"]
         new_password = serializer.validated_data["new_password"]
 
-        # Check if old_password is correct
         if not user.check_password(old_password):
             raise CurrentPasswordIncorrectException(detail="The current password is incorrect.")
 
-        # Everything is valid, update the password
         user.set_password(new_password)
         user.save()
 
@@ -513,10 +500,8 @@ class ManageUser(APIView):
 
     def get_tokens_for_user(self, user: CradleUser):
         refresh = RefreshToken.for_user(user)
-        # Decode access token to get expiry time
         access_expires_at = datetime.fromtimestamp(refresh.access_token["exp"], tz=dt_timezone.utc)
 
-        # Decode refresh token to get expiry time
         refresh_expires_at = datetime.fromtimestamp(refresh["exp"], tz=dt_timezone.utc)
 
         return {
@@ -537,12 +522,7 @@ class ManageUser(APIView):
         return getattr(self, action_name)(request, user_id, *args, **kwargs)
 
     def password_reset_email(self, request: Request, user_id: str | UUID, *args, **kwargs) -> Response:
-        user = request.user if user_id == "me" else None
-        if user is None:
-            try:
-                user = CradleUser.objects.get(id=user_id)
-            except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="That user could not be found.")
+        user = _resolve_user(request.user, user_id)
 
         user.send_password_reset()
 
@@ -552,12 +532,7 @@ class ManageUser(APIView):
         )
 
     def send_email_confirmation(self, request: Request, user_id: str | UUID, *args, **kwargs) -> Response:
-        user = request.user if user_id == "me" else None
-        if user is None:
-            try:
-                user = CradleUser.objects.get(id=user_id)
-            except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="That user could not be found.")
+        user = _resolve_user(request.user, user_id)
 
         if user.email_confirmed:
             raise EmailAlreadyConfirmedException(detail="This email address is already confirmed.")
@@ -569,12 +544,7 @@ class ManageUser(APIView):
         )
 
     def simulate(self, request: Request, user_id: str | UUID, *args, **kwargs) -> Response:
-        user = request.user if user_id == "me" else None
-        if user is None:
-            try:
-                user = CradleUser.objects.get(id=user_id)
-            except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="That user could not be found.")
+        user = _resolve_user(request.user, user_id)
         if user.is_cradle_admin:
             raise ActionNotAllowedException(detail="You do not have permission to impersonate an administrator.")
 
@@ -673,15 +643,9 @@ class APIKey(APIView):
     permission_classes = [IsAuthenticated]
 
     def _get_user_and_check_permission(self, user: CradleUser, user_id: str | UUID) -> CradleUser:
-        if user_id == "me":
-            target = user
-        else:
-            try:
-                target = CradleUser.objects.get(id=user_id)
-            except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="That user could not be found.")
+        target = _resolve_user(user, user_id)
 
-        if not (user.pk == target.pk or (user.is_cradle_admin and not target.is_cradle_admin)):
+        if not user.can_manage(target):
             raise ActionNotAllowedException(detail="You do not have permission to manage access keys for this user.")
         return target
 
@@ -770,7 +734,6 @@ class EmailConfirm(APIView):
 
         user = serializer.user
 
-        # Check if token expired
         if user.email_confirmation_token_expiry < timezone.now():
             user.send_email_confirmation()
             raise EmailConfirmationFailedException(
@@ -911,17 +874,9 @@ class DefaultNoteTemplateView(APIView):
 
     def get(self, request: Request, user_id: str | UUID) -> Response:
         initiator = cast(CradleUser, request.user)
-        user = None
-        if user_id == "me":
-            user = initiator
-        else:
-            try:
-                user = CradleUser.objects.get(id=user_id)
-            except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="That user could not be found.")
+        user = _resolve_user(initiator, user_id)
 
-        # Check permissions - users can only see their own template or admins can see non-admin templates
-        if not (initiator.pk == user.pk or (initiator.is_cradle_admin and not user.is_cradle_admin)):
+        if not initiator.can_manage(user):
             raise ActionNotAllowedException(detail="You do not have permission to view this template.")
 
         return Response(
@@ -931,18 +886,9 @@ class DefaultNoteTemplateView(APIView):
 
     def patch(self, request: Request, user_id: str | UUID) -> Response:
         editor = cast(CradleUser, request.user)
-        edited = None
+        edited = _resolve_user(editor, user_id)
 
-        if user_id == "me":
-            edited = editor
-        else:
-            try:
-                edited = CradleUser.objects.get(id=user_id)
-            except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="That user could not be found.")
-
-        # Check permissions - users can only edit their own template or admins can edit non-admin templates
-        if not (editor.pk == edited.pk or (editor.is_cradle_admin and not edited.is_cradle_admin)):
+        if not editor.can_manage(edited):
             raise ActionNotAllowedException(detail="You do not have permission to edit this template.")
 
         serializer = DefaultNoteTemplateSerializer(data=request.data)
@@ -1006,14 +952,17 @@ class UserMeDefaultNoteTemplateView(DefaultNoteTemplateView):
                 name="search",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Search sessions by device info or IP address",
+                description=(
+                    "Search sessions by device info or IP address. Supports AND/OR/NOT, -term, "
+                    '"phrases", =exact and * wildcards (case-insensitive).'
+                ),
                 required=False,
             ),
             OpenApiParameter(
                 name="order_by",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Comma-separated list of fields to order by. Prefix with '-' for descending. Valid fields: device_info, ip_address, created_at, last_activity, expires_at",
+                description="Comma-separated list of fields to order by. Prefix with '-' for descending. Valid fields: device_info, ip_address, created_at, last_activity_at, expires_at",
                 required=False,
             ),
             OpenApiParameter(
@@ -1051,41 +1000,30 @@ class UserSessionsListView(APIView):
     def get(self, request: Request, user_id: str | UUID) -> Response:
         """List all active sessions for a user."""
         initiator = cast(CradleUser, request.user)
-        user = None
-        if user_id == "me":
-            user = initiator
-        else:
-            try:
-                user = CradleUser.objects.get(id=user_id)
-            except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="That user could not be found.")
+        user = _resolve_user(initiator, user_id)
 
-        if not (initiator.pk == user.pk or initiator.is_cradle_admin):
+        if not initiator.can_view(user):
             raise ActionNotAllowedException(detail="You do not have permission to view sessions for this user.")
 
-        # Get all non-expired sessions, ordered by last activity
         sessions = UserSession.objects.filter(user=user, expires_at__gt=timezone.now()).order_by("-last_activity")
 
-        # Handle search parameter
-        search = request.query_params.get("search")
-        if search:
-            sessions = sessions.filter(Q(device_info__icontains=search) | Q(ip_address__icontains=search))
+        search = search_q(request.query_params.get("search"), ("device_info", "ip_address"))
+        if search is not None:
+            sessions = sessions.filter(search)
 
-        # Handle ordering
         order_by = request.query_params.get("order_by")
         if order_by:
-            valid_order_fields = [
-                "device_info",
-                "ip_address",
-                "created_at",
-                "last_activity",
-                "expires_at",
-            ]
+            valid_order_fields = {
+                "device_info": "device_info",
+                "ip_address": "ip_address",
+                "created_at": "created_at",
+                "last_activity_at": "last_activity",
+                "expires_at": "expires_at",
+            }
             order_fields = validate_order_by(order_by, valid_order_fields)
             if order_fields:
                 sessions = sessions.order_by(*order_fields)
 
-        # Mark current session using the refresh token cookie
         current_jti = None
         refresh_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
         refresh_cookie = request.COOKIES.get(refresh_name)
@@ -1171,29 +1109,18 @@ class UserSessionRevokeView(APIView):
     def delete(self, request: Request, user_id: str | UUID, session_id: UUID) -> Response:
         """Revoke a specific session."""
         initiator = cast(CradleUser, request.user)
-        user = None
-        if user_id == "me":
-            user = initiator
-        else:
-            try:
-                user = CradleUser.objects.get(id=user_id)
-            except CradleUser.DoesNotExist:
-                raise UserNotFoundException(detail="That user could not be found.")
+        user = _resolve_user(initiator, user_id)
 
-        # Users can revoke their own sessions; admins can revoke non-admin users' sessions
-        if not (initiator.pk == user.pk or (initiator.is_cradle_admin and not user.is_cradle_admin)):
+        if not initiator.can_manage(user):
             raise ActionNotAllowedException(detail="You do not have permission to revoke sessions for this user.")
 
         try:
             session = UserSession.objects.get(id=session_id, user=user)
-            # Blacklist the refresh token before deleting the session
             refresh_token_jti = session.refresh_token_jti
             expires_at = session.expires_at
 
-            # Add token to blacklist
             BlacklistedToken.blacklist_token(refresh_token_jti, expires_at)
 
-            # Delete the session
             session.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except UserSession.DoesNotExist:

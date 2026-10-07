@@ -1,10 +1,23 @@
 """Filters for event log list API."""
 
-from django.db.models import Q
 from django_filters import rest_framework as filters
+
+from core.query_lang import And, Node, Not, Or, parse_search, to_q
 
 from .enums import EventType
 from .models import EventLog
+
+EVENT_LOG_SEARCH_FIELDS = ("object_id", "content_type__model", "type")
+EVENT_LOG_DETAILS_MIN_TERM_LENGTH = 4
+
+
+def _shortest_term(node: Node) -> int:
+    """Length of the shortest literal (``*`` excluded) among the query's terms."""
+    if isinstance(node, (And, Or)):
+        return min(_shortest_term(node.left), _shortest_term(node.right))
+    if isinstance(node, Not):
+        return _shortest_term(node.operand)
+    return len(node.text.replace("*", "").strip())
 
 
 class EventLogFilter(filters.FilterSet):
@@ -14,7 +27,7 @@ class EventLogFilter(filters.FilterSet):
         choices=EventType.choices,
         help_text="Event type (create, edit, delete, fetch, login).",
     )
-    username = filters.CharFilter(
+    user = filters.CharFilter(
         field_name="user__username",
         help_text="Filter by username.",
     )
@@ -40,18 +53,21 @@ class EventLogFilter(filters.FilterSet):
     search = filters.CharFilter(
         method="filter_search",
         help_text=(
-            "Case-insensitive match on object id, content type, or event type. "
-            "``details`` is included only when the term has at least 4 characters (shorter terms skip JSON details to limit scan cost)."
+            "Search object id, content type, event type and details. Supports AND/OR/NOT, "
+            '-term, "phrases", =exact and * wildcards (case-insensitive). ``details`` is '
+            f"only searched when every term has at least {EVENT_LOG_DETAILS_MIN_TERM_LENGTH} characters, "
+            "to limit scan cost."
         ),
     )
 
     def filter_search(self, queryset, name, value):
-        if not value or not (term := value.strip()):
+        node = parse_search(value)
+        if node is None:
             return queryset
-        q = Q(object_id__icontains=term) | Q(content_type__model__icontains=term) | Q(type__icontains=term)
-        if len(term) >= 4:
-            q |= Q(details__icontains=term)
-        return queryset.filter(q)
+        fields = EVENT_LOG_SEARCH_FIELDS
+        if _shortest_term(node) >= EVENT_LOG_DETAILS_MIN_TERM_LENGTH:
+            fields = (*EVENT_LOG_SEARCH_FIELDS, "details")
+        return queryset.filter(to_q(node, fields))
 
     class Meta:
         model = EventLog

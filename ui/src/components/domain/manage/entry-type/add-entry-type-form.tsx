@@ -1,6 +1,6 @@
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
 import { Button } from '@/components/ui/button';
-import { DialogFooter } from '@/components/ui/dialog';
+import { DialogClose, DialogFooter } from '@/components/ui/dialog';
 import {
     Field,
     FieldDescription,
@@ -29,6 +29,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
+import { Plus } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
@@ -174,7 +175,7 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
             prefix: data.prefix,
             color: data.color,
             regex: data.regex,
-            options: data.options,
+            options: data.options.split('\n'),
             children: data.children?.map((child) => child.value) ?? [],
         };
         try {
@@ -214,6 +215,7 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Select
+                                    items={typeOptions}
                                     value={field.value?.value || ''}
                                     onValueChange={(value) => {
                                         const option = typeOptions.find(
@@ -229,7 +231,10 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
                                         );
                                     }}
                                 >
-                                    <SelectTrigger aria-invalid={fieldState.invalid}>
+                                    <SelectTrigger
+                                        className='w-full'
+                                        aria-invalid={fieldState.invalid}
+                                    >
                                         <SelectValue placeholder='Select type' />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -431,6 +436,7 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
                                             control={control}
                                             render={({ field, fieldState }) => (
                                                 <Select
+                                                    items={formatOptions}
                                                     value={field.value?.value || ''}
                                                     onValueChange={(value) => {
                                                         const option =
@@ -449,6 +455,7 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
                                                     }}
                                                 >
                                                     <SelectTrigger
+                                                        className='w-full'
                                                         aria-invalid={
                                                             fieldState.invalid
                                                         }
@@ -571,6 +578,7 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
                                     control={control}
                                     render={({ field }) => (
                                         <MultipleSelector
+                                            inlineDropdown
                                             value={
                                                 (field.value?.map((c) => ({
                                                     value: c.value,
@@ -587,11 +595,7 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
                                                     })),
                                                 );
                                             }}
-                                            emptyIndicator={
-                                                <p className='text-center text-sm'>
-                                                    No entry types found
-                                                </p>
-                                            }
+                                            emptyIndicator={<p>No entry types found</p>}
                                         />
                                     )}
                                 />
@@ -608,14 +612,28 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
             </div>
 
             <DialogFooter className='shrink-0 sm:justify-end'>
+                <DialogClose
+                    render={
+                        <Button
+                            type='button'
+                            variant='outline'
+                            disabled={isSubmitting}
+                        />
+                    }
+                >
+                    Cancel
+                </DialogClose>
                 <Button type='submit' variant='default' disabled={isSubmitting}>
                     {isSubmitting ? (
                         <>
-                            <Spinner className='size-4' />
+                            <Spinner />
                             Creating...
                         </>
                     ) : (
-                        'Create Entry'
+                        <>
+                            <Plus data-icon='inline-start' />
+                            Create
+                        </>
                     )}
                 </Button>
             </DialogFooter>

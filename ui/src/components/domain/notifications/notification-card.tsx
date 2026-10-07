@@ -98,33 +98,25 @@ const VISUALS: Record<string, NotificationVisual> = {
 export default function NotificationCard({
     notification,
 }: NotificationCardProps): React.JSX.Element {
-    const { id, message, timestamp, is_marked_unread } = notification;
-    const [unreadStatus, setUnreadStatus] = useState(is_marked_unread);
+    const { id, message, created_at, is_unread } = notification;
+    const [unreadStatus, setUnreadStatus] = useState(is_unread);
     const queryClient = useQueryClient();
     const router = useRouter();
 
     useEffect(() => {
-        setUnreadStatus(is_marked_unread);
-    }, [id, is_marked_unread]);
+        setUnreadStatus(is_unread);
+    }, [id, is_unread]);
 
-    const visual =
-        (notification.notification_type && VISUALS[notification.notification_type]) ||
-        DEFAULT_VISUAL;
+    const visual = (notification.type && VISUALS[notification.type]) || DEFAULT_VISUAL;
     const Icon = visual.icon;
 
     const updateUnreadStatus = useMutation({
-        mutationFn: async ({
-            id,
-            is_marked_unread,
-        }: {
-            id: string;
-            is_marked_unread: boolean;
-        }) => {
+        mutationFn: async ({ id, is_unread }: { id: string; is_unread: boolean }) => {
             const { error, response } = await fetchClient.PUT(
                 '/notifications/{notification_id}/',
                 {
                     params: { path: { notification_id: id } },
-                    body: { is_marked_unread },
+                    body: { is_unread },
                 },
             );
             if (error) throw { response, error };
@@ -133,7 +125,7 @@ export default function NotificationCard({
             suppressNotification: true,
         },
         onSuccess: (_data, variables) => {
-            setUnreadStatus(variables.is_marked_unread);
+            setUnreadStatus(variables.is_unread);
             void queryClient.invalidateQueries({
                 queryKey: queryKeys.notifications.unreadCount(),
             });
@@ -182,14 +174,17 @@ export default function NotificationCard({
 
     const fetchReportUrl = useMutation({
         mutationFn: async (reportId: string) => {
-            const { data, error, response } = await fetchClient.GET('/reports/{id}/', {
-                params: {
-                    path: { id: reportId },
-                    query: {
-                        download_url: false,
+            const { data, error, response } = await fetchClient.GET(
+                '/reports/{report_id}/',
+                {
+                    params: {
+                        path: { report_id: reportId },
+                        query: {
+                            download_url: false,
+                        },
                     },
                 },
-            });
+            );
             if (error) throw { response, error };
             return data?.report_url;
         },
@@ -208,7 +203,7 @@ export default function NotificationCard({
     const toggleUnread = () => {
         if (!id) return;
         const next = !unreadStatus;
-        updateUnreadStatus.mutate({ id, is_marked_unread: next });
+        updateUnreadStatus.mutate({ id, is_unread: next });
     };
 
     const grantAccess = (access: 'read' | 'read-write') => () => {
@@ -229,56 +224,61 @@ export default function NotificationCard({
 
     const viewReport = () => {
         const notif = notification as ReportRenderNotification;
-        if (!notif.published_report_id) return;
-        fetchReportUrl.mutate(notif.published_report_id);
+        if (!notif.report_id) return;
+        fetchReportUrl.mutate(notif.report_id);
     };
 
-    const timestampDate = timestamp ? new Date(timestamp) : null;
-    const relativeTime = timestampDate
-        ? formatDistanceToNow(timestampDate, { addSuffix: true })
+    const createdAtDate = created_at ? new Date(created_at) : null;
+    const relativeTime = createdAtDate
+        ? formatDistanceToNow(createdAtDate, { addSuffix: true })
         : 'N/A';
-    const absoluteTime = timestampDate
-        ? format(timestampDate, 'dd MMM yyyy, HH:mm')
+    const absoluteTime = createdAtDate
+        ? format(createdAtDate, 'dd MMM yyyy, HH:mm')
         : 'N/A';
 
     const isActionable = !!(
-        notification.notification_type === 'request_access_notification' ||
-        notification.notification_type === 'new_user_notification' ||
-        notification.notification_type === 'report_render_notification' ||
-        notification.notification_type === 'report_processing_error_notification' ||
-        notification.notification_type === 'enrichment_complete_notification' ||
-        notification.notification_type === 'enrichment_error_notification'
+        notification.type === 'request_access_notification' ||
+        notification.type === 'new_user_notification' ||
+        notification.type === 'report_render_notification' ||
+        notification.type === 'report_processing_error_notification' ||
+        notification.type === 'enrichment_complete_notification' ||
+        notification.type === 'enrichment_error_notification'
     );
 
     return (
         <Alert variant={visual.variant}>
             <Icon weight='fill' />
 
-            <AlertTitle className='flex items-center gap-2 pr-8'>
+            <AlertTitle className='flex items-center gap-2 pr-6'>
                 <span className='truncate'>{visual.title}</span>
                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <span className='shrink-0 text-xs font-normal text-muted-foreground'>
-                            {relativeTime}
-                        </span>
+                    <TooltipTrigger
+                        render={
+                            <span className='shrink-0 text-xs font-normal text-muted-foreground' />
+                        }
+                    >
+                        {relativeTime}
                     </TooltipTrigger>
                     <TooltipContent>{absoluteTime}</TooltipContent>
                 </Tooltip>
             </AlertTitle>
 
-            <div className='absolute top-2 right-2'>
+            <div className='absolute top-1.5 right-1.5'>
                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant='ghost' size='icon-xs' onClick={toggleUnread}>
-                            {unreadStatus ? (
-                                <EnvelopeIcon weight='bold' data-testid='mark-read' />
-                            ) : (
-                                <EnvelopeOpenIcon
-                                    weight='bold'
-                                    data-testid='mark-unread'
-                                />
-                            )}
-                        </Button>
+                    <TooltipTrigger
+                        render={
+                            <Button
+                                variant='ghost'
+                                size='icon-xs'
+                                onClick={toggleUnread}
+                            />
+                        }
+                    >
+                        {unreadStatus ? (
+                            <EnvelopeIcon weight='bold' data-testid='mark-read' />
+                        ) : (
+                            <EnvelopeOpenIcon weight='bold' data-testid='mark-unread' />
+                        )}
                     </TooltipTrigger>
                     <TooltipContent>
                         {unreadStatus ? 'Mark as read' : 'Mark as unread'}
@@ -290,9 +290,8 @@ export default function NotificationCard({
                 <p>{message}</p>
 
                 {isActionable && (
-                    <div className='flex flex-wrap gap-2 pt-2'>
-                        {notification.notification_type ===
-                            'request_access_notification' && (
+                    <div className='-mt-1 flex flex-wrap gap-2'>
+                        {notification.type === 'request_access_notification' && (
                             <>
                                 <Button size='xs' onClick={grantAccess('read')}>
                                     Read
@@ -303,20 +302,19 @@ export default function NotificationCard({
                             </>
                         )}
 
-                        {notification.notification_type === 'new_user_notification' && (
+                        {notification.type === 'new_user_notification' && (
                             <Button size='xs' onClick={activateNewUser}>
                                 Activate user
                             </Button>
                         )}
 
-                        {notification.notification_type ===
-                            'report_render_notification' && (
+                        {notification.type === 'report_render_notification' && (
                             <Button size='xs' onClick={viewReport}>
                                 View report
                             </Button>
                         )}
 
-                        {notification.notification_type ===
+                        {notification.type ===
                             'report_processing_error_notification' && (
                             <Button
                                 size='xs'
@@ -326,8 +324,7 @@ export default function NotificationCard({
                             </Button>
                         )}
 
-                        {notification.notification_type ===
-                            'enrichment_complete_notification' && (
+                        {notification.type === 'enrichment_complete_notification' && (
                             <Button
                                 size='xs'
                                 onClick={() => {
@@ -346,8 +343,7 @@ export default function NotificationCard({
                             </Button>
                         )}
 
-                        {notification.notification_type ===
-                            'enrichment_error_notification' && (
+                        {notification.type === 'enrichment_error_notification' && (
                             <Button
                                 size='xs'
                                 onClick={() => {

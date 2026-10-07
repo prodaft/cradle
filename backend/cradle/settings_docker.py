@@ -103,6 +103,7 @@ RABBITMQ_URL = env.str("RABBITMQ_URL", None)
 REDIS_URL = env.str("REDIS_URL", None)
 BROKER = RABBITMQ_URL if RABBITMQ_URL else REDIS_URL
 RESULT_BACKEND = REDIS_URL
+CHANNEL_LAYERS = channel_layers(REDIS_URL)  # noqa: F405
 
 # Email (SMTP)
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

@@ -19,6 +19,7 @@ from file_transfer.s3_utils import (
 from .exceptions import (
     AlreadyUploadingException,
     FileNotUploadedException,
+    InvalidFileNameException,
     InvalidFileSizeException,
     QuotaExceededException,
     UploadExpiredException,
@@ -33,6 +34,22 @@ if TYPE_CHECKING:
 logger = logging.getLogger("django.request")
 
 T = TypeVar("T", bound="BasePendingUpload")
+
+
+def parse_initiate_request(data) -> tuple[str, int]:
+    """Read `file_name` and `file_size` from an upload initiation request body."""
+    file_name = data.get("file_name")
+    if not file_name or not isinstance(file_name, str):
+        raise InvalidFileNameException(detail="A file name is required.")
+
+    file_size = data.get("file_size")
+    if file_size in (None, ""):
+        raise InvalidFileSizeException(detail="The file size is required.")
+
+    try:
+        return file_name, int(file_size)
+    except ValueError, TypeError:
+        raise InvalidFileSizeException(detail="Use a whole number for the file size.")
 
 
 @dataclass
@@ -136,7 +153,7 @@ class PresignedUploadFlow(Generic[T]):
                 - upload_id: UUID for this upload.
                 - presigned_url: S3 presigned PUT URL.
                 - object_key: S3 object key where file will be stored.
-                - expires_in: Seconds until URL expires.
+                - expires_at: When the URL expires.
 
         Raises:
             AlreadyUploadingException: If user has pending upload and
@@ -229,7 +246,7 @@ class PresignedUploadFlow(Generic[T]):
             "upload_id": upload_id,
             "presigned_url": presigned_url,
             "object_key": object_key,
-            "expires_in": self.config.expiry_seconds,
+            "expires_at": expires_at,
         }
 
     def finalize(self, upload_id: uuid.UUID, user: "CradleUser", **kwargs) -> dict:
@@ -248,19 +265,15 @@ class PresignedUploadFlow(Generic[T]):
             UploadExpiredException: If upload has expired.
             FileNotUploadedException: If file not found in storage.
         """
-        # Get pending upload
         try:
             pending_upload = self.pending_model.objects.get(id=upload_id, user=user)
         except self.pending_model.DoesNotExist:
             raise UploadNotFoundException(detail="That upload could not be found.")
 
-        # Verify file exists in storage
         if not exists(self.config.bucket_name, pending_upload.object_key):
             raise FileNotUploadedException(detail="The file upload did not complete.")
 
-        # Check if upload has expired
         if pending_upload.is_expired:
-            # Clean up the uploaded file
             try:
                 delete_object(self.config.bucket_name, pending_upload.object_key)
             except Exception as e:
@@ -269,7 +282,6 @@ class PresignedUploadFlow(Generic[T]):
             pending_upload.delete()
             raise UploadExpiredException(detail="This upload session has expired. Please initiate a new upload.")
 
-        # Call domain-specific finalization logic
         try:
             response_data = self.callbacks.on_finalize_success(pending_upload, **kwargs)
         except Exception:
@@ -284,7 +296,6 @@ class PresignedUploadFlow(Generic[T]):
             pending_upload.delete()
             raise
 
-        # Delete pending upload record
         pending_upload.delete()
 
         return response_data

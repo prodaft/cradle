@@ -74,7 +74,7 @@ class NotificationListTest(NotificationsTestCase):
         expected_ids = [str(message_user.id), str(access_request_user.id)]
         self.assertCountEqual(result_ids, expected_ids)
 
-        self.assertTrue(results[0]["timestamp"] >= results[1]["timestamp"])
+        self.assertTrue(results[0]["created_at"] >= results[1]["created_at"])
 
         self.assertFalse(MessageNotification.objects.filter(user=self.user, is_unread=True).exists())
         self.assertFalse(MessageNotification.objects.filter(user=self.other_user, is_unread=False).exists())
@@ -110,6 +110,8 @@ class NotificationListTest(NotificationsTestCase):
         self.assertEqual(data["count"], 2)
         result_ids = {n["id"] for n in data["results"]}
         self.assertEqual(result_ids, {str(natural.id), str(marked.id)})
+        self.assertTrue(all(n["is_unread"] for n in data["results"]))
+        self.assertTrue(all(n["type"] == "message_notification" for n in data["results"]))
 
         natural.refresh_from_db()
         self.assertTrue(natural.is_unread)

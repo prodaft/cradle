@@ -1,5 +1,5 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
 import PageHeader from '@/components/base/page-header';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import {
     ActionBar,
     ActionBarClose,
@@ -36,6 +36,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
+import { FREE_TEXT_SCHEMA, type SearchState } from '@/lib/search-query/search-schema';
 import {
     ClockCounterClockwiseIcon,
     PencilIcon,
@@ -178,14 +179,18 @@ export default function EntitiesList() {
         () => Math.max(1, entitiesPage?.total_pages ?? 1),
         [entitiesPage],
     );
+    const searchState = useMemo<SearchState>(
+        () => ({ q: trimmed || undefined, values: {}, dates: {} }),
+        [trimmed],
+    );
     const applySearch = useCallback(
-        (value: string) => {
+        (state: SearchState) => {
             router.navigate({
                 to: location.pathname as any,
                 search: {
                     ...search,
                     entities_page: 1,
-                    entities_search: value.trim() || undefined,
+                    entities_search: state.q || undefined,
                 } as any,
                 replace: true,
             });
@@ -229,9 +234,10 @@ export default function EntitiesList() {
                 maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        checked={table.getIsAllPageRowsSelected()}
+                        indeterminate={
+                            table.getIsSomePageRowsSelected() &&
+                            !table.getIsAllPageRowsSelected()
                         }
                         onCheckedChange={(value) =>
                             table.toggleAllPageRowsSelected(!!value)
@@ -332,9 +338,11 @@ export default function EntitiesList() {
             paginate(next.pageIndex, next.pageSize);
         },
         getCoreRowModel: getCoreRowModel(),
+        enableSorting: false,
         enableRowSelection: true,
         manualPagination: true,
         pageCount: totalPages,
+        rowCount: entitiesPage?.count,
     });
 
     const openAddDialog = () => {
@@ -358,11 +366,11 @@ export default function EntitiesList() {
                     actions={
                         isAdmin ? (
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button onClick={openAddDialog}>
-                                        <Plus />
-                                        Add Entity
-                                    </Button>
+                                <TooltipTrigger
+                                    render={<Button onClick={openAddDialog} />}
+                                >
+                                    <Plus />
+                                    Add Entity
                                 </TooltipTrigger>
                                 <TooltipContent>Create a new entity</TooltipContent>
                             </Tooltip>
@@ -378,13 +386,11 @@ export default function EntitiesList() {
                             onRowClick={openEntity}
                             getRowHref={(item) => `/manage/entities/${item.id}`}
                         >
-                            <ActionBarSearch
+                            <SearchInput
+                                schema={FREE_TEXT_SCHEMA}
+                                value={searchState}
+                                onApply={applySearch}
                                 placeholder='Search entities...'
-                                value={applied}
-                                debounceMs={300}
-                                onDebouncedChange={applySearch}
-                                onSubmit={applySearch}
-                                onClear={() => applySearch('')}
                             />
                         </DataTable>
                     </div>

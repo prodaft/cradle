@@ -16,6 +16,7 @@ import React, {
     ReactNode,
     useCallback,
     useEffect,
+    useLayoutEffect,
     useMemo,
     useRef,
     useState,
@@ -25,9 +26,14 @@ import { ThemeContext } from './theme-context';
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value);
 
+// Radius, fonts, shadows and spacing belong to the base-lyra style in globals.css, not to
+// themes. Older presets saved in profiles/localStorage still carry them, so drop them here.
+const STRUCTURAL_VAR = /^--(radius|font-|shadow|spacing|tracking|letter-spacing)/;
+
 const sanitizeThemeVars = (vars: Record<string, unknown>): ThemeConfig => {
     const entries = Object.entries(vars).filter(
-        (entry): entry is [string, string] => typeof entry[1] === 'string',
+        (entry): entry is [string, string] =>
+            typeof entry[1] === 'string' && !STRUCTURAL_VAR.test(entry[0]),
     );
     return Object.fromEntries(entries) as ThemeConfig;
 };
@@ -151,8 +157,9 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
         }
     }, [profileTheme]);
 
-    // Apply theme CSS variables from the theme settings.
-    useEffect(() => {
+    // Apply theme CSS variables from the theme settings. Layout effects (here and
+    // for data-theme) so they're set before descendants' effects read computed colors.
+    useLayoutEffect(() => {
         const root = document.documentElement;
         // Remove previously applied vars
         for (const key of appliedVarsRef.current) {
@@ -169,7 +176,7 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
         appliedVarsRef.current = cssVars;
     }, [activeTheme]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         document.documentElement.dataset.theme = isDarkMode ? 'dark' : 'light';
     }, [isDarkMode]);
 

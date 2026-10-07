@@ -9,6 +9,7 @@ export const Route = createFileRoute('/_authenticated/manage/_manage-auth/users/
         users_page: z.coerce.number().optional(),
         users_pagesize: z.coerce.number().optional(),
         users_search: z.string().optional(),
+        users_role: z.string().optional(),
     }),
     component: UsersList,
 });

@@ -184,6 +184,9 @@ export class LinkTreeFlattener {
     }
 }
 
+/** Dashboard subtype for files; the name segment starts with the file id. */
+export const FILE_DASHBOARD_SUBTYPE = 'file';
+
 /**
  * Create a dashboard link for an entry
  *

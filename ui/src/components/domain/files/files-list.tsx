@@ -1,4 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import {
     ActionBar,
     ActionBarClose,
@@ -25,32 +25,28 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-    Command,
-    CommandGroup,
-    CommandItem,
-    CommandList,
-    CommandSeparator,
-} from '@/components/ui/command';
-import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
+import type { SearchState } from '@/lib/search-query/search-schema';
 import { cn } from '@/lib/utils';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
-import { truncateText } from '@/utils/dashboard';
+import {
+    createDashboardLink,
+    FILE_DASHBOARD_SUBTYPE,
+    truncateText,
+} from '@/utils/dashboard';
 import { useDroppable } from '@dnd-kit/core';
 import {
     ArrowClockwiseIcon,
     DotsThreeIcon,
     DownloadSimpleIcon,
+    FileTextIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
@@ -60,23 +56,26 @@ import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
     type ColumnDef,
     type RowSelectionState,
-    type SortingState,
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
 import bytes from 'bytes';
 import { format } from 'date-fns';
-import { Check, PlusCircle, XCircle } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import {
+    FILES_SEARCH_SCHEMA,
+    orderByFromUrl,
+    searchStateFromUrl,
+    urlFromSearchState,
+} from './files-list-search-schema';
+import { useFileDownload } from './use-file-download';
 
 type FileRow = components['schemas']['FileReferenceWithNote'];
 
 type ListQuery = NonNullable<operations['notes_files_retrieve']['parameters']['query']>;
 
-export type FilesListScopeQuery = Partial<
-    Omit<ListQuery, 'linked_to' | 'references'>
-> & {
+type FilesListScopeQuery = Partial<Omit<ListQuery, 'linked_to' | 'references'>> & {
     linked_to?: number | string;
     references?: string;
 };
@@ -86,15 +85,11 @@ interface FilesListProps {
     hidePageHeader?: boolean;
 }
 
-const SORT_FIELD_MAPPING: Record<string, string> = {
-    file_name: 'file_name',
-    timestamp: 'timestamp',
-    mimetype: 'mimetype',
-    file_size: 'file_size',
-};
-
 const EMPTY_SCOPE: FilesListScopeQuery = {};
 const EMPTY_ROWS: FileRow[] = [];
+
+const fileDashboardLink = (item: FileRow) =>
+    createDashboardLink({ subtype: FILE_DASHBOARD_SUBTYPE, name: item.id ?? '' });
 
 export default function FilesList({
     scope = EMPTY_SCOPE,
@@ -107,34 +102,13 @@ export default function FilesList({
     });
     const search = useSearch({ strict: false }) as any;
     const page = Number(search?.files_page ?? 1) || 1;
-    const sortField = (search?.files_sort_field ?? 'timestamp') as string;
-    const sortDirection: 'asc' | 'desc' = (search?.files_sort_direction ?? 'desc') as
-        'asc' | 'desc';
+    const orderBy = orderByFromUrl(search ?? {});
+    const searchState = useMemo(() => searchStateFromUrl(search ?? {}), [search]);
     const pageSize = Number(search?.files_pagesize ?? 20) || 20;
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
 
-    const downloadFile = useMutation({
-        mutationFn: async (id: string) => {
-            const { data, error, response } = await fetchClient.GET(
-                '/file-transfer/download/',
-                {
-                    params: {
-                        query: {
-                            file_id: id,
-                        },
-                    },
-                },
-            );
-            if (error) throw { response, error };
-            return data.presigned_url;
-        },
-        onSuccess: (presignedUrl) => {
-            if (presignedUrl) {
-                window.open(presignedUrl, '_blank', 'noopener');
-            }
-        },
-    });
+    const downloadFile = useFileDownload();
 
     const reprocessFile = useMutation({
         mutationFn: async (id: string) => {
@@ -149,62 +123,29 @@ export default function FilesList({
         },
     });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [appliedSearch, setAppliedSearch] = useState('');
-    const statusFilter: 'all' | 'healthy' | 'warning' =
-        (search?.files_status as 'all' | 'healthy' | 'warning') || 'all';
 
     const { setNodeRef } = useDroppable({
         id: 'files-droppable',
     });
 
-    const applySort = useCallback(
-        (sorting: SortingState) => {
-            const next: any = { ...search, files_page: 1 };
-
-            if (sorting.length === 0) {
-                delete next.files_sort_field;
-                delete next.files_sort_direction;
-            } else {
-                const entry = sorting[0];
-                if (!entry) {
-                    delete next.files_sort_field;
-                    delete next.files_sort_direction;
-                } else {
-                    const apiField = SORT_FIELD_MAPPING[entry.id] || entry.id;
-                    next.files_sort_field = apiField;
-                    next.files_sort_direction = entry.desc ? 'desc' : 'asc';
-                }
-            }
-
-            router.navigate({
-                to: location.pathname as any,
-                search: next as any,
-                replace: true,
-            });
-        },
-        [search, router, location.pathname],
-    );
-
     const listQuery = useMemo((): ListQuery => {
-        const order_by = sortDirection === 'desc' ? `-${sortField}` : sortField;
-
         return Object.fromEntries(
             Object.entries({
                 page,
                 page_size: pageSize,
-                order_by,
+                order_by: orderBy,
                 date: scope.date,
-                keyword: appliedSearch || scope.keyword,
+                keyword: searchState.q || scope.keyword,
                 linked_to:
                     scope.linked_to != null ? String(scope.linked_to) : undefined,
-                mimetype: scope.mimetype,
+                mime_type: searchState.values.mimetype?.[0] || scope.mime_type,
                 references: scope.references ? [scope.references] : undefined,
-                status: statusFilter !== 'all' ? statusFilter : undefined,
-                timestamp_gte: scope.timestamp_gte,
-                timestamp_lte: scope.timestamp_lte,
+                status: searchState.values.status?.[0] ?? scope.status,
+                created_at_gte: scope.created_at_gte,
+                created_at_lte: scope.created_at_lte,
             }).filter(([, v]) => v !== undefined),
         ) as ListQuery;
-    }, [page, pageSize, sortField, sortDirection, scope, appliedSearch, statusFilter]);
+    }, [page, pageSize, orderBy, scope, searchState]);
 
     const {
         data: filesPage,
@@ -305,7 +246,11 @@ export default function FilesList({
             if (error) throw { response, error };
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.files.lists() }],
+            invalidateQueries: [
+                { queryKey: queryKeys.files.apiList() },
+                { queryKey: queryKeys.files.apiDetails() },
+                { queryKey: queryKeys.notes.apiDetails() },
+            ],
             suppressNotification: true,
         },
     });
@@ -349,34 +294,23 @@ export default function FilesList({
     );
 
     const applySearch = useCallback(
-        (value: string) => {
-            setAppliedSearch(value);
-            goTo(1);
-        },
-        [goTo],
-    );
-
-    const clearSelection = useCallback(() => {
-        setRowSelection({});
-    }, []);
-
-    const updateStatus = useCallback(
-        (value: string) => {
-            const next: any = { ...search, files_page: 1 };
-            const parsed = (value || 'all') as 'all' | 'healthy' | 'warning';
-            if (parsed === 'all') {
-                delete next.files_status;
-            } else {
-                next.files_status = parsed;
-            }
+        (state: SearchState) => {
             router.navigate({
                 to: location.pathname as any,
-                search: next as any,
+                search: {
+                    ...search,
+                    ...urlFromSearchState(state),
+                    files_page: 1,
+                } as any,
                 replace: true,
             });
         },
         [search, router, location.pathname],
     );
+
+    const clearSelection = useCallback(() => {
+        setRowSelection({});
+    }, []);
 
     const changePageSize = useCallback(
         (size: number) => {
@@ -415,9 +349,10 @@ export default function FilesList({
                 maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        checked={table.getIsAllPageRowsSelected()}
+                        indeterminate={
+                            table.getIsSomePageRowsSelected() &&
+                            !table.getIsAllPageRowsSelected()
                         }
                         onCheckedChange={(value) =>
                             table.toggleAllPageRowsSelected(!!value)
@@ -437,8 +372,8 @@ export default function FilesList({
                 enableHiding: false,
             },
             {
-                accessorKey: 'file_name',
-                id: 'file_name',
+                accessorKey: 'name',
+                id: 'name',
                 meta: { label: 'Name' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Name' />
@@ -446,17 +381,9 @@ export default function FilesList({
                 cell: ({ row }) => {
                     const item = row.original;
                     return (
-                        <div
-                            className='truncate w-32 cursor-pointer'
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                router.navigate({
-                                    to: `/notes/${item.note_id}` as any,
-                                });
-                            }}
-                        >
+                        <div className='truncate w-32'>
                             <span className='truncate'>
-                                {truncateText(item.file_name, 32)}
+                                {truncateText(item.name, 32)}
                             </span>
                         </div>
                     );
@@ -505,8 +432,8 @@ export default function FilesList({
                 enableSorting: false,
             },
             {
-                accessorKey: 'mimetype',
-                id: 'mimetype',
+                accessorKey: 'mime_type',
+                id: 'mime_type',
                 meta: { label: 'MimeType' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='MimeType' />
@@ -515,14 +442,14 @@ export default function FilesList({
                     const item = row.original;
                     return (
                         <div className='truncate w-32'>
-                            {truncateText(item.mimetype, 32)}
+                            {truncateText(item.mime_type, 32)}
                         </div>
                     );
                 },
             },
             {
-                accessorKey: 'file_size',
-                id: 'file_size',
+                accessorKey: 'size',
+                id: 'size',
                 meta: { label: 'Size' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Size' />
@@ -531,8 +458,8 @@ export default function FilesList({
                     const item = row.original;
                     return (
                         <div className='w-24'>
-                            {item.file_size != null
-                                ? bytes.format(item.file_size, {
+                            {item.size != null
+                                ? bytes.format(item.size, {
                                       unitSeparator: ' ',
                                   })
                                 : '-'}
@@ -549,18 +476,20 @@ export default function FilesList({
                     const item = row.original;
                     return (
                         <div className='w-48'>
-                            {item.sha256_hash ? (
+                            {item.sha256 ? (
                                 <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <span
-                                            className='cursor-pointer hover:bg-muted px-1 rounded truncate block'
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                copyToClipboard(item.sha256_hash!);
-                                            }}
-                                        >
-                                            {item.sha256_hash!.substring(0, 48)}...
-                                        </span>
+                                    <TooltipTrigger
+                                        render={
+                                            <span
+                                                className='cursor-pointer hover:bg-muted px-1 rounded truncate block'
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    copyToClipboard(item.sha256!);
+                                                }}
+                                            />
+                                        }
+                                    >
+                                        {item.sha256!.substring(0, 48)}...
                                     </TooltipTrigger>
                                     <TooltipContent>Click to copy</TooltipContent>
                                 </Tooltip>
@@ -573,8 +502,8 @@ export default function FilesList({
                 enableSorting: false,
             },
             {
-                accessorKey: 'timestamp',
-                id: 'timestamp',
+                accessorKey: 'created_at',
+                id: 'created_at',
                 meta: { label: 'Uploaded At' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Uploaded At' />
@@ -583,8 +512,8 @@ export default function FilesList({
                     const item = row.original;
                     return (
                         <div className='w-32'>
-                            {item.timestamp
-                                ? format(new Date(item.timestamp), 'dd/MM/yyyy, HH:mm')
+                            {item.created_at
+                                ? format(new Date(item.created_at), 'dd/MM/yyyy, HH:mm')
                                 : '-'}
                         </div>
                     );
@@ -605,21 +534,36 @@ export default function FilesList({
                         >
                             {item.id && (
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon-sm'
-                                            className='text-muted-foreground hover:text-foreground'
-                                            title='Actions'
-                                        >
-                                            <DotsThreeIcon
-                                                className='w-4 h-4'
-                                                weight='bold'
-                                                aria-hidden='true'
+                                    <DropdownMenuTrigger
+                                        render={
+                                            <Button
+                                                variant='ghost'
+                                                size='icon-sm'
+                                                className='text-muted-foreground hover:text-foreground'
+                                                title='Actions'
                                             />
-                                        </Button>
+                                        }
+                                    >
+                                        <DotsThreeIcon
+                                            className='w-4 h-4'
+                                            weight='bold'
+                                            aria-hidden='true'
+                                        />
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align='end'>
+                                        {item.note_id && (
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    router.navigate({
+                                                        to: '/notes/$id',
+                                                        params: { id: item.note_id! },
+                                                    })
+                                                }
+                                            >
+                                                <FileTextIcon size={16} weight='bold' />
+                                                Open note
+                                            </DropdownMenuItem>
+                                        )}
                                         <DropdownMenuItem
                                             onClick={() => download(item)}
                                         >
@@ -658,35 +602,10 @@ export default function FilesList({
         [copyToClipboard, router, download, reprocess, confirmDelete],
     );
 
-    const sorting = useMemo<SortingState>(() => {
-        const columnId =
-            Object.keys(SORT_FIELD_MAPPING).find(
-                (key) => SORT_FIELD_MAPPING[key] === sortField,
-            ) || sortField;
-
-        return columnId
-            ? [
-                  {
-                      id: columnId,
-                      desc: sortDirection === 'desc',
-                  },
-              ]
-            : [];
-    }, [sortField, sortDirection]);
-
-    const applySorting = useCallback(
-        (updater: SortingState | ((prev: SortingState) => SortingState)) => {
-            const next = typeof updater === 'function' ? updater(sorting) : updater;
-            applySort(next);
-        },
-        [applySort, sorting],
-    );
-
     const table = useReactTable({
         data: rows,
         columns,
         state: {
-            sorting,
             rowSelection,
             pagination: {
                 pageIndex: page - 1,
@@ -697,7 +616,6 @@ export default function FilesList({
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
-        onSortingChange: applySorting,
         onRowSelectionChange: setRowSelection,
         onPaginationChange: (updater) => {
             const current = {
@@ -710,8 +628,9 @@ export default function FilesList({
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
         manualPagination: true,
-        manualSorting: true,
+        enableSorting: false,
         pageCount: totalPages,
+        rowCount: filesPage?.count,
     });
 
     return (
@@ -732,124 +651,21 @@ export default function FilesList({
                 )}
 
                 <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
-                    <DataTable table={table} showViewOptions isLoading={isLoading}>
-                        <ActionBarSearch
+                    <DataTable
+                        table={table}
+                        showViewOptions
+                        isLoading={isLoading}
+                        onRowClick={(item) =>
+                            router.navigate({ to: fileDashboardLink(item) as any })
+                        }
+                        getRowHref={fileDashboardLink}
+                    >
+                        <SearchInput
+                            schema={FILES_SEARCH_SCHEMA}
+                            value={searchState}
+                            onApply={applySearch}
                             placeholder='Search files...'
-                            value={appliedSearch}
-                            debounceMs={300}
-                            onDebouncedChange={applySearch}
-                            onSubmit={applySearch}
-                            onClear={() => applySearch('')}
                         />
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    className='border-dashed font-normal'
-                                >
-                                    {statusFilter !== 'all' ? (
-                                        <div
-                                            role='button'
-                                            aria-label='Clear status filter'
-                                            tabIndex={0}
-                                            className='rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                updateStatus('all');
-                                            }}
-                                        >
-                                            <XCircle />
-                                        </div>
-                                    ) : (
-                                        <PlusCircle />
-                                    )}
-                                    Status
-                                    {statusFilter !== 'all' && (
-                                        <>
-                                            <Separator
-                                                orientation='vertical'
-                                                className='mx-0.5 data-[orientation=vertical]:h-4'
-                                            />
-                                            <Badge
-                                                variant='secondary'
-                                                className='rounded-sm px-1 font-normal'
-                                            >
-                                                {statusFilter === 'healthy'
-                                                    ? 'Healthy'
-                                                    : 'Warning'}
-                                            </Badge>
-                                        </>
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className='w-50 p-0' align='start'>
-                                <Command>
-                                    <CommandList className='max-h-full'>
-                                        <ScrollArea className='max-h-[300px]'>
-                                            <CommandGroup className='scroll-py-1'>
-                                                {(
-                                                    [
-                                                        {
-                                                            value: 'healthy',
-                                                            label: 'Healthy',
-                                                        },
-                                                        {
-                                                            value: 'warning',
-                                                            label: 'Warning',
-                                                        },
-                                                    ] as const
-                                                ).map((option) => {
-                                                    const isSelected =
-                                                        statusFilter === option.value;
-                                                    return (
-                                                        <CommandItem
-                                                            key={option.value}
-                                                            onSelect={() =>
-                                                                updateStatus(
-                                                                    isSelected
-                                                                        ? 'all'
-                                                                        : option.value,
-                                                                )
-                                                            }
-                                                        >
-                                                            <div
-                                                                className={cn(
-                                                                    'flex size-4 items-center justify-center rounded-sm border border-primary',
-                                                                    isSelected
-                                                                        ? 'bg-primary'
-                                                                        : 'opacity-50 [&_svg]:invisible',
-                                                                )}
-                                                            >
-                                                                <Check />
-                                                            </div>
-                                                            <span className='truncate'>
-                                                                {option.label}
-                                                            </span>
-                                                        </CommandItem>
-                                                    );
-                                                })}
-                                            </CommandGroup>
-                                        </ScrollArea>
-                                        {statusFilter !== 'all' && (
-                                            <>
-                                                <CommandSeparator />
-                                                <CommandGroup>
-                                                    <CommandItem
-                                                        onSelect={() =>
-                                                            updateStatus('all')
-                                                        }
-                                                        className='justify-center text-center'
-                                                    >
-                                                        Clear filters
-                                                    </CommandItem>
-                                                </CommandGroup>
-                                            </>
-                                        )}
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
                     </DataTable>
                 </div>
             </div>

@@ -3,7 +3,7 @@ import * as React from 'react';
 import { useEffect } from 'react';
 
 import { Command as CommandPrimitive, useCommandState } from 'cmdk';
-import { XIcon } from 'lucide-react';
+import { ChevronDownIcon, XIcon } from 'lucide-react';
 
 import {
     Command,
@@ -99,6 +99,12 @@ interface MultipleSelectorProps {
 
     /** hide the clear all button. */
     hideClearAllButton?: boolean;
+
+    /**
+     * Render the dropdown in document flow instead of absolutely positioned.
+     * Use inside scroll containers (e.g. dialog bodies) that would clip an overlay.
+     */
+    inlineDropdown?: boolean;
 }
 
 export function useDebounce<T>(value: T, delay?: number): T {
@@ -175,7 +181,7 @@ const CommandEmpty = ({
 
     return (
         <div
-            className={cn('px-2 py-4 text-center text-sm', className)}
+            className={cn('px-2 py-4 text-center text-xs', className)}
             cmdk-empty=''
             role='presentation'
             {...props}
@@ -209,9 +215,11 @@ const MultipleSelector = ({
     commandProps,
     inputProps,
     hideClearAllButton = false,
+    inlineDropdown = false,
 }: MultipleSelectorProps) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
     const [open, setOpen] = React.useState(false);
+    const listRef = React.useRef<HTMLDivElement>(null);
     const [onScrollbar, setOnScrollbar] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
     const dropdownRef = React.useRef<HTMLDivElement>(null); // Added this
@@ -284,6 +292,12 @@ const MultipleSelector = ({
             document.removeEventListener('touchend', handleClickOutside);
         };
     }, [open]);
+
+    useEffect(() => {
+        if (open && inlineDropdown) {
+            listRef.current?.scrollIntoView({ block: 'nearest' });
+        }
+    }, [open, inlineDropdown, options, isLoading]);
 
     useEffect(() => {
         if (value) {
@@ -445,6 +459,9 @@ const MultipleSelector = ({
         return undefined;
     }, [creatable, commandProps?.filter]);
 
+    const showClearAll =
+        !hideClearAllButton && !disabled && selected.some((s) => !s.fixed);
+
     return (
         <Command
             ref={dropdownRef}
@@ -466,12 +483,12 @@ const MultipleSelector = ({
         >
             <div
                 className={cn(
-                    'border-input focus-within:border-ring focus-within:ring-ring/50 has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40 has-aria-invalid:border-destructive relative min-h-[38px] rounded-md border text-sm transition-[color,box-shadow] outline-none focus-within:ring-[3px] has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50',
+                    'relative min-h-8 rounded-none border border-input bg-transparent text-xs transition-colors outline-none focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/50 has-aria-invalid:border-destructive has-aria-invalid:ring-1 has-aria-invalid:ring-destructive/20 has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40',
                     {
-                        'p-1': selected.length !== 0,
+                        'p-[3px]': selected.length !== 0,
                         'cursor-text': !disabled && selected.length !== 0,
                     },
-                    !hideClearAllButton && 'pr-9',
+                    'pr-8',
                     className,
                 )}
                 onClick={() => {
@@ -485,7 +502,7 @@ const MultipleSelector = ({
                             <div
                                 key={option.value}
                                 className={cn(
-                                    'animate-fadeIn bg-background text-secondary-foreground hover:bg-background relative inline-flex h-7 cursor-default items-center rounded-md border pr-7 pl-2 text-xs font-medium transition-all disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 data-fixed:pr-2',
+                                    'relative inline-flex h-6 cursor-default items-center rounded-none border border-input bg-muted pr-6 pl-2 font-medium text-foreground transition-colors data-disabled:pointer-events-none data-disabled:opacity-50 data-fixed:pr-2',
                                     badgeClassName,
                                 )}
                                 data-fixed={option.fixed}
@@ -493,7 +510,7 @@ const MultipleSelector = ({
                             >
                                 {option.label}
                                 <button
-                                    className='text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute -inset-y-px -right-px flex size-7 items-center justify-center rounded-r-md border border-transparent p-0 outline-hidden transition-[color,box-shadow] outline-none focus-visible:ring-[3px]'
+                                    className='absolute -inset-y-px -right-px flex size-6 items-center justify-center rounded-none border border-transparent text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50'
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                             handleUnselect(option);
@@ -506,7 +523,7 @@ const MultipleSelector = ({
                                     onClick={() => handleUnselect(option)}
                                     aria-label='Remove'
                                 >
-                                    <XIcon size={14} aria-hidden='true' />
+                                    <XIcon size={12} aria-hidden='true' />
                                 </button>
                             </div>
                         );
@@ -543,40 +560,41 @@ const MultipleSelector = ({
                                 : placeholder
                         }
                         className={cn(
-                            'placeholder:text-muted-foreground/70 flex-1 bg-transparent outline-hidden disabled:cursor-not-allowed',
+                            'min-w-16 flex-1 bg-transparent outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed',
                             {
                                 'w-full': hidePlaceholderWhenSelected,
-                                'px-3 py-2': selected.length === 0,
-                                'ml-1': selected.length !== 0,
+                                'h-[30px] px-2.5': selected.length === 0,
+                                'ml-1 h-6': selected.length !== 0,
                             },
                             inputProps?.className,
                         )}
                     />
-                    <button
-                        type='button'
-                        onClick={() => {
-                            setSelected(selected.filter((s) => s.fixed));
-                            onChange?.(selected.filter((s) => s.fixed));
-                        }}
-                        className={cn(
-                            'text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute top-0 right-0 flex size-9 items-center justify-center rounded-md border border-transparent transition-[color,box-shadow] outline-none focus-visible:ring-[3px]',
-                            (hideClearAllButton ||
-                                disabled ||
-                                selected.length < 1 ||
-                                selected.filter((s) => s.fixed).length ===
-                                    selected.length) &&
-                                'hidden',
-                        )}
-                        aria-label='Clear all'
-                    >
-                        <XIcon size={16} aria-hidden='true' />
-                    </button>
+                    {showClearAll ? (
+                        <button
+                            type='button'
+                            onClick={() => {
+                                setSelected(selected.filter((s) => s.fixed));
+                                onChange?.(selected.filter((s) => s.fixed));
+                            }}
+                            className='absolute top-0 right-0 flex h-full w-8 items-center justify-center rounded-none border border-transparent text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50'
+                            aria-label='Clear all'
+                        >
+                            <XIcon size={14} aria-hidden='true' />
+                        </button>
+                    ) : (
+                        <ChevronDownIcon
+                            className='pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground'
+                            aria-hidden='true'
+                        />
+                    )}
                 </div>
             </div>
             <div className='relative'>
                 <div
+                    ref={listRef}
                     className={cn(
-                        'border-input absolute top-2 z-10 w-full overflow-hidden rounded-md border',
+                        'w-full overflow-hidden rounded-none bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10',
+                        inlineDropdown ? 'mt-1' : 'absolute top-1 z-50',
                         'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
                         !open && 'hidden',
                     )}
@@ -584,7 +602,6 @@ const MultipleSelector = ({
                 >
                     {open && (
                         <CommandList
-                            className='bg-popover text-popover-foreground shadow-lg outline-hidden'
                             onMouseLeave={() => {
                                 setOnScrollbar(false);
                             }}

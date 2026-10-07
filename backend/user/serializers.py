@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 from django.conf import settings
 from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError as DjangoValidationError
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 from rest_framework_simplejwt.authentication import AuthUser
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -160,14 +161,12 @@ class UserUpdateSerializer(UserCreateSerializerAdmin):
     password = serializers.CharField(required=False)
 
 
+@extend_schema_serializer(component_name="ChangePassword")
 class ChangePasswordSerializer(serializers.Serializer):
     """Serializer for change password request and validation."""
 
     old_password = serializers.CharField(required=True, help_text="Current password of the user")
     new_password = serializers.CharField(required=True, help_text="New password to set")
-
-    class Meta:
-        ref_name = "ChangePasswordRequest"
 
     def validate(self, data):
         """Validate new_password against password policy."""
@@ -283,10 +282,10 @@ class TokenPairRetrieveSerializer(serializers.Serializer):
 class TokenObtainSerializer(TokenObtainPairSerializer):
     """JWT obtain serializer with 2FA support and role in token claims."""
 
-    two_factor_token = serializers.CharField(
+    otp = serializers.CharField(
         required=False,
         allow_blank=True,
-        help_text="2FA token (required if 2FA is enabled)",
+        help_text="6-digit TOTP code from authenticator app (required if 2FA is enabled)",
     )
 
     @classmethod
@@ -334,19 +333,18 @@ class Enable2FASerializer(serializers.Serializer):
     config_url = serializers.CharField(required=True, help_text="TOTP provisioning URL for authenticator apps")
 
 
-class TwoFactorTokenSerializer(serializers.Serializer):
-    """Shared token field for 2FA verify/disable requests."""
+class OTPSerializer(serializers.Serializer):
+    """Shared OTP field for 2FA verify/disable requests."""
 
-    token = serializers.CharField(required=True, help_text="6-digit TOTP code from authenticator app")
-
-
-class Verify2FASerializer(TwoFactorTokenSerializer):
-    """Serializer for 2FA token verification during setup."""
-
-    class Meta:
-        ref_name = "Verify2FARequest"
+    otp = serializers.CharField(required=True, help_text="6-digit TOTP code from authenticator app")
 
 
+@extend_schema_serializer(component_name="Verify2FA")
+class Verify2FASerializer(OTPSerializer):
+    """Serializer for 2FA OTP verification during setup."""
+
+
+@extend_schema_serializer(component_name="StepUp")
 class StepUpSerializer(serializers.Serializer):
     """Serializer for step-up password confirmation on sensitive actions."""
 
@@ -356,17 +354,13 @@ class StepUpSerializer(serializers.Serializer):
         help_text="Current password (required for password-based accounts)",
     )
 
-    class Meta:
-        ref_name = "StepUpRequest"
 
-
-class Disable2FASerializer(StepUpSerializer, TwoFactorTokenSerializer):
+@extend_schema_serializer(component_name="Disable2FA")
+class Disable2FASerializer(StepUpSerializer, OTPSerializer):
     """Serializer for disabling 2FA with step-up password confirmation."""
 
-    class Meta:
-        ref_name = "Disable2FARequest"
 
-
+@extend_schema_serializer(component_name="PasswordReset")
 class PasswordResetRequestSerializer(serializers.Serializer):
     """Serializer for password reset requests (email-based only)."""
 
@@ -449,17 +443,18 @@ class DefaultNoteTemplateResponseSerializer(serializers.Serializer):
 class UserSessionSerializer(serializers.ModelSerializer):
     """Serializer for user session information."""
 
-    refresh_token_jti = serializers.CharField(read_only=True)
+    last_activity_at = serializers.DateTimeField(
+        source="last_activity", read_only=True, help_text="Last activity timestamp"
+    )
 
     class Meta:
         model = UserSession
         fields = [
             "id",
-            "refresh_token_jti",
             "device_info",
             "ip_address",
             "created_at",
-            "last_activity",
+            "last_activity_at",
             "expires_at",
             "is_current",
         ]

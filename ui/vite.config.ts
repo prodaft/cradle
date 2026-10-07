@@ -2,12 +2,28 @@ import { sentryTanstackStart } from '@sentry/tanstackstart-react/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
+import { execSync } from 'child_process';
 import dns from 'dns';
+import { readFileSync } from 'fs';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, loadEnv } from 'vite';
 
 dns.setDefaultResultOrder('verbatim');
+
+function git(args: string): string {
+    try {
+        return execSync(`git ${args}`, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    } catch {
+        return '';
+    }
+}
+
+const appVersion: string = JSON.parse(readFileSync(path.resolve(import.meta.dirname, 'package.json'), 'utf-8')).version;
+const gitBranch = (process.env.GIT_BRANCH ?? git('rev-parse --abbrev-ref HEAD')).replace(/^HEAD$/, '');
+const gitCommit = (process.env.GIT_COMMIT || git('rev-parse HEAD')).slice(0, 8);
+const gitRef = gitCommit && (gitBranch ? `${gitBranch}@${gitCommit}` : gitCommit);
+const appVersionLabel = `v${appVersion}${gitRef ? ` · ${gitRef}` : ''}`;
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
@@ -42,18 +58,21 @@ export default defineConfig(({ mode }) => {
         build: {
             sourcemap: true,
         },
+        define: {
+            __APP_VERSION_LABEL__: JSON.stringify(appVersionLabel),
+        },
         server: { port: 5173 },
         resolve: {
             tsconfigPaths: true,
             alias: {
-                '@': path.resolve(__dirname, './src'),
-                '@components': path.resolve(__dirname, './src/components'),
-                '@contexts': path.resolve(__dirname, './src/contexts'),
-                '@hooks': path.resolve(__dirname, './src/hooks'),
-                '@services': path.resolve(__dirname, './src/services'),
-                '@utils': path.resolve(__dirname, './src/utils'),
-                '@styles': path.resolve(__dirname, './styles'),
-                src: path.resolve(__dirname, './src'),
+                '@': path.resolve(import.meta.dirname, './src'),
+                '@components': path.resolve(import.meta.dirname, './src/components'),
+                '@contexts': path.resolve(import.meta.dirname, './src/contexts'),
+                '@hooks': path.resolve(import.meta.dirname, './src/hooks'),
+                '@services': path.resolve(import.meta.dirname, './src/services'),
+                '@utils': path.resolve(import.meta.dirname, './src/utils'),
+                '@styles': path.resolve(import.meta.dirname, './styles'),
+                src: path.resolve(import.meta.dirname, './src'),
             },
             dedupe: [
                 '@codemirror/state',

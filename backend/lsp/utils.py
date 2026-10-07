@@ -5,7 +5,6 @@ from typing import Any
 
 from django.db.models import QuerySet
 
-from access.models import Access
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from user.models import CradleUser
@@ -53,10 +52,7 @@ def get_lsp_entries(user: CradleUser, eclass: EntryClass, initial: str) -> Query
 
 def get_entities(user: CradleUser) -> QuerySet[Entry]:
     """Return entities accessible to the user (all if admin, else by access)."""
-    if user.is_cradle_admin:
-        return Entry.entities.all().distinct()
-    entity_ids = Access.objects.get_accessible_entity_ids(user.id)
-    return Entry.entities.filter(pk__in=entity_ids).distinct()
+    return Entry.entities.readable_entities(user).distinct()
 
 
 def get_lsp_pack(user: CradleUser, classes: Iterable[EntryClass], initial: str = "") -> dict[str, dict[str, Any]]:

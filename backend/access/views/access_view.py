@@ -49,7 +49,10 @@ from ..serializers import AccessEntitySerializer, AccessUserSerializer
                 name="search",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Search entities by name, description, or numeric id",
+                description=(
+                    "Search entities by name or description, or by numeric id. Supports "
+                    'AND/OR/NOT, -term, "phrases", =exact and * wildcards.'
+                ),
                 required=False,
             ),
         ],
@@ -105,7 +108,10 @@ class UserAccessList(ListAPIView):
                 name="search",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Search users by username or user ID",
+                description=(
+                    "Search users by username, or by user ID. Supports AND/OR/NOT, -term, "
+                    '"phrases", =exact and * wildcards.'
+                ),
                 required=False,
             ),
             OpenApiParameter(

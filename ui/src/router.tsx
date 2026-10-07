@@ -1,3 +1,4 @@
+import NotFound from '@/components/feedback/not-found';
 import * as Sentry from '@sentry/tanstackstart-react';
 import { createRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen';
@@ -7,6 +8,7 @@ export function getRouter() {
         routeTree,
         defaultPreload: false,
         scrollRestoration: true,
+        defaultNotFoundComponent: () => <NotFound />,
     });
 
     if (!router.isServer) {

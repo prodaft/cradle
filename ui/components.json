@@ -1,6 +1,6 @@
 {
     "$schema": "https://ui.shadcn.com/schema.json",
-    "style": "new-york",
+    "style": "base-lyra",
     "rsc": false,
     "tsx": true,
     "tailwind": {
@@ -20,5 +20,8 @@
     },
     "registries": {
         "@diceui": "https://diceui.com/r/{name}.json"
-    }
+    },
+    "rtl": false,
+    "menuColor": "default",
+    "menuAccent": "subtle"
 }

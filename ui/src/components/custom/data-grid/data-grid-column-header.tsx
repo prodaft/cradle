@@ -1,5 +1,6 @@
 'use client';
 
+import type { BaseUIEvent } from '@base-ui/react/types';
 import type {
     ColumnSort,
     Header,
@@ -101,7 +102,7 @@ export function DataGridColumnHeader<TData, TValue>({
     }, [column]);
 
     const onTriggerPointerDown = React.useCallback(
-        (event: React.PointerEvent<HTMLButtonElement>) => {
+        (event: BaseUIEvent<React.PointerEvent<HTMLButtonElement>>) => {
             onPointerDown?.(event);
             if (event.defaultPrevented) return;
 
@@ -118,7 +119,7 @@ export function DataGridColumnHeader<TData, TValue>({
             <DropdownMenu modal={false}>
                 <DropdownMenuTrigger
                     className={cn(
-                        'flex size-full items-center justify-between gap-2 p-2 text-sm hover:bg-accent/40 data-[state=open]:bg-accent/40 [&_svg]:size-4',
+                        'flex size-full items-center justify-between gap-2 p-2 text-sm hover:bg-accent/40 data-popup-open:bg-accent/40 [&_svg]:size-4',
                         isAnyColumnResizing && 'pointer-events-none',
                         className,
                     )}
@@ -127,10 +128,13 @@ export function DataGridColumnHeader<TData, TValue>({
                 >
                     <div className='flex min-w-0 flex-1 items-center gap-1.5'>
                         {columnVariant && (
-                            <Tooltip delayDuration={100}>
-                                <TooltipTrigger asChild>
-                                    <columnVariant.icon className='size-3.5 shrink-0 text-muted-foreground' />
-                                </TooltipTrigger>
+                            <Tooltip>
+                                <TooltipTrigger
+                                    delay={100}
+                                    render={
+                                        <columnVariant.icon className='size-3.5 shrink-0 text-muted-foreground' />
+                                    }
+                                />
                                 <TooltipContent side='top'>
                                     <p>{columnVariant.label}</p>
                                 </TooltipContent>
@@ -146,6 +150,7 @@ export function DataGridColumnHeader<TData, TValue>({
                             <DropdownMenuCheckboxItem
                                 className='relative ltr:pr-8 ltr:pl-2 rtl:pr-2 rtl:pl-8 [&>span:first-child]:ltr:right-2 [&>span:first-child]:ltr:left-auto [&>span:first-child]:rtl:right-auto [&>span:first-child]:rtl:left-2 [&_svg]:text-muted-foreground'
                                 checked={column.getIsSorted() === 'asc'}
+                                closeOnClick
                                 onClick={() => onSortingChange('asc')}
                             >
                                 <ChevronUpIcon />
@@ -154,6 +159,7 @@ export function DataGridColumnHeader<TData, TValue>({
                             <DropdownMenuCheckboxItem
                                 className='relative ltr:pr-8 ltr:pl-2 rtl:pr-2 rtl:pl-8 [&>span:first-child]:ltr:right-2 [&>span:first-child]:ltr:left-auto [&>span:first-child]:rtl:right-auto [&>span:first-child]:rtl:left-2 [&_svg]:text-muted-foreground'
                                 checked={column.getIsSorted() === 'desc'}
+                                closeOnClick
                                 onClick={() => onSortingChange('desc')}
                             >
                                 <ChevronDownIcon />

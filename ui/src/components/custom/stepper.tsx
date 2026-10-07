@@ -5,8 +5,9 @@ import { useIsomorphicLayoutEffect } from '@/hooks/use-isomorphic-layout-effect'
 import { useLazyRef } from '@/hooks/use-lazy-ref';
 import { useComposedRefs } from '@/lib/compose-refs';
 import { cn } from '@/lib/utils';
+import { useDirection } from '@radix-ui/react-direction';
+import { Slot } from '@radix-ui/react-slot';
 import { Check } from 'lucide-react';
-import { Direction as DirectionPrimitive, Slot as SlotPrimitive } from 'radix-ui';
 import * as React from 'react';
 
 const ROOT_NAME = 'Stepper';
@@ -330,7 +331,7 @@ function Stepper(props: StepperProps) {
         }
     }, [value]);
 
-    const dir = DirectionPrimitive.useDirection(dirProp);
+    const dir = useDirection(dirProp);
 
     const instanceId = React.useId();
     const rootId = id ?? instanceId;
@@ -348,7 +349,7 @@ function Stepper(props: StepperProps) {
         [rootId, dir, orientation, activationMode, disabled, nonInteractive, loop],
     );
 
-    const RootPrimitive = asChild ? SlotPrimitive.Slot : 'div';
+    const RootPrimitive = asChild ? Slot : 'div';
 
     return (
         <StoreContext.Provider value={store}>
@@ -547,7 +548,7 @@ function StepperList(props: DivProps) {
         ],
     );
 
-    const ListPrimitive = asChild ? SlotPrimitive.Slot : 'div';
+    const ListPrimitive = asChild ? Slot : 'div';
 
     return (
         <FocusContext.Provider value={focusContextValue}>
@@ -639,7 +640,7 @@ function StepperItem(props: StepperItemProps) {
         [itemValue, stepState],
     );
 
-    const ItemPrimitive = asChild ? SlotPrimitive.Slot : 'div';
+    const ItemPrimitive = asChild ? Slot : 'div';
 
     return (
         <StepperItemContext.Provider value={itemContextValue}>
@@ -929,7 +930,7 @@ function StepperTrigger(props: ButtonProps) {
         [focusContext, triggerId, isDisabled, propsRef],
     );
 
-    const TriggerPrimitive = asChild ? SlotPrimitive.Slot : 'button';
+    const TriggerPrimitive = asChild ? Slot : 'button';
 
     return (
         <TriggerPrimitive
@@ -981,7 +982,7 @@ function StepperIndicator(props: StepperIndicatorProps) {
 
     const dataState = getDataState(value, itemValue, stepState, steps);
 
-    const IndicatorPrimitive = asChild ? SlotPrimitive.Slot : 'div';
+    const IndicatorPrimitive = asChild ? Slot : 'div';
 
     return (
         <IndicatorPrimitive
@@ -1036,7 +1037,7 @@ function StepperSeparator(props: StepperSeparatorProps) {
         'separator',
     );
 
-    const SeparatorPrimitive = asChild ? SlotPrimitive.Slot : 'div';
+    const SeparatorPrimitive = asChild ? Slot : 'div';
 
     return (
         <SeparatorPrimitive
@@ -1070,7 +1071,7 @@ function StepperTitle(props: StepperTitleProps) {
 
     const titleId = getId(context.rootId, 'title', itemContext.value);
 
-    const TitlePrimitive = asChild ? SlotPrimitive.Slot : 'span';
+    const TitlePrimitive = asChild ? Slot : 'span';
 
     return (
         <TitlePrimitive
@@ -1096,7 +1097,7 @@ function StepperDescription(props: StepperDescriptionProps) {
 
     const descriptionId = getId(context.rootId, 'description', itemContext.value);
 
-    const DescriptionPrimitive = asChild ? SlotPrimitive.Slot : 'span';
+    const DescriptionPrimitive = asChild ? Slot : 'span';
 
     return (
         <DescriptionPrimitive
@@ -1133,7 +1134,7 @@ function StepperContent(props: StepperContentProps) {
 
     if (valueProp !== value && !forceMount) return null;
 
-    const ContentPrimitive = asChild ? SlotPrimitive.Slot : 'div';
+    const ContentPrimitive = asChild ? Slot : 'div';
 
     return (
         <ContentPrimitive
@@ -1179,7 +1180,7 @@ function StepperPrev(props: ButtonProps) {
         [propsRef, isDisabled, currentIndex, stepKeys, store],
     );
 
-    const PrevPrimitive = asChild ? SlotPrimitive.Slot : 'button';
+    const PrevPrimitive = asChild ? Slot : 'button';
 
     return (
         <PrevPrimitive
@@ -1222,7 +1223,7 @@ function StepperNext(props: ButtonProps) {
         [propsRef, isDisabled, currentIndex, stepKeys, store],
     );
 
-    const NextPrimitive = asChild ? SlotPrimitive.Slot : 'button';
+    const NextPrimitive = asChild ? Slot : 'button';
 
     return (
         <NextPrimitive

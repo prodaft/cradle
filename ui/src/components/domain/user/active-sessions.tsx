@@ -1,4 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import TableActionsButton from '@/components/base/table-actions-button';
 import {
     ActionBar,
@@ -24,6 +24,12 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useAuthActions } from '@/hooks/auth/use-auth';
+import {
+    EMPTY_SEARCH_STATE,
+    sortToOrderBy,
+    type SearchSchema,
+    type SearchState,
+} from '@/lib/search-query/search-schema';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { TrashIcon } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
@@ -33,7 +39,6 @@ import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
     ColumnDef,
     RowSelectionState,
-    SortingState,
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
@@ -45,12 +50,14 @@ interface ActiveSessionsProps {
     userId: string;
 }
 
-const COLUMN_TO_FIELD: Record<string, string> = {
-    device_info: 'device_info',
-    ip_address: 'ip_address',
-    created_at: 'created_at',
-    last_activity: 'last_activity',
-    expires_at: 'expires_at',
+const SEARCH_SCHEMA: SearchSchema = {
+    sortFields: [
+        { value: 'device_info', label: 'Device' },
+        { value: 'ip_address', label: 'IP address' },
+        { value: 'created', label: 'Created', api: 'created_at' },
+        { value: 'last_activity', label: 'Last activity', api: 'last_activity_at' },
+        { value: 'expires_at', label: 'Expires' },
+    ],
 };
 
 /**
@@ -66,8 +73,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const pageSize = Number(search?.sessions_pagesize ?? 10) || 10;
 
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [appliedSearch, setAppliedSearch] = useState('');
-    const [sorting, setSorting] = useState<SortingState>([]);
+    const [searchState, setSearchState] = useState<SearchState>(EMPTY_SEARCH_STATE);
     const [isRevokeOpen, setIsRevokeOpen] = useState(false);
     const [pendingRevokeIds, setPendingRevokeIds] = useState<string[]>([]);
     const { logOut } = useAuthActions();
@@ -76,29 +82,16 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         setRowSelection({});
     }, []);
 
-    const orderBy = useMemo(() => {
-        if (!sorting.length) return undefined;
-        return (
-            sorting
-                .map(({ id, desc }) => {
-                    const field = COLUMN_TO_FIELD[id];
-                    if (!field) return null;
-                    return desc ? `-${field}` : field;
-                })
-                .filter(Boolean)
-                .join(',') || undefined
-        );
-    }, [sorting]);
-
-    const listQuery = useMemo(
-        () => ({
+    const listQuery = useMemo(() => {
+        const { q, sort } = searchState;
+        const orderBy = sortToOrderBy(sort, SEARCH_SCHEMA);
+        return {
             page,
             page_size: pageSize,
-            ...(appliedSearch ? { search: appliedSearch } : {}),
+            ...(q ? { search: q } : {}),
             ...(orderBy ? { order_by: orderBy } : {}),
-        }),
-        [appliedSearch, orderBy, page, pageSize],
-    );
+        };
+    }, [searchState, page, pageSize]);
 
     const { data: sessions, isPending } = $api.useQuery(
         'get',
@@ -233,16 +226,8 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     );
 
     const applySearch = useCallback(
-        (value: string) => {
-            setAppliedSearch(value);
-            goTo(1);
-        },
-        [goTo],
-    );
-
-    const sort = useCallback(
-        (next: SortingState) => {
-            setSorting(next);
+        (state: SearchState) => {
+            setSearchState(state);
             goTo(1);
         },
         [goTo],
@@ -285,9 +270,10 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        checked={table.getIsAllPageRowsSelected()}
+                        indeterminate={
+                            table.getIsSomePageRowsSelected() &&
+                            !table.getIsAllPageRowsSelected()
                         }
                         onCheckedChange={(value) =>
                             table.toggleAllPageRowsSelected(!!value)
@@ -359,7 +345,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 },
             },
             {
-                accessorKey: 'last_activity',
+                accessorKey: 'last_activity_at',
                 meta: { label: 'Last Activity' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Last Activity' />
@@ -368,7 +354,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     const item = row.original;
                     return (
                         <span className='text-sm text-muted-foreground'>
-                            {formatDate(item.last_activity)}
+                            {formatDate(item.last_activity_at)}
                         </span>
                     );
                 },
@@ -426,7 +412,6 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         columns,
         state: {
             rowSelection,
-            sorting,
             pagination: {
                 pageIndex: page - 1,
                 pageSize,
@@ -434,10 +419,6 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         },
         getRowId: (row, index) => row.id ?? String(index),
         onRowSelectionChange: setRowSelection,
-        onSortingChange: (updater) => {
-            const next = typeof updater === 'function' ? updater(sorting) : updater;
-            sort(next);
-        },
         onPaginationChange: (updater) => {
             const current = { pageIndex: page - 1, pageSize };
             const next = typeof updater === 'function' ? updater(current) : updater;
@@ -446,8 +427,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
         manualPagination: true,
-        manualSorting: true,
+        enableSorting: false,
         pageCount: totalPages,
+        rowCount: sessions?.count,
     });
 
     const revokeCount = pendingRevokeIds.length;
@@ -457,13 +439,11 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     return (
         <div className='w-full space-y-4'>
             <DataTable table={table} showViewOptions isLoading={isPending}>
-                <ActionBarSearch
-                    placeholder='Search sessions...'
-                    value={appliedSearch}
-                    debounceMs={300}
-                    onDebouncedChange={applySearch}
-                    onSubmit={applySearch}
-                    onClear={() => applySearch('')}
+                <SearchInput
+                    schema={SEARCH_SCHEMA}
+                    value={searchState}
+                    onApply={applySearch}
+                    placeholder='Search device or IP... (sort:-last_activity)'
                 />
             </DataTable>
             <ActionBar

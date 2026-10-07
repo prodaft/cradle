@@ -1,3 +1,4 @@
+import { useOpenExternalLink } from '@/components/base/external-link-confirm/external-link-confirm';
 import FileUploadDialog from '@/components/domain/notes/dialogs/file-upload-dialog';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -15,8 +16,18 @@ import {
     referenceLinkSyntax,
 } from '@/utils/editor/reference-links';
 import { codemirrorEditorSyncPeerExtensions } from '@/utils/editor/sync/codemirror-peer';
-import { createNoteEditorSyncConnection } from '@/utils/editor/sync/connection';
+import {
+    connectLiveNote,
+    type LiveEditorSyncConnection,
+    type LiveNoteSession,
+    type LiveStatus,
+} from '@/utils/editor/sync/live-connection';
+import {
+    type LivePeer,
+    remoteCursorExtensions,
+} from '@/utils/editor/sync/remote-cursors';
 import { tablePlugin } from '@/utils/editor/table-plugin';
+import { handleLinkClick } from '@/utils/editor/text-editor';
 import { createCradleTheme } from '@/utils/editor/theme';
 import { logger } from '@/utils/logger';
 import {
@@ -40,7 +51,13 @@ import {
 } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
-import { EditorState, Extension, Prec, StateEffect } from '@codemirror/state';
+import {
+    EditorState,
+    Extension,
+    Prec,
+    StateEffect,
+    Transaction,
+} from '@codemirror/state';
 import {
     drawSelection,
     EditorView,
@@ -56,6 +73,7 @@ import {
     additionalMarkdownSyntaxTags,
     baseSyntaxHighlights,
     clickLinkHandler,
+    defaultClickLinkHandler,
     markdownTags,
     prosemarkBaseThemeSetup,
     prosemarkBasicSetup,
@@ -72,6 +90,7 @@ import {
     memo,
     useCallback,
     useEffect,
+    useId,
     useImperativeHandle,
     useLayoutEffect,
     useMemo,
@@ -121,6 +140,9 @@ interface RichEditorProps {
     referenceMappings?: Record<string, FileReferenceWithNote>;
     isSaving?: boolean;
     isDirty?: boolean;
+    saveError?: string | null;
+    onSaveErrorClick?: () => void;
+    onLiveSessionChange?: (session: LiveNoteSession | null) => void;
     noteStatus?: NoteProcessingStatus;
     noteStatusMessage?: string | null;
     onEditorViewChange?: (view: EditorView | null) => void;
@@ -129,6 +151,33 @@ interface RichEditorProps {
 interface RichEditorRef {
     view: EditorView | null;
 }
+
+// How long to wait before trying the live (WebSocket) session again after it fails to connect.
+const LIVE_RETRY_DELAY = 5000;
+// Editing pauses once an edit has gone this long without the server accepting it, so
+// a long outage can't pile up unbounded unsaved work; it resumes once they're accepted.
+const MAX_UNSENT_MS = 120_000;
+
+const CONNECTION_NOTICES = {
+    unreachable: {
+        title: "Can't reach the server",
+        description:
+            'Editing is unavailable until it connects; retrying automatically.',
+        retry: true,
+    },
+    paused: {
+        title: 'Editing paused',
+        description:
+            "Your recent changes haven't reached the server for a while. They'll be saved once the connection is back; keep this tab open or they're lost.",
+        retry: false,
+    },
+    offline: {
+        title: 'Offline, reconnecting',
+        description:
+            'You can keep editing; your changes will be saved once the connection is back. Leaving the page before then loses them.',
+        retry: false,
+    },
+} as const;
 
 const sourceModeSyntaxHighlighting = syntaxHighlighting(
     HighlightStyle.define([
@@ -205,6 +254,9 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         referenceMappings: propReferenceMappings,
         isSaving = false,
         isDirty = false,
+        saveError = null,
+        onSaveErrorClick,
+        onLiveSessionChange,
         noteStatus,
         noteStatusMessage,
         onEditorViewChange,
@@ -224,6 +276,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     );
     const { isDarkMode } = useTheme();
     const router = useRouter();
+    const openExternalLink = useOpenExternalLink();
     const routerRef = useRef(router);
     routerRef.current = router;
     const onEditorViewChangeRef = useRef(onEditorViewChange);
@@ -256,15 +309,27 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const editorSyncInitDocRef = useRef('');
     const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
 
-    const needsEditorSyncHydration =
-        typeof SharedWorker !== 'undefined' && Boolean(noteid) && enableEditing;
+    const onLiveSessionChangeRef = useRef(onLiveSessionChange);
+    onLiveSessionChangeRef.current = onLiveSessionChange;
+    const [editorSyncEpoch, setEditorSyncEpoch] = useState(0);
+    const [livePeers, setLivePeers] = useState<LivePeer[]>([]);
+    const [liveUnavailable, setLiveUnavailable] = useState(false);
+    const [liveConnected, setLiveConnected] = useState(true);
+    const [editingPaused, setEditingPaused] = useState(false);
+    const toastKey = useId();
+    const liveUsers = useMemo(
+        () => [...new Map(livePeers.map((p) => [p.username, p])).values()],
+        [livePeers],
+    );
+
+    const needsEditorSyncHydration = Boolean(noteid) && enableEditing;
     const [editorSyncHydrated, setEditorSyncHydrated] = useState(
         !needsEditorSyncHydration,
     );
     const [editorSyncSession, setEditorSyncSession] = useState<{
         noteid: string;
         startVersion: number;
-        connection: NonNullable<ReturnType<typeof createNoteEditorSyncConnection>>;
+        connection: LiveEditorSyncConnection;
     } | null>(null);
 
     useLayoutEffect(() => {
@@ -274,34 +339,52 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         });
         if (needsEditorSyncHydration) setEditorSyncHydrated(false);
         else setEditorSyncHydrated(true);
-    }, [noteid, needsEditorSyncHydration]);
+    }, [noteid, needsEditorSyncHydration, editorSyncEpoch]);
 
     useEffect(() => {
         let cancelled = false;
         if (!needsEditorSyncHydration) {
             setEditorSyncHydrated(true);
+            setLiveUnavailable(false);
             return () => {
                 cancelled = true;
             };
         }
-        const conn = createNoteEditorSyncConnection(
-            noteid,
-            markdownContentRef.current ?? '',
-        );
-        if (!conn) {
+        let conn: LiveEditorSyncConnection | null = null;
+        let stopResetListener: (() => void) | undefined;
+        let retryTimer: ReturnType<typeof setTimeout> | undefined;
+        // No live session (the server is unreachable or couldn't load the note): the
+        // editor stays read-only, so keep trying.
+        const unavailable = () => {
+            setLiveUnavailable(true);
             setEditorSyncHydrated(true);
-            return () => {
-                cancelled = true;
-            };
-        }
+            retryTimer = setTimeout(
+                () => setEditorSyncEpoch((epoch) => epoch + 1),
+                LIVE_RETRY_DELAY,
+            );
+        };
         void (async () => {
+            const live = await connectLiveNote(noteid);
+            if (cancelled) {
+                live?.close();
+                return;
+            }
+            if (!live) {
+                unavailable();
+                return;
+            }
+            conn = live;
             try {
                 const { version, doc } = await conn.getDocument();
-                if (cancelled) {
-                    conn.close();
-                    return;
-                }
+                if (cancelled) return;
                 editorSyncInitDocRef.current = doc;
+                const view = editorViewRef.current;
+                if (view && view.state.doc.toString() !== doc) {
+                    view.dispatch({
+                        changes: { from: 0, to: view.state.doc.length, insert: doc },
+                        annotations: Transaction.addToHistory.of(false),
+                    });
+                }
                 setEditorSyncSession({
                     noteid,
                     startVersion: version,
@@ -310,17 +393,73 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 if (doc !== (markdownContentRef.current ?? '')) {
                     setMarkdownContentRef.current(doc);
                 }
+                stopResetListener = live.live.onReset(() =>
+                    setEditorSyncEpoch((epoch) => epoch + 1),
+                );
+                onLiveSessionChangeRef.current?.(live.live);
+                setLiveUnavailable(false);
                 setEditorSyncHydrated(true);
             } catch {
                 conn.close();
-                if (!cancelled) setEditorSyncHydrated(true);
+                conn = null;
+                if (!cancelled) unavailable();
             }
         })();
         return () => {
             cancelled = true;
-            conn.close();
+            clearTimeout(retryTimer);
+            stopResetListener?.();
+            if (conn) onLiveSessionChangeRef.current?.(null);
+            conn?.close();
         };
-    }, [needsEditorSyncHydration, noteid]);
+    }, [needsEditorSyncHydration, noteid, editorSyncEpoch]);
+
+    // Built once per live session, not with the other extensions: recreating the sync
+    // plugin (on a theme or vim change) would restart its sync loops.
+    const syncExtensions = useMemo(() => {
+        if (!editorSyncSession || editorSyncSession.noteid !== noteid) return [];
+        const { connection, startVersion } = editorSyncSession;
+        const { live } = connection;
+        return [
+            ...codemirrorEditorSyncPeerExtensions(startVersion, connection),
+            ...remoteCursorExtensions(live, setLivePeers),
+        ];
+    }, [editorSyncSession, noteid]);
+
+    const liveSession =
+        editorSyncSession?.noteid === noteid ? editorSyncSession.connection.live : null;
+    // Edits are only saved through the live session, so the editor stays read-only until
+    // it's established (anything typed before would be replaced by the server's document)
+    // and while editing is paused.
+    const canEdit =
+        enableEditing &&
+        (!needsEditorSyncHydration || (!!liveSession && !editingPaused));
+
+    useEffect(() => {
+        setLiveConnected(true);
+        setEditingPaused(false);
+        if (!liveSession) return;
+        let since: number | null = null;
+        let pauseTimer: ReturnType<typeof setTimeout> | undefined;
+        const apply = ({ connected, unsentSince }: LiveStatus) => {
+            setLiveConnected(connected);
+            if (unsentSince === since) return;
+            since = unsentSince;
+            clearTimeout(pauseTimer);
+            setEditingPaused(false);
+            if (unsentSince === null) return;
+            pauseTimer = setTimeout(
+                () => setEditingPaused(true),
+                Math.max(0, unsentSince + MAX_UNSENT_MS - Date.now()),
+            );
+        };
+        apply(liveSession.getStatus());
+        const unsubscribe = liveSession.subscribe(apply);
+        return () => {
+            unsubscribe();
+            clearTimeout(pauseTimer);
+        };
+    }, [liveSession]);
 
     const onUpdate = useMemo(
         () =>
@@ -347,7 +486,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             if (error) throw { response, error };
             return {
                 presigned_url: data!.presigned_url,
-                expires_in: data!.expires_in,
+                expires_at: data!.expires_at,
             } satisfies FileDownload;
         },
         meta: {
@@ -513,18 +652,13 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         const mappings: Record<string, FileReferenceWithNote> = {};
         for (const file of files) {
             if (file.id) mappings[file.id] = file;
-            mappings[`${file.id}-${file.file_name}`] = file;
+            mappings[`${file.id}-${file.name}`] = file;
         }
         return mappings;
     }, [files, propReferenceMappings]);
 
-    const extensions = useMemo(() => {
-        let exts: Extension[] = [
-            cradleLinksPlugin(entryColors, navigate, source),
-            cradleLinkColorPlugin(entryColors, source),
-            headingLineClassPlugin(source),
-            referenceLinksPlugin(referenceMappings, fileDownloadFn, source),
-            tablePlugin(entryColors, navigate, source),
+    const languageExtension = useMemo(
+        () =>
             yamlFrontmatter({
                 content: markdown({
                     codeLanguages: languages,
@@ -538,14 +672,30 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     ],
                 }),
             }),
+        [editorUtils, referenceMappings, source],
+    );
+
+    const extensions = useMemo(() => {
+        const onLinkClick = handleLinkClick(navigate, openExternalLink);
+        let exts: Extension[] = [
+            cradleLinksPlugin(entryColors, navigate, source),
+            cradleLinkColorPlugin(entryColors, source),
+            headingLineClassPlugin(source),
+            referenceLinksPlugin(referenceMappings, fileDownloadFn, source),
+            tablePlugin(entryColors, navigate, source),
+            languageExtension,
             ...(!source
                 ? [
-                      prosemarkBasicSetup(),
+                      (prosemarkBasicSetup() as Extension[]).filter(
+                          (ext) => ext !== defaultClickLinkHandler,
+                      ),
                       prosemarkBaseThemeSetup(),
                       htmlBlockExtension,
                       codeBlockCopyExtension,
-                      clickLinkHandler.of((url: string) => {
-                          window.open(url, '_blank', 'noopener,noreferrer');
+                      clickLinkHandler.of(openExternalLink),
+                      EditorView.domEventHandlers({
+                          click: onLinkClick,
+                          auxclick: onLinkClick,
                       }),
                       baseSyntaxHighlights,
                   ]
@@ -573,14 +723,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 ...(historyKeymap as any),
                 ...(searchKeymap as any),
             ] as any) as any,
-            EditorState.readOnly.of(!enableEditing),
-            EditorView.editable.of(enableEditing),
+            EditorState.readOnly.of(!canEdit),
+            EditorView.editable.of(canEdit),
             onUpdate,
             keymap.of([
                 {
                     key: 'Mod-s',
                     run: (cm: EditorView) => {
-                        if (!enableEditing) return false;
+                        if (!canEdit) return false;
                         setMarkdownContentRef.current(cm.state.doc.toString());
                         saveNoteRef.current();
                         return true;
@@ -595,12 +745,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 '.cm-scroller': { overflow: 'auto' },
             }),
             ...additionalExtensions,
-            ...(editorSyncSession && editorSyncSession.noteid === noteid
-                ? codemirrorEditorSyncPeerExtensions(
-                      editorSyncSession.startVersion,
-                      editorSyncSession.connection,
-                  )
-                : []),
+            ...syncExtensions,
         ];
 
         if (source) {
@@ -621,20 +766,21 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         return exts;
     }, [
         editorUtils,
+        languageExtension,
         profile?.vim_mode,
         additionalExtensions,
         entryColors,
         source,
-        enableEditing,
+        canEdit,
         cradleTheme,
         codeBlockCopyExtension,
         fileUploadInteractionHandler,
         referenceMappings,
         navigate,
+        openExternalLink,
         fileDownloadFn,
         onUpdate,
-        editorSyncSession,
-        noteid,
+        syncExtensions,
     ]);
 
     useEffect(() => {
@@ -798,13 +944,49 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         [markdownContent],
     );
     const charCount = markdownContent.length;
-    const saveStatus = getSaveStatus(markdownContent, isSaving, isDirty);
+    const saveStatus = getSaveStatus(markdownContent, isSaving, isDirty, !!saveError);
 
     const noteStatusBadgeDescription =
         noteStatusMessage?.trim() ||
         (noteStatus
             ? `Note status: ${formatNoteStatusLabel(noteStatus)}`
             : 'Note status unavailable');
+
+    const connectionNotice: keyof typeof CONNECTION_NOTICES | null =
+        needsEditorSyncHydration && liveUnavailable
+            ? 'unreachable'
+            : !liveSession
+              ? null
+              : editingPaused
+                ? 'paused'
+                : !liveConnected
+                  ? 'offline'
+                  : null;
+
+    // Stays up while the state lasts; the retry action keeps it open (a failed retry
+    // leaves the state unchanged, so it wouldn't be shown again).
+    useEffect(() => {
+        if (!connectionNotice) return;
+        const id = `live-connection-${toastKey}`;
+        const { title, description, retry } = CONNECTION_NOTICES[connectionNotice];
+        toast.warning(title, {
+            id,
+            description,
+            duration: Infinity,
+            action: retry
+                ? {
+                      label: 'Retry now',
+                      onClick: (event) => {
+                          event.preventDefault();
+                          setEditorSyncEpoch((epoch) => epoch + 1);
+                      },
+                  }
+                : undefined,
+        });
+        return () => {
+            toast.dismiss(id);
+        };
+    }, [connectionNotice, toastKey]);
 
     return (
         <div className='h-full w-full flex flex-col overflow-hidden'>
@@ -841,6 +1023,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                                 files={files}
                                 setFiles={setFiles}
                                 insertTextCallback={insertTextToCodeMirror}
+                                canRemove={enableEditing}
                             />
                             <ScrollBar orientation='horizontal' />
                         </ScrollArea>
@@ -850,52 +1033,94 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
             {/* Bottom toolbar: word count, character count, vim, save status, check badge */}
             <div className='flex-none flex items-center justify-end gap-2 px-3 py-1.5 border-t border-border bg-muted/30 text-muted-foreground text-xs'>
+                {liveUsers.length > 0 && (
+                    <Tooltip>
+                        <TooltipTrigger
+                            render={
+                                <span
+                                    className='inline-flex items-center -space-x-1 cursor-default'
+                                    data-testid='live-peers'
+                                />
+                            }
+                        >
+                            {liveUsers.map((p) => (
+                                <span
+                                    key={p.username}
+                                    className='inline-flex items-center justify-center size-5 rounded-full text-[10px] font-semibold text-white ring-2 ring-background'
+                                    style={{ backgroundColor: p.color }}
+                                >
+                                    {p.username.charAt(0).toUpperCase()}
+                                </span>
+                            ))}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            Also editing: {liveUsers.map((p) => p.username).join(', ')}
+                        </TooltipContent>
+                    </Tooltip>
+                )}
                 <span>{wordCount} words</span>
                 <span>{charCount} chars</span>
                 {profile?.vim_mode && (
                     <Tooltip>
-                        <TooltipTrigger asChild>
-                            <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'>
-                                <span className='w-1.5 h-1.5 rounded-full bg-green-500' />
-                                <span className='cradle-mono'>Vim</span>
-                            </span>
+                        <TooltipTrigger
+                            render={
+                                <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent' />
+                            }
+                        >
+                            <span className='w-1.5 h-1.5 rounded-full bg-green-500' />
+                            <span className='cradle-mono'>Vim</span>
                         </TooltipTrigger>
                         <TooltipContent>Vim mode enabled</TooltipContent>
                     </Tooltip>
                 )}
                 <Tooltip>
-                    <TooltipTrigger asChild>
+                    <TooltipTrigger
+                        render={
+                            saveStatus === 'error' ? (
+                                <button
+                                    type='button'
+                                    onClick={onSaveErrorClick}
+                                    className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-destructive border border-destructive/50 cursor-pointer'
+                                    data-testid='save-status-dot'
+                                    data-state={saveStatus}
+                                />
+                            ) : (
+                                <span
+                                    className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent cursor-default'
+                                    data-testid='save-status-dot'
+                                    data-state={saveStatus}
+                                />
+                            )
+                        }
+                    >
                         <span
-                            className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent cursor-default'
-                            data-testid='save-status-dot'
-                            data-state={saveStatus}
-                        >
-                            <span
-                                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                    saveStatus === 'saved'
-                                        ? 'bg-green-500'
-                                        : saveStatus === 'saving'
-                                          ? 'bg-amber-500 dark:bg-amber-400'
-                                          : saveStatus === 'unsaved'
-                                            ? 'bg-destructive'
-                                            : 'bg-muted-foreground'
-                                }`}
-                            />
-                            <span
-                                className={`cradle-mono tabular-nums ${
-                                    saveStatus === 'saving'
-                                        ? 'text-amber-800 dark:text-amber-300'
-                                        : ''
-                                }`}
-                            >
-                                {saveStatus === 'saved'
-                                    ? 'Saved'
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                saveStatus === 'saved'
+                                    ? 'bg-green-500'
                                     : saveStatus === 'saving'
-                                      ? 'Saving'
-                                      : saveStatus === 'unsaved'
-                                        ? 'Unsaved'
-                                        : '—'}
-                            </span>
+                                      ? 'bg-amber-500 dark:bg-amber-400'
+                                      : saveStatus === 'unsaved' ||
+                                          saveStatus === 'error'
+                                        ? 'bg-destructive'
+                                        : 'bg-muted-foreground'
+                            }`}
+                        />
+                        <span
+                            className={`cradle-mono tabular-nums ${
+                                saveStatus === 'saving'
+                                    ? 'text-amber-800 dark:text-amber-300'
+                                    : ''
+                            }`}
+                        >
+                            {saveStatus === 'saved'
+                                ? 'Saved'
+                                : saveStatus === 'saving'
+                                  ? 'Saving'
+                                  : saveStatus === 'unsaved'
+                                    ? 'Unsaved'
+                                    : saveStatus === 'error'
+                                      ? 'Not saved'
+                                      : '—'}
                         </span>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -905,7 +1130,9 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                               ? 'Saving...'
                               : saveStatus === 'unsaved'
                                 ? 'Unsaved changes'
-                                : 'Cannot save empty note'}
+                                : saveStatus === 'error'
+                                  ? `${saveError} Click to resolve.`
+                                  : 'Cannot save empty note'}
                     </TooltipContent>
                 </Tooltip>
                 <span
@@ -962,6 +1189,9 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.referenceMappings === nextProps.referenceMappings &&
         prevProps.isSaving === nextProps.isSaving &&
         prevProps.isDirty === nextProps.isDirty &&
+        prevProps.saveError === nextProps.saveError &&
+        prevProps.onSaveErrorClick === nextProps.onSaveErrorClick &&
+        prevProps.onLiveSessionChange === nextProps.onLiveSessionChange &&
         prevProps.noteStatus === nextProps.noteStatus &&
         prevProps.noteStatusMessage === nextProps.noteStatusMessage
     );

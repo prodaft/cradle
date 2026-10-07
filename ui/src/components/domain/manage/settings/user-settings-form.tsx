@@ -95,7 +95,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
 
     const saveSettings = useMutation({
         mutationFn: async (values: UserSettingsFormData) => {
-            const { error, response } = await fetchClient.POST(
+            const { error, response } = await fetchClient.PATCH(
                 '/management/settings/',
                 {
                     body: {

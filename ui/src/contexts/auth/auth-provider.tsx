@@ -154,7 +154,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         async (
             username: string,
             password: string,
-            twoFactorToken: string | null = null,
+            otp: string | null = null,
         ): Promise<LoginResult> => {
             setIsLoading(true);
 
@@ -165,7 +165,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         body: {
                             username,
                             password,
-                            ...(twoFactorToken && { two_factor_token: twoFactorToken }),
+                            ...(otp && { otp }),
                         },
                         headers: {
                             'X-CSRFToken': getCsrfToken() ?? '',
@@ -217,20 +217,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         error?.code != null
                             ? { ...error, detail: error.detail || 'An error occurred' }
                             : await parseAPIError(error);
-                    if (
-                        parsed.code === 'TWO_FACTOR_REQUIRED' ||
-                        parsed.detail?.toLowerCase?.().includes('2fa token required')
-                    ) {
+                    if (parsed.code === 'TWO_FACTOR_REQUIRED') {
                         return {
                             result: AuthResult.REQUIRES_2FA,
                             message: '',
                         };
                     }
 
-                    if (
-                        parsed.code === 'INVALID_TWO_FACTOR_TOKEN' ||
-                        parsed.detail?.toLowerCase?.().includes('invalid 2fa')
-                    ) {
+                    if (parsed.code === 'INVALID_TWO_FACTOR_CODE') {
                         return {
                             result: AuthResult.INVALID_CREDENTIALS,
                             message: parsed.detail || 'Invalid 2FA code',

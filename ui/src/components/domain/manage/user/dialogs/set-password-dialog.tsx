@@ -21,8 +21,9 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
+import { generatePassword } from '@/utils/password';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
+import { DiceSixIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import React, { useEffect, useState } from 'react';
@@ -114,8 +115,19 @@ export default function SetUserPasswordDialog({
     });
 
     useEffect(() => {
-        if (!open) form.reset();
+        if (!open) {
+            form.reset();
+            setIsPasswordVisible(false);
+            setIsConfirmPasswordVisible(false);
+        }
     }, [open, form]);
+
+    const handleGeneratePassword = () => {
+        const password = generatePassword();
+        form.setValue('newPassword', password, { shouldValidate: true });
+        form.setValue('confirmNewPassword', password, { shouldValidate: true });
+        setIsPasswordVisible(true);
+    };
 
     const onSubmit = async (data: FormData) => {
         setUserPassword.mutate(data.newPassword);
@@ -153,6 +165,18 @@ export default function SetUserPasswordDialog({
                                             disabled={setUserPassword.isPending}
                                         />
                                         <InputGroupAddon align='inline-end'>
+                                            <InputGroupButton
+                                                type='button'
+                                                onClick={handleGeneratePassword}
+                                                disabled={setUserPassword.isPending}
+                                                aria-label='Generate password'
+                                                title='Generate password'
+                                            >
+                                                <DiceSixIcon
+                                                    className='size-4'
+                                                    weight='bold'
+                                                />
+                                            </InputGroupButton>
                                             <InputGroupButton
                                                 type='button'
                                                 onClick={() =>
@@ -258,15 +282,17 @@ export default function SetUserPasswordDialog({
                         />
                     </FieldGroup>
                     <DialogFooter>
-                        <DialogClose asChild>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                disabled={setUserPassword.isPending}
-                            >
-                                Cancel
-                            </Button>
+                        <DialogClose
+                            render={
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={setUserPassword.isPending}
+                                />
+                            }
+                        >
+                            Cancel
                         </DialogClose>
                         <Button
                             type='submit'

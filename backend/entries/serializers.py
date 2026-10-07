@@ -242,10 +242,35 @@ class EntrySerializerMinimal(serializers.ModelSerializer):
         return representation
 
 
+class EntryClassOptionsField(serializers.ListField):
+    """Allowed values as a list; stored as newline-separated text on EntryClass.options."""
+
+    child = serializers.CharField(allow_blank=True, trim_whitespace=True)
+    max_stored_length = EntryClass._meta.get_field("options").max_length
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("required", False)
+        kwargs.setdefault("help_text", "Allowed values (alternative to regex)")
+        super().__init__(**kwargs)
+
+    def to_representation(self, data):
+        return [option for option in (data or "").split("\n") if option]
+
+    def to_internal_value(self, data):
+        options = [option for option in super().to_internal_value(data) if option]
+        if any("\n" in option for option in options):
+            raise serializers.ValidationError("Options cannot contain line breaks.")
+        stored = "\n".join(options)
+        if len(stored) > self.max_stored_length:
+            raise serializers.ValidationError(f"Options exceed {self.max_stored_length} characters in total.")
+        return stored
+
+
 class EntryClassSerializerNoChildren(serializers.ModelSerializer):
     """Entry class without children relation (for nesting in entry serializers)."""
 
     format = serializers.CharField(max_length=20, allow_null=True, help_text="Display format for the entry class")
+    options = EntryClassOptionsField()
 
     class Meta:
         model = EntryClass
@@ -274,6 +299,7 @@ class EntryClassSerializer(serializers.ModelSerializer):
     )
     children_detail = serializers.SerializerMethodField(read_only=True)
     format = serializers.CharField(max_length=20, allow_null=True, help_text="Display format for the entry class")
+    options = EntryClassOptionsField()
 
     class Meta:
         model = EntryClass
@@ -552,13 +578,10 @@ class EntitySerializer(serializers.ModelSerializer):
                 raise InvalidAliasTargetException()
         if aliases:
             request = self.context.get("request")
-            if request and not request.user.is_cradle_admin:
-                if not Access.objects.has_access_to_entities(
-                    request.user, set(aliases), {AccessType.READ, AccessType.READ_WRITE}
-                ):
-                    raise PermissionDeniedException(
-                        detail="You do not have access to one or more of the linked entries."
-                    )
+            if request and not Access.objects.has_access_to_entities(
+                request.user, set(aliases), {AccessType.READ, AccessType.READ_WRITE}
+            ):
+                raise PermissionDeniedException(detail="You do not have access to one or more of the linked entries.")
 
         # Check for duplicate entity (same name + subtype)
         qs = Entry.objects.filter(entry_class=data["entry_class"], name=data["name"])
@@ -655,6 +678,13 @@ class ArtifactSerializer(serializers.ModelSerializer):
         for key in EntryClassSerializerNoChildren.Meta.fields:
             if key in data:
                 entry_class_internal[key] = data.pop(key)
+        if "options" in entry_class_internal:
+            try:
+                entry_class_internal["options"] = EntryClassOptionsField().run_validation(
+                    entry_class_internal["options"]
+                )
+            except serializers.ValidationError as e:
+                raise serializers.ValidationError({"options": e.detail})
 
         internal = super().to_internal_value(data)
         internal["entry_class"] = EntryClass(**entry_class_internal)
@@ -709,9 +739,12 @@ class ArtifactSerializer(serializers.ModelSerializer):
             The created Entry.
         """
         entry_class = validated_data["entry_class"]
-        entry_class_data = EntryClassSerializerNoChildren(instance=entry_class).data
-        subtype = entry_class_data.pop("subtype")
-        entry_class, _ = EntryClass.objects.get_or_create(subtype=subtype, defaults=entry_class_data)
+        defaults = {
+            field: getattr(entry_class, field)
+            for field in EntryClassSerializerNoChildren.Meta.fields
+            if field != "subtype"
+        }
+        entry_class, _ = EntryClass.objects.get_or_create(subtype=entry_class.subtype, defaults=defaults)
         validated_data["entry_class"] = entry_class
 
         return super().create(validated_data)
@@ -735,6 +768,7 @@ class RelationSerializer(serializers.ModelSerializer):
 
     e1 = EntrySerializerMinimal(read_only=True)
     e2 = EntrySerializerMinimal(read_only=True)
+    last_seen_at = serializers.DateTimeField(source="last_seen", read_only=True, help_text="Last observation")
 
     class Meta:
         model = Relation
@@ -743,11 +777,11 @@ class RelationSerializer(serializers.ModelSerializer):
             "e1",
             "e2",
             "created_at",
-            "last_seen",
+            "last_seen_at",
             "reason",
             "details",
         ]
-        read_only_fields = ["created_at", "last_seen", "id"]
+        read_only_fields = ["created_at", "id"]
         ref_name = "Relation"
         extra_kwargs = {
             "e1": {"help_text": "Source entry"},
@@ -801,6 +835,7 @@ class RelationDetailSerializer(serializers.ModelSerializer):
     e1 = EntrySerializerMinimal(read_only=True)
     e2 = EntrySerializerMinimal(read_only=True)
     attachments = AttachmentSerializer(many=True, read_only=True)
+    last_seen_at = serializers.DateTimeField(source="last_seen", read_only=True, help_text="Last observation")
 
     class Meta:
         model = Relation
@@ -809,12 +844,12 @@ class RelationDetailSerializer(serializers.ModelSerializer):
             "e1",
             "e2",
             "created_at",
-            "last_seen",
+            "last_seen_at",
             "reason",
             "reason_context",
             "details",
             "virtual",
             "attachments",
         ]
-        read_only_fields = ["created_at", "last_seen", "id"]
+        read_only_fields = ["created_at", "id"]
         ref_name = "RelationDetail"

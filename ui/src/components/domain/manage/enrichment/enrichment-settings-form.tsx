@@ -31,8 +31,8 @@ import {
 import { fetchClient } from '@services/openapi/client';
 import { fetchNdjson } from '@services/openapi/ndjson-stream';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { startCase } from 'lodash';
 import isEqual from 'lodash/isEqual';
+import startCase from 'lodash/startCase';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
@@ -131,7 +131,7 @@ export default function EnrichmentSettingsForm({
 
     const saveSettings = useMutation({
         mutationFn: async (formatted_data: any) => {
-            const { error, response } = await fetchClient.POST(
+            const { error, response } = await fetchClient.PATCH(
                 '/intelio/enrichment/{enricher_type}/',
                 {
                     params: { path: { enricher_type: enrichment_class } },
@@ -332,6 +332,7 @@ export default function EnrichmentSettingsForm({
                                                 onValueChange={controllerField.onChange}
                                             >
                                                 <SelectTrigger
+                                                    className='w-full'
                                                     id={`settings.${key}`}
                                                     aria-invalid={fieldState.invalid}
                                                     aria-describedby={
@@ -676,9 +677,7 @@ export default function EnrichmentSettingsForm({
                                                         );
                                                     }}
                                                     emptyIndicator={
-                                                        <p className='text-center text-sm'>
-                                                            No entry classes found
-                                                        </p>
+                                                        <p>No entry classes found</p>
                                                     }
                                                 />
                                             </div>

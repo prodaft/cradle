@@ -80,3 +80,9 @@ export function isEntryManager(): boolean {
     const role = getRole();
     return role === 'entrymanager' || role === 'admin';
 }
+
+export const USER_ROLE_OPTIONS = [
+    { value: 'author', label: 'User' },
+    { value: 'entrymanager', label: 'Entry Manager' },
+    { value: 'admin', label: 'Admin' },
+];

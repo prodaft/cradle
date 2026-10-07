@@ -246,10 +246,16 @@ export default function ApiKeyGenerateDialog({
                                     </Button>
                                 </>
                             ) : (
-                                <DialogClose asChild>
-                                    <Button type='button' variant='outline' size='sm'>
-                                        Close
-                                    </Button>
+                                <DialogClose
+                                    render={
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                        />
+                                    }
+                                >
+                                    Close
                                 </DialogClose>
                             )}
                         </DialogFooter>

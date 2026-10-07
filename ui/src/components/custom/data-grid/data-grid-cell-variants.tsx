@@ -1,5 +1,6 @@
 'use client';
 
+import { useOpenExternalLink } from '@/components/base/external-link-confirm/external-link-confirm';
 import { DataGridCellWrapper } from '@/components/custom/data-grid/data-grid-cell-wrapper';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import {
     CommandList,
     CommandSeparator,
 } from '@/components/ui/command';
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { Popover, PopoverContent } from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -260,10 +261,8 @@ export function LongTextCell<TData>({
         [tableMeta, value, initialValue, rowIndex, columnId, readOnly],
     );
 
-    const onOpenAutoFocus: NonNullable<
-        React.ComponentProps<typeof PopoverContent>['onOpenAutoFocus']
-    > = React.useCallback((event) => {
-        event.preventDefault();
+    // Base UI calls this when the popup opens; returning nothing tells it not to move focus.
+    const onInitialFocus = React.useCallback((): void => {
         if (textareaRef.current) {
             textareaRef.current.focus();
             const length = textareaRef.current.value.length;
@@ -352,32 +351,31 @@ export function LongTextCell<TData>({
 
     return (
         <Popover open={isEditing} onOpenChange={onOpenChange}>
-            <PopoverAnchor asChild>
-                <DataGridCellWrapper<TData>
-                    ref={containerRef}
-                    cell={cell}
-                    tableMeta={tableMeta}
-                    rowIndex={rowIndex}
-                    columnId={columnId}
-                    rowHeight={rowHeight}
-                    isEditing={isEditing}
-                    isFocused={isFocused}
-                    isSelected={isSelected}
-                    isSearchMatch={isSearchMatch}
-                    isActiveSearchMatch={isActiveSearchMatch}
-                    readOnly={readOnly}
-                    onKeyDown={onWrapperKeyDown}
-                >
-                    <span data-slot='grid-cell-content'>{value}</span>
-                </DataGridCellWrapper>
-            </PopoverAnchor>
+            <DataGridCellWrapper<TData>
+                ref={containerRef}
+                cell={cell}
+                tableMeta={tableMeta}
+                rowIndex={rowIndex}
+                columnId={columnId}
+                rowHeight={rowHeight}
+                isEditing={isEditing}
+                isFocused={isFocused}
+                isSelected={isSelected}
+                isSearchMatch={isSearchMatch}
+                isActiveSearchMatch={isActiveSearchMatch}
+                readOnly={readOnly}
+                onKeyDown={onWrapperKeyDown}
+            >
+                <span data-slot='grid-cell-content'>{value}</span>
+            </DataGridCellWrapper>
             <PopoverContent
                 data-grid-cell-editor=''
+                anchor={containerRef}
                 align='start'
                 side='bottom'
                 sideOffset={sideOffset}
                 className='w-[400px] rounded-none p-0'
-                onOpenAutoFocus={onOpenAutoFocus}
+                initialFocus={onInitialFocus}
             >
                 <Textarea
                     placeholder='Enter text...'
@@ -544,6 +542,7 @@ export function UrlCell<TData>({
     const [value, setValue] = React.useState(initialValue ?? '');
     const cellRef = React.useRef<HTMLDivElement>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const openExternalLink = useOpenExternalLink();
 
     const prevInitialValueRef = React.useRef(initialValue);
     if (initialValue !== prevInitialValueRef.current) {
@@ -632,15 +631,14 @@ export function UrlCell<TData>({
 
     const onLinkClick = React.useCallback(
         (event: React.MouseEvent<HTMLAnchorElement>) => {
-            if (isEditing) {
-                event.preventDefault();
-                return;
-            }
+            // Only primary click and middle-click open the link
+            if (event.type === 'auxclick' && event.button !== 1) return;
+            event.preventDefault();
+            if (isEditing) return;
 
             // Check if URL was rejected due to dangerous protocol
             const href = getUrlHref(value);
             if (!href) {
-                event.preventDefault();
                 toast.error('Invalid URL', {
                     description:
                         'URL contains a dangerous protocol (javascript:, data:, vbscript:, or file:)',
@@ -650,8 +648,9 @@ export function UrlCell<TData>({
 
             // Stop propagation to prevent grid from interfering with link navigation
             event.stopPropagation();
+            openExternalLink(href);
         },
-        [isEditing, value],
+        [isEditing, value, openExternalLink],
     );
 
     React.useEffect(() => {
@@ -706,6 +705,7 @@ export function UrlCell<TData>({
                         rel='noopener noreferrer'
                         className='truncate text-primary underline decoration-primary/30 underline-offset-2 hover:decoration-primary/60 data-invalid:cursor-not-allowed data-focused:text-foreground data-invalid:text-destructive data-focused:decoration-foreground/50 data-invalid:decoration-destructive/50 data-focused:hover:decoration-foreground/70 data-invalid:hover:decoration-destructive/70'
                         onClick={onLinkClick}
+                        onAuxClick={onLinkClick}
                     >
                         {displayValue}
                     </a>
@@ -799,14 +799,14 @@ export function CheckboxCell<TData>({
     }, []);
 
     const onCheckboxMouseDown = React.useCallback(
-        (event: React.MouseEvent<HTMLButtonElement>) => {
+        (event: React.MouseEvent<HTMLElement>) => {
             event.stopPropagation();
         },
         [],
     );
 
     const onCheckboxDoubleClick = React.useCallback(
-        (event: React.MouseEvent<HTMLButtonElement>) => {
+        (event: React.MouseEvent<HTMLElement>) => {
             event.stopPropagation();
         },
         [],
@@ -869,8 +869,8 @@ export function SelectCell<TData>({
     }
 
     const onValueChange = React.useCallback(
-        (newValue: string) => {
-            if (readOnly) return;
+        (newValue: string | null) => {
+            if (readOnly || newValue === null) return;
             setValue(newValue);
             tableMeta?.onDataUpdate?.({ rowIndex, columnId, value: newValue });
             tableMeta?.onCellEditingStop?.();
@@ -925,6 +925,7 @@ export function SelectCell<TData>({
         >
             {isEditing ? (
                 <Select
+                    items={options}
                     value={value}
                     onValueChange={onValueChange}
                     open={isEditing}
@@ -951,7 +952,7 @@ export function SelectCell<TData>({
                         align='start'
                         alignOffset={-8}
                         sideOffset={-8}
-                        className='min-w-[calc(var(--radix-select-trigger-width)+16px)]'
+                        className='min-w-[calc(var(--anchor-width)+16px)]'
                     >
                         {options.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
@@ -997,6 +998,7 @@ export function MultiSelectCell<TData>({
     const [selectedValues, setSelectedValues] = React.useState<string[]>(cellValue);
     const [searchValue, setSearchValue] = React.useState('');
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const anchorRef = React.useRef<HTMLDivElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
     const cellOpts = cell.column.columnDef.meta?.cell;
     const options = cellOpts?.variant === 'multi-select' ? cellOpts.options : [];
@@ -1061,10 +1063,8 @@ export function MultiSelectCell<TData>({
         [tableMeta, rowIndex, columnId, readOnly],
     );
 
-    const onOpenAutoFocus: NonNullable<
-        React.ComponentProps<typeof PopoverContent>['onOpenAutoFocus']
-    > = React.useCallback((event) => {
-        event.preventDefault();
+    // Base UI calls this when the popup opens; returning nothing tells it not to move focus.
+    const onInitialFocus = React.useCallback((): void => {
         inputRef.current?.focus();
     }, []);
 
@@ -1100,13 +1100,15 @@ export function MultiSelectCell<TData>({
                     removeValue(lastValue);
                 }
             }
-            // Prevent escape from propagating to close the popover immediately
-            // Let the command handle it first
+            // Keep Escape from reaching the cell wrapper (which would reset the
+            // selection). Stopping it also hides it from Base UI's document-level
+            // dismiss listener, so close the popover explicitly.
             if (event.key === 'Escape') {
                 event.stopPropagation();
+                onOpenChange(false);
             }
         },
-        [searchValue, selectedValues, removeValue],
+        [searchValue, selectedValues, removeValue, onOpenChange],
     );
 
     const displayLabels = selectedValues
@@ -1141,15 +1143,14 @@ export function MultiSelectCell<TData>({
         >
             {isEditing ? (
                 <Popover open={isEditing} onOpenChange={onOpenChange}>
-                    <PopoverAnchor asChild>
-                        <div className='absolute inset-0' />
-                    </PopoverAnchor>
+                    <div ref={anchorRef} className='absolute inset-0' />
                     <PopoverContent
                         data-grid-cell-editor=''
+                        anchor={anchorRef}
                         align='start'
                         sideOffset={sideOffset}
                         className='w-[300px] rounded-none p-0'
-                        onOpenAutoFocus={onOpenAutoFocus}
+                        initialFocus={onInitialFocus}
                     >
                         <Command className='**:data-[slot=command-input-wrapper]:h-auto **:data-[slot=command-input-wrapper]:border-none **:data-[slot=command-input-wrapper]:p-0 [&_[data-slot=command-input-wrapper]_svg]:hidden'>
                             <div className='flex min-h-9 flex-wrap items-center gap-1 border-b px-3 py-1.5'>
@@ -1280,6 +1281,7 @@ export function DateCell<TData>({
     const initialValue = cell.getValue() as string;
     const [value, setValue] = React.useState(initialValue ?? '');
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const anchorRef = React.useRef<HTMLSpanElement>(null);
 
     const prevInitialValueRef = React.useRef(initialValue);
     if (initialValue !== prevInitialValueRef.current) {
@@ -1347,14 +1349,13 @@ export function DateCell<TData>({
             onKeyDown={onWrapperKeyDown}
         >
             <Popover open={isEditing} onOpenChange={onOpenChange}>
-                <PopoverAnchor asChild>
-                    <span data-slot='grid-cell-content'>
-                        {formatDateForDisplay(value)}
-                    </span>
-                </PopoverAnchor>
+                <span ref={anchorRef} data-slot='grid-cell-content'>
+                    {formatDateForDisplay(value)}
+                </span>
                 {isEditing && (
                     <PopoverContent
                         data-grid-cell-editor=''
+                        anchor={anchorRef}
                         align='start'
                         alignOffset={-8}
                         className='w-auto p-0'
@@ -1409,6 +1410,7 @@ export function FileCell<TData>({
     const isDeleting = deletingFiles.size > 0;
     const isPending = isUploading || isDeleting;
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const anchorRef = React.useRef<HTMLDivElement>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const dropzoneRef = React.useRef<HTMLDivElement>(null);
     const cellOpts = cell.column.columnDef.meta?.cell;
@@ -1806,18 +1808,20 @@ export function FileCell<TData>({
         [tableMeta, rowIndex, columnId, readOnly],
     );
 
-    const onEscapeKeyDown: NonNullable<
-        React.ComponentProps<typeof PopoverContent>['onEscapeKeyDown']
-    > = React.useCallback((event) => {
-        // Prevent the escape key from propagating to the data grid's keyboard handler
-        // which would call blurCell() and remove focus from the cell
-        event.stopPropagation();
-    }, []);
+    const onContentKeyDown = React.useCallback(
+        (event: React.KeyboardEvent<HTMLDivElement>) => {
+            if (event.key !== 'Escape') return;
+            // Prevent the escape key from propagating to the cell wrapper / data grid
+            // keyboard handlers. This also hides it from Base UI's document-level
+            // dismiss listener, so close the popover explicitly.
+            event.stopPropagation();
+            onOpenChange(false);
+        },
+        [onOpenChange],
+    );
 
-    const onOpenAutoFocus: NonNullable<
-        React.ComponentProps<typeof PopoverContent>['onOpenAutoFocus']
-    > = React.useCallback((event) => {
-        event.preventDefault();
+    // Base UI calls this when the popup opens; returning nothing tells it not to move focus.
+    const onInitialFocus = React.useCallback((): void => {
         queueMicrotask(() => {
             dropzoneRef.current?.focus();
         });
@@ -1909,16 +1913,15 @@ export function FileCell<TData>({
         >
             {isEditing ? (
                 <Popover open={isEditing} onOpenChange={onOpenChange}>
-                    <PopoverAnchor asChild>
-                        <div className='absolute inset-0' />
-                    </PopoverAnchor>
+                    <div ref={anchorRef} className='absolute inset-0' />
                     <PopoverContent
                         data-grid-cell-editor=''
+                        anchor={anchorRef}
                         align='start'
                         sideOffset={sideOffset}
                         className='w-[400px] rounded-none p-0'
-                        onEscapeKeyDown={onEscapeKeyDown}
-                        onOpenAutoFocus={onOpenAutoFocus}
+                        onKeyDown={onContentKeyDown}
+                        initialFocus={onInitialFocus}
                     >
                         <div className='flex flex-col gap-2 p-3'>
                             <span id={labelId} className='sr-only'>

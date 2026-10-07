@@ -1,5 +1,5 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
 import PageHeader from '@/components/base/page-header';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import {
     ActionBar,
     ActionBarClose,
@@ -36,6 +36,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
+import type { SearchSchema, SearchState } from '@/lib/search-query/search-schema';
 import { PencilIcon, TrashIcon, UserPlusIcon } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
@@ -66,7 +67,21 @@ const roleBadgeVariant = (role?: string) => {
     }
 };
 
-/** Manage `/manage/users`: dock tab + table; URL state uses `users_*` search params. */
+type UserRole = NonNullable<UserRow['role']>;
+
+const ROLE_VALUES = [
+    { value: 'admin', label: 'Admin' },
+    { value: 'manager', label: 'Manager' },
+    { value: 'entrymanager', label: 'Entry manager' },
+    { value: 'author', label: 'Author' },
+] as const satisfies readonly { value: UserRole; label: string }[];
+
+const SEARCH_SCHEMA: SearchSchema = {
+    qualifiers: [
+        { key: 'role', kind: 'enum', description: 'role', values: ROLE_VALUES },
+    ],
+};
+
 export default function UsersList() {
     useDockPanelTab({ title: 'Manage: Users', icon: 'manage-users' });
     const router = useRouter();
@@ -77,6 +92,13 @@ export default function UsersList() {
     const page = Number(search?.users_page ?? 1) || 1;
     const pageSize = Number(search?.users_pagesize ?? 20) || 20;
     const applied = (search?.users_search ?? '') as string;
+    const appliedRole = ROLE_VALUES.find((r) => r.value === search?.users_role)?.value;
+    const searchState = useMemo<SearchState>(() => {
+        const values: SearchState['values'] = appliedRole
+            ? { role: [appliedRole] }
+            : {};
+        return { q: applied || undefined, values, dates: {} };
+    }, [applied, appliedRole]);
 
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const { userId: selfId } = useAuthState();
@@ -101,8 +123,9 @@ export default function UsersList() {
             page,
             page_size: pageSize,
             ...(trimmed ? { search: trimmed } : {}),
+            ...(appliedRole ? { role: appliedRole } : {}),
         };
-    }, [page, pageSize, applied]);
+    }, [page, pageSize, applied, appliedRole]);
     const { data: usersPage, isPending } = $api.useQuery(
         'get',
         '/users/',
@@ -185,13 +208,14 @@ export default function UsersList() {
     const totalPages = Math.max(1, usersPage?.total_pages ?? 1);
 
     const applySearch = useCallback(
-        (value: string) => {
+        (state: SearchState) => {
             router.navigate({
                 to: location.pathname as any,
                 search: {
                     ...search,
                     users_page: 1,
-                    users_search: value.trim() || undefined,
+                    users_search: state.q || undefined,
+                    users_role: state.values.role?.[0] || undefined,
                 } as any,
                 replace: true,
             });
@@ -232,9 +256,10 @@ export default function UsersList() {
                 maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        checked={table.getIsAllPageRowsSelected()}
+                        indeterminate={
+                            table.getIsSomePageRowsSelected() &&
+                            !table.getIsAllPageRowsSelected()
                         }
                         onCheckedChange={(value) =>
                             table.toggleAllPageRowsSelected(!!value)
@@ -339,8 +364,10 @@ export default function UsersList() {
         },
         getCoreRowModel: getCoreRowModel(),
         enableRowSelection: true,
+        enableSorting: false,
         manualPagination: true,
         pageCount: totalPages,
+        rowCount: usersPage?.count,
     });
 
     const deleteCount = pendingDeleteIds.length;
@@ -362,11 +389,9 @@ export default function UsersList() {
                     description='Manage user accounts and permissions'
                     actions={
                         <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button onClick={openAddUser}>
-                                    <UserPlusIcon size={18} weight='bold' />
-                                    Add User
-                                </Button>
+                            <TooltipTrigger render={<Button onClick={openAddUser} />}>
+                                <UserPlusIcon size={18} weight='bold' />
+                                Add User
                             </TooltipTrigger>
                             <TooltipContent>Create a new user account</TooltipContent>
                         </Tooltip>
@@ -381,13 +406,11 @@ export default function UsersList() {
                             onRowClick={openUser}
                             getRowHref={(item) => `/manage/users/${item.id}`}
                         >
-                            <ActionBarSearch
-                                placeholder='Search users...'
-                                value={applied}
-                                debounceMs={300}
-                                onDebouncedChange={applySearch}
-                                onSubmit={applySearch}
-                                onClear={() => applySearch('')}
+                            <SearchInput
+                                schema={SEARCH_SCHEMA}
+                                value={searchState}
+                                onApply={applySearch}
+                                placeholder='Search users... (role:admin)'
                             />
                         </DataTable>
                     </div>

@@ -7,7 +7,6 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from access.models import Access
 from core.ndjson import ndjson_streaming_response
 from core.openapi import get_common_error_responses, get_error_responses
 from user.permissions import EntityListPermission, EntryClassListPermission
@@ -44,11 +43,7 @@ class EntityListStreamView(APIView):
         if getattr(self, "swagger_fake_view", False):
             return ndjson_streaming_response(iter(()))
 
-        if request.user.is_cradle_admin:
-            qs = Entry.entities.all()
-        else:
-            qs = Entry.entities.filter(id__in=Access.objects.get_accessible_entity_ids(request.user.id))
-        qs = qs.select_related("entry_class")
+        qs = Entry.entities.readable_entities(request.user).select_related("entry_class")
 
         serializer = EntryResponseSerializer()
 

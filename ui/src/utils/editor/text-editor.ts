@@ -66,19 +66,26 @@ export type NavigateHandler = (path: string, options?: { event?: Event }) => voi
 /**
  * Handles link clicks in the Preview component.
  * If the link is local, it will navigate using the provided navigateHandler.
- * If the link is external, it will open in a new tab.
+ * If the link is external, it is handed to openExternalLink (which asks for confirmation).
+ * Middle-clicks on local links are left to the browser; on external links they are
+ * intercepted too, so they can't bypass the confirmation.
  *
  * Useful information:
  * - All React Router navigation links have a `data-custom-href` attribute with the path they should navigate to.
  *
  * @param navigateHandler - How to handle local navigate links
+ * @param openExternalLink - How to open external links
  * @returns Event handler function
  */
 export const handleLinkClick =
-    (navigateHandler: NavigateHandler) =>
-    (event: Event): boolean => {
+    (navigateHandler: NavigateHandler, openExternalLink: (url: string) => void) =>
+    (event: MouseEvent): boolean => {
         const anchor = (event.target as HTMLElement | null)?.closest('a');
         if (!anchor?.href) return false;
+
+        const navigatePath = anchor.dataset.customHref;
+        if (event.type === 'auxclick' && (event.button !== 1 || navigatePath))
+            return false;
 
         event.preventDefault();
         try {
@@ -86,13 +93,12 @@ export const handleLinkClick =
         } catch {
             return false;
         }
-        const navigatePath = anchor.dataset.customHref;
         if (navigatePath) {
             // Local links to dashboards
             navigateHandler(navigatePath, { event });
         } else {
             // External links
-            window.open(anchor.href, '_blank');
+            openExternalLink(anchor.href);
         }
         return true;
     };

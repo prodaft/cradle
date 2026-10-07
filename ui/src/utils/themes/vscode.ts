@@ -3,33 +3,6 @@
  * Ported from official VS Code themes
  */
 
-const commonVars = {
-    '--font-sans':
-        "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
-    '--font-serif': "ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif",
-    '--font-mono':
-        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-    '--radius': '0.625rem',
-    '--shadow-x': '0',
-    '--shadow-y': '1px',
-    '--shadow-blur': '3px',
-    '--shadow-spread': '0px',
-    '--shadow-opacity': '0.1',
-    '--shadow-color': 'oklch(0 0 0)',
-    '--shadow-2xs': '0 1px 3px 0px hsl(0 0% 0% / 0.05)',
-    '--shadow-xs': '0 1px 3px 0px hsl(0 0% 0% / 0.05)',
-    '--shadow-sm':
-        '0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow': '0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow-md':
-        '0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow-lg':
-        '0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow-xl':
-        '0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow-2xl': '0 1px 3px 0px hsl(0 0% 0% / 0.25)',
-};
-
 /**
  * VS Code Dark+ Theme
  * Classic VS Code dark theme with blue accent
@@ -95,8 +68,6 @@ export const vscodeDark = {
     '--pm-code-btn-hover-background-color': '#505050',
     '--pm-blockquote-vertical-line-background-color': '#3c3c3c',
     '--pm-cursor-color': '#aeafad',
-
-    ...commonVars,
 };
 
 /**
@@ -164,6 +135,4 @@ export const vscodeLight = {
     '--pm-code-btn-hover-background-color': '#d5d5d5',
     '--pm-blockquote-vertical-line-background-color': '#e0e0e0',
     '--pm-cursor-color': '#000000',
-
-    ...commonVars,
 };

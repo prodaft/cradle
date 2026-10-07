@@ -1,6 +1,7 @@
 import DOMPurify from 'dompurify';
 import Prism from 'prismjs';
 
+import { useOpenExternalLink } from '@/components/base/external-link-confirm/external-link-confirm';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { handleLinkClick, NavigateHandler } from '@/utils/editor/text-editor';
@@ -22,6 +23,7 @@ export default function Preview({
 }: PreviewProps) {
     const sanitizedContent = useMemo(() => DOMPurify.sanitize(html), [html]);
     const router = useRouter();
+    const openExternalLink = useOpenExternalLink();
     const search = useSearch({ strict: false });
     const headingId = (search as any).heading as string | undefined;
     const preventScrollRef = useRef(false);
@@ -41,8 +43,10 @@ export default function Preview({
         Prism.highlightAllUnder(el);
     }, [sanitizedContent]);
 
+    const onLinkClick = handleLinkClick(navigateHandler, openExternalLink);
+
     const handleLineClick = (event: React.MouseEvent<HTMLDivElement>) => {
-        if (handleLinkClick(navigateHandler)(event.nativeEvent)) return;
+        if (onLinkClick(event.nativeEvent)) return;
 
         const targetElement = (event.target as HTMLElement).closest(
             '[data-source-line]',
@@ -124,6 +128,7 @@ export default function Preview({
                         data-testid='preview'
                         ref={previewRef}
                         onClick={handleLineClick}
+                        onAuxClick={(event) => onLinkClick(event.nativeEvent)}
                         id='preview-pane'
                     ></div>
                 </ScrollArea>

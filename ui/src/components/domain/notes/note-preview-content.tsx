@@ -6,7 +6,7 @@ import type { components } from '@services/openapi/schema';
 import { useQuery } from '@tanstack/react-query';
 
 type NoteForPreview = Pick<
-    components['schemas']['NoteListResponse'],
+    Extract<components['schemas']['NoteListResponse'], { accessible: true }>,
     'content' | 'files'
 > & { content?: string; files?: unknown[] };
 

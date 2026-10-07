@@ -1,3 +1,4 @@
+import { ExternalLinkConfirmProvider } from '@/components/base/external-link-confirm/external-link-confirm';
 import { PageLoader } from '@/components/base/page-loader';
 import { AppToaster } from '@/components/base/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -45,6 +46,7 @@ export const Route = createRootRoute({
                 content:
                     "default-src *; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; worker-src 'self' blob:; img-src 'self' data: *;",
             },
+            { name: 'referrer', content: 'no-referrer' },
             { title: 'CRADLE' },
         ],
         links: [
@@ -74,9 +76,13 @@ function RootComponent() {
                         <AppToaster />
                         <TooltipProvider>
                             <div id='root-content'>
-                                <Suspense fallback={<PageLoader fill='screen' logo />}>
-                                    <Outlet />
-                                </Suspense>
+                                <ExternalLinkConfirmProvider>
+                                    <Suspense
+                                        fallback={<PageLoader fill='screen' logo />}
+                                    >
+                                        <Outlet />
+                                    </Suspense>
+                                </ExternalLinkConfirmProvider>
                             </div>
                             <div id='portal-root' />
                         </TooltipProvider>

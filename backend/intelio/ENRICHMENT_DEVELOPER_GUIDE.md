@@ -72,18 +72,9 @@ class MyCustomEnricher(BaseEnricher):
 
     # Required: Define configuration schema using Django model fields
     settings_fields = {
-        "api_key": models.CharField(
-            max_length=255,
-            help_text="API key for external service"
-        ),
-        "timeout": models.IntegerField(
-            default=30,
-            help_text="Request timeout in seconds"
-        ),
-        "enabled_features": models.BooleanField(
-            default=True,
-            help_text="Enable advanced features"
-        ),
+        "api_key": models.CharField(max_length=255, help_text="API key for external service"),
+        "timeout": models.IntegerField(default=30, help_text="Request timeout in seconds"),
+        "enabled_features": models.BooleanField(default=True, help_text="Enable advanced features"),
     }
 
     def pre_enrich(self, entries: list[Entry]) -> Optional[str]:
@@ -135,8 +126,7 @@ class MyCustomEnricher(BaseEnricher):
                 for result in results:
                     # Create or get related entry
                     related_entry, created = Entry.objects.get_or_create(
-                        entry_class=result["entry_class"],
-                        name=result["name"]
+                        entry_class=result["entry_class"], name=result["name"]
                     )
 
                     # Create relation
@@ -151,16 +141,14 @@ class MyCustomEnricher(BaseEnricher):
                         details={
                             "source": "my_api",
                             "confidence": result.get("confidence", 1.0),
-                            "metadata": result.get("metadata", {})
-                        }
+                            "metadata": result.get("metadata", {}),
+                        },
                     )
                     relations_to_create.append(relation)
 
             except Exception as e:
                 # Log non-fatal errors as warnings
-                self.request._append_warning(
-                    f"Failed to enrich {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"Failed to enrich {entry.name}: {str(e)}")
 
         # Bulk create all relations at once for performance
         if relations_to_create:
@@ -197,10 +185,7 @@ from entries.models import Entry, Relation
 
 # Example: DNS enrichment linking domain to IP
 domain_entry = Entry.objects.get(name="example.com")
-ip_entry, _ = Entry.objects.get_or_create(
-    entry_class=ipv4_class,
-    name="93.184.216.34"
-)
+ip_entry, _ = Entry.objects.get_or_create(entry_class=ipv4_class, name="93.184.216.34")
 
 relation = Relation.objects.create(
     e1=domain_entry,
@@ -210,11 +195,7 @@ relation = Relation.objects.create(
     content_object=self.request,
     access_vector=self.request.access_vector,
     inherit_av=True,
-    details={
-        "record_type": "A",
-        "ttl": 3600,
-        "timestamp": "2025-01-15T10:30:00Z"
-    }
+    details={"record_type": "A", "ttl": 3600, "timestamp": "2025-01-15T10:30:00Z"},
 )
 ```
 
@@ -239,8 +220,8 @@ relation = Relation(
         "longitude": -122.4194,
         "accuracy_radius": 50,
         "asn": 15169,
-        "organization": "Google LLC"
-    }
+        "organization": "Google LLC",
+    },
 )
 ```
 
@@ -276,11 +257,8 @@ relation = Relation.objects.create(
         "threat_category": "phishing",
         "blocklisted": True,
         "last_seen_malicious": "2025-01-10",
-        "detections": {
-            "virustotal": 45,
-            "urlhaus": True
-        }
-    }
+        "detections": {"virustotal": 45, "urlhaus": True},
+    },
 )
 ```
 
@@ -328,11 +306,7 @@ attachment = Attachment.objects.create(
     relation=relation,
     name="traffic_capture.pcap",
     file=ContentFile(pcap_data, name="traffic_capture.pcap"),
-    context={
-        "tool": "custom-sandbox",
-        "duration_seconds": 120,
-        "protocols": ["http", "dns"]
-    }
+    context={"tool": "custom-sandbox", "duration_seconds": 120, "protocols": ["http", "dns"]},
 )
 ```
 Use the `context` field to store lightweight metadata about the attachment (origin, format, tool version), but avoid duplicating large structured results already present in the `Relation.details`.
@@ -371,18 +345,12 @@ def enrich(self, entries: list[Entry]) -> None:
             result = self._lookup_entry(entry)
             # Process result...
         except APIRateLimitError:
-            self.request._append_warning(
-                f"Rate limited while enriching {entry.name}"
-            )
+            self.request._append_warning(f"Rate limited while enriching {entry.name}")
         except APINotFoundError:
             # Not necessarily an error - entry might not exist in source
-            self.request._append_warning(
-                f"No data found for {entry.name}"
-            )
+            self.request._append_warning(f"No data found for {entry.name}")
         except Exception as e:
-            self.request._append_warning(
-                f"Failed to enrich {entry.name}: {str(e)}"
-            )
+            self.request._append_warning(f"Failed to enrich {entry.name}: {str(e)}")
 ```
 
 **Thread-safe**: `_append_warning()` uses database locking for concurrent safety.
@@ -462,10 +430,7 @@ class MyCustomEnricher(BaseEnricher):
 
     settings_fields = {
         # Store entry class subtype as a string
-        "target_class": models.CharField(
-            default="domain",
-            help_text="Entry class to create for results"
-        )
+        "target_class": models.CharField(default="domain", help_text="Entry class to create for results")
     }
 
     def enrich(self, entries: list[Entry]) -> None:
@@ -475,10 +440,7 @@ class MyCustomEnricher(BaseEnricher):
 
         for entry in entries:
             # Create entry with the configured class
-            result_entry, _ = Entry.objects.get_or_create(
-                entry_class=target_class,
-                name="discovered-value"
-            )
+            result_entry, _ = Entry.objects.get_or_create(entry_class=target_class, name="discovered-value")
 ```
 
 ### Creating Entries
@@ -492,10 +454,7 @@ from entries.models import Entry, EntryClass
 hash_class = EntryClass.objects.get(subtype="hash")
 
 # Create or retrieve entry
-file_hash, created = Entry.objects.get_or_create(
-    entry_class=hash_class,
-    name="a1b2c3d4e5f6..."
-)
+file_hash, created = Entry.objects.get_or_create(entry_class=hash_class, name="a1b2c3d4e5f6...")
 
 if created:
     print(f"Created new entry: {file_hash.name}")
@@ -509,9 +468,7 @@ Your enricher is configured with applicable entry classes via `EnricherSettings.
 
 ```python
 # In your enrichment job, the run_enricher task filters entries
-enricher_settings = EnricherSettings.objects.get(
-    enricher_type="MyCustomEnricher"
-)
+enricher_settings = EnricherSettings.objects.get(enricher_type="MyCustomEnricher")
 
 # Only entries matching these classes are passed to your enricher
 applicable_classes = enricher_settings.for_eclasses.all()
@@ -614,27 +571,18 @@ from entries.models import EntryClass
 
 # Map external type "IPV4_ADDR" to internal "ip" class
 ipv4_class = EntryClass.objects.get(subtype="ip")
-MySystemMapping.objects.create(
-    internal_class=ipv4_class,
-    external_type="IPV4_ADDR",
-    category="network",
-    priority=10
-)
+MySystemMapping.objects.create(internal_class=ipv4_class, external_type="IPV4_ADDR", category="network", priority=10)
 
 # Map external type "DOMAIN_NAME" to internal "domain" class
 domain_class = EntryClass.objects.get(subtype="domain")
-MySystemMapping.objects.create(
-    internal_class=domain_class,
-    external_type="DOMAIN_NAME",
-    category="network",
-    priority=5
-)
+MySystemMapping.objects.create(internal_class=domain_class, external_type="DOMAIN_NAME", category="network", priority=5)
 ```
 
 ### Using Mappings in Your Enricher
 
 ```python
 from intelio.models.mappings.my_system import MySystemMapping
+
 
 class MySystemEnricher(BaseEnricher):
     display_name = "My System Enricher"
@@ -656,16 +604,11 @@ class MySystemEnricher(BaseEnricher):
                 entry_class = typemapping[external_type]
 
                 if entry_class is None:
-                    self.request._append_warning(
-                        f"No mapping found for type: {external_type}"
-                    )
+                    self.request._append_warning(f"No mapping found for type: {external_type}")
                     continue
 
                 # Create entry with mapped class
-                discovered_entry, _ = Entry.objects.get_or_create(
-                    entry_class=entry_class,
-                    name=item["value"]
-                )
+                discovered_entry, _ = Entry.objects.get_or_create(entry_class=entry_class, name=item["value"])
 
                 # Create relation
                 Relation.objects.create(
@@ -676,10 +619,7 @@ class MySystemEnricher(BaseEnricher):
                     content_object=self.request,
                     access_vector=self.request.access_vector,
                     inherit_av=True,
-                    details={
-                        "external_type": external_type,
-                        "source": "my_system"
-                    }
+                    details={"external_type": external_type, "source": "my_system"},
                 )
 ```
 
@@ -696,17 +636,14 @@ typemapping = FalconMapping.get_typemapping_rev()
 # External data from Falcon API
 falcon_data = {
     "type": "domain",  # Falcon's type
-    "value": "example.com"
+    "value": "example.com",
 }
 
 # Map to CRADLE entry class
 entry_class = typemapping[falcon_data["type"]]  # Gets EntryClass(subtype="domain")
 
 if entry_class:
-    entry, _ = Entry.objects.get_or_create(
-        entry_class=entry_class,
-        name=falcon_data["value"]
-    )
+    entry, _ = Entry.objects.get_or_create(entry_class=entry_class, name=falcon_data["value"])
 ```
 
 ### When to Use Class Mappings
@@ -733,55 +670,27 @@ Use Django model fields to define your settings schema:
 ```python
 from django.db import models
 
+
 class MyEnricher(BaseEnricher):
     display_name = "My Enricher"
 
     settings_fields = {
         # Text fields
-        "api_url": models.URLField(
-            default="https://api.example.com",
-            help_text="API endpoint URL"
-        ),
-        "api_key": models.CharField(
-            max_length=255,
-            help_text="Authentication key"
-        ),
-
+        "api_url": models.URLField(default="https://api.example.com", help_text="API endpoint URL"),
+        "api_key": models.CharField(max_length=255, help_text="Authentication key"),
         # Numeric fields
-        "timeout": models.IntegerField(
-            default=30,
-            help_text="Request timeout in seconds"
-        ),
-        "max_results": models.IntegerField(
-            default=100,
-            help_text="Maximum results to fetch"
-        ),
-        "retry_delay": models.FloatField(
-            default=1.5,
-            help_text="Delay between retries in seconds"
-        ),
-
+        "timeout": models.IntegerField(default=30, help_text="Request timeout in seconds"),
+        "max_results": models.IntegerField(default=100, help_text="Maximum results to fetch"),
+        "retry_delay": models.FloatField(default=1.5, help_text="Delay between retries in seconds"),
         # Boolean fields
-        "verify_ssl": models.BooleanField(
-            default=True,
-            help_text="Verify SSL certificates"
-        ),
-        "enable_caching": models.BooleanField(
-            default=False,
-            help_text="Cache API responses"
-        ),
-
+        "verify_ssl": models.BooleanField(default=True, help_text="Verify SSL certificates"),
+        "enable_caching": models.BooleanField(default=False, help_text="Cache API responses"),
         # Choice fields
         "log_level": models.CharField(
             max_length=20,
             default="INFO",
-            choices=[
-                ("DEBUG", "Debug"),
-                ("INFO", "Info"),
-                ("WARNING", "Warning"),
-                ("ERROR", "Error")
-            ],
-            help_text="Logging verbosity"
+            choices=[("DEBUG", "Debug"), ("INFO", "Info"), ("WARNING", "Warning"), ("ERROR", "Error")],
+            help_text="Logging verbosity",
         ),
     }
 ```
@@ -812,7 +721,7 @@ settings = EnricherSettings.objects.create(
     enricher_type="MyEnricher",
     settings={
         "timeout": "invalid"  # ERROR: IntegerField expects int, not str
-    }
+    },
 )
 ```
 
@@ -822,9 +731,7 @@ Custom validation:
 class MyEnricher(BaseEnricher):
     display_name = "My Enricher"
 
-    settings_fields = {
-        "port": models.IntegerField(default=443)
-    }
+    settings_fields = {"port": models.IntegerField(default=443)}
 
     @classmethod
     def validate_settings(cls, settings_data):
@@ -852,9 +759,7 @@ defaults = MyEnricher.get_default_settings()
 
 # Create settings with defaults
 settings = EnricherSettings.objects.create(
-    enricher_type="MyEnricher",
-    settings=MyEnricher.get_default_settings(),
-    enabled=True
+    enricher_type="MyEnricher", settings=MyEnricher.get_default_settings(), enabled=True
 )
 ```
 
@@ -907,10 +812,7 @@ class MyEnricher(BaseEnricher):
 **IntelOwl**: Returns dict stored in AnalyzerReport
 ```python
 def run(self):
-    return {
-        "reputation_score": 85,
-        "categories": ["malware", "botnet"]
-    }
+    return {"reputation_score": 85, "categories": ["malware", "botnet"]}
 ```
 
 **CRADLE**: Creates Relation objects with details
@@ -923,10 +825,7 @@ def enrich(self, entries: list[Entry]) -> None:
         reason_context=self.name,
         content_object=self.request,
         access_vector=self.request.access_vector,
-        details={
-            "reputation_score": 85,
-            "categories": ["malware", "botnet"]
-        }
+        details={"reputation_score": 85, "categories": ["malware", "botnet"]},
     )
 ```
 
@@ -1010,22 +909,10 @@ class AbuseIPDBEnricher(BaseEnricher):
     display_name = "AbuseIPDB"
 
     settings_fields = {
-        "api_key": models.CharField(
-            max_length=255,
-            help_text="AbuseIPDB API key"
-        ),
-        "max_age": models.IntegerField(
-            default=90,
-            help_text="Maximum age of reports in days"
-        ),
-        "max_reports": models.IntegerField(
-            default=100,
-            help_text="Maximum number of reports to include"
-        ),
-        "verbose": models.BooleanField(
-            default=False,
-            help_text="Include detailed report information"
-        ),
+        "api_key": models.CharField(max_length=255, help_text="AbuseIPDB API key"),
+        "max_age": models.IntegerField(default=90, help_text="Maximum age of reports in days"),
+        "max_reports": models.IntegerField(default=100, help_text="Maximum number of reports to include"),
+        "verbose": models.BooleanField(default=False, help_text="Include detailed report information"),
     }
 
     API_URL = "https://api.abuseipdb.com/api/v2/check"
@@ -1077,15 +964,13 @@ class AbuseIPDBEnricher(BaseEnricher):
                         "is_whitelisted": result.get("data", {}).get("isWhitelisted", False),
                         "categories_found": categories_found,
                         "reports": reports[:max_reports],
-                        "permalink": f"https://www.abuseipdb.com/check/{entry.name}"
-                    }
+                        "permalink": f"https://www.abuseipdb.com/check/{entry.name}",
+                    },
                 )
                 relations.append(relation)
 
             except requests.RequestException as e:
-                self.request._append_warning(
-                    f"AbuseIPDB API failed for {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"AbuseIPDB API failed for {entry.name}: {str(e)}")
 
         # Bulk create relations
         if relations:
@@ -1139,10 +1024,7 @@ Or use `EnricherSettings.for_eclasses` to specify supported types and let the sy
 
 ```python
 # Configuration (via admin or API)
-enricher_settings = EnricherSettings.objects.create(
-    enricher_type="MyEnricher",
-    settings={"api_key": "..."}
-)
+enricher_settings = EnricherSettings.objects.create(enricher_type="MyEnricher", settings={"api_key": "..."})
 
 # Only process domains and URLs
 domain_class = EntryClass.objects.get(subtype="domain")
@@ -1171,13 +1053,7 @@ class MyHashEnricher(BaseEnricher):
 
     settings_fields = {
         "hash_type": models.CharField(
-            max_length=20,
-            default="sha256",
-            choices=[
-                ("md5", "MD5"),
-                ("sha1", "SHA1"),
-                ("sha256", "SHA256")
-            ]
+            max_length=20, default="sha256", choices=[("md5", "MD5"), ("sha1", "SHA1"), ("sha256", "SHA256")]
         )
     }
 
@@ -1223,6 +1099,7 @@ def pre_enrich(self, entries):
         return "API key is required"  # Fatal error
     return None
 
+
 def enrich(self, entries):
     for entry in entries:
         try:
@@ -1230,9 +1107,7 @@ def enrich(self, entries):
             response.raise_for_status()
         except requests.RequestException as e:
             # Non-fatal: log warning and continue
-            self.request._append_warning(
-                f"API call failed for {entry.name}: {e}"
-            )
+            self.request._append_warning(f"API call failed for {entry.name}: {e}")
             continue
 ```
 
@@ -1267,11 +1142,7 @@ def enrich(self, entries):
             reason_context=self.name,
             content_object=self.request,
             access_vector=self.request.access_vector,
-            details={
-                "evaluation": evaluation,
-                "is_whitelisted": is_whitelisted,
-                "raw_result": result
-            }
+            details={"evaluation": evaluation, "is_whitelisted": is_whitelisted, "raw_result": result},
         )
 ```
 
@@ -1288,7 +1159,7 @@ class SimpleAPIAnalyzer(ObservableAnalyzer):
         response = requests.get(
             "https://api.example.com/lookup",
             params={"query": self.observable_name},
-            headers={"Authorization": f"Bearer {self._api_key_name}"}
+            headers={"Authorization": f"Bearer {self._api_key_name}"},
         )
         return response.json()
 ```
@@ -1297,9 +1168,7 @@ class SimpleAPIAnalyzer(ObservableAnalyzer):
 ```python
 class SimpleAPIEnricher(BaseEnricher):
     display_name = "Simple API"
-    settings_fields = {
-        "api_key": models.CharField(max_length=255)
-    }
+    settings_fields = {"api_key": models.CharField(max_length=255)}
 
     def enrich(self, entries: list[Entry]):
         api_key = self.settings["api_key"]
@@ -1310,19 +1179,21 @@ class SimpleAPIEnricher(BaseEnricher):
                 response = requests.get(
                     "https://api.example.com/lookup",
                     params={"query": entry.name},
-                    headers={"Authorization": f"Bearer {api_key}"}
+                    headers={"Authorization": f"Bearer {api_key}"},
                 )
                 response.raise_for_status()
 
-                relations.append(Relation(
-                    e1=entry,
-                    e2=self.request.entry,
-                    reason=RelationReason.ENRICHMENT,
-                    reason_context=self.name,
-                    content_object=self.request,
-                    access_vector=self.request.access_vector,
-                    details=response.json()
-                ))
+                relations.append(
+                    Relation(
+                        e1=entry,
+                        e2=self.request.entry,
+                        reason=RelationReason.ENRICHMENT,
+                        reason_context=self.name,
+                        content_object=self.request,
+                        access_vector=self.request.access_vector,
+                        details=response.json(),
+                    )
+                )
             except Exception as e:
                 self.request._append_warning(f"Failed {entry.name}: {e}")
 
@@ -1347,10 +1218,7 @@ class CIRCL_PDNS(ObservableAnalyzer):
 ```python
 class CIRCLPDNSEnricher(BaseEnricher):
     display_name = "CIRCL PDNS"
-    settings_fields = {
-        "username": models.CharField(max_length=255),
-        "password": models.CharField(max_length=255)
-    }
+    settings_fields = {"username": models.CharField(max_length=255), "password": models.CharField(max_length=255)}
 
     def enrich(self, entries: list[Entry]):
         user = self.settings["username"]
@@ -1365,10 +1233,7 @@ class CIRCLPDNSEnricher(BaseEnricher):
                 for record in results:
                     # Get or create IP entry
                     ip_class = EntryClass.objects.get(subtype="ip")
-                    ip_entry, _ = Entry.objects.get_or_create(
-                        entry_class=ip_class,
-                        name=record.get("rdata")
-                    )
+                    ip_entry, _ = Entry.objects.get_or_create(entry_class=ip_class, name=record.get("rdata"))
 
                     Relation.objects.create(
                         e1=entry,
@@ -1380,8 +1245,8 @@ class CIRCLPDNSEnricher(BaseEnricher):
                         details={
                             "record_type": record.get("rrtype"),
                             "time_first": record.get("time_first"),
-                            "time_last": record.get("time_last")
-                        }
+                            "time_last": record.get("time_last"),
+                        },
                     )
             except Exception as e:
                 self.request._append_warning(f"PDNS lookup failed for {entry.name}: {e}")
@@ -1400,7 +1265,7 @@ class BasicRESTEnricher(BaseEnricher):
 
     settings_fields = {
         "api_key": models.CharField(max_length=255, blank=True),
-        "timeout": models.IntegerField(default=30)
+        "timeout": models.IntegerField(default=30),
     }
 
     # Override in subclass
@@ -1433,32 +1298,25 @@ class BasicRESTEnricher(BaseEnricher):
 
                 # Make request
                 if self.HTTP_METHOD.lower() == "get":
-                    response = requests.get(
-                        self.API_URL,
-                        params=params,
-                        headers=headers,
-                        timeout=timeout
-                    )
+                    response = requests.get(self.API_URL, params=params, headers=headers, timeout=timeout)
                 else:
                     response = requests.request(
-                        self.HTTP_METHOD,
-                        self.API_URL,
-                        json=params,
-                        headers=headers,
-                        timeout=timeout
+                        self.HTTP_METHOD, self.API_URL, json=params, headers=headers, timeout=timeout
                     )
 
                 response.raise_for_status()
 
-                relations.append(Relation(
-                    e1=entry,
-                    e2=self.request.entry,
-                    reason=RelationReason.ENRICHMENT,
-                    reason_context=self.name,
-                    content_object=self.request,
-                    access_vector=self.request.access_vector,
-                    details=response.json()
-                ))
+                relations.append(
+                    Relation(
+                        e1=entry,
+                        e2=self.request.entry,
+                        reason=RelationReason.ENRICHMENT,
+                        reason_context=self.name,
+                        content_object=self.request,
+                        access_vector=self.request.access_vector,
+                        details=response.json(),
+                    )
+                )
             except Exception as e:
                 self.request._append_warning(f"Request failed for {entry.name}: {e}")
 
@@ -1484,9 +1342,7 @@ from entries.models import Entry, EntryClass
 
 # Create settings
 settings = EnricherSettings.objects.create(
-    enricher_type="AbuseIPDBEnricher",
-    enabled=True,
-    settings={"api_key": "your-key", "max_age": 90}
+    enricher_type="AbuseIPDBEnricher", enabled=True, settings={"api_key": "your-key", "max_age": 90}
 )
 
 ip_class = EntryClass.objects.get(subtype="ip")
@@ -1494,9 +1350,7 @@ settings.for_eclasses.add(ip_class)
 
 # Create enrichment request
 request = EnrichmentRequest.objects.create(
-    title="Test AbuseIPDB Port",
-    request=[{"entry_class": "ip", "name": "8.8.8.8"}],
-    user=None
+    title="Test AbuseIPDB Port", request=[{"entry_class": "ip", "name": "8.8.8.8"}], user=None
 )
 request.enrichers_settings.add(settings)
 
@@ -1531,7 +1385,7 @@ class ExampleAnalyzer(ObservableAnalyzer):
     """Analyzes observables using Example API"""
 
     _api_key_name: str  # From secrets
-    timeout: int        # From config
+    timeout: int  # From config
 
     def config(self, runtime_configuration: Dict):
         super().config(runtime_configuration)
@@ -1549,7 +1403,7 @@ class ExampleAnalyzer(ObservableAnalyzer):
                 "https://api.example.com/check",
                 params={"query": self.observable_name},
                 headers={"X-API-Key": self._api_key_name},
-                timeout=self.timeout
+                timeout=self.timeout,
             )
             response.raise_for_status()
         except requests.RequestException as e:
@@ -1574,10 +1428,7 @@ class ExampleEnricher(BaseEnricher):
 
     display_name = "Example"
 
-    settings_fields = {
-        "api_key": models.CharField(max_length=255),
-        "timeout": models.IntegerField(default=30)
-    }
+    settings_fields = {"api_key": models.CharField(max_length=255), "timeout": models.IntegerField(default=30)}
 
     def pre_enrich(self, entries: list[Entry]):
         """Validate before processing"""
@@ -1599,26 +1450,26 @@ class ExampleEnricher(BaseEnricher):
                     "https://api.example.com/check",
                     params={"query": entry.name},  # observable_name → entry.name
                     headers={"X-API-Key": api_key},
-                    timeout=timeout
+                    timeout=timeout,
                 )
                 response.raise_for_status()
 
                 # Create relation (instead of return)
-                relations.append(Relation(
-                    e1=entry,
-                    e2=self.request.entry,
-                    reason=RelationReason.ENRICHMENT,
-                    reason_context=self.name,
-                    content_object=self.request,
-                    access_vector=self.request.access_vector,
-                    details=response.json()  # Store API response
-                ))
+                relations.append(
+                    Relation(
+                        e1=entry,
+                        e2=self.request.entry,
+                        reason=RelationReason.ENRICHMENT,
+                        reason_context=self.name,
+                        content_object=self.request,
+                        access_vector=self.request.access_vector,
+                        details=response.json(),  # Store API response
+                    )
+                )
 
             except requests.RequestException as e:
                 # Non-fatal: continue processing other entries
-                self.request._append_warning(
-                    f"API failed for {entry.name}: {e}"
-                )
+                self.request._append_warning(f"API failed for {entry.name}: {e}")
 
         # Bulk create all relations
         if relations:
@@ -1651,10 +1502,7 @@ class ExampleEnricher(BaseEnricher):
 
 2. **Deduplication**: Use `get_or_create()` for Entries to avoid duplicates
    ```python
-   entry, created = Entry.objects.get_or_create(
-       entry_class=ip_class,
-       name="1.2.3.4"
-   )
+   entry, created = Entry.objects.get_or_create(entry_class=ip_class, name="1.2.3.4")
    ```
 
 3. **Batch external API calls**: Reduce API requests when possible
@@ -1697,8 +1545,7 @@ class ExampleEnricher(BaseEnricher):
 3. **Provide helpful error messages**: Include context in warnings
    ```python
    self.request._append_warning(
-       f"Rate limit exceeded for {entry.name}. "
-       f"Tried {retry_count} times. Consider increasing timeout."
+       f"Rate limit exceeded for {entry.name}. Tried {retry_count} times. Consider increasing timeout."
    )
    ```
 
@@ -1707,10 +1554,7 @@ class ExampleEnricher(BaseEnricher):
 1. **Document your settings schema**:
    ```python
    settings_fields = {
-       "api_key": models.CharField(
-           max_length=255,
-           help_text="Get your API key from https://example.com/api"
-       )
+       "api_key": models.CharField(max_length=255, help_text="Get your API key from https://example.com/api")
    }
    ```
 
@@ -1775,9 +1619,10 @@ class ExampleEnricher(BaseEnricher):
    ```python
    import re
 
+
    def _sanitize_domain(self, domain):
        # Remove dangerous characters
-       return re.sub(r'[^\w\.-]', '', domain)
+       return re.sub(r"[^\w\.-]", "", domain)
    ```
 
 ### Maintainability
@@ -1790,6 +1635,7 @@ class ExampleEnricher(BaseEnricher):
 
    logger = logging.getLogger(__name__)
 
+
    def enrich(self, entries):
        logger.info(f"Starting enrichment of {len(entries)} entries")
        # ...
@@ -1797,12 +1643,7 @@ class ExampleEnricher(BaseEnricher):
 
 4. **Version your external APIs**: Handle API version changes gracefully
    ```python
-   settings_fields = {
-       "api_version": models.CharField(
-           default="v2",
-           choices=[("v1", "Version 1"), ("v2", "Version 2")]
-       )
-   }
+   settings_fields = {"api_version": models.CharField(default="v2", choices=[("v1", "Version 1"), ("v2", "Version 2")])}
    ```
 
 ---
@@ -1854,16 +1695,11 @@ class VirusTotalEnricher(BaseEnricher):
 
     settings_fields = {
         "api_key": models.CharField(
-            max_length=255,
-            help_text="VirusTotal API key (get from https://www.virustotal.com/gui/my-apikey)"
+            max_length=255, help_text="VirusTotal API key (get from https://www.virustotal.com/gui/my-apikey)"
         ),
-        "timeout": models.IntegerField(
-            default=30,
-            help_text="API request timeout in seconds"
-        ),
+        "timeout": models.IntegerField(default=30, help_text="API request timeout in seconds"),
         "min_detections": models.IntegerField(
-            default=1,
-            help_text="Minimum detections to create relation (0 = always create)"
+            default=1, help_text="Minimum detections to create relation (0 = always create)"
         ),
     }
 
@@ -1902,18 +1738,14 @@ class VirusTotalEnricher(BaseEnricher):
                 # Determine hash type
                 hash_type = self._detect_hash_type(entry.name)
                 if not hash_type:
-                    self.request._append_warning(
-                        f"Could not determine hash type for {entry.name}"
-                    )
+                    self.request._append_warning(f"Could not determine hash type for {entry.name}")
                     continue
 
                 # Query VirusTotal
                 result = self._query_virustotal(entry.name, api_key, timeout)
 
                 if result is None:
-                    self.request._append_warning(
-                        f"No VirusTotal data found for {entry.name}"
-                    )
+                    self.request._append_warning(f"No VirusTotal data found for {entry.name}")
                     continue
 
                 # Check minimum detections threshold
@@ -1928,7 +1760,7 @@ class VirusTotalEnricher(BaseEnricher):
                     "total_engines": result.get("total", 0),
                     "scan_date": result.get("scan_date", ""),
                     "positives": self._extract_positives(result),
-                    "permalink": result.get("permalink", "")
+                    "permalink": result.get("permalink", ""),
                 }
 
                 # Create relation to enrichment entry
@@ -1940,18 +1772,14 @@ class VirusTotalEnricher(BaseEnricher):
                     access_vector=self.request.access_vector,
                     reason=RelationReason.ENRICHMENT,
                     reason_context=self.name,
-                    details=details
+                    details=details,
                 )
                 relations_to_create.append(relation)
 
             except requests.RequestException as e:
-                self.request._append_warning(
-                    f"API request failed for {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"API request failed for {entry.name}: {str(e)}")
             except Exception as e:
-                self.request._append_warning(
-                    f"Unexpected error enriching {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"Unexpected error enriching {entry.name}: {str(e)}")
 
         # Bulk create all relations
         if relations_to_create:
@@ -1964,9 +1792,9 @@ class VirusTotalEnricher(BaseEnricher):
                 self.VT_API_URL,
                 params={
                     "apikey": api_key,
-                    "resource": "0" * 64  # Dummy hash
+                    "resource": "0" * 64,  # Dummy hash
                 },
-                timeout=5
+                timeout=5,
             )
             return response.status_code in [200, 404]  # 404 = valid API, hash not found
         except:
@@ -1974,14 +1802,7 @@ class VirusTotalEnricher(BaseEnricher):
 
     def _query_virustotal(self, file_hash: str, api_key: str, timeout: int):
         """Query VirusTotal for file hash."""
-        response = requests.get(
-            self.VT_API_URL,
-            params={
-                "apikey": api_key,
-                "resource": file_hash
-            },
-            timeout=timeout
-        )
+        response = requests.get(self.VT_API_URL, params={"apikey": api_key, "resource": file_hash}, timeout=timeout)
         response.raise_for_status()
 
         data = response.json()
@@ -2008,10 +1829,7 @@ class VirusTotalEnricher(BaseEnricher):
 
         for engine, scan_result in scans.items():
             if scan_result.get("detected"):
-                positives.append({
-                    "engine": engine,
-                    "result": scan_result.get("result", "")
-                })
+                positives.append({"engine": engine, "result": scan_result.get("result", "")})
 
         return positives[:10]  # Limit to top 10 to reduce data size
 ```

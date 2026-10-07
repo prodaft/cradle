@@ -59,7 +59,7 @@ class Enable2FAView(APIView):
     post=extend_schema(
         operation_id="users_2fa_verify_create",
         summary="Verify 2FA Setup",
-        description="Verifies the 2FA token and completes the setup",
+        description="Verifies the 2FA OTP and completes the setup",
         request=Verify2FASerializer,
         responses={
             200: {"description": "Two-factor authentication setup completed successfully"},
@@ -79,9 +79,9 @@ class Verify2FASetupView(APIView):
         serializer = Verify2FASerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        token = serializer.validated_data["token"]
+        otp = serializer.validated_data["otp"]
 
-        if not request.user.verify_2fa_token(token):
+        if not request.user.verify_otp(otp):
             raise InvalidTwoFactorCodeException(detail="The two-factor authentication code is invalid.")
 
         with transaction.atomic():
@@ -135,7 +135,7 @@ class Disable2FAView(APIView):
             request.user,
             serializer.validated_data.get("password") or None,
         )
-        if request.user.verify_2fa_token(serializer.validated_data["token"]):
+        if request.user.verify_otp(serializer.validated_data["otp"]):
             request.user.disable_2fa()
             return Response(
                 {"detail": "Two-factor authentication has been disabled."},

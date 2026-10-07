@@ -64,7 +64,7 @@ export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-    const [twoFactorToken, setTwoFactorToken] = useState('');
+    const [otp, setOtp] = useState('');
     const [isTwoFactorRequired, setIsTwoFactorRequired] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
@@ -217,7 +217,7 @@ export default function Login() {
             const result = await logIn(
                 username,
                 password,
-                isTwoFactorRequired && twoFactorToken ? twoFactorToken : null,
+                isTwoFactorRequired && otp ? otp : null,
             );
 
             if (result.result === 'success') {
@@ -265,7 +265,7 @@ export default function Login() {
                         <Button
                             onClick={() => {
                                 setIsTwoFactorRequired(false);
-                                setTwoFactorToken('');
+                                setOtp('');
                             }}
                             variant='ghost'
                             size='icon-sm'
@@ -332,9 +332,9 @@ export default function Login() {
                                                 name='login-2fa-otp'
                                                 autoComplete='one-time-code'
                                                 maxLength={6}
-                                                value={twoFactorToken}
+                                                value={otp}
                                                 onChange={(value) =>
-                                                    setTwoFactorToken(value)
+                                                    setOtp(value)
                                                 }
                                                 containerClassName='w-full'
                                             >
@@ -566,7 +566,7 @@ export default function Login() {
                         {/* Version/Status Indicator */}
                         <div className='mt-6 text-center'>
                             <span className='text-xs text-muted-foreground font-mono tracking-wide tracking-wider'>
-                                v2.10.2-beta.a070af1b
+                                {__APP_VERSION_LABEL__}
                             </span>
                         </div>
                     </div>

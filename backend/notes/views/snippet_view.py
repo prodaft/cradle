@@ -18,16 +18,11 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.exceptions import CoreErrorCodes, NotFoundException
 from core.openapi import get_common_error_responses, get_error_responses
 from user.exceptions import UserErrorCodes, UserNotFoundException
-from user.models import CradleUser, UserRoles
+from user.models import CradleUser
 
 from ..exceptions import NotesErrorCodes, SnippetNotFoundException
 from ..models import Snippet
 from ..serializers import SnippetSerializer
-
-
-def _is_admin(user: CradleUser) -> bool:
-    """Check if the user is an admin."""
-    return user.role == UserRoles.ADMIN
 
 
 class UserSnippetsListCreateView(APIView):
@@ -75,7 +70,7 @@ class UserSnippetsListCreateView(APIView):
                 raise UserNotFoundException(detail="That user could not be found.")
 
             # Check permissions (404 to avoid revealing user exists)
-            if not (current_user.pk == target_user.pk or _is_admin(current_user)):
+            if not current_user.can_view(target_user):
                 raise UserNotFoundException(detail="That user could not be found.")
 
             snippets = Snippet.objects.filter(owner=target_user)
@@ -112,8 +107,7 @@ class UserSnippetsListCreateView(APIView):
         current_user = cast(CradleUser, request.user)
 
         if user_id == "null":
-            # Create system snippet - requires admin privileges (404 to avoid revealing)
-            if not _is_admin(current_user):
+            if not current_user.is_cradle_admin:
                 raise NotFoundException(detail="That resource could not be found.")
             target_owner = None
         elif user_id == "me":
@@ -124,8 +118,7 @@ class UserSnippetsListCreateView(APIView):
             except CradleUser.DoesNotExist, ValueError, TypeError:
                 raise UserNotFoundException(detail="That user could not be found.")
 
-            # Check permissions (404 to avoid revealing user exists)
-            if current_user.pk != target_owner.pk and not _is_admin(current_user):
+            if not current_user.can_view(target_owner):
                 raise UserNotFoundException(detail="That user could not be found.")
 
         serializer = SnippetSerializer(data=request.data, context={"request": request})
@@ -184,10 +177,7 @@ class SnippetDetailView(APIView):
 
         current_user = cast(CradleUser, request.user)
 
-        # Check if user has permission to access this snippet (404 to avoid revealing snippet exists)
-        # Users can access their own snippets and system snippets (owner=null)
-        # Admins can access any snippet
-        if not (snippet.owner == current_user or snippet.owner is None or _is_admin(current_user)):
+        if not (snippet.owner == current_user or snippet.owner is None or current_user.is_cradle_admin):
             raise SnippetNotFoundException(detail="That snippet could not be found.")
 
         return snippet
@@ -195,7 +185,7 @@ class SnippetDetailView(APIView):
     def _check_modify_permissions(self, snippet, request):
         """Check if user has permission to modify/delete this snippet (404 to avoid revealing)."""
         current_user = cast(CradleUser, request.user)
-        if _is_admin(current_user):
+        if current_user.is_cradle_admin:
             return
         if snippet.owner is None:
             raise SnippetNotFoundException(detail="That snippet could not be found.")

@@ -20,15 +20,16 @@ from notes.models import Note
 class EdgeRelationSerializer(serializers.ModelSerializer):
     """Edge between two entries for graph visualization."""
 
+    last_seen_at = serializers.DateTimeField(source="last_seen", help_text="When the relation was last observed")
+
     class Meta:
         model = Edge
-        fields = ["id", "src", "dst", "created_at", "last_seen"]
+        fields = ["id", "src", "dst", "created_at", "last_seen_at"]
         extra_kwargs = {
             "id": {"help_text": "Edge ID"},
             "src": {"help_text": "Source entry ID"},
             "dst": {"help_text": "Destination entry ID"},
             "created_at": {"help_text": "When the relation was first observed"},
-            "last_seen": {"help_text": "When the relation was last observed"},
         }
 
 
@@ -67,11 +68,9 @@ class SubGraphSerializer(serializers.Serializer):
             degree_map[int(r.e1.id)] += 1
             degree_map[int(r.e2.id)] += 1
 
-        # Annotate entries with their calculated degree and enrich note entries with note titles and UUIDs
         for entry in entries:
             entry.degree = degree_map.get(int(entry.id), 0)
 
-            # For note entries, replace the name with the note title and add note_id
             if entry.entry_class.subtype == SUBTYPE_NOTE and entry.name and len(entry.name) >= 36:
                 try:
                     note_uuid = str(uuid.UUID(entry.name[:36]))
@@ -95,7 +94,6 @@ class SubGraphSerializer(serializers.Serializer):
                 "relations": [
                     Edge(
                         id=r.id,
-                        # Ensure src and dst are integers for consistent frontend handling
                         src=int(r.e1.id),
                         dst=int(r.e2.id),
                         created_at=r.created_at,

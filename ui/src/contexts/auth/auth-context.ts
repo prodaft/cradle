@@ -35,7 +35,7 @@ export interface AuthActionsValue {
     logIn: (
         username: string,
         password: string,
-        twoFactorToken?: string | null,
+        otp?: string | null,
     ) => Promise<LoginResult>;
     logOut: () => Promise<void>;
     getAccessToken: () => Promise<string>;

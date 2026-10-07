@@ -4,7 +4,7 @@ from .settings_common import *  # noqa:F401,F403
 
 SECRET_KEY = "django-insecure-0in+njnc5mjf3xuh$yjy+$s@78-!9rh$qjzv@aqw+*c$zh&d*&"
 
-# Disable auth rate limiting in tests (tests run many requests in quick succession)
+# Relax rate limiting in tests (tests run many requests in quick succession)
 REST_FRAMEWORK = {
     **REST_FRAMEWORK,  # noqa: F405
     "DEFAULT_THROTTLE_RATES": {"auth": "10000/minute"},
@@ -55,6 +55,7 @@ OAUTH_REDIRECT_URI_WHITELIST = CORS_ALLOWED_ORIGINS
 REDIS_URL = "redis://redis:6379/0"
 BROKER = REDIS_URL
 RESULT_BACKEND = REDIS_URL
+CHANNEL_LAYERS = channel_layers(REDIS_URL)  # noqa: F405
 
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 USE_SILK = False

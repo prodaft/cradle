@@ -8,12 +8,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { Archive, FileText, Layers, Network, UserPlus } from 'lucide-react';
+import { Archive, FileText, Layers, Network, Search, UserPlus } from 'lucide-react';
 import React from 'react';
 import EntriesSettingsForm from './entries-settings-form';
 import FileSettingsForm from './file-settings-form';
 import GraphSettingsForm from './graph-settings-form';
 import NoteSettingsForm from './note-settings-form';
+import SearchSettingsForm from './search-settings-form';
 import UserSettingsForm from './user-settings-form';
 
 const MANAGE_SETTINGS_COMPONENTS: Record<string, React.ComponentType> = {
@@ -21,6 +22,7 @@ const MANAGE_SETTINGS_COMPONENTS: Record<string, React.ComponentType> = {
     files: FileSettingsForm,
     graph: GraphSettingsForm,
     entries: EntriesSettingsForm,
+    search: SearchSettingsForm,
     users: UserSettingsForm,
 };
 
@@ -48,6 +50,12 @@ const MANAGE_SETTINGS_ITEMS = [
         label: 'Entry',
         icon: Layers,
         description: 'Configure entry types and properties',
+    },
+    {
+        id: 'search',
+        label: 'Search',
+        icon: Search,
+        description: 'Control what note search reveals',
     },
     {
         id: 'users',

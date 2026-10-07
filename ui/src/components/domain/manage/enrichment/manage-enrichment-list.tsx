@@ -1,4 +1,4 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import {
@@ -11,10 +11,15 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
+import {
+    EMPTY_SEARCH_STATE,
+    FREE_TEXT_SCHEMA,
+    type SearchState,
+} from '@/lib/search-query/search-schema';
 import { fetchClient } from '@services/openapi/client';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import EnrichmentSettingsForm from './enrichment-settings-form';
 
 type EnricherItem = { class_name: string; name: string };
@@ -28,12 +33,8 @@ export default function ManageEnrichmentList() {
     const search = useSearch({
         from: '/_authenticated/manage/_manage-auth/enrichment',
     }) as Record<string, unknown>;
-    const [draft, setDraft] = useState('');
-    const [applied, setApplied] = useState('');
-
-    const applySearch = useCallback((value: string) => {
-        setApplied(value);
-    }, []);
+    const [searchState, setSearchState] = useState<SearchState>(EMPTY_SEARCH_STATE);
+    const applied = searchState.q ?? '';
 
     const { data: enrichers = [], isPending } = useQuery({
         queryKey: ['enrichmentTypes', applied],
@@ -78,16 +79,12 @@ export default function ManageEnrichmentList() {
                     className='border-r bg-background text-foreground [&_[data-slot=sidebar-inner]]:bg-background [&_[data-slot=sidebar-inner]]:text-foreground'
                 >
                     <SidebarHeader className='flex flex-col p-4 gap-2 border-b border-border'>
-                        <ActionBarSearch
+                        <SearchInput
+                            schema={FREE_TEXT_SCHEMA}
+                            value={searchState}
+                            onApply={setSearchState}
                             placeholder='Search enrichment types...'
-                            name='manage-enrichment-sidebar-search'
-                            value={draft}
-                            debounceMs={300}
                             className='w-full min-w-0'
-                            onValueChange={setDraft}
-                            onDebouncedChange={applySearch}
-                            onSubmit={applySearch}
-                            onClear={() => applySearch('')}
                         />
                     </SidebarHeader>
                     <SidebarContent>
@@ -102,7 +99,7 @@ export default function ManageEnrichmentList() {
                                         <Empty className='border-0 p-3'>
                                             <EmptyHeader className='max-w-none gap-0'>
                                                 <EmptyDescription>
-                                                    {draft
+                                                    {applied
                                                         ? 'No enrichment types match your search'
                                                         : 'No enrichment types found'}
                                                 </EmptyDescription>

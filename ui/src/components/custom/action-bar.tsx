@@ -1,3 +1,4 @@
+import type { BaseUIEvent } from '@base-ui/react/types';
 import { Slot } from '@radix-ui/react-slot';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -461,7 +462,7 @@ function ActionBarItem(props: ActionBarItemProps) {
     }, [focusContext, itemId, disabled]);
 
     const onClick = React.useCallback(
-        (event: React.MouseEvent<ItemElement>) => {
+        (event: BaseUIEvent<React.MouseEvent<ItemElement>>) => {
             onClickProp?.(event);
             if (event.defaultPrevented) return;
 
@@ -487,7 +488,7 @@ function ActionBarItem(props: ActionBarItemProps) {
     );
 
     const onFocus = React.useCallback(
-        (event: React.FocusEvent<ItemElement>) => {
+        (event: BaseUIEvent<React.FocusEvent<ItemElement>>) => {
             onFocusProp?.(event);
             if (event.defaultPrevented) return;
 
@@ -498,7 +499,7 @@ function ActionBarItem(props: ActionBarItemProps) {
     );
 
     const onKeyDown = React.useCallback(
-        (event: React.KeyboardEvent<ItemElement>) => {
+        (event: BaseUIEvent<React.KeyboardEvent<ItemElement>>) => {
             onKeyDownProp?.(event);
             if (event.defaultPrevented) return;
 
@@ -551,7 +552,7 @@ function ActionBarItem(props: ActionBarItemProps) {
     );
 
     const onMouseDown = React.useCallback(
-        (event: React.MouseEvent<ItemElement>) => {
+        (event: BaseUIEvent<React.MouseEvent<ItemElement>>) => {
             onMouseDownProp?.(event);
             if (event.defaultPrevented) return;
 

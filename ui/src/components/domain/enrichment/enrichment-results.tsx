@@ -1,5 +1,5 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
 import Pagination from '@/components/base/pagination/pagination';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,11 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cradleJsonTheme } from '@/config/json-view';
 import { queryKeys } from '@/hooks/query';
+import {
+    EMPTY_SEARCH_STATE,
+    FREE_TEXT_SCHEMA,
+    type SearchState,
+} from '@/lib/search-query/search-schema';
 import {
     CalendarIcon,
     CaretDownIcon,
@@ -244,14 +249,14 @@ export default function EnrichmentResults() {
     const [isShowingIgnored, setIsShowingIgnored] = useState(false);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
-    const [applied, setApplied] = useState('');
-    const [draft, setDraft] = useState('');
+    const [applied, setApplied] = useState<SearchState>(EMPTY_SEARCH_STATE);
+    const appliedSearch = applied.q;
     const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set());
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
     useEffect(() => {
         setPage(1);
-    }, [applied]);
+    }, [appliedSearch]);
 
     const {
         data: requestDetail,
@@ -261,8 +266,8 @@ export default function EnrichmentResults() {
         queryKey: queryKeys.enrichment.results.detail(String(id)),
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrich/{id}/',
-                { params: { path: { id } } },
+                '/intelio/enrich/{enrichment_id}/',
+                { params: { path: { enrichment_id: id } } },
             );
             if (error) throw { response, error };
             return data;
@@ -306,10 +311,10 @@ export default function EnrichmentResults() {
         queryKey: queryKeys.enrichment.results.detail(`${id}-${selectedEnricher}`),
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrich/{id}/{enricher_type}/',
+                '/intelio/enrich/{enrichment_id}/{enricher_type}/',
                 {
                     params: {
-                        path: { id, enricher_type: selectedEnricher! },
+                        path: { enrichment_id: id, enricher_type: selectedEnricher! },
                     },
                 },
             );
@@ -329,22 +334,22 @@ export default function EnrichmentResults() {
             entryId: activeArtifactId ?? undefined,
             page,
             pageSize,
-            search: applied.trim() || undefined,
+            search: appliedSearch,
         }),
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrich/{id}/{enricher_type}/relations/',
+                '/intelio/enrich/{enrichment_id}/{enricher_type}/relations/',
                 {
                     params: {
                         path: {
-                            id,
+                            enrichment_id: id,
                             enricher_type: selectedEnricher!,
                         },
                         query: {
                             entry_id: activeArtifactId!,
                             page,
                             page_size: pageSize,
-                            ...(applied.trim() ? { search: applied.trim() } : {}),
+                            ...(appliedSearch ? { search: appliedSearch } : {}),
                         },
                     },
                 },
@@ -646,8 +651,7 @@ export default function EnrichmentResults() {
         setActiveArtifactId(null);
         setIsShowingIgnored(false);
         setPage(1);
-        setApplied('');
-        setDraft('');
+        setApplied(EMPTY_SEARCH_STATE);
     };
 
     const viewIgnored = () => {
@@ -750,13 +754,13 @@ export default function EnrichmentResults() {
                     <div className='flex items-center gap-4 text-xs text-muted-foreground'>
                         {request.status && (
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div className='flex items-center gap-1.5'>
-                                        {statusIcon(request.status)}
-                                        <span className='capitalize'>
-                                            {request.status}
-                                        </span>
-                                    </div>
+                                <TooltipTrigger
+                                    render={
+                                        <div className='flex items-center gap-1.5' />
+                                    }
+                                >
+                                    {statusIcon(request.status)}
+                                    <span className='capitalize'>{request.status}</span>
                                 </TooltipTrigger>
                                 <TooltipContent>{statusDetail()}</TooltipContent>
                             </Tooltip>
@@ -855,27 +859,12 @@ export default function EnrichmentResults() {
                                     className='flex w-full shrink-0 items-start justify-between gap-2 py-1'
                                 >
                                     <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
-                                        <ActionBarSearch
+                                        <SearchInput
+                                            schema={FREE_TEXT_SCHEMA}
+                                            value={applied}
+                                            onApply={setApplied}
                                             placeholder='Search relations...'
-                                            name='relations-search'
-                                            value={draft}
-                                            debounceMs={300}
                                             className='w-full min-w-0'
-                                            onValueChange={setDraft}
-                                            onDebouncedChange={(v) =>
-                                                setApplied((prev) =>
-                                                    prev === v ? prev : v,
-                                                )
-                                            }
-                                            onSubmit={(v) => {
-                                                setApplied(v);
-                                                setPage(1);
-                                            }}
-                                            onClear={() => {
-                                                setDraft('');
-                                                setApplied('');
-                                                setPage(1);
-                                            }}
                                         />
                                     </div>
                                     <div className='flex shrink-0 items-center gap-2'>

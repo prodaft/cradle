@@ -52,7 +52,7 @@ export default function Navbar(): React.JSX.Element {
                     variant='outline'
                     size='sm'
                     onClick={() => setIsDialogOpen(true)}
-                    className='hidden sm:inline-flex rounded-full w-64 justify-between text-muted-foreground'
+                    className='hidden sm:inline-flex w-64 justify-between text-muted-foreground'
                 >
                     <div className='flex items-center gap-2'>
                         <MagnifyingGlassIcon className='h-4 w-4' weight='bold' />

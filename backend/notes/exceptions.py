@@ -70,6 +70,11 @@ class NotesErrorCodes(ErrorCode):
         "Cannot Edit Note",
         "cannot-edit-note",
     )
+    NOTE_EDIT_CONFLICT = (
+        status.HTTP_409_CONFLICT,
+        "Note Edit Conflict",
+        "note-edit-conflict",
+    )
     SNIPPET_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
         "Snippet Not Found",
@@ -175,6 +180,12 @@ class CannotEditNoteException(CradleAPIException):
     """Exception raised when user cannot edit a note."""
 
     error_code = NotesErrorCodes.CANNOT_EDIT_NOTE
+
+
+class NoteEditConflictException(CradleAPIException):
+    """Exception raised when a note was changed since the client loaded it."""
+
+    error_code = NotesErrorCodes.NOTE_EDIT_CONFLICT
 
 
 class SnippetNotFoundException(CradleAPIException):

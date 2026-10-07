@@ -9,6 +9,7 @@ export type EditorSyncConnection = {
     pushUpdates(version: number, updates: readonly Update[]): Promise<boolean>;
     pullUpdates(version: number): Promise<readonly Update[]>;
     close(): void;
+    setPendingLocal?(pending: boolean): void;
 };
 
 /**

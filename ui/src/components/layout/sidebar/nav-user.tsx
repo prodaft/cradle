@@ -58,36 +58,37 @@ export function NavUser() {
         <SidebarMenu>
             <SidebarMenuItem>
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton
-                            size='lg'
-                            className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center'
-                            aria-label={`User menu for ${profile?.username || 'User'}`}
-                        >
-                            <User className='size-4 shrink-0' />
-                            <div className='grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden'>
-                                <div className='flex items-center gap-2'>
-                                    <span className='truncate font-medium'>
-                                        {profile?.username || 'User'}
-                                    </span>
-                                    {role && (
-                                        <Badge
-                                            variant={getRoleBadgeVariant(role)}
-                                            className='text-[10px] px-1.5 py-0 h-4 leading-none'
-                                        >
-                                            {role.charAt(0).toUpperCase() +
-                                                role.slice(1)}
-                                        </Badge>
-                                    )}
-                                </div>
-                                <span className='truncate text-xs'>
-                                    {profile?.email || ''}
+                    <DropdownMenuTrigger
+                        render={
+                            <SidebarMenuButton
+                                size='lg'
+                                className='data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center'
+                                aria-label={`User menu for ${profile?.username || 'User'}`}
+                            />
+                        }
+                    >
+                        <User className='size-4 shrink-0' />
+                        <div className='grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden'>
+                            <div className='flex items-center gap-2'>
+                                <span className='truncate font-medium'>
+                                    {profile?.username || 'User'}
                                 </span>
+                                {role && (
+                                    <Badge
+                                        variant={getRoleBadgeVariant(role)}
+                                        className='text-[10px] px-1.5 py-0 h-4 leading-none'
+                                    >
+                                        {role.charAt(0).toUpperCase() + role.slice(1)}
+                                    </Badge>
+                                )}
                             </div>
-                        </SidebarMenuButton>
+                            <span className='truncate text-xs'>
+                                {profile?.email || ''}
+                            </span>
+                        </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
-                        className='w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg [&_[data-slot=dropdown-menu-item][data-variant=default]_svg]:text-sidebar-foreground'
+                        className='w-(--anchor-width) min-w-56 rounded-lg [&_[data-slot=dropdown-menu-item][data-variant=default]_svg]:text-sidebar-foreground'
                         side={isMobile ? 'bottom' : 'right'}
                         align='end'
                         sideOffset={4}

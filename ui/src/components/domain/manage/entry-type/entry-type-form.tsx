@@ -142,7 +142,7 @@ function getEntryTypeFormFromApi(
         typeFormat:
             formatOptions.find((o) => o.value === data.format) ?? formatOptions[0]!,
         regex: data.regex || '',
-        options: data.options || '',
+        options: (data.options ?? []).join('\n'),
         children:
             data.children_detail?.map((x) => {
                 const c = x as { subtype: string };
@@ -219,7 +219,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
 
     const saveEntryClass = useMutation({
         mutationFn: async (payload: EntryClassRequest) => {
-            const { data, error, response } = await fetchClient.POST(
+            const { data, error, response } = await fetchClient.PUT(
                 '/entries/entry-classes/{class_subtype}/',
                 {
                     params: { path: { class_subtype: id! } },
@@ -255,7 +255,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
             prefix: data.prefix,
             color: data.color,
             regex: data.regex,
-            options: data.options,
+            options: data.options.split('\n'),
             children: data.children.map((child) => child.value),
         };
         saveEntryClass.mutate(payload);
@@ -372,6 +372,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                             )}
                                         </FieldContent>
                                         <Select
+                                            items={typeOptions}
                                             value={field.value?.value || ''}
                                             onValueChange={(value) => {
                                                 const option = typeOptions.find(
@@ -659,6 +660,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                     )}
                                                 </FieldContent>
                                                 <Select
+                                                    items={formatOptions}
                                                     value={field.value?.value || ''}
                                                     onValueChange={(value) => {
                                                         const option =
@@ -908,9 +910,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                     );
                                                 }}
                                                 emptyIndicator={
-                                                    <p className='text-center text-sm'>
-                                                        No entry types found
-                                                    </p>
+                                                    <p>No entry types found</p>
                                                 }
                                             />
                                         </div>

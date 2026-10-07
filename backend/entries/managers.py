@@ -48,6 +48,14 @@ class EntryQuerySet(models.QuerySet):
         accessible_vertices = Edge.objects.accessible(user).values_list("src", flat=True)
         return self.filter(Q(id__in=accessible_vertices) | Q(entry_class__type=EntryType.ENTITY))
 
+    def readable_entities(self, user: CradleUser) -> models.QuerySet:
+        """Filter to entities the user has read access to (all entities for admins)."""
+        entities = self.is_entity()
+        if user.is_cradle_admin:
+            return entities
+        Access = apps.get_model("access", "Access")
+        return entities.filter(id__in=Access.objects.get_accessible_entity_ids(user.id))
+
     def non_virtual(self) -> models.QuerySet:
         """Exclude internal/virtual entry classes."""
         return self.exclude(entry_class__subtype__in=INTERNAL_SUBTYPES)
@@ -101,6 +109,10 @@ class EntryManager(models.Manager):
     def accessible(self, user: CradleUser) -> models.QuerySet:
         """Filter to entries accessible to the user."""
         return self.get_queryset().accessible(user)
+
+    def readable_entities(self, user: CradleUser) -> models.QuerySet:
+        """Filter to entities the user has read access to (all entities for admins)."""
+        return self.get_queryset().readable_entities(user)
 
     def is_artifact(self) -> models.QuerySet:
         """Filter to artifact entries only."""

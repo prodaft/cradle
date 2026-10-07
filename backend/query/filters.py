@@ -3,6 +3,7 @@
 import django_filters
 from django.db.models import Q
 
+from core.query_lang import search_q
 from entries.models import Entry
 from notes.models import Note
 
@@ -31,7 +32,10 @@ class EntryFilter(django_filters.FilterSet):
     )
     search = django_filters.CharFilter(
         method="filter_search",
-        help_text="Search across name, subtype, and description (OR)",
+        help_text=(
+            "Search across name, subtype, and description. Supports AND/OR/NOT (or -term), "
+            '"quoted phrases", =exact matches and * wildcards.'
+        ),
     )
 
     class Meta:
@@ -87,11 +91,9 @@ class EntryFilter(django_filters.FilterSet):
         accessible_note_ids = Note.objects.get_accessible_notes(req.user).filter(id=value).values_list("id", flat=True)
         return queryset.filter(notes__id__in=accessible_note_ids)
 
+    _SEARCH_FIELDS = ("name", "entry_class__subtype", "description")
+
     def filter_search(self, queryset, name, value):
-        """Search across name, subtype, description (OR)."""
-        if not value or not value.strip():
-            return queryset
-        term = value.strip()
-        return queryset.filter(
-            Q(name__icontains=term) | Q(entry_class__subtype__icontains=term) | Q(description__icontains=term)
-        )
+        """Boolean/wildcard search (core.query_lang) across name, subtype, description."""
+        q = search_q(value, self._SEARCH_FIELDS)
+        return queryset if q is None else queryset.filter(q)

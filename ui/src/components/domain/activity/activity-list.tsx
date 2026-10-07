@@ -1,23 +1,12 @@
-import { ActionBarSearch } from '@/components/base/action-bar-controls/action-bar-controls';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import { TableSkeleton } from '@/components/base/table-skeleton';
 import { DataTable } from '@/components/custom/data-table/data-table';
-import { DateRangeFilterButton } from '@/components/custom/data-table/data-table-date-range-filter';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
 import OfflineIndicator from '@/components/feedback/offline-indicator';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-    Command,
-    CommandGroup,
-    CommandItem,
-    CommandList,
-} from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import type { DateRangeFilter } from '@/types/list-view';
+import { EMPTY_SEARCH_STATE, type SearchState } from '@/lib/search-query/search-schema';
 import { CaretDownIcon, GitForkIcon } from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
 import type { operations } from '@services/openapi/schema';
@@ -32,29 +21,19 @@ import {
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { diff_match_patch } from 'diff-match-patch';
-import { Check, PlusCircle, XCircle } from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+    ACTIVITY_SEARCH_SCHEMA,
+    USER_SCOPED_ACTIVITY_SEARCH_SCHEMA,
+    activitySearchParams,
+} from './activity-search-schema';
 
 type EventLogsListQuery = NonNullable<
     operations['event_logs_list']['parameters']['query']
 >;
 
-interface Filters {
-    dateRange: DateRangeFilter;
-    type: string;
-    contentType?: string;
-    objectId?: string;
-}
-
-const EVENT_TYPE_OPTIONS = [
-    { value: 'create', label: 'Create' },
-    { value: 'edit', label: 'Edit' },
-    { value: 'delete', label: 'Delete' },
-    { value: 'fetch', label: 'Fetch' },
-    { value: 'login', label: 'Login' },
-] as const;
-
 interface ActivityListProps {
+    noteId?: string;
     objectId?: string;
     contentType?: string;
     username?: string;
@@ -95,119 +74,6 @@ const typeBadgeVariant = (type: string) => {
             return 'outline';
     }
 };
-
-function EventTypeFilter({
-    value,
-    onChange,
-}: {
-    value: string;
-    onChange: (value: string) => void;
-}) {
-    const [isTypePickerOpen, setIsTypePickerOpen] = useState(false);
-    const hasFilter = value !== '';
-
-    const selectType = useCallback(
-        (selected: string) => {
-            onChange(selected === value ? '' : selected);
-            setIsTypePickerOpen(false);
-        },
-        [onChange, value],
-    );
-
-    const clearFilter = useCallback(
-        (e?: React.MouseEvent) => {
-            e?.stopPropagation();
-            onChange('');
-        },
-        [onChange],
-    );
-
-    const label = EVENT_TYPE_OPTIONS.find((o) => o.value === value)?.label;
-
-    return (
-        <Popover open={isTypePickerOpen} onOpenChange={setIsTypePickerOpen}>
-            <PopoverTrigger asChild>
-                <Button
-                    variant='outline'
-                    size='sm'
-                    className='border-dashed font-normal'
-                >
-                    {hasFilter ? (
-                        <span
-                            role='button'
-                            tabIndex={0}
-                            aria-label='Clear type filter'
-                            className='inline-flex rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                clearFilter(e);
-                            }}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    clearFilter();
-                                }
-                            }}
-                        >
-                            <XCircle />
-                        </span>
-                    ) : (
-                        <PlusCircle />
-                    )}
-                    Type
-                    {hasFilter && label && (
-                        <>
-                            <Separator
-                                orientation='vertical'
-                                className='mx-0.5 data-[orientation=vertical]:h-4'
-                            />
-                            <Badge
-                                variant='secondary'
-                                className='rounded-sm px-1 font-normal'
-                            >
-                                {label}
-                            </Badge>
-                        </>
-                    )}
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className='w-44 p-0' align='start'>
-                <Command>
-                    <CommandList className='max-h-full'>
-                        <ScrollArea className='max-h-[300px]'>
-                            <CommandGroup>
-                                {EVENT_TYPE_OPTIONS.map((option) => {
-                                    const isSelected = value === option.value;
-                                    return (
-                                        <CommandItem
-                                            key={option.value}
-                                            onSelect={() => selectType(option.value)}
-                                        >
-                                            <div
-                                                className={cn(
-                                                    'flex size-4 items-center justify-center rounded-sm border border-primary',
-                                                    isSelected
-                                                        ? 'bg-primary'
-                                                        : 'opacity-50 [&_svg]:invisible',
-                                                )}
-                                            >
-                                                <Check className='size-3 text-primary-foreground' />
-                                            </div>
-                                            <span className='truncate'>
-                                                {option.label}
-                                            </span>
-                                        </CommandItem>
-                                    );
-                                })}
-                            </CommandGroup>
-                        </ScrollArea>
-                    </CommandList>
-                </Command>
-            </PopoverContent>
-        </Popover>
-    );
-}
 
 const formatObjectRepr = (
     value: string,
@@ -326,12 +192,14 @@ function ExpandedRowDetail({ item }: { item: ActivityEvent }) {
                                     {item.srcLog!.type}
                                 </Badge>
                                 <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <span
-                                            className={`text-xs cursor-help ${source.isDeleted ? 'text-muted-foreground line-through' : ''}`}
-                                        >
-                                            {source.label}
-                                        </span>
+                                    <TooltipTrigger
+                                        render={
+                                            <span
+                                                className={`text-xs cursor-help ${source.isDeleted ? 'text-muted-foreground line-through' : ''}`}
+                                            />
+                                        }
+                                    >
+                                        {source.label}
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <span className='font-mono text-xs'>
@@ -361,6 +229,7 @@ function ExpandedRowDetail({ item }: { item: ActivityEvent }) {
 }
 
 export default function ActivityList({
+    noteId,
     objectId,
     contentType,
     username,
@@ -368,13 +237,7 @@ export default function ActivityList({
     const params = useParams({ strict: false });
     const scope = username || (params as any).username || '';
 
-    const [applied, setApplied] = useState(scope);
-    const [filters, setFilters] = useState<Filters>({
-        dateRange: { from: '', to: '' },
-        type: '',
-        contentType,
-        objectId,
-    });
+    const [searchState, setSearchState] = useState<SearchState>(EMPTY_SEARCH_STATE);
 
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
@@ -382,52 +245,54 @@ export default function ActivityList({
     const hasUserColumn = !scope;
 
     useEffect(() => {
-        setApplied(scope);
-        setFilters((prev) => ({
-            ...prev,
-            contentType,
-            objectId,
-        }));
+        setSearchState(EMPTY_SEARCH_STATE);
         setPage(1);
-    }, [scope, contentType, objectId]);
+    }, [scope, contentType, objectId, noteId]);
 
     const listQuery = useMemo((): EventLogsListQuery => {
-        const type: EventLogsListQuery['type'] | undefined = EVENT_TYPE_OPTIONS.some(
-            (o) => o.value === filters.type,
-        )
-            ? (filters.type as EventLogsListQuery['type'])
-            : undefined;
-
         return Object.fromEntries(
             Object.entries({
                 page,
                 page_size: pageSize,
-                username: applied || undefined,
-                start_date: filters.dateRange.from || undefined,
-                end_date: filters.dateRange.to || undefined,
-                type,
-                content_type: filters.contentType || undefined,
-                object_id: filters.objectId || undefined,
+                user: scope || searchState.values.user?.[0] || undefined,
+                ...activitySearchParams(searchState),
+                content_type: contentType || undefined,
+                object_id: objectId || undefined,
             }).filter(([, v]) => v !== undefined),
         ) as EventLogsListQuery;
-    }, [page, pageSize, filters, applied]);
+    }, [page, pageSize, scope, searchState, contentType, objectId]);
 
-    const {
-        data: logsPage,
-        isLoading,
-        isPaused,
-    } = $api.useQuery(
+    const logsQuery = $api.useQuery(
         'get',
         '/logs/',
         {
             params: { query: listQuery },
         },
         {
+            enabled: !noteId,
             meta: {
                 showErrorToast: true,
             },
         },
     );
+    const noteHistoryQuery = $api.useQuery(
+        'get',
+        '/notes/{note_id}/history/',
+        {
+            params: { path: { note_id: noteId ?? '' }, query: listQuery },
+        },
+        {
+            enabled: !!noteId,
+            meta: {
+                showErrorToast: true,
+            },
+        },
+    );
+    const {
+        data: logsPage,
+        isLoading,
+        isPaused,
+    } = noteId ? noteHistoryQuery : logsQuery;
 
     const rows = useMemo(() => {
         if (!logsPage?.results) return [];
@@ -435,8 +300,8 @@ export default function ActivityList({
         return logsPage.results.map((log: any): ActivityEvent => ({
             id: log.id || '',
             timestamp:
-                typeof log.timestamp === 'string'
-                    ? log.timestamp
+                typeof log.created_at === 'string'
+                    ? log.created_at
                     : new Date().toISOString(),
             type: log.type,
             username: log.user?.username || 'unknown',
@@ -458,7 +323,6 @@ export default function ActivityList({
     }, [logsPage?.results]);
 
     const totalPages = logsPage?.total_pages || 1;
-    const totalCount = logsPage?.count || 0;
 
     const columns = useMemo<ColumnDef<ActivityEvent>[]>(
         () => [
@@ -481,10 +345,12 @@ export default function ActivityList({
                             </Badge>
                             {hasSource && (
                                 <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <span className='text-muted-foreground'>
-                                            <GitForkIcon className='size-3.5' />
-                                        </span>
+                                    <TooltipTrigger
+                                        render={
+                                            <span className='text-muted-foreground' />
+                                        }
+                                    >
+                                        <GitForkIcon className='size-3.5' />
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <span className='text-xs'>
@@ -547,12 +413,14 @@ export default function ActivityList({
                     );
                     return (
                         <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span
-                                    className={`cursor-help ${isDeleted ? 'text-muted-foreground line-through' : ''}`}
-                                >
-                                    {label}
-                                </span>
+                            <TooltipTrigger
+                                render={
+                                    <span
+                                        className={`cursor-help ${isDeleted ? 'text-muted-foreground line-through' : ''}`}
+                                    />
+                                }
+                            >
+                                {label}
                             </TooltipTrigger>
                             <TooltipContent>
                                 <span className='font-mono text-xs'>{fullId}</span>
@@ -635,16 +503,11 @@ export default function ActivityList({
         getRowId: (row) => row.id,
         manualPagination: true,
         pageCount: totalPages,
-        rowCount: totalCount,
+        rowCount: logsPage?.count,
     });
 
-    const applyFilters = useCallback((update: Partial<Filters>) => {
-        setFilters((prev) => ({ ...prev, ...update }));
-        setPage(1);
-    }, []);
-
-    const applySearch = useCallback((value: string) => {
-        setApplied(value);
+    const applySearch = useCallback((state: SearchState) => {
+        setSearchState(state);
         setPage(1);
     }, []);
 
@@ -678,23 +541,15 @@ export default function ActivityList({
                 renderSubRow={renderSubRow}
                 emptyMessage='No event logs found.'
             >
-                <ActionBarSearch
-                    placeholder='Search by username...'
-                    name='username'
-                    value={applied}
-                    debounceMs={300}
-                    onDebouncedChange={applySearch}
-                    onSubmit={applySearch}
-                    onClear={() => applySearch('')}
-                />
-                <DateRangeFilterButton
-                    title='Date'
-                    value={filters.dateRange}
-                    onChange={(dateRange) => applyFilters({ dateRange })}
-                />
-                <EventTypeFilter
-                    value={filters.type}
-                    onChange={(type) => applyFilters({ type })}
+                <SearchInput
+                    schema={
+                        scope
+                            ? USER_SCOPED_ACTIVITY_SEARCH_SCHEMA
+                            : ACTIVITY_SEARCH_SCHEMA
+                    }
+                    value={searchState}
+                    onApply={applySearch}
+                    placeholder='Search activity...'
                 />
             </DataTable>
             <ScrollBar orientation='horizontal' />

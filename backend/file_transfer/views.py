@@ -6,11 +6,13 @@ Uses presigned URLs for direct S3 uploads; validates quota and access.
 import logging
 import os
 import uuid
+from datetime import timedelta
 
 from botocore.exceptions import ClientError
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.urls import reverse
+from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from pathvalidate import sanitize_filename
 from rest_framework import status
@@ -41,10 +43,11 @@ from .serializers import (
     FileProcessSerializer,
     FileUploadFinalizeResponseSerializer,
     FileUploadFinalizeSerializer,
+    FileUploadInitiateSerializer,
     FileUploadResponseSerializer,
 )
 from .storage import FileTransferStorage
-from .uploads import PresignedUploadFlow, UploadConfig
+from .uploads import PresignedUploadFlow, UploadConfig, parse_initiate_request
 from .uploads.exceptions import (
     InvalidFileNameException,
     InvalidFileSizeException,
@@ -206,28 +209,13 @@ file_upload_flow = PresignedUploadFlow(
 
 
 @extend_schema_view(
-    get=extend_schema(
-        operation_id="file_transfer_upload_retrieve",
+    post=extend_schema(
+        operation_id="file_transfer_upload_create",
         summary="Initiate file upload",
-        description="Generates a presigned URL for uploading a file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.",
-        parameters=[
-            OpenApiParameter(
-                name="file_name",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="Name of the file to be uploaded",
-                required=True,
-            ),
-            OpenApiParameter(
-                name="file_size",
-                type=int,
-                location=OpenApiParameter.QUERY,
-                description="Size of the file to be uploaded in bytes",
-                required=True,
-            ),
-        ],
+        description="Generates a presigned URL for uploading a file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_at. The upload must be finalized within the expiration time.",
+        request=FileUploadInitiateSerializer,
         responses={
-            200: FileUploadResponseSerializer,
+            201: FileUploadResponseSerializer,
             **get_error_responses(
                 UploadErrorCodes.INVALID_FILE_NAME,
                 UploadErrorCodes.INVALID_FILE_SIZE,
@@ -241,7 +229,7 @@ class FileUpload(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request) -> Response:
+    def post(self, request: Request) -> Response:
         """Generate a presigned URL for file upload.
 
         Creates a PendingUpload record and schedules a cleanup task for when the
@@ -249,28 +237,14 @@ class FileUpload(APIView):
         and then call the finalize endpoint.
 
         Args:
-            request: The request with query parameters `file_name` and `file_size`.
+            request: The request with body fields `file_name` and `file_size`.
 
         Returns:
-            Response with upload_id, presigned_url, object_key, and expires_in.
+            Response with upload_id, presigned_url, object_key, and expires_at.
         """
-        file_name = request.query_params.get("file_name")
-        if not file_name:
-            raise InvalidFileNameException(detail="A file name is required.")
-        file_name = _sanitize_filename(file_name)
-
-        # Get and validate file size
-        file_size_str = request.query_params.get("file_size")
-        if not file_size_str:
-            raise InvalidFileSizeException(detail="The file size is required.")
-
-        try:
-            file_size = int(file_size_str)
-        except ValueError:
-            raise InvalidFileSizeException(detail="Use a whole number for the file size.")
-
-        response_data = file_upload_flow.initiate(request.user, file_name, file_size)
-        return Response(FileUploadResponseSerializer(response_data).data, status=status.HTTP_200_OK)
+        file_name, file_size = parse_initiate_request(request.data)
+        response_data = file_upload_flow.initiate(request.user, _sanitize_filename(file_name), file_size)
+        return Response(FileUploadResponseSerializer(response_data).data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -376,7 +350,7 @@ class FileDownload(APIView):
             request: The request with query parameter `file_id`.
 
         Returns:
-            Response with presigned_url and expires_in.
+            Response with presigned_url and expires_at.
         """
         file_id = request.query_params.get("file_id")
         if not file_id:
@@ -389,14 +363,15 @@ class FileDownload(APIView):
         except ValueError, TypeError, ValidationError:
             raise InvalidFileReferenceException(detail="That is not a valid file.")
 
-        if not file_reference.file:
-            raise StoredFileNotFoundException(detail="The file could not be found.")
-
         if not file_reference.has_access(request.user):
             raise FileAccessDeniedException(detail="You do not have access to this file.")
 
+        if not file_reference.file:
+            raise StoredFileNotFoundException(detail="The file could not be found.")
+
         safe_filename = _sanitize_filename(file_reference.file_name, default="download")
 
+        expires_at = timezone.now() + timedelta(seconds=FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS)
         presigned_url = presign_get(
             FileTransferStorage.bucket_name,
             file_reference.file.name,
@@ -406,7 +381,7 @@ class FileDownload(APIView):
 
         response_data = {
             "presigned_url": presigned_url,
-            "expires_in": FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS,
+            "expires_at": expires_at,
         }
 
         return Response(FileDownloadSerializer(response_data).data, status=status.HTTP_200_OK)
@@ -501,8 +476,8 @@ class FileDelete(APIView):
 
         try:
             file_reference = FileReference.objects.get(id=file_id)
-            if not file_reference.has_access(request.user):
-                raise FileAccessDeniedException(detail="You do not have access to this file.")
+            if not file_reference.has_write_access(request.user):
+                raise FileAccessDeniedException(detail="You do not have permission to delete this file.")
             if file_reference.file:
                 try:
                     file_reference.file.delete(save=False)

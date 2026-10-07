@@ -6,33 +6,6 @@
  * A retro groove color scheme with warm, earthy tones
  */
 
-const commonVars = {
-    '--font-sans':
-        "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
-    '--font-serif': "ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif",
-    '--font-mono':
-        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-    '--radius': '0.5rem',
-    '--shadow-x': '0',
-    '--shadow-y': '1px',
-    '--shadow-blur': '3px',
-    '--shadow-spread': '0px',
-    '--shadow-opacity': '0.12',
-    '--shadow-color': 'oklch(0 0 0)',
-    '--shadow-2xs': '0 1px 2px 0px hsl(0 0% 0% / 0.06)',
-    '--shadow-xs': '0 1px 2px 0px hsl(0 0% 0% / 0.06)',
-    '--shadow-sm':
-        '0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow': '0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow-md':
-        '0 2px 4px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow-lg':
-        '0 4px 6px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow-xl':
-        '0 8px 10px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1)',
-    '--shadow-2xl': '0 12px 16px 0px hsl(0 0% 0% / 0.2)',
-};
-
 /**
  * Gruvbox Dark Theme
  * Warm, retro dark theme with earthy brown backgrounds
@@ -118,8 +91,6 @@ export const gruvboxDark = {
     '--pm-code-btn-hover-background-color': '#665c54',
     '--pm-blockquote-vertical-line-background-color': '#504945',
     '--pm-cursor-color': '#ebdbb2',
-
-    ...commonVars,
 };
 
 /**
@@ -207,6 +178,4 @@ export const gruvboxLight = {
     '--pm-code-btn-hover-background-color': '#bdae93',
     '--pm-blockquote-vertical-line-background-color': '#d5c4a1',
     '--pm-cursor-color': '#3c3836',
-
-    ...commonVars,
 };

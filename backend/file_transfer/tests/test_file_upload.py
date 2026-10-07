@@ -1,6 +1,8 @@
 """Tests for file upload API (initiate presigned URL)."""
 
 import uuid
+from datetime import datetime
+from datetime import timezone as dt_timezone
 from unittest.mock import patch
 
 from django.urls import reverse
@@ -42,66 +44,74 @@ class TestFileUpload(FileTransferTestCase):
                 "upload_id": "aad5cae6-5737-409d-8ce2-5f116ed5e2de",
                 "presigned_url": "https://example.com/put",
                 "object_key": "aad5cae6-5737-409d-8ce2-5f116ed5e2de",
-                "expires_in": 300,
+                "expires_at": datetime(2026, 1, 1, tzinfo=dt_timezone.utc),
             }
-            response = self.client.get(
+            response = self.client.post(
                 reverse("file_upload"),
                 {"file_name": self.file_name, "file_size": self.file_size},
+                content_type="application/json",
                 **self.headers,
             )
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 201)
             self.assertIn("presigned_url", response.json())
+            self.assertEqual(response.json()["expires_at"], "2026-01-01T00:00:00Z")
             mock_flow.initiate.assert_called_once_with(self.user, self.file_name, self.file_size)
 
     def test_initiate_upload_not_authenticated(self):
         """Initiate upload returns 401 when not authenticated."""
-        response = self.client.get(
+        response = self.client.post(
             reverse("file_upload"),
             {"file_name": self.file_name, "file_size": self.file_size},
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 401)
 
     def test_initiate_upload_no_file_name(self):
         """Initiate upload returns 400 when file_name missing."""
-        response = self.client.get(
+        response = self.client.post(
             reverse("file_upload"),
             {"file_size": self.file_size},
+            content_type="application/json",
             **self.headers,
         )
         self.assertEqual(response.status_code, 400)
 
     def test_initiate_upload_no_file_size(self):
         """Initiate upload returns 400 when file_size missing."""
-        response = self.client.get(
+        response = self.client.post(
             reverse("file_upload"),
             {"file_name": self.file_name},
+            content_type="application/json",
             **self.headers,
         )
         self.assertEqual(response.status_code, 400)
 
     def test_initiate_upload_file_name_empty(self):
         """Initiate upload returns 400 when file_name is empty."""
-        response = self.client.get(
+        response = self.client.post(
             reverse("file_upload"),
             {"file_name": "", "file_size": self.file_size},
+            content_type="application/json",
             **self.headers,
         )
         self.assertEqual(response.status_code, 400)
 
     def test_initiate_upload_invalid_file_size(self):
         """Initiate upload returns 400 when file_size is not a valid integer."""
-        response = self.client.get(
+        response = self.client.post(
             reverse("file_upload"),
             {"file_name": self.file_name, "file_size": "not-a-number"},
+            content_type="application/json",
             **self.headers,
         )
         self.assertEqual(response.status_code, 400)
 
     def test_initiate_upload_file_size_zero(self):
         """Initiate upload returns 400 when file_size is zero."""
-        response = self.client.get(
+        response = self.client.post(
             reverse("file_upload"),
             {"file_name": self.file_name, "file_size": "0"},
+            content_type="application/json",
             **self.headers,
         )
         self.assertEqual(response.status_code, 400)

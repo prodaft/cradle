@@ -210,7 +210,7 @@ export default function SearchDialog({
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent
-                className='top-[10vh] translate-y-0 max-w-lg p-0 gap-0 max-h-[75vh] overflow-hidden'
+                className='top-[10vh] translate-y-0 sm:max-w-2xl grid-rows-[minmax(0,1fr)] p-0 gap-0 max-h-[85vh] overflow-hidden'
                 showCloseButton={false}
             >
                 <DialogTitle className='sr-only'>Search entries</DialogTitle>
@@ -234,7 +234,7 @@ export default function SearchDialog({
                         colors={colors}
                     />
 
-                    <ScrollArea className='min-h-0 flex-1 max-h-[50vh]'>
+                    <ScrollArea className='min-h-0 flex-1'>
                         <CommandList className='max-h-none'>
                             {isFetching ? (
                                 <div className='flex items-center justify-center py-6'>
@@ -288,10 +288,14 @@ export default function SearchDialog({
                             <div className='flex items-center gap-1'>
                                 <Select
                                     value={`${pageSize}`}
-                                    onValueChange={(v) => changePageSize(Number(v))}
+                                    onValueChange={(v) => {
+                                        if (v !== null) changePageSize(Number(v));
+                                    }}
                                 >
-                                    <SelectTrigger className='h-4 w-auto gap-0.5 border-0 px-1 text-[10px] shadow-none focus:ring-0'>
-                                        <SelectValue />
+                                    <SelectTrigger className='h-4 w-auto gap-0.5 border-0 px-1 text-[10px] shadow-none focus:ring-0 dark:bg-transparent dark:hover:bg-transparent'>
+                                        <SelectValue>
+                                            {(v: string | null) => `${v} / page`}
+                                        </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent side='top' align='end'>
                                         {[10, 20, 30, 40, 50].map((size) => (

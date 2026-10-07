@@ -17,6 +17,7 @@ from core.openapi import (
     get_error_responses,
 )
 from core.pagination import TotalPagesPagination
+from core.query_lang import search_q
 from core.utils import validate_order_by
 from core.validators import validate_choice_param
 from user.authentication import APIKeyAuthentication
@@ -41,13 +42,17 @@ from ..tasks import generate_report
     get=extend_schema(
         operation_id="reports_list",
         summary="Get published reports",
-        description="Returns a paginated list of published reports for the authenticated user, ordered by creation date descending. Can be filtered by search term matching report ID or title.",  # noqa: E501
+        description="Returns a paginated list of published reports for the authenticated user, ordered by creation date descending. Can be filtered by a search query over the report title, or by exact report ID.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="search",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Search term to filter reports by ID or title",
+                description=(
+                    "Search query over the report title. Supports AND/OR/NOT, -term, "
+                    '"phrases", wildcards (term*, *term) and =exact. A bare report UUID '
+                    "also matches that report's ID."
+                ),
             ),
             OpenApiParameter(
                 name="page_size",
@@ -66,7 +71,7 @@ from ..tasks import generate_report
                 name="order_by",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Order reports by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, title, status, strategy, user__username. Default: -created_at",  # noqa: E501
+                description="Order reports by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, title, status, strategy, anonymized, user. Default: -created_at",  # noqa: E501
                 required=False,
                 default="-created_at",
             ),
@@ -106,18 +111,15 @@ class ReportListAPIView(generics.ListAPIView):
     def get(self, request: Request, *args, **kwargs) -> Response:
         queryset = self.get_queryset()
 
-        # Handle search parameter
         search = request.query_params.get("search")
-        if search:
-            search_filter = Q(title__icontains=search)
+        search_filter = search_q(search, ["title"])
+        if search_filter is not None:
             try:
-                search_uuid = UUID(search)
-                search_filter |= Q(id=search_uuid)
+                search_filter |= Q(id=UUID(search.strip()))
             except ValueError, TypeError:
                 pass
             queryset = queryset.filter(search_filter)
 
-        # Handle status filter
         status_filter = validate_choice_param(
             request.query_params.get("status"),
             [c[0] for c in ReportStatus.choices],
@@ -126,24 +128,22 @@ class ReportListAPIView(generics.ListAPIView):
         if status_filter:
             queryset = queryset.filter(status=status_filter)
 
-        # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
-        valid_order_fields = [
-            "created_at",
-            "title",
-            "status",
-            "strategy",
-            "user__username",
-        ]
+        valid_order_fields = {
+            "created_at": "created_at",
+            "title": "title",
+            "status": "status",
+            "strategy": "strategy",
+            "anonymized": "anonymized",
+            "user": "user__username",
+        }
 
-        # Parse and validate order_by parameter
         order_fields = validate_order_by(order_by, valid_order_fields)
         if order_fields:
             queryset = queryset.order_by(*order_fields)
         else:
             queryset = queryset.order_by("-created_at")
 
-        # Apply pagination
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(queryset, request)
         serializer = self.get_serializer(page, many=True)
@@ -173,10 +173,10 @@ class ReportRetryAPIView(APIView):
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: Request, pk: UUID) -> Response:
+    def post(self, request: Request, report_id: UUID) -> Response:
         """Reset report status, re-queue generation task, and return updated report."""
         try:
-            report = PublishedReport.objects.for_user(request.user).get(id=pk)
+            report = PublishedReport.objects.for_user(request.user).get(id=report_id)
         except PublishedReport.DoesNotExist:
             raise ReportNotFoundException(detail="That report could not be found.")
 
@@ -191,7 +191,6 @@ class ReportRetryAPIView(APIView):
             report.error_message = ""
             report.save()
 
-        # Re-run the generation Celery task
         generate_report.delay(report.id)
 
         return Response(ReportListSerializer(report).data, status=status.HTTP_200_OK)
@@ -237,6 +236,7 @@ class ReportDetailAPIView(generics.RetrieveDestroyAPIView):
     serializer_class = ReportDetailSerializer
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
+    lookup_url_kwarg = "report_id"
 
     def retrieve(self, request: Request, *args, **kwargs) -> Response:
         """Return report details; include presigned download URL if download_url=true."""

@@ -1,3 +1,4 @@
+import { useOpenExternalLink } from '@/components/base/external-link-confirm/external-link-confirm';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { handleLinkClick, NavigateHandler } from '@/utils/editor/text-editor';
@@ -23,6 +24,7 @@ interface StaticRenderProps {
 export default function StaticRender({ markdownContent, files }: StaticRenderProps) {
     const previewRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+    const openExternalLink = useOpenExternalLink();
 
     const navigateHandler: NavigateHandler = useCallback(
         (path: string) => {
@@ -47,7 +49,7 @@ export default function StaticRender({ markdownContent, files }: StaticRenderPro
     );
 
     const onContentClick = (event: React.MouseEvent<HTMLDivElement>) => {
-        handleLinkClick(navigateHandler)(event.nativeEvent);
+        handleLinkClick(navigateHandler, openExternalLink)(event.nativeEvent);
     };
 
     const { data: html = '', isLoading } = useQuery({
@@ -87,6 +89,7 @@ export default function StaticRender({ markdownContent, files }: StaticRenderPro
                     className='rich-editor markdown-body static-render'
                     ref={previewRef}
                     onClick={onContentClick}
+                    onAuxClick={onContentClick}
                 ></div>
             </ScrollArea>
         </div>

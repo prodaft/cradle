@@ -4,6 +4,7 @@ import KnowledgeGraphSearch from '@/components/domain/graph/knowledge-graph-sear
 import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { isAdmin, isEntryManager } from '@/utils/auth';
+import { FILE_DASHBOARD_SUBTYPE } from '@/utils/dashboard';
 import { fetchClient } from '@services/openapi/client';
 import {
     createRootRoute,
@@ -17,6 +18,7 @@ import * as z from 'zod';
 
 import { validateSearchSchema as digestsValidateSearchSchema } from '@/components/domain/digests/digests-list-search-schema';
 import { validateSearchSchema as enrichmentValidateSearchSchema } from '@/components/domain/enrichment/enrichment-list-search-schema';
+import { validateSearchSchema as filesValidateSearchSchema } from '@/components/domain/files/files-list-search-schema';
 import {
     dashboardValidateSearchSchema,
     validateSearchSchema as notesValidateSearchSchema,
@@ -79,13 +81,6 @@ const noteSearch = z.object({
     source: z.boolean().optional(),
 });
 
-const filesSearch = z.object({
-    files_page: z.coerce.number().optional(),
-    files_sort_field: z.string().optional(),
-    files_sort_direction: z.enum(['asc', 'desc']).optional(),
-    files_pagesize: z.coerce.number().optional(),
-});
-
 const accountSettingsSearch = z.object({
     tab: z.string().optional(),
     sessions_page: z.coerce.number().optional(),
@@ -96,6 +91,7 @@ const usersSearch = z.object({
     users_page: z.coerce.number().optional(),
     users_pagesize: z.coerce.number().optional(),
     users_search: z.string().optional(),
+    users_role: z.string().optional(),
 });
 
 const entitiesSearch = z.object({
@@ -158,7 +154,7 @@ const reportsRoute = createRoute({
 const filesRoute = createRoute({
     getParentRoute: () => authenticatedRoute,
     path: 'files',
-    validateSearch: filesSearch,
+    validateSearch: filesValidateSearchSchema,
     component: FilesList,
 });
 
@@ -213,11 +209,17 @@ const dashboardRoute = createRoute({
     gcTime: 1000 * 60 * 5,
     staleTime: 1000 * 60,
     pendingComponent: () => <PageLoader fill='container' />,
+    notFoundComponent: () => (
+        <NotFound message='The entry you are looking for does not exist.' />
+    ),
     loader: async ({ params }) => {
         const { subtype, name } = params;
 
         if (!subtype || !name) {
             throw notFound();
+        }
+        if (subtype === FILE_DASHBOARD_SUBTYPE) {
+            return { entry: null };
         }
 
         try {
@@ -261,7 +263,7 @@ const manageIndexRoute = createRoute({
     path: '/',
     beforeLoad: () => {
         throw redirect({
-            to: '/manage/entities',
+            to: '/manage/entry-types',
             replace: true,
         });
     },

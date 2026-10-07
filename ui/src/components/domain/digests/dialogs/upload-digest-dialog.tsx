@@ -139,12 +139,10 @@ export default function UploadDigestDialog({
                 data: init,
                 error: initError,
                 response: initResponse,
-            } = await fetchClient.GET('/intelio/digest/upload/', {
-                params: {
-                    query: {
-                        file_name: file.name,
-                        file_size: file.size,
-                    },
+            } = await fetchClient.POST('/intelio/digest/upload/', {
+                body: {
+                    file_name: file.name,
+                    file_size: file.size,
                 },
             });
             if (initError) throw { response: initResponse, error: initError };
@@ -271,7 +269,8 @@ export default function UploadDigestDialog({
                                             }
                                         >
                                             <Select
-                                                value={selectedType?.value || ''}
+                                                items={dataTypeOptions}
+                                                value={selectedType?.value || null}
                                                 onValueChange={(value) => {
                                                     const option = dataTypeOptions.find(
                                                         (opt) => opt.value === value,
@@ -542,15 +541,17 @@ export default function UploadDigestDialog({
                         />
                     </FieldGroup>
                     <DialogFooter>
-                        <DialogClose asChild>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                disabled={isUploading}
-                            >
-                                Cancel
-                            </Button>
+                        <DialogClose
+                            render={
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={isUploading}
+                                />
+                            }
+                        >
+                            Cancel
                         </DialogClose>
                         <Button
                             type='submit'

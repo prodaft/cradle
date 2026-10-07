@@ -1,9 +1,6 @@
-import {
-    ActionBarButton,
-    ActionBarSearch,
-} from '@/components/base/action-bar-controls/action-bar-controls';
+import { ActionBarButton } from '@/components/base/action-bar-controls/action-bar-controls';
 import PreviewTip from '@/components/base/preview/preview-tip';
-import StatusHeaderDropdown from '@/components/base/status-header-dropdown/status-header-dropdown';
+import { SearchInput } from '@/components/base/search-input/search-input';
 import { StatusIcon, type StatusType } from '@/components/base/status-icon/status-icon';
 import {
     ActionBar,
@@ -15,7 +12,6 @@ import {
 } from '@/components/custom/action-bar';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
-import { DateRangeFilterButton } from '@/components/custom/data-table/data-table-date-range-filter';
 import EnrichmentRequestDialog from '@/components/domain/enrichment/dialogs/enrichment-request-dialog';
 import ReportGenerationDialog from '@/components/domain/reports/dialogs/report-generation-dialog';
 import OfflineIndicator from '@/components/feedback/offline-indicator';
@@ -43,7 +39,8 @@ import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
-import { DateRangeFilter, type SortDirection } from '@/types/list-view';
+import { dayEndIso, dayStartIso } from '@/lib/search-query/dates';
+import type { SearchState } from '@/lib/search-query/search-schema';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
 import { parseMarkdownInline } from '@/utils/parser';
@@ -51,42 +48,115 @@ import {
     ArrowClockwiseIcon,
     ChartBarIcon,
     DotsThreeIcon,
+    LockIcon,
+    LockKeyOpenIcon,
     PlusCircleIcon,
     SparkleIcon,
     TrashIcon,
 } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components, operations } from '@services/openapi/schema';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
+    type CellContext,
     ColumnDef,
     type RowSelectionState,
-    SortingState,
+    flexRender,
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { startCase } from 'lodash';
+import startCase from 'lodash/startCase';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { StatusSlug } from './note-list-status';
 import { NotePreviewContent } from './note-preview-content';
+import {
+    NOTES_SEARCH_SCHEMA,
+    NOTES_SEARCH_SCHEMA_NO_FLEETING,
+    orderByFromUrl,
+} from './notes-list-search-schema';
+import { useRequestNoteAccess } from './use-request-note-access';
 
-type NoteRow = components['schemas']['NoteListResponse'];
+type NoteListItem = components['schemas']['NoteListResponse'];
+type NoteRow = Extract<NoteListItem, { accessible: true }>;
 type NoteMetadata = { title?: string; description?: string };
+
+const RESTRICTED_VISIBLE_COLUMNS = new Set(['created_at', 'updated_at']);
+
+function RestrictedStatusBadge() {
+    return (
+        <Tooltip>
+            <TooltipTrigger
+                render={
+                    <Badge
+                        variant='outline'
+                        className='h-auto py-1 pl-1.5 [&>svg]:size-3.5! text-muted-foreground'
+                    />
+                }
+            >
+                <LockIcon />
+                <span>Restricted</span>
+            </TooltipTrigger>
+            <TooltipContent>You don&apos;t have access to this note</TooltipContent>
+        </Tooltip>
+    );
+}
+
+function RestrictedNoteActions({ noteId }: { noteId: string }) {
+    const requestAccess = useRequestNoteAccess();
+    return (
+        <div
+            className='text-right flex justify-end'
+            onClick={(e) => e.stopPropagation()}
+        >
+            <DropdownMenu>
+                <DropdownMenuTrigger
+                    render={
+                        <Button
+                            variant='ghost'
+                            size='icon-sm'
+                            className='text-muted-foreground hover:text-foreground'
+                            title='Actions'
+                        />
+                    }
+                >
+                    <DotsThreeIcon
+                        className='w-4 h-4'
+                        weight='bold'
+                        aria-hidden='true'
+                    />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end'>
+                    <DropdownMenuItem
+                        onClick={() => requestAccess.mutate(noteId)}
+                        disabled={requestAccess.isPending || requestAccess.isSuccess}
+                    >
+                        <LockKeyOpenIcon size={16} weight='bold' />
+                        {requestAccess.isSuccess
+                            ? 'Access requested'
+                            : 'Request access'}
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
+    );
+}
+
+function CensoredValue() {
+    return (
+        <span
+            role='img'
+            aria-label='Hidden'
+            title="Hidden: you don't have access to this note"
+            className='inline-block h-3 w-20 rounded-sm bg-muted-foreground/25 align-middle'
+        />
+    );
+}
 type OptimizedEntryResponse = components['schemas']['OptimizedEntryResponse'];
 
 type ListQuery = NonNullable<operations['notes_list']['parameters']['query']>;
-
-const SORT_FIELD_MAPPING: Record<string, string> = {
-    title: 'title',
-    description: 'timestamp',
-    author: 'author__username',
-    editor: 'editor__username',
-    timestamp: 'timestamp',
-    edit_timestamp: 'edit_timestamp',
-};
 
 /**
  * Props for `NotesTable`: fields sent to GET `/notes/` plus URL-scoped keys
@@ -94,7 +164,6 @@ const SORT_FIELD_MAPPING: Record<string, string> = {
  */
 export type NotesTableQueryInput = Partial<Omit<ListQuery, 'linked_to'>> & {
     linked_to?: number | string;
-    editor__username?: string;
     linked_to_exact_match?: boolean;
     created_date_from?: string;
     created_date_to?: string;
@@ -102,19 +171,9 @@ export type NotesTableQueryInput = Partial<Omit<ListQuery, 'linked_to'>> & {
     updated_date_to?: string;
 };
 
-interface Filters {
-    [key: string]: string | DateRangeFilter | undefined;
-    status: string;
-    author: string;
-    editor: string;
-    timestamp: DateRangeFilter;
-    edit_timestamp: DateRangeFilter;
-}
-
 interface SearchField {
-    value: string;
-    onChange?: (value: string) => void;
-    onSubmit?: (value?: string) => void;
+    value: SearchState;
+    onApply: (state: SearchState) => void;
 }
 
 interface NotesTableProps {
@@ -123,8 +182,7 @@ interface NotesTableProps {
     noteActions?: unknown[];
     hideActionBar?: boolean;
     references?: unknown;
-    onFilterChange?: ((column: string, value: string | DateRangeFilter) => void) | null;
-    contentSearch?: SearchField | null;
+    search?: SearchField | null;
     onCreateNote?: (() => void) | null;
     onCount?: ((count: { current: number; total: number }) => void) | null;
 }
@@ -135,8 +193,7 @@ export default function NotesTable({
     noteActions: _noteActions = [],
     hideActionBar = false,
     references: _references = null,
-    onFilterChange = null,
-    contentSearch = null,
+    search: searchField = null,
     onCreateNote = null,
     onCount = null,
 }: NotesTableProps) {
@@ -147,9 +204,7 @@ export default function NotesTable({
     const search = useSearch({ strict: false }) as any;
     const { isAdmin } = useAuthState();
     const page = Number(search?.notes_page ?? 1) || 1;
-    const sortField = (search?.notes_sort_field ?? 'timestamp') as string;
-    const sortDirection: SortDirection = (search?.notes_sort_direction ??
-        'desc') as SortDirection;
+    const orderBy = orderByFromUrl(search ?? {});
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
     const [isReportOpen, setIsReportOpen] = useState(false);
@@ -161,169 +216,39 @@ export default function NotesTable({
         Array<{ id: string; title: string; entities: OptimizedEntryResponse[] }>
     >([]);
     const [isRelinkOpen, setIsRelinkOpen] = useState(false);
-    const queryClient = useQueryClient();
+    const [pendingRelinkIds, setPendingRelinkIds] = useState<string[]>([]);
 
-    const relinkNotes = useMutation({
-        mutationFn: async () => {
-            const { error, response } = await fetchClient.POST('/notes/relink/', {
-                body: undefined,
-            });
+    const relinkNote = useMutation({
+        mutationFn: async (id: string) => {
+            const { error, response } = await fetchClient.POST(
+                '/notes/{note_id}/relink/',
+                { params: { path: { note_id: id } }, body: undefined },
+            );
             if (error) throw { response, error };
         },
         meta: {
-            invalidateQueries: [{ queryKey: queryKeys.notes.apiList() }],
+            invalidateQueries: [
+                { queryKey: queryKeys.notes.apiList() },
+                { queryKey: queryKeys.notes.apiDetails() },
+            ],
             suppressNotification: true,
         },
     });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const pageSize = Number(search?.notes_pagesize ?? 20) || 20;
-    const [filters, setFilters] = useState<Filters>({
-        status: 'all',
-        any_field: scope?.any_field || '',
-        author: scope?.author__username || '',
-        editor: scope?.editor__username || '',
-        timestamp: {
-            from:
-                scope?.created_date_from && scope?.created_date_to
-                    ? scope.created_date_from
-                    : '',
-            to:
-                scope?.created_date_from && scope?.created_date_to
-                    ? scope.created_date_to
-                    : '',
-        },
-        edit_timestamp: {
-            from:
-                scope?.updated_date_from && scope?.updated_date_to
-                    ? scope.updated_date_from
-                    : '',
-            to:
-                scope?.updated_date_from && scope?.updated_date_to
-                    ? scope.updated_date_to
-                    : '',
-        },
-    });
     const containerRef = useRef<HTMLDivElement>(null);
-
-    const applySort = useCallback(
-        (sorting: SortingState) => {
-            const next: any = {
-                ...search,
-                notes_page: 1,
-            };
-            if (sorting.length === 0) {
-                delete next.notes_sort_field;
-                delete next.notes_sort_direction;
-            } else {
-                const sort = sorting[0];
-                if (!sort) {
-                    delete next.notes_sort_field;
-                    delete next.notes_sort_direction;
-                } else {
-                    const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
-                    next.notes_sort_field = apiField;
-                    next.notes_sort_direction = sort.desc ? 'desc' : 'asc';
-                }
-            }
-            router.navigate({
-                to: location.pathname as any,
-                search: next as any,
-                replace: true,
-            });
-        },
-        [search, router, location.pathname],
-    );
-
-    const applyFilter = useCallback(
-        (column: string, value: string | DateRangeFilter) => {
-            setFilters((prev) => ({
-                ...prev,
-                [column]: value,
-            }));
-
-            if (onFilterChange) {
-                onFilterChange(column, value);
-            }
-        },
-        [onFilterChange],
-    );
-
-    const updateStatus = useCallback(
-        (status: string) => {
-            setFilters((prev) => ({
-                ...prev,
-                status,
-            }));
-            router.navigate({
-                to: location.pathname as any,
-                search: { ...search, notes_page: 1 } as any,
-                replace: true,
-            });
-        },
-        [router, location.pathname, search],
-    );
-
-    useEffect(() => {
-        setFilters({
-            any_field: scope?.any_field || '',
-            author: scope?.author__username || '',
-            editor: scope?.editor__username || '',
-            timestamp: {
-                from:
-                    scope?.created_date_from && scope?.created_date_to
-                        ? scope.created_date_from
-                        : '',
-                to:
-                    scope?.created_date_from && scope?.created_date_to
-                        ? scope.created_date_to
-                        : '',
-            },
-            edit_timestamp: {
-                from:
-                    scope?.updated_date_from && scope?.updated_date_to
-                        ? scope.updated_date_from
-                        : '',
-                to:
-                    scope?.updated_date_from && scope?.updated_date_to
-                        ? scope.updated_date_to
-                        : '',
-            },
-            status: 'all',
-        });
-    }, [
-        scope?.any_field,
-        scope?.author__username,
-        scope?.editor__username,
-        scope?.created_date_from,
-        scope?.created_date_to,
-        scope?.updated_date_from,
-        scope?.updated_date_to,
-    ]);
-
-    const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-    const createdRange =
-        Boolean(filters.timestamp?.from) && Boolean(filters.timestamp?.to);
-    const updatedRange =
-        Boolean(filters.edit_timestamp?.from) && Boolean(filters.edit_timestamp?.to);
 
     const listQuery = useMemo((): ListQuery | null => {
         if (!scope) return null;
 
-        const exclusiveStatuses: StatusSlug[] = [
-            'fleeting',
-            'healthy',
-            'warning',
-            'invalid',
-            'processing',
-        ];
-        const apiStatus: ListQuery['status'] | undefined =
-            filters.status === 'all'
-                ? hideFleetingNotes
-                    ? ['finalized']
-                    : undefined
-                : exclusiveStatuses.includes(filters.status as StatusSlug)
-                  ? [filters.status as StatusSlug]
-                  : undefined;
+        const statuses = (scope.status ?? []).filter(
+            (slug) => !hideFleetingNotes || slug !== 'fleeting',
+        ) as StatusSlug[];
+        const apiStatus: ListQuery['status'] | undefined = statuses.length
+            ? statuses
+            : hideFleetingNotes
+              ? ['finalized']
+              : undefined;
 
         return Object.fromEntries(
             Object.entries({
@@ -332,35 +257,26 @@ export default function NotesTable({
                 order_by: orderBy,
                 linked_to:
                     scope.linked_to != null ? String(scope.linked_to) : undefined,
+                file: scope.file,
                 status: apiStatus,
                 any_field: scope.any_field,
-                content: scope.content,
-                author__username: scope.author__username,
+                include_restricted: scope.any_field ? true : undefined,
+                author: scope.author,
+                editor: scope.editor,
                 date: scope.date,
                 references: scope.references,
-                timestamp_gte: createdRange ? filters.timestamp.from : undefined,
-                timestamp_lte: createdRange ? filters.timestamp.to : undefined,
-                edit_timestamp_gte: updatedRange
-                    ? filters.edit_timestamp.from
-                    : undefined,
-                edit_timestamp_lte: updatedRange
-                    ? filters.edit_timestamp.to
-                    : undefined,
+                created_at_gte:
+                    dayStartIso(scope.created_date_from) ?? scope.created_at_gte,
+                created_at_lte:
+                    dayEndIso(scope.created_date_to) ?? scope.created_at_lte,
+                updated_at_gte:
+                    dayStartIso(scope.updated_date_from) ?? scope.updated_at_gte,
+                updated_at_lte:
+                    dayEndIso(scope.updated_date_to) ?? scope.updated_at_lte,
                 truncate: scope.truncate,
             }).filter(([, v]) => v !== undefined),
         ) as ListQuery;
-    }, [
-        page,
-        pageSize,
-        scope,
-        filters.status,
-        hideFleetingNotes,
-        filters.timestamp,
-        filters.edit_timestamp,
-        createdRange,
-        updatedRange,
-        orderBy,
-    ]);
+    }, [page, pageSize, scope, hideFleetingNotes, orderBy]);
 
     const {
         data: notesData,
@@ -387,17 +303,6 @@ export default function NotesTable({
             onCount({ current: rows.length, total: totalCount });
         }
     }, [rows.length, totalCount, onCount]);
-
-    const confirmRelink = useCallback(() => {
-        setIsRelinkOpen(true);
-    }, []);
-
-    const executeRelink = useCallback(async () => {
-        await relinkNotes.mutateAsync();
-        toast.success('Relinking all notes...');
-        setRowSelection({});
-        queryClient.invalidateQueries({ queryKey: queryKeys.notes.apiList() });
-    }, [relinkNotes, queryClient]);
 
     const goTo = useCallback(
         (target: number) => {
@@ -477,29 +382,32 @@ export default function NotesTable({
         }
     };
 
-    const sorting = useMemo<SortingState>(() => {
-        const columnId =
-            Object.keys(SORT_FIELD_MAPPING).find(
-                (key) => SORT_FIELD_MAPPING[key] === sortField,
-            ) || sortField;
+    const relinkNotes = async (noteIds: string[]) => {
+        const results = await Promise.allSettled(
+            noteIds.map((id) => relinkNote.mutateAsync(id)),
+        );
 
-        return columnId
-            ? [
-                  {
-                      id: columnId,
-                      desc: sortDirection === 'desc',
-                  },
-              ]
-            : [];
-    }, [sortField, sortDirection]);
+        const successes = results.filter((r) => r.status === 'fulfilled').length;
+        const failures = results.filter((r) => r.status === 'rejected').length;
 
-    const applySorting = useCallback(
-        (updater: SortingState | ((prev: SortingState) => SortingState)) => {
-            const next = typeof updater === 'function' ? updater(sorting) : updater;
-            applySort(next);
-        },
-        [applySort, sorting],
-    );
+        if (failures === 0) {
+            toast.success(
+                `Successfully relinked ${successes} note${successes > 1 ? 's' : ''}`,
+            );
+        } else if (successes === 0) {
+            const firstRejected = results.find(
+                (r) => r.status === 'rejected',
+            ) as PromiseRejectedResult;
+            const parsed = await parseAPIError(firstRejected.reason);
+            toast.error(getDisplayMessage(parsed));
+        } else {
+            toast.warning(
+                `Relinked ${successes} note${successes > 1 ? 's' : ''}, ${failures} failed`,
+            );
+        }
+
+        setRowSelection({});
+    };
 
     const checkedIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
@@ -520,6 +428,20 @@ export default function NotesTable({
         [checkedIds],
     );
 
+    const confirmRelink = useCallback(
+        (item?: NoteRow) => {
+            if (item?.id) {
+                setPendingRelinkIds([String(item.id)]);
+                setIsRelinkOpen(true);
+                return;
+            }
+            if (checkedIds.length === 0) return;
+            setPendingRelinkIds(checkedIds);
+            setIsRelinkOpen(true);
+        },
+        [checkedIds],
+    );
+
     const renderPreview = useCallback((item: NoteRow) => {
         return <NotePreviewContent note={item} />;
     }, []);
@@ -533,9 +455,10 @@ export default function NotesTable({
                 maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        checked={table.getIsAllPageRowsSelected()}
+                        indeterminate={
+                            table.getIsSomePageRowsSelected() &&
+                            !table.getIsAllPageRowsSelected()
                         }
                         onCheckedChange={(value) =>
                             table.toggleAllPageRowsSelected(!!value)
@@ -564,17 +487,16 @@ export default function NotesTable({
                     const label = item.fleeting ? 'Fleeting' : startCase(status);
                     return (
                         <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Badge
-                                    variant='outline'
-                                    className='py-1 [&>svg]:size-3.5 capitalize'
-                                >
-                                    <StatusIcon
-                                        status={status as StatusType}
-                                        size={14}
+                            <TooltipTrigger
+                                render={
+                                    <Badge
+                                        variant='outline'
+                                        className='h-auto py-1 pl-1.5 [&>svg]:size-3.5! capitalize'
                                     />
-                                    <span>{label}</span>
-                                </Badge>
+                                }
+                            >
+                                <StatusIcon status={status as StatusType} size={14} />
+                                <span>{label}</span>
                             </TooltipTrigger>
                             {item.status_message && (
                                 <TooltipContent>{item.status_message}</TooltipContent>
@@ -649,12 +571,7 @@ export default function NotesTable({
                 id: 'author',
                 meta: { label: 'Author' },
                 header: ({ column }) => (
-                    <div className='flex items-center gap-2'>
-                        <DataTableColumnHeader column={column} label='Author' />
-                        {filters.author && (
-                            <span className='text-xs text-accent'>●</span>
-                        )}
-                    </div>
+                    <DataTableColumnHeader column={column} label='Author' />
                 ),
                 cell: ({ row }) => {
                     const item = row.original;
@@ -670,12 +587,7 @@ export default function NotesTable({
                 id: 'editor',
                 meta: { label: 'Editor' },
                 header: ({ column }) => (
-                    <div className='flex items-center gap-2'>
-                        <DataTableColumnHeader column={column} label='Editor' />
-                        {filters.editor && (
-                            <span className='text-xs text-accent'>●</span>
-                        )}
-                    </div>
+                    <DataTableColumnHeader column={column} label='Editor' />
                 ),
                 cell: ({ row }) => {
                     const item = row.original;
@@ -687,8 +599,8 @@ export default function NotesTable({
                 },
             },
             {
-                accessorKey: 'timestamp',
-                id: 'timestamp',
+                accessorKey: 'created_at',
+                id: 'created_at',
                 meta: { label: 'Created At' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Created At' />
@@ -697,16 +609,16 @@ export default function NotesTable({
                     const item = row.original;
                     return (
                         <div className='w-36'>
-                            {item.timestamp
-                                ? format(new Date(item.timestamp), 'dd/MM/yyyy, HH:mm')
+                            {item.created_at
+                                ? format(new Date(item.created_at), 'dd/MM/yyyy, HH:mm')
                                 : 'N/A'}
                         </div>
                     );
                 },
             },
             {
-                accessorKey: 'edit_timestamp',
-                id: 'edit_timestamp',
+                accessorKey: 'updated_at',
+                id: 'updated_at',
                 meta: { label: 'Updated At' },
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} label='Updated At' />
@@ -715,11 +627,8 @@ export default function NotesTable({
                     const item = row.original;
                     return (
                         <div className='w-36'>
-                            {item.edit_timestamp
-                                ? format(
-                                      new Date(item.edit_timestamp),
-                                      'dd/MM/yyyy, HH:mm',
-                                  )
+                            {item.updated_at
+                                ? format(new Date(item.updated_at), 'dd/MM/yyyy, HH:mm')
                                 : '-'}
                         </div>
                     );
@@ -740,23 +649,27 @@ export default function NotesTable({
                         >
                             {item.id && (
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant='ghost'
-                                            size='icon-sm'
-                                            className='text-muted-foreground hover:text-foreground'
-                                            title='Actions'
-                                        >
-                                            <DotsThreeIcon
-                                                className='w-4 h-4'
-                                                weight='bold'
-                                                aria-hidden='true'
+                                    <DropdownMenuTrigger
+                                        render={
+                                            <Button
+                                                variant='ghost'
+                                                size='icon-sm'
+                                                className='text-muted-foreground hover:text-foreground'
+                                                title='Actions'
                                             />
-                                        </Button>
+                                        }
+                                    >
+                                        <DotsThreeIcon
+                                            className='w-4 h-4'
+                                            weight='bold'
+                                            aria-hidden='true'
+                                        />
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align='end'>
                                         {isAdmin && (
-                                            <DropdownMenuItem onClick={confirmRelink}>
+                                            <DropdownMenuItem
+                                                onClick={() => confirmRelink(item)}
+                                            >
                                                 <ArrowClockwiseIcon
                                                     size={16}
                                                     weight='bold'
@@ -821,7 +734,6 @@ export default function NotesTable({
             },
         ],
         [
-            filters,
             router,
             confirmRelink,
             setReportNotes,
@@ -834,11 +746,41 @@ export default function NotesTable({
         ],
     );
 
+    const tableColumns = useMemo<ColumnDef<NoteListItem>[]>(
+        () =>
+            columns.map((column) => ({
+                ...(column as unknown as ColumnDef<NoteListItem>),
+                cell: (context: CellContext<NoteListItem, unknown>) => {
+                    const columnId = column.id ?? '';
+                    if (
+                        context.row.original.accessible ||
+                        RESTRICTED_VISIBLE_COLUMNS.has(columnId)
+                    ) {
+                        const noteContext = context as unknown as CellContext<
+                            NoteRow,
+                            unknown
+                        >;
+                        return column.cell
+                            ? flexRender(column.cell, noteContext)
+                            : context.renderValue();
+                    }
+                    if (columnId === 'status') return <RestrictedStatusBadge />;
+                    if (columnId === 'actions') {
+                        return (
+                            <RestrictedNoteActions noteId={context.row.original.id} />
+                        );
+                    }
+                    if (columnId === 'select') return null;
+                    return <CensoredValue />;
+                },
+            })),
+        [columns],
+    );
+
     const table = useReactTable({
         data: rows,
-        columns,
+        columns: tableColumns,
         state: {
-            sorting,
             rowSelection,
             pagination: {
                 pageIndex: page - 1,
@@ -849,7 +791,6 @@ export default function NotesTable({
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
-        onSortingChange: applySorting,
         onRowSelectionChange: setRowSelection,
         onPaginationChange: (updater) => {
             const current = {
@@ -860,16 +801,17 @@ export default function NotesTable({
             paginate(next.pageIndex, next.pageSize);
         },
         getCoreRowModel: getCoreRowModel(),
-        enableRowSelection: true,
+        enableRowSelection: (row) => row.original.accessible,
         manualPagination: true,
-        manualSorting: true,
+        enableSorting: false,
         pageCount: totalPages,
+        rowCount: notesData?.count,
     });
 
     const noteById = useMemo(() => {
         const map = new Map<string, NoteRow>();
         for (const item of rows) {
-            if (item.id) {
+            if (item.accessible && item.id) {
                 map.set(String(item.id), item);
             }
         }
@@ -927,7 +869,7 @@ export default function NotesTable({
                         }
                         getRowHref={(item) => `/notes/${item.id}`}
                     >
-                        <div className='flex items-center gap-2'>
+                        <div className='flex min-w-0 flex-1 items-center gap-2'>
                             {onCreateNote && hideActionBar && (
                                 <ActionBarButton
                                     tooltip={
@@ -946,47 +888,18 @@ export default function NotesTable({
                                     disabled={isLoading}
                                 />
                             )}
-                            {contentSearch && (
-                                <ActionBarSearch
-                                    placeholder='Search content...'
-                                    value={contentSearch.value || ''}
-                                    debounceMs={300}
-                                    onDebouncedChange={(v) => {
-                                        contentSearch.onChange?.(v);
-                                        contentSearch.onSubmit?.(v);
-                                    }}
-                                    onSubmit={(v) => {
-                                        contentSearch.onChange?.(v);
-                                        contentSearch.onSubmit?.(v);
-                                    }}
-                                    onClear={() => {
-                                        contentSearch.onChange?.('');
-                                        contentSearch.onSubmit?.('');
-                                    }}
+                            {searchField && (
+                                <SearchInput
+                                    schema={
+                                        hideFleetingNotes
+                                            ? NOTES_SEARCH_SCHEMA_NO_FLEETING
+                                            : NOTES_SEARCH_SCHEMA
+                                    }
+                                    value={searchField.value}
+                                    onApply={searchField.onApply}
+                                    placeholder='Search notes...'
                                 />
                             )}
-                            <StatusHeaderDropdown
-                                onStatusChange={updateStatus}
-                                status={filters.status}
-                                options={[
-                                    'all',
-                                    'fleeting',
-                                    'healthy',
-                                    'warning',
-                                    'invalid',
-                                    'processing',
-                                ]}
-                            />
-                            <DateRangeFilterButton
-                                title='Created At'
-                                value={filters.timestamp}
-                                onChange={(v) => applyFilter('timestamp', v)}
-                            />
-                            <DateRangeFilterButton
-                                title='Updated At'
-                                value={filters.edit_timestamp}
-                                onChange={(v) => applyFilter('edit_timestamp', v)}
-                            />
                         </div>
                     </DataTable>
                 </div>
@@ -1005,8 +918,12 @@ export default function NotesTable({
                 <ActionBarGroup>
                     {isAdmin && (
                         <ActionBarItem
-                            onClick={confirmRelink}
-                            disabled={isLoading || rows.length === 0}
+                            onClick={() => confirmRelink()}
+                            disabled={
+                                isLoading ||
+                                rows.length === 0 ||
+                                checkedIds.length === 0
+                            }
                         >
                             <ArrowClockwiseIcon width={18} height={18} />
                             Relink
@@ -1095,8 +1012,11 @@ export default function NotesTable({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Relinking</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to relink all notes? This will
-                            reprocess the relationships between notes and entities.
+                            Are you sure you want to relink {pendingRelinkIds.length}{' '}
+                            note{pendingRelinkIds.length > 1 ? 's' : ''}? This will
+                            reprocess the relationships between{' '}
+                            {pendingRelinkIds.length > 1 ? 'these notes' : 'this note'}{' '}
+                            and entities.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -1106,15 +1026,7 @@ export default function NotesTable({
                         <AlertDialogAction
                             variant='default'
                             size='sm'
-                            onClick={async () => {
-                                try {
-                                    await executeRelink();
-                                    setIsRelinkOpen(false);
-                                } catch (error) {
-                                    const parsed = await parseAPIError(error);
-                                    toast.error(getDisplayMessage(parsed));
-                                }
-                            }}
+                            onClick={() => relinkNotes(pendingRelinkIds)}
                         >
                             Relink
                         </AlertDialogAction>

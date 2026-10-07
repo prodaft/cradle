@@ -11,9 +11,9 @@ layout = "hextra-home"
   imageGalleryTitles="Welcome Screen|Files List|Markdown Editor|Graph Explorer|Access Control|Admin Entry Types|Case Relations|External Enrichment|HTML Report"
   imageGalleryClass="cradle-hero-carousel"
 >}}
-{{< hextra/hero-badge link="https://github.com/prodaft/cradle/tree/v2.10.2-beta.9bd46310" >}}
+{{< hextra/hero-badge link="https://github.com/prodaft/cradle/tree/v3.0.0" >}}
   <div class="hx-w-2 hx-h-2 hx-rounded-full hx-bg-primary-400"></div>
-  <span>Latest version: 2.10.2-beta.9bd46310</span>
+  <span>Latest version: 3.0.0</span>
   {{< icon name="arrow-circle-right" attributes="height=14" >}}
 {{< /hextra/hero-badge >}}
 

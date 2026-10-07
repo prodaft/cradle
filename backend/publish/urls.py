@@ -12,6 +12,6 @@ from .views.reports import (
 urlpatterns = [
     path("publish/", PublishReportAPIView.as_view(), name="publish_report"),
     path("", ReportListAPIView.as_view(), name="report_list"),
-    path("<uuid:pk>/", ReportDetailAPIView.as_view(), name="report_detail"),
-    path("<uuid:pk>/retry/", ReportRetryAPIView.as_view(), name="report_retry"),
+    path("<uuid:report_id>/", ReportDetailAPIView.as_view(), name="report_detail"),
+    path("<uuid:report_id>/retry/", ReportRetryAPIView.as_view(), name="report_retry"),
 ]

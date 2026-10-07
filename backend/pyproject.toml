@@ -1,6 +1,6 @@
 [project]
 name = "cradle-backend"
-version = "2.10.2"
+version = "3.0.0"
 description = "CRADLE Backend"
 requires-python = ">=3.14"
 dependencies = [
@@ -42,6 +42,9 @@ dependencies = [
     "docker==7.2.0",
     "django-storages[s3]==1.14.6",
     "pathvalidate==3.3.1",
+    "channels==4.3.2",
+    "channels-redis==4.3.0",
+    "daphne==4.2.3",
 ]
 
 [project.optional-dependencies]

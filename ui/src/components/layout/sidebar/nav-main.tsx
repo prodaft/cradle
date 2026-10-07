@@ -10,6 +10,7 @@ import {
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -72,67 +73,65 @@ export function NavMain({
     return (
         <SidebarGroup>
             {showLabel && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
-            <SidebarMenu>
+            <SidebarMenu className='gap-1'>
                 {items.map((item) =>
                     item.items && item.items.length > 0 ? (
                         isCollapsed ? (
                             <SidebarMenuItem key={item.title}>
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <SidebarMenuButton
-                                            tooltip={item.title}
-                                            isActive={item.isActive}
-                                        >
-                                            {item.icon && <item.icon />}
-                                            <span>{item.title}</span>
-                                            <ChevronRight className='ml-auto' />
-                                        </SidebarMenuButton>
+                                    <DropdownMenuTrigger
+                                        render={
+                                            <SidebarMenuButton
+                                                tooltip={item.title}
+                                                isActive={item.isActive}
+                                            />
+                                        }
+                                    >
+                                        {item.icon && <item.icon />}
+                                        <span>{item.title}</span>
+                                        <ChevronRight className='ml-auto' />
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent
                                         side='right'
                                         align='start'
                                         className='w-48'
                                     >
-                                        <DropdownMenuLabel>
-                                            {item.title}
-                                        </DropdownMenuLabel>
+                                        <DropdownMenuGroup>
+                                            <DropdownMenuLabel>
+                                                {item.title}
+                                            </DropdownMenuLabel>
+                                        </DropdownMenuGroup>
                                         <DropdownMenuSeparator />
                                         {item.items.map((subItem) => (
                                             <DropdownMenuItem
                                                 key={subItem.title}
-                                                asChild
                                                 className={
                                                     isSubItemActive(subItem.url)
                                                         ? 'bg-accent'
                                                         : ''
                                                 }
+                                                render={
+                                                    isExternalUrl(subItem.url) ? (
+                                                        <a
+                                                            href={subItem.url}
+                                                            onClick={(e) =>
+                                                                handleClick(
+                                                                    subItem.url,
+                                                                    e,
+                                                                )
+                                                            }
+                                                            target='_blank'
+                                                            rel='noopener noreferrer'
+                                                        />
+                                                    ) : (
+                                                        <Link to={subItem.url as any} />
+                                                    )
+                                                }
                                             >
-                                                {isExternalUrl(subItem.url) ? (
-                                                    <a
-                                                        href={subItem.url}
-                                                        onClick={(e) =>
-                                                            handleClick(subItem.url, e)
-                                                        }
-                                                        target='_blank'
-                                                        rel='noopener noreferrer'
-                                                    >
-                                                        {subItem.icon && (
-                                                            <subItem.icon />
-                                                        )}
-                                                        <span className='max-w-52 text-wrap'>
-                                                            {subItem.title}
-                                                        </span>
-                                                    </a>
-                                                ) : (
-                                                    <Link to={subItem.url as any}>
-                                                        {subItem.icon && (
-                                                            <subItem.icon />
-                                                        )}
-                                                        <span className='max-w-52 text-wrap'>
-                                                            {subItem.title}
-                                                        </span>
-                                                    </Link>
-                                                )}
+                                                {subItem.icon && <subItem.icon />}
+                                                <span className='max-w-52 text-wrap'>
+                                                    {subItem.title}
+                                                </span>
                                             </DropdownMenuItem>
                                         ))}
                                     </DropdownMenuContent>
@@ -141,32 +140,32 @@ export function NavMain({
                         ) : (
                             <Collapsible
                                 key={item.title}
-                                asChild
                                 defaultOpen={item.isActive}
                                 className='group/collapsible'
+                                render={<SidebarMenuItem />}
                             >
-                                <SidebarMenuItem>
-                                    <CollapsibleTrigger asChild>
+                                <CollapsibleTrigger
+                                    render={
                                         <SidebarMenuButton
                                             tooltip={item.title}
                                             isActive={item.isActive}
-                                        >
-                                            {item.icon && <item.icon />}
-                                            <span>{item.title}</span>
-                                            <ChevronRight className='ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
-                                        </SidebarMenuButton>
-                                    </CollapsibleTrigger>
-                                    <CollapsibleContent>
-                                        <SidebarMenuSub>
-                                            {item.items.map((subItem) => (
-                                                <SidebarMenuSubItem key={subItem.title}>
-                                                    <SidebarMenuSubButton
-                                                        asChild
-                                                        isActive={isSubItemActive(
-                                                            subItem.url,
-                                                        )}
-                                                    >
-                                                        {isExternalUrl(subItem.url) ? (
+                                        />
+                                    }
+                                >
+                                    {item.icon && <item.icon />}
+                                    <span>{item.title}</span>
+                                    <ChevronRight className='ml-auto transition-transform duration-200 group-data-open/collapsible:rotate-90' />
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                    <SidebarMenuSub>
+                                        {item.items.map((subItem) => (
+                                            <SidebarMenuSubItem key={subItem.title}>
+                                                <SidebarMenuSubButton
+                                                    isActive={isSubItemActive(
+                                                        subItem.url,
+                                                    )}
+                                                    render={
+                                                        isExternalUrl(subItem.url) ? (
                                                             <a
                                                                 href={subItem.url}
                                                                 onClick={(e) =>
@@ -177,26 +176,20 @@ export function NavMain({
                                                                 }
                                                                 target='_blank'
                                                                 rel='noopener noreferrer'
-                                                            >
-                                                                <span>
-                                                                    {subItem.title}
-                                                                </span>
-                                                            </a>
+                                                            />
                                                         ) : (
                                                             <Link
                                                                 to={subItem.url as any}
-                                                            >
-                                                                <span>
-                                                                    {subItem.title}
-                                                                </span>
-                                                            </Link>
-                                                        )}
-                                                    </SidebarMenuSubButton>
-                                                </SidebarMenuSubItem>
-                                            ))}
-                                        </SidebarMenuSub>
-                                    </CollapsibleContent>
-                                </SidebarMenuItem>
+                                                            />
+                                                        )
+                                                    }
+                                                >
+                                                    <span>{subItem.title}</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        ))}
+                                    </SidebarMenuSub>
+                                </CollapsibleContent>
                             </Collapsible>
                         )
                     ) : (
@@ -214,12 +207,10 @@ export function NavMain({
                                 <SidebarMenuButton
                                     tooltip={item.title}
                                     isActive={item.isActive}
-                                    asChild
+                                    render={<Link to={item.url as any} />}
                                 >
-                                    <Link to={item.url as any}>
-                                        {item.icon && <item.icon />}
-                                        <span>{item.title}</span>
-                                    </Link>
+                                    {item.icon && <item.icon />}
+                                    <span>{item.title}</span>
                                 </SidebarMenuButton>
                             )}
                         </SidebarMenuItem>

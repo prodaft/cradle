@@ -5,30 +5,65 @@ import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { queryKeys } from '@/hooks/query';
+import {
+    sortFromUrl,
+    sortToOrderBy,
+    sortToUrl,
+    type SearchState,
+} from '@/lib/search-query/search-schema';
 import { cn } from '@/lib/utils';
 import { fetchClient } from '@services/openapi/client';
 import type { operations } from '@services/openapi/schema';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Sparkles } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { parseParam, toFilterValue } from './enrichment-list-status';
+import { SEARCH_SCHEMA } from './enrichment-list-search-schema';
+import { parseParam } from './enrichment-list-status';
 import EnrichmentTable from './enrichment-table';
 
 type ListQuery = NonNullable<
     operations['enrichment_request_list']['parameters']['query']
 >;
 
-interface Filters {
-    status: string;
-    user: string;
-}
+const DEFAULT_ORDER_BY = '-created_at';
 
 export interface EnrichmentListProps {
     hidePageHeader?: boolean;
-    /** Scope list to enrichment requests for this entry (dashboard). */
     entryId?: number;
+}
+
+interface ListParams {
+    title?: string;
+    status?: string;
+    user?: string;
+    sort_field?: string;
+    sort_direction?: 'asc' | 'desc';
+}
+
+function toSearchState(params: ListParams): SearchState {
+    const status = parseParam(params.status);
+    return {
+        q: params.title || undefined,
+        values: {
+            ...(status ? { status: [status] } : {}),
+            ...(params.user ? { user: [params.user] } : {}),
+        },
+        dates: {},
+        sort: sortFromUrl(params.sort_field, params.sort_direction, SEARCH_SCHEMA),
+    };
+}
+
+function toListParams(state: SearchState): ListParams {
+    const sort = sortToUrl(state.sort, SEARCH_SCHEMA);
+    return {
+        title: state.q || undefined,
+        status: parseParam(state.values.status?.[0]),
+        user: state.values.user?.[0] || undefined,
+        sort_field: sort.field,
+        sort_direction: sort.direction,
+    };
 }
 
 export default function EnrichmentList({
@@ -42,51 +77,52 @@ export default function EnrichmentList({
     });
     const search = useSearch({ strict: false });
     const isScoped = entryId != null;
-    const status = isScoped ? undefined : parseParam(search.status);
-    const sortField = (search.sort_field as string) || 'created_at';
-    const sortDirection: 'asc' | 'desc' =
-        (search.sort_direction as 'asc' | 'desc') || 'desc';
-    const pageSize = Number(search.pagesize) || 20;
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [page, setPage] = useState(1);
-    const activePage = isScoped ? page : Number(search.page ?? 1) || 1;
+    const [scopedPage, setScopedPage] = useState(1);
+    const [scopedPageSize, setScopedPageSize] = useState(20);
+    const [scopedParams, setScopedParams] = useState<ListParams>({});
 
-    const [applied, setApplied] = useState((search.title as string) || '');
+    const params: ListParams = isScoped
+        ? scopedParams
+        : {
+              title: search.title as string | undefined,
+              status: search.status as string | undefined,
+              user: search.user as string | undefined,
+              sort_field: search.sort_field as string | undefined,
+              sort_direction: search.sort_direction as 'asc' | 'desc' | undefined,
+          };
+    const { title, status, user, sort_field, sort_direction } = params;
+    const activePage = isScoped ? scopedPage : Number(search.page ?? 1) || 1;
+    const pageSize = isScoped ? scopedPageSize : Number(search.pagesize) || 20;
 
-    const [filters, setFilters] = useState<Filters>({
-        status: toFilterValue(status),
-        user: (search.user__username as string) || '',
-    });
+    const searchState = useMemo(
+        () =>
+            toSearchState({
+                title,
+                status,
+                user,
+                sort_field,
+                sort_direction,
+            }),
+        [title, status, user, sort_field, sort_direction],
+    );
 
     const listQuery = useMemo((): ListQuery => {
-        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-        const apiStatus = isScoped
-            ? parseParam(filters.status === 'all' ? undefined : filters.status)
-            : status;
-
         return Object.fromEntries(
             Object.entries({
                 page: activePage,
                 page_size: pageSize,
-                title: applied || undefined,
-                user__username: filters.user || undefined,
-                status: apiStatus,
-                order_by: orderBy,
+                title: title || undefined,
+                user: user || undefined,
+                status: parseParam(status),
+                // Unknown sort fields (stale URLs) fall back to the default instead of a 400.
+                order_by:
+                    sortToOrderBy(searchState.sort, SEARCH_SCHEMA) ?? DEFAULT_ORDER_BY,
                 ...(entryId != null ? { entry_id: String(entryId) } : {}),
             }).filter(([, v]) => v !== undefined),
         ) as ListQuery;
-    }, [
-        activePage,
-        pageSize,
-        applied,
-        filters,
-        sortField,
-        sortDirection,
-        entryId,
-        status,
-        isScoped,
-    ]);
+    }, [activePage, pageSize, title, user, status, searchState.sort, entryId]);
 
     const {
         data: requestsPage,
@@ -110,57 +146,50 @@ export default function EnrichmentList({
     const rows = requestsPage?.results ?? [];
     const totalPages = requestsPage?.total_pages ?? 1;
 
-    useEffect(() => {
-        if (isScoped) return;
-        setFilters((prev) => ({
-            ...prev,
-            status: toFilterValue(status),
-            user: (search.user__username as string) || '',
-        }));
-    }, [search.user__username, status, isScoped]);
+    const navigateSearch = useCallback(
+        (patch: Record<string, unknown>) => {
+            const next: Record<string, unknown> = { ...search, ...patch };
+            for (const key of Object.keys(next)) {
+                if (next[key] === undefined || next[key] === '') delete next[key];
+            }
+            router.navigate({
+                to: location.pathname as any,
+                search: next as any,
+                replace: true,
+            });
+        },
+        [search, router, location.pathname],
+    );
 
     const goToPage = useCallback(
         (target: number) => {
             if (isScoped) {
-                setPage(target);
-                return;
+                setScopedPage(target);
+            } else {
+                navigateSearch({ page: target });
             }
-            router.navigate({
-                to: location.pathname as any,
-                search: ((prev: any) => ({ ...prev, page: target })) as any,
-                replace: true,
-            });
         },
-        [isScoped, router, location.pathname],
+        [isScoped, navigateSearch],
     );
 
     const applySearch = useCallback(
-        (value: string) => {
+        (state: SearchState) => {
+            const next = toListParams(state);
             if (isScoped) {
-                setPage(1);
+                setScopedParams(next);
+                setScopedPage(1);
             } else {
-                const next: any = { ...search, page: 1, title: value || undefined };
-                Object.keys(next).forEach((key) => {
-                    if (next[key] === undefined || next[key] === '') {
-                        delete next[key];
-                    }
-                });
-                router.navigate({
-                    to: location.pathname as any,
-                    search: next,
-                    replace: true,
-                });
+                navigateSearch({ ...next, page: 1 });
             }
-            setApplied(value);
         },
-        [search, router, location.pathname, isScoped],
+        [isScoped, navigateSearch],
     );
 
     const deleteRequest = useMutation({
         mutationFn: async (id: string) => {
             const { error, response } = await fetchClient.DELETE(
-                '/intelio/enrich/{id}/',
-                { params: { path: { id } } },
+                '/intelio/enrich/{enrichment_id}/',
+                { params: { path: { enrichment_id: id } } },
             );
             if (error) throw { response, error };
         },
@@ -172,8 +201,8 @@ export default function EnrichmentList({
     const rerunRequest = useMutation({
         mutationFn: async (id: string) => {
             const { data, error, response } = await fetchClient.POST(
-                '/intelio/enrich/{id}/restart/',
-                { params: { path: { id } } },
+                '/intelio/enrich/{enrichment_id}/restart/',
+                { params: { path: { enrichment_id: id } } },
             );
             if (error) throw { response, error };
             return data;
@@ -183,82 +212,13 @@ export default function EnrichmentList({
         },
     });
 
-    const applySort = (field: string, direction: 'asc' | 'desc') => {
-        if (isScoped) setPage(1);
-        router.navigate({
-            to: location.pathname as any,
-            search: {
-                ...search,
-                ...(isScoped ? {} : { page: 1 }),
-                sort_field: field,
-                sort_direction: direction,
-            } as any,
-            replace: true,
-        });
-    };
-
     const changePageSize = (size: number) => {
-        if (isScoped) setPage(1);
-        router.navigate({
-            to: location.pathname as any,
-            search: {
-                ...search,
-                ...(isScoped ? {} : { page: 1 }),
-                pagesize: String(size),
-            } as any,
-            replace: true,
-        });
-    };
-
-    const applyFilter = (column: keyof Filters, value: string) => {
-        if (column === 'status') {
-            const parsed = parseParam(value);
-            if (!isScoped) {
-                const next: Record<string, unknown> = { ...search, page: 1 };
-                if (parsed) {
-                    next.status = parsed;
-                } else {
-                    delete next.status;
-                }
-                router.navigate({
-                    to: location.pathname as any,
-                    search: next as any,
-                    replace: true,
-                });
-            } else {
-                goToPage(1);
-            }
-            setFilters((prev) => ({
-                ...prev,
-                status: toFilterValue(parsed),
-            }));
-            return;
+        if (isScoped) {
+            setScopedPageSize(size);
+            setScopedPage(1);
+        } else {
+            navigateSearch({ page: 1, pagesize: String(size) });
         }
-
-        if (column === 'user' && !isScoped) {
-            const next: Record<string, unknown> = { ...search, page: 1 };
-            if (value) {
-                next.user__username = value;
-            } else {
-                delete next.user__username;
-            }
-            router.navigate({
-                to: location.pathname as any,
-                search: next as any,
-                replace: true,
-            });
-            setFilters((prev) => ({
-                ...prev,
-                user: value || '',
-            }));
-            return;
-        }
-
-        setFilters((prev) => ({
-            ...prev,
-            [column]: value,
-        }));
-        goToPage(1);
     };
 
     const deleteRequests = async (ids: string[]) => {
@@ -301,14 +261,16 @@ export default function EnrichmentList({
                     </div>
                     <div className='flex gap-2'>
                         <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    onClick={() => setIsCreateOpen(true)}
-                                    variant='default'
-                                >
-                                    <Sparkles />
-                                    New Request
-                                </Button>
+                            <TooltipTrigger
+                                render={
+                                    <Button
+                                        onClick={() => setIsCreateOpen(true)}
+                                        variant='default'
+                                    />
+                                }
+                            >
+                                <Sparkles />
+                                New Request
                             </TooltipTrigger>
                             <TooltipContent>
                                 Create a new enrichment request{' '}
@@ -331,16 +293,12 @@ export default function EnrichmentList({
                     isLoading={isLoading}
                     page={activePage}
                     totalPages={totalPages}
+                    totalCount={requestsPage?.count}
                     onPageChange={goToPage}
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                    onSort={applySort}
                     pageSize={pageSize}
                     onPageSizeChange={changePageSize}
-                    onColumnFilterChange={applyFilter}
-                    filters={filters}
-                    initialSearch={applied}
-                    onSearchSubmit={applySearch}
+                    searchState={searchState}
+                    onSearchApply={applySearch}
                     onDelete={deleteRequests}
                     onRerun={rerunRequests}
                 />

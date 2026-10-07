@@ -33,7 +33,7 @@ export function DataTableColumnHeader<TData, TValue>({
         <DropdownMenu>
             <DropdownMenuTrigger
                 className={cn(
-                    '-ml-1.5 flex h-8 items-center gap-1.5 rounded-md px-2 py-1.5 hover:bg-accent focus:outline-none focus:ring-1 focus:ring-ring data-[state=open]:bg-accent [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground',
+                    '-ml-1.5 flex h-8 items-center gap-1.5 rounded-md px-2 py-1.5 hover:bg-accent focus:outline-none focus:ring-1 focus:ring-ring data-popup-open:bg-accent [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground',
                     className,
                 )}
                 {...props}
@@ -52,6 +52,7 @@ export function DataTableColumnHeader<TData, TValue>({
                 {column.getCanSort() && (
                     <>
                         <DropdownMenuCheckboxItem
+                            closeOnClick
                             className='relative pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto [&_svg]:text-muted-foreground'
                             checked={column.getIsSorted() === 'asc'}
                             onClick={() => column.toggleSorting(false)}
@@ -60,6 +61,7 @@ export function DataTableColumnHeader<TData, TValue>({
                             Asc
                         </DropdownMenuCheckboxItem>
                         <DropdownMenuCheckboxItem
+                            closeOnClick
                             className='relative pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto [&_svg]:text-muted-foreground'
                             checked={column.getIsSorted() === 'desc'}
                             onClick={() => column.toggleSorting(true)}
@@ -80,6 +82,7 @@ export function DataTableColumnHeader<TData, TValue>({
                 )}
                 {column.getCanHide() && (
                     <DropdownMenuCheckboxItem
+                        closeOnClick
                         className='relative pr-8 pl-2 [&>span:first-child]:right-2 [&>span:first-child]:left-auto [&_svg]:text-muted-foreground'
                         checked={!column.getIsVisible()}
                         onClick={() => column.toggleVisibility(false)}

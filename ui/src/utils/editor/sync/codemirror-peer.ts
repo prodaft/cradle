@@ -9,7 +9,7 @@ import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import { EDITOR_SYNC_CONNECTION_CLOSED, type EditorSyncConnection } from './connection';
 
 /**
- * CodeMirror extensions that sync the editor document across tabs (via {@link EditorSyncConnection}),
+ * CodeMirror extensions that sync the editor document with the live note session (via {@link EditorSyncConnection}),
  * using `@codemirror/collab` as in
  * {@link https://codemirror.net/examples/collab/ | CodeMirror’s collab example}.
  */
@@ -27,6 +27,7 @@ export function codemirrorEditorSyncPeerExtensions(
             }
 
             update(update: ViewUpdate) {
+                connection.setPendingLocal?.(sendableUpdates(update.state).length > 0);
                 if (update.docChanged) void this.push();
             }
 

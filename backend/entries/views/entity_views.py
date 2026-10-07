@@ -94,9 +94,7 @@ class EntityList(ListCreateAPIView):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Entry.entities.none()
-        if self.request.user.is_cradle_admin:
-            return Entry.entities.all()
-        return Entry.entities.filter(id__in=Access.objects.get_accessible_entity_ids(self.request.user.id))
+        return Entry.entities.readable_entities(self.request.user)
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -199,7 +197,7 @@ class EntityDetail(APIView):
     def get(self, request: Request, entity_id: int) -> Response:
         """Return entity details; requires access permission."""
         entity = _get_entity_or_404(entity_id)
-        if not (request.user.is_cradle_admin or Access.objects.user_has_entity_access(request.user.id, entity_id)):
+        if not Access.objects.has_access_to_entities(request.user, {entity}, {AccessType.READ, AccessType.READ_WRITE}):
             raise PermissionDeniedException(detail="You do not have access to this entity.")
 
         serializer = EntitySerializer(entity)
@@ -209,7 +207,9 @@ class EntityDetail(APIView):
         """Delete entity and remap note links (admin only)."""
         entity = _get_entity_or_404(entity_id)
         if not request.user.is_cradle_admin:
-            if not Access.objects.user_has_entity_access(request.user.id, entity_id):
+            if not Access.objects.has_access_to_entities(
+                request.user, {entity}, {AccessType.READ, AccessType.READ_WRITE}
+            ):
                 raise PermissionDeniedException(detail="You do not have access to this entity.")
             raise AdminOnlyEntityDeleteException(detail="Only administrators can delete entities.")
         entity.delete_renaming(request.user.id)
@@ -220,7 +220,7 @@ class EntityDetail(APIView):
     def patch(self, request: Request, entity_id: int) -> Response:
         """Update entity; is_public change requires admin."""
         entity = _get_entity_or_404(entity_id)
-        if not (Access.objects.has_access_to_entities(request.user, {entity}, {AccessType.READ_WRITE})):
+        if not Access.objects.has_access_to_entities(request.user, {entity}, {AccessType.READ_WRITE}):
             raise PermissionDeniedException(detail="You do not have write access to this entity.")
 
         serializer = EntitySerializer(entity, data=request.data)
