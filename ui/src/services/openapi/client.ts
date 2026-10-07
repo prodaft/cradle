@@ -7,6 +7,7 @@ const baseUrl = import.meta.env.VITE_API_BASE_URL ?? '';
 
 const AUTH_PATHS = [
     '/auth/login',
+    '/auth/oauth/login',
     '/auth/refresh',
     '/auth/logout',
     '/auth/reset-password',
@@ -22,35 +23,32 @@ function getCsrfToken(): string | null {
     return raw === undefined ? null : decodeURIComponent(raw);
 }
 
-let _accessToken: string | null = null;
+type EnsureSessionFn = () => Promise<void>;
+type RefreshSessionFn = () => Promise<boolean>;
 
-export function setClientAccessToken(token: string | null) {
-    _accessToken = token;
-}
+let _ensureSession: EnsureSessionFn | null = null;
+let _refreshSession: RefreshSessionFn | null = null;
 
-type GetAccessTokenFn = () => Promise<string>;
-type RefreshAccessTokenFn = () => Promise<boolean>;
-
-let _getAccessToken: GetAccessTokenFn | null = null;
-let _refreshAccessToken: RefreshAccessTokenFn | null = null;
-
+/**
+ * Auth tokens live only in HttpOnly cookies; these callbacks keep the cookie session
+ * fresh (refresh before expiry, and once more after a 401).
+ */
 export function setClientAuthCallbacks(
-    getAccessToken: GetAccessTokenFn | null,
-    refreshAccessToken: RefreshAccessTokenFn | null,
+    ensureSession: EnsureSessionFn | null,
+    refreshSession: RefreshSessionFn | null,
 ) {
-    _getAccessToken = getAccessToken;
-    _refreshAccessToken = refreshAccessToken;
+    _ensureSession = ensureSession;
+    _refreshSession = refreshSession;
 }
 
-export async function getClientAccessToken(): Promise<string | null> {
-    if (_getAccessToken) {
-        try {
-            return await _getAccessToken();
-        } catch {
-            return null;
-        }
+export async function ensureClientSession(): Promise<boolean> {
+    if (!_ensureSession) return false;
+    try {
+        await _ensureSession();
+        return true;
+    } catch {
+        return false;
     }
-    return _accessToken;
 }
 
 function isAuthPath(url: string): boolean {
@@ -71,19 +69,11 @@ fetchClient.use({
     onRequest: async ({ request }) => {
         const headers = new Headers(request.headers);
 
-        if (!isAuthPath(request.url)) {
-            let token: string | null = null;
-            if (_getAccessToken) {
-                try {
-                    token = await _getAccessToken();
-                } catch {
-                    throw new SessionExpiredException('Unable to obtain access token');
-                }
-            } else if (_accessToken) {
-                token = _accessToken;
-            }
-            if (token) {
-                headers.set('Authorization', `Bearer ${token}`);
+        if (!isAuthPath(request.url) && _ensureSession) {
+            try {
+                await _ensureSession();
+            } catch {
+                throw new SessionExpiredException('Unable to renew session');
             }
         }
 
@@ -104,25 +94,19 @@ fetchClient.use({
         if (response.status !== 401 || isAuthPath(request.url)) {
             return;
         }
-        if (!_refreshAccessToken) return;
+        if (!_refreshSession) return;
 
-        const ok = await _refreshAccessToken();
+        const ok = await _refreshSession();
         if (!ok) {
             throw new SessionExpiredException('Session expired');
         }
-
-        const newToken = _accessToken;
-        if (!newToken) return;
 
         const method = request.method.toUpperCase();
         if (method !== 'GET' && method !== 'HEAD') {
             return;
         }
 
-        const newHeaders = new Headers(request.headers);
-        newHeaders.set('Authorization', `Bearer ${newToken}`);
-        const retryRequest = new Request(request, { headers: newHeaders });
-        const retryResponse = await fetch(retryRequest);
+        const retryResponse = await fetch(request);
 
         return retryResponse;
     },

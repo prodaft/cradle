@@ -74,11 +74,16 @@ class NoteCollabConsumerTest(TransactionTestCase):
     async def connect(self, user, note=None):
         note = note or self.note
         comm = WebsocketCommunicator(
-            application, f"/api/ws/notes/{note.id}/", headers=[(b"origin", b"http://localhost")]
+            application,
+            f"/api/ws/notes/{note.id}/",
+            headers=[
+                (b"origin", b"http://localhost"),
+                (b"cookie", f"access_token={AccessToken.for_user(user)}".encode()),
+            ],
         )
         connected, _ = await comm.connect()
         self.assertTrue(connected)
-        await comm.send_json_to({"type": "auth", "token": str(AccessToken.for_user(user))})
+        await comm.send_json_to({"type": "auth"})
         return comm
 
     async def request(self, comm, **message):
@@ -97,10 +102,12 @@ class NoteCollabConsumerTest(TransactionTestCase):
 
     async def test_rejects_invalid_token(self):
         comm = WebsocketCommunicator(
-            application, f"/api/ws/notes/{self.note.id}/", headers=[(b"origin", b"http://localhost")]
+            application,
+            f"/api/ws/notes/{self.note.id}/",
+            headers=[(b"origin", b"http://localhost"), (b"cookie", b"access_token=garbage")],
         )
         await comm.connect()
-        await comm.send_json_to({"type": "auth", "token": "garbage"})
+        await comm.send_json_to({"type": "auth"})
         self.assertEqual((await comm.receive_output(timeout=5))["code"], consumers.CLOSE_UNAUTHENTICATED)
 
     async def test_rejects_user_without_access(self):

@@ -5,11 +5,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
+from user.authentication import CookieJWTAuthentication
 from user.permissions import HasAdminRole
 
 from .filters import EventLogFilter
@@ -44,7 +44,7 @@ class EventLogListView(ListAPIView):
     filterset_class = EventLogFilter
     pagination_class = TotalPagesPagination
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
 
     def get_queryset(self):

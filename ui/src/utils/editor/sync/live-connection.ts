@@ -1,6 +1,7 @@
+import { apiWebSocketUrl } from '@/utils/websocket';
 import type { Update } from '@codemirror/collab';
 import { ChangeSet } from '@codemirror/state';
-import { getClientAccessToken } from '@services/openapi/client';
+import { ensureClientSession } from '@services/openapi/client';
 import { EDITOR_SYNC_CONNECTION_CLOSED, type EditorSyncConnection } from './connection';
 import { ReconnectTimer } from './reconnect-timer';
 
@@ -61,17 +62,7 @@ type UpdateJSON = { clientID: string; changes: unknown };
 
 const CLOSE_FORBIDDEN = 4403;
 const HISTORY_SIZE = 200;
-// A request unanswered for this long means the connection is dead (the browser may not
-// notice for minutes). Longer than the server's worst case: it waits up to 10s for the
-// note's session lock.
 const REQUEST_TIMEOUT = 15_000;
-
-function socketUrl(noteId: string): string {
-    const base = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
-    const url = new URL(`${base}/ws/notes/${noteId}/`, window.location.href);
-    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-    return url.toString();
-}
 
 /**
  * Live editing of a note with other users, through the server's WebSocket authority
@@ -186,7 +177,8 @@ class LiveConnection {
         };
     }
 
-    connect(timeoutMs: number): Promise<boolean> {
+    async connect(timeoutMs: number): Promise<boolean> {
+        if (!(await ensureClientSession())) return false;
         return new Promise((resolve) => {
             let settled = false;
             const finish = (ok: boolean) => {
@@ -204,20 +196,15 @@ class LiveConnection {
 
             let socket: WebSocket;
             try {
-                socket = new WebSocket(socketUrl(this.noteId));
+                socket = new WebSocket(apiWebSocketUrl(`/ws/notes/${this.noteId}/`));
             } catch {
                 finish(false);
                 return;
             }
             this.socket = socket;
 
-            socket.onopen = async () => {
-                const token = await getClientAccessToken();
-                if (!token) {
-                    socket.close();
-                    return;
-                }
-                socket.send(JSON.stringify({ type: 'auth', token }));
+            socket.onopen = () => {
+                socket.send(JSON.stringify({ type: 'auth' }));
             };
             socket.onmessage = (event) => {
                 let data: Record<string, unknown>;

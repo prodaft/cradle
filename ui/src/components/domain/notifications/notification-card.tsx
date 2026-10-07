@@ -1,17 +1,11 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { queryKeys } from '@/hooks/query';
 import {
-    BellSimpleIcon,
-    CheckCircleIcon,
-    EnvelopeIcon,
-    EnvelopeOpenIcon,
-    FileTextIcon,
-    ShieldCheckIcon,
-    SparkleIcon,
-    UserPlusIcon,
-    WarningCircleIcon,
-    type IconWeight,
-} from '@phosphor-icons/react';
+    notificationDestructive,
+    notificationIcon,
+    notificationTitle,
+} from '@/utils/notification-titles';
+import { EnvelopeIcon, EnvelopeOpenIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -34,67 +28,6 @@ interface NotificationCardProps {
     notification: Notification;
 }
 
-type AlertVariant = 'default' | 'destructive';
-
-type NotificationVisual = {
-    icon: React.ComponentType<{
-        size?: number | string;
-        weight?: IconWeight;
-        className?: string;
-    }>;
-    title: string;
-    variant: AlertVariant;
-};
-
-const DEFAULT_VISUAL: NotificationVisual = {
-    icon: BellSimpleIcon,
-    title: 'Notification',
-    variant: 'default',
-};
-
-const VISUALS: Record<string, NotificationVisual> = {
-    request_access_notification: {
-        icon: ShieldCheckIcon,
-        title: 'Access request',
-        variant: 'default',
-    },
-    access_granted_notification: {
-        icon: CheckCircleIcon,
-        title: 'Access granted',
-        variant: 'default',
-    },
-    new_user_notification: {
-        icon: UserPlusIcon,
-        title: 'New user',
-        variant: 'default',
-    },
-    report_render_notification: {
-        icon: FileTextIcon,
-        title: 'Report ready',
-        variant: 'default',
-    },
-    report_processing_error_notification: {
-        icon: WarningCircleIcon,
-        title: 'Report failed',
-        variant: 'destructive',
-    },
-    enrichment_complete_notification: {
-        icon: SparkleIcon,
-        title: 'Enrichment complete',
-        variant: 'default',
-    },
-    enrichment_error_notification: {
-        icon: WarningCircleIcon,
-        title: 'Enrichment failed',
-        variant: 'destructive',
-    },
-    message_notification: {
-        icon: BellSimpleIcon,
-        title: 'Message',
-        variant: 'default',
-    },
-};
-
 export default function NotificationCard({
     notification,
 }: NotificationCardProps): React.JSX.Element {
@@ -107,8 +40,9 @@ export default function NotificationCard({
         setUnreadStatus(is_unread);
     }, [id, is_unread]);
 
-    const visual = (notification.type && VISUALS[notification.type]) || DEFAULT_VISUAL;
-    const Icon = visual.icon;
+    const title = notificationTitle(notification.type);
+    const Icon = notificationIcon(notification.type);
+    const variant = notificationDestructive(notification.type) ? 'destructive' : 'default';
 
     const updateUnreadStatus = useMutation({
         mutationFn: async ({ id, is_unread }: { id: string; is_unread: boolean }) => {
@@ -246,11 +180,11 @@ export default function NotificationCard({
     );
 
     return (
-        <Alert variant={visual.variant}>
+        <Alert variant={variant}>
             <Icon weight='fill' />
 
             <AlertTitle className='flex items-center gap-2 pr-6'>
-                <span className='truncate'>{visual.title}</span>
+                <span className='truncate'>{title}</span>
                 <Tooltip>
                     <TooltipTrigger
                         render={

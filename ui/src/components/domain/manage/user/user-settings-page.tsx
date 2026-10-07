@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import {
     ClockCounterClockwiseIcon,
-    GearSixIcon,
+    LightningIcon,
     LockKeyIcon,
     PasswordIcon,
     UserIcon,
@@ -28,7 +28,6 @@ import {
 import { useMemo } from 'react';
 import UserAccountForm from './user-account-form';
 import UserActivityList from './user-activity-list';
-import UserAdministrativeForm from './user-administrative-form';
 import UserManagementActions from './user-management-actions';
 import UserPermissionsForm from './user-permissions-form';
 
@@ -37,13 +36,13 @@ const USER_SETTINGS_ITEMS = [
         id: 'account',
         label: 'Account',
         icon: UserIcon,
-        description: 'Manage user account information and basic settings',
+        description: 'Manage user account information, access and limits',
     },
     {
-        id: 'administrative',
-        label: 'Administrative',
-        icon: GearSixIcon,
-        description: 'Configure user permissions and administrative settings',
+        id: 'actions',
+        label: 'Actions',
+        icon: LightningIcon,
+        description: 'One-time actions for this user, applied immediately',
     },
     {
         id: 'permissions',
@@ -62,12 +61,6 @@ const USER_SETTINGS_ITEMS = [
         label: 'Sessions',
         icon: PasswordIcon,
         description: 'View and manage active user sessions',
-    },
-    {
-        id: 'management',
-        label: 'Management',
-        icon: GearSixIcon,
-        description: 'Administrative actions for user management',
     },
 ];
 
@@ -103,7 +96,7 @@ export default function UserSettingsPage() {
     const visibleTabs = useMemo(
         () =>
             isOtherAdmin
-                ? USER_SETTINGS_ITEMS.filter((item) => item.id !== 'management')
+                ? USER_SETTINGS_ITEMS.filter((item) => item.id !== 'actions')
                 : USER_SETTINGS_ITEMS,
         [isOtherAdmin],
     );
@@ -204,12 +197,6 @@ export default function UserSettingsPage() {
                                                 isOtherAdmin={isOtherAdmin}
                                             />
                                         )}
-                                        {tab === 'administrative' && (
-                                            <UserAdministrativeForm
-                                                userId={userId}
-                                                isOtherAdmin={isOtherAdmin}
-                                            />
-                                        )}
                                         {tab === 'permissions' && (
                                             <UserPermissionsForm
                                                 id={userId}
@@ -224,7 +211,7 @@ export default function UserSettingsPage() {
                                         {tab === 'sessions' && (
                                             <ActiveSessions userId={userId} />
                                         )}
-                                        {!isOtherAdmin && tab === 'management' && (
+                                        {!isOtherAdmin && tab === 'actions' && (
                                             <UserManagementActions userId={userId} />
                                         )}
                                     </CardContent>

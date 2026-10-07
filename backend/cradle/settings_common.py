@@ -151,7 +151,6 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "user.authentication.APIKeyAuthentication",
         "user.authentication.CookieJWTAuthentication",
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_SCHEMA_CLASS": "core.openapi.CradleAutoSchema",
     "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
@@ -236,10 +235,11 @@ ASGI_APPLICATION = "cradle.asgi.application"
 
 
 def channel_layers(redis_url: str | None) -> dict:
-    """Channels layer for live note editing; Redis is required with more than one process."""
+    """Channels layer for WebSockets. Redis is required with more than one process."""
     if not redis_url:
         return {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
     return {"default": {"BACKEND": "channels_redis.core.RedisChannelLayer", "CONFIG": {"hosts": [redis_url]}}}
+
 
 CSRF_COOKIE_NAME = "csrf_token"
 CSRF_COOKIE_SECURE = True
@@ -308,9 +308,6 @@ MINIO_BACKEND_URL = None
 # UUID segment for Django admin URL: /admin/<ADMIN_PATH_UUID>/
 ADMIN_PATH_UUID = "1eef2e9b-6350-4fb7-a65b-ccaaf09c39b2"
 
-CATALYST_HOST = "https://prod.blindspot.prodaft.com"
-CATALYST_PUBLISH_CATEGORY = "RESEARCH"
-CATALYST_PUBLISH_SUBCATEGORY = "4dff0ddf-fc2f-4a8e-b43f-1bc25973537b"
 
 # File upload max size limit
 FILE_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024

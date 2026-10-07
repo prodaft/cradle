@@ -18,6 +18,23 @@ from mail.models import (
 )
 from user.models import CradleUser
 
+from .realtime import broadcast_notification
+
+_SOCKET_TYPES = {
+    "AccessGrantedNotification": "access_granted_notification",
+    "AccessRequestNotification": "request_access_notification",
+    "NewUserNotification": "new_user_notification",
+    "ReportRenderNotification": "report_render_notification",
+    "ReportProcessingErrorNotification": "report_processing_error_notification",
+    "EnrichmentCompleteNotification": "enrichment_complete_notification",
+    "EnrichmentErrorNotification": "enrichment_error_notification",
+}
+
+
+def _socket_type(notification: "MessageNotification") -> str:
+    """Type name for the live signal, matching the in-app notification title."""
+    return _SOCKET_TYPES.get(type(notification).__name__, "message_notification")
+
 
 class MessageNotification(LifecycleModel):
     """Base notification model. Dispatches email on creation via get_mail."""
@@ -43,6 +60,11 @@ class MessageNotification(LifecycleModel):
     def get_mail(self):
         """Return the mail instance to send, or None if no email."""
         return None
+
+    @hook(AFTER_CREATE, on_commit=True)
+    def broadcast_created(self, *args, **kwargs):
+        """Signal open clients to refetch once the row is committed."""
+        broadcast_notification(self.user_id, self.message, _socket_type(self), str(self.id))
 
     @hook(AFTER_CREATE)
     def send_mail(self, *args, **kwargs):

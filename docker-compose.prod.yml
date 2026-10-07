@@ -45,6 +45,7 @@ x-backend: &backend
   image: ghcr.io/prodaft/cradle:${CRADLE_VERSION:?set CRADLE_VERSION}
   restart: unless-stopped
   environment: *backend-env
+  networks: [internal, web, egress]
   depends_on:
     postgres:
       condition: service_healthy
@@ -90,12 +91,14 @@ services:
       - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "${HTTP_BIND:-127.0.0.1}:${HTTP_PORT:-8000}:8000"
+    networks: [web, egress]
     depends_on:
       cradle:
         condition: service_healthy
 
   postgres:
     image: pgrouting/pgrouting:16-3.5-4.0
+    networks: [internal]
     restart: unless-stopped
     environment:
       POSTGRES_DB: cradle
@@ -111,6 +114,7 @@ services:
 
   redis:
     image: redis:8-alpine
+    networks: [internal]
     restart: unless-stopped
     volumes:
       - redis_data:/data
@@ -121,7 +125,8 @@ services:
       retries: 5
 
   rabbitmq:
-    image: rabbitmq:4-management-alpine
+    image: rabbitmq:4-alpine
+    networks: [internal]
     restart: unless-stopped
     hostname: rabbitmq
     environment:
@@ -138,6 +143,7 @@ services:
 
   minio:
     image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    networks: [internal, web]
     command: server /data
     restart: unless-stopped
     environment:
@@ -151,6 +157,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+networks:
+  internal:
+    internal: true
+  web:
+    internal: true
+  egress:
 
 volumes:
   postgres_data:

@@ -451,7 +451,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                                 htmlFor='isPublic'
                                                 className='text-sm block mb-0.5'
                                             >
-                                                Publicly Available
+                                                Public
                                             </FieldLabel>
                                             <FieldDescription>
                                                 Allow public access to this entity

@@ -138,9 +138,9 @@ export default function SetUserPasswordDialog({
             <DialogContent className='sm:max-w-md'>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <DialogHeader>
-                        <DialogTitle>Set Password</DialogTitle>
+                        <DialogTitle>Change Password</DialogTitle>
                         <DialogDescription>
-                            Set a new password for this user. The user will need to use
+                            Change the password for this user. The user will need to use
                             this password to log in.
                         </DialogDescription>
                     </DialogHeader>
@@ -300,7 +300,7 @@ export default function SetUserPasswordDialog({
                             size='sm'
                             disabled={setUserPassword.isPending}
                         >
-                            {setUserPassword.isPending ? 'Setting...' : 'Confirm'}
+                            {setUserPassword.isPending ? 'Changing...' : 'Change'}
                         </Button>
                     </DialogFooter>
                 </form>

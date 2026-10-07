@@ -18,9 +18,9 @@ class UserDetailTest(UserTestCase):
         self.token_admin = str(AccessToken.for_user(self.admin))
         self.token_normal = str(AccessToken.for_user(self.user))
         self.token_normal2 = str(AccessToken.for_user(self.user2))
-        self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
-        self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
-        self.headers_normal2 = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal2}"}
+        self.headers_admin = {"HTTP_COOKIE": f"access_token={self.token_admin}"}
+        self.headers_normal = {"HTTP_COOKIE": f"access_token={self.token_normal}"}
+        self.headers_normal2 = {"HTTP_COOKIE": f"access_token={self.token_normal2}"}
 
     def test_delete_user_successfully(self):
         response = self.client.delete(

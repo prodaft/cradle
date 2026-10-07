@@ -9,7 +9,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.models import Access
 from core.exceptions import CoreErrorCodes
@@ -19,7 +18,7 @@ from core.validators import validate_str_list_param
 from entries.enums import EntryType
 from entries.models import Entry
 from entries.serializers import EntryResponseSerializer
-from user.authentication import APIKeyAuthentication
+from user.authentication import APIKeyAuthentication, CookieJWTAuthentication
 
 from ..exceptions import InvalidSearchSyntaxException, QueryErrorCodes
 from ..filters import EntryFilter
@@ -63,7 +62,7 @@ class EntryListQuery(ListAPIView):
     """List entries with filters (type, subtype, name, search, referenced_in)."""
 
     serializer_class = EntryResponseSerializer
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_class = EntryFilter
@@ -79,7 +78,7 @@ class EntryListQuery(ListAPIView):
 class AdvancedQueryView(APIView):
     """Advanced query: entry type and name separated by a colon, with wildcards."""
 
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
 

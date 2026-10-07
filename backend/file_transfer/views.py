@@ -20,11 +20,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from notes.models import Note
+from user.authentication import CookieJWTAuthentication
 
 from .constants import FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS
 from .exceptions import (
@@ -226,7 +226,7 @@ file_upload_flow = PresignedUploadFlow(
     )
 )
 class FileUpload(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
@@ -281,7 +281,7 @@ class FileUpload(APIView):
     )
 )
 class FileUploadFinalize(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, upload_id: uuid.UUID) -> Response:
@@ -297,11 +297,9 @@ class FileUploadFinalize(APIView):
         Returns:
             Response with file_id, file_name, and object_key.
         """
-        # Parse request body for note_id
         serializer = FileUploadFinalizeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Finalize upload via flow
         response_data = file_upload_flow.finalize(upload_id, request.user, **serializer.validated_data)
         download_url = reverse("file_download") + f"?file_id={response_data['file_id']}"
         location = request.build_absolute_uri(download_url)
@@ -340,7 +338,7 @@ class FileUploadFinalize(APIView):
     )
 )
 class FileDownload(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
@@ -405,7 +403,7 @@ class FileDownload(APIView):
     )
 )
 class FileProcess(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
@@ -458,7 +456,7 @@ class FileProcess(APIView):
     )
 )
 class FileDelete(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def delete(self, request: Request) -> Response:

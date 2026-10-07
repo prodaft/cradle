@@ -13,10 +13,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import CoreErrorCodes, NotFoundException
 from core.openapi import get_common_error_responses, get_error_responses
+from user.authentication import CookieJWTAuthentication
 from user.exceptions import UserErrorCodes, UserNotFoundException
 from user.models import CradleUser
 
@@ -32,7 +32,7 @@ class UserSnippetsListCreateView(APIView):
     POST: Create snippet for user_id.
     """
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -139,7 +139,7 @@ class AllAccessibleSnippetsListView(APIView):
     Returns user's own snippets and system snippets (owner is null).
     """
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -165,7 +165,7 @@ class SnippetDetailView(APIView):
     GET: Retrieve. PUT: Full update. PATCH: Partial update. DELETE: Remove.
     """
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def _get_snippet_and_check_permissions(self, snippet_id, request):

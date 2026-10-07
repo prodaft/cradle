@@ -9,13 +9,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import BadRequestException, CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from entries.constants import INTERNAL_SUBTYPES
 from entries.enums import EntryType
 from entries.models import EntryClass
+from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser
 
 from ..serializers import LspEntryClassSerializer
@@ -44,7 +44,7 @@ from ..utils import get_lsp_pack
 class LspTypes(APIView):
     """Returns LSP type definitions (subtype -> type definition) for the editor."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
@@ -86,7 +86,7 @@ class LspTypes(APIView):
 class CompletionTrie(APIView):
     """Returns serialized completion tries for LSP autocomplete (entities and option-based types)."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:

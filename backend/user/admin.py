@@ -68,7 +68,6 @@ class CradleUserAdmin(UserAdmin):
                 )
             },
         ),
-        ("API Keys", {"fields": ("catalyst_api_key",)}),
         (
             "Tokens & Expiry",
             {

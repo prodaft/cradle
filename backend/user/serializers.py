@@ -35,7 +35,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "username",
             "email",
             "password",
-            "catalyst_api_key",
             "vim_mode",
             "theme",
         ]
@@ -98,14 +97,13 @@ class UserCreateSerializer(serializers.ModelSerializer):
         )
 
     def update(self, instance: CradleUser, validated_data: dict[str, Any]):
-        """Update catalyst_api_key, vim_mode, theme only. Username and email cannot be changed."""
+        """Update vim_mode and theme only. Username and email cannot be changed."""
         if validated_data.get("username", instance.username) != instance.username:
             raise ActionNotAllowedException(detail="You cannot change your username.")
 
         if validated_data.get("email", instance.email) != instance.email:
             raise ActionNotAllowedException(detail="You cannot change your email.")
 
-        instance.catalyst_api_key = validated_data.get("catalyst_api_key", instance.catalyst_api_key)
         instance.vim_mode = validated_data.get("vim_mode", instance.vim_mode)
         instance.theme = validated_data.get("theme", instance.theme)
         instance.save()
@@ -122,13 +120,11 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
             "username",
             "email",
             "password",
-            "catalyst_api_key",
             "vim_mode",
             "theme",
             "role",
             "email_confirmed",
             "is_active",
-            "two_factor_enabled",
             "file_upload_limit_override",
         ]
         extra_kwargs: Dict[str, Dict[str, List]] = {
@@ -180,7 +176,6 @@ class ChangePasswordSerializer(serializers.Serializer):
 class UserRetrieveSerializer(serializers.ModelSerializer):
     """Serializer for user detail response. Includes role, 2FA status, theme, OAuth connections."""
 
-    catalyst_api_key = serializers.SerializerMethodField()
     oauth_connections = serializers.SerializerMethodField()
     has_password = serializers.SerializerMethodField()
 
@@ -195,7 +190,6 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "is_active",
             "vim_mode",
             "email_confirmed",
-            "catalyst_api_key",
             "file_upload_limit_override",
             "theme",
             "oauth_connections",
@@ -205,10 +199,6 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
     def get_has_password(self, obj) -> bool:
         """Return True if the user has a local password (vs OAuth-only)."""
         return obj.has_usable_password()
-
-    def get_catalyst_api_key(self, obj) -> bool:
-        """Return True if user has Catalyst API key set (masked for security)."""
-        return bool(obj.catalyst_api_key)
 
     def get_oauth_connections(self, obj) -> dict:
         """Return dict of provider -> connected for each configured OAuth provider."""
@@ -270,11 +260,10 @@ class UserConfigSerializer(serializers.Serializer):
 
 
 class TokenPairRetrieveSerializer(serializers.Serializer):
-    """Response schema for token obtain and refresh endpoints."""
+    """Response schema for token obtain and refresh endpoints; the tokens themselves are set as HttpOnly cookies."""
 
-    access = serializers.CharField(required=True, help_text="JWT access token")
-    refresh = serializers.CharField(required=True, help_text="JWT refresh token")
     role = serializers.CharField(required=True, help_text="User role")
+    user_id = serializers.UUIDField(required=False, help_text="Signed-in user ID (sign-in only)")
     access_expires_at = serializers.DateTimeField(required=True, help_text="Access token expiry")
     refresh_expires_at = serializers.DateTimeField(required=True, help_text="Refresh token expiry")
 
@@ -394,8 +383,7 @@ class APIKeyResponseSerializer(serializers.Serializer):
 class UserManageResponseSerializer(serializers.Serializer):
     """Serializer for user management action response."""
 
-    refresh = serializers.CharField(required=False, help_text="JWT refresh token (only for simulate action)")
-    access = serializers.CharField(required=False, help_text="JWT access token (only for simulate action)")
+    user_id = serializers.UUIDField(required=False, help_text="Simulated user ID (simulate action only)")
     message = serializers.CharField(required=False, help_text="Success message for other actions")
     access_expires_at = serializers.DateTimeField(
         required=False, help_text="Access token expiry (simulate action only)"

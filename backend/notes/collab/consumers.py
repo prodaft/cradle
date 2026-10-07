@@ -11,8 +11,8 @@ live in Redis, so every server process sees the same session:
 * The document is saved to the note shortly after edits stop and when an editor
   leaves, through the regular edit serializer (validation and processing pipeline).
 
-Wire format: the client authenticates with ``{"type": "auth", "token": <JWT>}`` as its
-first message, then sends requests ``{"id", "type", ...}`` answered with
+Wire format: the client authenticates with ``{"type": "auth"}`` as its first message
+(the access JWT is read from the handshake's HttpOnly cookie), then sends requests ``{"id", "type", ...}`` answered with
 ``{"id", "payload"}`` or ``{"id", "error"}``. The server also pushes
 ``{"type": "updates"}`` and ``{"type": "saveState"}`` messages.
 
@@ -36,9 +36,8 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.layers import get_channel_layer
 from django.conf import settings
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+
+from user.authentication import user_from_websocket_scope
 
 from .changes import InvalidChangeSet, apply_changes, normalize_newlines, replace_all
 from .persist import PersistResult, current_access, load_note, persist_document, read_note_content
@@ -295,16 +294,6 @@ async def persist_now(note_id: str, force: bool = False) -> None:
         )
 
 
-def _user_from_token(token) -> object | None:
-    if not isinstance(token, str) or not token:
-        return None
-    auth = JWTAuthentication()
-    try:
-        return auth.get_user(auth.get_validated_token(token))
-    except InvalidToken, TokenError, AuthenticationFailed:
-        return None
-
-
 class NoteCollabConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.note_id = str(self.scope["url_route"]["kwargs"]["note_id"])
@@ -364,7 +353,7 @@ class NoteCollabConsumer(AsyncJsonWebsocketConsumer):
     async def _authenticate(self, content):
         user = None
         if content.get("type") == "auth":
-            user = await database_sync_to_async(_user_from_token)(content.get("token"))
+            user = await database_sync_to_async(user_from_websocket_scope)(self.scope)
         if user is None:
             await self.close(code=CLOSE_UNAUTHENTICATED)
             return

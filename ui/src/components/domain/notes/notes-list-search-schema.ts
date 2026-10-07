@@ -29,7 +29,7 @@ export const validateSearchSchema = z.object({
     created_date_to: z.string().optional(),
     updated_date_from: z.string().optional(),
     updated_date_to: z.string().optional(),
-    any_field: z.string().optional(),
+    notes_search: z.string().optional(),
     status: z
         .union([slug, z.array(slug)])
         .optional()
@@ -110,7 +110,7 @@ export const NOTES_SEARCH_SCHEMA_NO_FLEETING = notesSearchSchema(false);
 
 /** Notes list URL params driven by the search bar. */
 interface NotesSearchUrlState {
-    any_field?: string;
+    notes_search?: string;
     status?: StatusSlug[];
     author?: string;
     editor?: string;
@@ -147,7 +147,7 @@ export function searchStateFromUrl(
     if (updated) dates.updated = updated;
 
     return {
-        q: str('any_field') || undefined,
+        q: str('notes_search') || undefined,
         values,
         dates,
         sort: sortFromUrl(
@@ -164,7 +164,7 @@ export function urlFromSearchState(state: SearchState): NotesSearchUrlState {
     const statuses = state.values.status as StatusSlug[] | undefined;
     const sort = sortToUrl(state.sort, NOTES_SEARCH_SCHEMA);
     return {
-        any_field: state.q || undefined,
+        notes_search: state.q || undefined,
         status: statuses?.length ? statuses : undefined,
         author: state.values.author?.[0] || undefined,
         editor: state.values.editor?.[0] || undefined,

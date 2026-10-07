@@ -8,12 +8,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.enums import AccessType
 from access.models import Access
 from core.exceptions import CoreErrorCodes, PermissionDeniedException
 from core.openapi import get_common_error_responses, get_error_responses
+from user.authentication import CookieJWTAuthentication
 
 from ..enums import EntryType
 from ..exceptions import (
@@ -46,7 +46,7 @@ from ..serializers import ArtifactSerializer, EntitySerializer, EntrySerializer
     ),
 )
 class EntryView(generics.CreateAPIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = EntrySerializer
 
@@ -86,7 +86,7 @@ class EntryView(generics.CreateAPIView):
 class EntryDetailView(APIView):
     """Retrieve a single entry by ID with access control."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(

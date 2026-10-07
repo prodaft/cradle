@@ -4,11 +4,11 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_sche
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.ndjson import ndjson_streaming_response
 from core.openapi import get_common_error_responses, get_error_responses
 from entries.exceptions import EntriesErrorCodes
+from user.authentication import CookieJWTAuthentication
 from user.exceptions import UserErrorCodes, UserNotFoundException
 from user.models import CradleUser
 from user.permissions import HasAdminRole, HasManagerRole
@@ -53,7 +53,7 @@ from ..serializers import AccessEntitySerializer, AccessUserSerializer
 class UserAccessListStreamView(APIView):
     """Stream user->entity access rows as NDJSON."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
 
     def get(self, request: Request, user_id):
@@ -112,7 +112,7 @@ class UserAccessListStreamView(APIView):
 class EntityAccessListStreamView(APIView):
     """Stream entity->user access rows as NDJSON."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasManagerRole]
 
     def get(self, request: Request, entity_id: int):

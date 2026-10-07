@@ -18,7 +18,7 @@ class ReportDetailTest(TestCase):
         self.user = CradleUser.objects.create_user(
             username="user", password="user", email="user@example.com", is_active=True, email_confirmed=True
         )
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(self.user)}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.user)}"}
         self.report = PublishedReport.objects.create(user=self.user, title="Report", strategy=DownloadStrategies.HTML)
 
     def tearDown(self):

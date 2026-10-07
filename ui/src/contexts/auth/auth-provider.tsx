@@ -1,10 +1,11 @@
 import { parseAPIError } from '@/utils/api';
+import { clearShownNotificationToasts } from '@/utils/notification-toasts';
 import { setClientAuthCallbacks } from '@services/openapi/client';
 import {
     applyClientTokenData,
     clearClientSession,
     clearRefreshTimer,
-    getAccessTokenForRequest,
+    ensureSessionForRequest,
     hasUsableAccessToken,
     isSessionLoggedIn,
     refreshSessionAccessToken,
@@ -145,10 +146,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, [isInitializing]);
 
     if (typeof window !== 'undefined') {
-        setClientAuthCallbacks(getAccessTokenForRequest, refreshSessionAccessToken);
+        setClientAuthCallbacks(ensureSessionForRequest, refreshSessionAccessToken);
     }
-
-    const getAccessToken = useCallback(() => getAccessTokenForRequest(), []);
 
     const logIn = useCallback(
         async (
@@ -180,34 +179,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     throw { ...parsed, status: response?.status };
                 }
 
-                const tokenData: TokenData = {
-                    access: data.access,
-                    refresh: data.refresh,
+                storeTokens({
                     accessExpiresAt: new Date(data.access_expires_at),
                     refreshExpiresAt: new Date(data.refresh_expires_at),
                     role: data.role,
-                };
+                });
 
-                storeTokens(tokenData);
-
-                try {
-                    const tokenParts = data.access.split('.');
-                    if (tokenParts.length === 3) {
-                        const payloadPart = tokenParts[1];
-                        if (payloadPart !== undefined) {
-                            const payload = JSON.parse(
-                                atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')),
-                            );
-                            const extractedUserId =
-                                payload.user_id || payload.sub || null;
-                            if (extractedUserId) {
-                                setStorageItem('user_id', extractedUserId);
-                                setUserId(extractedUserId);
-                            }
-                        }
-                    }
-                } catch {
-                    // ignore malformed JWT payload
+                if (data.user_id) {
+                    setStorageItem('user_id', data.user_id);
+                    setUserId(data.user_id);
                 }
 
                 return { result: AuthResult.SUCCESS };
@@ -286,6 +266,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // best-effort
         }
         clearTokens();
+        clearShownNotificationToasts();
     }, [clearTokens, fetchClient]);
 
     const setTokensDirectly = useCallback(
@@ -338,11 +319,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         () => ({
             logIn,
             logOut,
-            getAccessToken,
             isLoggedIn,
             setTokensDirectly,
         }),
-        [logIn, logOut, getAccessToken, isLoggedIn, setTokensDirectly],
+        [logIn, logOut, isLoggedIn, setTokensDirectly],
     );
 
     return (

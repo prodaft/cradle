@@ -9,7 +9,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import CoreErrorCodes
 from core.openapi import (
@@ -20,7 +19,7 @@ from core.pagination import TotalPagesPagination
 from core.query_lang import search_q
 from core.utils import validate_order_by
 from core.validators import validate_choice_param
-from user.authentication import APIKeyAuthentication
+from user.authentication import APIKeyAuthentication, CookieJWTAuthentication
 
 from ..exceptions import (
     PublishErrorCodes,
@@ -100,7 +99,7 @@ class ReportListAPIView(generics.ListAPIView):
     """List published reports for the authenticated user with search, filter, and ordering."""
 
     serializer_class = ReportListSerializer
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
 
@@ -170,7 +169,7 @@ class ReportListAPIView(generics.ListAPIView):
 class ReportRetryAPIView(APIView):
     """Retry failed report generation by re-queuing the Celery task."""
 
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, report_id: UUID) -> Response:
@@ -234,7 +233,7 @@ class ReportDetailAPIView(generics.RetrieveDestroyAPIView):
     """Retrieve or delete a specific report belonging to the authenticated user."""
 
     serializer_class = ReportDetailSerializer
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     lookup_url_kwarg = "report_id"
 

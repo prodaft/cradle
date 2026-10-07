@@ -49,6 +49,7 @@ app.conf.task_routes = {
     "file_transfer.tasks.process_file_task": {"queue": "files"},
     "file_transfer.tasks.reprocess_all_files_task": {"queue": "files"},
     "file_transfer.uploads.tasks.cleanup_all_expired_uploads": {"queue": "cleanup"},
+    "user.tasks.delete_expired_blacklisted_tokens": {"queue": "cleanup"},
 }
 
 app.conf.task_default_priority = 5
@@ -62,7 +63,6 @@ app.conf.task_max_retries = 3
 
 app.conf.beat_scheduler = "django_celery_beat.schedulers:DatabaseScheduler"
 
-# Set up periodic tasks
 app.conf.beat_schedule = {
     "refresh-edges-materialized-view-every-night": {
         "task": "entries.tasks.refresh_edges_materialized_view",
@@ -71,6 +71,10 @@ app.conf.beat_schedule = {
     "delete-hanging-artifacts-every-night": {
         "task": "entries.tasks.delete_hanging_artifacts",
         "schedule": crontab(hour=2, minute=0),
+    },
+    "delete-expired-blacklisted-tokens-every-night": {
+        "task": "user.tasks.delete_expired_blacklisted_tokens",
+        "schedule": crontab(hour=4, minute=0),
     },
     "cleanup-expired-uploads-every-10-minutes": {
         "task": "file_transfer.uploads.tasks.cleanup_all_expired_uploads",

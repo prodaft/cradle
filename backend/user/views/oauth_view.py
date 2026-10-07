@@ -14,12 +14,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from core.openapi import get_common_error_responses, get_error_responses
 from core.throttling import AuthRateThrottle
 
+from ..authentication import CookieJWTAuthentication
 from ..exceptions import (
     AccountNotActivatedException,
     AccountNotLinkedException,
@@ -116,7 +116,7 @@ def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> 
     ),
 )
 class OAuthConnectView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
@@ -230,8 +230,6 @@ class OAuthLoginView(APIView):
         refresh_expires_at = datetime.fromtimestamp(refresh["exp"], tz=dt_timezone.utc)
 
         response_data = {
-            "access": str(access_token),
-            "refresh": str(refresh),
             "role": user.role,
             "access_expires_at": access_expires_at,
             "refresh_expires_at": refresh_expires_at,
@@ -261,7 +259,7 @@ class OAuthLoginView(APIView):
     ),
 )
 class OAuthDisconnectView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def delete(self, request: Request, provider: str) -> Response:

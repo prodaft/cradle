@@ -4,10 +4,12 @@ import logging
 
 import bcrypt
 from django.conf import settings
+from django.http.cookie import parse_cookie
 from django.middleware.csrf import CsrfViewMiddleware
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 from .models import CradleUser
 
@@ -15,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class CookieJWTAuthentication(JWTAuthentication):
-    """Read access JWT from HttpOnly cookie instead of Authorization header.
+    """Read the access JWT from its HttpOnly cookie (tokens are never exposed to page scripts).
 
     Enforces CSRF for unsafe methods since cookies are sent automatically.
     """
@@ -42,6 +44,19 @@ class CookieJWTAuthentication(JWTAuthentication):
         if reason:
             logger.warning("CSRF verification failed: %s", reason)
             raise AuthenticationFailed(detail="Your session could not be verified. Refresh the page and try again.")
+
+
+def user_from_websocket_scope(scope) -> CradleUser | None:
+    """Return the user for the access-token cookie on a WebSocket scope, or None."""
+    cookie_header = dict(scope.get("headers") or []).get(b"cookie", b"").decode("latin-1")
+    token = parse_cookie(cookie_header).get(getattr(settings, "JWT_ACCESS_COOKIE_NAME", "access_token"))
+    if not isinstance(token, str) or not token:
+        return None
+    auth = JWTAuthentication()
+    try:
+        return auth.get_user(auth.get_validated_token(token))
+    except InvalidToken, TokenError, AuthenticationFailed:
+        return None
 
 
 class APIKeyAuthentication(BaseAuthentication):

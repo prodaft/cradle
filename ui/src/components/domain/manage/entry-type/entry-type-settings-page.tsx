@@ -151,44 +151,27 @@ export default function EntryTypeSettingsPage() {
                         </Tabs>
                         <div className='flex w-full overflow-y-hidden p-1'>
                             <div className='flex flex-1 flex-col'>
-                                {tab === 'activity' ? (
-                                    <ScrollArea className='faded-bottom h-full w-full'>
-                                        <CardContent className='px-0'>
-                                            <div className='flex-none mb-4'>
-                                                <h3 className='text-lg font-medium'>
-                                                    {currentTab?.label || 'Settings'}
-                                                </h3>
-                                                <p className='text-sm text-muted-foreground'>
-                                                    {currentDescription}
-                                                </p>
-                                            </div>
-                                            <Separator
-                                                data-orientation='horizontal'
-                                                role='none'
-                                                className='bg-border mb-4 flex-none'
-                                            />
+                                <ScrollArea className='faded-bottom h-full w-full pb-12'>
+                                    <CardContent className='px-0'>
+                                        <div className='flex-none mb-4'>
+                                            <h3 className='text-lg font-medium'>
+                                                {currentTab?.label || 'Settings'}
+                                            </h3>
+                                            <p className='text-sm text-muted-foreground'>
+                                                {currentDescription}
+                                            </p>
+                                        </div>
+                                        <Separator
+                                            data-orientation='horizontal'
+                                            role='none'
+                                            className='bg-border mb-4 flex-none'
+                                        />
+                                        {tab === 'activity' ? (
                                             <ActivityList
                                                 contentType='entryclass'
                                                 objectId={subtype}
                                             />
-                                        </CardContent>
-                                    </ScrollArea>
-                                ) : (
-                                    <ScrollArea className='faded-bottom h-full w-full pb-12'>
-                                        <CardContent className='px-0'>
-                                            <div className='flex-none mb-4'>
-                                                <h3 className='text-lg font-medium'>
-                                                    {currentTab?.label || 'Settings'}
-                                                </h3>
-                                                <p className='text-sm text-muted-foreground'>
-                                                    {currentDescription}
-                                                </p>
-                                            </div>
-                                            <Separator
-                                                data-orientation='horizontal'
-                                                role='none'
-                                                className='bg-border mb-4 flex-none'
-                                            />
+                                        ) : (
                                             <EntryTypeForm
                                                 id={subtype}
                                                 onAdd={(newEntryType: EntryClass) => {
@@ -221,9 +204,9 @@ export default function EntryTypeSettingsPage() {
                                                     }
                                                 }}
                                             />
-                                        </CardContent>
-                                    </ScrollArea>
-                                )}
+                                        )}
+                                    </CardContent>
+                                </ScrollArea>
                             </div>
                         </div>
                     </div>

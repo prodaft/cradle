@@ -12,7 +12,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import CoreErrorCodes, PermissionDeniedException
 from core.openapi import get_common_error_responses, get_error_responses
@@ -23,7 +22,7 @@ from core.validators import validate_choice_param, validate_optional_int_param
 from entries.models import Entry
 from query.exceptions import InvalidSearchSyntaxException, QueryErrorCodes
 from query.utils import parse_query
-from user.authentication import APIKeyAuthentication
+from user.authentication import APIKeyAuthentication, CookieJWTAuthentication
 from user.permissions import HasAdminRole
 
 from ..constants import (
@@ -114,7 +113,7 @@ class EnrichmentRequestObjectMixin:
 class EnrichmentSubclassesAPIView(APIView):
     """DRF API view that returns all BaseEnricher subclasses with their names."""
 
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, *args, **kwargs) -> Response:
@@ -169,7 +168,7 @@ class EnrichmentSubclassesAPIView(APIView):
 class EnrichmentSettingsAPIView(GenericAPIView):
     """Get, create and update enrichment settings."""
 
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
     serializer_class = EnrichmentSettingsSerializer
 
@@ -216,7 +215,7 @@ class EnrichmentSettingsAPIView(GenericAPIView):
                 required=False,
             ),
             OpenApiParameter(
-                name="any_value",
+                name="search",
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description="Search titles and usernames, with the same syntax as `title`",
@@ -293,7 +292,7 @@ class EnrichmentAPIView(APIView):
     POST: Create a new enrichment request (optional entity IDs for access scope).
     """
 
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = EnrichmentRequestSerializer
     pagination_class = TotalPagesPagination
@@ -310,9 +309,9 @@ class EnrichmentAPIView(APIView):
         if title_q is not None:
             queryset = queryset.filter(title_q)
 
-        any_value_q = search_q(request.query_params.get("any_value"), ["title", "user__username"], param="any_value")
-        if any_value_q is not None:
-            queryset = queryset.filter(any_value_q)
+        search = search_q(request.query_params.get("search"), ["title", "user__username"])
+        if search is not None:
+            queryset = queryset.filter(search)
 
         entry_id = validate_optional_int_param(request.query_params.get("entry_id"), param_name="entry_id")
         if entry_id is not None:
@@ -405,7 +404,7 @@ class EnrichmentDetailAPIView(EnrichmentRequestObjectMixin, APIView):
     DELETE: Delete an enrichment request.
     """
 
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, enrichment_id: uuid.UUID) -> Response:
@@ -453,7 +452,7 @@ class EnrichmentRestartAPIView(EnrichmentRequestObjectMixin, APIView):
     POST: Restart an enrichment request.
     """
 
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = EnrichmentRequestDetailSerializer
 
@@ -508,7 +507,7 @@ class EnrichmentRequestEnricherAPIView(EnrichmentRequestObjectMixin, APIView):
     GET: Retrieve enrichment request enricher information.
     """
 
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = EnrichmentRequestEnricherSerializer
     enrichment_prefetch = ("enrichers_settings",)
@@ -601,7 +600,7 @@ class EnrichmentRelationsAPIView(EnrichmentRequestObjectMixin, APIView):
     GET: Retrieve relations for a specific enricher type.
     """
 
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
     enrichment_prefetch = ("enrichers_settings",)

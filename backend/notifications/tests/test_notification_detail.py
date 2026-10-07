@@ -37,7 +37,7 @@ class NotificationDetailTest(NotificationsTestCase):
         )
 
         self.token = str(AccessToken.for_user(self.user))
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.token}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={self.token}"}
 
     def test_update_notifications_not_authenticated(self):
         response = self.client.put(

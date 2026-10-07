@@ -1,9 +1,9 @@
 import json
 
 from django.urls import reverse
-from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
-from ..models import CradleUser
+from ..models import BlacklistedToken, CradleUser, UserSession
 from ..serializers import UserRetrieveSerializer
 from .utils import UserTestCase
 
@@ -82,6 +82,42 @@ class CreateUserTest(UserTestCase):
 
         self.assertEqual(response.status_code, 200)
 
+    def test_user_login_sets_tokens_only_as_cookies(self):
+        self.create_user_request("user", "userR1#1234112", email="alabala@gmail.com")
+        response = self.client.post(
+            reverse("auth_login"),
+            data=json.dumps({"username": "user", "password": "userR1#1234112"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("access", response.data)
+        self.assertNotIn("refresh", response.data)
+        self.assertEqual(response.data["user_id"], str(CradleUser.objects.get(username="user").id))
+        self.assertTrue(response.cookies["access_token"]["httponly"])
+        self.assertTrue(response.cookies["refresh_token"]["httponly"])
+
+        me = self.client.get(reverse("user_detail_me"))
+        self.assertEqual(me.status_code, 200)
+
+    def test_rotated_refresh_token_is_rejected(self):
+        self.create_user_request("user", "userR1#1234112", email="alabala@gmail.com")
+        self.client.post(
+            reverse("auth_login"),
+            data=json.dumps({"username": "user", "password": "userR1#1234112"}),
+            content_type="application/json",
+        )
+        old_refresh = self.client.cookies["refresh_token"].value
+
+        response = self.client.post(reverse("auth_refresh"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(self.client.cookies["refresh_token"].value, old_refresh)
+
+        self.client.cookies["refresh_token"] = old_refresh
+        response = self.client.post(reverse("auth_refresh"))
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["code"], "SESSION_RENEWAL_FAILED")
+
     def test_user_login_wrong_credentials(self):
         response = self.client.post(
             reverse("auth_login"),
@@ -118,8 +154,8 @@ class GetAllUsersTest(UserTestCase):
         self.admin = CradleUser.objects.create_superuser(username="admin", password="admin", email="b@c.d")
         self.token_admin = str(AccessToken.for_user(self.admin))
         self.token_normal = str(AccessToken.for_user(self.user))
-        self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
-        self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
+        self.headers_admin = {"HTTP_COOKIE": f"access_token={self.token_admin}"}
+        self.headers_normal = {"HTTP_COOKIE": f"access_token={self.token_normal}"}
 
     def test_get_all_users_successful(self):
         response = self.client.get(reverse("user_list"), **self.headers_admin)
@@ -137,3 +173,19 @@ class GetAllUsersTest(UserTestCase):
         response = self.client.get(reverse("user_list"), **self.headers_normal)
 
         self.assertEqual(response.status_code, 403)
+
+
+class SimulateUserTest(UserTestCase):
+    def test_simulate_retires_admin_refresh_token_and_records_session(self):
+        user = CradleUser.objects.create_user(username="user", password="user", email="a@b.c")
+        admin = CradleUser.objects.create_superuser(username="admin", password="admin", email="b@c.d")
+        admin_refresh = RefreshToken.for_user(admin)
+        self.client.cookies["access_token"] = str(admin_refresh.access_token)
+        self.client.cookies["refresh_token"] = str(admin_refresh)
+
+        response = self.client.post(reverse("user_manage", args=[user.id, "simulate"]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(BlacklistedToken.is_blacklisted(admin_refresh["jti"]))
+        simulated_refresh = RefreshToken(response.cookies["refresh_token"].value)
+        self.assertTrue(UserSession.objects.filter(user=user, refresh_token_jti=simulated_refresh["jti"]).exists())

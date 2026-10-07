@@ -9,12 +9,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.openapi import get_common_error_responses
 from entries.constants import SUBTYPE_FILE, SUBTYPE_NOTE
 from entries.models import Entry
 from notes.models import Note
+from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser
 
 from ..serializers import HomePageStatisticsSerializer
@@ -34,7 +34,7 @@ from ..serializers import HomePageStatisticsSerializer
 class StatisticsList(APIView):
     """API view returning homepage statistics: recent notes, entities, and artifacts."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:

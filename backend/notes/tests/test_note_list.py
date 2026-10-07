@@ -15,7 +15,7 @@ class CreateFleetingNoteTest(NotesTestCase):
         self.user.default_note_template = "Default note template"
         self.user.save(update_fields=["default_note_template"])
         self.user_token = str(AccessToken.for_user(self.user))
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
 
     def test_create_fleeting_note_not_authenticated(self):
         response = self.client.post(
@@ -60,7 +60,7 @@ class NoteListStatusFilterTest(NotesTestCase):
     def setUp(self):
         super().setUp()
         self.user_token = str(AccessToken.for_user(self.user))
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
 
     def test_list_notes_multiple_status_or(self):
         healthy = Note.objects.create(
@@ -92,7 +92,7 @@ class NoteListStatusFilterTest(NotesTestCase):
         ids = {row["id"] for row in response.json()["results"]}
         self.assertEqual(ids, {str(healthy.id), str(warning.id)})
 
-    def test_list_notes_multiple_status_with_any_field_param(self):
+    def test_list_notes_multiple_status_with_empty_search_param(self):
         healthy = Note.objects.create(
             author=self.user,
             fleeting=False,
@@ -110,7 +110,7 @@ class NoteListStatusFilterTest(NotesTestCase):
             reverse("note_list"),
             {
                 "status": ["finalized", "healthy"],
-                "any_field": "",
+                "search": "",
                 "content": "",
                 "author": "",
             },
@@ -120,7 +120,7 @@ class NoteListStatusFilterTest(NotesTestCase):
         ids = {row["id"] for row in response.json()["results"]}
         self.assertEqual(ids, {str(healthy.id), str(processing.id)})
 
-    def test_list_notes_multiple_status_with_any_field_search(self):
+    def test_list_notes_multiple_status_with_search(self):
         matching = Note.objects.create(
             author=self.user,
             fleeting=False,
@@ -142,7 +142,7 @@ class NoteListStatusFilterTest(NotesTestCase):
 
         response = self.client.get(
             reverse("note_list"),
-            {"status": ["healthy", "warning"], "any_field": "keyword"},
+            {"status": ["healthy", "warning"], "search": "keyword"},
             **self.headers,
         )
         self.assertEqual(response.status_code, 200)
@@ -176,7 +176,7 @@ class NoteListStatusFilterTest(NotesTestCase):
 class NoteListTimestampTest(NotesTestCase):
     def setUp(self):
         super().setUp()
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(self.user)}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.user)}"}
         self.older = Note.objects.create(author=self.user, fleeting=False, content="older")
         self.newer = Note.objects.create(author=self.user, fleeting=False, content="newer")
         Note.objects.filter(id=self.older.id).update(timestamp=datetime(2026, 1, 1, tzinfo=dt_timezone.utc))

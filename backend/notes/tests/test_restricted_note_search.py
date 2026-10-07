@@ -1,4 +1,4 @@
-"""Tests for restricted notes in note search (GET /notes/?any_field=...&include_restricted=true)."""
+"""Tests for restricted notes in note search (GET /notes/?search=...&include_restricted=true)."""
 
 import json
 
@@ -58,7 +58,7 @@ class RestrictedNoteSearchTest(NotesTestCase):
         cache.delete("setting:search.reveal_restricted_matches")
 
     def search(self, term, **params):
-        return self.client.get(reverse("note_list"), {"any_field": term, "include_restricted": "true", **params})
+        return self.client.get(reverse("note_list"), {"search": term, "include_restricted": "true", **params})
 
     def rows(self, response):
         self.assertEqual(response.status_code, 200, response.content)
@@ -122,7 +122,7 @@ class RestrictedNoteSearchTest(NotesTestCase):
 
     def test_without_parameter_reveals_nothing(self):
         self.enable()
-        response = self.client.get(reverse("note_list"), {"any_field": "1.1.1.1"})
+        response = self.client.get(reverse("note_list"), {"search": "1.1.1.1"})
         self.assertEqual(self.ids(response), [str(self.open_note.id)])
 
     def test_admin_gets_full_notes(self):

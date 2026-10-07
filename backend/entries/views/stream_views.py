@@ -5,10 +5,10 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_sche
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.ndjson import ndjson_streaming_response
 from core.openapi import get_common_error_responses, get_error_responses
+from user.authentication import CookieJWTAuthentication
 from user.permissions import EntityListPermission, EntryClassListPermission
 
 from ..exceptions import AdminOnlyViewCountException, EntriesErrorCodes
@@ -36,7 +36,7 @@ from ..serializers import EntryClassSerializer, EntryClassSerializerCount, Entry
 class EntityListStreamView(APIView):
     """Stream entities as NDJSON."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, EntityListPermission]
 
     def get(self, request: Request):
@@ -90,7 +90,7 @@ class EntityListStreamView(APIView):
 class EntryClassListStreamView(APIView):
     """Stream entry classes as NDJSON."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, EntryClassListPermission]
 
     def get(self, request: Request):

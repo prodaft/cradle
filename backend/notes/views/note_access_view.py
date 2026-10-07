@@ -9,12 +9,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.models import Access
 from access.views.request_access_view import notify_access_request
 from core.openapi import get_common_error_responses, get_error_responses
 from entries.enums import EntryType
+from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser
 
 from ..exceptions import NoteNotFoundException, NotesErrorCodes
@@ -50,7 +50,7 @@ from ..models import Note
 class RequestNoteAccess(APIView):
     """Request access to the entities of a restricted note; notifies users who can grant it."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, note_id: UUID) -> Response:

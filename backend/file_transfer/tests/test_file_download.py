@@ -30,7 +30,7 @@ class TestFileDownload(FileTransferTestCase):
             email_confirmed=True,
         )
         self.user_token = str(AccessToken.for_user(self.user))
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
 
     def tearDown(self):
         self.patcher.stop()

@@ -348,7 +348,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
 
                     <Field data-invalid={Boolean(errors.fileUploadLimitOverride)}>
                         <FieldLabel htmlFor='fileUploadLimitOverride'>
-                            File Upload Limit Override
+                            Upload Limit
                         </FieldLabel>
                         <InputGroup>
                             <InputGroupInput

@@ -12,11 +12,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { BellRingingIcon, XIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import NotificationCard from './notification-card';
@@ -24,6 +23,7 @@ import NotificationCard from './notification-card';
 type FilterMode = 'all' | 'unread';
 
 interface NotificationsPanelProps {
+    unreadCount: number;
     onClose?: () => void;
 }
 
@@ -37,22 +37,8 @@ const OVERSCAN = 5;
  * Rendered as a resizable side panel in MainLayout. Fetches notifications on mount
  * with infinite scroll pagination. Uses virtual scrolling for performance.
  */
-export default function NotificationsPanel({ onClose }: NotificationsPanelProps) {
+export default function NotificationsPanel({ unreadCount, onClose }: NotificationsPanelProps) {
     const queryClient = useQueryClient();
-    const { isInitializing } = useAuthState();
-    const { isLoggedIn } = useAuthActions();
-    const { data: unreadCountResponse } = useQuery({
-        queryKey: queryKeys.notifications.unreadCount(),
-        enabled: !isInitializing && isLoggedIn(),
-        queryFn: async () => {
-            const { data, error, response } = await fetchClient.GET(
-                '/notifications/unread-count/',
-            );
-            if (error) throw { response, error };
-            return data!;
-        },
-    });
-    const unreadCount = unreadCountResponse?.count ?? 0;
     const [filter, setFilter] = useState<FilterMode>('all');
     const scrollAreaContainerRef = useRef<HTMLDivElement>(null);
 

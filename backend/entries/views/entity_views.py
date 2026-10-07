@@ -10,13 +10,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.enums import AccessType
 from access.models import Access
 from core.exceptions import CoreErrorCodes, PermissionDeniedException
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
+from user.authentication import CookieJWTAuthentication
 from user.permissions import EntityDetailPermission, EntityListPermission
 
 from ..exceptions import (
@@ -87,7 +87,7 @@ def _get_entity_or_404(entity_id: int) -> Entry:
 class EntityList(ListCreateAPIView):
     """List or create entities. Admins see all; others see accessible only."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, EntityListPermission]
     pagination_class = TotalPagesPagination
 
@@ -191,7 +191,7 @@ class EntityList(ListCreateAPIView):
 class EntityDetail(APIView):
     """Retrieve, update, or delete an entity."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, EntityDetailPermission]
 
     def get(self, request: Request, entity_id: int) -> Response:

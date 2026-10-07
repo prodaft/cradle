@@ -26,5 +26,5 @@ use a digest to ingest it and connect it back to the case entity.
 ## Produce a publishable report
 Curate the relevant notes, order them to match the narrative you want, choose
 anonymization settings, and export or publish the report. If you are
-publishing to another CRADLE instance or Catalyst, use the appropriate output
-format and verify the rendered report once the job completes.
+publishing to another CRADLE instance, use the JSON output format and verify
+the rendered report once the job completes.

@@ -18,20 +18,17 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
+import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { USER_ROLE_OPTIONS } from '@/utils/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-    ArrowCounterClockwiseIcon,
-    ClockCounterClockwiseIcon,
-    FloppyDiskIcon,
-} from '@phosphor-icons/react';
+import { ArrowCounterClockwiseIcon, FloppyDiskIcon } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import isEqual from 'lodash/isEqual';
-import { useEffect, useRef } from 'react';
+import bytes from 'bytes';
+import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 import * as z from 'zod';
 
 interface UserAccountFormProps {
@@ -44,6 +41,20 @@ const schema = z.object({
     username: z.string().min(1, { error: 'Username is required' }),
     email: z.email({ error: 'Invalid email' }).min(1, { error: 'Email is required' }),
     role: z.string().min(1, { error: 'Role is required' }),
+    emailConfirmed: z.boolean().optional(),
+    isActive: z.boolean().optional(),
+    fileUploadLimitOverride: z
+        .string()
+        .optional()
+        .refine(
+            (value) => {
+                if (!value || value === '') return true;
+                return typeof bytes(value) === 'number';
+            },
+            {
+                error: 'Enter a valid size (e.g. 100MB, 1GB) or leave empty to use global default',
+            },
+        ),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -53,7 +64,8 @@ export default function UserAccountForm({
     isOtherAdmin,
 }: UserAccountFormProps) {
     const queryClient = useQueryClient();
-    const previousValuesRef = useRef<Partial<FormData> | null>(null);
+    const { userId: currentUserId } = useAuthState();
+    const isSelf = userId === currentUserId;
 
     const { data: user } = $api.useQuery(
         'get',
@@ -80,71 +92,60 @@ export default function UserAccountForm({
 
     const {
         reset,
-        getValues,
-        watch,
+        handleSubmit,
         control,
-        formState: { isDirty },
+        formState: { isDirty, dirtyFields },
     } = useForm<FormData>({
         resolver: zodResolver(schema) as any,
-        defaultValues: { id: '', username: '', email: '', role: 'author' },
+        defaultValues: {
+            id: '',
+            username: '',
+            email: '',
+            role: 'author',
+            emailConfirmed: false,
+            isActive: false,
+            fileUploadLimitOverride: '',
+        },
     });
 
     useEffect(() => {
         if (!user) return;
-        const values = {
+        const values: FormData = {
             id: user.id,
             username: user.username,
             email: user.email,
             role: user.role || 'author',
+            emailConfirmed: user.email_confirmed || false,
+            isActive: user.is_active || false,
+            fileUploadLimitOverride: user.file_upload_limit_override
+                ? (bytes.format(user.file_upload_limit_override, {
+                      unitSeparator: ' ',
+                  }) ?? '')
+                : '',
         };
         reset(values);
-        previousValuesRef.current = values;
     }, [user, reset]);
 
-    const save = () => {
-        const values = getValues();
-        const prev = previousValuesRef.current;
+    const save = (values: FormData) => {
         if (!values.id) return;
 
         const payload: any = {};
-        if (values.username !== prev?.username) payload.username = values.username;
-        if (values.email !== prev?.email) payload.email = values.email;
-        if (values.role !== prev?.role) payload.role = values.role;
-
-        if (Object.keys(payload).length === 0) {
-            toast.info('No changes to save');
-            return;
+        if (dirtyFields.username) payload.username = values.username;
+        if (dirtyFields.email) payload.email = values.email;
+        if (dirtyFields.role) payload.role = values.role;
+        if (dirtyFields.emailConfirmed) payload.email_confirmed = values.emailConfirmed;
+        if (dirtyFields.isActive) payload.is_active = values.isActive;
+        if (dirtyFields.fileUploadLimitOverride) {
+            payload.file_upload_limit_override = values.fileUploadLimitOverride?.trim()
+                ? bytes.parse(values.fileUploadLimitOverride)
+                : null;
         }
 
         updateUser.mutate(
             { userId: values.id, payload },
-            {
-                onSuccess: () => {
-                    previousValuesRef.current = { ...prev, ...values };
-                },
-            },
+            { onSuccess: () => reset(values) },
         );
     };
-
-    const revert = () => {
-        if (previousValuesRef.current) reset(previousValuesRef.current);
-    };
-    const accountDefaultState = {
-        username: user?.username ?? '',
-        email: user?.email ?? '',
-        role: user?.role || 'author',
-    };
-    const resetToDefaults = () => {
-        const baseline = { ...accountDefaultState, id: user?.id };
-        reset(baseline, { keepDefaultValues: true });
-        previousValuesRef.current = baseline;
-    };
-    const isAtDefault =
-        !!user &&
-        isEqual(
-            { username: watch('username'), email: watch('email'), role: watch('role') },
-            accountDefaultState,
-        );
 
     if (!user) return null;
 
@@ -158,7 +159,7 @@ export default function UserAccountForm({
                             variant='outline'
                             size='icon'
                             disabled={!isDirty}
-                            onClick={revert}
+                            onClick={() => reset()}
                             title='Revert'
                         >
                             <ArrowCounterClockwiseIcon
@@ -168,23 +169,10 @@ export default function UserAccountForm({
                         </Button>
                         <Button
                             type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={isAtDefault}
-                            onClick={resetToDefaults}
-                            title='Default'
-                        >
-                            <ClockCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='button'
                             variant='default'
                             size='icon'
                             disabled={updateUser.isPending || !isDirty}
-                            onClick={save}
+                            onClick={handleSubmit(save)}
                             title='Save Settings'
                         >
                             {updateUser.isPending ? (
@@ -327,7 +315,7 @@ export default function UserAccountForm({
                                             items={USER_ROLE_OPTIONS}
                                             value={field.value}
                                             onValueChange={field.onChange}
-                                            disabled={isOtherAdmin}
+                                            disabled={isOtherAdmin || isSelf}
                                         >
                                             <SelectTrigger
                                                 className='w-full sm:w-64'
@@ -346,6 +334,117 @@ export default function UserAccountForm({
                                                 ))}
                                             </SelectContent>
                                         </Select>
+                                    </div>
+                                </Field>
+                            )}
+                        />
+
+                        <Separator />
+
+                        <Controller
+                            name='emailConfirmed'
+                            control={control}
+                            render={({ field }) => (
+                                <Field orientation='responsive'>
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='emailConfirmed'
+                                            className='text-sm block mb-0.5'
+                                        >
+                                            Email Confirmed
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            User's email confirmation status
+                                        </FieldDescription>
+                                    </FieldContent>
+                                    <Switch
+                                        id='emailConfirmed'
+                                        name={field.name}
+                                        data-testid='emailConfirmed-toggle'
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        disabled={isOtherAdmin || isSelf}
+                                        className='self-start md:self-center'
+                                    />
+                                </Field>
+                            )}
+                        />
+
+                        <Separator />
+
+                        <Controller
+                            name='isActive'
+                            control={control}
+                            render={({ field }) => (
+                                <Field orientation='responsive'>
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='isActive'
+                                            className='text-sm block mb-0.5'
+                                        >
+                                            Active
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Disabled accounts cannot log in
+                                        </FieldDescription>
+                                    </FieldContent>
+                                    <Switch
+                                        id='isActive'
+                                        name={field.name}
+                                        data-testid='isActive-toggle'
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        disabled={isOtherAdmin || isSelf}
+                                        className='self-start md:self-center'
+                                    />
+                                </Field>
+                            )}
+                        />
+
+                        <Separator />
+
+                        <Controller
+                            name='fileUploadLimitOverride'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='responsive'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='fileUploadLimitOverride'
+                                            className='text-sm block'
+                                        >
+                                            Upload Limit
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Override global file upload limit for this
+                                            user (e.g., 100MB, 1GB). Leave empty to use
+                                            global default.
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError
+                                                id='fileUploadLimitOverride-error'
+                                                className='text-sm mt-1'
+                                            >
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <div className='w-64 shrink-0 self-start md:self-center'>
+                                        <Input
+                                            {...field}
+                                            id='fileUploadLimitOverride'
+                                            placeholder='e.g., 100MB, 1GB'
+                                            disabled={isOtherAdmin || isSelf}
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'fileUploadLimitOverride-error'
+                                                    : undefined
+                                            }
+                                        />
                                     </div>
                                 </Field>
                             )}

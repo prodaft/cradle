@@ -66,10 +66,12 @@ export default function NotesList({
         const {
             notes_sort_field: _sortField,
             notes_sort_direction: _sortDirection,
+            notes_search,
             ...filters
         } = urlFromSearchState(searchState);
         return {
             ...filters,
+            search: notes_search,
             ...(linkedToEntryId != null
                 ? {
                       linked_to: linkedToEntryId,

@@ -10,13 +10,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from entries.exceptions import EntityNotFoundException, EntriesErrorCodes
 from entries.models import Entry
 from notifications.models import AccessGrantedNotification
+from user.authentication import CookieJWTAuthentication
 from user.exceptions import UserErrorCodes, UserNotFoundException
 from user.models import CradleUser
 
@@ -62,7 +62,7 @@ from ..serializers import AccessSerializer
 class UpdateAccess(APIView):
     """Update a user's access level for an entity (admins and managers)."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = AccessSerializer
 

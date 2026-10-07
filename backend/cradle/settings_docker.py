@@ -19,9 +19,7 @@ SECRET_KEY = env.str("SECRET_KEY", "django-insecure-default-secret-key")
 DEBUG = env.bool("DEBUG", False)
 
 if not DEBUG and SECRET_KEY == "django-insecure-default-secret-key":
-    raise ValueError(
-        "SECRET_KEY must be set in production. Set the SECRET_KEY environment variable."
-    )
+    raise ValueError("SECRET_KEY must be set in production. Set the SECRET_KEY environment variable.")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", ["localhost", "127.0.0.1"])
 
@@ -34,7 +32,7 @@ _csrf_origins = list(
         [FRONTEND_URL] + list(DEFAULT_CSRF_ORIGINS)  # noqa: F405
     )
 )
-CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", _csrf_origins)
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(env.list("CSRF_TRUSTED_ORIGINS", _csrf_origins) + [FRONTEND_URL]))
 
 # Behind a TLS-terminating proxy: trust its X-Forwarded-Proto, so absolute URLs use https
 if env.bool("TRUST_X_FORWARDED_PROTO", False):

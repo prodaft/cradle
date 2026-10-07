@@ -27,7 +27,7 @@ class RequestAccessTest(AccessTestCase):
 
         self.tokens_users = [str(AccessToken.for_user(self.users[id])) for id in range(5)]
 
-        self.headers = [{"HTTP_AUTHORIZATION": f"Bearer {self.tokens_users[id]}"} for id in range(5)]
+        self.headers = [{"HTTP_COOKIE": f"access_token={self.tokens_users[id]}"} for id in range(5)]
 
     def test_request_access_not_authenticated(self):
         response = self.client.post(

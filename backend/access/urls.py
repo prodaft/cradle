@@ -9,7 +9,7 @@ Routes:
 
 from django.urls import path
 
-from .views.access_stream_views import EntityAccessListStreamView, UserAccessListStreamView
+from .views.stream_views import EntityAccessListStreamView, UserAccessListStreamView
 from .views.access_view import EntityAccessList, UserAccessList
 from .views.request_access_view import RequestAccess
 from .views.update_access_view import UpdateAccess

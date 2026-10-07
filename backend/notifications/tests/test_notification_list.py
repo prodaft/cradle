@@ -35,7 +35,7 @@ class NotificationListTest(NotificationsTestCase):
         self.entity = Entry.objects.create(name="Entity", entry_class=self.entryclass1)
 
         self.token = str(AccessToken.for_user(self.user))
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.token}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={self.token}"}
 
     def test_get_notifications_not_authenticated(self):
         response = self.client.get(reverse("notification_list"))

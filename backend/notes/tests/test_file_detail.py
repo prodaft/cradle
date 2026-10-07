@@ -44,7 +44,7 @@ class FileFixtures(NotesTestCase):
             username="other", password="pass", email="o@c.d", is_active=True, email_confirmed=True
         )
         Access.objects.create(user_id=self.other.id, entity_id=self.case.id, access_type=AccessType.READ)
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(self.other)}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.other)}"}
 
     def _file(self, note, name, sha256):
         return FileReference.objects.create(

@@ -88,7 +88,7 @@ class EntryClassRenameAPITestCase(EntriesTestCase):
             email="entrymgr@example.com",
             is_active=True,
         )
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(self.manager)}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.manager)}"}
         self.entry_class = EntryClass.objects.create(
             type=EntryType.ARTIFACT,
             subtype="PTI",

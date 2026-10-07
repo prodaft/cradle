@@ -32,8 +32,8 @@ class GetNoteTest(NotesTestCase):
         self.user_token = str(AccessToken.for_user(self.user))
         self.not_owner = CradleUser.objects.create_user(username="not_owner", password="pass", email="b@c.d")
         self.not_owner_token = AccessToken.for_user(self.not_owner)
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
-        self.not_owner_headers = {"HTTP_AUTHORIZATION": f"Bearer {self.not_owner_token}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
+        self.not_owner_headers = {"HTTP_COOKIE": f"access_token={self.not_owner_token}"}
 
     def test_get_note_not_authenticated(self):
         response = self.client.get(
@@ -107,8 +107,8 @@ class DeleteNoteTest(NotesTestCase):
         self.user_token = str(AccessToken.for_user(self.user))
         self.not_owner = CradleUser.objects.create_user(username="not_owner", password="pass", email="b@c.d")
         self.not_owner_token = str(AccessToken.for_user(self.not_owner))
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
-        self.not_owner_headers = {"HTTP_AUTHORIZATION": f"Bearer {self.not_owner_token}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
+        self.not_owner_headers = {"HTTP_COOKIE": f"access_token={self.not_owner_token}"}
 
         self.init_database()
 
@@ -227,7 +227,7 @@ class DeleteNoteTest(NotesTestCase):
 class NoteEditConflictTest(NotesTestCase):
     def setUp(self):
         super().setUp()
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(self.user)}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.user)}"}
         self.note = Note.objects.create(author=self.user, fleeting=True, content="original")
         self.url = reverse("note_detail", kwargs={"note_id": self.note.id})
 
@@ -295,7 +295,7 @@ class NoteWritePermissionTest(NotesTestCase):
         self.other = CradleUser.objects.create_user(
             username="other", password="pass", email="o@c.d", is_active=True, email_confirmed=True
         )
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(self.other)}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.other)}"}
         self.url = reverse("note_detail", kwargs={"note_id": self.note.id})
 
     def grant(self, access_type):

@@ -9,12 +9,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.openapi import get_common_error_responses, get_error_responses
 from entries.exceptions import EntityNotFoundException, EntriesErrorCodes
 from entries.models import Entry
 from notifications.models import AccessRequestNotification
+from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser, UserRoles
 
 from ..enums import AccessType
@@ -68,7 +68,7 @@ def notify_access_request(user: CradleUser, entity: Entry, message: str) -> None
 class RequestAccess(APIView):
     """Request access to an entity; notifies users with read-write access."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = RequestAccessSerializer
 

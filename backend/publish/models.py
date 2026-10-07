@@ -1,4 +1,4 @@
-"""Published report models for exporting notes to external systems and file formats."""
+"""Published report models for exporting notes to file formats."""
 
 import uuid
 
@@ -15,12 +15,6 @@ from .managers import PublishedReportManager
 def report_upload_path(instance: "PublishedReport", _filename: str) -> str:
     """Return S3 object key: {report_id}.{strategy}, e.g. abc123.html."""
     return f"{instance.id}.{(instance.strategy or '').lower()}"
-
-
-class UploadStrategies(models.TextChoices):
-    """Strategies for uploading reports to external systems."""
-
-    CATALYST = "catalyst", "Catalyst"
 
 
 class DownloadStrategies(models.TextChoices):
@@ -40,7 +34,7 @@ class ReportStatus(models.TextChoices):
 
 
 class PublishedReport(models.Model, LoggableModelMixin):
-    """A report published from notes, stored in S3 and optionally sent to external systems."""
+    """A report published from notes and stored in S3."""
 
     id = models.UUIDField(
         primary_key=True,
@@ -73,8 +67,8 @@ class PublishedReport(models.Model, LoggableModelMixin):
     )
     strategy = models.CharField(
         max_length=255,
-        choices=UploadStrategies.choices + DownloadStrategies.choices,
-        help_text="Upload or download format strategy.",
+        choices=DownloadStrategies.choices,
+        help_text="Export format strategy.",
     )
     anonymized = models.BooleanField(
         default=False,
@@ -108,12 +102,6 @@ class PublishedReport(models.Model, LoggableModelMixin):
     )
 
     objects = PublishedReportManager()
-
-    external_ref = models.CharField(
-        max_length=1024,
-        null=True,
-        help_text="Reference ID in external system (e.g. Catalyst).",
-    )
 
     class Meta:
         ordering = ["-created_at"]

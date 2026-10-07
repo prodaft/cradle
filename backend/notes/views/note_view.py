@@ -18,7 +18,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.enums import AccessType
 from access.models import Access
@@ -43,6 +42,7 @@ from file_transfer.models import FileReference
 from knowledge_graph.serializers import SubGraphSerializer
 from logs.models import EventLog
 from logs.serializers import EVENT_LOG_PAGE_RESPONSE, EventLogSerializer
+from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser
 from user.permissions import HasAdminRole
 
@@ -86,7 +86,7 @@ RESTRICTED_NOTE_SEARCH_FIELDS = ("content", "title")
 RESTRICTED_NOTE_MIN_TERM_LENGTH = 3
 RESTRICTED_NOTE_LIMIT = 100
 _RESTRICTED_NOTE_ALLOWED_PARAMS = frozenset(
-    {"any_field", "include_restricted", "page", "page_size", "order_by", "truncate"}
+    {"search", "include_restricted", "page", "page_size", "order_by", "truncate"}
 )
 
 
@@ -112,7 +112,7 @@ def _restricted_note_ids(request, user: CradleUser) -> list[UUID]:
     params = request.query_params
     if not _wants_restricted_notes(request) or set(params) - _RESTRICTED_NOTE_ALLOWED_PARAMS:
         return []
-    node = parse_search(params.get("any_field"), param="any_field")
+    node = parse_search(params.get("search"))
     if node is None or not _is_plain_text(node):
         return []
     accessible_ids = Note.objects.get_accessible_notes(user).order_by().values("id")
@@ -284,7 +284,7 @@ def get_readable_note(user: CradleUser, note_id: UUID) -> Note:
                 default="-created_at",
             ),
             OpenApiParameter(
-                name="any_field",
+                name="search",
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description=(
@@ -298,7 +298,7 @@ def get_readable_note(user: CradleUser, note_id: UUID) -> Note:
                 type=bool,
                 location=OpenApiParameter.QUERY,
                 description=(
-                    "Also return published notes you cannot access whose content or title matches any_field, "
+                    "Also return published notes you cannot access whose content or title matches search, "
                     "redacted to their id and timestamps with accessible=false, after the accessible notes. "
                     "Only for plain-text searches (terms, phrases or =exact of 3+ characters, combined with AND) "
                     "with no other filters, and only when enabled in the search settings."
@@ -333,7 +333,7 @@ def get_readable_note(user: CradleUser, note_id: UUID) -> Note:
 class NoteList(APIView):
     """List and create notes; supports filtering and pagination."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
 
@@ -416,9 +416,9 @@ class NoteList(APIView):
             file = FileReference.objects.filter(id=file_id).first()
             queryset = notes_holding_file(queryset, file) if file else queryset.none()
 
-        any_field_q = search_q(request.query_params.get("any_field"), NOTE_SEARCH_FIELDS, param="any_field")
-        if any_field_q is not None:
-            queryset = queryset.filter(any_field_q)
+        search = search_q(request.query_params.get("search"), NOTE_SEARCH_FIELDS)
+        if search is not None:
+            queryset = queryset.filter(search)
 
         filterset = NoteFilter(request.query_params, queryset=queryset)
 
@@ -592,7 +592,7 @@ class NoteList(APIView):
 class NoteDetail(APIView):
     """Retrieve, update, or delete a single note."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = NoteRetrieveSerializer
 
@@ -670,7 +670,7 @@ class NoteDetail(APIView):
 class NoteFinalize(APIView):
     """Convert a fleeting note to a regular note (triggers processing pipeline)."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def put(self, request: Request, note_id: UUID) -> Response:
@@ -715,7 +715,7 @@ class NoteFinalize(APIView):
 class NoteRelink(APIView):
     """Re-run note processing pipeline for a single note. Admin only."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
     serializer_class = NoteRetrieveSerializer
 
@@ -768,7 +768,7 @@ class NoteRelink(APIView):
 class NoteRelinkAll(APIView):
     """Re-run note processing pipeline for all non-fleeting notes. Admin only."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
 
     def post(self, request: Request) -> Response:
@@ -822,7 +822,7 @@ class NoteRelinkAll(APIView):
                 default=10,
             ),
             OpenApiParameter(
-                name="keyword",
+                name="search",
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description=(
@@ -872,13 +872,6 @@ class NoteRelinkAll(APIView):
                 default="-created_at",
             ),
             OpenApiParameter(
-                name="any_field",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="Filter with an or over all fields (case-insensitive partial match)",
-                required=False,
-            ),
-            OpenApiParameter(
                 name="status",
                 type=str,
                 location=OpenApiParameter.QUERY,
@@ -902,7 +895,7 @@ class NoteRelinkAll(APIView):
 class NoteFiles(APIView):
     """List files from accessible notes with filtering."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
 
@@ -968,9 +961,9 @@ class NoteFiles(APIView):
             .distinct()
         )
 
-        keyword_q = search_q(request.query_params.get("keyword"), FILE_SEARCH_FIELDS, param="keyword")
-        if keyword_q is not None:
-            files = files.filter(keyword_q)
+        search = search_q(request.query_params.get("search"), FILE_SEARCH_FIELDS)
+        if search is not None:
+            files = files.filter(search)
 
         if request.query_params.get("mime_type"):
             mimetype = request.query_params.get("mime_type")
@@ -1027,7 +1020,7 @@ class NoteFiles(APIView):
 class FileDetail(APIView):
     """Dashboard data for a single file attached to an accessible note."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, file_id: UUID) -> Response:
@@ -1073,7 +1066,7 @@ class FileDetail(APIView):
 class NoteGraph(APIView):
     """Return knowledge graph subgraph for notes matching filters."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, note_id: UUID) -> Response:
@@ -1130,7 +1123,7 @@ class NoteHistory(ListAPIView):
     filterset_class = NoteHistoryFilter
     pagination_class = TotalPagesPagination
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):

@@ -31,8 +31,8 @@ class DeleteEntityDetailsTest(EntriesTestCase):
         )
         self.token_admin = str(AccessToken.for_user(self.admin_user))
         self.token_normal = str(AccessToken.for_user(self.normal_user))
-        self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
-        self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
+        self.headers_admin = {"HTTP_COOKIE": f"access_token={self.token_admin}"}
+        self.headers_normal = {"HTTP_COOKIE": f"access_token={self.token_normal}"}
 
     def test_delete_entity_authenticated_not_admin(self):
         entity = Entry.objects.create(name="Entity1", description="Description1", entry_class=self.entryclass1)

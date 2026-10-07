@@ -13,7 +13,7 @@ class StepUpAuthTest(UserTestCase):
 
         self.user = CradleUser.objects.create_user(username="user", password="userR1#1234112", email="a@b.c")
         self.token = str(AccessToken.for_user(self.user))
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.token}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={self.token}"}
 
     def test_delete_own_account_requires_password(self):
         response = self.client.delete(

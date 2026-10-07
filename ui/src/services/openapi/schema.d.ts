@@ -252,7 +252,7 @@ export interface paths {
         put?: never;
         /**
          * Refresh Access Token
-         * @description Refresh the access token using a valid refresh token.
+         * @description Refresh the access token using the refresh token cookie.
          */
         post: operations["auth_refresh_create"];
         delete?: never;
@@ -3687,8 +3687,6 @@ export interface components {
             /** Format: email */
             email?: string;
             password?: string;
-            /** @description API key for Catalyst integration */
-            catalyst_api_key?: string | null;
             /** @description Whether to enable Vim keybindings in the editor */
             vim_mode?: boolean;
             /** @description UI theme settings (JSON object) */
@@ -3706,8 +3704,6 @@ export interface components {
             email_confirmed?: boolean;
             /** @description Whether the user can log in */
             is_active?: boolean;
-            /** @description Whether 2FA is enabled for this account */
-            two_factor_enabled?: boolean;
             /**
              * Format: int64
              * @description File upload limit in bytes
@@ -3721,15 +3717,14 @@ export interface components {
             /** @description Title for the published report. */
             title: string;
             /**
-             * @description Strategy to use (upload or download).
+             * @description Export format to use.
              *
-             *     * `catalyst` - Catalyst
              *     * `html` - HTML
              *     * `plain` - Plain Text
              *     * `json` - JSON
              * @enum {string}
              */
-            strategy: "catalyst" | "html" | "plain" | "json";
+            strategy: "html" | "plain" | "json";
             /**
              * @description Whether the report content should be anonymized.
              * @default false
@@ -3738,8 +3733,6 @@ export interface components {
         };
         /** @description Serializer for the publish strategies endpoint response. */
         PublishStrategiesResponse: {
-            /** @description Available upload strategies. */
-            upload: components["schemas"]["PublishStrategy"][];
             /** @description Available download strategies. */
             download: components["schemas"]["PublishStrategy"][];
         };
@@ -3747,7 +3740,7 @@ export interface components {
         PublishStrategy: {
             /** @description Human-readable label for the strategy. */
             label: string;
-            /** @description Strategy identifier (e.g. 'html', 'catalyst'). */
+            /** @description Strategy identifier (e.g. 'html'). */
             strategy: string;
         };
         /** @description Relation with minimal entry details for list views. */
@@ -3843,18 +3836,17 @@ export interface components {
              */
             readonly created_at?: string;
             /**
-             * @description Upload or download format strategy.
+             * @description Export format strategy.
              *
-             *     * `catalyst` - Catalyst
              *     * `html` - HTML
              *     * `plain` - Plain Text
              *     * `json` - JSON
              * @enum {string}
              */
-            strategy: "catalyst" | "html" | "plain" | "json";
+            strategy: "html" | "plain" | "json";
             /** @description Human-readable strategy name. */
             readonly strategy_label?: string;
-            /** @description Presigned URL to download the report file, or external URL for Catalyst. */
+            /** @description Presigned URL to download the report file. */
             readonly report_url?: string | null;
             /** @description Error details when status is error. */
             error_message?: string | null;
@@ -3889,15 +3881,14 @@ export interface components {
              */
             readonly created_at?: string;
             /**
-             * @description Upload or download format strategy.
+             * @description Export format strategy.
              *
-             *     * `catalyst` - Catalyst
              *     * `html` - HTML
              *     * `plain` - Plain Text
              *     * `json` - JSON
              * @enum {string}
              */
-            strategy: "catalyst" | "html" | "plain" | "json";
+            strategy: "html" | "plain" | "json";
             /** @description Human-readable strategy name. */
             readonly strategy_label?: string;
             /** @description Error details when status is error. */
@@ -4049,14 +4040,15 @@ export interface components {
             username: string;
             password: string;
         };
-        /** @description Response schema for token obtain and refresh endpoints. */
+        /** @description Response schema for token obtain and refresh endpoints; the tokens themselves are set as HttpOnly cookies. */
         TokenPairRetrieve: {
-            /** @description JWT access token */
-            access: string;
-            /** @description JWT refresh token */
-            refresh: string;
             /** @description User role */
             role: string;
+            /**
+             * Format: uuid
+             * @description Signed-in user ID (sign-in only)
+             */
+            user_id?: string;
             /**
              * Format: date-time
              * @description Access token expiry
@@ -4067,9 +4059,6 @@ export interface components {
              * @description Refresh token expiry
              */
             refresh_expires_at: string;
-        };
-        TokenRefreshRequest: {
-            refresh: string;
         };
         /** @description Serializer for unread notification count response. */
         UnreadNotifications: {
@@ -4101,8 +4090,6 @@ export interface components {
             email: string;
             /** @description User password (min 12 chars, upper, lower, digit, special) */
             password: string;
-            /** @description API key for Catalyst integration */
-            catalyst_api_key?: string | null;
             /** @description Whether to enable Vim keybindings in the editor */
             vim_mode?: boolean;
             /** @description UI theme settings (JSON object) */
@@ -4119,8 +4106,6 @@ export interface components {
             email: string;
             /** @description User password (admin can skip validation) */
             password: string;
-            /** @description API key for Catalyst integration */
-            catalyst_api_key?: string | null;
             /** @description Whether to enable Vim keybindings in the editor */
             vim_mode?: boolean;
             /** @description UI theme settings (JSON object) */
@@ -4138,8 +4123,6 @@ export interface components {
             email_confirmed?: boolean;
             /** @description Whether the user can log in */
             is_active?: boolean;
-            /** @description Whether 2FA is enabled for this account */
-            two_factor_enabled?: boolean;
             /**
              * Format: int64
              * @description File upload limit in bytes
@@ -4148,10 +4131,11 @@ export interface components {
         };
         /** @description Serializer for user management action response. */
         UserManageResponse: {
-            /** @description JWT refresh token (only for simulate action) */
-            refresh?: string;
-            /** @description JWT access token (only for simulate action) */
-            access?: string;
+            /**
+             * Format: uuid
+             * @description Simulated user ID (simulate action only)
+             */
+            user_id?: string;
             /** @description Success message for other actions */
             message?: string;
             /**
@@ -4204,8 +4188,6 @@ export interface components {
             vim_mode?: boolean;
             /** @description Whether the email address has been verified */
             email_confirmed?: boolean;
-            /** @description Return True if user has Catalyst API key set (masked for security). */
-            readonly catalyst_api_key?: boolean;
             /**
              * Format: int64
              * @description File upload limit in bytes
@@ -7594,11 +7576,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TokenRefreshRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {
@@ -17145,8 +17123,6 @@ export interface operations {
     enrichment_request_list: {
         parameters: {
             query?: {
-                /** @description Search titles and usernames, with the same syntax as `title` */
-                any_value?: string;
                 /** @description Filter by entries that have results for this entry */
                 entry_id?: string;
                 /** @description Order enrichment requests by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, title, user, status. Default: -created_at */
@@ -17155,6 +17131,8 @@ export interface operations {
                 page?: number;
                 /** @description Number of enrichment requests to return per page. Max 100. */
                 page_size?: number;
+                /** @description Search titles and usernames, with the same syntax as `title` */
+                search?: string;
                 /** @description Filter by status */
                 status?: "done" | "error" | "waiting" | "warning" | "working";
                 /** @description Search titles (case-insensitive). Supports the search syntax: AND/OR/NOT (or -term), "quoted phrases", =exact, and * wildcards. */
@@ -22144,7 +22122,7 @@ export interface operations {
                 page?: number;
                 /** @description Number of results per page */
                 page_size?: number;
-                /** @description Query filter for results */
+                /** @description Advanced entry filter: entry type, colon, then name (e.g. *:note, author:Smith) */
                 query?: string;
                 /** @description Free-text search across entry name, subtype and description (ignored when `query` is set). Supports AND/OR/NOT (or -term), "quoted phrases", =exact matches and * wildcards. */
                 search?: string;
@@ -24248,8 +24226,6 @@ export interface operations {
     notes_list: {
         parameters: {
             query?: {
-                /** @description Free-text search over content, title, author and editor username. Supports the search syntax: terms/"phrases" (contains), =exact, wildcards (adm*n), AND/OR, NOT/-term, parentheses. */
-                any_field?: string;
                 /** @description Filter by author username (case-insensitive partial match) */
                 author?: string;
                 /** @description Filter by note content (case-insensitive partial match) */
@@ -24264,7 +24240,7 @@ export interface operations {
                 editor?: string;
                 /** @description Filter notes holding this file or a copy of it (same SHA-256) */
                 file?: string;
-                /** @description Also return published notes you cannot access whose content or title matches any_field, redacted to their id and timestamps with accessible=false, after the accessible notes. Only for plain-text searches (terms, phrases or =exact of 3+ characters, combined with AND) with no other filters, and only when enabled in the search settings. */
+                /** @description Also return published notes you cannot access whose content or title matches search, redacted to their id and timestamps with accessible=false, after the accessible notes. Only for plain-text searches (terms, phrases or =exact of 3+ characters, combined with AND) with no other filters, and only when enabled in the search settings. */
                 include_restricted?: boolean;
                 /** @description Filter notes by being linked to a specific entry */
                 linked_to?: string;
@@ -24276,6 +24252,8 @@ export interface operations {
                 page_size?: number;
                 /** @description Filter notes by referenced entry IDs */
                 references?: string[];
+                /** @description Free-text search over content, title, author and editor username. Supports the search syntax: terms/"phrases" (contains), =exact, wildcards (adm*n), AND/OR, NOT/-term, parentheses. */
+                search?: string;
                 /** @description Filter by note status (repeat for OR). `finalized` means non-fleeting notes; `fleeting` limits to the current user's fleeting notes. Omit this parameter for the default list (accessible notes plus your fleeting notes). */
                 status?: ("finalized" | "fleeting" | "healthy" | "invalid" | "processing" | "warning")[];
                 /** @description Number of characters to truncate note content to */
@@ -27230,16 +27208,12 @@ export interface operations {
     notes_files_retrieve: {
         parameters: {
             query?: {
-                /** @description Filter with an or over all fields (case-insensitive partial match) */
-                any_field?: string;
                 /** @description Filter notes by creation time greater than or equal to (ISO datetime format) */
                 created_at_gte?: string;
                 /** @description Filter notes by creation time less than or equal to (ISO datetime format) */
                 created_at_lte?: string;
                 /** @description Filter notes by date (YYYY-MM-DD format) */
                 date?: string;
-                /** @description Free-text search over file name, mimetype and MD5/SHA1/SHA256 hashes. Supports the search syntax: terms/"phrases" (contains), =exact, wildcards (*.pdf), AND/OR, NOT/-term, parentheses. */
-                keyword?: string;
                 /** @description Filter notes by being linked to a specific entry */
                 linked_to?: string;
                 /** @description Filter files by MIME type (case-insensitive partial match; `*` is a wildcard, e.g. image/*) */
@@ -27252,6 +27226,8 @@ export interface operations {
                 page_size?: number;
                 /** @description Filter notes by referenced entry IDs */
                 references?: string[];
+                /** @description Free-text search over file name, mimetype and MD5/SHA1/SHA256 hashes. Supports the search syntax: terms/"phrases" (contains), =exact, wildcards (*.pdf), AND/OR, NOT/-term, parentheses. */
+                search?: string;
                 /** @description Filter files by status: 'healthy' (has sha256 hash) or 'warning' (missing sha256 hash) */
                 status?: string;
             };

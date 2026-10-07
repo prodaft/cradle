@@ -15,7 +15,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -147,16 +146,18 @@ class TokenObtainPairLogView(TokenObtainPairView):
             if not user.verify_otp(request.data["otp"]):
                 raise InvalidTwoFactorCodeException(detail="The two-factor authentication code is invalid.")
 
-        response_data = serializer.validated_data.copy()
-        response_data["role"] = user.role
-
         access_token = AccessToken(serializer.validated_data["access"])
         access_expires_at = datetime.fromtimestamp(access_token["exp"], tz=timezone.utc)
-        response_data["access_expires_at"] = access_expires_at
 
         refresh_token = RefreshToken(serializer.validated_data["refresh"])
         refresh_expires_at = datetime.fromtimestamp(refresh_token["exp"], tz=timezone.utc)
-        response_data["refresh_expires_at"] = refresh_expires_at
+
+        response_data = {
+            "role": user.role,
+            "user_id": str(user.id),
+            "access_expires_at": access_expires_at,
+            "refresh_expires_at": refresh_expires_at,
+        }
 
         create_or_update_session(request, user, refresh_token, refresh_expires_at)
 
@@ -180,8 +181,8 @@ class TokenObtainPairLogView(TokenObtainPairView):
     post=extend_schema(
         operation_id="auth_refresh_create",
         summary="Refresh Access Token",
-        description="Refresh the access token using a valid refresh token.",
-        request=TokenRefreshSerializer,
+        description="Refresh the access token using the refresh token cookie.",
+        request=None,
         auth=[],
         responses={
             200: TokenPairRetrieveSerializer,
@@ -199,11 +200,11 @@ class TokenRefreshLogView(TokenRefreshView):
 
     def post(self, request: Request, *args, **kwargs) -> Response:
         refresh_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
-        refresh_token_str = request.data.get("refresh") or request.COOKIES.get(refresh_name)
+        refresh_token_str = request.COOKIES.get(refresh_name)
         if not refresh_token_str:
             raise UnauthenticatedException(detail="Your session could not be renewed. Please sign in again.")
 
-        request._full_data = {**request.data, "refresh": refresh_token_str}
+        request._full_data = {"refresh": refresh_token_str}
 
         try:
             old_refresh_token = RefreshToken(refresh_token_str)
@@ -223,6 +224,13 @@ class TokenRefreshLogView(TokenRefreshView):
         if response.status_code == 200:
             old_refresh_token = RefreshToken(refresh_token_str)
             role = old_refresh_token.get("role", "")
+            old_jti = old_refresh_token.get("jti")
+            rotated = "refresh" in response.data
+
+            if rotated and old_jti:
+                old_expires_at = datetime.fromtimestamp(old_refresh_token["exp"], tz=timezone.utc)
+                if not BlacklistedToken.blacklist_token(old_jti, old_expires_at):
+                    raise SessionRenewalFailedException(detail="This session has ended. Please sign in again.")
 
             access_token = AccessToken(response.data["access"])
             access_expires_at = datetime.fromtimestamp(access_token["exp"], tz=timezone.utc)
@@ -239,18 +247,18 @@ class TokenRefreshLogView(TokenRefreshView):
             refresh_max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
             set_token_cookies(
                 response,
-                response.data["access"],
+                response.data.pop("access"),
                 new_refresh_token_str,
                 access_max_age,
                 refresh_max_age,
             )
+            response.data.pop("refresh", None)
 
             try:
                 jwt_auth = JWTAuthentication()
                 user = jwt_auth.get_user(old_refresh_token)
 
-                old_jti = old_refresh_token.get("jti")
-                if old_jti and new_refresh_token_str != refresh_token_str:
+                if rotated and old_jti:
                     UserSession.objects.filter(refresh_token_jti=old_jti).delete()
                 create_or_update_session(request, user, new_refresh_token, refresh_expires_at)
             except (

@@ -11,7 +11,7 @@ import {
     AuthTokenException,
     SessionExpiredException,
 } from '@services/openapi/auth-exceptions';
-import { fetchClient, setClientAccessToken, setClientAuthCallbacks } from './client';
+import { fetchClient, setClientAuthCallbacks } from './client';
 
 function getStorageItem(key: string): string | null {
     if (typeof window === 'undefined') return null;
@@ -48,10 +48,8 @@ function getCsrfToken(): string | null {
 }
 
 const state = {
-    accessToken: '',
     accessExpiresAt: null as string | null,
     refreshExpiresAt: null as string | null,
-    refreshToken: '' as string,
     refreshInFlight: null as Promise<boolean> | null,
     refreshTimer: null as ReturnType<typeof setTimeout> | null,
 };
@@ -82,7 +80,6 @@ function scheduleTokenRefresh() {
 export function loadSessionFromStorage(): void {
     state.accessExpiresAt = getStorageItem('access_expires_at');
     state.refreshExpiresAt = getStorageItem('refresh_expires_at');
-    state.accessToken = '';
 }
 
 export function isSessionLoggedIn(): boolean {
@@ -93,18 +90,15 @@ export function isSessionLoggedIn(): boolean {
 }
 
 export function hasUsableAccessToken(): boolean {
-    if (!state.accessToken || !state.accessExpiresAt) {
+    if (!state.accessExpiresAt) {
         return false;
     }
     return new Date(state.accessExpiresAt).getTime() - Date.now() >= 60_000;
 }
 
 export function clearClientSession(): void {
-    state.accessToken = '';
     state.accessExpiresAt = null;
     state.refreshExpiresAt = null;
-    state.refreshToken = '';
-    setClientAccessToken(null);
     removeStorageItem('access_expires_at');
     removeStorageItem('refresh_expires_at');
     removeStorageItem('role');
@@ -118,11 +112,8 @@ export function clearClientSession(): void {
 
 export function applyClientTokenData(data: TokenData): void {
     resetSessionExpiredGate();
-    state.accessToken = data.access;
     state.accessExpiresAt = data.accessExpiresAt.toISOString();
     state.refreshExpiresAt = data.refreshExpiresAt.toISOString();
-    state.refreshToken = data.refresh;
-    setClientAccessToken(data.access);
     setStorageItem('access_expires_at', state.accessExpiresAt);
     setStorageItem('refresh_expires_at', state.refreshExpiresAt);
     setStorageItem('role', data.role);
@@ -140,12 +131,23 @@ export async function refreshSessionAccessToken(): Promise<boolean> {
         return false;
     }
 
-    state.refreshInFlight = (async () => {
+    const expiresAtBefore = state.accessExpiresAt;
+    const inFlight = withRefreshLock(async () => {
         try {
+            const storedAccessExpiresAt = getStorageItem('access_expires_at');
+            const storedRefreshExpiresAt = getStorageItem('refresh_expires_at');
+            if (
+                storedAccessExpiresAt &&
+                storedRefreshExpiresAt &&
+                storedAccessExpiresAt !== expiresAtBefore
+            ) {
+                state.accessExpiresAt = storedAccessExpiresAt;
+                state.refreshExpiresAt = storedRefreshExpiresAt;
+                scheduleTokenRefresh();
+                return true;
+            }
+
             const { data, error, response } = await fetchClient.POST('/auth/refresh/', {
-                body: {
-                    refresh: state.refreshToken,
-                },
                 headers: {
                     'X-CSRFToken': getCsrfToken() ?? '',
                 },
@@ -159,8 +161,6 @@ export async function refreshSessionAccessToken(): Promise<boolean> {
             }
 
             applyClientTokenData({
-                access: data.access,
-                refresh: data.refresh,
                 accessExpiresAt: new Date(data.access_expires_at),
                 refreshExpiresAt: new Date(data.refresh_expires_at),
                 role: data.role,
@@ -168,48 +168,36 @@ export async function refreshSessionAccessToken(): Promise<boolean> {
             return true;
         } catch {
             return false;
-        } finally {
-            state.refreshInFlight = null;
         }
-    })();
+    }).finally(() => {
+        state.refreshInFlight = null;
+    });
 
-    return state.refreshInFlight;
+    state.refreshInFlight = inFlight;
+    return inFlight;
 }
 
-export async function getAccessTokenForRequest(): Promise<string> {
-    if (!state.accessToken) {
-        if (!isSessionLoggedIn()) {
-            throw new AuthTokenException('No access token available');
-        }
-        const ok = await refreshSessionAccessToken();
-        if (!ok || !state.accessToken) {
-            clearClientSession();
-            throw new SessionExpiredException('Unable to refresh access token');
-        }
-    }
+function withRefreshLock(fn: () => Promise<boolean>): Promise<boolean> {
+    if (typeof navigator === 'undefined' || !navigator.locks) return fn();
+    return navigator.locks.request('cradle-session-refresh', fn);
+}
 
-    const accessExpiresAt = state.accessExpiresAt;
-    if (accessExpiresAt) {
-        const expiresAt = new Date(accessExpiresAt);
-        if (expiresAt.getTime() - Date.now() < 60_000) {
-            const ok = await refreshSessionAccessToken();
-            if (!ok || !state.accessToken) {
-                clearClientSession();
-                throw new SessionExpiredException('Unable to refresh access token');
-            }
-        }
+export async function ensureSessionForRequest(): Promise<void> {
+    if (hasUsableAccessToken()) return;
+    if (!isSessionLoggedIn()) {
+        throw new AuthTokenException('Not signed in');
     }
-
-    if (!state.accessToken) {
-        throw new AuthTokenException('No access token available');
+    const ok = await refreshSessionAccessToken();
+    if (!ok) {
+        clearClientSession();
+        throw new SessionExpiredException('Unable to refresh access token');
     }
-    return state.accessToken;
 }
 
 export function registerOpenapiAuthCallbacks(): void {
     if (typeof window === 'undefined') return;
     loadSessionFromStorage();
-    setClientAuthCallbacks(getAccessTokenForRequest, refreshSessionAccessToken);
+    setClientAuthCallbacks(ensureSessionForRequest, refreshSessionAccessToken);
 }
 
 export function unregisterOpenapiAuthCallbacks(): void {

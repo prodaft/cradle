@@ -14,7 +14,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import BadRequestException, CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
@@ -24,6 +23,7 @@ from entries.tasks import (
     update_accesses,
 )
 from file_transfer.tasks import reprocess_all_files_task
+from user.authentication import CookieJWTAuthentication
 from user.permissions import HasAdminRole
 
 from .models import BaseSettingsSection, Setting
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 class SettingsView(APIView):
     """Get or update namespaced settings (notes, users, files). Admin only."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
 
     @extend_schema(
@@ -157,7 +157,7 @@ class SettingsView(APIView):
 class ActionView(APIView):
     """Execute admin management actions (refresh graph, reprocess files, etc.)."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
 
     @classmethod

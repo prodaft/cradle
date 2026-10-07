@@ -445,30 +445,23 @@ export default function UserPermissionsForm({
                     </div>
                 </SettingsHeaderActionsPortal>
             )}
-            <div className='space-y-4'>
-                <div className='flex w-full min-w-0 shrink-0 items-start justify-between gap-2 py-1'>
-                    <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
-                        <SearchInput
-                            schema={FREE_TEXT_SCHEMA}
-                            value={searchState}
-                            onApply={applySearch}
-                            placeholder='Search entities...'
-                            disabled={!!readOnly}
-                        />
-                    </div>
-                    <div className='flex shrink-0 items-center gap-2'>
-                        <DataTableViewOptions table={table} />
-                    </div>
-                </div>
-                <DataTable
-                    table={table}
-                    density='compact'
-                    emptyMessage={emptyMessage}
-                    showPagination={(permissions?.count ?? 0) > 0 || isFetching}
-                    paginationDisabled={!!readOnly}
-                    isLoading={hydratedRef.current && isFetching && !permissions}
+            <DataTable
+                table={table}
+                density='compact'
+                emptyMessage={emptyMessage}
+                showPagination={(permissions?.count ?? 0) > 0 || isFetching}
+                paginationDisabled={!!readOnly}
+                isLoading={hydratedRef.current && isFetching && !permissions}
+                toolbarEnd={<DataTableViewOptions table={table} />}
+            >
+                <SearchInput
+                    schema={FREE_TEXT_SCHEMA}
+                    value={searchState}
+                    onApply={applySearch}
+                    placeholder='Search entities...'
+                    disabled={!!readOnly}
                 />
-            </div>
+            </DataTable>
         </>
     );
 }

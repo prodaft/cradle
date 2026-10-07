@@ -2,14 +2,14 @@
 
 from django.urls import path
 
-from .views import entity_views, entry_class_views, entry_view, list_stream_views, relation_view
+from .views import entity_views, entry_class_views, entry_views, relation_views, stream_views
 
 urlpatterns = [
-    path("", entry_view.EntryView.as_view(), name="entry_create"),
-    path("<int:entry_id>/", entry_view.EntryDetailView.as_view(), name="entry_detail"),
+    path("", entry_views.EntryView.as_view(), name="entry_create"),
+    path("<int:entry_id>/", entry_views.EntryDetailView.as_view(), name="entry_detail"),
     path(
         "entry-classes/stream/",
-        list_stream_views.EntryClassListStreamView.as_view(),
+        stream_views.EntryClassListStreamView.as_view(),
         name="entry_class_list_stream",
     ),
     path(
@@ -24,7 +24,7 @@ urlpatterns = [
     ),
     path(
         "entities/stream/",
-        list_stream_views.EntityListStreamView.as_view(),
+        stream_views.EntityListStreamView.as_view(),
         name="entity_list_stream",
     ),
     path("entities/", entity_views.EntityList.as_view(), name="entity_list"),
@@ -38,10 +38,10 @@ urlpatterns = [
         entry_class_views.NextName.as_view(),
         name="next_name",
     ),
-    path("relations/", relation_view.RelationListView.as_view(), name="relation_list"),
+    path("relations/", relation_views.RelationListView.as_view(), name="relation_list"),
     path(
         "relations/<uuid:relation_id>/",
-        relation_view.RelationDetailView.as_view(),
+        relation_views.RelationDetailView.as_view(),
         name="relation_detail",
     ),
 ]

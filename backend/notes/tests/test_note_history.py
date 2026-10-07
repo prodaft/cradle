@@ -20,8 +20,8 @@ class NoteHistoryTest(NotesTestCase):
         self.other = CradleUser.objects.create_user(
             username="other", password="pass", email="b@c.d", is_active=True, email_confirmed=True
         )
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(self.user)}"}
-        self.other_headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(self.other)}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.user)}"}
+        self.other_headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.other)}"}
 
         self.note = Note.objects.create(author=self.user, content="mine")
         self.note.log_create(self.user)

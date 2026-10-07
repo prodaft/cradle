@@ -14,7 +14,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import CoreErrorCodes, InvalidRequestException
 from core.openapi import get_common_error_responses, get_error_responses
@@ -30,7 +29,7 @@ from file_transfer.uploads.exceptions import (
     UploadExpiredException,
     UploadNotFoundException,
 )
-from user.authentication import APIKeyAuthentication
+from user.authentication import APIKeyAuthentication, CookieJWTAuthentication
 
 from ..enums import DigestStatus
 from ..exceptions import (
@@ -132,14 +131,12 @@ digest_upload_flow = PresignedUploadFlow(
     methods=["POST"],
 )
 class DigestUploadAPIView(APIView):
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
         file_name, file_size = parse_initiate_request(request.data)
 
-        # Non-admin users cannot have concurrent uploads
-        # (admins can have multiple pending uploads)
         if not request.user.is_cradle_admin and PendingDigestUpload.objects.filter(user=request.user).exists():
             raise AlreadyUploadingException(
                 detail="You already have an open upload session. Please finalize the previous upload before starting a new one."
@@ -177,7 +174,7 @@ class DigestUploadAPIView(APIView):
     methods=["POST"],
 )
 class DigestUploadFinalizeAPIView(APIView):
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request, upload_id: str) -> Response:
@@ -221,7 +218,7 @@ class DigestUploadFinalizeAPIView(APIView):
 class DigestSubclassesAPIView(APIView):
     """DRF API view that returns all BaseDigest subclasses with their names."""
 
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, *args, **kwargs) -> Response:
@@ -335,7 +332,7 @@ class DigestSubclassesAPIView(APIView):
     ),
 )
 class DigestAPIView(GenericAPIView):
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
     serializer_class = BaseDigestSerializer
@@ -428,7 +425,7 @@ class DigestAPIView(GenericAPIView):
     ),
 )
 class DigestDetailAPIView(APIView):
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = BaseDigestSerializer
 

@@ -7,8 +7,6 @@
 import { createContext } from 'react';
 
 export interface TokenData {
-    access: string;
-    refresh: string;
     accessExpiresAt: Date;
     refreshExpiresAt: Date;
     role: string;
@@ -38,7 +36,6 @@ export interface AuthActionsValue {
         otp?: string | null,
     ) => Promise<LoginResult>;
     logOut: () => Promise<void>;
-    getAccessToken: () => Promise<string>;
     isLoggedIn: () => boolean;
     setTokensDirectly: (data: TokenData) => void;
 }

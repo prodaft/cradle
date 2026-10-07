@@ -8,10 +8,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.openapi import get_common_error_responses, get_error_responses
 
+from ..authentication import CookieJWTAuthentication
 from ..exceptions import (
     InvalidTwoFactorCodeException,
     TwoFactorAlreadyEnabledException,
@@ -40,7 +40,7 @@ from ..utils.step_up import require_step_up, validate_step_up
     )
 )
 class Enable2FAView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
@@ -72,7 +72,7 @@ class Enable2FAView(APIView):
     )
 )
 class Verify2FASetupView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
@@ -91,7 +91,6 @@ class Verify2FASetupView(APIView):
                 newest_device = confirmed_devices.order_by("-id").first()
                 confirmed_devices.exclude(id=newest_device.id).delete()
 
-            # Update user
             request.user.two_factor_enabled = True
             request.user.save(update_fields=["two_factor_enabled"])
 
@@ -120,7 +119,7 @@ class Verify2FASetupView(APIView):
     )
 )
 class Disable2FAView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:

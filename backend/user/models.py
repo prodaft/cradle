@@ -47,10 +47,6 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         max_length=128, blank=True, null=True, help_text="API key for programmatic access"
     )
 
-    catalyst_api_key: models.TextField = models.TextField(
-        null=True, blank=True, help_text="API key for Catalyst integration"
-    )
-
     password_reset_token: models.TextField = models.TextField(
         null=True, blank=True, help_text="Token for password reset flow"
     )
@@ -377,9 +373,14 @@ class BlacklistedToken(models.Model):
         return cls.objects.filter(jti=jti).exists()
 
     @classmethod
-    def blacklist_token(cls, jti: str, expires_at: datetime) -> None:
-        """Add a token JTI to the blacklist (idempotent via get_or_create)."""
-        cls.objects.get_or_create(
+    def blacklist_token(cls, jti: str, expires_at: datetime) -> bool:
+        """Add a token JTI to the blacklist (idempotent via get_or_create).
+
+        Returns:
+            True if this call blacklisted the token, False if it already was.
+        """
+        _, created = cls.objects.get_or_create(
             jti=jti,
             defaults={"expires_at": expires_at},
         )
+        return created

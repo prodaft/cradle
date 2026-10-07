@@ -110,8 +110,6 @@ export default function OAuthCallback() {
             if (loginError) throw { response: loginResponse, error: loginError };
 
             const data = resp as {
-                access: string;
-                refresh: string;
                 role: string;
                 access_expires_at: string;
                 refresh_expires_at: string;
@@ -119,8 +117,6 @@ export default function OAuthCallback() {
             };
 
             setTokensDirectly({
-                access: data.access,
-                refresh: data.refresh,
                 accessExpiresAt: new Date(data.access_expires_at),
                 refreshExpiresAt: new Date(data.refresh_expires_at),
                 role: data.role,

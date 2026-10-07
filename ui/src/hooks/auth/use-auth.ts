@@ -31,7 +31,7 @@ export const useAuthState = (): AuthStateValue => {
 };
 
 /**
- * Hook to access authentication actions only (logIn, logOut, getAccessToken, isLoggedIn, setTokensDirectly)
+ * Hook to access authentication actions only (logIn, logOut, isLoggedIn, setTokensDirectly)
  * Use this when you only need actions to avoid rerenders from state changes
  *
  * @returns Authentication actions value

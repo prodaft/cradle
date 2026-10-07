@@ -9,7 +9,7 @@ from file_transfer.s3_utils import presign_get
 from file_transfer.storage import ReportStorage
 
 from .constants import PUBLISH_REPORT_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS
-from .models import DownloadStrategies, PublishedReport, ReportStatus, UploadStrategies
+from .models import DownloadStrategies, PublishedReport, ReportStatus
 from .strategies import PUBLISH_STRATEGIES
 
 
@@ -17,9 +17,7 @@ class ReportDetailSerializer(serializers.ModelSerializer):
     """Serializer for full report details including presigned download URL and note IDs."""
 
     note_ids = serializers.SerializerMethodField(help_text="IDs of notes included in the report.")
-    report_url = serializers.SerializerMethodField(
-        help_text="Presigned URL to download the report file, or external URL for Catalyst."
-    )
+    report_url = serializers.SerializerMethodField(help_text="Presigned URL to download the report file.")
     strategy_label = serializers.SerializerMethodField(help_text="Human-readable strategy name.")
 
     class Meta:
@@ -45,7 +43,7 @@ class ReportDetailSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_report_url(self, obj: PublishedReport) -> str | None:
-        """Return presigned S3 URL, external Catalyst URL, or None if not ready."""
+        """Return presigned S3 URL, or None if not ready."""
         if obj.status != ReportStatus.DONE:
             return None
 
@@ -54,9 +52,6 @@ class ReportDetailSerializer(serializers.ModelSerializer):
         response_disposition = (
             f'attachment; filename="{obj.title}.{(obj.strategy or "").lower()}"' if download_url else None
         )
-
-        if obj.external_ref and strategy_factory:
-            return strategy_factory(False).get_remote_url(obj)
 
         if obj.file:
             publisher = strategy_factory(False) if strategy_factory else None
@@ -105,8 +100,8 @@ class PublishReportSerializer(serializers.Serializer):
     )
     title = serializers.CharField(max_length=512, help_text="Title for the published report.")
     strategy = serializers.ChoiceField(
-        choices=UploadStrategies.choices + DownloadStrategies.choices,
-        help_text="Strategy to use (upload or download).",
+        choices=DownloadStrategies.choices,
+        help_text="Export format to use.",
     )
     anonymized = serializers.BooleanField(
         default=False,
@@ -118,7 +113,7 @@ class PublishStrategySerializer(serializers.Serializer):
     """Serializer for a single publish strategy item."""
 
     label = serializers.CharField(help_text="Human-readable label for the strategy.")
-    strategy = serializers.CharField(help_text="Strategy identifier (e.g. 'html', 'catalyst').")
+    strategy = serializers.CharField(help_text="Strategy identifier (e.g. 'html').")
 
     class Meta:
         ref_name = "PublishStrategy"
@@ -127,7 +122,6 @@ class PublishStrategySerializer(serializers.Serializer):
 class PublishStrategiesResponseSerializer(serializers.Serializer):
     """Serializer for the publish strategies endpoint response."""
 
-    upload = PublishStrategySerializer(many=True, help_text="Available upload strategies.")
     download = PublishStrategySerializer(many=True, help_text="Available download strategies.")
 
     class Meta:

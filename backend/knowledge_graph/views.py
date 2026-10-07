@@ -12,7 +12,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.enums import AccessType
 from access.models import Access
@@ -26,6 +25,7 @@ from entries.models import Entry, Relation
 from query.exceptions import InvalidSearchSyntaxException, QueryErrorCodes
 from query.filters import EntryFilter
 from query.utils import parse_query
+from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser
 
 from .exceptions import DepthOutOfRangeException, KnowledgeGraphErrorCodes
@@ -103,7 +103,7 @@ def _get_accessible_entry(user, entry_id: int) -> Entry:
 class GraphPathFindView(APIView):
     """Find shortest paths between a source entry and destination entries."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = SubGraphSerializer
 
@@ -188,7 +188,7 @@ class GraphPathFindView(APIView):
             name="query",
             type=str,
             location=OpenApiParameter.QUERY,
-            description="Query filter for results",
+            description="Advanced entry filter: entry type, colon, then name (e.g. *:note, author:Smith)",
             required=False,
         ),
         OpenApiParameter(
@@ -243,7 +243,7 @@ class GraphPathFindView(APIView):
 class GraphNeighborsView(APIView):
     """Get neighboring entries at a given depth with optional filters."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
@@ -339,7 +339,7 @@ class GraphNeighborsView(APIView):
 class GraphInaccessibleView(APIView):
     """List entity IDs that are reachable but inaccessible to the current user."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
@@ -386,7 +386,7 @@ class GraphInaccessibleView(APIView):
 class KnowledgeGraphView(APIView):
     """Return the full knowledge graph accessible to the user."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:

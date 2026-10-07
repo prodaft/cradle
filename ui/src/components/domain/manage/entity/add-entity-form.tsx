@@ -311,9 +311,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                         data-invalid={Boolean(errors.isPublic)}
                     >
                         <FieldContent>
-                            <FieldLabel htmlFor='isPublic'>
-                                Publicly Available
-                            </FieldLabel>
+                            <FieldLabel htmlFor='isPublic'>Public</FieldLabel>
                             <FieldDescription>
                                 Allow public access to this entity
                             </FieldDescription>

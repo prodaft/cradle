@@ -9,12 +9,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import CoreErrorCodes, InvalidRequestException
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from core.validators import validate_int_list_param
+from user.authentication import CookieJWTAuthentication
 from user.permissions import HasAdminRole
 
 from ..enums import RelationReason
@@ -31,7 +31,7 @@ from ..serializers import RelationDetailSerializer, RelationSerializer
 class RelationListView(APIView):
     """List relations between specified entries (requires 'relates' query param)."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
 
@@ -144,7 +144,7 @@ class RelationListView(APIView):
 class RelationDetailView(APIView):
     """Retrieve or delete a relation by ID."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):

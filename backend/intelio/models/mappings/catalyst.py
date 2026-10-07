@@ -4,7 +4,7 @@ from ..base import ClassMapping
 
 
 class CatalystMapping(ClassMapping):
-    """Maps Catalyst types to CRADLE entry classes for publish/ingest workflows."""
+    """Maps CRADLE entry classes to Catalyst types."""
 
     display_name = "catalyst"
 

@@ -135,7 +135,7 @@ export default function FilesList({
                 page_size: pageSize,
                 order_by: orderBy,
                 date: scope.date,
-                keyword: searchState.q || scope.keyword,
+                search: searchState.q || scope.search,
                 linked_to:
                     scope.linked_to != null ? String(scope.linked_to) : undefined,
                 mime_type: searchState.values.mimetype?.[0] || scope.mime_type,

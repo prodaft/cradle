@@ -14,11 +14,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
+from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser
 from user.permissions import EntryClassDetailPermission, EntryClassListPermission, HasAdminRole
 
@@ -99,7 +99,7 @@ def _get_entry_class_or_404(subtype: str) -> EntryClass:
 class EntryClassList(ListCreateAPIView):
     """List or create entry classes. show_count requires admin."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [EntryClassListPermission]
     pagination_class = TotalPagesPagination
     filter_backends = [DjangoFilterBackend]
@@ -206,7 +206,7 @@ class EntryClassList(ListCreateAPIView):
 class EntryClassDetail(APIView):
     """Retrieve, update, or delete an entry class."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [EntryClassDetailPermission]
 
     def get(self, request: Request, class_subtype: str) -> Response:
@@ -277,7 +277,7 @@ class EntryClassDetail(APIView):
 class NextName(APIView):
     """Return next available name for an entry class (prefix + N)."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
 
     def get(self, request: Request, class_subtype: str) -> Response:

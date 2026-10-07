@@ -24,8 +24,8 @@ class AccessListTest(AccessTestCase):
         self.admin = CradleUser.objects.create_superuser(username="admin", password="pass", email="b@c.d")
         self.token_admin = str(AccessToken.for_user(self.admin))
         self.token_normal = str(AccessToken.for_user(self.user))
-        self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}
-        self.headers_normal = {"HTTP_AUTHORIZATION": f"Bearer {self.token_normal}"}
+        self.headers_admin = {"HTTP_COOKIE": f"access_token={self.token_admin}"}
+        self.headers_normal = {"HTTP_COOKIE": f"access_token={self.token_normal}"}
         self.entity, created = Entry.objects.get_or_create(
             name="Entity 1", description="Cool entity", entry_class=self.entryclass1
         )
@@ -134,7 +134,7 @@ class AccessListTest(AccessTestCase):
         manager = CradleUser.objects.create_user(
             username="manager", password="pass", email="m@c.d", role=UserRoles.MANAGER
         )
-        headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(manager)}"}
+        headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(manager)}"}
         for name in ("entity_access_list", "entity_access_list_stream"):
             response = self.client.get(reverse(name, kwargs={"entity_id": self.entity.id}), **headers)
             self.assertEqual(response.status_code, 200)

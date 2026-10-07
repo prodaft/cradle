@@ -17,11 +17,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
+from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser
 
 from ..exceptions import NotificationErrorCodes, NotificationNotFoundException
@@ -119,7 +119,7 @@ def _get_notification_or_404(user: CradleUser, notification_id: UUID) -> Message
 class NotificationList(APIView):
     """List paginated notifications for the authenticated user."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
 
@@ -160,7 +160,7 @@ class NotificationList(APIView):
 class NotificationDetail(APIView):
     """Update a single notification (e.g. mark as unread)."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -201,7 +201,7 @@ class NotificationDetail(APIView):
 class NotificationUnread(APIView):
     """Return the count of unread notifications."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:

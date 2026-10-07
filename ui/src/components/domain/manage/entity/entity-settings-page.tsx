@@ -148,72 +148,53 @@ export default function EntitySettingsPage() {
                         </Tabs>
                         <div className='flex w-full overflow-y-hidden p-1'>
                             <div className='flex flex-1 flex-col'>
-                                {tab === 'activity' ? (
-                                    <ScrollArea className='faded-bottom h-full w-full'>
-                                        <CardContent className='px-0'>
-                                            <div className='flex-none mb-4'>
-                                                <h3 className='text-lg font-medium'>
-                                                    {currentTab?.label || 'Settings'}
-                                                </h3>
-                                                <p className='text-sm text-muted-foreground'>
-                                                    {currentDescription}
-                                                </p>
-                                            </div>
-                                            <Separator
-                                                data-orientation='horizontal'
-                                                role='none'
-                                                className='bg-border mb-4 flex-none'
-                                            />
+                                <ScrollArea className='faded-bottom h-full w-full pb-12'>
+                                    <CardContent className='px-0'>
+                                        <div className='flex-none mb-4'>
+                                            <h3 className='text-lg font-medium'>
+                                                {currentTab?.label || 'Settings'}
+                                            </h3>
+                                            <p className='text-sm text-muted-foreground'>
+                                                {currentDescription}
+                                            </p>
+                                        </div>
+                                        <Separator
+                                            data-orientation='horizontal'
+                                            role='none'
+                                            className='bg-border mb-4 flex-none'
+                                        />
+                                        {tab === 'activity' ? (
                                             <ActivityList
                                                 contentType='entry'
                                                 objectId={entityId}
                                             />
-                                        </CardContent>
-                                    </ScrollArea>
-                                ) : (
-                                    <ScrollArea className='faded-bottom h-full w-full pb-12'>
-                                        <CardContent className='px-0'>
-                                            <div className='flex-none mb-4'>
-                                                <h3 className='text-lg font-medium'>
-                                                    {currentTab?.label || 'Settings'}
-                                                </h3>
-                                                <p className='text-sm text-muted-foreground'>
-                                                    {currentDescription}
-                                                </p>
-                                            </div>
-                                            <Separator
-                                                data-orientation='horizontal'
-                                                role='none'
-                                                className='bg-border mb-4 flex-none'
+                                        ) : tab === 'permissions' ? (
+                                            <EntityPermissionsForm
+                                                entityId={Number(entityId)}
                                             />
-                                            {tab === 'permissions' ? (
-                                                <EntityPermissionsForm
-                                                    entityId={Number(entityId)}
-                                                />
-                                            ) : (
-                                                <EntityForm
-                                                    id={Number(entityId)}
-                                                    onAdd={() => {
-                                                        queryClient.invalidateQueries({
-                                                            queryKey:
-                                                                queryKeys.entities.lists(),
-                                                        });
-                                                        queryClient.invalidateQueries({
-                                                            queryKey:
-                                                                queryKeys.entities.detail(
-                                                                    String(entityId),
-                                                                ),
-                                                        });
-                                                        queryClient.invalidateQueries({
-                                                            queryKey:
-                                                                queryKeys.notes.apiList(),
-                                                        });
-                                                    }}
-                                                />
-                                            )}
-                                        </CardContent>
-                                    </ScrollArea>
-                                )}
+                                        ) : (
+                                            <EntityForm
+                                                id={Number(entityId)}
+                                                onAdd={() => {
+                                                    queryClient.invalidateQueries({
+                                                        queryKey:
+                                                            queryKeys.entities.lists(),
+                                                    });
+                                                    queryClient.invalidateQueries({
+                                                        queryKey:
+                                                            queryKeys.entities.detail(
+                                                                String(entityId),
+                                                            ),
+                                                    });
+                                                    queryClient.invalidateQueries({
+                                                        queryKey:
+                                                            queryKeys.notes.apiList(),
+                                                    });
+                                                }}
+                                            />
+                                        )}
+                                    </CardContent>
+                                </ScrollArea>
                             </div>
                         </div>
                     </div>

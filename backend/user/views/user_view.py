@@ -20,7 +20,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -33,7 +32,7 @@ from core.utils import validate_order_by
 from management.settings import cradle_settings
 from notifications.models import NewUserNotification
 
-from ..authentication import APIKeyAuthentication
+from ..authentication import APIKeyAuthentication, CookieJWTAuthentication
 from ..exceptions import (
     ActionNotAllowedException,
     CurrentPasswordIncorrectException,
@@ -60,6 +59,7 @@ from ..serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     StepUpSerializer,
+    TokenObtainSerializer,
     UserConfigSerializer,
     UserCreateSerializer,
     UserCreateSerializerAdmin,
@@ -69,7 +69,7 @@ from ..serializers import (
     UserUpdateSerializer,
 )
 from ..utils.step_up import validate_step_up
-from .token_view import set_token_cookies
+from .token_view import create_or_update_session, set_token_cookies
 
 
 def _resolve_user(initiator: CradleUser, user_id: str | UUID) -> CradleUser:
@@ -128,7 +128,7 @@ def _resolve_user(initiator: CradleUser, user_id: str | UUID) -> CradleUser:
 class UserList(ListCreateAPIView):
     """List or create users. Admin only."""
 
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
     pagination_class = TotalPagesPagination
     serializer_class = UserRetrieveSerializer
@@ -323,7 +323,7 @@ class UserConfigView(APIView):
     ),
 )
 class UserDetail(APIView):
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, user_id: str | UUID) -> Response:
@@ -442,7 +442,7 @@ class UserMeDetail(UserDetail):
 class ChangePasswordView(APIView):
     """An endpoint for users to change their password if they know their old password."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
@@ -495,22 +495,8 @@ class ChangePasswordView(APIView):
     )
 )
 class ManageUser(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
-
-    def get_tokens_for_user(self, user: CradleUser):
-        refresh = RefreshToken.for_user(user)
-        access_expires_at = datetime.fromtimestamp(refresh.access_token["exp"], tz=dt_timezone.utc)
-
-        refresh_expires_at = datetime.fromtimestamp(refresh["exp"], tz=dt_timezone.utc)
-
-        return {
-            "refresh": str(refresh),
-            "refresh_expires_at": refresh_expires_at,
-            "access": str(refresh.access_token),
-            "access_expires_at": access_expires_at,
-            "role": user.role,
-        }
 
     def post(self, request: Request, user_id: str | UUID, action_name: str, *args, **kwargs) -> Response:
         if action_name not in [
@@ -548,12 +534,36 @@ class ManageUser(APIView):
         if user.is_cradle_admin:
             raise ActionNotAllowedException(detail="You do not have permission to impersonate an administrator.")
 
-        token_data = self.get_tokens_for_user(user)
-        response = Response(token_data, status=status.HTTP_200_OK)
+        admin_refresh_str = request.COOKIES.get(getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token"))
+        if admin_refresh_str:
+            try:
+                admin_refresh = RefreshToken(admin_refresh_str)
+                admin_jti = admin_refresh.get("jti")
+                if admin_jti:
+                    BlacklistedToken.blacklist_token(
+                        admin_jti, datetime.fromtimestamp(admin_refresh["exp"], tz=dt_timezone.utc)
+                    )
+                    UserSession.objects.filter(refresh_token_jti=admin_jti).delete()
+            except TokenError, InvalidToken:
+                pass
+
+        refresh = TokenObtainSerializer.get_token(user)
+        access = refresh.access_token
+        refresh_expires_at = datetime.fromtimestamp(refresh["exp"], tz=dt_timezone.utc)
+        create_or_update_session(request, user, refresh, refresh_expires_at)
+        response = Response(
+            {
+                "role": user.role,
+                "user_id": str(user.id),
+                "access_expires_at": datetime.fromtimestamp(access["exp"], tz=dt_timezone.utc),
+                "refresh_expires_at": refresh_expires_at,
+            },
+            status=status.HTTP_200_OK,
+        )
 
         access_max_age = int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
         refresh_max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
-        set_token_cookies(response, token_data["access"], token_data["refresh"], access_max_age, refresh_max_age)
+        set_token_cookies(response, str(access), str(refresh), access_max_age, refresh_max_age)
 
         return response
 
@@ -639,7 +649,7 @@ class UserMeManage(ManageUser):
 )
 class APIKey(APIView):
     serializer_class = APIKeyResponseSerializer
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
     def _get_user_and_check_permission(self, user: CradleUser, user_id: str | UUID) -> CradleUser:
@@ -869,7 +879,7 @@ class PasswordReset(APIView):
     ),
 )
 class DefaultNoteTemplateView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, user_id: str | UUID) -> Response:
@@ -993,7 +1003,7 @@ class UserMeDefaultNoteTemplateView(DefaultNoteTemplateView):
     ),
 )
 class UserSessionsListView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
 
@@ -1103,7 +1113,7 @@ class UserMeSessionsListView(UserSessionsListView):
     ),
 )
 class UserSessionRevokeView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def delete(self, request: Request, user_id: str | UUID, session_id: UUID) -> Response:

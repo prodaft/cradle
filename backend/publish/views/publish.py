@@ -6,18 +6,17 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.openapi import get_common_error_responses, get_error_responses
 from notes.models import Note
-from user.authentication import APIKeyAuthentication
+from user.authentication import APIKeyAuthentication, CookieJWTAuthentication
 
 from ..exceptions import (
     ExportFormatNotFoundException,
     NotesNotFoundException,
     PublishErrorCodes,
 )
-from ..models import DownloadStrategies, PublishedReport, UploadStrategies
+from ..models import DownloadStrategies, PublishedReport
 from ..serializers import (
     PublishReportSerializer,
     PublishStrategiesResponseSerializer,
@@ -56,14 +55,13 @@ from ..tasks import generate_report
 class PublishReportAPIView(APIView):
     """List publish strategies (GET) or create a new published report (POST)."""
 
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        """Return available upload and download strategies."""
-        upload_strategies = [{"label": choice.label, "strategy": choice.value} for choice in UploadStrategies]
+        """Return available download strategies."""
         download_strategies = [{"label": choice.label, "strategy": choice.value} for choice in DownloadStrategies]
-        return Response({"upload": upload_strategies, "download": download_strategies}, status=status.HTTP_200_OK)
+        return Response({"download": download_strategies}, status=status.HTTP_200_OK)
 
     def post(self, request: Request) -> Response:
         """Create a report from selected notes and enqueue generation task."""

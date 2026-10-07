@@ -1,3 +1,4 @@
+import SetUserPasswordDialog from '@/components/domain/manage/user/dialogs/set-password-dialog';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -19,9 +20,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAuthActions } from '@/hooks/auth/use-auth';
+import { queryKeys } from '@/hooks/query';
 import { getSuccessMessage } from '@/utils/api';
 import { $api, fetchClient } from '@services/openapi/client';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -33,7 +35,9 @@ interface UserManagementActionsProps {
 export default function UserManagementActions({ userId }: UserManagementActionsProps) {
     const router = useRouter();
     const { setTokensDirectly } = useAuthActions();
+    const queryClient = useQueryClient();
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isSetPasswordOpen, setIsSetPasswordOpen] = useState(false);
     const [typed, setTyped] = useState('');
 
     const { data: user } = $api.useQuery(
@@ -59,11 +63,10 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
         meta: { suppressNotification: true },
         onSuccess: (res: any) => {
             setTokensDirectly({
-                access: res.access,
-                refresh: res.refresh,
                 accessExpiresAt: new Date(res.access_expires_at),
                 refreshExpiresAt: new Date(res.refresh_expires_at),
                 role: res.role,
+                user_id: res.user_id,
             });
             router.navigate({ to: '/', replace: true });
         },
@@ -195,6 +198,28 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                         <Field orientation='responsive'>
                             <FieldContent className='flex-1'>
                                 <FieldLabel className='text-sm block'>
+                                    Password
+                                </FieldLabel>
+                                <FieldDescription>
+                                    Change the password for this user
+                                </FieldDescription>
+                            </FieldContent>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                className='self-start md:self-center'
+                                onClick={() => setIsSetPasswordOpen(true)}
+                            >
+                                Change
+                            </Button>
+                        </Field>
+
+                        <Separator />
+
+                        <Field orientation='responsive'>
+                            <FieldContent className='flex-1'>
+                                <FieldLabel className='text-sm block'>
                                     Delete
                                 </FieldLabel>
                                 <FieldDescription>
@@ -214,6 +239,18 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                     </FieldGroup>
                 </div>
             </section>
+            {user?.id && (
+                <SetUserPasswordDialog
+                    open={isSetPasswordOpen}
+                    onOpenChange={setIsSetPasswordOpen}
+                    userId={user.id}
+                    onSuccess={() => {
+                        queryClient.invalidateQueries({
+                            queryKey: queryKeys.users.detail(userId),
+                        });
+                    }}
+                />
+            )}
             <AlertDialog
                 open={isDeleteOpen}
                 onOpenChange={(open) => {

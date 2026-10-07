@@ -27,7 +27,7 @@ class UpdateAccessTest(AccessTestCase):
         self.entity = Entry.objects.create(name="entity", entry_class=self.entryclass1)
 
         self.tokens = [str(AccessToken.for_user(user)) for user in self.users]
-        self.headers = [{"HTTP_AUTHORIZATION": f"Bearer {token}"} for token in self.tokens]
+        self.headers = [{"HTTP_COOKIE": f"access_token={token}"} for token in self.tokens]
 
         Access.objects.create(user=self.users[0], entity=self.entity, access_type=AccessType.READ_WRITE)
         Access.objects.create(user=self.users[1], entity=self.entity, access_type=AccessType.READ)

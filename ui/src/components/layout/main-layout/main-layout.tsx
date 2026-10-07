@@ -10,6 +10,7 @@ import {
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
+import { useNotificationSocket } from '@/hooks/use-notification-socket';
 import { fetchClient } from '@services/openapi/client';
 import { useQuery } from '@tanstack/react-query';
 import React, { useState } from 'react';
@@ -32,10 +33,12 @@ export default function MainLayout(): React.JSX.Element {
     const { isInitializing } = useAuthState();
     const { isLoggedIn } = useAuthActions();
     const [showNotifications, setShowNotifications] = useState(false);
+    const loggedIn = !isInitializing && isLoggedIn();
+    const notificationsReady = useNotificationSocket(loggedIn);
 
     const { data: unreadNotifications } = useQuery({
         queryKey: queryKeys.notifications.unreadCount(),
-        enabled: !isInitializing && isLoggedIn(),
+        enabled: loggedIn && notificationsReady,
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
                 '/notifications/unread-count/',
@@ -94,6 +97,7 @@ export default function MainLayout(): React.JSX.Element {
                                 className='bg-card overflow-hidden border-l border-border shadow-xl'
                             >
                                 <NotificationsPanel
+                                    unreadCount={unreadNotificationsCount}
                                     onClose={() => setShowNotifications(false)}
                                 />
                             </ResizablePanel>

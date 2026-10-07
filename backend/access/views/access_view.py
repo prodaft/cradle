@@ -3,13 +3,13 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from entries.exceptions import EntriesErrorCodes
 from entries.models import Entry
+from user.authentication import CookieJWTAuthentication
 from user.exceptions import UserErrorCodes, UserNotFoundException
 from user.models import CradleUser
 from user.permissions import HasAdminRole, HasManagerRole
@@ -70,7 +70,7 @@ from ..serializers import AccessEntitySerializer, AccessUserSerializer
 class UserAccessList(ListAPIView):
     """List entities and their access types for a given user (admin only)."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
     serializer_class = AccessEntitySerializer
     pagination_class = TotalPagesPagination
@@ -143,7 +143,7 @@ class UserAccessList(ListAPIView):
 class EntityAccessList(ListAPIView):
     """List users and their access types for a given entity (admins and managers)."""
 
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasManagerRole]
     pagination_class = TotalPagesPagination
     serializer_class = AccessUserSerializer
