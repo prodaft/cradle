@@ -85,6 +85,7 @@ export const SearchInput = memo(function SearchInput({
     const [focused, setFocused] = useState(false);
     const [escaped, setEscaped] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
+    const [browsing, setBrowsing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const draftRef = useRef(draft);
@@ -137,6 +138,7 @@ export const SearchInput = memo(function SearchInput({
     function change(next: string) {
         setDraft(next);
         setEscaped(false);
+        setBrowsing(false);
         setError(null);
     }
 
@@ -161,17 +163,20 @@ export const SearchInput = memo(function SearchInput({
         if (open) {
             if (event.key === 'ArrowDown') {
                 event.preventDefault();
+                setBrowsing(true);
                 setActiveIndex((i) => (i + 1) % suggestions.length);
                 return;
             }
             if (event.key === 'ArrowUp') {
                 event.preventDefault();
+                setBrowsing(true);
                 setActiveIndex(
                     (i) => (i - 1 + suggestions.length) % suggestions.length,
                 );
                 return;
             }
-            if (event.key === 'Tab') {
+            const typing = cursor > 0 && !/\s/.test(draft[cursor - 1]!);
+            if (event.key === 'Tab' && (typing || browsing)) {
                 event.preventDefault();
                 accept(suggestions[safeActiveIndex]!);
                 return;
@@ -209,7 +214,10 @@ export const SearchInput = memo(function SearchInput({
                     setCursor(target.selectionStart ?? target.value.length);
                 }}
                 onKeyDown={handleKeyDown}
-                onFocus={() => setFocused(true)}
+                onFocus={() => {
+                    setFocused(true);
+                    setBrowsing(false);
+                }}
                 onBlur={() => setFocused(false)}
                 placeholder={placeholder}
                 disabled={disabled}

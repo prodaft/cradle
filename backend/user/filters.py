@@ -21,7 +21,7 @@ class UserFilter(django_filters.FilterSet):
     )
     role = django_filters.ChoiceFilter(
         choices=UserRoles.choices,
-        help_text="Filter by role (admin, manager, entrymanager, author).",
+        help_text="Filter by role (admin, manager, author).",
     )
 
     class Meta:

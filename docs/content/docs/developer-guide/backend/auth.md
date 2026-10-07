@@ -11,6 +11,6 @@ access to all entities referenced in the note.
 
 ## Roles
 - **Admin** has full permissions for all entities and user management.
-- **Manager** manages system configuration and content, excluding user admin.
-- **Entry manager** manages entry classes and entity metadata.
+- **Manager** manages entry classes and entity metadata, and grants access to
+  entities (as do admins).
 - **User** provides base access for creating and viewing notes.

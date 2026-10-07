@@ -1,10 +1,10 @@
-import { isAdmin, isEntryManager } from '@/utils/auth';
+import { isAdmin, isManager } from '@/utils/auth';
 import { createFileRoute, notFound, Outlet } from '@tanstack/react-router';
 
 const ADMIN_PATHS = ['/manage/users', '/manage/settings'];
 
 /**
- * Single pathless layout for manage: enforces admin for users/settings, entry-manager for the rest.
+ * Single pathless layout for manage: enforces admin for users/settings, manager for the rest.
  */
 export const Route = createFileRoute('/_authenticated/manage/_manage-auth')({
     beforeLoad: ({ location }) => {
@@ -13,7 +13,7 @@ export const Route = createFileRoute('/_authenticated/manage/_manage-auth')({
         if (isAdminRoute) {
             if (!isAdmin()) throw notFound();
         } else {
-            if (!isEntryManager()) throw notFound();
+            if (!isManager()) throw notFound();
         }
     },
     component: () => <Outlet />,

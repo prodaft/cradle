@@ -27,62 +27,41 @@ Django-based backend providing core functionality for CRADLE including:
 ### Prerequisites
 
 - Python 3.14+
-- PostgreSQL 13+
-- Redis 6.0+
 - uv
-- MinIO (optional)
+- Docker with Docker Compose
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
    git clone https://github.com/prodaft/cradle.git
-   cd cradle/backend
+   cd cradle
    ```
 
-2. **Database Setup**
+2. **Start supporting services**
    ```bash
-   psql -U [your-postgres-username]
-   CREATE DATABASE cradledb;
+   docker compose -f docker-compose.dev.yml up -d
    ```
+   This starts PostgreSQL, Redis, RabbitMQ and MinIO (plus Keycloak and pgAdmin).
 
-3. **Redis Setup**
-   - Install and start Redis server
+3. **Configure Environment**
    ```bash
-   # On Ubuntu
-   sudo apt install redis-server
-   sudo systemctl start redis
+   cd backend
+   cp .env.example .env
    ```
+   The defaults in `.env.example` match the credentials used by `docker-compose.dev.yml`.
 
-4. **Configure Environment**
-   - Update database credentials in `cradle/settings.py`
-   ```python
-   DATABASES = {
-       "default": {
-           "ENGINE": "django.db.backends.postgresql",
-           "NAME": "cradledb",
-           "USER": "[your_user]",
-           "PASSWORD": "[your_password]",
-           "HOST": "localhost",
-           "PORT": "5432",
-       }
-   }
-
-   CELERY_BROKER_URL = "redis://localhost:6379/0"
-   ```
-
-5. **Install Dependencies**
+4. **Install Dependencies**
    ```bash
-   pip install uv
    uv sync
    ```
 
-6. **Run Migrations**
+5. **Run Migrations**
    ```bash
    uv run python manage.py migrate
    ```
 
-7. **Start Services**
+6. **Start Services**
    ```bash
    # Start Django development server
    uv run python manage.py runserver
@@ -129,11 +108,11 @@ uv run ruff check .
 ## Troubleshooting
 
 **Database Connection Issues**
-- Verify PostgreSQL service is running
-- Check credentials in settings.py match your DB configuration
+- Verify the containers are running: `docker compose -f docker-compose.dev.yml ps`
+- Check the `DB_*` values in `backend/.env` match `docker-compose.dev.yml`
 
 **Celery Task Issues**
-- Ensure Redis server is running
+- Ensure the RabbitMQ and Redis containers are running
 - Verify Celery worker is started
 - Check task queue status with Flower
 

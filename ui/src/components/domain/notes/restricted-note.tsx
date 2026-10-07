@@ -25,7 +25,7 @@ export default function RestrictedNote({ noteId }: RestrictedNoteProps) {
                 </EmptyMedia>
                 <EmptyTitle>403 - Restricted</EmptyTitle>
                 <EmptyDescription>
-                    This note belongs to a source or case you don&apos;t have access to.
+                    This note belongs to an entity you don&apos;t have access to.
                 </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>

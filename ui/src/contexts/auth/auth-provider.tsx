@@ -304,7 +304,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     );
 
     const isAdmin = role === 'admin';
-    const isEntryManager = role === 'entrymanager' || role === 'admin';
+    const isManager = role === 'manager' || role === 'admin';
 
     useEffect(() => {
         return () => unregisterOpenapiAuthCallbacks();
@@ -328,10 +328,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
             isLoading,
             basePath,
             isAdmin,
-            isEntryManager,
+            isManager,
             isInitializing,
         }),
-        [role, userId, isLoading, basePath, isAdmin, isEntryManager, isInitializing],
+        [role, userId, isLoading, basePath, isAdmin, isManager, isInitializing],
     );
 
     const actionsValue = useMemo<AuthActionsValue>(

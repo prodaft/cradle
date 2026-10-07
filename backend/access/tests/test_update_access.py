@@ -4,8 +4,8 @@ from django.urls import reverse
 from rest_framework_simplejwt.tokens import AccessToken
 
 from entries.models import Entry
-from notifications.models import MessageNotification
-from user.models import CradleUser
+from notifications.models import AccessGrantedNotification, MessageNotification
+from user.models import CradleUser, UserRoles
 
 from ..enums import AccessType
 from ..models import Access
@@ -21,10 +21,13 @@ class UpdateAccessTest(AccessTestCase):
             for id in range(3)
         ]
         self.users.append(CradleUser.objects.create_superuser(username="admin", password="admin", email="b@c.d"))
+        self.users.append(
+            CradleUser.objects.create_user(username="manager", password="user", email="m@c.d", role=UserRoles.MANAGER)
+        )
         self.entity = Entry.objects.create(name="entity", entry_class=self.entryclass1)
 
-        self.tokens = [str(AccessToken.for_user(self.users[id])) for id in range(4)]
-        self.headers = [{"HTTP_AUTHORIZATION": f"Bearer {self.tokens[id]}"} for id in range(4)]
+        self.tokens = [str(AccessToken.for_user(user)) for user in self.users]
+        self.headers = [{"HTTP_AUTHORIZATION": f"Bearer {token}"} for token in self.tokens]
 
         Access.objects.create(user=self.users[0], entity=self.entity, access_type=AccessType.READ_WRITE)
         Access.objects.create(user=self.users[1], entity=self.entity, access_type=AccessType.READ)
@@ -122,6 +125,52 @@ class UpdateAccessTest(AccessTestCase):
                 access_type=AccessType.READ_WRITE,
             ).exists()
         )
+
+    def test_update_access_read_write_user_cannot_grant(self):
+        response = self.client.put(
+            reverse(
+                "update_access",
+                kwargs={"user_id": self.users[2].id, "entity_id": self.entity.id},
+            ),
+            {"access_type": "read"},
+            content_type="application/json",
+            **self.headers[0],
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(
+            Access.objects.filter(user=self.users[2], entity=self.entity, access_type=AccessType.NONE).exists()
+        )
+
+    def test_update_access_manager_grants(self):
+        response = self.client.put(
+            reverse(
+                "update_access",
+                kwargs={"user_id": self.users[2].id, "entity_id": self.entity.id},
+            ),
+            {"access_type": "read-write"},
+            content_type="application/json",
+            **self.headers[4],
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            Access.objects.filter(user=self.users[2], entity=self.entity, access_type=AccessType.READ_WRITE).exists()
+        )
+        self.assertTrue(AccessGrantedNotification.objects.filter(user=self.users[2], entity=self.entity).exists())
+
+    def test_update_access_manager_updates_admin(self):
+        response = self.client.put(
+            reverse(
+                "update_access",
+                kwargs={"user_id": self.users[3].id, "entity_id": self.entity.id},
+            ),
+            {"access_type": "none"},
+            content_type="application/json",
+            **self.headers[4],
+        )
+
+        self.assertEqual(response.status_code, 403)
 
     def test_update_access_user_does_not_have_access(self):
         response = self.client.put(

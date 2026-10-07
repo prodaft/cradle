@@ -20,7 +20,7 @@ class MappingSchemaViewTest(TestCase):
             username="manager",
             email="manager@test.com",
             password="testpass",
-            role=UserRoles.ENTRY_MANAGER,
+            role=UserRoles.MANAGER,
         )
         self.client.force_authenticate(user=self.user)
         self.url = reverse("mapping_schema", kwargs={"class_name": "catalystmapping"})

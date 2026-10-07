@@ -1,0 +1,161 @@
+name: cradle-prod
+
+x-backend-env: &backend-env
+  SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+  DEBUG: "false"
+  SENTRY_DSN: ${SENTRY_DSN:-}
+
+  ALLOWED_HOSTS: ${CRADLE_HOST:?set CRADLE_HOST}
+  CSRF_TRUSTED_ORIGINS: https://${CRADLE_HOST}
+  FRONTEND_URL: https://${CRADLE_HOST}
+  BASE_URL: api
+  TRUST_X_FORWARDED_PROTO: "true"
+
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_NAME: cradle
+  DB_USER: cradle
+  DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+
+  MINIO_ENDPOINT: minio:9000
+  MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+  MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+  MINIO_SECURE: "false"
+  AWS_S3_ENDPOINT_URL: http://minio:9000
+  AWS_S3_PUBLIC_ENDPOINT_URL: https://${CRADLE_HOST}
+
+  REDIS_URL: redis://redis:6379/0
+  RABBITMQ_URL: amqp://cradle:${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD}@rabbitmq:5672//
+
+  CRADLE_ADMIN_USER: ${CRADLE_ADMIN_USER:-admin}
+  CRADLE_ADMIN_EMAIL: ${CRADLE_ADMIN_EMAIL:?set CRADLE_ADMIN_EMAIL}
+  CRADLE_ADMIN_PASSWORD: ${CRADLE_ADMIN_PASSWORD:?set CRADLE_ADMIN_PASSWORD}
+
+  EMAIL_HOST: ${EMAIL_HOST:-}
+  EMAIL_PORT: ${EMAIL_PORT:-587}
+  EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+  EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+  DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-}
+  EMAIL_USE_TLS: ${EMAIL_USE_TLS:-true}
+
+  NUM_WORKERS: ${NUM_WORKERS:-12}
+  CELERY_CONCURRENCY: ${CELERY_CONCURRENCY:-4}
+
+x-backend: &backend
+  image: ghcr.io/prodaft/cradle:${CRADLE_VERSION:?set CRADLE_VERSION}
+  restart: unless-stopped
+  environment: *backend-env
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    rabbitmq:
+      condition: service_healthy
+    minio:
+      condition: service_healthy
+
+services:
+  cradle:
+    <<: *backend
+    volumes:
+      - media:/media
+      - static:/app/static
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          curl -fsS -o /dev/null -H "Host: ${CRADLE_HOST}" http://localhost:8000/api/auth/config/ &&
+          curl -fsS -o /dev/null -H "Host: ${CRADLE_HOST}" http://localhost:8001/api/auth/config/
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 300s
+
+  celery:
+    <<: *backend
+    command: /app/entrypoint_celery.sh
+    depends_on:
+      cradle:
+        condition: service_healthy
+    volumes:
+      - media:/media
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  cradleweb:
+    image: ghcr.io/prodaft/cradle-web:${CRADLE_VERSION:?set CRADLE_VERSION}
+    restart: unless-stopped
+    volumes:
+      - static:/www/static
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "${HTTP_BIND:-127.0.0.1}:${HTTP_PORT:-8000}:8000"
+    depends_on:
+      cradle:
+        condition: service_healthy
+
+  postgres:
+    image: pgrouting/pgrouting:16-3.5-4.0
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cradle
+      POSTGRES_USER: cradle
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cradle -d cradle"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    restart: unless-stopped
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: cradle
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD}
+    volumes:
+      - ./docker/rabbitmq.conf:/etc/rabbitmq/conf.d/10-celery.conf:ro
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  minio:
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    command: server /data
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER: "off"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  minio_data:
+  media:
+  static:

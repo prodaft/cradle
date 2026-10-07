@@ -22,6 +22,7 @@ import {
     type LiveNoteSession,
     type LiveStatus,
 } from '@/utils/editor/sync/live-connection';
+import { ReconnectTimer } from '@/utils/editor/sync/reconnect-timer';
 import {
     type LivePeer,
     remoteCursorExtensions,
@@ -98,6 +99,7 @@ import {
     useState,
 } from 'react';
 import { toast } from 'sonner';
+import { type ConnectionNotice, ConnectionToast } from './connection-toast';
 import FileTable from './file-table';
 import { getSaveStatus } from './status-indicators';
 
@@ -152,32 +154,9 @@ interface RichEditorRef {
     view: EditorView | null;
 }
 
-// How long to wait before trying the live (WebSocket) session again after it fails to connect.
-const LIVE_RETRY_DELAY = 5000;
 // Editing pauses once an edit has gone this long without the server accepting it, so
 // a long outage can't pile up unbounded unsaved work; it resumes once they're accepted.
 const MAX_UNSENT_MS = 120_000;
-
-const CONNECTION_NOTICES = {
-    unreachable: {
-        title: "Can't reach the server",
-        description:
-            'Editing is unavailable until it connects; retrying automatically.',
-        retry: true,
-    },
-    paused: {
-        title: 'Editing paused',
-        description:
-            "Your recent changes haven't reached the server for a while. They'll be saved once the connection is back; keep this tab open or they're lost.",
-        retry: false,
-    },
-    offline: {
-        title: 'Offline, reconnecting',
-        description:
-            'You can keep editing; your changes will be saved once the connection is back. Leaving the page before then loses them.',
-        retry: false,
-    },
-} as const;
 
 const sourceModeSyntaxHighlighting = syntaxHighlighting(
     HighlightStyle.define([
@@ -315,6 +294,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const [livePeers, setLivePeers] = useState<LivePeer[]>([]);
     const [liveUnavailable, setLiveUnavailable] = useState(false);
     const [liveConnected, setLiveConnected] = useState(true);
+    const [liveRetryAt, setLiveRetryAt] = useState<number | null>(null);
+    // Retries the live session while it can't be established.
+    const [liveRetry] = useState(() => {
+        const retry = new ReconnectTimer(
+            () => setEditorSyncEpoch((epoch) => epoch + 1),
+            () => setLiveRetryAt(retry.at),
+        );
+        return retry;
+    });
+    const [liveReconnectAt, setLiveReconnectAt] = useState<number | null>(null);
     const [editingPaused, setEditingPaused] = useState(false);
     const toastKey = useId();
     const liveUsers = useMemo(
@@ -352,16 +341,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         }
         let conn: LiveEditorSyncConnection | null = null;
         let stopResetListener: (() => void) | undefined;
-        let retryTimer: ReturnType<typeof setTimeout> | undefined;
-        // No live session (the server is unreachable or couldn't load the note): the
-        // editor stays read-only, so keep trying.
         const unavailable = () => {
             setLiveUnavailable(true);
             setEditorSyncHydrated(true);
-            retryTimer = setTimeout(
-                () => setEditorSyncEpoch((epoch) => epoch + 1),
-                LIVE_RETRY_DELAY,
-            );
+            liveRetry.schedule();
         };
         void (async () => {
             const live = await connectLiveNote(noteid);
@@ -397,6 +380,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     setEditorSyncEpoch((epoch) => epoch + 1),
                 );
                 onLiveSessionChangeRef.current?.(live.live);
+                liveRetry.resetBackoff();
                 setLiveUnavailable(false);
                 setEditorSyncHydrated(true);
             } catch {
@@ -407,15 +391,17 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         })();
         return () => {
             cancelled = true;
-            clearTimeout(retryTimer);
+            liveRetry.cancel();
             stopResetListener?.();
             if (conn) onLiveSessionChangeRef.current?.(null);
             conn?.close();
         };
-    }, [needsEditorSyncHydration, noteid, editorSyncEpoch]);
+    }, [needsEditorSyncHydration, noteid, editorSyncEpoch, liveRetry]);
 
-    // Built once per live session, not with the other extensions: recreating the sync
-    // plugin (on a theme or vim change) would restart its sync loops.
+    useEffect(() => {
+        liveRetry.resetBackoff();
+    }, [liveRetry, noteid]);
+
     const syncExtensions = useMemo(() => {
         if (!editorSyncSession || editorSyncSession.noteid !== noteid) return [];
         const { connection, startVersion } = editorSyncSession;
@@ -428,9 +414,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     const liveSession =
         editorSyncSession?.noteid === noteid ? editorSyncSession.connection.live : null;
-    // Edits are only saved through the live session, so the editor stays read-only until
-    // it's established (anything typed before would be replaced by the server's document)
-    // and while editing is paused.
     const canEdit =
         enableEditing &&
         (!needsEditorSyncHydration || (!!liveSession && !editingPaused));
@@ -441,8 +424,9 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         if (!liveSession) return;
         let since: number | null = null;
         let pauseTimer: ReturnType<typeof setTimeout> | undefined;
-        const apply = ({ connected, unsentSince }: LiveStatus) => {
+        const apply = ({ connected, reconnectAt, unsentSince }: LiveStatus) => {
             setLiveConnected(connected);
+            setLiveReconnectAt(reconnectAt);
             if (unsentSince === since) return;
             since = unsentSince;
             clearTimeout(pauseTimer);
@@ -952,7 +936,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             ? `Note status: ${formatNoteStatusLabel(noteStatus)}`
             : 'Note status unavailable');
 
-    const connectionNotice: keyof typeof CONNECTION_NOTICES | null =
+    const connectionNotice: ConnectionNotice | null =
         needsEditorSyncHydration && liveUnavailable
             ? 'unreachable'
             : !liveSession
@@ -963,33 +947,21 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                   ? 'offline'
                   : null;
 
-    // Stays up while the state lasts; the retry action keeps it open (a failed retry
-    // leaves the state unchanged, so it wouldn't be shown again).
-    useEffect(() => {
-        if (!connectionNotice) return;
-        const id = `live-connection-${toastKey}`;
-        const { title, description, retry } = CONNECTION_NOTICES[connectionNotice];
-        toast.warning(title, {
-            id,
-            description,
-            duration: Infinity,
-            action: retry
-                ? {
-                      label: 'Retry now',
-                      onClick: (event) => {
-                          event.preventDefault();
-                          setEditorSyncEpoch((epoch) => epoch + 1);
-                      },
-                  }
-                : undefined,
-        });
-        return () => {
-            toast.dismiss(id);
-        };
-    }, [connectionNotice, toastKey]);
+    const retryLiveNow = useCallback(() => liveRetry.retrySoon(), [liveRetry]);
+    const reconnect =
+        needsEditorSyncHydration && liveUnavailable
+            ? { at: liveRetryAt, now: retryLiveNow }
+            : liveSession && !liveConnected
+              ? { at: liveReconnectAt, now: liveSession.reconnectNow }
+              : null;
 
     return (
         <div className='h-full w-full flex flex-col overflow-hidden'>
+            <ConnectionToast
+                id={`live-connection-${toastKey}`}
+                notice={connectionNotice}
+                reconnect={reconnect}
+            />
             <div className='flex-1 min-h-0 relative'>
                 <div
                     id='codemirror-container'

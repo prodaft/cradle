@@ -60,8 +60,6 @@ const roleBadgeVariant = (role?: string) => {
             return 'destructive';
         case 'manager':
             return 'default';
-        case 'entrymanager':
-            return 'secondary';
         default:
             return 'outline';
     }
@@ -72,7 +70,6 @@ type UserRole = NonNullable<UserRow['role']>;
 const ROLE_VALUES = [
     { value: 'admin', label: 'Admin' },
     { value: 'manager', label: 'Manager' },
-    { value: 'entrymanager', label: 'Entry manager' },
     { value: 'author', label: 'Author' },
 ] as const satisfies readonly { value: UserRole; label: string }[];
 

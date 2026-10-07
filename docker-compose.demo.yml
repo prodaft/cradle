@@ -14,8 +14,6 @@ services:
     environment:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: cradle_minio
-      MINIO_SERVER_URL: http://localhost:8000
-      MINIO_BROWSER_REDIRECT_URL: http://localhost:8000/minio/ui
     networks:
       cradle_demo_network:
         ipv4_address: 192.168.42.5
@@ -57,7 +55,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment: &cradle_env
-      INITIALIZE_ENTRYCLASSES: false
       DB_NAME: cradle
       DB_USER: cradle
       DB_PASSWORD: cradle
@@ -70,6 +67,7 @@ services:
       MINIO_SECURE: false
 
       MINIO_BACKEND_URL: http://192.168.42.5:9000
+      AWS_S3_PUBLIC_ENDPOINT_URL: http://localhost:8000
 
       CRADLE_ADMIN_USER: admin
       CRADLE_ADMIN_EMAIL: admin@cradle.sh
@@ -83,10 +81,6 @@ services:
       FRONTEND_URL: http://localhost:8000
 
       DEBUG: true
-      ALLOW_REGISTRATION: true
-      AUTOREGISTER_ARTIFACT_TYPES: true
-      MIN_ENTRY_COUNT_PER_NODE: 2
-      MIN_ENTITY_COUNT_PER_NODE: 1
 
       EMAIL_HOST: ""
       EMAIL_PORT: 587
@@ -94,11 +88,6 @@ services:
       DEFAULT_FROM_EMAIL: ""
       EMAIL_HOST_PASSWORD: ""
       EMAIL_USE_TLS: false
-
-      REQUIRE_EMAIL_CONFIRMATION: false
-      REQUIRE_ADMIN_ACTIVATION: false
-
-      INSTALL_FIXTURES: true
 
       REDIS_URL: "redis://192.168.42.7:6379/0"
       RABBITMQ_URL: "amqp://cradle:cradle@192.168.42.11:5672//"
@@ -147,7 +136,7 @@ services:
     container_name: cradleweb
     volumes:
       - ./build/www:/www
-      - ./docker/nginx_demo.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
     restart: unless-stopped
     environment:
       NODE_ENV: production

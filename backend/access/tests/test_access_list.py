@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework_simplejwt.tokens import AccessToken
 
 from entries.models import Entry
-from user.models import CradleUser
+from user.models import CradleUser, UserRoles
 
 from ..enums import AccessType
 from ..models import Access
@@ -129,6 +129,19 @@ class AccessListTest(AccessTestCase):
         text = b"".join(response_stream.streaming_content).decode()
         rows = [json.loads(line) for line in text.splitlines() if line.strip()]
         self.assertEqual(rows, response_list.json()["results"])
+
+    def test_entity_access_list_manager(self):
+        manager = CradleUser.objects.create_user(
+            username="manager", password="pass", email="m@c.d", role=UserRoles.MANAGER
+        )
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(manager)}"}
+        for name in ("entity_access_list", "entity_access_list_stream"):
+            response = self.client.get(reverse(name, kwargs={"entity_id": self.entity.id}), **headers)
+            self.assertEqual(response.status_code, 200)
+        response = self.client.get(
+            reverse("entity_access_list", kwargs={"entity_id": self.entity.id}), **self.headers_normal
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_entity_access_list_stream_matches_paginated_list(self):
         response_list = self.client.get(

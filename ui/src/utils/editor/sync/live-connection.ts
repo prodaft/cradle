@@ -2,6 +2,7 @@ import type { Update } from '@codemirror/collab';
 import { ChangeSet } from '@codemirror/state';
 import { getClientAccessToken } from '@services/openapi/client';
 import { EDITOR_SYNC_CONNECTION_CLOSED, type EditorSyncConnection } from './connection';
+import { ReconnectTimer } from './reconnect-timer';
 
 type LiveSaveState = 'saved' | 'saving' | 'error' | 'conflict';
 
@@ -19,6 +20,8 @@ export type LiveStatus = {
     unsentSince: number | null;
     /** The socket is open and authenticated. */
     connected: boolean;
+    /** When (Date.now()) the next reconnect attempt starts; null while connected or attempting. */
+    reconnectAt: number | null;
 };
 
 /** Another editor's cursor; positions are in the document at server `version`. */
@@ -40,6 +43,8 @@ export type LiveNoteSession = {
     /** The session can't continue (e.g. the server lost its history); reconnect from scratch. */
     onReset(listener: () => void): () => void;
     saveNow(): void;
+    /** Starts a pending reconnect attempt now (or a second after the last one). */
+    reconnectNow(): void;
     resolveConflict(choice: 'mine' | 'theirs'): void;
     /** Shares this editor's selection, in the document at server `version`. */
     sendPresence(presence: { version: number; anchor: number; head: number }): void;
@@ -56,7 +61,6 @@ type UpdateJSON = { clientID: string; changes: unknown };
 
 const CLOSE_FORBIDDEN = 4403;
 const HISTORY_SIZE = 200;
-const MAX_RECONNECT_DELAY = 10_000;
 // A request unanswered for this long means the connection is dead (the browser may not
 // notice for minutes). Longer than the server's worst case: it waits up to 10s for the
 // note's session lock.
@@ -88,21 +92,20 @@ export async function connectLiveNote(
 class LiveConnection {
     private socket: WebSocket | null = null;
     private closed = false;
-    private reconnectDelay = 500;
+    private readonly retry = new ReconnectTimer(
+        () => void this.reconnect(),
+        () => this.emitStatus(),
+    );
     private nextId = 0;
     private pending = new Map<
         number,
         { resolve: (v: unknown) => void; reject: (e: unknown) => void }
     >();
 
-    // Updates received from the server, starting at version `bufferStart`; collected
-    // once the initial document has been loaded.
     private synced = false;
     private buffer: Update[] = [];
     private bufferStart = 0;
     private waiters: Array<() => void> = [];
-    // Recent server changes, starting at version `historyStart`, for mapping positions
-    // (other editors' cursors) between versions.
     private history: ChangeSet[] = [];
     private historyStart = 0;
 
@@ -110,7 +113,6 @@ class LiveConnection {
     private savedVersion = 0;
     private saveState: LiveSaveState = 'saved';
     private saveMessage = '';
-    // Set while the editor has local edits the server hasn't confirmed.
     private unsent = false;
     private unsentSince: number | null = null;
     private connected = false;
@@ -124,7 +126,6 @@ class LiveConnection {
 
     readonly api: LiveEditorSyncConnection;
 
-    // The OS reports the network gone: don't wait for a request to time out.
     private readonly onOffline = () => {
         if (this.socket && this.connected) this.dropSocket(this.socket);
     };
@@ -153,6 +154,7 @@ class LiveConnection {
                     return () => this.resetListeners.delete(listener);
                 },
                 saveNow: () => void this.request({ type: 'saveNow' }).catch(() => {}),
+                reconnectNow: () => this.retry.retrySoon(),
                 resolveConflict: (choice) =>
                     void this.request({ type: 'resolveConflict', choice }).catch(
                         () => {},
@@ -184,7 +186,6 @@ class LiveConnection {
         };
     }
 
-    /** Opens the socket and authenticates; resolves false if that fails or times out. */
     connect(timeoutMs: number): Promise<boolean> {
         return new Promise((resolve) => {
             let settled = false;
@@ -195,8 +196,6 @@ class LiveConnection {
                 resolve(ok);
             };
             const timer = setTimeout(() => {
-                // Give up on this socket entirely, or it would linger half-open and
-                // stop the caller's reconnect loop.
                 socket.onmessage = socket.onclose = null;
                 socket.close();
                 if (this.socket === socket) this.socket = null;
@@ -228,7 +227,7 @@ class LiveConnection {
                     return;
                 }
                 if (data.type === 'ready') {
-                    this.reconnectDelay = 500;
+                    this.retry.resetBackoff();
                     this.peerId = String(data.peerId ?? '');
                     this.connected = true;
                     this.emitStatus();
@@ -245,22 +244,19 @@ class LiveConnection {
                 } else if (event.code === CLOSE_FORBIDDEN) {
                     this.loseAccess();
                 } else if (!this.closed) {
-                    this.scheduleReconnect();
+                    this.retry.schedule();
                 }
             };
         });
     }
 
-    /** Gives up on an established socket that stopped responding, and reconnects. */
     private dropSocket(socket: WebSocket) {
         if (this.socket !== socket) return;
-        // Closing a dead socket can hang on the closing handshake, so its close event
-        // isn't waited for (or handled).
         socket.onmessage = socket.onclose = null;
         socket.close();
         this.socket = null;
         this.markDisconnected();
-        if (!this.closed) this.scheduleReconnect();
+        if (!this.closed) this.retry.schedule();
     }
 
     private markDisconnected() {
@@ -271,18 +267,14 @@ class LiveConnection {
         this.failPending();
     }
 
-    private scheduleReconnect() {
-        const delay = this.reconnectDelay;
-        this.reconnectDelay = Math.min(delay * 2, MAX_RECONNECT_DELAY);
-        setTimeout(async () => {
+    private async reconnect() {
+        if (this.closed) return;
+        if (await this.connect(5000)) {
             if (this.closed) return;
-            if (await this.connect(5000)) {
-                if (this.closed) return;
-                void this.catchUp();
-            } else if (!this.closed && !this.socket) {
-                this.scheduleReconnect();
-            }
-        }, delay);
+            void this.catchUp();
+        } else if (!this.closed && !this.socket) {
+            this.retry.schedule();
+        }
     }
 
     private handleMessage(data: Record<string, unknown>) {
@@ -371,7 +363,6 @@ class LiveConnection {
     }
 
     private async pushUpdates(version: number, updates: readonly Update[]) {
-        // Stops the editor's retry loop; it only retries other failures.
         if (this.accessLost) throw new Error(EDITOR_SYNC_CONNECTION_CLOSED);
         if (!this.socket) return false;
         try {
@@ -385,14 +376,12 @@ class LiveConnection {
                 })),
             });
             if (accepted === true) return true;
-            // Rejected as stale: make sure the updates it was missing are on their way.
             void this.catchUp();
             return false;
         } catch (error) {
             const code = (error as { code?: unknown }).code;
             if (code === 'forbidden') this.loseAccess();
             if (code === 'resync') this.resync();
-            // Stop the editor retrying a push that can't succeed.
             if (code === 'forbidden' || code === 'resync') {
                 throw new Error(EDITOR_SYNC_CONNECTION_CLOSED, { cause: error });
             }
@@ -419,7 +408,6 @@ class LiveConnection {
         if (!this.synced) return;
         const end = this.bufferStart + this.buffer.length;
         if (start > end) {
-            // Missed some (e.g. while reconnecting): fetch the gap from the server's log.
             void this.catchUp();
             return;
         }
@@ -454,7 +442,6 @@ class LiveConnection {
                 saveMessage: string;
             };
             this.receiveUpdates(data.version, data.updates);
-            // Save state broadcasts may have been missed while disconnected.
             this.savedVersion = Math.max(this.savedVersion, data.savedVersion);
             this.saveState = data.saveState;
             this.saveMessage = data.saveMessage;
@@ -470,7 +457,6 @@ class LiveConnection {
         for (const wake of waiters) wake();
     }
 
-    /** The server no longer has this session's history; rebuild it from scratch. */
     private resync() {
         for (const listener of this.resetListeners) listener();
     }
@@ -492,6 +478,7 @@ class LiveConnection {
             unsent: this.unsent,
             unsentSince: this.unsentSince,
             connected: this.connected,
+            reconnectAt: this.retry.at,
         };
     }
 
@@ -503,6 +490,7 @@ class LiveConnection {
     close() {
         if (this.closed) return;
         this.closed = true;
+        this.retry.cancel();
         window.removeEventListener('offline', this.onOffline);
         this.failPending();
         this.wakeWaiters();

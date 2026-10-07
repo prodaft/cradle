@@ -87,7 +87,7 @@ def _get_entry_class_or_404(subtype: str) -> EntryClass:
     post=extend_schema(
         operation_id="entry_classes_create",
         summary="Create entry class",
-        description="Creates a new entry class. Requires entry manager or admin role.",
+        description="Creates a new entry class. Requires manager or admin role.",
         request=EntryClassSerializer,
         responses={
             201: EntryClassSerializer,

@@ -6,8 +6,11 @@ Uses boto3 via storage.connection; supports both S3 and MinIO.
 
 from __future__ import annotations
 
+from functools import cache
 from io import BytesIO
 from typing import Optional
+
+from django.conf import settings
 
 from .storage import DigestStorage, FileTransferStorage, RelationStorage, ReportStorage
 
@@ -27,6 +30,22 @@ def _get_storage_for_bucket(bucket_name: str):
         return RelationStorage()
     # Default: files bucket
     return FileTransferStorage()
+
+
+@cache
+def _public_storage(storage_cls):
+    return storage_cls(endpoint_url=settings.AWS_S3_PUBLIC_ENDPOINT_URL)
+
+
+def presign_client(storage):
+    """boto3 client for signing URLs that browsers will use.
+
+    Signing needs no connection, so with AWS_S3_PUBLIC_ENDPOINT_URL set the URLs point at
+    the public address while server-side calls keep using the internal endpoint.
+    """
+    if not settings.AWS_S3_PUBLIC_ENDPOINT_URL:
+        return storage.connection.meta.client
+    return _public_storage(type(storage)).connection.meta.client
 
 
 def _ensure_bucket_exists(storage) -> None:
@@ -122,7 +141,7 @@ def presign_get(
     if response_content_disposition:
         params["ResponseContentDisposition"] = response_content_disposition
 
-    return storage.connection.meta.client.generate_presigned_url(
+    return presign_client(storage).generate_presigned_url(
         "get_object",
         Params=params,
         ExpiresIn=expires_in,

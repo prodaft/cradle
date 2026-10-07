@@ -45,7 +45,7 @@ export function AppSidebar({
     ...props
 }: AppSidebarProps) {
     const matchRoute = useMatchRoute();
-    const { isEntryManager, isAdmin } = useAuthState();
+    const { isManager, isAdmin } = useAuthState();
     const { state, isMobile } = useSidebar();
     const isCollapsed = state === 'collapsed';
     const hasUnreadNotifications = unreadNotificationsCount > 0;
@@ -132,7 +132,7 @@ export function AppSidebar({
                 <NavMain items={navMain} showLabel label='General' />
                 <NavMain
                     items={[
-                        ...(isEntryManager
+                        ...(isManager
                             ? [
                                   {
                                       title: 'Manage',

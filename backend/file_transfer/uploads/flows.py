@@ -14,6 +14,7 @@ from file_transfer.s3_utils import (
     delete_object,
     ensure_bucket_exists,
     exists,
+    presign_client,
 )
 
 from .exceptions import (
@@ -161,18 +162,14 @@ class PresignedUploadFlow(Generic[T]):
             InvalidFileSizeException: If file_size is invalid (<= 0 or exceeds the per-file upload limit).
             QuotaExceededException: If upload would exceed user's quota.
         """
-        # Validate file size
         if file_size <= 0:
             raise InvalidFileSizeException(detail="The file size must be greater than zero.")
 
-        # Check user's upload limit
         if file_size > user.file_upload_limit:
             raise InvalidFileSizeException(
                 detail=f"File size ({file_size} bytes) exceeds your upload limit ({user.file_upload_limit} bytes)."
             )
 
-        # Check quota: sum of existing files + new file
-        # Local import: file_transfer.models loads uploads/__init__.py, which imports this module.
         from file_transfer.models import FileReference
 
         existing_total = FileReference.objects.filter(user=user).aggregate(total=models.Sum("file_size"))["total"] or 0
@@ -185,21 +182,17 @@ class PresignedUploadFlow(Generic[T]):
                 f"Limit: {user.file_upload_limit} bytes."
             )
 
-        # Check for existing uploads if configured
         if not self.config.allow_concurrent_per_user:
             if self.pending_model.objects.filter(user=user).exists():
                 raise AlreadyUploadingException(
                     detail="You already have an open upload session. Please finalize the previous upload before starting a new one."
                 )
 
-        # Generate unique upload ID and object key
         upload_id = uuid.uuid4()
         object_key = self.config.object_key_generator(upload_id, file_name, user)
 
-        # Calculate expiration time
         expires_at = timezone.now() + timedelta(seconds=self.config.expiry_seconds)
 
-        # Create pending upload record
         pending_upload = self.pending_model.objects.create(
             id=upload_id,
             object_key=object_key,
@@ -208,10 +201,9 @@ class PresignedUploadFlow(Generic[T]):
             expires_at=expires_at,
         )
 
-        # Generate presigned URL for upload with size constraint
         storage = self._get_storage()
         try:
-            presigned_url = storage.connection.meta.client.generate_presigned_url(
+            presigned_url = presign_client(storage).generate_presigned_url(
                 "put_object",
                 Params={
                     "Bucket": storage.bucket_name,
@@ -224,8 +216,6 @@ class PresignedUploadFlow(Generic[T]):
             pending_upload.delete()
             raise
 
-        # Schedule one-shot cleanup shortly after session / presigned URL expiry (see countdown).
-        # Local import: top-level would create flows -> tasks -> models while models is still loading.
         from .tasks import cleanup_expired_upload_generic
 
         try:
@@ -235,11 +225,9 @@ class PresignedUploadFlow(Generic[T]):
                     f"{self.pending_model._meta.app_label}.{self.pending_model.__name__}",
                     self.config.bucket_name,
                 ),
-                # Buffer past expiry so the pending row is definitely expired when the task runs.
                 countdown=self.config.expiry_seconds + 60,
             )
         except Exception as e:
-            # apply_async can fail if the broker is down; cleanup_all_expired_uploads (Beat) is the fallback.
             logger.warning(f"Could not schedule cleanup task: {e}")
 
         return {

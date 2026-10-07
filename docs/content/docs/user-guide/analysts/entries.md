@@ -21,6 +21,5 @@ views.
 
 ## Requesting access to an entry
 If you see a message indicating inaccessible entities, you can request access
-from the dashboard. The request notifies users with read-write access to the
-entity. When approved, the entry becomes accessible and you receive a
+from the dashboard. The request notifies admins and managers. When approved, the entry becomes accessible and you receive a
 notification.

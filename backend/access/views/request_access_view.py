@@ -15,7 +15,7 @@ from core.openapi import get_common_error_responses, get_error_responses
 from entries.exceptions import EntityNotFoundException, EntriesErrorCodes
 from entries.models import Entry
 from notifications.models import AccessRequestNotification
-from user.models import CradleUser
+from user.models import CradleUser, UserRoles
 
 from ..enums import AccessType
 from ..models import Access
@@ -23,9 +23,10 @@ from ..serializers import RequestAccessSerializer
 
 
 def notify_access_request(user: CradleUser, entity: Entry, message: str) -> None:
-    """Notify every user who can grant access to ``entity`` that ``user`` asked for it."""
+    """Notify everyone who can grant access to ``entity`` (admins and managers) that ``user`` asked for it."""
+    granters = CradleUser.objects.filter(role__in=(UserRoles.ADMIN, UserRoles.MANAGER))
     with transaction.atomic():
-        for notified_user_id in Access.objects.get_users_with_access(entity.id):
+        for notified_user_id in granters.values_list("id", flat=True):
             AccessRequestNotification.objects.create(
                 user_id=notified_user_id,
                 requesting_user=user,
@@ -38,7 +39,7 @@ def notify_access_request(user: CradleUser, entity: Entry, message: str) -> None
     post=extend_schema(
         operation_id="access_request_create",
         summary="Request access to entity",
-        description="Allows a user to request access for an entity. All users with read-write access for that specific entity will receive a notification. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.",  # noqa: E501
+        description="Allows a user to request access for an entity. All admins and managers receive a notification. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="entity_id",

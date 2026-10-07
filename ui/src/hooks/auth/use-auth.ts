@@ -21,7 +21,7 @@ const useRequiredContext = <T>(ctx: Context<T | undefined>, hookName: string): T
 };
 
 /**
- * Hook to access authentication state only (role, userId, isLoading, basePath, isAdmin, isEntryManager)
+ * Hook to access authentication state only (role, userId, isLoading, basePath, isAdmin, isManager)
  * Use this when you only need state values to avoid rerenders from action changes
  *
  * @returns Authentication state value

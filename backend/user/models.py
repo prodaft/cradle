@@ -27,8 +27,7 @@ class UserRoles(models.TextChoices):
     """User role levels for access control."""
 
     ADMIN = "admin"  # Superuser
-    MANAGER = "manager"  # Manages everything except users
-    ENTRY_MANAGER = "entrymanager"  # Manage Entities and EntryTypes
+    MANAGER = "manager"  # Manages entities, entry types and access to entities
     USER = "author"  # Writer of notes
 
 
@@ -92,7 +91,6 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     REQUIRED_FIELDS = ["password", "email"]
     EMAIL_FIELD = "email"
 
-    # incompatible types. We do not have a fix for this yet.
     objects: CradleUserManager = CradleUserManager()  # type: ignore
 
     def __str__(self) -> str:
@@ -157,6 +155,11 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     def is_cradle_admin(self) -> bool:
         """True if user has admin role."""
         return self.role == UserRoles.ADMIN
+
+    @property
+    def is_manager(self) -> bool:
+        """True if user manages entities and entry types, and grants access to entities."""
+        return self.role == UserRoles.MANAGER or self.is_cradle_admin
 
     @property
     def can_see_restricted_notes(self) -> bool:

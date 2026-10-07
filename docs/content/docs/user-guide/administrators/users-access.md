@@ -24,18 +24,17 @@ read-write access to all entities referenced in that note. **Default access**
 is none unless higher permissions are explicitly assigned. **Superuser
 privileges** grant admins read-write access to all entities, and those
 permissions are not stored in the database. **Roles** include **admin** (full
-permissions and user management), **manager** (system configuration and
-content, excluding user admin), **entry manager** (entry classes and entity
-metadata), and **user** (base access for creating and viewing notes).
+permissions and user management), **manager** (entry classes, entity
+metadata and access to entities), and **user** (base access for creating and
+viewing notes).
 
 ## Access management
 
-**Admin capabilities** include modifying access levels for any non-admin user,
-but admins cannot modify access for other admins. **Users with read-write
-access** can grant access to other users for entities they control, but cannot
-modify access for admins or users who already have read-write access. **Access
-requests** let users request access to entities they cannot view, and users
-with read-write access receive notifications.
+**Admins and managers** can modify access levels for any non-admin user;
+nobody can modify access for admins, who can access everything. Read-write
+access to an entity does not let a user grant access to it. **Access
+requests** let users request access to entities they cannot view, and admins
+and managers receive notifications.
 
 ## Artifact visibility cases
 

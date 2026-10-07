@@ -58,7 +58,7 @@ It provides an intuitive interface for cybersecurity analysts to:
     cp .env.example .env
     ```
 
-    Then edit `.env` and set `VITE_API_BASE_URL` to your backend API URL (default: `http://localhost:8000`).
+    Then edit `.env` and set `VITE_API_BASE_URL` to your backend API URL (default: `http://localhost:8000/api`).
 
 4. **Start development server**
     ```bash

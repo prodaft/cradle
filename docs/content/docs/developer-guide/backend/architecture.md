@@ -58,7 +58,7 @@ Several users can edit a note at the same time. The editor uses
 Gunicorn serves WSGI only, so WebSockets need an ASGI server: the backend
 container starts Daphne on port 8001 next to Gunicorn, and the reverse proxy must
 forward `/api/ws/` there with the WebSocket upgrade headers (see
-`docker/nginx_demo.conf`). In development, `runserver` handles both. When the
+`docker/nginx.conf`). In development, `runserver` handles both. When the
 WebSocket is unavailable, the editor falls back to syncing tabs within one browser
 and saving through the REST API.
 

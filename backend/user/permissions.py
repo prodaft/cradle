@@ -2,8 +2,6 @@
 
 from rest_framework.permissions import BasePermission
 
-from .models import UserRoles
-
 
 class HasAdminRole(BasePermission):
     """Allow only users with admin role."""
@@ -12,15 +10,15 @@ class HasAdminRole(BasePermission):
         return bool(request.user and request.user.is_cradle_admin)
 
 
-class HasEntryManagerRole(BasePermission):
-    """Allow users with entry manager or admin role."""
+class HasManagerRole(BasePermission):
+    """Allow users with manager or admin role."""
 
     def has_permission(self, request, view):
-        return bool(request.user and (request.user.role == UserRoles.ENTRY_MANAGER or request.user.is_cradle_admin))
+        return bool(request.user and request.user.is_manager)
 
 
 class EntryClassListPermission(BasePermission):
-    """GET: any authenticated user. POST: requires HasEntryManagerRole."""
+    """GET: any authenticated user. POST: requires HasManagerRole."""
 
     message = "You do not have permission to perform this action."
 
@@ -29,11 +27,11 @@ class EntryClassListPermission(BasePermission):
             return False
         if request.method == "GET":
             return True
-        return HasEntryManagerRole().has_permission(request, view)
+        return HasManagerRole().has_permission(request, view)
 
 
 class EntityListPermission(BasePermission):
-    """GET: HasEntryManagerRole. POST: HasAdminRole only."""
+    """GET: HasManagerRole. POST: HasAdminRole only."""
 
     message = "You do not have permission to perform this action."
 
@@ -41,25 +39,25 @@ class EntityListPermission(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         if request.method == "GET":
-            return HasEntryManagerRole().has_permission(request, view)
+            return HasManagerRole().has_permission(request, view)
         if request.method == "POST":
             return HasAdminRole().has_permission(request, view)
         return False
 
 
 class EntityDetailPermission(BasePermission):
-    """GET/PATCH/DELETE: HasEntryManagerRole; DELETE admin check is enforced in the view."""
+    """GET/PATCH/DELETE: HasManagerRole; DELETE admin check is enforced in the view."""
 
     message = "You do not have permission to perform this action."
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        return HasEntryManagerRole().has_permission(request, view)
+        return HasManagerRole().has_permission(request, view)
 
 
 class EntryClassDetailPermission(BasePermission):
-    """GET: any authenticated. DELETE: HasAdminRole. PUT: HasEntryManagerRole."""
+    """GET: any authenticated. DELETE: HasAdminRole. PUT: HasManagerRole."""
 
     message = "You do not have permission to perform this action."
 
@@ -70,4 +68,4 @@ class EntryClassDetailPermission(BasePermission):
             return True
         if request.method == "DELETE":
             return HasAdminRole().has_permission(request, view)
-        return HasEntryManagerRole().has_permission(request, view)
+        return HasManagerRole().has_permission(request, view)

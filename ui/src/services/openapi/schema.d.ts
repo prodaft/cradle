@@ -13,7 +13,7 @@ export interface paths {
         };
         /**
          * Get entity access privileges
-         * @description Returns a list of all users with their access types for a specific entity. Only available to admin users.
+         * @description Returns a list of all users with their access types for a specific entity. Only available to admins and managers.
          */
         get: operations["access_entity_retrieve"];
         put?: never;
@@ -33,7 +33,7 @@ export interface paths {
         };
         /**
          * Stream entity access privileges (NDJSON)
-         * @description Returns all users and access types for an entity as NDJSON (one object per line). Admin only; same data as the paginated endpoint.
+         * @description Returns all users and access types for an entity as NDJSON (one object per line). Admins and managers only; same data as the paginated endpoint.
          */
         get: operations["access_entity_stream"];
         put?: never;
@@ -55,7 +55,7 @@ export interface paths {
         put?: never;
         /**
          * Request access to entity
-         * @description Allows a user to request access for an entity. All users with read-write access for that specific entity will receive a notification. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.
+         * @description Allows a user to request access for an entity. All admins and managers receive a notification. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.
          */
         post: operations["access_request_create"];
         delete?: never;
@@ -94,7 +94,7 @@ export interface paths {
         get?: never;
         /**
          * Update user access for entity
-         * @description Updates a user's access privileges for a specific entity. Admin users can update access for non-admin users. Users with read-write access can update access for non-admin users who don't have read-write access.
+         * @description Updates a user's access privileges for a specific entity. Admins and managers can update access for non-admin users.
          */
         put: operations["access_user_update"];
         post?: never;
@@ -354,7 +354,7 @@ export interface paths {
         };
         /**
          * List entities
-         * @description Returns a paginated list of entities. For entry managers, returns only entities they have access to. For admin users, returns all entities.
+         * @description Returns a paginated list of entities. For managers, returns only entities they have access to. For admin users, returns all entities.
          */
         get: operations["entities_list"];
         put?: never;
@@ -378,7 +378,7 @@ export interface paths {
         };
         /**
          * Get entity details
-         * @description Returns details of a specific entity. Entry managers can only access entities they have permissions for. Admin users can access any entity.
+         * @description Returns details of a specific entity. Managers can only access entities they have permissions for. Admin users can access any entity.
          */
         get: operations["entities_retrieve"];
         put?: never;
@@ -432,7 +432,7 @@ export interface paths {
         put?: never;
         /**
          * Create entry class
-         * @description Creates a new entry class. Requires entry manager or admin role.
+         * @description Creates a new entry class. Requires manager or admin role.
          */
         post: operations["entry_classes_create"];
         delete?: never;
@@ -1232,7 +1232,7 @@ export interface paths {
         put?: never;
         /**
          * Request access to a note
-         * @description Requests access to the sources/cases of a published note the user cannot read. Users with read-write access to each of those entities receive a notification; the requester is not told which entities they are. Only available when restricted note search is enabled. If the user can already read the note, no notifications are sent but the request is deemed successful.
+         * @description Requests access to the sources/cases of a published note the user cannot read. Admins and managers receive a notification for each of those entities; the requester is not told which entities they are. Only available when restricted note search is enabled. If the user can already read the note, no notifications are sent but the request is deemed successful.
          */
         post: operations["notes_access_request_create"];
         delete?: never;
@@ -3698,11 +3698,10 @@ export interface components {
              *
              *     * `admin` - Admin
              *     * `manager` - Manager
-             *     * `entrymanager` - Entry Manager
              *     * `author` - User
              * @enum {string}
              */
-            role?: "admin" | "manager" | "entrymanager" | "author";
+            role?: "admin" | "manager" | "author";
             /** @description Whether the email address has been verified */
             email_confirmed?: boolean;
             /** @description Whether the user can log in */
@@ -4131,11 +4130,10 @@ export interface components {
              *
              *     * `admin` - Admin
              *     * `manager` - Manager
-             *     * `entrymanager` - Entry Manager
              *     * `author` - User
              * @enum {string}
              */
-            role?: "admin" | "manager" | "entrymanager" | "author";
+            role?: "admin" | "manager" | "author";
             /** @description Whether the email address has been verified */
             email_confirmed?: boolean;
             /** @description Whether the user can log in */
@@ -4194,11 +4192,10 @@ export interface components {
              *
              *     * `admin` - Admin
              *     * `manager` - Manager
-             *     * `entrymanager` - Entry Manager
              *     * `author` - User
              * @enum {string}
              */
-            role?: "admin" | "manager" | "entrymanager" | "author";
+            role?: "admin" | "manager" | "author";
             /** @description Whether 2FA is enabled for this account */
             two_factor_enabled?: boolean;
             /** @description Whether the user can log in */
@@ -4237,11 +4234,10 @@ export interface components {
              *
              *     * `admin` - Admin
              *     * `manager` - Manager
-             *     * `entrymanager` - Entry Manager
              *     * `author` - User
              * @enum {string}
              */
-            role?: "admin" | "manager" | "entrymanager" | "author";
+            role?: "admin" | "manager" | "author";
             /** @description Whether 2FA is enabled for this account */
             two_factor_enabled?: boolean;
             /** @description Whether the user can log in */
@@ -33176,14 +33172,13 @@ export interface operations {
                 /** @description Number of results per page */
                 page_size?: number;
                 /**
-                 * @description Filter by role (admin, manager, entrymanager, author).
+                 * @description Filter by role (admin, manager, author).
                  *
                  *     * `admin` - Admin
                  *     * `manager` - Manager
-                 *     * `entrymanager` - Entry Manager
                  *     * `author` - User
                  */
-                role?: "admin" | "author" | "entrymanager" | "manager";
+                role?: "admin" | "author" | "manager";
                 /** @description Search username, email or role. Supports AND/OR/NOT, -term, "phrases", =exact and * wildcards (case-insensitive). */
                 search?: string;
             };

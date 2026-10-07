@@ -36,6 +36,10 @@ _csrf_origins = list(
 )
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", _csrf_origins)
 
+# Behind a TLS-terminating proxy: trust its X-Forwarded-Proto, so absolute URLs use https
+if env.bool("TRUST_X_FORWARDED_PROTO", False):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 ADMIN_PATH_UUID = env.str("ADMIN_PATH_UUID", ADMIN_PATH_UUID)  # noqa: F405
 
 # Database
@@ -83,6 +87,9 @@ AWS_S3_ENDPOINT_URL = env.str(
 AWS_S3_USE_SSL = MINIO_CONFIG["secure"]
 AWS_S3_VERIFY = env.bool("AWS_S3_VERIFY", True)
 AWS_S3_ADDRESSING_STYLE = "path"
+# Where browsers reach object storage, for presigned URLs; server-side calls keep using
+# AWS_S3_ENDPOINT_URL. Unset: presigned URLs use AWS_S3_ENDPOINT_URL too.
+AWS_S3_PUBLIC_ENDPOINT_URL = env.str("AWS_S3_PUBLIC_ENDPOINT_URL", "") or None
 AWS_S3_REGION_NAME = env.str("AWS_S3_REGION_NAME", "us-east-1")
 AWS_S3_SIGNATURE_VERSION = env.str("AWS_S3_SIGNATURE_VERSION", "s3v4")
 

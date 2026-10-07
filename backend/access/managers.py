@@ -8,7 +8,7 @@ from django.db.models import F, FilteredRelation, Q, QuerySet
 from core.query_lang import search_q
 from entries.enums import EntryType
 from entries.models import Entry
-from user.models import CradleUser, UserRoles
+from user.models import CradleUser
 
 from .enums import AccessType
 
@@ -123,40 +123,3 @@ class AccessManager(models.Manager):
                     pass
             qs = qs.filter(q)
         return qs
-
-    def get_users_with_access(self, entity_id: int) -> QuerySet:
-        """Retrieves user ids that can grant access for the given entity.
-
-        Includes users with read-write access and superusers.
-
-        Args:
-            entity_id: ID of the entity to check.
-
-        Returns:
-            A QuerySet containing the ids of the users that are allowed to give
-            access to the entity.
-        """
-        return (
-            self.get_queryset()
-            .filter(entity_id=entity_id, access_type=AccessType.READ_WRITE)
-            .values_list("user_id", flat=True)
-            .union(CradleUser.objects.filter(role=UserRoles.ADMIN).values_list("id", flat=True))
-        )
-
-    def check_user_access(self, user: CradleUser, entity: Entry, access_type: AccessType) -> bool:
-        """Checks whether the user has the given access_type for the entity.
-
-        Do not call when the user is a superuser or access_type is NONE.
-
-        Args:
-            user: User whose access is checked.
-            entity: The entity for which the check is performed.
-            access_type: The access type for which the method checks.
-
-        Returns:
-            True if the user has the given access_type for the entity; False otherwise.
-        """
-        assert not user.is_cradle_admin, "The user parameter should not be a superuser"
-        assert access_type != AccessType.NONE, "The provided access type should not be NONE"
-
-        return self.get_queryset().filter(user=user, entity=entity, access_type=access_type).exists()

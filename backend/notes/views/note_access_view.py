@@ -26,8 +26,8 @@ from ..models import Note
         operation_id="notes_access_request_create",
         summary="Request access to a note",
         description=(
-            "Requests access to the sources/cases of a published note the user cannot read. Users with read-write "
-            "access to each of those entities receive a notification; the requester is not told which entities "
+            "Requests access to the sources/cases of a published note the user cannot read. Admins and "
+            "managers receive a notification for each of those entities; the requester is not told which entities "
             "they are. Only available when restricted note search is enabled. If the user can already read the "
             "note, no notifications are sent but the request is deemed successful."
         ),

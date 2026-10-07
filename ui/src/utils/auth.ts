@@ -68,21 +68,21 @@ export function isAdmin(): boolean {
 }
 
 /**
- * Check if user is an entry manager or admin
+ * Check if user is a manager or admin
  * This matches the logic in AuthProvider but works outside React context
  *
  * Used in router beforeLoad hooks where React context is not available.
- * For components, use useAuthState().isEntryManager instead.
+ * For components, use useAuthState().isManager instead.
  *
- * @returns true if user is an entry manager or admin
+ * @returns true if user is a manager or admin
  */
-export function isEntryManager(): boolean {
+export function isManager(): boolean {
     const role = getRole();
-    return role === 'entrymanager' || role === 'admin';
+    return role === 'manager' || role === 'admin';
 }
 
 export const USER_ROLE_OPTIONS = [
     { value: 'author', label: 'User' },
-    { value: 'entrymanager', label: 'Entry Manager' },
+    { value: 'manager', label: 'Manager' },
     { value: 'admin', label: 'Admin' },
 ];

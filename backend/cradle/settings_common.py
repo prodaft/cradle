@@ -35,6 +35,8 @@ DEFAULT_CSRF_ORIGINS = [
 
 # S3/MinIO signature (shared by docker and test settings)
 AWS_S3_SIGNATURE_VERSION = "s3v4"
+# Public object storage address for presigned URLs; None = AWS_S3_ENDPOINT_URL
+AWS_S3_PUBLIC_ENDPOINT_URL = None
 
 
 # Application definition

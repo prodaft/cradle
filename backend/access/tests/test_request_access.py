@@ -2,7 +2,8 @@ from django.urls import reverse
 from rest_framework_simplejwt.tokens import AccessToken
 
 from entries.models import Entry
-from user.models import CradleUser
+from notifications.models import AccessRequestNotification
+from user.models import CradleUser, UserRoles
 
 from ..enums import AccessType
 from ..models import Access
@@ -37,3 +38,17 @@ class RequestAccessTest(AccessTestCase):
         )
 
         self.assertEqual(response.status_code, 401)
+
+    def test_request_access_notifies_admins_and_managers(self):
+        manager = CradleUser.objects.create_user(
+            username="manager", password="user", email="m@c.d", role=UserRoles.MANAGER
+        )
+        response = self.client.post(
+            reverse("request_access", kwargs={"entity_id": self.entity.id}),
+            **self.headers[3],
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertCountEqual(
+            AccessRequestNotification.objects.values_list("user_id", flat=True), [self.users[4].id, manager.id]
+        )

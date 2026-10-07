@@ -2,9 +2,8 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
 
 /**
  * Base layout route for /manage
- * Permission checks are handled by child layout routes:
- * - _entry-manager.tsx - for entry manager accessible routes
- * - _admin.tsx - for admin-only routes
+ * Permission checks are handled by the _manage-auth.tsx layout route:
+ * admin-only for users/settings, manager (or admin) for the rest.
  */
 export const Route = createFileRoute('/_authenticated/manage')({
     staticData: {

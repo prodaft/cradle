@@ -180,10 +180,9 @@ export function getSuggestions(
     let candidates: Suggestion[];
     if (colonIndex === -1) {
         const lower = token.toLowerCase();
-        // An empty token (just typed a space) would list everything on every keystroke; only
-        // open the list once something has been typed.
-        if (!lower) return [];
-        candidates = [...keySuggestions(schema), ...KEYWORD_SUGGESTIONS].filter(
+        const keys = keySuggestions(schema);
+        if (!lower && !keys.length) return [];
+        candidates = [...keys, ...KEYWORD_SUGGESTIONS].filter(
             (s) =>
                 s.label.toLowerCase().startsWith(lower) &&
                 s.label.toLowerCase() !== lower,
@@ -197,9 +196,6 @@ export function getSuggestions(
         candidates = valueSuggestions(key, partialValue, schema);
     }
 
-    // Keep a candidate only if the text it produces (plus a placeholder for what's still to be
-    // typed) parses. When the rest of the input is already invalid on its own, judge the text up
-    // to the cursor instead, so an unrelated mistake further on doesn't hide every suggestion.
     const replaceFrom = replaceRangeStart(input, cursor);
     const after = input.slice(cursor);
     const rest = parseSearch(closeParens(`${before} ${after}`), schema);
@@ -210,8 +206,6 @@ export function getSuggestions(
         if (candidate.kind === 'qualifier') {
             const key = candidate.label.slice(0, -1);
             const spec = findQualifier(schema, key);
-            // A key that's already set can only be repeated if it's a `multiple` enum (the
-            // placeholder value could coincide with the existing one and hide that).
             if (context.ok && isSet(spec, context.state)) return false;
             const sample = sampleValue(spec, schema);
             if (sample === undefined) return false;

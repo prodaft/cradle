@@ -3,7 +3,7 @@
  * Hooks for managing authentication state
  *
  * Best practice recommendations:
- * - useAuthState() - For state values only (role, userId, isLoading, basePath, isAdmin, isEntryManager, isInitializing)
+ * - useAuthState() - For state values only (role, userId, isLoading, basePath, isAdmin, isManager, isInitializing)
  * - useAuthActions() - For actions only (logIn, logOut, getAccessToken, isLoggedIn, setTokensDirectly)
  *   Import from '@/hooks/auth/use-auth' for useAuthActions
  *

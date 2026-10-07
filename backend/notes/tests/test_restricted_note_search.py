@@ -176,13 +176,17 @@ class RestrictedNoteSearchTest(NotesTestCase):
     def request_access(self, note_id):
         return self.client.post(reverse("note_request_access", kwargs={"note_id": note_id}))
 
-    def test_request_access_notifies_case_owners(self):
+    def test_request_access_notifies_managers_not_owners(self):
         self.enable()
         owner = CradleUser.objects.create_user(username="owner", password="password", email="o@x.y")
         Access.objects.create(user=owner, entity=self.case_closed, access_type="read-write")
+        manager = CradleUser.objects.create_user(
+            username="manager", password="password", email="m@x.y", role=UserRoles.MANAGER
+        )
 
         self.assertEqual(self.request_access(self.closed_note.id).status_code, 201)
-        notification = AccessRequestNotification.objects.get(user=owner)
+        self.assertFalse(AccessRequestNotification.objects.filter(user=owner).exists())
+        notification = AccessRequestNotification.objects.get(user=manager)
         self.assertEqual(notification.requesting_user, self.user)
         self.assertEqual(notification.entity, self.case_closed)
         self.assertIn('read note "Closed"', notification.message)
@@ -191,12 +195,9 @@ class RestrictedNoteSearchTest(NotesTestCase):
         self.enable()
         both = self.published_note("# Both\nshared", self.case_closed)
         both.entries.add(self.case_open)
-        owner = CradleUser.objects.create_user(username="owner", password="password", email="o@x.y")
-        Access.objects.create(user=owner, entity=self.case_open, access_type="read-write")
-        Access.objects.create(user=owner, entity=self.case_closed, access_type="read-write")
 
         self.request_access(both.id)
-        # Admins are notified too, so check which entities were requested rather than how many notifications.
+        # Every admin and manager is notified, so check which entities were requested.
         self.assertEqual(
             set(AccessRequestNotification.objects.values_list("entity_id", flat=True)), {self.case_closed.id}
         )

@@ -43,7 +43,7 @@ def _get_entity_or_404(entity_id: int) -> Entry:
     get=extend_schema(
         operation_id="entities_list",
         summary="List entities",
-        description="Returns a paginated list of entities. For entry managers, returns only entities they have access to. For admin users, returns all entities.",  # noqa: E501
+        description="Returns a paginated list of entities. For managers, returns only entities they have access to. For admin users, returns all entities.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="page",
@@ -123,7 +123,7 @@ class EntityList(ListCreateAPIView):
     get=extend_schema(
         operation_id="entities_retrieve",
         summary="Get entity details",
-        description="Returns details of a specific entity. Entry managers can only access entities they have permissions for. Admin users can access any entity.",  # noqa: E501
+        description="Returns details of a specific entity. Managers can only access entities they have permissions for. Admin users can access any entity.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="entity_id",

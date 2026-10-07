@@ -27,7 +27,7 @@ export interface AuthStateValue {
     isLoading: boolean;
     basePath: string;
     isAdmin: boolean;
-    isEntryManager: boolean;
+    isManager: boolean;
     isInitializing: boolean;
 }
 

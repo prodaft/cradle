@@ -81,14 +81,14 @@ class EntryClassRenameAPITestCase(EntriesTestCase):
     def setUp(self):
         super().setUp()
         self.client = APIClient()
-        self.entry_manager = CradleUser.objects.create_user(
+        self.manager = CradleUser.objects.create_user(
             username="entrymgr",
             password="password",
-            role=UserRoles.ENTRY_MANAGER,
+            role=UserRoles.MANAGER,
             email="entrymgr@example.com",
             is_active=True,
         )
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(self.entry_manager)}"}
+        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {AccessToken.for_user(self.manager)}"}
         self.entry_class = EntryClass.objects.create(
             type=EntryType.ARTIFACT,
             subtype="PTI",

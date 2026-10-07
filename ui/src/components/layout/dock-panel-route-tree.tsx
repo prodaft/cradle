@@ -3,7 +3,7 @@ import Dashboard from '@/components/domain/dashboard/dashboard';
 import KnowledgeGraphSearch from '@/components/domain/graph/knowledge-graph-search';
 import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
-import { isAdmin, isEntryManager } from '@/utils/auth';
+import { isAdmin, isManager } from '@/utils/auth';
 import { FILE_DASHBOARD_SUBTYPE } from '@/utils/dashboard';
 import { fetchClient } from '@services/openapi/client';
 import {
@@ -279,7 +279,7 @@ const manageAuthRoute = createRoute({
         const isAdminRoute = ADMIN_PATHS.some((p) => path.startsWith(p));
         if (isAdminRoute) {
             if (!isAdmin()) throw notFound();
-        } else if (!isEntryManager()) {
+        } else if (!isManager()) {
             throw notFound();
         }
     },

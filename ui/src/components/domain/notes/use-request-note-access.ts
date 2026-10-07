@@ -11,7 +11,7 @@ export function useRequestNoteAccess() {
             if (error) throw { response, error };
         },
         meta: {
-            successMessage: 'Access requested. The note’s owners have been notified.',
+            successMessage: 'Access requested.',
         },
     });
 }

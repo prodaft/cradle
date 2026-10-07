@@ -9,7 +9,7 @@
         "/access/entity/{entity_id}/": {
             "get": {
                 "operationId": "access_entity_retrieve",
-                "description": "Returns a list of all users with their access types for a specific entity. Only available to admin users.",
+                "description": "Returns a list of all users with their access types for a specific entity. Only available to admins and managers.",
                 "summary": "Get entity access privileges",
                 "parameters": [
                     {
@@ -522,7 +522,7 @@
         "/access/entity/{entity_id}/stream/": {
             "get": {
                 "operationId": "access_entity_stream",
-                "description": "Returns all users and access types for an entity as NDJSON (one object per line). Admin only; same data as the paginated endpoint.",
+                "description": "Returns all users and access types for an entity as NDJSON (one object per line). Admins and managers only; same data as the paginated endpoint.",
                 "summary": "Stream entity access privileges (NDJSON)",
                 "parameters": [
                     {
@@ -912,7 +912,7 @@
         "/access/request/{entity_id}/": {
             "post": {
                 "operationId": "access_request_create",
-                "description": "Allows a user to request access for an entity. All users with read-write access for that specific entity will receive a notification. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.",
+                "description": "Allows a user to request access for an entity. All admins and managers receive a notification. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.",
                 "summary": "Request access to entity",
                 "parameters": [
                     {
@@ -1928,7 +1928,7 @@
         "/access/user/{user_id}/{entity_id}/": {
             "put": {
                 "operationId": "access_user_update",
-                "description": "Updates a user's access privileges for a specific entity. Admin users can update access for non-admin users. Users with read-write access can update access for non-admin users who don't have read-write access.",
+                "description": "Updates a user's access privileges for a specific entity. Admins and managers can update access for non-admin users.",
                 "summary": "Update user access for entity",
                 "parameters": [
                     {
@@ -7416,7 +7416,7 @@
         "/entries/entities/": {
             "get": {
                 "operationId": "entities_list",
-                "description": "Returns a paginated list of entities. For entry managers, returns only entities they have access to. For admin users, returns all entities.",
+                "description": "Returns a paginated list of entities. For managers, returns only entities they have access to. For admin users, returns all entities.",
                 "summary": "List entities",
                 "parameters": [
                     {
@@ -8306,7 +8306,7 @@
         "/entries/entities/{entity_id}/": {
             "get": {
                 "operationId": "entities_retrieve",
-                "description": "Returns details of a specific entity. Entry managers can only access entities they have permissions for. Admin users can access any entity.",
+                "description": "Returns details of a specific entity. Managers can only access entities they have permissions for. Admin users can access any entity.",
                 "summary": "Get entity details",
                 "parameters": [
                     {
@@ -10280,7 +10280,7 @@
             },
             "post": {
                 "operationId": "entry_classes_create",
-                "description": "Creates a new entry class. Requires entry manager or admin role.",
+                "description": "Creates a new entry class. Requires manager or admin role.",
                 "summary": "Create entry class",
                 "tags": [
                     "entries"
@@ -33315,7 +33315,7 @@
         "/notes/{note_id}/access/request/": {
             "post": {
                 "operationId": "notes_access_request_create",
-                "description": "Requests access to the sources/cases of a published note the user cannot read. Users with read-write access to each of those entities receive a notification; the requester is not told which entities they are. Only available when restricted note search is enabled. If the user can already read the note, no notifications are sent but the request is deemed successful.",
+                "description": "Requests access to the sources/cases of a published note the user cannot read. Admins and managers receive a notification for each of those entities; the requester is not told which entities they are. Only available when restricted note search is enabled. If the user can already read the note, no notifications are sent but the request is deemed successful.",
                 "summary": "Request access to a note",
                 "parameters": [
                     {
@@ -44707,15 +44707,14 @@
                         "name": "role",
                         "schema": {
                             "type": "string",
-                            "x-spec-enum-id": "632e0f526798aebd",
+                            "x-spec-enum-id": "1e5cdfedb4a50968",
                             "enum": [
                                 "admin",
                                 "author",
-                                "entrymanager",
                                 "manager"
                             ]
                         },
-                        "description": "Filter by role (admin, manager, entrymanager, author).\n\n* `admin` - Admin\n* `manager` - Manager\n* `entrymanager` - Entry Manager\n* `author` - User"
+                        "description": "Filter by role (admin, manager, author).\n\n* `admin` - Admin\n* `manager` - Manager\n* `author` - User"
                     },
                     {
                         "in": "query",
@@ -60621,12 +60620,11 @@
                         "enum": [
                             "admin",
                             "manager",
-                            "entrymanager",
                             "author"
                         ],
                         "type": "string",
-                        "x-spec-enum-id": "632e0f526798aebd",
-                        "description": "User role for access control\n\n* `admin` - Admin\n* `manager` - Manager\n* `entrymanager` - Entry Manager\n* `author` - User"
+                        "x-spec-enum-id": "1e5cdfedb4a50968",
+                        "description": "User role for access control\n\n* `admin` - Admin\n* `manager` - Manager\n* `author` - User"
                     },
                     "email_confirmed": {
                         "type": "boolean",
@@ -61512,12 +61510,11 @@
                         "enum": [
                             "admin",
                             "manager",
-                            "entrymanager",
                             "author"
                         ],
                         "type": "string",
-                        "x-spec-enum-id": "632e0f526798aebd",
-                        "description": "User role for access control\n\n* `admin` - Admin\n* `manager` - Manager\n* `entrymanager` - Entry Manager\n* `author` - User"
+                        "x-spec-enum-id": "1e5cdfedb4a50968",
+                        "description": "User role for access control\n\n* `admin` - Admin\n* `manager` - Manager\n* `author` - User"
                     },
                     "email_confirmed": {
                         "type": "boolean",
@@ -61632,12 +61629,11 @@
                         "enum": [
                             "admin",
                             "manager",
-                            "entrymanager",
                             "author"
                         ],
                         "type": "string",
-                        "x-spec-enum-id": "632e0f526798aebd",
-                        "description": "User role for access control\n\n* `admin` - Admin\n* `manager` - Manager\n* `entrymanager` - Entry Manager\n* `author` - User"
+                        "x-spec-enum-id": "1e5cdfedb4a50968",
+                        "description": "User role for access control\n\n* `admin` - Admin\n* `manager` - Manager\n* `author` - User"
                     },
                     "two_factor_enabled": {
                         "type": "boolean",
@@ -61710,12 +61706,11 @@
                         "enum": [
                             "admin",
                             "manager",
-                            "entrymanager",
                             "author"
                         ],
                         "type": "string",
-                        "x-spec-enum-id": "632e0f526798aebd",
-                        "description": "User role for access control\n\n* `admin` - Admin\n* `manager` - Manager\n* `entrymanager` - Entry Manager\n* `author` - User"
+                        "x-spec-enum-id": "1e5cdfedb4a50968",
+                        "description": "User role for access control\n\n* `admin` - Admin\n* `manager` - Manager\n* `author` - User"
                     },
                     "two_factor_enabled": {
                         "type": "boolean",

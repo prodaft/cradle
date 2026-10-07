@@ -1,3 +1,5 @@
+name: cradle-dev
+
 services:
   postgres:
     image: pgrouting/pgrouting:16-3.5-4.0
@@ -40,7 +42,7 @@ services:
       RABBITMQ_DEFAULT_USER: cradle
       RABBITMQ_DEFAULT_PASS: cradle
     volumes:
-      - ./rabbitmq.conf:/etc/rabbitmq/conf.d/10-celery.conf:ro
+      - ./docker/rabbitmq.conf:/etc/rabbitmq/conf.d/10-celery.conf:ro
     networks:
       default:
         ipv4_address: 192.168.31.44
@@ -89,7 +91,7 @@ services:
     ports:
       - "8081:8080"
     volumes:
-      - ./keycloak-realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ./docker/keycloak-realm.json:/opt/keycloak/data/import/realm.json:ro
     networks:
       default:
         ipv4_address: 192.168.31.45

@@ -19,7 +19,7 @@ from core.openapi import get_common_error_responses, get_error_responses
 from core.query_lang import matches_text, parse_search
 from core.utils import fields_to_form
 from user.authentication import APIKeyAuthentication
-from user.permissions import HasEntryManagerRole
+from user.permissions import HasManagerRole
 
 from ..exceptions import (
     DataConflictException,
@@ -102,7 +102,7 @@ class ClassMappingSubclassesAPIView(APIView):
     """DRF API view that returns all ClassMapping subclasses with their names."""
 
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
-    permission_classes = [IsAuthenticated, HasEntryManagerRole]
+    permission_classes = [IsAuthenticated, HasManagerRole]
 
     def get(self, request: Request, *args, **kwargs) -> Response:
         subclasses = ClassMapping.__subclasses__()
@@ -143,7 +143,7 @@ class MappingKeysSchemaView(APIView):
     """Given a class name, return the possible values in a mapping."""
 
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
-    permission_classes = [IsAuthenticated, HasEntryManagerRole]
+    permission_classes = [IsAuthenticated, HasManagerRole]
 
     def get(self, request: Request, class_name: str) -> Response:
         mapping_class = _get_mapping_class(class_name)
@@ -243,7 +243,7 @@ class MappingSchemaView(APIView):
     """Given a class name, return the possible values in a mapping."""
 
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
-    permission_classes = [IsAuthenticated, HasEntryManagerRole]
+    permission_classes = [IsAuthenticated, HasManagerRole]
 
     def get(self, request: Request, class_name: str) -> Response:
         mapping_class = _get_mapping_class(class_name)

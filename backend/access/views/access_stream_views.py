@@ -11,7 +11,7 @@ from core.openapi import get_common_error_responses, get_error_responses
 from entries.exceptions import EntriesErrorCodes
 from user.exceptions import UserErrorCodes, UserNotFoundException
 from user.models import CradleUser
-from user.permissions import HasAdminRole
+from user.permissions import HasAdminRole, HasManagerRole
 
 from ..entity_access_rows import build_entity_access_user_rows
 from ..models import Access
@@ -83,7 +83,7 @@ class UserAccessListStreamView(APIView):
         summary="Stream entity access privileges (NDJSON)",
         description=(
             "Returns all users and access types for an entity as NDJSON (one object per line). "
-            "Admin only; same data as the paginated endpoint."
+            "Admins and managers only; same data as the paginated endpoint."
         ),
         parameters=[
             OpenApiParameter(
@@ -113,7 +113,7 @@ class EntityAccessListStreamView(APIView):
     """Stream entity->user access rows as NDJSON."""
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, HasAdminRole]
+    permission_classes = [IsAuthenticated, HasManagerRole]
 
     def get(self, request: Request, entity_id: int):
         if getattr(self, "swagger_fake_view", False):

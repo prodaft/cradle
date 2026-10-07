@@ -12,7 +12,7 @@ from entries.exceptions import EntriesErrorCodes
 from entries.models import Entry
 from user.exceptions import UserErrorCodes, UserNotFoundException
 from user.models import CradleUser
-from user.permissions import HasAdminRole
+from user.permissions import HasAdminRole, HasManagerRole
 
 from ..entity_access_rows import build_entity_access_user_rows
 from ..models import Access
@@ -96,7 +96,7 @@ class UserAccessList(ListAPIView):
     get=extend_schema(
         operation_id="access_entity_retrieve",
         summary="Get entity access privileges",
-        description="Returns a list of all users with their access types for a specific entity. Only available to admin users.",  # noqa: E501
+        description="Returns a list of all users with their access types for a specific entity. Only available to admins and managers.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="entity_id",
@@ -141,10 +141,10 @@ class UserAccessList(ListAPIView):
     )
 )
 class EntityAccessList(ListAPIView):
-    """List users and their access types for a given entity (admin only)."""
+    """List users and their access types for a given entity (admins and managers)."""
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, HasAdminRole]
+    permission_classes = [IsAuthenticated, HasManagerRole]
     pagination_class = TotalPagesPagination
     serializer_class = AccessUserSerializer
 
