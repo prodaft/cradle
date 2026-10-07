@@ -17,7 +17,7 @@ class StepUpAuthTest(UserTestCase):
 
     def test_delete_own_account_requires_password(self):
         response = self.client.delete(
-            reverse("user_detail", kwargs={"user_id": "me"}),
+            reverse("user_detail_me"),
             data=json.dumps({}),
             content_type="application/json",
             **self.headers,
@@ -27,7 +27,7 @@ class StepUpAuthTest(UserTestCase):
 
     def test_delete_own_account_wrong_password(self):
         response = self.client.delete(
-            reverse("user_detail", kwargs={"user_id": "me"}),
+            reverse("user_detail_me"),
             data=json.dumps({"password": "wrong-password"}),
             content_type="application/json",
             **self.headers,
@@ -37,7 +37,7 @@ class StepUpAuthTest(UserTestCase):
 
     def test_delete_own_account_with_password(self):
         response = self.client.delete(
-            reverse("user_detail", kwargs={"user_id": "me"}),
+            reverse("user_detail_me"),
             data=json.dumps({"password": "userR1#1234112"}),
             content_type="application/json",
             **self.headers,
