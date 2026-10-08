@@ -1,175 +1,160 @@
+name: cradle-demo
+
+x-backend-env: &backend-env
+  SECRET_KEY: super-secret-key
+  DEBUG: "true"
+
+  FRONTEND_URL: http://localhost:8000
+
+  DB_HOST: postgres
+  DB_USER: cradle
+  DB_PASSWORD: cradle
+
+  MINIO_ENDPOINT: minio:9000
+  AWS_S3_PUBLIC_ENDPOINT_URL: http://localhost:8000
+
+  REDIS_URL: redis://redis:6379/0
+  RABBITMQ_URL: amqp://cradle:cradle@rabbitmq:5672//
+
+  CRADLE_ADMIN_EMAIL: admin@cradle.sh
+  CRADLE_ADMIN_PASSWORD: admin
+
+  NUM_WORKERS: "4"
+
+x-backend: &backend
+  image: ghcr.io/prodaft/cradle:latest
+  build:
+    context: .
+    dockerfile: ./docker/Dockerfile.backend
+  restart: unless-stopped
+  environment: *backend-env
+  networks: [internal, web, egress]
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    rabbitmq:
+      condition: service_healthy
+    minio:
+      condition: service_healthy
+
 services:
-  minio:
-    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
-    container_name: minio
-    command: server /data --console-address "0.0.0.0:9001"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - minio_data:/data
-    environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: cradle_minio
-    networks:
-      cradle_demo_network:
-        ipv4_address: 192.168.42.5
-
-  postgres:
-    image: pgrouting/pgrouting:16-3.5-4.0
-    container_name: postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: cradle
-      POSTGRES_PASSWORD: cradle
-      POSTGRES_DB: cradle
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cradle"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      cradle_demo_network:
-        ipv4_address: 192.168.42.6
-
-  redis:
-    image: "redis:8-alpine"
-    container_name: redis
-    networks:
-      cradle_demo_network:
-        ipv4_address: 192.168.42.7
-
-  celery:
-    image: ghcr.io/prodaft/cradle:latest
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.backend
-    container_name: celery
-    restart: unless-stopped
-    command: /app/entrypoint_celery.sh
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment: &cradle_env
-      DB_NAME: cradle
-      DB_USER: cradle
-      DB_PASSWORD: cradle
-      DB_HOST: 192.168.42.6
-      DB_PORT: 5432
-
-      MINIO_ENDPOINT: localhost:8000
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: cradle_minio
-      MINIO_SECURE: false
-
-      MINIO_BACKEND_URL: http://192.168.42.5:9000
-      AWS_S3_PUBLIC_ENDPOINT_URL: http://localhost:8000
-
-      CRADLE_ADMIN_USER: admin
-      CRADLE_ADMIN_EMAIL: admin@cradle.sh
-      CRADLE_ADMIN_PASSWORD: admin
-
-      SECRET_KEY: "super-secret-key"
-
-      ALLOWED_HOSTS: localhost
-      CSRF_TRUSTED_ORIGINS: http://localhost
-      BASE_URL: api
-      FRONTEND_URL: http://localhost:8000
-
-      DEBUG: true
-
-      EMAIL_HOST: ""
-      EMAIL_PORT: 587
-      EMAIL_HOST_USER: ""
-      DEFAULT_FROM_EMAIL: ""
-      EMAIL_HOST_PASSWORD: ""
-      EMAIL_USE_TLS: false
-
-      REDIS_URL: "redis://192.168.42.7:6379/0"
-      RABBITMQ_URL: "amqp://cradle:cradle@192.168.42.11:5672//"
-
-      CELERY_QUEUES: "email,notes,graph,publish,import,access,enrich,digest,files,cleanup"
-      CELERY_CONCURRENCY: 4
-      NUM_WORKERS: 4
-
-    depends_on:
-      - postgres
-      - minio
-      - cradle
-    networks:
-      cradle_demo_network:
-        ipv4_address: 192.168.42.8
-
   cradle:
-    image: ghcr.io/prodaft/cradle:latest
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.backend
-    container_name: cradle
-    restart: unless-stopped
+    <<: *backend
+    volumes:
+      - media:/media
+      - static:/app/static
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/schema"]
+      test:
+        - CMD-SHELL
+        - >-
+          curl -fsS -o /dev/null -H "Host: localhost" http://localhost:8000/api/auth/config/ &&
+          curl -fsS -o /dev/null -H "Host: localhost" http://localhost:8001/api/auth/config/
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 20s
-    volumes:
-      - ./build/www/static:/app/static
-      - ./media:/media
-    environment: *cradle_env
-    depends_on:
-      - postgres
-      - minio
-    networks:
-      cradle_demo_network:
-        ipv4_address: 192.168.42.9
+      start_period: 300s
 
-  cradleweb:
+  celery:
+    <<: *backend
+    command: /app/entrypoint_celery.sh
+    depends_on:
+      cradle:
+        condition: service_healthy
+    volumes:
+      - media:/media
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  ui:
     image: ghcr.io/prodaft/cradle-web:latest
     build:
       context: .
       dockerfile: ./docker/Dockerfile.ui
-    container_name: cradleweb
+    restart: unless-stopped
     volumes:
-      - ./build/www:/www
+      - static:/www/static
       - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8000:8000"
+    networks: [web, egress]
+    depends_on:
+      cradle:
+        condition: service_healthy
+
+  postgres:
+    image: pgrouting/pgrouting:16-3.5-4.0
+    networks: [internal]
     restart: unless-stopped
     environment:
-      NODE_ENV: production
-      VITE_ENV: production
-      FRONTEND_URL: http://localhost:8000
-    ports:
-      - 8000:8000
-    depends_on:
-      - postgres
-      - minio
-    networks:
-      cradle_demo_network:
-        ipv4_address: 192.168.42.10
+      POSTGRES_DB: cradle
+      POSTGRES_USER: cradle
+      POSTGRES_PASSWORD: cradle
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cradle -d cradle"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8-alpine
+    networks: [internal]
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
-    image: rabbitmq:4-management-alpine
-    container_name: cradle_rabbitmq
+    image: rabbitmq:4-alpine
+    networks: [internal]
+    restart: unless-stopped
+    hostname: rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: cradle
       RABBITMQ_DEFAULT_PASS: cradle
     volumes:
       - ./docker/rabbitmq.conf:/etc/rabbitmq/conf.d/10-celery.conf:ro
-    networks:
-      cradle_demo_network:
-        ipv4_address: 192.168.42.11
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  minio:
+    image: pgsty/silo:RELEASE.2026-09-16T00-00-00Z
+    networks: [internal, web]
+    command: server /data
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: cradle_minio
+      MINIO_BROWSER: "off"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  internal:
+    internal: true
+  web:
+    internal: true
+  egress:
 
 volumes:
   postgres_data:
+  redis_data:
+  rabbitmq_data:
   minio_data:
-
-networks:
-  cradle_demo_network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 192.168.42.0/24
+  media:
+  static:

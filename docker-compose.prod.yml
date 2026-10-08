@@ -83,7 +83,7 @@ services:
       - media:/media
       - /var/run/docker.sock:/var/run/docker.sock
 
-  cradleweb:
+  ui:
     image: ghcr.io/prodaft/cradle-web:${CRADLE_VERSION:?set CRADLE_VERSION}
     restart: unless-stopped
     volumes:
