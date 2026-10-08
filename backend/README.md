@@ -26,70 +26,48 @@ Django-based backend providing core functionality for CRADLE including:
 
 ### Prerequisites
 
-- Python 3.11+
-- PostgreSQL 13+
-- Redis 6.0+
-- Pipenv
-- MinIO (optional)
+- Python 3.14+
+- uv
+- Docker with Docker Compose
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
    git clone https://github.com/prodaft/cradle.git
-   cd cradle/backend
-   git submodule update --init --recursive
+   cd cradle
    ```
 
-2. **Database Setup**
+2. **Start supporting services**
    ```bash
-   psql -U [your-postgres-username]
-   CREATE DATABASE cradledb;
+   docker compose -f docker-compose.dev.yml up -d
    ```
+   This starts PostgreSQL, Redis, RabbitMQ and MinIO (plus Keycloak and pgAdmin).
 
-3. **Redis Setup**
-   - Install and start Redis server
+3. **Configure Environment**
    ```bash
-   # On Ubuntu
-   sudo apt install redis-server
-   sudo systemctl start redis
+   cd backend
+   cp .env.example .env
    ```
+   The defaults in `.env.example` match the credentials used by `docker-compose.dev.yml`.
 
-4. **Configure Environment**
-   - Update database credentials in `cradle/settings.py`
-   ```python
-   DATABASES = {
-       'default': {
-           'ENGINE': 'django.db.backends.postgresql',
-           'NAME': 'cradledb',
-           'USER': '[your_user]',
-           'PASSWORD': '[your_password]',
-           'HOST': 'localhost',
-           'PORT': '5432',
-       }
-   }
-
-   CELERY_BROKER_URL = 'redis://localhost:6379/0'
-   ```
-
-5. **Install Dependencies**
+4. **Install Dependencies**
    ```bash
-   pip install pipenv
-   pipenv install
+   uv sync
    ```
 
-6. **Run Migrations**
+5. **Run Migrations**
    ```bash
-   pipenv run python manage.py migrate
+   uv run python manage.py migrate
    ```
 
-7. **Start Services**
+6. **Start Services**
    ```bash
    # Start Django development server
-   pipenv run python manage.py runserver
+   uv run python manage.py runserver
 
-   # Start Celery worker (in separate terminal)
-   pipenv run celery -A cradle worker -Q email,notes,publish,import -l INFO
+   # Start Celery worker with beat and all routed queues (in separate terminal)
+   uv run celery -A cradle worker --beat -Q email,notes,graph,publish,import,access,enrich,digest,files,cleanup -l INFO
    ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -100,25 +78,28 @@ Django-based backend providing core functionality for CRADLE including:
 ### Common Commands
 ```bash
 # Run tests
-pipenv run python manage.py test
+uv run python manage.py test
 
 # Create new migration
-pipenv run python manage.py makemigrations
+uv run python manage.py makemigrations
 
 # Generate API documentation
 cd docs && make html
 
 # Monitor Celery tasks
-pipenv run celery -A cradle flower
+uv run celery -A cradle flower
 ```
 
 ### Development Tips
 ```bash
 # Access Django shell
-pipenv run python manage.py shell_plus --ipython
+uv run python manage.py shell_plus --ipython
+
+# Format code
+uv run ruff format .
 
 # Check code quality
-pipenv run flake8 .
+uv run ruff check .
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -127,11 +108,11 @@ pipenv run flake8 .
 ## Troubleshooting
 
 **Database Connection Issues**
-- Verify PostgreSQL service is running
-- Check credentials in settings.py match your DB configuration
+- Verify the containers are running: `docker compose -f docker-compose.dev.yml ps`
+- Check the `DB_*` values in `backend/.env` match `docker-compose.dev.yml`
 
 **Celery Task Issues**
-- Ensure Redis server is running
+- Ensure the RabbitMQ and Redis containers are running
 - Verify Celery worker is started
 - Check task queue status with Flower
 

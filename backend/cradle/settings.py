@@ -1,1 +1,1 @@
-settings_dev.py
+settings_docker.py

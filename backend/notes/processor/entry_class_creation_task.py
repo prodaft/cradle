@@ -1,9 +1,14 @@
+"""Task to create missing entry classes for a note."""
+
 from typing import Iterable, Tuple
+
+from celery.canvas import Signature
+
 from entries.models import Entry
 
-from .base_task import BaseTask
 from ..models import Note
 from ..tasks import entry_class_creation_task
+from .base_task import BaseTask
 
 
 class EntryClassCreationTask(BaseTask):
@@ -11,15 +16,15 @@ class EntryClassCreationTask(BaseTask):
     def is_validator(self) -> bool:
         return False
 
-    def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[None, Iterable[Entry]]:
-        """
-        Create the entry classes that are missing for a note.
+    def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[Signature, Iterable[Entry]]:
+        """Create the entry classes that are missing for a note.
 
         Args:
-            note: The note object being processde
+            note: The note object being processed.
+            entries: Entries from previous tasks (passed through).
 
         Returns:
-            The processed note object.
+            Tuple of (Celery task signature, entries).
         """
         return (
             entry_class_creation_task.si(note.id, self.user.id if self.user else None),

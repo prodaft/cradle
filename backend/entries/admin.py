@@ -1,26 +1,27 @@
+"""Django admin configuration for the entries app."""
+
 from django.contrib import admin
-from .models import EntryClass, Entry
+
+from .models import Entry, EntryClass
 
 
 @admin.register(EntryClass)
 class EntryClassAdmin(admin.ModelAdmin):
+    """Admin for EntryClass: type, subtype, timestamp; search and filter by type."""
+
     list_display = ("type", "subtype", "timestamp")
-    search_fields = ("subtype", "type")
     list_filter = ("type", "timestamp")
     readonly_fields = ("timestamp",)
-
-    def save_model(self, request, obj, form, change):
-        """Override to handle any additional logic when saving an EntryClass."""
-        super().save_model(request, obj, form, change)
+    search_fields = ("subtype", "type")
+    date_hierarchy = "timestamp"
 
 
 @admin.register(Entry)
 class EntryAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "entry_class", "is_public")
-    search_fields = ("name", "entry_class__subtype")
-    list_filter = ("is_public", "entry_class")
-    readonly_fields = ("id",)
+    """Admin for Entry: display name, class, visibility, last_seen; search by name/class/type; readonly timestamps and acvec_offset."""
 
-    def save_model(self, request, obj, form, change):
-        """Override to handle any additional logic when saving an Entry."""
-        super().save_model(request, obj, form, change)
+    list_display = ("id", "name", "entry_class", "is_public", "last_seen")
+    list_filter = ("is_public", "entry_class")
+    readonly_fields = ("id", "created_at", "last_seen", "acvec_offset")
+    search_fields = ("name", "entry_class__subtype", "entry_class__type")
+    date_hierarchy = "last_seen"

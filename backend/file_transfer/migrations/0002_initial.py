@@ -9,22 +9,10 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("file_transfer", "0001_initial"),
-        ("fleeting_notes", "0001_initial"),
         ("notes", "0001_initial"),
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="filereference",
-            name="fleeting_note",
-            field=models.ForeignKey(
-                blank=True,
-                null=True,
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="files",
-                to="fleeting_notes.fleetingnote",
-            ),
-        ),
         migrations.AddField(
             model_name="filereference",
             name="note",

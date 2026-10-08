@@ -1,3 +1,5 @@
-from .celery import app as celery_app
+"""Cradle Django project package. Exposes the Celery app for async task processing."""
 
-__all__ = ("celery_app",)
+from .celery import app
+
+__all__ = ("app",)

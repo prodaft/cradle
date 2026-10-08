@@ -1,21 +1,17 @@
-import io
 import uuid
 from unittest.mock import patch
 
+from django.urls import reverse
+from rest_framework_simplejwt.tokens import AccessToken
+
 from access.enums import AccessType
 from access.models import Access
-from django.urls import reverse
 from entries.models import Entry
-from rest_framework.parsers import JSONParser
-from rest_framework_simplejwt.tokens import AccessToken
+from file_transfer.models import FileReference
 from user.models import CradleUser
 
 from ..models import Note
 from .utils import NotesTestCase
-
-
-def bytes_to_json(data):
-    return JSONParser().parse(io.BytesIO(data))
 
 
 class SingleNoteGetMocker:
@@ -34,14 +30,10 @@ class GetNoteTest(NotesTestCase):
         super().setUp()
 
         self.user_token = str(AccessToken.for_user(self.user))
-        self.not_owner = CradleUser.objects.create_user(
-            username="not_owner", password="pass", email="b@c.d"
-        )
+        self.not_owner = CradleUser.objects.create_user(username="not_owner", password="pass", email="b@c.d")
         self.not_owner_token = AccessToken.for_user(self.not_owner)
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
-        self.not_owner_headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {self.not_owner_token}"
-        }
+        self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
+        self.not_owner_headers = {"HTTP_COOKIE": f"access_token={self.not_owner_token}"}
 
     def test_get_note_not_authenticated(self):
         response = self.client.get(
@@ -70,9 +62,7 @@ class GetNoteTest(NotesTestCase):
         note = Note(uuid1)
         mock_get.return_value = note
         mock_access.return_value = False
-        response = self.client.get(
-            reverse("note_detail", kwargs={"note_id": uuid1}), **self.headers
-        )
+        response = self.client.get(reverse("note_detail", kwargs={"note_id": uuid1}), **self.headers)
 
         with self.subTest("Check correct response code."):
             self.assertEqual(response.status_code, 404)
@@ -84,15 +74,30 @@ class GetNoteTest(NotesTestCase):
         note = Note(id=uuid1)
         mock_get.return_value = SingleNoteGetMocker(note)
         mock_access.return_value = True
-        response = self.client.get(
-            reverse("note_detail", kwargs={"note_id": uuid1}), **self.headers
-        )
+        response = self.client.get(reverse("note_detail", kwargs={"note_id": uuid1}), **self.headers)
 
         with self.subTest("Check correct response code."):
             self.assertEqual(response.status_code, 200)
 
         with self.subTest("Correct note"):
-            self.assertEqual(bytes_to_json(response.content)["id"], str(uuid1))
+            self.assertEqual(response.json()["id"], str(uuid1))
+
+    def test_get_note_includes_permissions(self):
+        entity = Entry.objects.create(name="Perm entity", entry_class=self.entryclass1)
+        note = Note.objects.create(author=self.user, fleeting=False)
+        note.entries.add(entity)
+        Access.objects.create(
+            user_id=self.user.id,
+            entity_id=entity.id,
+            access_type=AccessType.READ_WRITE,
+        )
+        response = self.client.get(
+            reverse("note_detail", kwargs={"note_id": note.id}),
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["permission"], AccessType.READ_WRITE)
 
 
 class DeleteNoteTest(NotesTestCase):
@@ -100,30 +105,21 @@ class DeleteNoteTest(NotesTestCase):
         super().setUp()
 
         self.user_token = str(AccessToken.for_user(self.user))
-        self.not_owner = CradleUser.objects.create_user(
-            username="not_owner", password="pass", email="b@c.d"
-        )
+        self.not_owner = CradleUser.objects.create_user(username="not_owner", password="pass", email="b@c.d")
         self.not_owner_token = str(AccessToken.for_user(self.not_owner))
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
-        self.not_owner_headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {self.not_owner_token}"
-        }
+        self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
+        self.not_owner_headers = {"HTTP_COOKIE": f"access_token={self.not_owner_token}"}
 
         self.init_database()
 
     def init_database(self):
-        self.entity = Entry.objects.create(
-            name="Clearly not an entity", entry_class=self.entryclass1
-        )
+        self.entity = Entry.objects.create(name="Clearly not an entity", entry_class=self.entryclass1)
         # init entries
-        self.entries = [
-            Entry.objects.create(name=f"Entry{i}", entry_class=self.entryclass_ip)
-            for i in range(0, 4)
-        ]
+        self.entries = [Entry.objects.create(name=f"Entry{i}", entry_class=self.entryclass_ip) for i in range(0, 4)]
 
         self.notes = []
-        self.notes.append(Note.objects.create())
-        self.notes.append(Note.objects.create())
+        self.notes.append(Note.objects.create(author=self.user))
+        self.notes.append(Note.objects.create(author=self.user))
         self.notes[0].entries.add(self.entries[0])
         self.notes[0].entries.add(self.entries[1])
         self.notes[1].entries.add(self.entries[0])
@@ -136,9 +132,7 @@ class DeleteNoteTest(NotesTestCase):
         )
 
     def test_delete_note_not_authenticated(self):
-        response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id": self.notes[0].id})
-        )
+        response = self.client.delete(reverse("note_detail", kwargs={"note_id": self.notes[0].id}))
 
         self.assertEqual(response.status_code, 401)
 
@@ -157,18 +151,16 @@ class DeleteNoteTest(NotesTestCase):
             **self.headers,
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
         with self.assertRaises(Note.DoesNotExist):
             Note.objects.get(id=note_id)
 
     def test_delete_note_keeps_entities(self):
         note_id = self.notes[1].id
-        response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id": note_id}), **self.headers
-        )
+        response = self.client.delete(reverse("note_detail", kwargs={"note_id": note_id}), **self.headers)
 
         with self.subTest("Check response code is correct"):
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 204)
 
         with self.assertRaises(Note.DoesNotExist):
             Note.objects.get(id=note_id)
@@ -176,14 +168,160 @@ class DeleteNoteTest(NotesTestCase):
             self.assertEqual(Entry.objects.get(id=self.entity.id).id, self.entity.id)
 
     def test_delete_note_no_access(self):
-        entity1 = Entry.objects.create(
-            name="this is an entity", entry_class=self.entryclass1
-        )
+        entity1 = Entry.objects.create(name="this is an entity", entry_class=self.entryclass1)
         self.notes[1].entries.add(entity1)
         note_id = self.notes[1].id
-        response = self.client.delete(
-            reverse("note_detail", kwargs={"note_id": note_id}), **self.headers
+
+        response = self.client.delete(reverse("note_detail", kwargs={"note_id": note_id}), **self.headers)
+        self.assertEqual(response.status_code, 404)
+
+    def test_delete_note_denied_with_read_only_entity_access(self):
+        """Readers must not delete notes; delete requires read-write on all referenced entities."""
+        entity = Entry.objects.create(name="read-only entity", entry_class=self.entryclass1)
+        note = Note.objects.create(author=self.user, fleeting=False)
+        note.entries.add(entity)
+        Access.objects.create(
+            user_id=self.not_owner.id,
+            entity_id=entity.id,
+            access_type=AccessType.READ,
         )
 
-        with self.subTest("Check response code is correct"):
-            self.assertEqual(response.status_code, 403)
+        response = self.client.delete(
+            reverse("note_detail", kwargs={"note_id": note.id}),
+            **self.not_owner_headers,
+        )
+        self.assertEqual(response.status_code, 404)
+
+        get_response = self.client.get(
+            reverse("note_detail", kwargs={"note_id": note.id}),
+            **self.not_owner_headers,
+        )
+        self.assertEqual(get_response.status_code, 200)
+        self.assertEqual(get_response.json()["permission"], AccessType.READ)
+
+    def test_patch_note_denied_without_write_permission(self):
+        """Author with only entity-level READ has read permission and cannot PATCH."""
+        entity = Entry.objects.create(name="rw-required", entry_class=self.entryclass1)
+        note = Note.objects.create(author=self.user, fleeting=False, content="hello")
+        note.entries.add(entity)
+        Access.objects.create(
+            user_id=self.user.id,
+            entity_id=entity.id,
+            access_type=AccessType.READ,
+        )
+        response = self.client.patch(
+            reverse("note_detail", kwargs={"note_id": note.id}),
+            {"content": "changed"},
+            format="json",
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 403)
+
+        get_body = self.client.get(
+            reverse("note_detail", kwargs={"note_id": note.id}),
+            **self.headers,
+        ).json()
+        self.assertEqual(get_body["permission"], AccessType.READ)
+
+
+class NoteEditConflictTest(NotesTestCase):
+    def setUp(self):
+        super().setUp()
+        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.user)}"}
+        self.note = Note.objects.create(author=self.user, fleeting=True, content="original")
+        self.url = reverse("note_detail", kwargs={"note_id": self.note.id})
+
+    def test_get_returns_content_hash(self):
+        response = self.client.get(self.url, **self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["content_hash"], self.note.content_hash)
+
+    def test_patch_with_current_hash_succeeds(self):
+        response = self.client.patch(
+            self.url,
+            {"content": "edited", "base_content_hash": self.note.content_hash},
+            content_type="application/json",
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.content, "edited")
+        self.assertEqual(response.json()["content_hash"], self.note.content_hash)
+
+    def test_patch_with_stale_hash_conflicts(self):
+        stale_hash = self.note.content_hash
+        Note.objects.filter(id=self.note.id).update(content="changed elsewhere")
+
+        response = self.client.patch(
+            self.url,
+            {"content": "edited", "base_content_hash": stale_hash},
+            content_type="application/json",
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()["code"], "NOTE_EDIT_CONFLICT")
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.content, "changed elsewhere")
+
+    def test_patch_with_stale_hash_and_same_content_succeeds(self):
+        stale_hash = self.note.content_hash
+        Note.objects.filter(id=self.note.id).update(content="edited")
+
+        response = self.client.patch(
+            self.url,
+            {"content": "edited", "base_content_hash": stale_hash},
+            content_type="application/json",
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_patch_without_hash_overwrites(self):
+        Note.objects.filter(id=self.note.id).update(content="changed elsewhere")
+
+        response = self.client.patch(self.url, {"content": "edited"}, content_type="application/json", **self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.content, "edited")
+
+
+class NoteWritePermissionTest(NotesTestCase):
+    """Note write access follows entity access only; authorship does not matter."""
+
+    def setUp(self):
+        super().setUp()
+        self.entity = Entry.objects.create(name="shared-case", entry_class=self.entryclass1)
+        self.note = Note.objects.create(author=self.user, fleeting=False, content="hello")
+        self.note.entries.add(self.entity)
+        self.other = CradleUser.objects.create_user(
+            username="other", password="pass", email="o@c.d", is_active=True, email_confirmed=True
+        )
+        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.other)}"}
+        self.url = reverse("note_detail", kwargs={"note_id": self.note.id})
+
+    def grant(self, access_type):
+        Access.objects.create(user_id=self.other.id, entity_id=self.entity.id, access_type=access_type)
+
+    def test_read_write_non_author_can_edit(self):
+        self.grant(AccessType.READ_WRITE)
+        self.assertEqual(self.client.get(self.url, **self.headers).json()["permission"], AccessType.READ_WRITE)
+        self.assertEqual(self.client.delete(self.url, **self.headers).status_code, 204)
+
+    def test_read_only_non_author_cannot_edit(self):
+        self.grant(AccessType.READ)
+        self.assertEqual(self.client.get(self.url, **self.headers).json()["permission"], AccessType.READ)
+        response = self.client.patch(self.url, {"content": "changed"}, content_type="application/json", **self.headers)
+        self.assertEqual(response.status_code, 403)
+
+    def test_note_file_delete_requires_write(self):
+        file = FileReference.objects.create(
+            note=self.note, file_name="a.txt", minio_file_name="a.txt", bucket_name="bucket"
+        )
+        url = f"{reverse('file_delete')}?file_id={file.id}"
+
+        self.grant(AccessType.READ)
+        self.assertEqual(self.client.delete(url, **self.headers).status_code, 403)
+        self.assertTrue(FileReference.objects.filter(id=file.id).exists())
+
+        Access.objects.filter(user_id=self.other.id).update(access_type=AccessType.READ_WRITE)
+        self.assertEqual(self.client.delete(url, **self.headers).status_code, 204)
+        self.assertFalse(FileReference.objects.filter(id=file.id).exists())

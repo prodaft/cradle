@@ -1,22 +1,19 @@
-from django.db import models
 from collections import defaultdict
+
+from django.db import models
+
 from ..base import ClassMapping
 
 
 class FalconMapping(ClassMapping):
-    """
-    A mapping for Catalyst types.
-    """
+    """Maps Falcon entity/artifact types to CRADLE entry classes. Used by FalconDigest."""
 
     display_name = "falcon"
-
-    type = models.CharField(max_length=255, unique=True)
+    type = models.CharField(max_length=255, unique=True, help_text="Falcon type identifier")
 
     @classmethod
     def get_typemapping_rev(cls):
-        """
-        Returns a dictionary mapping type names to FalconMapping instances.
-        """
+        """Returns a dictionary mapping type names to FalconMapping instances."""
         typemapping = defaultdict(lambda: None)
 
         for mapping in cls.objects.all():

@@ -87,5 +87,8 @@ jobs:
           context: .
           file: ./docker/Dockerfile.ui
           push: true
+          build-args: |
+            GIT_BRANCH=${{ github.ref_type == 'branch' && github.ref_name || '' }}
+            GIT_COMMIT=${{ github.sha }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

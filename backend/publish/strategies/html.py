@@ -1,28 +1,32 @@
 import logging
-import bleach
-from io import BytesIO
 from typing import List
 
+import bleach
+from django.core.files.base import ContentFile
 from django.template.loader import get_template
 
-from file_transfer.models import FileReference
-from notes.models import Note
-from notes.markdown.to_html import markdown_to_html
 from entries.models import EntryClass
-from publish.models import PublishedReport, ReportStatus
-from file_transfer.utils import MinioClient
+from file_transfer.s3_utils import fetch_bytes
+from file_transfer.storage import FileTransferStorage
+from notes.markdown.to_html import markdown_to_html
+from notes.models import Note
+
+from ..models import PublishedReport, ReportStatus
 from .base import BasePublishStrategy
+
+logger = logging.getLogger(__name__)
 
 
 class HTMLPublish(BasePublishStrategy):
-    """
-    HTML publishing strategy that renders a report using a Django template
-    and sanitizes user content to prevent harmful HTML from being introduced.
+    """HTML publishing strategy using Django templates.
+
+    Sanitizes user content to prevent XSS.
     """
 
     content_type = "text/html"
 
     def _sanitize_html(self, html: str) -> str:
+        """Sanitize HTML to prevent XSS; allow only safe tags and attributes."""
         allowed_tags = [
             "a",
             "abbr",
@@ -57,19 +61,29 @@ class HTMLPublish(BasePublishStrategy):
             strip=True,
         )
 
-    def _build_html(self, title: str, notes: List[Note], user) -> str:
+    def _build_html(self, title: str, notes: List[Note]) -> str:
+        """Render notes as HTML using the report template."""
         body = ""
 
         footnotes = {}
         for note in notes:
             for f in note.files.all():
-                footnotes[f.minio_file_name] = (f.bucket_name, f.minio_file_name)
+                if not f.file:
+                    continue
+                # Backward-compatible: footnote keys in markdown may still reference
+                # legacy minio_file_name, but the object now lives under f.file.name
+                if f.minio_file_name:
+                    footnotes[f.minio_file_name] = (
+                        FileTransferStorage.bucket_name,
+                        f.file.name,
+                    )
+                footnotes[f.file.name] = (FileTransferStorage.bucket_name, f.file.name)
 
         for note in notes:
             anonymized_note = self._anonymize_note(note)
             rendered_note = markdown_to_html(
                 anonymized_note.content,
-                fetch_image=MinioClient().fetch_file,
+                fetch_image=lambda bucket, key: fetch_bytes(bucket, key),
                 footnotes=footnotes,
             )
             sanitized_note = self._sanitize_html(rendered_note)
@@ -86,83 +100,40 @@ class HTMLPublish(BasePublishStrategy):
         context = {
             "title": sanitized_title,
             "body": body,
-            "styles": "\n".join(
-                [
-                    f'[entry-type="{k}"] {{ background-color: {v}44; }}'
-                    for k, v in colors.items()
-                ]
-            ),
+            "styles": "\n".join([f'[entry-type="{k}"] {{ background-color: {v}44; }}' for k, v in colors.items()]),
         }
         return template.render(context)
 
-    def create_report(self, report: PublishedReport) -> bool:
-        full_html = self._build_html(report.title, report.notes.all(), user=report.user)
-        bucket_name = str(report.user.id)
-        file_name = f"{report.id}.html"
-
-        client = MinioClient().client
-        if client is None:
-            report.error_message = "Minio client is not configured."
-            report.status = ReportStatus.ERROR
-            report.save()
-            return False
-
-        data = BytesIO(full_html.encode("utf-8"))
-        size = len(full_html.encode("utf-8"))
-        content_type = "text/html"
-
+    def _upload_html(self, html: str, report: PublishedReport) -> bool:
+        """Save HTML to S3 via report.file; returns False on failure."""
         try:
-            client.put_object(
-                bucket_name, file_name, data, size, content_type=content_type
-            )
-            FileReference.objects.filter(report=report).delete()
-            FileReference.objects.create(
-                minio_file_name=file_name,
-                file_name=file_name,
-                bucket_name=bucket_name,
-                report=report,
-            )
-        except Exception as e:
-            logging.exception(e)
-            report.error_message = "Failed to upload HTML report."
+            if report.file:
+                report.file.delete(save=False)
+            report.file.save(f"{report.id}.html", ContentFile(html.encode("utf-8")), save=True)
+        except Exception:
+            logger.exception("Failed to upload HTML report.")
+            report.error_message = "The report could not be saved. Please try again."
             report.status = ReportStatus.ERROR
             report.save()
             return False
-
         return True
+
+    def create_report(self, report: PublishedReport) -> bool:
+        full_html = self._build_html(report.title, report.notes.all())
+        return self._upload_html(full_html, report)
 
     def edit_report(self, report: PublishedReport) -> bool:
-        bucket_name = str(report.user.id)
-        client = MinioClient().client
-        if client is None:
-            report.error_message = "Minio client is not configured."
-            report.status = ReportStatus.ERROR
-            report.save()
-            return False
-
-        full_html = self._build_html(report.title, report.notes.all(), user=report.user)
-        data = BytesIO(full_html.encode("utf-8"))
-        size = len(full_html.encode("utf-8"))
-        content_type = "text/html"
-
-        try:
-            client.put_object(
-                bucket_name, report.id, data, size, content_type=content_type
-            )
-        except Exception:
-            report.error_message = "Failed to upload HTML report."
-            report.status = ReportStatus.ERROR
-            report.save()
-            return False
-
-        return True
+        full_html = self._build_html(report.title, report.notes.all())
+        return self._upload_html(full_html, report)
 
     def delete_report(self, report: PublishedReport) -> bool:
-        client = MinioClient().client
         try:
-            client.remove_object(str(report.user.id), f"{report.id}.html")
+            # Delete file from S3 via FileField
+            if report.file:
+                report.file.delete(save=False)
         except Exception:
-            report.error_message = "Failed to delete HTML report."
+            logger.exception("Failed to delete HTML report.")
+            report.error_message = "The published report file could not be removed."
             report.status = ReportStatus.ERROR
             report.save()
             return False

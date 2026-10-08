@@ -1,0 +1,42 @@
+"""User app constants."""
+
+USER_ACCESS_VECTOR_LENGTH = 2048
+
+# Default UI theme CSS variables.
+USER_DEFAULT_THEME = {
+    "name": "cradle-dark",
+    "--background": "#1a1a1a",
+    "--foreground": "#ffffff",
+    "--card": "#1f1f1f",
+    "--card-foreground": "#bfbfbf",
+    "--popover": "#1f1f1f",
+    "--popover-foreground": "#bfbfbf",
+    "--primary": "#c7772a",
+    "--primary-foreground": "#ffffff",
+    "--secondary": "#2a2a2a",
+    "--secondary-foreground": "#bfbfbf",
+    "--muted": "#2a2a2a",
+    "--muted-foreground": "#999999",
+    "--accent": "#2a2a2a",
+    "--accent-foreground": "#ffffff",
+    "--destructive": "#b85d30",
+    "--destructive-foreground": "#ffffff",
+    "--border": "#2a2a2a",
+    "--input": "#2a2a2a",
+    "--ring": "#c7772a",
+    "--sidebar": "#1a1a1a",
+    "--sidebar-foreground": "#999999",
+    "--sidebar-primary": "#c7772a",
+    "--sidebar-primary-foreground": "#ffffff",
+    "--sidebar-accent": "#2a2a2a",
+    "--sidebar-accent-foreground": "#ffffff",
+    "--sidebar-border": "#2a2a2a",
+    "--pm-header-mark-color": "#c7772a",
+    "--pm-link-color": "#c7772a",
+    "--pm-muted-color": "#999999",
+    "--pm-code-background-color": "#1a1a1a",
+    "--pm-code-btn-background-color": "#2a2a2a",
+    "--pm-code-btn-hover-background-color": "#404040",
+    "--pm-blockquote-vertical-line-background-color": "#2a2a2a",
+    "--pm-cursor-color": "#ffffff",
+}

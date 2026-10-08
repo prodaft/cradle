@@ -4,7 +4,10 @@ coverage
 out
 docs
 node_modules
-src/renderer/dist
-src/renderer/src/assets
-src/renderer/src/services/cradle/
+dist
+src/assets
+src/services/openapi/schema.d.ts
+src/routeTree.gen.ts
+src/hooks/use-mobile.ts
+src/components/ui
 public/

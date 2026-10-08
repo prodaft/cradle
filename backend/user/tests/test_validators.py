@@ -1,16 +1,16 @@
-from .utils import UserTestCase
-from ..utils.validators import (
-    MinimumUpperentityLettersValidator,
-    MinimumDigitsValidator,
-    MinimumLowerentityLettersValidator,
-    MinimumSpecialCharacterValidator,
-)
-
 from django.core.exceptions import ValidationError
 
+from ..utils.validators import (
+    MinimumDigitsValidator,
+    MinimumLowercaseLettersValidator,
+    MinimumSpecialCharacterValidator,
+    MinimumUppercaseLettersValidator,
+)
+from .utils import UserTestCase
 
-class MinimumUpperentityLettersValidatorTest(UserTestCase):
-    def test_upperentity_validator_successful(self):
+
+class MinimumUppercaseLettersValidatorTest(UserTestCase):
+    def test_uppercase_validator_successful(self):
         tests = [
             ("aaaaaaa", 0),
             ("", 0),
@@ -24,13 +24,11 @@ class MinimumUpperentityLettersValidatorTest(UserTestCase):
         for i in range(0, len(tests)):
             with self.subTest(f"{i}"):
                 self.assertEqual(
-                    MinimumUpperentityLettersValidator(tests[i][1]).validate(
-                        tests[i][0]
-                    ),
+                    MinimumUppercaseLettersValidator(tests[i][1]).validate(tests[i][0]),
                     None,
                 )
 
-    def test_upperentity_validator_unsucessful(self):
+    def test_uppercase_validator_unsuccessful(self):
         tests = [
             ("aaaaaaa", 1),
             ("", 1),
@@ -43,11 +41,11 @@ class MinimumUpperentityLettersValidatorTest(UserTestCase):
 
         for i in range(0, len(tests)):
             with self.subTest(f"{i}"), self.assertRaises(ValidationError):
-                MinimumUpperentityLettersValidator(tests[i][1]).validate(tests[i][0])
+                MinimumUppercaseLettersValidator(tests[i][1]).validate(tests[i][0])
 
 
-class MinimumLowerentityLettersValidatorTest(UserTestCase):
-    def test_lowerentity_validator_successful(self):
+class MinimumLowercaseLettersValidatorTest(UserTestCase):
+    def test_lowercase_validator_successful(self):
         tests = [
             ("password", 4),
             ("lowerENTITYletters", 6),
@@ -59,13 +57,11 @@ class MinimumLowerentityLettersValidatorTest(UserTestCase):
         for i in range(0, len(tests)):
             with self.subTest(f"{i}"):
                 self.assertEqual(
-                    MinimumLowerentityLettersValidator(tests[i][1]).validate(
-                        tests[i][0]
-                    ),
+                    MinimumLowercaseLettersValidator(tests[i][1]).validate(tests[i][0]),
                     None,
                 )
 
-    def test_lowerentity_validator_unsucessful(self):
+    def test_lowercase_validator_unsuccessful(self):
         tests = [
             ("PASSWORD", 1),
             ("P@SSW0RD", 1),
@@ -76,7 +72,7 @@ class MinimumLowerentityLettersValidatorTest(UserTestCase):
 
         for i in range(0, len(tests)):
             with self.subTest(f"{i}"), self.assertRaises(ValidationError):
-                MinimumLowerentityLettersValidator(tests[i][1]).validate(tests[i][0])
+                MinimumLowercaseLettersValidator(tests[i][1]).validate(tests[i][0])
 
 
 class MinimumDigitsValidatorTest(UserTestCase):
@@ -92,11 +88,9 @@ class MinimumDigitsValidatorTest(UserTestCase):
 
         for i in range(0, len(tests)):
             with self.subTest(f"{i}"):
-                self.assertEqual(
-                    MinimumDigitsValidator(tests[i][1]).validate(tests[i][0]), None
-                )
+                self.assertEqual(MinimumDigitsValidator(tests[i][1]).validate(tests[i][0]), None)
 
-    def test_digits_validator_unsucessful(self):
+    def test_digits_validator_unsuccessful(self):
         tests = [
             ("password", 1),
             ("passw0rd", 2),
@@ -127,7 +121,7 @@ class MinimumSpecialCharactersValidatorTest(UserTestCase):
                     None,
                 )
 
-    def test_special_validator_unsucessful(self):
+    def test_special_validator_unsuccessful(self):
         tests = [
             ("password", 1),
             ("pass@word", 2),

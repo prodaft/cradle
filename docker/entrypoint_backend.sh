@@ -2,17 +2,27 @@
 
 : "${NUM_WORKERS:=12}"
 
-uv run python manage.py collectstatic --noinput -c
-chown -R www-data:www-data static
+echo "Running migrations..."
+python manage.py migrate
 
-uv run python manage.py migrate django_celery_beat
-uv run python manage.py migrate
+echo "Collecting static files..."
+python manage.py collectstatic --noinput
 
-if $INSTALL_FIXTURES; then
-  uv run python manage.py loaddata entries
+if [ "$AUTO_POPULATE" = "false" ]; then
+    echo "Skipping population..."
+else    
+    echo "Seeding entries..."
+    python manage.py seed_entries --populate-existing
+
+    echo "Initializing admin account..."
+    python manage.py initadmin
 fi
 
-uv run python manage.py initadmin
-uv run python manage.py delete_hanging_entries
+echo "Deleting hanging entries..."
+python manage.py delete_hanging_entries
 
-uv run gunicorn --workers $NUM_WORKERS -b 0.0.0.0:8000 cradle.wsgi:application
+echo "Starting Daphne for WebSockets on port 8001..."
+daphne -b 0.0.0.0 -p 8001 cradle.asgi:application &
+
+echo "Starting Gunicorn with $NUM_WORKERS workers..."
+gunicorn --workers "$NUM_WORKERS" -b 0.0.0.0:8000 cradle.wsgi:application

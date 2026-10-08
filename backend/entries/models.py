@@ -1,27 +1,37 @@
+"""Entry and relation models for the knowledge graph.
+
+Defines EntryClass (entry type definitions), Entry (entities and artifacts),
+Relation (links between entries), Edge (materialized graph edges), and Attachment.
+"""
+
 import re
 import uuid
 from typing import Optional
 
-from core.fields import BitStringField
+from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models as gis_models
-from django.db import models
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone
-from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, LifecycleModel, hook
+from django_lifecycle import AFTER_UPDATE, LifecycleModel, hook
 from django_lifecycle.conditions import WhenFieldHasChanged
-from django_lifecycle.mixins import LifecycleModelMixin, transaction
-from intelio.enums import EnrichmentStrategy
+from django_lifecycle.mixins import LifecycleModelMixin
+
+from core.fields import BitStringField
+from file_transfer.storage import RelationStorage
 from logs.models import LoggableModelMixin
 
 from .enums import EntryType, EntryTypeFormat, RelationReason
 from .exceptions import (
-    ClassBreaksHierarchyException,
-    InvalidClassFormatException,
+    EntityLimitExceededException,
+    EntryTypeRequiredException,
     InvalidEntryException,
-    InvalidRegexException,
-    OutOfEntitySlotsException,
+    InvalidEntryHierarchyException,
+    InvalidEntryTypeSettingsException,
+    InvalidPatternException,
 )
 from .managers import (
     ArtifactManager,
@@ -31,23 +41,26 @@ from .managers import (
     RelationManager,
 )
 
-fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
+
+def attachment_upload_path(instance: "Attachment", filename: str) -> str:
+    """Generate upload path for attachments: attachments/{uuid}-{filename}."""
+    return f"{instance.id}-{filename}"
 
 
 class Edge(LifecycleModel):
+    """Materialized view row representing a directed edge between two entries in the graph."""
+
     id = models.CharField(primary_key=True)
-    src = models.BigIntegerField()
-    dst = models.BigIntegerField()
+    src = models.BigIntegerField(help_text="Source entry ID")
+    dst = models.BigIntegerField(help_text="Destination entry ID")
 
     objects = EdgeManager()
 
-    access_vector: BitStringField = BitStringField(
-        max_length=2048, null=False, default=1 << 2047, varying=False
-    )
+    access_vector: BitStringField = BitStringField(max_length=2048, null=False, default=1 << 2047, varying=False)
 
-    created_at = models.DateTimeField()
-    last_seen = models.DateTimeField()
-    virtual = models.BooleanField()
+    created_at = models.DateTimeField(help_text="When the edge was first created")
+    last_seen = models.DateTimeField(help_text="Last time the edge was observed")
+    virtual = models.BooleanField(help_text="Whether this edge is virtual (e.g. alias)")
 
     class Meta:
         managed = False
@@ -56,26 +69,38 @@ class Edge(LifecycleModel):
 
 
 class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
-    type: models.CharField = models.CharField(max_length=20, choices=EntryType.choices)
+    """Defines an entry type (subtype) with validation rules and display options."""
+
+    type: models.CharField = models.CharField(max_length=20, choices=EntryType.choices, help_text="Entity or artifact")
     subtype: models.CharField = models.CharField(
-        max_length=64, blank=False, primary_key=True
+        max_length=64, blank=False, primary_key=True, help_text="Unique identifier (e.g. ip/address)"
     )
-    description: models.TextField = models.TextField(null=True, blank=True)
-    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    description: models.TextField = models.TextField(
+        null=True, blank=True, help_text="Human-readable description of this entry class"
+    )
+    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True, help_text="When this class was created")
     format: models.CharField = models.CharField(
-        max_length=20, choices=EntryTypeFormat.choices, default=None, null=True
+        max_length=20,
+        choices=EntryTypeFormat.choices,
+        default=None,
+        null=True,
+        help_text="Validation format: regex or options",
     )
-    regex: models.CharField = models.CharField(max_length=65536, blank=True, default="")
+    regex: models.CharField = models.CharField(
+        max_length=65536, blank=True, default="", help_text="Regex pattern for artifact validation"
+    )
     generative_regex: models.CharField = models.CharField(
-        max_length=65536, blank=True, default=""
+        max_length=65536, blank=True, default="", help_text="Regex for generating child entries from parent text"
     )
     options: models.CharField = models.CharField(
-        max_length=65536, blank=True, default=""
+        max_length=65536, blank=True, default="", help_text="Newline-separated allowed values (alternative to regex)"
     )
 
-    color: models.CharField = models.CharField(max_length=7, default="#e66100")
+    color: models.CharField = models.CharField(max_length=7, default="#e66100", help_text="Hex color for UI display")
 
-    prefix: models.CharField = models.CharField(max_length=64, blank=True)
+    prefix: models.CharField = models.CharField(
+        max_length=64, blank=True, help_text="Prefix for entity names (e.g. E- for cases)"
+    )
 
     children = models.ManyToManyField(
         "self",
@@ -86,7 +111,12 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
     )
 
     @classmethod
+    def normalize_subtype(cls, subtype: str) -> str:
+        return subtype.strip().strip("/")
+
+    @classmethod
     def get_default_pk(cls):
+        """Return the primary key of the default 'thunk' entry class, creating it if needed."""
         eclass, created = cls.objects.get_or_create(
             subtype="thunk",
             defaults=dict(type="artifact"),
@@ -94,45 +124,49 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         return eclass.pk
 
     def rename(self, new_subtype: Optional[str], user_id: str = None):
-        if new_subtype == self.subtype:
-            return None
-
-        from django.db import transaction
-
+        """Rename this entry class to new_subtype, updating all entries and notes."""
         from entries.tasks import remap_notes_task
 
         old_subtype = self.subtype
 
         if new_subtype is not None:
-            entries = self.entries.all()
-            for entry in entries:
-                entry.entry_class_id = new_subtype
-            Entry.objects.bulk_update(entries, ["entry_class_id"])
-
-            self.subtype = new_subtype
-            self.save()
+            new_subtype = self.normalize_subtype(new_subtype)
+            if new_subtype == old_subtype:
+                return self
+            if not new_subtype:
+                raise EntryTypeRequiredException(detail="Entry type name is required.")
+            if EntryClass.objects.filter(subtype=new_subtype).exists():
+                raise InvalidEntryTypeSettingsException(detail="An entry type with this name already exists.")
 
         notes = []
         for e in self.entries.all():
             notes.extend(e.notes.all())
         unique_note_ids = list({note.id for note in notes})
 
-        # Schedule remapping to update notes' content asynchronously.
-        transaction.on_commit(
-            lambda: remap_notes_task.delay(
-                unique_note_ids, {old_subtype: new_subtype}, {}, user_id
-            )
-        )
+        with transaction.atomic():
+            renamed = None
+            if new_subtype is not None:
+                field_values = {
+                    field.attname: getattr(self, field.attname)
+                    for field in self._meta.concrete_fields
+                    if field.attname != self._meta.pk.attname
+                }
+                renamed = EntryClass.objects.create(subtype=new_subtype, **field_values)
+                _update_entry_class_references(old_subtype, new_subtype)
+                self.delete()
+            else:
+                self.delete()
 
-        EntryClass.objects.get(subtype=old_subtype).delete()
-        return self
+            transaction.on_commit(
+                lambda note_ids=unique_note_ids, old=old_subtype, new=new_subtype, uid=user_id: remap_notes_task.delay(
+                    note_ids, {old: new}, {}, uid
+                )
+            )
+
+        return renamed if renamed is not None else self
 
     def validate_text(self, t: str):
-        """
-        Validate an entry for a given entry class
-
-        :param t: The entry data to validate
-        """
+        """Validate entry text against this class's regex, options, or prefix."""
         if self.type == EntryType.ARTIFACT:
             if self.regex:
                 return re.match(f"^{self.regex}$", t)
@@ -159,35 +193,33 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
 
         possible_parents = ["/".join(parts[:i]) for i in range(1, len(parts))]
 
-        if EntryClass.objects.filter(subtype__in=possible_parents).exists():
-            return EntryClass.objects.filter(subtype__in=possible_parents).first()
+        parent = EntryClass.objects.filter(subtype__in=possible_parents).first()
+        if parent:
+            return parent
 
-        possible_children = EntryClass.objects.filter(
-            subtype__startswith=self.subtype + "/"
-        )
-
-        if possible_children.exists():
-            return possible_children.first()
+        possible_children = EntryClass.objects.filter(subtype__startswith=self.subtype + "/")
+        child = possible_children.first()
+        if child:
+            return child
 
         return False
 
     def save(self, *args, **kwargs):
-        self.subtype = self.subtype.strip().strip("/")
+        self.subtype = self.normalize_subtype(self.subtype)
 
         if conflict := self.does_entryclass_violate_hierarchy():
-            raise ClassBreaksHierarchyException(conflict.subtype)
+            raise InvalidEntryHierarchyException(conflict.subtype)
 
         if self.type == EntryType.ARTIFACT:
             if self.regex and self.options:
-                raise InvalidClassFormatException()
+                raise InvalidEntryTypeSettingsException(
+                    detail="You cannot use a pattern and a fixed list of options at the same time. Choose one."
+                )
 
             self.options = self.options.strip()
 
             if self.options:
-                self.options = "\n".join(
-                    map(lambda x: x.strip(), self.options.split("\n"))
-                ).strip()
-
+                self.options = "\n".join(x.strip() for x in self.options.split("\n")).strip()
                 self.generative_regex = ""
 
             try:
@@ -196,7 +228,7 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
                 if self.generative_regex:
                     re.compile(self.generative_regex)
             except re.error:
-                raise InvalidRegexException()
+                raise InvalidPatternException(detail="The pattern could not be read. Check the syntax and try again.")
         else:
             self.generative_regex = ""
 
@@ -209,9 +241,7 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         return self.subtype
 
     def match(self, s):
-        """
-        Find all matches of regex or options in a string
-        """
+        """Find all matches of regex or options in string s."""
         if self.type == EntryType.ENTITY:
             return []
 
@@ -228,37 +258,67 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
             i.save()
 
 
+def _update_entry_class_references(old_subtype: str, new_subtype: str) -> None:
+    """Repoint every FK and M2M reference to EntryClass from old_subtype to new_subtype."""
+    registered_models = set(apps.get_models())
+
+    for model in registered_models:
+        for field in model._meta.local_concrete_fields:
+            remote_field = getattr(field, "remote_field", None)
+            if remote_field and remote_field.model == EntryClass:
+                model.objects.filter(**{field.attname: old_subtype}).update(**{field.attname: new_subtype})
+
+        for field in model._meta.many_to_many:
+            if getattr(field, "related_model", None) != EntryClass:
+                continue
+            through = field.remote_field.through
+            if through in registered_models:
+                continue
+            for through_field in through._meta.local_concrete_fields:
+                remote_field = getattr(through_field, "remote_field", None)
+                if remote_field and remote_field.model == EntryClass:
+                    through.objects.filter(**{through_field.attname: old_subtype}).update(
+                        **{through_field.attname: new_subtype}
+                    )
+
+
 class Entry(LifecycleModel, LoggableModelMixin):
+    """A node in the knowledge graph: either an entity (user-defined) or artifact (data)."""
+
     id = models.BigAutoField(primary_key=True)
-    is_public: models.BooleanField = models.BooleanField(default=False)
+    is_public: models.BooleanField = models.BooleanField(
+        default=False, help_text="Whether this entry is visible to all users"
+    )
 
     entry_class: models.ForeignKey[uuid.UUID, EntryClass] = models.ForeignKey(
         EntryClass,
         on_delete=models.CASCADE,
         null=False,
         related_name="entries",
+        help_text="Type of this entry (entity or artifact subtype)",
     )
 
-    name: models.CharField = models.CharField(max_length=1024)
-    description: models.TextField = models.TextField(null=True, blank=True)
-    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    name: models.CharField = models.CharField(max_length=1024, help_text="Display name, validated by entry_class rules")
+    description: models.TextField = models.TextField(null=True, blank=True, help_text="Optional description")
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True, help_text="Creation timestamp")
     last_seen: models.DateTimeField = models.DateTimeField(
-        auto_now_add=True, null=False
+        auto_now_add=True, null=False, help_text="Last activity timestamp"
     )
 
     relations = GenericRelation("entries.Relation", related_query_name="entry")
 
-    # New field: acvec_offset is an unsigned integer.
-    acvec_offset: models.PositiveIntegerField = models.PositiveIntegerField(default=0)
+    acvec_offset: models.PositiveIntegerField = models.PositiveIntegerField(
+        default=0, help_text="Bit offset in access vector for entity visibility"
+    )
 
-    status: models.JSONField = models.JSONField(default=dict, null=True)
+    status: models.JSONField = models.JSONField(
+        default=dict, null=True, help_text="Transient status (e.g. during access updates)"
+    )
 
     class Meta:
         ordering = ["-last_seen"]
         constraints = [
-            models.UniqueConstraint(
-                fields=["name", "entry_class"], name="unique_name_class"
-            ),
+            models.UniqueConstraint(fields=["name", "entry_class"], name="unique_name_class"),
             # Enforces uniqueness on non-zero acvec_offset values.
             models.UniqueConstraint(
                 fields=["acvec_offset"],
@@ -272,9 +332,9 @@ class Entry(LifecycleModel, LoggableModelMixin):
     artifacts = ArtifactManager()
 
     location: gis_models.PointField = gis_models.PointField(
-        null=True, blank=True, srid=0, dim=2
+        null=True, blank=True, srid=0, dim=2, help_text="Optional geographic location"
     )
-    degree: models.IntegerField = models.IntegerField(default=0)
+    degree: models.IntegerField = models.IntegerField(default=0, help_text="Number of outgoing edges in the graph")
 
     aliases = models.ManyToManyField(
         "self",
@@ -308,6 +368,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
         return super().save(*args, **kwargs)
 
     def setup_access(self):
+        """Set is_public and acvec_offset based on entry type and visibility."""
         # Artifacts and public entities have public access
         if self.entry_class.type == EntryType.ARTIFACT or self.is_public:
             self.is_public = True
@@ -316,9 +377,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
         elif self.acvec_offset == 0:
             if self.entry_class.type == EntryType.ENTITY:
                 existing_offsets = set(
-                    self.__class__.objects.exclude(acvec_offset=0).values_list(
-                        "acvec_offset", flat=True
-                    )
+                    self.__class__.objects.exclude(acvec_offset=0).values_list("acvec_offset", flat=True)
                 )
                 offset = 1
                 while offset in existing_offsets:
@@ -326,7 +385,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
                 self.acvec_offset = offset
 
         if self.acvec_offset > 2047:
-            raise OutOfEntitySlotsException()
+            raise EntityLimitExceededException()
 
     def delete_renaming(self, user_id: str, *args, **kwargs):
         from django.db import transaction
@@ -347,27 +406,9 @@ class Entry(LifecycleModel, LoggableModelMixin):
         super().delete(*args, **kwargs)
 
     def ping(self):
-        """
-        Set the timestamp to current time
-        """
+        """Update last_seen to now."""
         self.last_seen = timezone.now()
         self.save(update_fields=["last_seen"])
-
-    def propagate_from(self, log):
-        if self.entry_class.type == EntryType.ENTITY:
-            super().propagate_from(log)
-
-    def log_create(self, user):
-        super().log_create(user)
-
-    def log_delete(self, user, details=None):
-        super().log_delete(user, details)
-
-    def log_edit(self, user, details=None):
-        super().log_edit(user, details)
-
-    def log_fetch(self, user, details=None):
-        super().log_fetch(user, details)
 
     @hook(AFTER_UPDATE, condition=WhenFieldHasChanged("acvec_offset", True))
     def acvec_offset_updated(self):
@@ -375,24 +416,8 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
         transaction.on_commit(lambda: update_accesses.apply_async((self.id,)))
 
-    @hook(AFTER_CREATE)
-    def enrich(self):
-        from intelio.tasks import enrich_entries
-
-        content_type = ContentType.objects.get_for_model(self)
-
-        for e in self.entry_class.enrichers.filter(
-            strategy=EnrichmentStrategy.ON_CREATE, enabled=True
-        ):
-            enrich_entries.apply_async(
-                e.id,
-                [self.id],
-                content_type.id,
-                self.id,
-                None,
-            )
-
     def get_acvec(self):
+        """Return access vector bitmask for this entry."""
         return 1 | (1 << self.acvec_offset)
 
     def reconnect_aliases(self):
@@ -400,17 +425,22 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
         Relation.objects.filter(e1=self, reason=RelationReason.ALIAS).delete()
 
-        for e in self.aliases.all():
+        root = self.__class__.objects.select_related("entry_class").get(pk=self.pk)
+        alias_entries = root.aliases.all().select_related("entry_class")
+        for e in alias_entries:
+            if not Relation.includes_entity(root, e):
+                continue
             Relation.objects.create(
-                e1=self,
+                e1=root,
                 e2=e,
-                content_object=self,
+                content_object=root,
                 reason=RelationReason.ALIAS,
                 access_vector=e.get_acvec(),
                 virtual=True,
             )
 
     def aliasqs(self, user):
+        """Return queryset of this entry plus all aliases visible to the user."""
         rels = (
             Edge.objects.accessible(user)
             .filter(
@@ -425,41 +455,55 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
 
 class Relation(LifecycleModel):
-    """
-    A model representing a generic link between two entries.
-    """
+    """Generic link between two entries with reason, access control, and optional attachments."""
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
-    access_vector: BitStringField = BitStringField(
-        max_length=2048, null=False, default=1 << 2047, varying=False
+    access_vector: BitStringField = BitStringField(max_length=2048, null=False, default=1 << 2047, varying=False)
+
+    inherit_av = models.BooleanField(default=False, help_text="Whether to inherit access from content_object")
+
+    e1 = models.ForeignKey(
+        Entry, on_delete=models.CASCADE, related_name="relations_1", help_text="First entry (lower ID)"
+    )
+    e2 = models.ForeignKey(
+        Entry, on_delete=models.CASCADE, related_name="relations_2", help_text="Second entry (higher ID)"
     )
 
-    inherit_av = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now, help_text="Creation timestamp")
+    last_seen = models.DateTimeField(default=timezone.now, help_text="Last observation")
 
-    e1 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="relations_1")
-    e2 = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="relations_2")
-
-    created_at = models.DateTimeField(default=timezone.now)
-    last_seen = models.DateTimeField(default=timezone.now)
-
-    object_id = models.UUIDField()
+    object_id = models.UUIDField(help_text="ID of the content object")
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     content_object = GenericForeignKey("content_type", "object_id")
 
     reason: models.CharField = models.CharField(
-        max_length=255, null=False, blank=False, choices=RelationReason.choices
+        max_length=255,
+        null=False,
+        blank=False,
+        choices=RelationReason.choices,
+        help_text="Why this relation exists (digest, enrichment, contains, etc.)",
+    )
+    reason_context: models.CharField = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Additional context for reason"
     )
 
-    details: models.JSONField = models.JSONField(default=dict, blank=True)
+    details: models.JSONField = models.JSONField(default=dict, blank=True, help_text="Extra relation metadata")
 
     objects = RelationManager()
 
-    virtual = models.BooleanField(default=False)
+    virtual = models.BooleanField(default=False, help_text="Whether this relation is virtual (e.g. alias)")
+
+    @staticmethod
+    def includes_entity(e1: "Entry", e2: "Entry") -> bool:
+        """True if at least one endpoint is an entity (enforced on save and Relation.objects.bulk_create)."""
+        return e1.entry_class.type == EntryType.ENTITY or e2.entry_class.type == EntryType.ENTITY
 
     def save(self, *args, **kwargs):
         if self.e1.id > self.e2.id:
             self.e1, self.e2 = self.e2, self.e1
+        if not Relation.includes_entity(self.e1, self.e2):
+            raise ValidationError("Each relation must involve at least one entity endpoint.")
         super().save(*args, **kwargs)
 
     class Meta:
@@ -467,3 +511,20 @@ class Relation(LifecycleModel):
 
     def __str__(self):
         return f"Relation [{self.reason}]({self.e1}-{self.e2}) "
+
+
+class Attachment(LifecycleModel):
+    """File attached to a relation (e.g. enrichment evidence)."""
+
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    relation: models.ForeignKey = models.ForeignKey(
+        Relation, on_delete=models.CASCADE, related_name="attachments", help_text="Relation this attachment belongs to"
+    )
+    name: models.CharField = models.CharField(max_length=255, help_text="Original filename for download")
+    file: models.FileField = models.FileField(
+        upload_to=attachment_upload_path,
+        storage=RelationStorage,
+        help_text="Stored file path",
+    )
+    type: models.CharField = models.CharField(max_length=255, help_text="MIME type or file category")
+    context: models.JSONField = models.JSONField(default=dict, help_text="Extra metadata (e.g. enrichment source)")

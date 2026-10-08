@@ -8,8 +8,8 @@ on:
   pull_request:
 
 jobs:
-  flake8:
-    name: Static Analysis - flake8
+  ruff:
+    name: Static Analysis - ruff
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,11 +25,11 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.14"
       - name: Install dependencies
         run: uv sync --extra dev
-      - name: Run flake8
-        run: uv run flake8 --verbose .
+      - name: Run ruff
+        run: uv run ruff check .
 
   tests:
     name: Run Django Tests
@@ -64,6 +64,17 @@ jobs:
           --health-timeout 5s
           --health-retries 3
 
+      minio:
+        image: bitnamilegacy/minio:2025.7.23-debian-12-r5
+        env:
+          MINIO_ROOT_USER: "admin"
+          MINIO_ROOT_PASSWORD: "cradle_minio"
+        options: >-
+          --health-cmd "curl -fsS http://127.0.0.1:9000/minio/health/live || exit 1"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
     steps:
       - uses: actions/checkout@v3
 
@@ -84,7 +95,7 @@ jobs:
       - name: Install system dependencies
         run: |
           apt update
-          apt install -y python3-pip
+          apt install -y python3-pip libmagic1
       - name: Install dependencies
         run: uv sync --extra dev
       - name: Settings Copy
@@ -95,5 +106,5 @@ jobs:
           uv run python3 manage.py check
       - name: Run Tests with Coverage
         run: |
-          uv run coverage run manage.py test
+          uv run coverage run -m pytest
           uv run coverage report

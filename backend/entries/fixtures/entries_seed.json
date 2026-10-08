@@ -1,0 +1,1671 @@
+{
+  "entry_classes": [
+    {
+      "subtype": "actor",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:20.354324+00:00",
+      "format": "regex",
+      "regex": "\\bLARVA-\\d+\\b|\\b[A-Za-z]+\\s+Mantis\\b",
+      "generative_regex": "",
+      "options": "",
+      "color": "#dc00e6",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "address/jabber",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-01-17T13:38:40.537881+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#f38972",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "alias",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-03-10T12:42:30.106396+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#7f8389",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "asn",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-09-04T10:18:44.935448+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d298",
+      "prefix": "",
+      "children": [],
+      "enrichment_techniques": ["misp", "opencti", "urlscan"],
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "AS"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "Autonomous-System"
+          }
+        ],
+        "urlscan": [
+          {
+            "observable_type": "asn"
+          }
+        ]
+      }
+    },
+    {
+      "subtype": "case",
+      "type": "entity",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:20.354324+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "CASE-",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "codeby.net/id",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-07-14T13:36:05.053109+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d2ac79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "codeby.net/username",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-07-14T13:36:02.110255+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d2ac79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "crypto/btc",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-15T14:43:28.730491+00:00",
+      "format": "regex",
+      "regex": "(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "crypto/eth",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-24T21:14:58.785834+00:00",
+      "format": "regex",
+      "regex": "(0x)?[0-9a-fA-F]{40}",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "crypto/ltc",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-28T19:59:10.609980+00:00",
+      "format": "regex",
+      "regex": "(?:L[a-km-zA-HJ-NP-Z1-9]{26,33}|3[a-km-zA-HJ-NP-Z1-9]{26,33}|ltc1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{39,59})",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "crypto/tron",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-24T21:15:09.931152+00:00",
+      "format": "regex",
+      "regex": "T[A-Za-z1-9]{33}",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "crypto/xmr",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-02-03T09:56:27.365103+00:00",
+      "format": "regex",
+      "regex": "(?:4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}|8[1-9A-HJ-NP-Za-km-z]{94}|4[0-9AB][1-9A-HJ-NP-Za-km-z]{105})",
+      "generative_regex": "",
+      "options": "",
+      "color": "#bc3541",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "crypto/xrp",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-24T21:15:25.498814+00:00",
+      "format": "regex",
+      "regex": "r[1-9A-HJ-NP-Za-km-z]{25,34}",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "domain",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:20.354324+00:00",
+      "format": "regex",
+      "regex": "[a-zA-Z0-9]{1,}(?:[a-zA-Z0-9\\-\\.\u00e4\u00e0]+)?\\.(?i:international|construction|blackfriday|contractors|enterprises|investments|photography|productions|xn--6frz82g|xn--j6w193g|accountant|creditcard|foundation|healthcare|industries|restaurant|technology|christmas|community|directory|education|institute|marketing|melbourne|solutions|vacations|bargains|business|capetown|clothing|computer|delivery|democrat|download|engineer|observer|partners|pictures|services|software|supplies|ventures|xn--p1ai|abogado|academy|capital|careers|charity|college|company|contact|corsica|digital|domains|exposed|express|finance|fitness|flights|flowers|gallery|hosting|kitchen|limited|markets|monster|network|organic|realtor|rentals|reviews|science|singles|support|systems|website|africa|agency|beauty|berlin|broker|casino|center|church|clinic|coffee|credit|design|direct|doctor|durban|events|expert|futbol|global|google|gratis|insure|joburg|london|makeup|market|moscow|online|parody|photos|pirate|quebec|racing|realty|repair|report|review|school|soccer|social|stream|studio|tattoo|travel|turkey|vessel|vision|voyage|webcam|yachts|click|audio|autos|bazar|bingo|black|boats|cards|cheap|click|cloud|codes|deals|email|equip|faith|games|gives|green|group|homes|house|lease|legal|loans|local|media|miami|money|ninja|onion|parts|party|photo|pizza|place|poker|press|quest|rocks|salon|shell|space|store|today|tokyo|tools|tours|trade|vegas|video|watch|works|world|army|asia|baby|beer|best|bike|blog|blue|bond|buzz|cafe|camp|care|casa|cash|chat|city|club|comm|cool|cyou|date|desi|fail|fans|farm|fish|fund|geek|gift|gmbh|gold|golf|guru|hair|haus|help|host|immo|indy|info|jobs|kiwi|kred|land|lgbt|life|link|live|loan|love|mobi|name|news|page|pics|pink|plus|porn|qpon|rent|rest|rsvp|sale|sexy|shop|site|skin|spae|surf|taxi|team|tech|tips|town|toys|vote|voto|wang|wiki|work|yoga|zero|zone|afl|app|art|aws|bar|bet|bid|bio|bit|biz|boo|cab|cam|cat|ceo|cfd|com|com|day|dev|dog|eco|edu|eus|fan|fit|fly|frl|fun|fyi|gay|gdn|icu|inc|inf|ing|ink|ist|kim|krd|lat|law|lib|llc|loc|lol|ltd|men|mls|moe|mom|net|ngo|nra|nyc|ocm|old|one|ong|onl|ooo|org|ovh|pet|pro|pub|red|ren|rip|run|sbs|srl|tax|tel|top|uno|vet|vin|vip|vru|win|wow|wtf|xin|xxx|xyz|zip|ac|ad|ae|af|ag|ai|al|am|ao|ar|at|au|ax|az|ba|bd|be|bf|bg|bh|bi|bj|bo|br|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|cl|cm|cn|co|cr|cv|cw|cx|cz|de|dk|do|dz|ec|ee|eg|es|et|eu|fi|fj|fm|fo|fr|ga|gd|ge|gg|gh|gl|gm|gq|gr|gs|gt|gy|hk|hn|hr|ht|hu|ic|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|kr|kz|la|lb|lc|li|lk|lr|lt|lu|lv|ly|ma|md|me|mg|mk|ml|mm|mn|mr|ms|mu|mv|mw|mx|my|mz|ne|nf|ng|ni|nl|no|np|nu|nz|om|or|pa|pe|pg|ph|pk|pl|pm|ps|pt|pw|py|qa|re|rg|ro|rs|ru|rw|sa|sc|sd|se|sg|sh|si|sk|sl|sn|so|st|su|sv|sx|tc|tf|tg|th|tj|tk|tm|tn|to|tr|tv|tw|tz|ua|ug|uk|us|uy|uz|vc|ve|vn|vu|wf|ws|xy|ye|yt|za|zm|zw)",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "enrichment_techniques": ["dns", "misp", "opencti", "urlscan"],
+      "type_mappings": {
+        "dns": [
+          {
+            "record_type": "CNAME"
+          },
+          {
+            "record_type": "PTR"
+          },
+          {
+            "record_type": "NS"
+          },
+          {
+            "record_type": "MX"
+          },
+          {
+            "record_type": "SRV"
+          }
+        ],
+        "misp": [
+          {
+            "attribute_type": "domain"
+          },
+          {
+            "attribute_type": "domain|ip"
+          },
+          {
+            "attribute_type": "hostname"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "Domain-Name"
+          },
+          {
+            "observable_type": "Hostname"
+          }
+        ],
+        "urlscan": [
+          {
+            "observable_type": "domain"
+          }
+        ]
+      }
+    },
+    {
+      "subtype": "email",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:20.354324+00:00",
+      "format": "regex",
+      "regex": "^(?:[a-zA-Z0-9_\\-\\.]+)@(?:(?:\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(?:(?:[a-zA-Z0-9\\-]+\\.)+))(?:[a-zA-Z]{2,6}|[0-9]{1,3})(?:\\]?)$",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [
+        "domain"
+      ],
+      "enrichment_techniques": ["misp", "opencti"],
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "email"
+          },
+          {
+            "attribute_type": "email-src"
+          },
+          {
+            "attribute_type": "email-dst"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "Email-Addr"
+          }
+        ]
+      }
+    },
+    {
+      "subtype": "enabler",
+      "type": "artifact",
+      "description": "cybercrimeenabler type for catalyst",
+      "timestamp": "2025-06-02T10:18:43.203421+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d2797c",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "file",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-05-30T12:27:09.451231+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#7f8389",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "hash/md5",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:20.354324+00:00",
+      "format": "regex",
+      "regex": "[a-fA-F0-9]{32}",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "enrichment_techniques": [ "misp", "opencti", "mwdb"],
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "md5"
+          }
+        ],
+        "mwdb": [
+          {
+            "artifact_type": "md5"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "StixFile:hashes.MD5"
+          }
+        ]
+      }
+    },
+    {
+      "subtype": "hash/sha1",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:20.354324+00:00",
+      "format": "regex",
+      "regex": "[a-fA-F0-9]{40}",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "enrichment_techniques": [ "misp", "opencti", "mwdb"],
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "sha1"
+          }
+        ],
+        "mwdb": [
+          {
+            "artifact_type": "sha1"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "StixFile:hashes.SHA-1"
+          }
+        ]
+      }
+    },
+    {
+      "subtype": "hash/sha256",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:20.354324+00:00",
+      "format": "regex",
+      "regex": "[a-fA-F0-9]{64}",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "enrichment_techniques": [ "misp", "opencti", "mwdb"],
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "sha256"
+          }
+        ],
+        "mwdb": [
+          {
+            "artifact_type": "sha256"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "StixFile:hashes.SHA-256"
+          }
+        ],
+        "urlscan": [
+          {
+            "observable_type": "hash"
+          }
+        ]
+      }
+    },
+    {
+      "subtype": "id/antichat",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-12-17T11:05:25.771989+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#67f757",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/bhf",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-12-17T11:05:30.789340+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#17bbb5",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/breached",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-10T13:15:43.162420+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d1d279",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/breachforums",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-10T13:16:19.031866+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79a0d2",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/dark2web",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-12-17T11:06:22.896131+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#171bfa",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/darkmarket",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-12-17T11:05:41.390544+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#067841",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/darkmoney",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-06-04T08:51:50.094912+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d279b3",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/dublikat",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-12-17T11:05:36.020425+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#ffd330",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/exploit.in",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-14T12:12:08.804612+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#f17a62",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/fuckav.ru",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-04-30T08:49:56.522220+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d29b",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/gaia",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-08-26T10:49:30.060509+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d2af",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/gerki",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-10T14:47:51.452004+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#799ed2",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/icq",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-31T08:38:05.809070+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#7997d2",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/leakbase.io",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-12-17T11:05:55.582046+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#bcd297",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/mazafaka.ru",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-31T20:27:19.396875+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d28f",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/raidforums",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-14T12:13:15.092449+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#7aa594",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/ramp4u",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-14T12:13:14.538362+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#7aa594",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/session",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-05-14T15:01:48.119201+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#7988d2",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/telegram",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-05-19T14:48:58.585986+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#536ea1",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/tox",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-05T12:15:48.526846+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#b229a7",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/ufolabs",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-04-30T08:50:13.565832+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d29b",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/verified_forum",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-30T17:21:44.117235+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79c9d2",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/wwh-club",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-14T12:13:14.779496+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#7aa594",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/xss.is",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-14T12:12:32.698446+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#7aa594",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "id/zloy.org",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-31T20:27:47.327288+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d2c8",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "ip",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:20.354324+00:00",
+      "format": "regex",
+      "regex": "(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "enrichment_techniques": [ "misp", "opencti"],
+      "type_mappings": {
+        "dns": [
+          {
+            "record_type": "A"
+          }
+        ],
+        "misp": [
+          {
+            "attribute_type": "ip-dst"
+          },
+          {
+            "attribute_type": "ip-src"
+          },
+          {
+            "attribute_type": "ip-dst|port"
+          },
+          {
+            "attribute_type": "ip-src|port"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "IPv4-Addr"
+          }
+        ],
+        "urlscan": [
+          {
+            "observable_type": "ip"
+          }
+        ]
+      }
+    },
+    {
+      "subtype": "ipv6",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:20.354324+00:00",
+      "format": "regex",
+      "regex": "(?:(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?:(?::[0-9a-fA-F]{1,4}){1,6})|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(?::[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(?:ffff(?::0{1,4}){0,1}:){0,1}(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])|(?:[0-9a-fA-F]{1,4}:){1,4}:(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9]))",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "enrichment_techniques": [ "misp", "opencti"],
+      "type_mappings": {
+        "dns": [
+          {
+            "record_type": "AAAA"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "IPv6-Addr"
+          }
+        ]
+      }
+    },
+    {
+      "subtype": "location/city",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-04-23T13:32:55.708591+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d28c79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "location/country",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-02-03T13:46:18.904152+00:00",
+      "format": "options",
+      "regex": "",
+      "generative_regex": "",
+      "options": "Afghanistan\nAlbania\nAlgeria\nAndorra\nAngola\nArgentina\nArmenia\nAustralia\nAustria\nAzerbaijan\nBahamas\nBahrain\nBangladesh\nBarbados\nBelarus\nBelgium\nBelize\nBenin\nBhutan\nBolivia\nBotswana\nBrazil\nBrunei\nBulgaria\nBurkina\nBurundi\nCambodia\nCameroon\nCanada\nChad\nChile\nChina\nColombia\nComoros\nCongo\nCroatia\nCuba\nCyprus\nDenmark\nDjibouti\nDominica\nEcuador\nEgypt\nEritrea\nEstonia\nEthiopia\nFiji\nFinland\nFrance\nGabon\nGambia\nGeorgia\nGermany\nGhana\nGreece\nGrenada\nGuatemala\nGuinea\nGuinea-Bissau\nGuyana\nHaiti\nHonduras\nHungary\nIceland\nIndia\nIndonesia\nIran\nIraq\nIsrael\nItaly\nJamaica\nJapan\nJordan\nKazakhstan\nKenya\nKiribati\nKosovo\nKuwait\nKyrgyzstan\nLaos\nLatvia\nLebanon\nLesotho\nLiberia\nLibya\nLiechtenstein\nLithuania\nLuxembourg\nMacedonia\nMadagascar\nMalawi\nMalaysia\nMaldives\nMali\nMalta\nMauritania\nMauritius\nMexico\nMicronesia\nMoldova\nMonaco\nMongolia\nMontenegro\nMorocco\nMozambique\nNamibia\nNauru\nNepal\nNetherlands\nNicaragua\nNiger\nNigeria\nNorway\nOman\nPakistan\nPalau\nPanama\nParaguay\nPeru\nPhilippines\nPoland\nPortugal\nQatar\nRomania\nRussia\nRwanda\nSamoa\nSenegal\nSerbia\nSeychelles\nSingapore\nSlovakia\nSlovenia\nSomalia\nSpain\nSudan\nSuriname\nSwaziland\nSweden\nSwitzerland\nSyria\nTaiwan\nTajikistan\nTanzania\nThailand\nTogo\nTonga\nTunisia\nTurkey\nTurkmenistan\nTuvalu\nUganda\nUkraine\nUruguay\nUzbekistan\nVanuatu\nVenezuela\nVietnam\nYemen\nZambia\nZimbabwe",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {
+        "urlscan": [
+          {
+            "observable_type": "country"
+          }
+        ]
+      }
+    },
+    {
+      "subtype": "lolzteam/id",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-07-14T13:35:23.831571+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d2ac79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "lolzteam/username",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-07-14T13:35:34.107146+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d2ac79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "name/jabber",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-04-29T14:55:59.358051+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d28c79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "name/matrix",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-04-30T12:49:27.464761+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#797bd2",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "name/rocket.chat",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-06-02T10:34:23.879983+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d2b2",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "name/skype",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-01-17T13:19:30.416186+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#6ec3a0",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "name/telegram",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-05-19T14:49:02.694500+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#664f7b",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "name/tox",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-05T12:15:44.506325+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d72ce5",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "nickname/rocket.chat",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-06-03T11:53:19.031300+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#8fd279",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "note",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2026-01-15T09:11:03.247939+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#7f8389",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "password",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-03T08:57:56.088545+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "phone",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:31.065195+00:00",
+      "format": "regex",
+      "regex": "(\\+\\d{1,2}\\s?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "skynetzone/id",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-07-14T13:58:55.464267+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d2ac79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "skynetzone/username",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-07-14T13:58:52.779793+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d2ac79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "source",
+      "type": "entity",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:20.354324+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#744abf",
+      "prefix": "PTI-",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "tag/c2",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-04-30T12:10:51.843619+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d2bf79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "tag/malware",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-04-30T12:10:48.298656+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d2bf79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "tool",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-22T13:26:10.171988+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#f4870f",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "ttp",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:20.354324+00:00",
+      "format": "options",
+      "regex": "",
+      "generative_regex": "",
+      "options": "T1001\nT1001.001\nT1001.002\nT1001.003\nT1003\nT1003.001\nT1003.002\nT1003.003\nT1003.004\nT1003.005\nT1003.006\nT1003.007\nT1003.008\nT1011\nT1011.001\nT1016\nT1016.001\nT1016.002\nT1020\nT1020.001\nT1021\nT1021.001\nT1021.002\nT1021.003\nT1021.004\nT1021.005\nT1021.006\nT1021.007\nT1021.008\nT1027\nT1027.001\nT1027.002\nT1027.003\nT1027.004\nT1027.005\nT1027.006\nT1027.007\nT1027.008\nT1027.009\nT1027.010\nT1027.011\nT1027.012\nT1027.013\nT1036\nT1036.001\nT1036.002\nT1036.003\nT1036.004\nT1036.005\nT1036.006\nT1036.007\nT1036.008\nT1036.009\nT1037\nT1037.001\nT1037.002\nT1037.003\nT1037.004\nT1037.005\nT1048\nT1048.001\nT1048.002\nT1048.003\nT1052\nT1052.001\nT1053\nT1053.002\nT1053.003\nT1053.005\nT1053.006\nT1053.007\nT1055\nT1055.001\nT1055.002\nT1055.003\nT1055.004\nT1055.005\nT1055.008\nT1055.009\nT1055.011\nT1055.012\nT1055.013\nT1055.014\nT1055.015\nT1056\nT1056.001\nT1056.002\nT1056.003\nT1056.004\nT1059\nT1059.001\nT1059.002\nT1059.003\nT1059.004\nT1059.005\nT1059.006\nT1059.007\nT1059.008\nT1059.009\nT1059.010\nT1069\nT1069.001\nT1069.002\nT1069.003\nT1070\nT1070.001\nT1070.002\nT1070.003\nT1070.004\nT1070.005\nT1070.006\nT1070.007\nT1070.008\nT1070.009\nT1071\nT1071.001\nT1071.002\nT1071.003\nT1071.004\nT1074\nT1074.001\nT1074.002\nT1078\nT1078.001\nT1078.002\nT1078.003\nT1078.004\nT1087\nT1087.001\nT1087.002\nT1087.003\nT1087.004\nT1090\nT1090.001\nT1090.002\nT1090.003\nT1090.004\nT1098\nT1098.001\nT1098.002\nT1098.003\nT1098.004\nT1098.005\nT1098.006\nT1102\nT1102.001\nT1102.002\nT1102.003\nT1110\nT1110.001\nT1110.002\nT1110.003\nT1110.004\nT1114\nT1114.001\nT1114.002\nT1114.003\nT1127\nT1127.001\nT1132\nT1132.001\nT1132.002\nT1134\nT1134.001\nT1134.002\nT1134.003\nT1134.004\nT1134.005\nT1136\nT1136.001\nT1136.002\nT1136.003\nT1137\nT1137.001\nT1137.002\nT1137.003\nT1137.004\nT1137.005\nT1137.006\nT1195\nT1195.001\nT1195.002\nT1195.003\nT1204\nT1204.001\nT1204.002\nT1204.003\nT1205\nT1205.001\nT1205.002\nT1213\nT1213.001\nT1213.002\nT1213.003\nT1216\nT1216.001\nT1216.002\nT1218\nT1218.001\nT1218.002\nT1218.003\nT1218.004\nT1218.005\nT1218.007\nT1218.008\nT1218.009\nT1218.010\nT1218.011\nT1218.012\nT1218.013\nT1218.014\nT1218.015\nT1222\nT1222.001\nT1222.002\nT1480\nT1480.001\nT1484\nT1484.001\nT1484.002\nT1491\nT1491.001\nT1491.002\nT1497\nT1497.001\nT1497.002\nT1497.003\nT1498\nT1498.001\nT1498.002\nT1499\nT1499.001\nT1499.002\nT1499.003\nT1499.004\nT1505\nT1505.001\nT1505.002\nT1505.003\nT1505.004\nT1505.005\nT1518\nT1518.001\nT1542\nT1542.001\nT1542.002\nT1542.003\nT1542.004\nT1542.005\nT1543\nT1543.001\nT1543.002\nT1543.003\nT1543.004\nT1543.005\nT1546\nT1546.001\nT1546.002\nT1546.003\nT1546.004\nT1546.005\nT1546.006\nT1546.007\nT1546.008\nT1546.009\nT1546.010\nT1546.011\nT1546.012\nT1546.013\nT1546.014\nT1546.015\nT1546.016\nT1547\nT1547.001\nT1547.002\nT1547.003\nT1547.004\nT1547.005\nT1547.006\nT1547.007\nT1547.008\nT1547.009\nT1547.010\nT1547.012\nT1547.013\nT1547.014\nT1547.015\nT1548\nT1548.001\nT1548.002\nT1548.003\nT1548.004\nT1548.005\nT1548.006\nT1550\nT1550.001\nT1550.002\nT1550.003\nT1550.004\nT1552\nT1552.001\nT1552.002\nT1552.003\nT1552.004\nT1552.005\nT1552.006\nT1552.007\nT1552.008\nT1553\nT1553.001\nT1553.002\nT1553.003\nT1553.004\nT1553.005\nT1553.006\nT1555\nT1555.001\nT1555.002\nT1555.003\nT1555.004\nT1555.005\nT1555.006\nT1556\nT1556.001\nT1556.002\nT1556.003\nT1556.004\nT1556.005\nT1556.006\nT1556.007\nT1556.008\nT1556.009\nT1557\nT1557.001\nT1557.002\nT1557.003\nT1558\nT1558.001\nT1558.002\nT1558.003\nT1558.004\nT1559\nT1559.001\nT1559.002\nT1559.003\nT1560\nT1560.001\nT1560.002\nT1560.003\nT1561\nT1561.001\nT1561.002\nT1562\nT1562.001\nT1562.002\nT1562.003\nT1562.004\nT1562.006\nT1562.007\nT1562.008\nT1562.009\nT1562.010\nT1562.011\nT1562.012\nT1563\nT1563.001\nT1563.002\nT1564\nT1564.001\nT1564.002\nT1564.003\nT1564.004\nT1564.005\nT1564.006\nT1564.007\nT1564.008\nT1564.009\nT1564.010\nT1564.011\nT1564.012\nT1565\nT1565.001\nT1565.002\nT1565.003\nT1566\nT1566.001\nT1566.002\nT1566.003\nT1566.004\nT1567\nT1567.001\nT1567.002\nT1567.003\nT1567.004\nT1568\nT1568.001\nT1568.002\nT1568.003\nT1569\nT1569.001\nT1569.002\nT1573\nT1573.001\nT1573.002\nT1574\nT1574.001\nT1574.002\nT1574.004\nT1574.005\nT1574.006\nT1574.007\nT1574.008\nT1574.009\nT1574.010\nT1574.011\nT1574.012\nT1574.013\nT1574.014\nT1578\nT1578.001\nT1578.002\nT1578.003\nT1578.004\nT1578.005\nT1583\nT1583.001\nT1583.002\nT1583.003\nT1583.004\nT1583.005\nT1583.006\nT1583.007\nT1583.008\nT1584\nT1584.001\nT1584.002\nT1584.003\nT1584.004\nT1584.005\nT1584.006\nT1584.007\nT1584.008\nT1585\nT1585.001\nT1585.002\nT1585.003\nT1586\nT1586.001\nT1586.002\nT1586.003\nT1587\nT1587.001\nT1587.002\nT1587.003\nT1587.004\nT1588\nT1588.001\nT1588.002\nT1588.003\nT1588.004\nT1588.005\nT1588.006\nT1588.007\nT1589\nT1589.001\nT1589.002\nT1589.003\nT1590\nT1590.001\nT1590.002\nT1590.003\nT1590.004\nT1590.005\nT1590.006\nT1591\nT1591.001\nT1591.002\nT1591.003\nT1591.004\nT1592\nT1592.001\nT1592.002\nT1592.003\nT1592.004\nT1593\nT1593.001\nT1593.002\nT1593.003\nT1595\nT1595.001\nT1595.002\nT1595.003\nT1596\nT1596.001\nT1596.002\nT1596.003\nT1596.004\nT1596.005\nT1597\nT1597.001\nT1597.002\nT1598\nT1598.001\nT1598.002\nT1598.003\nT1598.004\nT1599\nT1599.001\nT1600\nT1600.001\nT1600.002\nT1601\nT1601.001\nT1601.002\nT1602\nT1602.001\nT1602.002\nT1606\nT1606.001\nT1606.002\nT1608\nT1608.001\nT1608.002\nT1608.003\nT1608.004\nT1608.005\nT1608.006\nT1614\nT1614.001\nT1041\nT1105\nT1496\nT1113\nT1083\nT1046\nT1140\nT1190\nT1203",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "url",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-10-16T11:45:20.354324+00:00",
+      "format": "regex",
+      "regex": "https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9(?:)]{1,6}\\b(?:[-a-zA-Z0-9(?:)!@:%_\\+.~#?\\$&\\/\\/=]*)",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [
+        "domain",
+        "ip"
+      ],
+      "enrichment_techniques": [ "misp", "opencti", "urlscan"],
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "url"
+          },
+          {
+            "attribute_type": "uri"
+          },
+          {
+            "attribute_type": "link"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "URL"
+          }
+        ],
+        "urlscan": [
+          {
+            "observable_type": "url"
+          }
+        ]
+      }
+    },
+    {
+      "subtype": "username/antichat",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-12-17T11:06:40.741908+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#c1cb3c",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/bhf",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-12-17T11:06:46.311917+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#52508c",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/blackhatworld.com",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-31T08:37:42.226865+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#7997d2",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/breached",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-02-03T13:18:01.611361+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#aa68eb",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/breachforums",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-03-10T13:16:09.707120+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#43f02e",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/dark2web",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-12-17T11:07:08.732384+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#fddaad",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/darkmarket",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-12-17T11:06:57.631608+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#205836",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/darkmoney",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-06-04T08:51:57.603806+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d279b3",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/dublikat",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-12-17T11:06:51.593810+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#06f82d",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/exploit.in",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-14T12:15:23.995145+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#c88686",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/exposed.vc",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-11T08:23:21.997165+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d2cf",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/fuckav.ru",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-04-30T08:50:01.314566+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d29b",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/gerki",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-10T14:48:02.099222+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#c379d2",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/leakbase.io",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-12-17T11:07:03.051996+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#557813",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/magbo.cc",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-02-17T08:19:58.597566+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#a3f455",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/matrix",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-02-07T16:09:30.292001+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#796485",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/mattermost",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-08-28T10:55:07.524150+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d279be",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/mazafaka.ru",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-31T20:27:23.692603+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d28f",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/other",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-05-06T12:14:17.906531+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#e66100",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/qip.ru",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-31T20:32:42.158075+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d282",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/raidforums",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-14T12:15:23.802293+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#c88686",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/ramp4u",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-14T12:15:23.419850+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#c88686",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/rocket.chat",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-05-19T14:42:46.339369+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#ca3bb8",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/skype",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-01-17T13:19:36.787191+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#ed284a",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/telegram",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-05-19T14:49:06.582536+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#fbbb9e",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/thesecure.biz",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-05-26T15:37:30.868040+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d29e79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/ufolabs",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-04-30T08:50:10.746940+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d29b",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/verified_forum",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-30T17:21:30.765447+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79c9d2",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/wwh-club",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-14T12:15:23.612016+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#c88686",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/xss.is",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2024-11-14T12:15:24.205798+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#c88686",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/yalishanda",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-26T14:37:00.416595+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d2bf79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "username/zloy.org",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-03-31T20:27:51.513808+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#79d2c8",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "virtual",
+      "type": "artifact",
+      "description": null,
+      "timestamp": "2025-04-25T18:18:31.953234+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#7f8389",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "vlmi/id",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-07-14T13:37:09.049068+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d2ac79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    },
+    {
+      "subtype": "vlmi/username",
+      "type": "artifact",
+      "description": "",
+      "timestamp": "2025-07-14T13:37:12.620365+00:00",
+      "format": null,
+      "regex": "",
+      "generative_regex": "",
+      "options": "",
+      "color": "#d2ac79",
+      "prefix": "",
+      "children": [],
+      "type_mappings": {}
+    }
+  ]
+}

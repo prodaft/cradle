@@ -1,15 +1,13 @@
+"""Management command to refresh the edges materialized view."""
+
 from django.core.management.base import BaseCommand
-from entries.tasks import refresh_edges_materialized_view
-from entries.tasks import simulate_graph
+
+from ...tasks import refresh_edges_materialized_view
 
 
 class Command(BaseCommand):
-    def handle(self, *args, **options):
-        """
-        Recreates the materialized view and refreshes the edge positions
-        """
-        refresh = refresh_edges_materialized_view.si()
-        simulate = simulate_graph.si()
+    help = "Refreshes the edges materialized view and updates entry degrees."
 
-        group = refresh | simulate
-        group.apply_async()
+    def handle(self, *args, **options):
+        """Trigger async refresh of edges materialized view."""
+        refresh_edges_materialized_view.apply_async()

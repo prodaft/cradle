@@ -1,43 +1,23 @@
-from django.test import TestCase
+"""Test utilities for notification tests."""
+
 from unittest.mock import patch
+
+from django.test import TestCase
 
 from entries.enums import EntryType
 from entries.models import EntryClass
 
 
 class NotificationsTestCase(TestCase):
+    """Base test case with mocked storage bucket creation and sample EntryClasses."""
+
     def setUp(self):
-        self.patcher = patch("file_transfer.utils.MinioClient.create_user_bucket")
-        self.mocked_create_user_bucket = self.patcher.start()
+        """Create mocks and sample EntryClass for notification tests."""
+        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher.start()
 
-        self.success_logger_patcher = patch("logs.utils.success_logger")
-        self.error_logger_patcher = patch("logs.utils.error_logger")
-
-        self.mocked_success_logger = self.success_logger_patcher.start()
-        self.mocked_error_logger = self.error_logger_patcher.start()
-
-        self.entryclass_ip = EntryClass.objects.create(
-            type=EntryType.ARTIFACT, subtype="ip"
-        )
-
-        self.entryclass_country = EntryClass.objects.create(
-            type=EntryType.ARTIFACT, subtype="country"
-        )
-
-        self.entryclass1 = EntryClass.objects.create(
-            type=EntryType.ENTITY, subtype="case"
-        )
-
-        self.entryclass2 = EntryClass.objects.create(
-            type=EntryType.ARTIFACT, subtype="actor"
-        )
-
-        self.entryclass1.save()
-        self.entryclass2.save()
-        self.entryclass_ip.save()
-        self.entryclass_country.save()
+        self.entryclass1 = EntryClass.objects.create(type=EntryType.ENTITY, subtype="case")
 
     def tearDown(self):
+        """Stop all patchers."""
         self.patcher.stop()
-        self.success_logger_patcher.stop()
-        self.error_logger_patcher.stop()

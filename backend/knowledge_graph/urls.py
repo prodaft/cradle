@@ -1,22 +1,21 @@
+"""URL routing for knowledge graph API endpoints."""
+
 from django.urls import path
+
 from .views import (
-    FetchGraphView,
-    GraphPathFindView,
     GraphInaccessibleView,
     GraphNeighborsView,
+    GraphPathFindView,
+    KnowledgeGraphView,
 )
 
 urlpatterns = [
-    path("pathfind/", GraphPathFindView.as_view(), name="graph_pathfind_query"),
+    path("", KnowledgeGraphView.as_view(), name="knowledge_graph"),
+    path("paths/", GraphPathFindView.as_view(), name="graph_path_find"),
     path("neighbors/", GraphNeighborsView.as_view(), name="graph_neighbors_query"),
     path(
         "inaccessible/",
         GraphInaccessibleView.as_view(),
         name="graph_inaccessible_query",
-    ),
-    path(
-        "fetch/",
-        FetchGraphView.as_view(),
-        name="graph_fetch",
     ),
 ]

@@ -1,98 +1,97 @@
 [project]
 name = "cradle-backend"
-version = "2.10.2"
+version = "3.0.0"
 description = "CRADLE Backend"
-requires-python = ">=3.10"
+requires-python = ">=3.14"
 dependencies = [
-    "django==5.0.4",
-    "djangorestframework==3.15.1",
-    "django-cors-headers==4.3.1",
-    "djangorestframework-simplejwt==5.3.1",
-    "djangorestframework-stubs==3.15.0",
-    "django-stubs",
-    "django-stubs-ext",
-    "minio",
-    "django-model-utils",
-    "django-extensions",
-    "pytest",
-    "pyyaml",
-    "mistune",
-    "drf-spectacular",
-    "django-filter",
-    "pytest-django",
-    "environs",
-    "django-lifecycle",
-    "sentry-sdk[django]",
-    "celery[redis]",
-    "redis",
-    "python-redis-lock",
-    "diff-match-patch",
-    "xeger",
-    "bleach",
-    "numpy",
-    "psycopg2-binary",
-    "dnspython",
-    "bcrypt",
-    "django-celery-beat",
-    "requests",
-    "python-frontmatter",
-    "django-otp",
-    "qrcode",
-    "python-magic",
-    "fa2-modified",
-    "networkx",
-    "scipy",
-    "django-silk[formatting]",
-    "gunicorn",
+    "django==6.0.8",
+    "djangorestframework==3.18.0",
+    "django-cors-headers==4.9.0",
+    "djangorestframework-simplejwt==5.5.1",
+    "djangorestframework-stubs==3.18.0",
+    "django-stubs==6.0.9",
+    "django-stubs-ext==6.0.9",
+    "minio==7.2.20",
+    "django-model-utils==5.0.0",
+    "django-extensions==4.1",
+    "pytest==9.1.1",
+    "mistune==3.3.4",
+    "drf-spectacular==0.30.0",
+    "django-filter==26.1",
+    "pytest-django==4.14.0",
+    "environs==15.2.0",
+    "django-lifecycle==1.3.0",
+    "sentry-sdk[django]==2.68.1",
+    "celery[redis]==5.6.3",
+    # kombu[redis] (via celery[redis]) requires redis<6.5.
+    "redis==6.4.0",
+    "python-redis-lock==4.0.1",
+    "diff-match-patch==20241021",
+    "xeger==0.4.0",
+    "bleach==6.4.0",
+    "psycopg2-binary==2.9.12",
+    "bcrypt==5.0.0",
+    "django-celery-beat==2.9.0",
+    "requests==2.34.2",
+    "python-frontmatter==1.3.0",
+    "django-otp==1.7.1",
+    "python-magic==0.4.27",
+    "django-silk[formatting]==5.5.2",
+    "gunicorn==26.2.0",
+    "pydantic==2.13.5",
+    "docker==7.2.0",
+    "django-storages[s3]==1.14.6",
+    "pathvalidate==3.3.1",
+    "channels==4.3.2",
+    "channels-redis==4.3.0",
+    "daphne==4.2.3",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "bump-my-version",
-    "deptry",
-    "coverage",
-    "flake8==7.0.0",
-    "black==24.4.2",
-    "mypy==1.10.0",
-    "ipython",
-    "autoflake",
-    "flake8-pyproject",
+    "bump-my-version==1.5.1",
+    "coverage==7.16.0",
+    "ruff==0.16.5",
+    "ipython==9.17.1",
 ]
+
+[tool.uv]
+exclude-newer = "30 days"
 
 [tool.mypy]
 namespace_packages = true
 warn_unused_ignores = false
 files = "**/*.py"
-exclude = "*/migrations/*.py,*/tests/*.py"
+exclude = ["*/migrations/*.py","*/tests/*.py"]
 
 [tool.mypy.plugins.django-stubs]
 django_settings_module = "cradle.settings"
 
-[tool.flake8]
-exclude = ".git,__pycache__,.vscode,cradle,manage.py,env,venv,.venv,*/migrations/*"
-max-line-length = 120
-extend-ignore = "E203"
-
-[tool.black]
-exclude = '''
-(
-  /(
-      \.git
-    | __pycache__
-    | \.venv
-    | env
-    | venv
-    | migrations
-  )/
-)
-'''
-
 [tool.ruff]
+line-length = 120
 exclude = [
     ".git",
     "__pycache__",
     ".venv",
     "env",
     "venv",
+    ".vscode",
+    "cradle",
+    "manage.py",
     "*/migrations/*"
+]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+extend-select = ["I", "D"]
+ignore = ["E203", "D100", "D101", "D102", "D104", "D105", "D106", "D107", "D417"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "pytest-django==4.14.0",
+    "vulture==2.16",
 ]

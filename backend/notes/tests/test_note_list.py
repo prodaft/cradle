@@ -1,201 +1,218 @@
+from datetime import datetime
+from datetime import timezone as dt_timezone
+
 from django.urls import reverse
-from access.models import Access
-from access.enums import AccessType
 from rest_framework_simplejwt.tokens import AccessToken
 
-from notes import utils
+from ..enums import NoteStatus
 from ..models import Note
-from entries.models import Entry
 from .utils import NotesTestCase
-from unittest.mock import patch
-import notes.processor.entry_population_task as task
 
 
-class CreateNoteTest(NotesTestCase):
+class CreateFleetingNoteTest(NotesTestCase):
     def setUp(self):
         super().setUp()
-
+        self.user.default_note_template = "Default note template"
+        self.user.save(update_fields=["default_note_template"])
         self.user_token = str(AccessToken.for_user(self.user))
-        self.headers = {"HTTP_AUTHORIZATION": f"Bearer {self.user_token}"}
-        self.saved_entity = Entry.objects.create(
-            name="entity", entry_class=self.entryclass1
-        )
-        self.saved_actor = Entry.objects.create(
-            name="actor", entry_class=self.entryclass2
-        )
+        self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
 
-        self.file_name = "evidence.png"
-        self.minio_file_name = "aad5cae6-5737-409d-8ce2-5f116ed5e2de-evidence.png"
-        self.bucket_name = str(self.user.id)
-
-        self.file_exists_patcher = patch(
-            "file_transfer.utils.MinioClient.file_exists_at_path"
-        )
-        self.mocked_file_exists = self.file_exists_patcher.start()
-
-        def mocked_file_exists_call(bucket_name, minio_file_name):
-            if (
-                bucket_name == self.bucket_name
-                and minio_file_name == self.minio_file_name
-            ):
-                return True
-            else:
-                return False
-
-        self.mocked_file_exists.side_effect = mocked_file_exists_call
-        self.file_reference = {
-            "minio_file_name": self.minio_file_name,
-            "file_name": self.file_name,
-            "bucket_name": self.bucket_name,
-        }
-        task.extract_links = utils.extract_links
-
-    def tearDown(self):
-        super().tearDown()
-        self.file_exists_patcher.stop()
-
-    def test_create_note_no_content(self):
+    def test_create_fleeting_note_not_authenticated(self):
         response = self.client.post(
             reverse("note_list"),
-            {"files": [self.file_reference]},
-            content_type="application/json",
-            **self.headers,
-        )
-
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["detail"], "The note should not be empty.")
-
-    def test_create_note_empty_content(self):
-        response = self.client.post(
-            reverse("note_list"),
-            {"files": [self.file_reference], "content": ""},
-            content_type="application/json",
-            **self.headers,
-        )
-
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["detail"], "The note should not be empty.")
-
-    def test_create_note_wrong_bucket_name(self):
-        Access.objects.create(
-            user=self.user, entity=self.saved_entity, access_type=AccessType.READ_WRITE
-        )
-        note_content = "Lorem ipsum [[actor:actor]] [[entity:entity]] [[ip:127.0.0.1]]"
-        self.file_reference["bucket_name"] = "wrong_name"
-
-        response = self.client.post(
-            reverse("note_list"),
-            {"files": [self.file_reference], "content": note_content},
-            content_type="application/json",
-            **self.headers,
-        )
-
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(
-            response.json()["detail"],
-            "There exists no file at the specified path",
-        )
-
-    def test_create_note_wrong_minio_file_name(self):
-        Access.objects.create(
-            user=self.user, entity=self.saved_entity, access_type=AccessType.READ_WRITE
-        )
-        note_content = "Lorem ipsum [[actor:actor]] [[entity:entity]] [[ip:127.0.0.1]]"
-        self.file_reference["minio_file_name"] = "wrong_name"
-
-        response = self.client.post(
-            reverse("note_list"),
-            {"files": [self.file_reference], "content": note_content},
-            content_type="application/json",
-            **self.headers,
-        )
-
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(
-            response.json()["detail"], "There exists no file at the specified path"
-        )
-
-    def test_create_note_not_authenticated(self):
-        Access.objects.create(
-            user=self.user, entity=self.saved_entity, access_type=AccessType.READ_WRITE
-        )
-        response = self.client.post(
-            reverse("note_list"),
-            {
-                "files": [self.file_reference],
-                "content": "Lorem ipsum [[actor:actor]] [[entity:entity]]",
-            },
+            {"content": "Quick thought"},
             content_type="application/json",
         )
 
         self.assertEqual(response.status_code, 401)
 
-    def test_does_not_reference_enough_entries(self):
+    def test_create_fleeting_note_defaults_content(self):
         response = self.client.post(
             reverse("note_list"),
-            {"files": [self.file_reference], "content": "Lorem ipsum"},
-            content_type="application/json",
-            **self.headers,
-        )
-
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(
-            response.json()["detail"],
-            "Note does not reference at least 1 entity and at least 2 entries.",
-        )
-
-    def test_references_entries_that_do_not_exist(self):
-        response = self.client.post(
-            reverse("note_list"),
-            {
-                "files": [self.file_reference],
-                "content": "Lorem ipsum [[actor:actor]] [[case:wrongentity]]",
-            },
-            content_type="application/json",
-            **self.headers,
-        )
-
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(
-            response.json()["detail"],
-            "Some of the referenced entries do not exist or you don't have the right permissions to "
-            + "access them:\n(case: wrongentity)",
-        )
-
-    def test_references_entities_user_has_no_access_to(self):
-        response = self.client.post(
-            reverse("note_list"),
-            {
-                "files": [self.file_reference],
-                "content": "Lorem ipsum [[actor:actor]] [[case:entity]]",
-            },
-            content_type="application/json",
-            **self.headers,
-        )
-
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(
-            response.json()["detail"],
-            "Some of the referenced entries do not exist or you don't have the right "
-            + "permissions to access them:\n(case: entity)",
-        )
-
-    def test_create_note_successfully(self):
-        Access.objects.create(
-            user=self.user, entity=self.saved_entity, access_type=AccessType.READ_WRITE
-        )
-        note_content = "Lorem ipsum [[actor:actor]] [[case:entity]] [[ip:127.0.0.1]]"
-
-        response = self.client.post(
-            reverse("note_list"),
-            {"files": [self.file_reference], "content": note_content},
+            {},
             content_type="application/json",
             **self.headers,
         )
 
         saved_note = Note.objects.first()
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["content"], "Default note template")
+        self.assertTrue(response.json()["fleeting"])
+        self.assertTrue(saved_note.fleeting)
+
+    def test_create_fleeting_note_with_content(self):
+        note_content = "Quick thought"
+        response = self.client.post(
+            reverse("note_list"),
+            {"content": note_content},
+            content_type="application/json",
+            **self.headers,
+        )
+
+        saved_note = Note.objects.first()
+        self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json()["content"], note_content)
-        self.assertEqual(len(response.json()["files"]), len([self.file_reference]))
+        self.assertTrue(response.json()["fleeting"])
         self.assertEqual(saved_note.content, note_content)
-        self.assertIsNotNone(response.json()["timestamp"])
+
+
+class NoteListStatusFilterTest(NotesTestCase):
+    def setUp(self):
+        super().setUp()
+        self.user_token = str(AccessToken.for_user(self.user))
+        self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
+
+    def test_list_notes_multiple_status_or(self):
+        healthy = Note.objects.create(
+            author=self.user,
+            fleeting=False,
+            content="h",
+            status=NoteStatus.HEALTHY,
+        )
+        warning = Note.objects.create(
+            author=self.user,
+            fleeting=False,
+            content="w",
+            status=NoteStatus.WARNING,
+        )
+        Note.objects.create(
+            author=self.user,
+            fleeting=False,
+            content="p",
+            status=NoteStatus.PROCESSING,
+        )
+
+        url = reverse("note_list")
+        response = self.client.get(
+            url,
+            {"status": ["healthy", "warning"]},
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        ids = {row["id"] for row in response.json()["results"]}
+        self.assertEqual(ids, {str(healthy.id), str(warning.id)})
+
+    def test_list_notes_multiple_status_with_empty_search_param(self):
+        healthy = Note.objects.create(
+            author=self.user,
+            fleeting=False,
+            content="healthy note",
+            status=NoteStatus.HEALTHY,
+        )
+        processing = Note.objects.create(
+            author=self.user,
+            fleeting=False,
+            content="processing note",
+            status=NoteStatus.PROCESSING,
+        )
+
+        response = self.client.get(
+            reverse("note_list"),
+            {
+                "status": ["finalized", "healthy"],
+                "search": "",
+                "content": "",
+                "author": "",
+            },
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        ids = {row["id"] for row in response.json()["results"]}
+        self.assertEqual(ids, {str(healthy.id), str(processing.id)})
+
+    def test_list_notes_multiple_status_with_search(self):
+        matching = Note.objects.create(
+            author=self.user,
+            fleeting=False,
+            content="alpha keyword here",
+            status=NoteStatus.HEALTHY,
+        )
+        Note.objects.create(
+            author=self.user,
+            fleeting=False,
+            content="no match",
+            status=NoteStatus.HEALTHY,
+        )
+        Note.objects.create(
+            author=self.user,
+            fleeting=False,
+            content="alpha elsewhere",
+            status=NoteStatus.PROCESSING,
+        )
+
+        response = self.client.get(
+            reverse("note_list"),
+            {"status": ["healthy", "warning"], "search": "keyword"},
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        ids = {row["id"] for row in response.json()["results"]}
+        self.assertEqual(ids, {str(matching.id)})
+
+    def test_list_notes_single_status_backward_compatible(self):
+        note = Note.objects.create(
+            author=self.user,
+            fleeting=False,
+            content="only",
+            status=NoteStatus.INVALID,
+        )
+        Note.objects.create(
+            author=self.user,
+            fleeting=False,
+            content="other",
+            status=NoteStatus.HEALTHY,
+        )
+
+        response = self.client.get(
+            reverse("note_list"),
+            {"status": "invalid"},
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        ids = {row["id"] for row in response.json()["results"]}
+        self.assertEqual(ids, {str(note.id)})
+
+
+class NoteListTimestampTest(NotesTestCase):
+    def setUp(self):
+        super().setUp()
+        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.user)}"}
+        self.older = Note.objects.create(author=self.user, fleeting=False, content="older")
+        self.newer = Note.objects.create(author=self.user, fleeting=False, content="newer")
+        Note.objects.filter(id=self.older.id).update(timestamp=datetime(2026, 1, 1, tzinfo=dt_timezone.utc))
+        Note.objects.filter(id=self.newer.id).update(timestamp=datetime(2026, 6, 1, tzinfo=dt_timezone.utc))
+
+    def test_results_use_created_at_and_updated_at(self):
+        response = self.client.get(reverse("note_list"), **self.headers)
+
+        self.assertEqual(response.status_code, 200)
+        row = response.json()["results"][0]
+        for key in ("created_at", "updated_at", "status_changed_at", "linked_at"):
+            self.assertIn(key, row)
+        for key in ("timestamp", "edit_timestamp", "status_timestamp", "last_linked"):
+            self.assertNotIn(key, row)
+
+    def test_filter_by_created_at(self):
+        response = self.client.get(reverse("note_list"), {"created_at_gte": "2026-03-01T00:00:00Z"}, **self.headers)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([row["id"] for row in response.json()["results"]], [str(self.newer.id)])
+
+    def test_order_by_created_at(self):
+        response = self.client.get(reverse("note_list"), {"order_by": "created_at"}, **self.headers)
+
+        self.assertEqual(response.status_code, 200)
+        ids = [row["id"] for row in response.json()["results"]]
+        self.assertEqual(ids, [str(self.older.id), str(self.newer.id)])
+
+    def test_order_by_old_field_name_is_rejected(self):
+        response = self.client.get(reverse("note_list"), {"order_by": "-timestamp"}, **self.headers)
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_filter_by_author_username(self):
+        matching = self.client.get(reverse("note_list"), {"author": "use"}, **self.headers)
+        other = self.client.get(reverse("note_list"), {"author": "nobody"}, **self.headers)
+
+        self.assertEqual(len(matching.json()["results"]), 2)
+        self.assertEqual(other.json()["results"], [])

@@ -1,25 +1,31 @@
+"""Celery tasks for note processing: linking, population, metadata, access vectors."""
+
 import json
 import logging
-from collections import defaultdict
 
 from celery import shared_task
-from core.decorators import distributed_lock
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db import close_old_connections
+from django.db import close_old_connections, transaction
+from django.db.models import Count, Q
 from django.utils import timezone
+
+from core.decorators import distributed_lock
+from entries.constants import (
+    INTERNAL_ENTRY_CLASS_DEFAULTS,
+    SUBTYPE_ALIAS,
+    SUBTYPE_FILE,
+    SUBTYPE_NOTE,
+)
 from entries.enums import EntryType, RelationReason
 from entries.exceptions import InvalidEntryException
 from entries.models import Entry, EntryClass, Relation
-from intelio.enums import EnrichmentStrategy
 from management.settings import cradle_settings
 from user.models import CradleUser
 
-from notes.enums import NoteStatus
-from notes.exceptions import EntriesDoNotExistException, EntryClassesDoNotExistException
-from notes.markdown.to_links import Link
-from notes.markdown.to_metadata import infer_metadata
-
+from .enums import NoteStatus
+from .exceptions import EntriesNotFoundException, EntryTypesNotFoundException
+from .markdown.to_metadata import infer_metadata
 from .models import Note
 
 logger = logging.getLogger(__name__)
@@ -27,79 +33,90 @@ logger = logging.getLogger(__name__)
 
 @shared_task
 @distributed_lock("smartlinker_note_{note_id}", timeout=1800)
-def smart_linker_task(note_id):
+def smart_linker_task(note_id, user_id=None):
+    """Create NOTE relations for graph materialization.
+
+    - A canonical ``note`` artifact entry (name = note UUID) is ensured and linked on the note.
+    - That note entry gets NOTE relations only to linked entities (not to other artifacts).
+    - Other artifacts still get NOTE relations to every linked entity (clique), excluding the
+      note hub row to avoid duplicates.
+    - If the note references **no entities**, no NOTE relations are created (artifact-artifact
+      NOTE edges from the legacy reference-tree combinator are intentionally not materialized).
+    """
     from entries.tasks import refresh_edges_materialized_view
-
-    """
-    Celery task to create links between entries for a given note.
-
-    Args:
-        note_id: ID of the Note object to process
-    """
 
     note = Note.objects.get(id=note_id)
 
     try:
-        Relation.objects.filter(note=note, reason=RelationReason.NOTE).delete()
+        note_ct = ContentType.objects.get_for_model(Note)
+        Relation.objects.filter(
+            content_type=note_ct,
+            object_id=note.pk,
+            reason=RelationReason.NOTE,
+        ).delete()
 
-        pairs = note.reference_tree.get_relation_tuples()
-        pairs_resolved = set()
+        note_ec, _ = EntryClass.objects.get_or_create(
+            subtype=SUBTYPE_NOTE,
+            defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_NOTE],
+        )
+        note_entry, _ = Entry.objects.get_or_create(
+            name=str(note.id),
+            entry_class=note_ec,
+        )
+        note.entries.add(note_entry)
 
-        entries = {}
-        for e in note.entries.all():
-            entries[Link(e.entry_class.subtype, e.name)] = e
+        entries_list = list(note.entries.all().select_related("entry_class"))
+        entities = [e for e in entries_list if e.entry_class.type == EntryType.ENTITY]
+        artifacts_other = [
+            e for e in entries_list if e.entry_class.type == EntryType.ARTIFACT and e.id != note_entry.id
+        ]
 
-        # Resolve pairs from reference tree
-        for src, dst in pairs:
-            if src in entries and dst in entries:
-                if (
-                    src.date and dst.date and src.date != dst.date
-                ):  # If both have dates, and they are different, two relations with both dates are created
-                    pairs_resolved.add(
-                        (
-                            entries[src],
-                            entries[dst],
-                            src.virtual or dst.virtual,
-                            dst.date,
-                        )
-                    )
+        now = timezone.now()
+        to_create: list[Relation] = []
+        seen_pairs: set[tuple[int, int]] = set()
 
-                pairs_resolved.add(
-                    (
-                        entries[src],
-                        entries[dst],
-                        src.virtual or dst.virtual,
-                        src.date or dst.date,
-                    )
-                )
-            else:
-                logger.warning(
-                    f"Pair ({src}, {dst}) not found in entries. Skipping this pair."
-                )
-
-        # Bulk create relations
-        Relation.objects.bulk_create(
-            [
+        def append_note_rel(a: Entry, b: Entry) -> None:
+            e1, e2 = (a, b) if a.id < b.id else (b, a)
+            key = (e1.id, e2.id)
+            if key in seen_pairs:
+                return
+            seen_pairs.add(key)
+            to_create.append(
                 Relation(
-                    e1=src,
-                    e2=dst,
+                    e1=e1,
+                    e2=e2,
                     content_object=note,
                     access_vector=note.access_vector,
-                    virtual=virtual,
+                    virtual=False,
                     reason=RelationReason.NOTE,
-                    created_at=date if date else timezone.now(),
-                    last_seen=date if date else timezone.now(),
+                    created_at=now,
+                    last_seen=now,
                 )
-                for src, dst, virtual, date in pairs_resolved
-            ]
-        )
+            )
+
+        for art in artifacts_other:
+            for ent in entities:
+                append_note_rel(art, ent)
+
+        for ent in entities:
+            append_note_rel(note_entry, ent)
+
+        if not entities:
+            logger.info(
+                "smart_linker_task note %s: no entity references; skipping NOTE relation materialization "
+                "(no hub-entity or artifact-entity NOTE edges)",
+                note_id,
+            )
+
+        if to_create:
+            Relation.objects.bulk_create(to_create)
 
         note.last_linked = timezone.now()
         note.save()
 
     finally:
         close_old_connections()
-        refresh_edges_materialized_view.apply_async(simulate=True)
+        refresh_edges_materialized_view.apply_async()
 
     return note_id
 
@@ -107,47 +124,27 @@ def smart_linker_task(note_id):
 @shared_task
 @distributed_lock("link_files_note_{note_id}", timeout=1800)
 def link_files_task(note_id, file_ref_id=None):
-    from entries.tasks import refresh_edges_materialized_view
-
-    """
-    Celery task to create links between entries for a given note.
+    """Link file references in a note to entries (hashes, entities).
 
     Args:
-        note_id: ID of the Note object to process
+        note_id: ID of the Note object to process.
+        file_ref_id: Optional specific file reference ID; if omitted, all files are processed.
     """
+    from entries.tasks import refresh_edges_materialized_view
+
     note = Note.objects.get(id=note_id)
 
     md5_subclass = cradle_settings.files.md5_subtype
     sha256_subclass = cradle_settings.files.sha256_subtype
     sha1_subclass = cradle_settings.files.sha1_subtype
 
-    md5_et, sha256_et, sha1_et = None, None, None
-
-    if (
-        md5_subclass
-        and EntryClass.objects.filter(
-            type=EntryType.ARTIFACT, subtype=md5_subclass
-        ).exists()
-    ):
-        md5_et = EntryClass.objects.get(type=EntryType.ARTIFACT, subtype=md5_subclass)
-
-    if (
-        sha256_subclass
-        and EntryClass.objects.filter(
-            type=EntryType.ARTIFACT, subtype=sha256_subclass
-        ).exists()
-    ):
-        sha256_et = EntryClass.objects.get(
-            type=EntryType.ARTIFACT, subtype=sha256_subclass
-        )
-
-    if (
-        sha1_subclass
-        and EntryClass.objects.filter(
-            type=EntryType.ARTIFACT, subtype=sha1_subclass
-        ).exists()
-    ):
-        sha1_et = EntryClass.objects.get(type=EntryType.ARTIFACT, subtype=sha1_subclass)
+    md5_et = EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=md5_subclass).first() if md5_subclass else None
+    sha256_et = (
+        EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=sha256_subclass).first() if sha256_subclass else None
+    )
+    sha1_et = (
+        EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=sha1_subclass).first() if sha1_subclass else None
+    )
 
     relations = []
     if file_ref_id is None:
@@ -155,17 +152,12 @@ def link_files_task(note_id, file_ref_id=None):
     else:
         file_ref = note.files.filter(id=file_ref_id).first()
         if not file_ref:
-            logger.warning(
-                f"File reference with ID {file_ref_id} not found in note {note_id}."
-            )
+            logger.warning(f"File reference with ID {file_ref_id} not found in note {note_id}.")
             return note_id
 
         files = [file_ref]
 
     for f in files:
-        if cradle_settings.files.autoprocess_files:
-            f.process_file()
-
         note.entries.add(f.entry)
 
         for e in f.entities:
@@ -187,20 +179,24 @@ def link_files_task(note_id, file_ref_id=None):
             hashes.append(entry)
 
         if f.sha256_hash and sha256_et:
-            entry, _ = Entry.objects.get_or_create(
-                name=f.sha256_hash, entry_class=sha256_et
-            )
+            entry, _ = Entry.objects.get_or_create(name=f.sha256_hash, entry_class=sha256_et)
             note.entries.add(entry)
             hashes.append(entry)
 
         if f.sha1_hash and sha1_et:
-            entry, _ = Entry.objects.get_or_create(
-                name=f.sha1_hash, entry_class=sha1_et
-            )
+            entry, _ = Entry.objects.get_or_create(name=f.sha1_hash, entry_class=sha1_et)
             note.entries.add(entry)
             hashes.append(entry)
 
         for h in hashes:
+            if not Relation.includes_entity(h, f.entry):
+                logger.warning(
+                    "Skipping hash-file artifact-artifact relation for note %s (entries %s, %s)",
+                    note_id,
+                    h.id,
+                    f.entry.id,
+                )
+                continue
             relations.append(
                 Relation(
                     e1=h,
@@ -219,179 +215,172 @@ def link_files_task(note_id, file_ref_id=None):
     return note_id
 
 
-@shared_task(
-    autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=60, max_retries=1
-)
+@shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=60, max_retries=1)
 def entry_class_creation_task(note_id, user_id=None):
-    """
-    Celery task to create missing entry classes for a note.
+    """Create missing entry classes referenced by a note.
+
+    Args:
+        note_id: ID of the Note object to process.
+        user_id: ID of the user performing the action (optional, for logging).
     """
     note = Note.objects.get(id=note_id)
     if user_id:
         user = CradleUser.objects.get(id=user_id)
 
-    virtual_class = EntryClass.objects.filter(subtype="virtual")
-
-    if not virtual_class.exists():  # If alias type does not exist, create it
-        virtual_class = EntryClass.objects.create(
-            type=EntryType.ARTIFACT,
-            subtype="virtual",
-            color="#7f8389",
-        )
-
-    file_class = EntryClass.objects.filter(subtype="file")
-
-    if not file_class.exists():  # If alias type does not exist, create it
-        file_class = EntryClass.objects.create(
-            type=EntryType.ARTIFACT,
-            subtype="file",
-            color="#7f8389",
-        )
+    EntryClass.objects.get_or_create(subtype=SUBTYPE_NOTE, defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_NOTE])
+    EntryClass.objects.get_or_create(subtype=SUBTYPE_FILE, defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_FILE])
 
     try:
-        nonexistent_entries = set()
+        unique_subtypes = {r.key for r in note.reference_tree.all_links()}
+        existing = set(EntryClass.objects.filter(subtype__in=unique_subtypes).values_list("subtype", flat=True))
+        missing = unique_subtypes - existing
 
-        for r in note.reference_tree.all_links():
-            if not EntryClass.objects.filter(subtype=r.key).exists():
-                if not cradle_settings.notes.allow_dynamic_entry_class_creation:
-                    nonexistent_entries.add(r.key)
-                else:
-                    entry = EntryClass.objects.create(
-                        type=EntryType.ARTIFACT, subtype=r.key
-                    )
-                    if user_id:
-                        entry.log_create(user)
+        nonexistent_subtypes = set()
+        for subtype in missing:
+            if not cradle_settings.notes.allow_dynamic_entry_class_creation:
+                nonexistent_subtypes.add(subtype)
+            else:
+                entry = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype=subtype)
+                if user_id:
+                    entry.log_create(user)
 
-        if nonexistent_entries:
-            raise EntryClassesDoNotExistException(nonexistent_entries)
-    except EntryClassesDoNotExistException as e:
+        if nonexistent_subtypes:
+            raise EntryTypesNotFoundException(nonexistent_subtypes)
+    except EntryTypesNotFoundException as e:
         note.set_status(NoteStatus.INVALID, e.detail)
         note.save()
 
         raise e
 
 
-@shared_task(
-    autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3
-)
-def entry_population_task(note_id, user_id=None, force_contains_check=False):
-    """
-    Celery task to create missing entries for a note.
+@shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3)
+@distributed_lock("entry_population_note_{note_id}", timeout=1800)
+def entry_population_task(note_id, user_id=None):
+    """Create missing entries for a note from its reference tree.
+
+    Args:
+        note_id: ID of the Note object to process.
+        user_id: ID of the user performing the action (optional, for logging).
     """
     from entries.tasks import scan_for_children
-    from intelio.tasks import enrich_entries
 
     note = Note.objects.get(id=note_id)
     if user_id:
         user = CradleUser.objects.get(id=user_id)
 
-    note.entries.clear()
-
     try:
-        entries = []
-        for r in note.reference_tree.all_links():
-            entry = Entry.objects.filter(name=r.value, entry_class__subtype=r.key)
-            if not entry.exists():
-                try:
-                    entry_class = EntryClass.objects.get(subtype=r.key)
-                except EntryClass.DoesNotExist:
-                    logging.warning(
-                        f"Entry class {r.key} does not exist. Skipping entry creation."
-                    )
-                    continue
+        with transaction.atomic():
+            note.entries.clear()
 
-                if entry_class.type == EntryType.ARTIFACT:
+            links = list(note.reference_tree.all_links())
+            unique_keys = {(r.key, r.value) for r in links}
+
+            # Batch fetch existing entries
+            if unique_keys:
+                entry_conditions = Q()
+                for key, value in unique_keys:
+                    entry_conditions |= Q(entry_class__subtype=key, name=value)
+                existing = {
+                    (e.entry_class.subtype, e.name): e
+                    for e in Entry.objects.filter(entry_conditions).select_related("entry_class")
+                }
+                entry_classes = {
+                    ec.subtype: ec for ec in EntryClass.objects.filter(subtype__in={k for k, _ in unique_keys})
+                }
+            else:
+                existing = {}
+                entry_classes = {}
+
+            entries = []
+            entries_to_add = []
+            for r in links:
+                key = (r.key, r.value)
+                if key in existing:
+                    entries_to_add.append(existing[key])
+                    continue
+                ec = entry_classes.get(r.key)
+                if not ec:
+                    if cradle_settings.notes.allow_dynamic_entry_class_creation:
+                        continue
+                    logger.warning(f"Entry class {r.key} does not exist. Skipping entry creation.")
+                    continue
+                if ec.type == EntryType.ENTITY:
+                    raise EntriesNotFoundException([r])
+                if ec.type == EntryType.ARTIFACT:
                     try:
-                        entries.append(Entry(name=r.value, entry_class=entry_class))
+                        entries.append(Entry(name=r.value, entry_class=ec))
                     except InvalidEntryException as e:
                         note.set_status(
                             NoteStatus.INVALID,
-                            note.status_message + e.detail.strip() + "\n",
+                            (note.status_message or "") + e.detail.strip() + "\n",
                         )
                         note.save()
-
                         logger.warning(e.detail)
-                else:
-                    raise EntriesDoNotExistException([r])
-            else:
-                entry = entry.first()
-                note.entries.add(entry)
 
-        new_objs = Entry.objects.bulk_create(entries, ignore_conflicts=True)
+            Entry.objects.bulk_create(entries, ignore_conflicts=True)
+            objs = []
+            if entries:
+                keys = [(e.name, e.entry_class_id) for e in entries]
+                conditions = Q()
+                for n, ec in keys:
+                    conditions |= Q(name=n, entry_class_id=ec)
+                fetched = {(e.name, e.entry_class_id): e for e in Entry.objects.filter(conditions)}
+                for entry in entries:
+                    key = (entry.name, entry.entry_class_id)
+                    if key in fetched:
+                        objs.append(fetched[key])
+                    else:
+                        obj, _ = Entry.objects.get_or_create(
+                            name=entry.name,
+                            entry_class__subtype=entry.entry_class.subtype,
+                            defaults={"entry_class": entry.entry_class},
+                        )
+                        objs.append(obj)
 
-        objs = [None] * len(new_objs)
-        for i, e in enumerate(new_objs):
-            # print(e.name, e.entry_class.subtype)
-            if e.id is None:
-                objs[i], _ = Entry.objects.get_or_create(
-                    name=e.name, entry_class__subtype=e.entry_class.subtype
-                )
-            else:
-                objs[i] = e
+            note.entries.add(*(entries_to_add + objs))
 
-        note.entries.add(*objs)
-
-        childscan = []
-        enrich = defaultdict(list)
-        for entry in objs:
             content_type = ContentType.objects.get_for_model(note)
+            entry_class_ids = [e.entry_class_id for e in objs]
+            ec_with_children = set(
+                EntryClass.objects.filter(pk__in=entry_class_ids)
+                .annotate(child_count=Count("children"))
+                .filter(child_count__gt=0)
+                .values_list("pk", flat=True)
+            )
+            childscan = [e.id for e in objs if e.entry_class_id in ec_with_children]
 
-            if entry.entry_class.children.count() > 0:
-                childscan.append(entry.id)
+            for entry in objs:
+                if user_id:
+                    entry.save()
+                    entry.log_create(user)
 
-        for entry in objs:
-            if entry is None:
-                continue
+            if childscan:
+                scan_for_children.delay(childscan, content_type.id, note.id)
 
-            for e in entry.entry_class.enrichers.filter(
-                strategy=EnrichmentStrategy.ON_CREATE, enabled=True
-            ):
-                enrich[e.id].append(entry.id)
-
-            if user_id:
-                entry.save()
-                entry.log_create(user)  # Pass user_id for logging
-
-        if len(childscan):
-            scan_for_children.delay(childscan, content_type.id, note.id)
-
-        if len(enrich):
-            for k, v in enrich:
-                enrich_entries.delay(k, v, content_type.id, note.id)
-
-        note.save()
-    except EntriesDoNotExistException as e:
+            note.save()
+    except EntriesNotFoundException as e:
         note.set_status(NoteStatus.INVALID, e.detail)
         note.save()
 
         raise e
 
 
-@shared_task(
-    autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3
-)
+@shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3)
 def connect_aliases(note_id, user_id=None):
-    """
-    Celery task to connect aliases in a note
+    """Create alias entries and relations from note reference tree.
+
+    Args:
+        note_id: ID of the Note object to process.
+        user_id: ID of the user performing the action (optional, for logging).
     """
     from entries.tasks import refresh_edges_materialized_view
 
-    alias_class = EntryClass.objects.filter(subtype="alias")
-
-    if not alias_class.exists():  # If alias type does not exist, create it
-        alias_class = EntryClass.objects.create(
-            type=EntryType.ARTIFACT,
-            subtype="alias",
-            color="#7f8389",
-        )
+    alias_class, _ = EntryClass.objects.get_or_create(
+        subtype=SUBTYPE_ALIAS, defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_ALIAS]
+    )
 
     note = Note.objects.get(id=note_id)
-
-    if user_id:
-        user = CradleUser.objects.get(id=user_id)
-    else:
-        user = None
-
+    user = CradleUser.objects.get(id=user_id) if user_id else None
     aliases = {}
 
     for r in note.reference_tree.all_links():
@@ -402,22 +391,37 @@ def connect_aliases(note_id, user_id=None):
 
         aliases[r.alias].add((r.key, r.value))
 
+    # Batch fetch all entries needed for alias relations
+    all_subtype_name = [(s, n) for entries in aliases.values() for s, n in entries]
+    if all_subtype_name:
+        entry_conditions = Q()
+        for subtype, name in all_subtype_name:
+            entry_conditions |= Q(entry_class__subtype=subtype, name=name)
+        entry_map = {
+            (e.entry_class.subtype, e.name): e
+            for e in Entry.objects.filter(entry_conditions).select_related("entry_class")
+        }
+    else:
+        entry_map = {}
+
     for aname, entries in aliases.items():
-        if len(entries) == 0:
+        if not entries:
             continue
 
-        alias, created = Entry.objects.get_or_create(name=aname, entry_class_id="alias")
+        alias, created = Entry.objects.get_or_create(name=aname, entry_class=alias_class)
 
         if created and user:
             alias.log_create(user)
 
         note.entries.add(alias)
 
-        subtypes, names = zip(*entries)
         relations = []
-
         for subtype, name in entries:
-            e = Entry.objects.get(name=name, entry_class__subtype=subtype)
+            e = entry_map.get((subtype, name))
+            if e is None:
+                continue
+            if not Relation.includes_entity(e, alias):
+                continue
             relations.append(
                 Relation(
                     e1=e,
@@ -429,24 +433,25 @@ def connect_aliases(note_id, user_id=None):
                 )
             )
 
-        refresh_edges_materialized_view.apply_async()
+        if relations:
+            Relation.objects.bulk_create(relations)
 
-        Relation.objects.bulk_create(relations)
+    refresh_edges_materialized_view.apply_async()
 
 
 @shared_task
 @distributed_lock("propagate_acvec_{note_id}", timeout=3600)
 def propagate_acvec(note_id):
+    """Propagate note's access vector to all its relations."""
     note = Note.objects.get(id=note_id)
-
     return note.relations.update(access_vector=note.access_vector)
 
 
 @shared_task
 @distributed_lock("finalize_note_{note_id}", timeout=1800)
 def note_finalize_task(note_id):
+    """Mark note as healthy when processing is complete."""
     note = Note.objects.get(id=note_id)
-
     if note.status == NoteStatus.PROCESSING:
         note.set_status(NoteStatus.HEALTHY)
         note.save()
@@ -455,6 +460,7 @@ def note_finalize_task(note_id):
 @shared_task
 @distributed_lock("metadata_process_{note_id}", timeout=1800)
 def note_metadata_process_task(note_id):
+    """Extract and apply metadata (title, description) from note frontmatter."""
     note = Note.objects.get(id=note_id)
 
     offset, metadata = infer_metadata(note.content)
@@ -476,7 +482,7 @@ def note_metadata_process_task(note_id):
     note.content_offset = offset
     note.metadata = json.loads(json.dumps(metadata, cls=DjangoJSONEncoder))
 
-    if note.title is None or len(note.title.strip()) == 0:
+    if not (note.title or "").strip():
         note.set_status(NoteStatus.WARNING, "Note title is empty.")
 
     note.save()

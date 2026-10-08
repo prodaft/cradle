@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cradle-enricher-urlscan"
+version = "0.0.0"
+description = "CRADLE Docker enricher: urlscan.io"
+requires-python = ">=3.14"
+dependencies = [
+    "requests>=2.32,<3",
+]
+
+[tool.setuptools]
+packages = []

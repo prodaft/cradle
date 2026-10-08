@@ -1,36 +1,29 @@
 # vi: ft=dockerfile
 
-FROM node:23-alpine3.20
+FROM oven/bun:1-alpine AS builder
 
-RUN apk update
-RUN apk add nginx
-
-RUN adduser -D -g 'www' www
-
-RUN mkdir /www
-RUN chown -R www:www /var/lib/nginx
-RUN chown -R www:www /www
-
-# Copy application source code
-COPY ./ui ui
 WORKDIR /ui
 
-RUN npm install
+COPY ./ui/package.json ./ui/bun.lock ./ui/bunfig.toml ./
+RUN bun install --frozen-lockfile
 
-RUN mkdir -p /www
-RUN cd /ui
+COPY ./ui ./
 
-ENV VITE_API_BASE_URL="http://localhost:8000/api"
-RUN npm run build-web
+ARG GIT_BRANCH=""
+ARG GIT_COMMIT=""
+ARG VITE_API_BASE_URL="/api"
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+RUN bun run build
 
-RUN rm -rf /www/cradle
-RUN cp -r dist /cradle
-RUN chown -R www:www /www
+FROM alpine:3.23
 
-WORKDIR /
-RUN rm -rf /ui
+RUN apk add --no-cache nginx \
+    && adduser -D -g 'www' www \
+    && mkdir -p /www \
+    && chown -R www:www /var/lib/nginx
 
-COPY ./docker/entrypoint_ui.sh entrypoint_ui.sh
-RUN chmod +x ./entrypoint_ui.sh
+COPY --from=builder /ui/dist/client /cradle
 
-CMD ./entrypoint_ui.sh
+COPY --chmod=755 ./docker/entrypoint_ui.sh /entrypoint_ui.sh
+
+CMD ["/entrypoint_ui.sh"]

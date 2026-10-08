@@ -2,5 +2,6 @@ from django.apps import AppConfig
 
 
 class LspConfig(AppConfig):
-    default_auto_field = "django.db.models.BigAutoField"
+    """App providing LSP endpoints for type definitions and completion trie."""
+
     name = "lsp"

@@ -1,6 +1,9 @@
+"""Django app config for the mail module."""
+
 from django.apps import AppConfig
 
 
 class MailConfig(AppConfig):
-    default_auto_field = "django.db.models.BigAutoField"
+    """App config for transactional email (password reset, confirmations, access requests, reports, enrichments)."""
+
     name = "mail"

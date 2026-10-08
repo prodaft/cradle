@@ -1,35 +1,40 @@
-from io import BytesIO
+import logging
 from typing import List
 
-from file_transfer.models import FileReference
+from django.core.files.base import ContentFile
+
 from notes.models import Note
-from publish.models import PublishedReport, ReportStatus
-from publish.strategies.base import BasePublishStrategy
-from file_transfer.utils import MinioClient
+
+from ..models import PublishedReport, ReportStatus
+from .base import BasePublishStrategy
+
+logger = logging.getLogger(__name__)
 
 
 class PlaintextPublish(BasePublishStrategy):
-    """
-    A publishing strategy that generates a plaintext report from a list of notes.
-    """
+    """A publishing strategy that generates a plaintext report from a list of notes."""
 
     content_type = "text/plain"
 
     def create_report(self, report: PublishedReport) -> bool:
+        """Build plaintext report and upload to S3."""
         text_content = self._build_text(report.title, report.notes.all())
         return self._upload_text(text_content, report)
 
     def edit_report(self, report: PublishedReport) -> bool:
+        """Rebuild plaintext report and re-upload to S3."""
         text_content = self._build_text(report.title, report.notes.all())
         return self._upload_text(text_content, report)
 
     def delete_report(self, report: PublishedReport) -> bool:
-        bucket_name = str(report.user.id)
-        client = MinioClient().client
+        """Delete the plaintext report file from S3."""
         try:
-            client.remove_object(bucket_name, f"{report.id}.txt")
+            # Delete file from S3 via FileField
+            if report.file:
+                report.file.delete(save=False)
         except Exception:
-            report.error_message = "Failed to delete plaintext report."
+            logger.exception("Failed to delete plaintext report.")
+            report.error_message = "The published report file could not be removed."
             report.status = ReportStatus.ERROR
             report.save()
             return False
@@ -37,6 +42,7 @@ class PlaintextPublish(BasePublishStrategy):
         return True
 
     def _build_text(self, title: str, notes: List[Note]) -> str:
+        """Concatenate note contents with separators."""
         contents = []
         for note in notes:
             anonymized_note = self._anonymize_note(note)
@@ -45,27 +51,18 @@ class PlaintextPublish(BasePublishStrategy):
         notes_text = separator.join(contents)
         return f"{title}\n\n{notes_text}"
 
-    def _upload_text(self, text: dict, report: PublishedReport) -> bool:
-        client = MinioClient().client
-        data = BytesIO(text.encode("utf-8"))
-        bucket_name = str(report.user.id)
-        size = len(text)
-        content_type = "text/plain"
-        file_name = f"{report.id}.txt"
-
+    def _upload_text(self, text: str, report: PublishedReport) -> bool:
+        """Save plaintext to S3 via report.file; returns False on failure."""
         try:
-            client.put_object(
-                bucket_name, file_name, data, size, content_type=content_type
-            )
-            FileReference.objects.filter(report=report).delete()
-            FileReference.objects.create(
-                minio_file_name=file_name,
-                file_name=file_name,
-                bucket_name=bucket_name,
-                report=report,
-            )
+            # Delete old file if exists
+            if report.file:
+                report.file.delete(save=False)
+
+            # Save plaintext content to FileField - Django handles S3 upload
+            report.file.save(f"{report.id}.txt", ContentFile(text.encode("utf-8")), save=True)
         except Exception:
-            report.error_message = "Failed to upload plaintext report."
+            logger.exception("Failed to upload plaintext report.")
+            report.error_message = "The report could not be saved. Please try again."
             report.status = ReportStatus.ERROR
             report.save()
             return False

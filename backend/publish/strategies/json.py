@@ -1,39 +1,45 @@
 import json
-from io import BytesIO
+import logging
 from datetime import timedelta
 from typing import List
 
-from file_transfer.models import FileReference
-from notes.models import Note
-from publish.models import PublishedReport, ReportStatus
-from publish.strategies.base import BasePublishStrategy
-from file_transfer.utils import MinioClient
+from django.core.files.base import ContentFile
 
 from entries.serializers import EntryClassSerializer, EntryPublishSerializer
+from file_transfer.s3_utils import presign_get
+from file_transfer.storage import FileTransferStorage
+from notes.models import Note
+
+from ..models import PublishedReport, ReportStatus
+from .base import BasePublishStrategy
+
+logger = logging.getLogger(__name__)
 
 
 class JSONPublish(BasePublishStrategy):
-    """
-    A publishing strategy that generates a JSON report from a list of notes.
-    """
+    """A publishing strategy that generates a JSON report from a list of notes."""
 
     content_type = "application/json"
 
     def create_report(self, report: PublishedReport) -> bool:
+        """Build JSON report and upload to S3."""
         content = self._build_report(report.title, report.notes.all())
         return self._upload_report(content, report)
 
     def edit_report(self, report: PublishedReport) -> bool:
+        """Rebuild JSON report and re-upload to S3."""
         content = self._build_report(report.title, report.notes.all())
         return self._upload_report(content, report)
 
     def delete_report(self, report: PublishedReport) -> bool:
-        bucket_name = str(report.user.id)
-        client = MinioClient().client
+        """Delete the JSON report file from S3."""
         try:
-            client.remove_object(bucket_name, f"{report.id}.json")
+            # Delete file from S3 via FileField
+            if report.file:
+                report.file.delete(save=False)
         except Exception:
-            report.error_message = "Failed to delete JSON report."
+            logger.exception("Failed to delete JSON report.")
+            report.error_message = "The published report file could not be removed."
             report.status = ReportStatus.ERROR
             report.save()
             return False
@@ -41,6 +47,7 @@ class JSONPublish(BasePublishStrategy):
         return True
 
     def _build_report(self, title: str, notes: List[Note]) -> dict:
+        """Build JSON report structure with notes, entries, and entry classes."""
         report = {
             "title": title,
             "notes": [],
@@ -62,14 +69,27 @@ class JSONPublish(BasePublishStrategy):
                 linked_entries_set.add(self._anonymize_entry(entry))
 
             for file_ref in files.all():
+                # Backward-compatible: markdown keys may reference legacy minio_file_name,
+                # while actual objects are now stored under file_ref.file.name.
+                if not file_ref.file:
+                    continue
+
+                key_candidates = [file_ref.file.name]
+                if file_ref.minio_file_name:
+                    key_candidates.insert(0, file_ref.minio_file_name)
+
                 try:
-                    url = MinioClient().create_presigned_get(
-                        file_ref.bucket_name,
-                        file_ref.minio_file_name,
-                        timedelta(days=7),
+                    url = presign_get(
+                        FileTransferStorage.bucket_name,
+                        file_ref.file.name,
+                        expires_in=int(timedelta(days=7).total_seconds()),
+                        response_content_type="application/octet-stream",
+                        response_content_disposition=f'attachment; filename="{file_ref.file_name or "file"}"',
                     )
-                    note_data["file_urls"][file_ref.minio_file_name] = url
-                except Exception:
+                    for k in key_candidates:
+                        note_data["file_urls"][k] = url
+                except Exception as e:
+                    logger.debug("Failed to presign file %s: %s", file_ref.file.name, e)
                     continue
 
             report["notes"].append(note_data)
@@ -84,27 +104,19 @@ class JSONPublish(BasePublishStrategy):
         return report
 
     def _upload_report(self, content: dict, report: PublishedReport) -> bool:
+        """Save JSON to S3 via report.file; returns False on failure."""
         report_json = json.dumps(content)
-        bucket_name = str(report.user.id)
-        client = MinioClient().client
-        data = BytesIO(report_json.encode("utf-8"))
-        size = len(report_json)
-        content_type = "application/json"
-        file_name = f"{report.id}.json"
 
         try:
-            client.put_object(
-                bucket_name, file_name, data, size, content_type=content_type
-            )
-            FileReference.objects.filter(report=report).delete()
-            FileReference.objects.create(
-                minio_file_name=file_name,
-                file_name=file_name,
-                bucket_name=bucket_name,
-                report=report,
-            )
+            # Delete old file if exists
+            if report.file:
+                report.file.delete(save=False)
+
+            # Save JSON content to FileField - Django handles S3 upload
+            report.file.save(f"{report.id}.json", ContentFile(report_json.encode("utf-8")), save=True)
         except Exception:
-            report.error_message = "Failed to upload JSON report."
+            logger.exception("Failed to upload JSON report.")
+            report.error_message = "The report could not be saved. Please try again."
             report.status = ReportStatus.ERROR
             report.save()
             return False
