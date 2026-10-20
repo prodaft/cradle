@@ -4,6 +4,7 @@ import logging
 import uuid
 
 from celery import group, shared_task
+from django.utils import timezone
 
 from entries.constants import INTERNAL_ENTRY_CLASS_DEFAULTS, SUBTYPE_DIGEST, SUBTYPE_ENRICHMENT
 from entries.models import EntryClass
@@ -40,7 +41,14 @@ def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
     request = EnrichmentRequest.objects.get(id=request_id)
     enricher_settings = EnricherSettings.objects.get(id=enricher_id)
 
-    entries = request.entries(set(enricher_settings.for_eclasses.all().values_list("subtype", flat=True)))
+    label = BaseEnricher.display_label_for_type(enricher_settings.enricher_type)
+    try:
+        entries = request.entries(set(enricher_settings.for_eclasses.all().values_list("subtype", flat=True)))
+    except EntryClass.DoesNotExist:
+        request.fail_enricher(
+            enricher_settings.enricher_type, f"{label}: the artifact's entry type is no longer available."
+        )
+        return
 
     try:
         run_enricher_container(
@@ -50,16 +58,14 @@ def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
             request=request,
         )
     except Exception as exc:
-        label = BaseEnricher.display_label_for_type(enricher_settings.enricher_type)
         logger.exception("Enrichment run failed (%s)", enricher_settings.enricher_type)
         error_message = f"{label} could not finish. Please try again."
         if any(x.__class__.__name__ == "ImageNotFound" for x in _exception_chain(exc)):
             error_message = f"{label}: Docker image is missing."
-        request._set_enricher_status(enricher_settings.enricher_type, EnrichmentStatus.ERROR)
-        request._append_error(error_message, enricher_settings.enricher_type)
+        request.fail_enricher(enricher_settings.enricher_type, error_message)
         return
 
-    request._set_enricher_status(enricher_settings.enricher_type, EnrichmentStatus.DONE)
+    request.set_enricher_status(enricher_settings.enricher_type, EnrichmentStatus.DONE)
 
     refresh_edges_materialized_view.apply_async()
     return
@@ -81,9 +87,15 @@ def start_enrich(enrich_id):
         subtype=SUBTYPE_ENRICHMENT, defaults=INTERNAL_ENTRY_CLASS_DEFAULTS[SUBTYPE_ENRICHMENT]
     )
     request = EnrichmentRequest.objects.get(id=enrich_id)
-    tasks = []
-    for enricher in request.enrichers:
-        tasks.append(run_enricher.si(enricher.id, request.id))
+    tasks = [
+        run_enricher.si(settings_id, request.id)
+        for settings_id in request.enrichers_settings.values_list("id", flat=True)
+    ]
+    if not tasks:
+        request.status = EnrichmentStatus.ERROR
+        request.completed_at = timezone.now()
+        request.save(update_fields=["status", "completed_at"])
+        return
 
     group(*tasks).apply_async()
 

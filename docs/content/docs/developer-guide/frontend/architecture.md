@@ -17,7 +17,7 @@ After building the app, a `dist` folder is generated with bundled files.
 - `src`: application source code.
 - `.env`: environment variables (see Vite docs).
 - Config files: `vite.config.ts`, `tsconfig.json`, and `eslint.config.mjs`.
-- Tooling configs: `tailwind.config.ts`, `postcss.config.ts`, `eslint.config.mjs`.
+- Tailwind v4 is configured in CSS (`styles/globals.css`) and loaded through `@tailwindcss/vite`.
 
 ### Inside src
 

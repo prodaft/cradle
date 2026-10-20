@@ -5,12 +5,15 @@ Provides base classes and concrete implementations for transactional emails
 """
 
 import abc
+import logging
 from typing import Any, Dict, Optional
 
 from django.conf import settings
 from django.template.loader import render_to_string
 
 from .tasks import send_email_task
+
+logger = logging.getLogger(__name__)
 
 
 class Mail(abc.ABC):
@@ -34,6 +37,15 @@ class Mail(abc.ABC):
 
     @abc.abstractmethod
     def dispatch(self) -> None: ...
+
+    def dispatch_safely(self) -> bool:
+        """Queue the email; on a broker error log it and return False instead of failing the caller."""
+        try:
+            self.dispatch()
+        except Exception:
+            logger.exception("Could not queue %s", type(self).__name__)
+            return False
+        return True
 
     def _dispatch_celery(self, recipient: str) -> None:
         """Queue email via Celery task."""

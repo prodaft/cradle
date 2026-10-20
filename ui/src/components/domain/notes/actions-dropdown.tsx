@@ -13,18 +13,19 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
     ArrowClockwiseIcon,
     ArrowsLeftRightIcon,
-    ChartBarIcon,
     CheckIcon,
     ClockCounterClockwiseIcon,
     CloudArrowUpIcon,
     CodeIcon,
     CubeIcon,
     DotsThreeVerticalIcon,
+    ExportIcon,
+    EyeSlashIcon,
     FileTextIcon,
-    FloppyDiskIcon,
     GraphIcon,
     LightbulbIcon,
     MagnifyingGlassIcon,
+    PaperPlaneTiltIcon,
     SparkleIcon,
     TrashIcon,
     TreeViewIcon,
@@ -45,10 +46,12 @@ interface ActionsDropdownProps {
     relink: () => void;
     isFleeting: boolean;
     hasFiles: boolean;
-    finalize: () => void;
-    isSaving: boolean;
     publish: () => void;
+    isSaving: boolean;
+    exportReport: () => void;
     confirmDelete: () => void;
+    canUnpublish: boolean;
+    confirmUnpublish: () => void;
     isWritable: boolean;
     openUpload: () => void;
     find: () => void;
@@ -73,10 +76,12 @@ export default function ActionsDropdown({
     relink,
     isFleeting,
     hasFiles,
-    finalize,
-    isSaving,
     publish,
+    isSaving,
+    exportReport,
     confirmDelete,
+    canUnpublish,
+    confirmUnpublish,
     isWritable,
     openUpload,
     find,
@@ -255,12 +260,24 @@ export default function ActionsDropdown({
                     <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                            onClick={finalize}
-                            data-testid='save-as-final-menu-item'
+                            onClick={publish}
+                            data-testid='publish-menu-item'
                         >
-                            <FloppyDiskIcon size={16} weight='bold' />
-                            <span className='flex-1'>Save As Final</span>
+                            <PaperPlaneTiltIcon size={16} weight='bold' />
+                            <span className='flex-1'>Publish</span>
                             {isSaving && <Spinner />}
+                        </DropdownMenuItem>
+                    </>
+                )}
+                {canUnpublish && (
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={confirmUnpublish}
+                            data-testid='unpublish-menu-item'
+                        >
+                            <EyeSlashIcon size={16} weight='bold' />
+                            <span className='flex-1'>Unpublish</span>
                         </DropdownMenuItem>
                     </>
                 )}
@@ -271,14 +288,14 @@ export default function ActionsDropdown({
                             data-testid='enrich-data-menu-item'
                         >
                             <SparkleIcon size={16} weight='bold' />
-                            <span className='flex-1'>Enrich Artifacts</span>
+                            <span className='flex-1'>Enrich</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            onClick={publish}
-                            data-testid='publish-menu-item'
+                            onClick={exportReport}
+                            data-testid='export-menu-item'
                         >
-                            <ChartBarIcon size={16} weight='bold' />
-                            <span className='flex-1'>Publish</span>
+                            <ExportIcon size={16} weight='bold' />
+                            <span className='flex-1'>Export</span>
                         </DropdownMenuItem>
                     </>
                 )}

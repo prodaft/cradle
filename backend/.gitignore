@@ -1,8 +1,5 @@
-db.sqlite3
-.vscode
 .coverage
-reports
 exceptions.log
-.idea
 /static
 **/__pycache__
+*.egg-info/

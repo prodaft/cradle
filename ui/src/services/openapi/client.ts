@@ -2,26 +2,21 @@ import { SessionExpiredException } from '@services/openapi/auth-exceptions';
 import createFetchClient from 'openapi-fetch';
 import createClient from 'openapi-react-query';
 import type { paths } from './schema';
+import { getCsrfToken } from './session-storage';
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? '';
 
 const AUTH_PATHS = [
-    '/auth/login',
-    '/auth/oauth/login',
-    '/auth/refresh',
-    '/auth/logout',
-    '/auth/reset-password',
-    '/auth/email-confirm',
-    '/auth/signup',
-    '/auth/config',
-];
-
-function getCsrfToken(): string | null {
-    if (typeof document === 'undefined') return null;
-    const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
-    const raw = match?.[1];
-    return raw === undefined ? null : decodeURIComponent(raw);
-}
+    '/auth/login/',
+    '/auth/oauth/login/',
+    '/auth/refresh/',
+    '/auth/logout/',
+    '/auth/password/reset/',
+    '/auth/password/reset/confirm/',
+    '/auth/email/confirm/',
+    '/auth/signup/',
+    '/auth/config/',
+] as const satisfies readonly (keyof paths)[];
 
 type EnsureSessionFn = () => Promise<void>;
 type RefreshSessionFn = () => Promise<boolean>;

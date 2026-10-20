@@ -6,6 +6,7 @@ import {
     DockPanelTabProvider,
     type DockPanelTabIcon,
 } from '@/components/layout/dock-panel-tab-context';
+import NavbarBreadcrumb from '@/components/layout/navbar/navbar-breadcrumb';
 import { Button } from '@/components/ui/button';
 import {
     ContextMenu,
@@ -62,25 +63,17 @@ import {
     Settings,
     Sparkles,
     Users,
+    UsersRound,
     Wrench,
     X,
     type LucideIcon,
 } from 'lucide-react';
-import React, {
-    createContext,
-    Suspense,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import '@styles/dockview.css';
 import 'dockview-react/dist/styles/dockview.css';
 
-export type AppRouteTabParams = {
+type AppRouteTabParams = {
     href: string;
     tabTitle?: string;
     tabIcon?: DockPanelTabIcon | null;
@@ -101,6 +94,7 @@ const TAB_ICONS: Record<DockPanelTabIcon, LucideIcon> = {
     'manage-entities': Building2,
     'manage-entry-types': Layers,
     'manage-settings': Wrench,
+    'manage-teams': UsersRound,
     'manage-type-mappings': Link2,
     'manage-users': Users,
     'knowledge-graph': Network,
@@ -536,6 +530,7 @@ const RoutePanel: React.FunctionComponent<IDockviewPanelProps<AppRouteTabParams>
                             outerRouter={outerRouter}
                             panelApi={props.api}
                         />
+                        <NavbarBreadcrumb title={props.params.tabTitle ?? ''} />
                         <Suspense fallback={<PageLoader fill='container' />}>
                             <Matches />
                         </Suspense>
@@ -723,16 +718,6 @@ function DockviewGroupHeaderActions(props: IDockviewHeaderActionsProps) {
     );
 }
 
-export interface AppDockviewContextValue {
-    api: DockviewApi | null;
-}
-
-const AppDockviewContext = createContext<AppDockviewContextValue>({ api: null });
-
-export function useAppDockview(): AppDockviewContextValue {
-    return useContext(AppDockviewContext);
-}
-
 export function AppDockviewShell(): React.JSX.Element {
     const router = useRouter();
     const location = useLocation();
@@ -746,8 +731,6 @@ export function AppDockviewShell(): React.JSX.Element {
     }, [dockApi]);
 
     const theme: DockviewTheme = isDarkMode ? themeDark : themeLight;
-
-    const contextValue = useMemo(() => ({ api: dockApi }), [dockApi]);
 
     const navigateOuterToPanelHref = useCallback(
         (href: string) => {
@@ -887,16 +870,14 @@ export function AppDockviewShell(): React.JSX.Element {
     }, [dockApi, router]);
 
     return (
-        <AppDockviewContext.Provider value={contextValue}>
-            <DockviewReact
-                className='cradle-dockview absolute inset-0 h-full w-full min-h-0'
-                theme={theme}
-                defaultRenderer='always'
-                components={components}
-                defaultTabComponent={AppDockviewTab}
-                onReady={onReady}
-                rightHeaderActionsComponent={DockviewGroupHeaderActions}
-            />
-        </AppDockviewContext.Provider>
+        <DockviewReact
+            className='cradle-dockview absolute inset-0 h-full w-full min-h-0'
+            theme={theme}
+            defaultRenderer='always'
+            components={components}
+            defaultTabComponent={AppDockviewTab}
+            onReady={onReady}
+            rightHeaderActionsComponent={DockviewGroupHeaderActions}
+        />
     );
 }

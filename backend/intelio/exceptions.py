@@ -18,6 +18,11 @@ class IntelIOErrorCodes(ErrorCode):
         "Enrichment Not Found",
         "enrichment-not-found",
     )
+    ENRICHMENT_RUNNING = (
+        status.HTTP_409_CONFLICT,
+        "Enrichment Running",
+        "enrichment-running",
+    )
     ENRICHMENT_OPTION_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
         "Enrichment Option Not Found",
@@ -28,14 +33,13 @@ class IntelIOErrorCodes(ErrorCode):
         "Digest Not Found",
         "digest-not-found",
     )
-    MISSING_FILE = (status.HTTP_400_BAD_REQUEST, "Missing File", "missing-file")
     UNKNOWN_MAPPING = (
-        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_404_NOT_FOUND,
         "Unknown Mapping",
         "unknown-mapping",
     )
     INVALID_MAPPING_SELECTION = (
-        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_404_NOT_FOUND,
         "Invalid Mapping Selection",
         "invalid-mapping-selection",
     )
@@ -45,19 +49,9 @@ class IntelIOErrorCodes(ErrorCode):
         "target-type-required",
     )
     DATA_CONFLICT = (
-        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_409_CONFLICT,
         "Data Conflict",
         "data-conflict",
-    )
-    MAPPING_REQUIRED = (
-        status.HTTP_400_BAD_REQUEST,
-        "Mapping Required",
-        "mapping-required",
-    )
-    INVALID_MAPPING = (
-        status.HTTP_400_BAD_REQUEST,
-        "Invalid Mapping",
-        "invalid-mapping",
     )
     MAPPING_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
@@ -93,6 +87,12 @@ class EnrichmentNotFoundException(CradleAPIException):
     error_code = IntelIOErrorCodes.ENRICHMENT_NOT_FOUND
 
 
+class EnrichmentRunningException(CradleAPIException):
+    """Exception raised when restarting an enrichment that is still running."""
+
+    error_code = IntelIOErrorCodes.ENRICHMENT_RUNNING
+
+
 class EnrichmentOptionNotFoundException(CradleAPIException):
     """Exception raised when enricher type is not found in enrichment request."""
 
@@ -103,12 +103,6 @@ class DigestNotFoundException(CradleAPIException):
     """Exception raised when digest is not found."""
 
     error_code = IntelIOErrorCodes.DIGEST_NOT_FOUND
-
-
-class MissingFileException(CradleAPIException):
-    """Exception raised when file is missing from request."""
-
-    error_code = IntelIOErrorCodes.MISSING_FILE
 
 
 class UnknownMappingException(CradleAPIException):
@@ -133,18 +127,6 @@ class DataConflictException(CradleAPIException):
     """Exception raised when a mapping or related data conflicts with existing state."""
 
     error_code = IntelIOErrorCodes.DATA_CONFLICT
-
-
-class MappingRequiredException(CradleAPIException):
-    """Exception raised when mapping_id is required but missing."""
-
-    error_code = IntelIOErrorCodes.MAPPING_REQUIRED
-
-
-class InvalidMappingException(CradleAPIException):
-    """Exception raised when mapping ID has invalid format (not a valid UUID)."""
-
-    error_code = IntelIOErrorCodes.INVALID_MAPPING
 
 
 class MappingNotFoundException(CradleAPIException):

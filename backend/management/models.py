@@ -1,10 +1,12 @@
+import inspect
+
 from django.conf import settings
 from django.core.cache import cache
 from django.db import models
 from django_lifecycle import AFTER_DELETE, AFTER_SAVE, LifecycleModelMixin, hook
 
 
-class Setting(models.Model, LifecycleModelMixin):
+class Setting(LifecycleModelMixin, models.Model):
     """Stored key-value setting, namespaced via dotted keys (e.g. notes.min_entries)."""
 
     key = models.CharField(
@@ -17,10 +19,10 @@ class Setting(models.Model, LifecycleModelMixin):
     def __str__(self):
         return f"{self.key}: {self.value}"
 
-    @hook(AFTER_SAVE)
-    @hook(AFTER_DELETE)
+    @hook(AFTER_SAVE, on_commit=True)
+    @hook(AFTER_DELETE, on_commit=True)
     def invalidate_cache(self):
-        """Clear cached value on save/delete."""
+        """Clear the cached value once the change is committed, so a concurrent read cannot re-cache the old one."""
         cache.delete(f"setting:{self.key}")
 
 
@@ -28,6 +30,16 @@ class BaseSettingsSection:
     """Base for settings sections; reads from DB/cache with fallback to defaults."""
 
     prefix = ""
+
+    @classmethod
+    def defaults(cls) -> dict:
+        """Map each setting key in this section to the default its property passes to ``get``."""
+        found: dict = {}
+        probe = cls.__new__(cls)
+        probe.get = lambda key, default=None: found.setdefault(key, default)
+        for _, prop in inspect.getmembers(cls, lambda m: isinstance(m, property)):
+            prop.fget(probe)
+        return found
 
     def get(self, key, default=None):
         """Get setting value from cache/DB, falling back to default."""

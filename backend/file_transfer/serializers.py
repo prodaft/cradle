@@ -2,8 +2,6 @@
 
 from rest_framework import serializers
 
-from .models import FileReference
-
 
 class FileUploadInitiateSerializer(serializers.Serializer):
     """Request body for upload initiation (parsed by parse_initiate_request to keep upload error codes)."""
@@ -44,42 +42,3 @@ class FileDownloadSerializer(serializers.Serializer):
 
     presigned_url = serializers.CharField(help_text="S3 presigned GET URL for downloading the file")
     expires_at = serializers.DateTimeField(help_text="When the download URL expires")
-
-
-class FileReferenceSerializer(serializers.ModelSerializer):
-    """Serializer for FileReference model."""
-
-    id = serializers.UUIDField(required=False, help_text="File reference UUID")
-
-    class Meta:
-        model = FileReference
-        fields = [
-            "id",
-            "file_name",
-            "timestamp",
-            "file_size",
-            "mimetype",
-            "md5_hash",
-            "sha1_hash",
-            "sha256_hash",
-        ]
-        read_only_fields = [
-            "timestamp",
-            "mimetype",
-            "md5_hash",
-            "sha1_hash",
-            "sha256_hash",
-        ]
-        extra_kwargs = {
-            "file_name": {"help_text": "Original filename"},
-            "file_size": {"help_text": "File size in bytes"},
-            "md5_hash": {"help_text": "MD5 hash of file contents"},
-            "sha1_hash": {"help_text": "SHA-1 hash of file contents"},
-            "sha256_hash": {"help_text": "SHA-256 hash of file contents"},
-        }
-
-
-class FileProcessSerializer(serializers.Serializer):
-    """Request serializer for file processing."""
-
-    file_id = serializers.UUIDField(required=True, help_text="UUID of the FileReference to process")

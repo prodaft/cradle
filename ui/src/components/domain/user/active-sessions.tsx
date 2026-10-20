@@ -433,8 +433,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     });
 
     const revokeCount = pendingRevokeIds.length;
-    const targetSession = rows.find((row) => row.id === pendingRevokeIds[0]);
-    const isCurrentSession = targetSession?.is_current;
+    const isCurrentSession = rows.some(
+        (row) => row.is_current && pendingRevokeIds.includes(row.id || ''),
+    );
 
     return (
         <div className='w-full space-y-4'>
@@ -484,7 +485,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                                 ? isCurrentSession
                                     ? 'Are you sure you want to revoke this session? This is your current session and you will be logged out immediately.'
                                     : 'Are you sure you want to revoke this session? The device will be signed out and will need to sign in again.'
-                                : `Are you sure you want to revoke ${revokeCount} sessions? The devices will be signed out and will need to sign in again.`}
+                                : isCurrentSession
+                                  ? `Are you sure you want to revoke ${revokeCount} sessions? This includes your current session, so you will be logged out immediately.`
+                                  : `Are you sure you want to revoke ${revokeCount} sessions? The devices will be signed out and will need to sign in again.`}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

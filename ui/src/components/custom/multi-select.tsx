@@ -107,7 +107,7 @@ interface MultipleSelectorProps {
     inlineDropdown?: boolean;
 }
 
-export function useDebounce<T>(value: T, delay?: number): T {
+function useDebounce<T>(value: T, delay?: number): T {
     const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
 
     useEffect(() => {

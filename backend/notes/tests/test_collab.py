@@ -5,7 +5,6 @@ from unittest.mock import patch
 from asgiref.sync import sync_to_async
 from channels.testing import WebsocketCommunicator
 from django.test import TransactionTestCase
-from rest_framework_simplejwt.tokens import AccessToken
 
 from access.enums import AccessType
 from access.models import Access
@@ -13,6 +12,7 @@ from cradle.asgi import application
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from user.models import CradleUser
+from user.testing import session_access_token
 
 from ..collab import consumers
 from ..collab.changes import InvalidChangeSet, apply_changes, replace_all
@@ -73,12 +73,13 @@ class NoteCollabConsumerTest(TransactionTestCase):
 
     async def connect(self, user, note=None):
         note = note or self.note
+        token = await sync_to_async(session_access_token)(user)  # writes a session row
         comm = WebsocketCommunicator(
             application,
             f"/api/ws/notes/{note.id}/",
             headers=[
                 (b"origin", b"http://localhost"),
-                (b"cookie", f"access_token={AccessToken.for_user(user)}".encode()),
+                (b"cookie", f"access_token={token}".encode()),
             ],
         )
         connected, _ = await comm.connect()

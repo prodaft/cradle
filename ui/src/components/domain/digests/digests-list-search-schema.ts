@@ -1,8 +1,7 @@
 import type { SearchSchema } from '@/lib/search-query/search-schema';
+import { digestStatusEnumValues } from '@services/openapi/schema';
 import startCase from 'lodash/startCase';
 import * as z from 'zod';
-
-import { QUERY_SLUGS } from './digest-list-status';
 
 export const validateSearchSchema = z.object({
     digests_page: z.coerce.number().optional(),
@@ -13,7 +12,7 @@ export const validateSearchSchema = z.object({
     user: z.string().optional(),
     created_at_gte: z.string().optional(),
     created_at_lte: z.string().optional(),
-    status: z.enum(QUERY_SLUGS).optional().catch(undefined),
+    status: z.enum(digestStatusEnumValues).optional().catch(undefined),
 });
 
 export const SEARCH_SCHEMA: SearchSchema = {
@@ -22,7 +21,10 @@ export const SEARCH_SCHEMA: SearchSchema = {
             key: 'status',
             kind: 'enum',
             description: 'status',
-            values: QUERY_SLUGS.map((value) => ({ value, label: startCase(value) })),
+            values: digestStatusEnumValues.map((value) => ({
+                value,
+                label: startCase(value),
+            })),
         },
         {
             key: 'user',

@@ -19,7 +19,7 @@ export default function EntriesSettingsForm() {
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}/',
-                { params: { path: { action_name: 'propagate_access_vectors' } } },
+                { params: { path: { action_name: 'propagate-access-vectors' } } },
             );
             if (error) throw { response, error };
             return data;
@@ -42,7 +42,7 @@ export default function EntriesSettingsForm() {
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}/',
-                { params: { path: { action_name: 'delete_hanging_artifacts' } } },
+                { params: { path: { action_name: 'delete-hanging-artifacts' } } },
             );
             if (error) throw { response, error };
             return data;

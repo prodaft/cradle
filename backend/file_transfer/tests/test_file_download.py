@@ -3,20 +3,19 @@
 import uuid
 from unittest.mock import patch
 
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
-from rest_framework_simplejwt.tokens import AccessToken
 
 from file_transfer.constants import FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS
 from file_transfer.models import FileReference
 from user.models import CradleUser
+from user.testing import session_access_token
 
-from .utils import FileTransferTestCase
 
-
-class TestFileDownload(FileTransferTestCase):
-    """Tests for GET /file/download/ (get presigned download URL)."""
+class TestFileDownload(TestCase):
+    """Tests for /files/<id>/ download, process and delete."""
 
     def setUp(self):
         super().setUp()
@@ -29,98 +28,84 @@ class TestFileDownload(FileTransferTestCase):
             is_active=True,
             email_confirmed=True,
         )
-        self.user_token = str(AccessToken.for_user(self.user))
+        self.user_token = str(session_access_token(self.user))
         self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
 
     def tearDown(self):
         self.patcher.stop()
         super().tearDown()
 
-    def test_download_successfully(self):
-        """Download returns presigned URL when file_id is valid and user has access."""
-        file_ref = FileReference.objects.create(
-            file_name="evidence.png",
-            user=self.user,
-        )
+    def private_file(self, owner, name="private.png"):
+        file_ref = FileReference.objects.create(file_name=name, user=owner)
         FileReference.objects.filter(pk=file_ref.pk).update(file=str(file_ref.id))
         file_ref.refresh_from_db()
+        return file_ref
 
-        with patch("file_transfer.views.presign_get", return_value="https://example.com/download"):
-            response = self.client.get(
-                reverse("file_download"),
-                {"file_id": str(file_ref.id)},
-                **self.headers,
-            )
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json()["presigned_url"], "https://example.com/download")
-            expires_at = parse_datetime(response.json()["expires_at"])
-            remaining = (expires_at - timezone.now()).total_seconds()
-            self.assertTrue(0 < remaining <= FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS)
+    def other_user(self):
+        return CradleUser.objects.create_user(
+            username="other", password="other", email="other@gmail.com", is_active=True, email_confirmed=True
+        )
+
+    def test_download_successfully(self):
+        """Download returns presigned URL when the user has access."""
+        file_ref = self.private_file(self.user, "evidence.png")
+
+        with patch("file_transfer.models.presign_get", return_value="https://example.com/download"):
+            response = self.client.get(reverse("file_download", kwargs={"file_id": file_ref.id}), **self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["presigned_url"], "https://example.com/download")
+        expires_at = parse_datetime(response.json()["expires_at"])
+        remaining = (expires_at - timezone.now()).total_seconds()
+        self.assertTrue(0 < remaining <= FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS)
+
+    def test_download_url_sanitizes_attachment_name(self):
+        """A quote in the stored name must not break out of the Content-Disposition filename."""
+        file_ref = self.private_file(self.user, 'evil".png')
+
+        with patch("file_transfer.models.presign_get", return_value="https://example.com/download") as presign:
+            file_ref.download_url(expires_in=60)
+
+        self.assertEqual(presign.call_args.kwargs["response_content_disposition"], 'attachment; filename="evil_.png"')
 
     def test_download_not_authenticated(self):
-        """Download returns 401 when not authenticated."""
-        response = self.client.get(
-            reverse("file_download"),
-            {"file_id": "aad5cae6-5737-409d-8ce2-5f116ed5e2de"},
-        )
+        response = self.client.get(reverse("file_download", kwargs={"file_id": uuid.uuid4()}))
         self.assertEqual(response.status_code, 401)
 
-    def test_download_no_file_id(self):
-        """Download returns 400 when file_id missing."""
-        response = self.client.get(reverse("file_download"), **self.headers)
-        self.assertEqual(response.status_code, 400)
-
-    def test_download_invalid_file_id(self):
-        """Download returns 400 when file_id is not a valid UUID."""
-        response = self.client.get(
-            reverse("file_download"),
-            {"file_id": "not-a-uuid"},
-            **self.headers,
-        )
-        self.assertEqual(response.status_code, 400)
-
     def test_download_file_not_found(self):
-        """Download returns 404 when FileReference does not exist."""
-        response = self.client.get(
-            reverse("file_download"),
-            {"file_id": str(uuid.uuid4())},
-            **self.headers,
-        )
+        response = self.client.get(reverse("file_download", kwargs={"file_id": uuid.uuid4()}), **self.headers)
         self.assertEqual(response.status_code, 404)
 
-    def test_download_access_denied(self):
-        """Download returns 403 when user does not have access to the file."""
-        other_user = CradleUser.objects.create_user(
-            username="other",
-            password="other",
-            email="other@gmail.com",
-            is_active=True,
-            email_confirmed=True,
-        )
-        file_ref = FileReference.objects.create(
-            file_name="private.png",
-            user=other_user,
-        )
-        FileReference.objects.filter(pk=file_ref.pk).update(file=str(file_ref.id))
+    def test_unreadable_file_is_404_like_a_missing_one(self):
+        """Files the user cannot read must not be told apart from missing ones."""
+        file_ref = self.private_file(self.other_user())
 
-        response = self.client.get(
-            reverse("file_download"),
-            {"file_id": str(file_ref.id)},
-            **self.headers,
-        )
-        self.assertEqual(response.status_code, 403)
+        for name, method in (("file_download", "get"), ("file_process", "post"), ("file_detail", "delete")):
+            with self.subTest(name=name):
+                response = getattr(self.client, method)(reverse(name, kwargs={"file_id": file_ref.id}), **self.headers)
+                self.assertEqual(response.status_code, 404)
+                self.assertEqual(response.json()["code"], "FILE_REFERENCE_NOT_FOUND")
 
     def test_download_file_not_in_storage(self):
         """Download returns 404 when FileReference exists but file is not in storage."""
-        file_ref = FileReference.objects.create(
-            file_name="orphan.png",
-            user=self.user,
-        )
-        # file field left empty (no object in storage)
+        file_ref = FileReference.objects.create(file_name="orphan.png", user=self.user)
 
-        response = self.client.get(
-            reverse("file_download"),
-            {"file_id": str(file_ref.id)},
-            **self.headers,
-        )
+        response = self.client.get(reverse("file_download", kwargs={"file_id": file_ref.id}), **self.headers)
         self.assertEqual(response.status_code, 404)
+
+    def test_owner_deletes_file(self):
+        file_ref = self.private_file(self.user)
+
+        with patch("django.db.models.fields.files.FieldFile.delete"):
+            response = self.client.delete(reverse("file_detail", kwargs={"file_id": file_ref.id}), **self.headers)
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(FileReference.objects.filter(pk=file_ref.pk).exists())
+
+    def test_process_queues_processing(self):
+        file_ref = self.private_file(self.user)
+
+        with patch.object(FileReference, "process_file") as process:
+            response = self.client.post(reverse("file_process", kwargs={"file_id": file_ref.id}), **self.headers)
+
+        self.assertEqual(response.status_code, 202)
+        process.assert_called_once()

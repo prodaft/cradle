@@ -11,13 +11,20 @@ type EventLogsListQuery = NonNullable<
 >;
 type EventType = NonNullable<EventLogsListQuery['type']>;
 
-const EVENT_TYPE_VALUES = [
-    { value: 'create', label: 'Create' },
-    { value: 'edit', label: 'Edit' },
-    { value: 'delete', label: 'Delete' },
-    { value: 'fetch', label: 'Fetch' },
-    { value: 'login', label: 'Login' },
-] as const satisfies readonly { value: EventType; label: string }[];
+const EVENT_TYPE_LABELS = {
+    create: 'Create',
+    edit: 'Edit',
+    delete: 'Delete',
+    fetch: 'Fetch',
+    login: 'Login',
+} satisfies Record<EventType, string>;
+
+const EVENT_TYPE_VALUES = (Object.keys(EVENT_TYPE_LABELS) as EventType[]).map(
+    (value) => ({
+        value,
+        label: EVENT_TYPE_LABELS[value],
+    }),
+);
 
 const TYPE_QUALIFIER: QualifierSpec = {
     key: 'type',
@@ -58,14 +65,13 @@ function isEventType(value: string | undefined): value is EventType {
 /** Maps search-bar state to the `/logs/` query params it controls (`user:` excluded). */
 export function activitySearchParams(
     state: SearchState,
-): Pick<EventLogsListQuery, 'type' | 'start_date' | 'end_date' | 'search'> {
+): Pick<EventLogsListQuery, 'type' | 'created_at_gte' | 'created_at_lte' | 'search'> {
     const type = state.values.type?.[0];
     const date = state.dates.date;
     return {
         type: isEventType(type) ? type : undefined,
-        // DateTimeFilter params; date qualifier bounds are inclusive local days.
-        start_date: dayStartIso(date?.after),
-        end_date: dayEndIso(date?.before),
+        created_at_gte: dayStartIso(date?.after),
+        created_at_lte: dayEndIso(date?.before),
         search: state.q || undefined,
     };
 }

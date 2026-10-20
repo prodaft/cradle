@@ -2,6 +2,9 @@
 *Dockerfile*
 *docker-compose*
 docs
+media
+.github
+.vscode
 
 **/.env
 **/.venv

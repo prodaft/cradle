@@ -18,9 +18,6 @@ const INDICATOR_NAME = 'StepperIndicator';
 const SEPARATOR_NAME = 'StepperSeparator';
 const TITLE_NAME = 'StepperTitle';
 const DESCRIPTION_NAME = 'StepperDescription';
-const CONTENT_NAME = 'StepperContent';
-const PREV_NAME = 'StepperPrev';
-const NEXT_NAME = 'StepperNext';
 
 const ENTRY_FOCUS = 'stepperFocusGroup.onEntryFocus';
 const EVENT_OPTIONS = { bubbles: false, cancelable: true };
@@ -1111,145 +1108,13 @@ function StepperDescription(props: StepperDescriptionProps) {
     );
 }
 
-interface StepperContentProps extends DivProps {
-    value: string;
-    forceMount?: boolean;
-}
-
-function StepperContent(props: StepperContentProps) {
-    const {
-        value: valueProp,
-        asChild,
-        forceMount = false,
-        ref,
-        className,
-        ...contentProps
-    } = props;
-
-    const context = useStepperContext(CONTENT_NAME);
-    const value = useStore((state) => state.value);
-
-    const contentId = getId(context.rootId, 'content', valueProp);
-    const triggerId = getId(context.rootId, 'trigger', valueProp);
-
-    if (valueProp !== value && !forceMount) return null;
-
-    const ContentPrimitive = asChild ? Slot : 'div';
-
-    return (
-        <ContentPrimitive
-            id={contentId}
-            role='tabpanel'
-            aria-labelledby={triggerId}
-            data-slot='stepper-content'
-            dir={context.dir}
-            {...contentProps}
-            ref={ref}
-            className={cn('flex-1 outline-none', className)}
-        />
-    );
-}
-
-function StepperPrev(props: ButtonProps) {
-    const { asChild, onClick: onClickProp, disabled, ...prevProps } = props;
-
-    const store = useStoreContext(PREV_NAME);
-    const value = useStore((state) => state.value);
-    const steps = useStore((state) => state.steps);
-
-    const propsRef = useAsRef({
-        onClick: onClickProp,
-    });
-
-    const stepKeys = Array.from(steps.keys());
-    const currentIndex = value ? stepKeys.indexOf(value) : -1;
-    const isDisabled = disabled || currentIndex <= 0;
-
-    const onClick = React.useCallback(
-        async (event: React.MouseEvent<HTMLButtonElement>) => {
-            propsRef.current.onClick?.(event);
-            if (event.defaultPrevented || isDisabled) return;
-
-            const prevIndex = Math.max(currentIndex - 1, 0);
-            const prevStepValue = stepKeys[prevIndex];
-
-            if (prevStepValue) {
-                store.setState('value', prevStepValue);
-            }
-        },
-        [propsRef, isDisabled, currentIndex, stepKeys, store],
-    );
-
-    const PrevPrimitive = asChild ? Slot : 'button';
-
-    return (
-        <PrevPrimitive
-            type='button'
-            data-slot='stepper-prev'
-            disabled={isDisabled}
-            {...prevProps}
-            onClick={onClick}
-        />
-    );
-}
-
-function StepperNext(props: ButtonProps) {
-    const { asChild, onClick: onClickProp, disabled, ...nextProps } = props;
-
-    const store = useStoreContext(NEXT_NAME);
-    const value = useStore((state) => state.value);
-    const steps = useStore((state) => state.steps);
-
-    const propsRef = useAsRef({
-        onClick: onClickProp,
-    });
-
-    const stepKeys = Array.from(steps.keys());
-    const currentIndex = value ? stepKeys.indexOf(value) : -1;
-    const isDisabled = disabled || currentIndex >= stepKeys.length - 1;
-
-    const onClick = React.useCallback(
-        async (event: React.MouseEvent<HTMLButtonElement>) => {
-            propsRef.current.onClick?.(event);
-            if (event.defaultPrevented || isDisabled) return;
-
-            const nextIndex = Math.min(currentIndex + 1, stepKeys.length - 1);
-            const nextStepValue = stepKeys[nextIndex];
-
-            if (nextStepValue) {
-                await store.setStateWithValidation(nextStepValue, 'next');
-            }
-        },
-        [propsRef, isDisabled, currentIndex, stepKeys, store],
-    );
-
-    const NextPrimitive = asChild ? Slot : 'button';
-
-    return (
-        <NextPrimitive
-            type='button'
-            data-slot='stepper-next'
-            disabled={isDisabled}
-            {...nextProps}
-            onClick={onClick}
-        />
-    );
-}
-
 export {
     Stepper,
-    StepperContent,
     StepperDescription,
     StepperIndicator,
     StepperItem,
     StepperList,
-    StepperNext,
-    StepperPrev,
     StepperSeparator,
     StepperTitle,
     StepperTrigger,
-    //
-    useStore as useStepper,
-    //
-    type StepperProps,
 };

@@ -9,12 +9,9 @@ export function createCradleTheme(isDarkMode: boolean) {
         {
             '&': {
                 backgroundColor: 'var(--background)',
-                color: 'inherit',
                 '--pm-cursor-color': 'var(--foreground)',
             },
             '.cm-content': {
-                color: 'inherit',
-                caretColor: 'var(--pm-cursor-color)',
                 // Map Prosemark CSS variables to our theme colors
                 '--pm-header-mark-color': 'var(--primary)',
                 '--pm-heading-color': 'var(--foreground)',
@@ -25,59 +22,63 @@ export function createCradleTheme(isDarkMode: boolean) {
                 '--pm-code-btn-background-color': 'var(--secondary)',
                 '--pm-code-btn-hover-background-color': 'var(--accent)',
                 '--pm-blockquote-vertical-line-background-color': 'var(--border)',
-                // Syntax highlighting colors using our chart palette
-                '--pm-syntax-link': 'var(--chart-1)',
-                '--pm-syntax-keyword': 'var(--chart-4)',
-                '--pm-syntax-atom': 'var(--chart-3)',
-                '--pm-syntax-literal': 'var(--chart-2)',
-                '--pm-syntax-string': 'var(--chart-5)',
-                '--pm-syntax-regexp': 'var(--chart-3)',
-                '--pm-syntax-definition-variable': 'var(--foreground)',
-                '--pm-syntax-local-variable': 'var(--foreground)',
-                '--pm-syntax-type-namespace': 'var(--chart-2)',
-                '--pm-syntax-class-name': 'var(--chart-2)',
-                '--pm-syntax-special-variable-macro': 'var(--chart-4)',
-                '--pm-syntax-definition-property': 'var(--foreground)',
-                '--pm-syntax-comment': 'var(--muted-foreground)',
-                '--pm-syntax-invalid': 'var(--destructive)',
+                // Syntax colors copied from prosemark's lightTheme (not part of
+                // prosemarkBaseThemeSetup). Not mapped to --chart-*: that palette is
+                // grayscale in some themes, which made strings match the code background.
+                '--pm-syntax-link': 'oklch(62.75% 0.188 259.38)',
+                '--pm-syntax-keyword': 'oklch(58.13% 0.248 297.57)',
+                '--pm-syntax-atom': 'oklch(51.29% 0.219 260.63)',
+                '--pm-syntax-literal': 'oklch(57.38% 0.111 170.31)',
+                '--pm-syntax-string': 'oklch(54.86% 0.184 25.53)',
+                '--pm-syntax-regexp': 'oklch(65.88% 0.184 43.8)',
+                '--pm-syntax-definition-variable': 'oklch(45.32% 0.171 260.3)',
+                '--pm-syntax-local-variable': 'oklch(64.13% 0.09 184.42)',
+                '--pm-syntax-type-namespace': 'oklch(49.1% 0.091 165.52)',
+                '--pm-syntax-class-name': 'oklch(64.42% 0.11 168.83)',
+                '--pm-syntax-special-variable-macro': 'oklch(52.58% 0.212 282.71)',
+                '--pm-syntax-definition-property': 'oklch(42.1% 0.142 260.08)',
+                '--pm-syntax-comment': 'oklch(62.79% 0.022 252.89)',
+                '--pm-syntax-invalid': 'oklch(64.62% 0.203 29.2)',
             },
-            '.cm-editor, .cm-scroller': {
-                backgroundColor: 'var(--background)',
-            },
-            '.cm-cursor, .cm-dropCursor, .cm-caret': {
-                borderLeftColor: 'var(--pm-cursor-color) !important',
+            '.cm-cursor, .cm-dropCursor': {
+                borderLeftColor: 'var(--pm-cursor-color)',
             },
             // drawSelection puts .cm-selectionLayer under .cm-scroller as a sibling of
-            // .cm-content — not inside it. Raising z-index made highlights sit above
-            // text so clicks hit .cm-selectionBackground; eventBelongsToEditor() then
-            // never reaches contentDOM and mousedown (e.g. clearing select-all) is ignored.
+            // .cm-content, behind the text by default, where opaque line backgrounds
+            // (fenced code) hide it. It is raised above the text instead; the highlight
+            // is translucent so text stays readable. pointer-events must stay off:
+            // otherwise clicks hit .cm-selectionBackground, eventBelongsToEditor() never
+            // reaches contentDOM and mousedown (e.g. clearing select-all) is ignored.
+            // The z-index needs !important because CodeMirror sets it inline.
             '.cm-selectionLayer': {
                 pointerEvents: 'none',
+                zIndex: '1 !important',
             },
             '.cm-selectionBackground': {
                 backgroundColor:
                     'color-mix(in oklch, var(--ring) 20%, transparent) !important',
-                pointerEvents: 'none',
             },
             '.cm-selectionHandle': {
                 pointerEvents: 'auto',
             },
+            '.cm-selectionMatch': {
+                backgroundColor: 'color-mix(in oklch, var(--ring) 12%, transparent)',
+            },
             '.cm-lineNumbers': {
-                backgroundColor: 'var(--background)',
                 color: 'var(--muted-foreground)',
-                borderRight: '1px solid var(--border)',
             },
             '.cm-lineNumbers .cm-gutterElement': {
                 padding: '0 8px',
                 minWidth: '40px',
-                textAlign: 'right',
             },
-            '.cm-gutter, .cm-gutters': {
+            '.cm-gutters': {
                 backgroundColor: 'var(--background)',
                 borderRight: '1px solid var(--border)',
             },
-            '.cm-activeLine, .cm-activeLineGutter': {
-                backgroundColor: 'transparent !important',
+            // Fenced code lines keep their block background when active, otherwise
+            // the line holding the cursor punches a hole in the code box.
+            '.cm-activeLine:not(.cm-fenced-code-line)': {
+                backgroundColor: 'transparent',
             },
             // Prosemark hides emphasis marks (**) via font-size:0px which produces
             // zero-height DOM rects. Those confuse CodeMirror's InlineCoordsScan.scan()
@@ -92,22 +93,23 @@ export function createCradleTheme(isDarkMode: boolean) {
                 backgroundColor: 'var(--card)',
                 border: '1px solid var(--border)',
                 borderRadius: '6px',
-                padding: '8px',
                 boxShadow: 'var(--shadow-lg)',
                 fontSize: '13px',
             },
-            '.cm-panel.cm-search, .cm-search': {
+            // CodeMirror styles the search panel via `.cm-panel.cm-search`, so these
+            // selectors need the same specificity to win.
+            '.cm-panel.cm-search': {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '6px',
+                padding: '8px',
             },
-            '.cm-search label': {
+            '.cm-panel.cm-search label': {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
                 fontSize: '12px',
                 color: 'var(--foreground)',
-                whiteSpace: 'nowrap',
             },
             '.cm-textfield': {
                 backgroundColor: 'var(--secondary)',
@@ -124,8 +126,10 @@ export function createCradleTheme(isDarkMode: boolean) {
                 boxShadow:
                     '0 0 0 2px color-mix(in oklch, var(--ring) 20%, transparent)',
             },
+            // CodeMirror paints a gradient background-image over the button color.
             '.cm-button': {
                 backgroundColor: 'var(--secondary)',
+                backgroundImage: 'none',
                 border: '1px solid var(--border)',
                 borderRadius: '4px',
                 padding: '4px 10px',
@@ -140,6 +144,7 @@ export function createCradleTheme(isDarkMode: boolean) {
                 borderColor: 'var(--ring)',
             },
             '.cm-button:active': {
+                backgroundImage: 'none',
                 transform: 'scale(0.98)',
             },
             '.cm-searchMatch': {
@@ -147,7 +152,6 @@ export function createCradleTheme(isDarkMode: boolean) {
                 outline: '1px solid var(--ring)',
             },
             '.cm-searchMatch-selected': {
-                backgroundColor: 'color-mix(in oklch, var(--ring) 20%, transparent)',
                 outline: '2px solid var(--ring)',
             },
             // Tooltip styling for autocomplete and lint overlays
@@ -155,9 +159,7 @@ export function createCradleTheme(isDarkMode: boolean) {
                 backgroundColor: 'var(--popover)',
                 color: 'var(--popover-foreground)',
                 border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
                 boxShadow: 'var(--shadow-lg)',
-                fontFamily: 'var(--font-sans)',
                 fontSize: '13px',
                 padding: '4px',
                 zIndex: 50,
@@ -165,22 +167,21 @@ export function createCradleTheme(isDarkMode: boolean) {
             '.cm-tooltip-autocomplete': {
                 minWidth: '220px',
             },
-            '.cm-tooltip-autocomplete ul': {
-                listStyle: 'none',
-                margin: 0,
+            // CodeMirror styles the list via `.cm-tooltip.cm-tooltip-autocomplete > ul`
+            // and the selected item via `... ul li[aria-selected]`, so these selectors
+            // need at least the same specificity to win.
+            '.cm-tooltip.cm-tooltip-autocomplete > ul': {
                 padding: '4px',
                 maxHeight: '260px',
             },
-            '.cm-tooltip-autocomplete li': {
+            '.cm-tooltip.cm-tooltip-autocomplete > ul > li': {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
                 padding: '6px 8px',
                 borderRadius: '6px',
-                color: 'var(--popover-foreground)',
-                cursor: 'pointer',
             },
-            '.cm-tooltip-autocomplete li[aria-selected]': {
+            '.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]': {
                 backgroundColor: 'var(--accent)',
                 color: 'var(--accent-foreground)',
             },
@@ -203,28 +204,16 @@ export function createCradleTheme(isDarkMode: boolean) {
             '.cm-tooltip-lint': {
                 padding: '6px',
             },
-            '.cm-tooltip-lint ul': {
-                listStyle: 'none',
-                margin: 0,
-                padding: 0,
-            },
             '.cm-tooltip-lint li': {
                 padding: '2px 6px',
-                color: 'var(--popover-foreground)',
             },
             '.cm-diagnostic-error': {
                 borderLeft: '3px solid var(--destructive)',
-                paddingLeft: '8px',
             },
             '.cm-diagnostic-warning': {
                 borderLeft: '3px solid var(--chart-4)',
-                paddingLeft: '16px',
                 display: 'flex',
                 alignItems: 'center',
-            },
-            '.cm-diagnostic-info': {
-                borderLeft: '3px solid var(--chart-2)',
-                paddingLeft: '8px',
             },
             '.cm-diagnosticAction': {
                 marginTop: '6px',
@@ -234,7 +223,6 @@ export function createCradleTheme(isDarkMode: boolean) {
                 padding: '4px 8px',
                 fontSize: '12px',
                 color: 'var(--foreground)',
-                cursor: 'pointer',
             },
         },
         { dark: isDarkMode },

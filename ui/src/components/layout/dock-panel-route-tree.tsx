@@ -3,7 +3,7 @@ import Dashboard from '@/components/domain/dashboard/dashboard';
 import KnowledgeGraphSearch from '@/components/domain/graph/knowledge-graph-search';
 import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
-import { isAdmin, isManager } from '@/utils/auth';
+import { canOpenManagePath } from '@/utils/auth';
 import { FILE_DASHBOARD_SUBTYPE } from '@/utils/dashboard';
 import { fetchClient } from '@services/openapi/client';
 import {
@@ -66,6 +66,10 @@ const ManageSettingsPage = lazy(
 const TypeMappingsList = lazy(
     () => import('@/components/domain/manage/type-mappings/type-mappings-list'),
 );
+const TeamsList = lazy(() => import('@/components/domain/manage/team/teams-list'));
+const TeamSettingsPage = lazy(
+    () => import('@/components/domain/manage/team/team-settings-page'),
+);
 const UsersList = lazy(() => import('@/components/domain/manage/user/users-list'));
 const UserSettingsPage = lazy(
     () => import('@/components/domain/manage/user/user-settings-page'),
@@ -92,6 +96,12 @@ const usersSearch = z.object({
     users_pagesize: z.coerce.number().optional(),
     users_search: z.string().optional(),
     users_role: z.string().optional(),
+});
+
+const teamsSearch = z.object({
+    teams_page: z.coerce.number().optional(),
+    teams_pagesize: z.coerce.number().optional(),
+    teams_search: z.string().optional(),
 });
 
 const entitiesSearch = z.object({
@@ -269,19 +279,11 @@ const manageIndexRoute = createRoute({
     },
 });
 
-const ADMIN_PATHS = ['/manage/users', '/manage/settings'];
-
 const manageAuthRoute = createRoute({
     getParentRoute: () => manageRoute,
     id: '_manage-auth',
     beforeLoad: ({ location }) => {
-        const path = location.pathname;
-        const isAdminRoute = ADMIN_PATHS.some((p) => path.startsWith(p));
-        if (isAdminRoute) {
-            if (!isAdmin()) throw notFound();
-        } else if (!isManager()) {
-            throw notFound();
-        }
+        if (!canOpenManagePath(location.pathname)) throw notFound();
     },
     component: Outlet,
 });
@@ -324,6 +326,26 @@ const entityRoute = createRoute({
     path: '$id',
     validateSearch: tabSearch,
     component: EntitySettingsPage,
+});
+
+const teamsRoute = createRoute({
+    getParentRoute: () => manageAuthRoute,
+    path: 'teams',
+    component: Outlet,
+});
+
+const teamsIndexRoute = createRoute({
+    getParentRoute: () => teamsRoute,
+    path: '/',
+    validateSearch: teamsSearch,
+    component: TeamsList,
+});
+
+const teamRoute = createRoute({
+    getParentRoute: () => teamsRoute,
+    path: '$id',
+    validateSearch: tabSearch,
+    component: TeamSettingsPage,
 });
 
 const entryTypesRoute = createRoute({
@@ -389,6 +411,7 @@ export const panelRouteTree = rootRoute.addChildren([
             manageAuthRoute.addChildren([
                 usersRoute.addChildren([usersIndexRoute, userRoute]),
                 entitiesRoute.addChildren([entitiesIndexRoute, entityRoute]),
+                teamsRoute.addChildren([teamsIndexRoute, teamRoute]),
                 entryTypesRoute.addChildren([entryTypesIndexRoute, entryTypeRoute]),
                 typeMappingsRoute,
                 manageSettingsRoute,

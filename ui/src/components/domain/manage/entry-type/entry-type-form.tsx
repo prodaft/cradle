@@ -1,4 +1,7 @@
-import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
+import {
+    SettingsHeaderActionsPortal,
+    SettingsSaveButton,
+} from '@/components/base/settings-header-actions/settings-header-actions';
 import {
     ColorPicker,
     ColorPickerArea,
@@ -11,7 +14,22 @@ import {
     ColorPickerTrigger,
 } from '@/components/custom/color-picker';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
+import {
+    entryClassFormat,
+    formatOptions,
+    typeOptions,
+} from '@/components/domain/manage/entry-type/entry-class-options';
 import OfflineIndicator from '@/components/feedback/offline-indicator';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -37,25 +55,24 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys, useNdjsonQuery } from '@/hooks/query';
 import { SelectOption } from '@/types/models';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-    ArrowCounterClockwiseIcon,
-    ClockCounterClockwiseIcon,
-    FloppyDiskIcon,
-} from '@phosphor-icons/react';
+import {} from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
-import type { components } from '@services/openapi/schema';
+import { entryTypeEnumValues, type components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
-import isEqual from 'lodash/isEqual';
-import { useEffect, useId, useMemo, useRef } from 'react';
+import { useRouter } from '@tanstack/react-router';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 type EntryClass = components['schemas']['EntryClass'];
 type EntryClassRequest = components['schemas']['EntryClassRequest'];
+
+const INTERNAL_SUBTYPES = new Set(['alias', 'note', 'file', 'digest', 'enrichment']);
 
 interface EntryTypeFormProps {
     id?: string | null;
@@ -67,31 +84,10 @@ interface ChildOption extends SelectOption<string> {
     label: string;
 }
 
-interface TypeOption extends SelectOption<string> {
-    value: EntryClassRequest['type'];
-    label: string;
-}
-
-interface FormatOption extends SelectOption<string> {
-    value: string;
-    label: string;
-}
-
-const typeOptions: TypeOption[] = [
-    { value: 'artifact', label: 'Artifact' },
-    { value: 'entity', label: 'Entity' },
-];
-
-const formatOptions: FormatOption[] = [
-    { value: 'any', label: 'Any Format' },
-    { value: 'options', label: 'Enumerator' },
-    { value: 'regex', label: 'Regex' },
-];
-
 const entryTypeSchema = z.object({
     type: z
         .object({
-            value: z.enum(['artifact', 'entity'] as const),
+            value: z.enum(entryTypeEnumValues),
             label: z.string().min(1),
         })
         .nullable()
@@ -144,7 +140,7 @@ function getEntryTypeFormFromApi(
         regex: data.regex || '',
         options: (data.options ?? []).join('\n'),
         children:
-            data.children_detail?.map((x) => {
+            data.children?.map((x) => {
                 const c = x as { subtype: string };
                 return { value: c.subtype, label: c.subtype };
             }) || [],
@@ -153,14 +149,17 @@ function getEntryTypeFormFromApi(
 
 export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) {
     const formId = useId();
+    const { isAdmin } = useAuthState();
+    const router = useRouter();
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [confirmText, setConfirmText] = useState('');
+    const canDelete = isAdmin && !!id && !INTERNAL_SUBTYPES.has(id);
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const defaultColor = useMemo(() => colorGenerator.nextHexColor(), [colorGenerator]);
     const entryTypeDefaults = useMemo(
         () => getEntryTypeDefaults(defaultColor),
         [defaultColor],
     );
-
-    const loadedValuesRef = useRef<EntryTypeFormValues | null>(null);
 
     const {
         handleSubmit,
@@ -210,7 +209,6 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     useEffect(() => {
         const values = getEntryTypeFormFromApi(entryClass, colorGenerator);
         if (!values) return;
-        loadedValuesRef.current = values;
         reset(values);
     }, [id, entryClass, colorGenerator, reset]);
 
@@ -235,6 +233,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                 { queryKey: queryKeys.entryTypes.apiList() },
                 { queryKey: ['entry_classes'] },
                 ...(id ? [{ queryKey: queryKeys.entryTypes.apiDetail(id) }] : []),
+                ...queryKeys.entryLists().map((queryKey) => ({ queryKey })),
             ],
         },
         onSuccess: (result) => {
@@ -242,13 +241,29 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         },
     });
 
+    const deleteEntryClass = useMutation({
+        mutationFn: async () => {
+            const { error, response } = await fetchClient.DELETE(
+                '/entries/entry-classes/{class_subtype}/',
+                { params: { path: { class_subtype: id! } } },
+            );
+            if (error) throw { response, error };
+        },
+        meta: {
+            successMessage: 'Entry type deleted successfully',
+            invalidateQueries: [
+                { queryKey: queryKeys.entryTypes.apiList() },
+                { queryKey: ['entry_classes'] },
+                ...queryKeys.entryLists().map((queryKey) => ({ queryKey })),
+            ],
+        },
+        onSuccess: () => router.navigate({ to: '/manage/entry-types' as any }),
+    });
+
     const onSubmit = async (data: EntryTypeFormValues) => {
         const payload: EntryClassRequest = {
             generative_regex: data.generativeRegex,
-            format:
-                !data.typeFormat || data.typeFormat.value === 'any'
-                    ? null
-                    : data.typeFormat.value,
+            format: entryClassFormat(data.typeFormat?.value),
             type: data.type?.value ?? 'artifact',
             subtype: data.subtype,
             description: data.description,
@@ -256,7 +271,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
             color: data.color,
             regex: data.regex,
             options: data.options.split('\n'),
-            children: data.children.map((child) => child.value),
+            child_subtypes: data.children.map((child) => child.value),
         };
         saveEntryClass.mutate(payload);
     };
@@ -290,51 +305,14 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         );
     }
 
-    const revert = () => {
-        if (loadedValuesRef.current) reset(loadedValuesRef.current);
-    };
-    const resetToDefaults = () => reset(entryTypeDefaults, { keepDefaultValues: true });
-    const isAtDefault = isEqual(watch(), entryTypeDefaults);
-
     return (
         <>
             <SettingsHeaderActionsPortal>
-                <div className='flex items-center gap-2'>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={!isDirty}
-                        onClick={revert}
-                        title='Revert'
-                    >
-                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={isAtDefault}
-                        onClick={resetToDefaults}
-                        title='Default'
-                    >
-                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='submit'
-                        form={formId}
-                        variant='default'
-                        size='icon'
-                        disabled={saveEntryClass.isPending || !isDirty}
-                        title='Save Changes'
-                    >
-                        {saveEntryClass.isPending ? (
-                            <Spinner className='size-4' />
-                        ) : (
-                            <FloppyDiskIcon className='size-4' weight='bold' />
-                        )}
-                    </Button>
-                </div>
+                <SettingsSaveButton
+                    isDirty={isDirty}
+                    saving={saveEntryClass.isPending}
+                    form={formId}
+                />
             </SettingsHeaderActionsPortal>
             <form id={formId} onSubmit={handleSubmit(onSubmit)}>
                 <div className='flex flex-col gap-6'>
@@ -917,10 +895,85 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                     </Field>
                                 )}
                             />
+
+                            {canDelete && (
+                                <>
+                                    <Separator />
+
+                                    <Field orientation='responsive'>
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm block'>
+                                                Delete
+                                            </FieldLabel>
+                                            <FieldDescription>
+                                                Entries of this type are removed. Notes
+                                                are kept but lose their links to them.
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Button
+                                            type='button'
+                                            variant='destructive'
+                                            size='sm'
+                                            className='self-start md:self-center'
+                                            onClick={() => setIsDeleteOpen(true)}
+                                        >
+                                            Delete
+                                        </Button>
+                                    </Field>
+                                </>
+                            )}
                         </FieldGroup>
                     </div>
                 </div>
             </form>
+            {canDelete && (
+                <AlertDialog
+                    open={isDeleteOpen}
+                    onOpenChange={(open) => {
+                        setIsDeleteOpen(open);
+                        if (!open) setConfirmText('');
+                    }}
+                >
+                    <AlertDialogContent className='sm:max-w-md'>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Delete {id}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This removes the entry type and its entries. It cannot
+                                be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <FieldGroup className='gap-4'>
+                            <Field>
+                                <FieldLabel htmlFor='confirm-delete-entry-type'>
+                                    Type below to confirm
+                                </FieldLabel>
+                                <Input
+                                    id='confirm-delete-entry-type'
+                                    type='text'
+                                    placeholder={`Type "${id}" to confirm`}
+                                    value={confirmText}
+                                    onChange={(e) => setConfirmText(e.target.value)}
+                                />
+                            </Field>
+                        </FieldGroup>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel variant='outline' size='sm'>
+                                Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                variant='destructive'
+                                size='sm'
+                                disabled={
+                                    confirmText !== id || deleteEntryClass.isPending
+                                }
+                                onClick={() => deleteEntryClass.mutate()}
+                            >
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
         </>
     );
 }

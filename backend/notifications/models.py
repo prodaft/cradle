@@ -1,10 +1,10 @@
 """Notification models for user-facing alerts (access, reports, enrichments)."""
 
+import logging
 import uuid
 
-from django.db import models
+from django.db import models, transaction
 from django_lifecycle import AFTER_CREATE, LifecycleModel, hook
-from model_utils.managers import InheritanceManager
 
 from entries.models import Entry
 from mail.models import (
@@ -16,13 +16,18 @@ from mail.models import (
     ReportErrorMail,
     ReportReadyMail,
 )
+from teams.rules import access_request_recipients
 from user.models import CradleUser
 
+from .managers import NotificationManager
 from .realtime import broadcast_notification
+
+logger = logging.getLogger(__name__)
 
 _SOCKET_TYPES = {
     "AccessGrantedNotification": "access_granted_notification",
     "AccessRequestNotification": "request_access_notification",
+    "TeamMembershipNotification": "team_membership_notification",
     "NewUserNotification": "new_user_notification",
     "ReportRenderNotification": "report_render_notification",
     "ReportProcessingErrorNotification": "report_processing_error_notification",
@@ -54,7 +59,12 @@ class MessageNotification(LifecycleModel):
         default=False, help_text="User manually marked as unread."
     )
 
-    objects: InheritanceManager = InheritanceManager()
+    objects = NotificationManager()
+
+    @property
+    def shows_as_unread(self) -> bool:
+        """Whether the notification shows as unread (never read, or manually marked unread)."""
+        return self.is_unread or self.is_marked_unread
 
     @property
     def get_mail(self):
@@ -66,11 +76,18 @@ class MessageNotification(LifecycleModel):
         """Signal open clients to refetch once the row is committed."""
         broadcast_notification(self.user_id, self.message, _socket_type(self), str(self.id))
 
-    @hook(AFTER_CREATE)
+    @hook(AFTER_CREATE, on_commit=True)
     def send_mail(self, *args, **kwargs):
-        """Send email after creation if get_mail returns a mail instance."""
-        if self.get_mail:
-            self.get_mail.dispatch()
+        """Queue the notification email once the row is committed.
+
+        Failures are logged; the notification is already saved, so a broker error must not fail the request.
+        """
+        try:
+            mail = self.get_mail
+            if mail:
+                mail.dispatch()
+        except Exception:
+            logger.exception("Failed to queue the email for notification %s", self.id)
 
 
 class AccessGrantedNotification(MessageNotification):
@@ -100,6 +117,27 @@ class AccessRequestNotification(MessageNotification):
     def get_mail(self):
         """Return AccessRequestMail for the access request."""
         return AccessRequestMail(self.user, self.requesting_user, self.entity)
+
+    @classmethod
+    def notify_granters(cls, requesting_user: CradleUser, entity: Entry, message: str) -> None:
+        """Notify everyone who decides access to ``entity`` that ``requesting_user`` asked for it.
+
+        One notification per recipient (see ``teams.rules.access_request_recipients``); each is saved on its own so
+        its broadcast and email hooks run.
+        """
+        with transaction.atomic():
+            for recipient_id in access_request_recipients(entity).values_list("id", flat=True):
+                cls.objects.create(
+                    user_id=recipient_id, requesting_user=requesting_user, entity=entity, message=message
+                )
+
+
+class TeamMembershipNotification(MessageNotification):
+    """Notification when the recipient is added to a team or their team role changes."""
+
+    team: models.ForeignKey = models.ForeignKey(
+        "teams.Team", on_delete=models.CASCADE, help_text="Team the recipient was added to."
+    )
 
 
 class NewUserNotification(MessageNotification):

@@ -15,7 +15,8 @@ ENV UV_COMPILE_BYTECODE=1
 ENV UV_SYSTEM_PYTHON=1
 
 COPY ./backend/pyproject.toml ./backend/uv.lock ./
-RUN uv pip install --system -r pyproject.toml
+RUN uv export --frozen --no-dev --no-emit-project -o requirements.txt \
+    && uv pip install --system -r requirements.txt
 
 FROM python:3.14-slim-trixie
 
@@ -29,6 +30,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdal36 \
     libmagic1t64 \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libharfbuzz-subset0 \
+    fonts-liberation \
+    fonts-roboto \
     curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -36,7 +42,6 @@ COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 COPY ./backend/ .
-COPY ./backend/cradle/settings_docker.py ./cradle/settings.py
 
 COPY ./docker/entrypoint_backend.sh ./docker/entrypoint_celery.sh ./
 RUN chmod +x ./entrypoint_backend.sh ./entrypoint_celery.sh

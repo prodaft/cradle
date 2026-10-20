@@ -2,6 +2,7 @@ import {
     SettingsHeaderActionsProvider,
     SettingsHeaderActionsTarget,
 } from '@/components/base/settings-header-actions/settings-header-actions';
+import ActivityList from '@/components/domain/activity/activity-list';
 import ActiveSessions from '@/components/domain/user/active-sessions';
 import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
@@ -13,10 +14,10 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import {
     ClockCounterClockwiseIcon,
-    LightningIcon,
     LockKeyIcon,
     PasswordIcon,
     UserIcon,
+    UsersThreeIcon,
 } from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
 import {
@@ -27,9 +28,9 @@ import {
 } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import UserAccountForm from './user-account-form';
-import UserActivityList from './user-activity-list';
 import UserManagementActions from './user-management-actions';
 import UserPermissionsForm from './user-permissions-form';
+import UserTeamsForm from './user-teams-form';
 
 const USER_SETTINGS_ITEMS = [
     {
@@ -39,16 +40,16 @@ const USER_SETTINGS_ITEMS = [
         description: 'Manage user account information, access and limits',
     },
     {
-        id: 'actions',
-        label: 'Actions',
-        icon: LightningIcon,
-        description: 'One-time actions for this user, applied immediately',
-    },
-    {
         id: 'permissions',
         label: 'Permissions',
         icon: LockKeyIcon,
         description: 'Manage entity access permissions for this user',
+    },
+    {
+        id: 'teams',
+        label: 'Teams',
+        icon: UsersThreeIcon,
+        description: 'Manage the teams this user belongs to and their role in each',
     },
     {
         id: 'activity',
@@ -93,21 +94,13 @@ export default function UserSettingsPage() {
 
     const isOtherAdmin = data?.role === 'admin' && data?.id !== currentUserId;
 
-    const visibleTabs = useMemo(
-        () =>
-            isOtherAdmin
-                ? USER_SETTINGS_ITEMS.filter((item) => item.id !== 'actions')
-                : USER_SETTINGS_ITEMS,
-        [isOtherAdmin],
-    );
-
     const dockPanelTitle = useMemo(
         () =>
             isError
                 ? 'Not found'
                 : data?.username
                   ? `Manage: ${data.username}`
-                  : 'Manage: User',
+                  : 'Manage',
         [isError, data?.username],
     );
     useDockPanelTab({
@@ -124,8 +117,8 @@ export default function UserSettingsPage() {
     };
 
     const currentTab =
-        visibleTabs.find((item) => item.id === tab) ??
-        visibleTabs.find((item) => item.id === defaultUserSettingsTabId);
+        USER_SETTINGS_ITEMS.find((item) => item.id === tab) ??
+        USER_SETTINGS_ITEMS.find((item) => item.id === defaultUserSettingsTabId);
     const currentDescription = currentTab?.description ?? '';
 
     if (isLoading) {
@@ -161,9 +154,9 @@ export default function UserSettingsPage() {
                         <SettingsHeaderActionsTarget />
                     </div>
                     <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
-                        <Tabs value={tab} onValueChange={handleTabChange}>
+                        <Tabs value={currentTab?.id} onValueChange={handleTabChange}>
                             <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
-                                {visibleTabs.map((item) => {
+                                {USER_SETTINGS_ITEMS.map((item) => {
                                     const Icon = item.icon;
                                     return (
                                         <TabsTrigger key={item.id} value={item.id}>
@@ -191,28 +184,52 @@ export default function UserSettingsPage() {
                                             role='none'
                                             className='bg-border mb-4 flex-none'
                                         />
-                                        {tab === 'account' && (
-                                            <UserAccountForm
-                                                userId={userId}
-                                                isOtherAdmin={isOtherAdmin}
-                                            />
+                                        {currentTab?.id === 'account' && (
+                                            <>
+                                                <UserAccountForm
+                                                    userId={userId}
+                                                    isOtherAdmin={isOtherAdmin}
+                                                />
+                                                {!isOtherAdmin && (
+                                                    <>
+                                                        <div className='flex-none mt-8 mb-4'>
+                                                            <h3 className='text-lg font-medium'>
+                                                                Actions
+                                                            </h3>
+                                                            <p className='text-sm text-muted-foreground'>
+                                                                One-time actions for
+                                                                this user, applied
+                                                                immediately
+                                                            </p>
+                                                        </div>
+                                                        <Separator className='bg-border mb-4 flex-none' />
+                                                        <UserManagementActions
+                                                            userId={userId}
+                                                        />
+                                                    </>
+                                                )}
+                                            </>
                                         )}
-                                        {tab === 'permissions' && (
+                                        {currentTab?.id === 'permissions' && (
                                             <UserPermissionsForm
                                                 id={userId}
                                                 readOnly={isOtherAdmin}
                                             />
                                         )}
-                                        {tab === 'activity' && (
-                                            <UserActivityList
-                                                username={data?.username || ''}
+                                        {currentTab?.id === 'teams' && (
+                                            <UserTeamsForm
+                                                userId={userId}
+                                                readOnly={data?.role === 'admin'}
                                             />
                                         )}
-                                        {tab === 'sessions' && (
+                                        {currentTab?.id === 'activity' &&
+                                            data?.username && (
+                                                <ActivityList
+                                                    username={data.username}
+                                                />
+                                            )}
+                                        {currentTab?.id === 'sessions' && (
                                             <ActiveSessions userId={userId} />
-                                        )}
-                                        {!isOtherAdmin && tab === 'actions' && (
-                                            <UserManagementActions userId={userId} />
                                         )}
                                     </CardContent>
                                 </ScrollArea>

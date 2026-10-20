@@ -56,6 +56,7 @@ export default function NotificationsPanel({ unreadCount, onClose }: Notificatio
         hasNextPage,
         isFetchingNextPage,
         isLoading,
+        dataUpdatedAt,
     } = useInfiniteQuery({
         queryKey: queryKeys.notifications.list(filter === 'unread' ? 'unread' : 'all'),
         queryFn: async ({ pageParam }) => {
@@ -70,11 +71,6 @@ export default function NotificationsPanel({ unreadCount, onClose }: Notificatio
                 },
             });
             if (error) throw { response, error };
-            if (!unreadOnly) {
-                void queryClient.invalidateQueries({
-                    queryKey: queryKeys.notifications.unreadCount(),
-                });
-            }
             return data!;
         },
         getNextPageParam: (lastPage) => {
@@ -88,6 +84,16 @@ export default function NotificationsPanel({ unreadCount, onClose }: Notificatio
             showErrorToast: true,
         },
     });
+
+    useEffect(() => {
+        if (filter !== 'all' || !dataUpdatedAt || unreadCount === 0) return;
+        void fetchClient.POST('/notifications/mark-read/').then(({ error }) => {
+            if (error) return;
+            void queryClient.invalidateQueries({
+                queryKey: queryKeys.notifications.unreadCount(),
+            });
+        });
+    }, [filter, dataUpdatedAt, unreadCount, queryClient]);
 
     const notifications = useMemo(() => {
         return notificationPages?.pages.flatMap((page) => page.results) ?? [];

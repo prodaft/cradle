@@ -16,7 +16,7 @@ shows entry details, notes referencing the entry, and related entries derived
 from note references, including related entities, related artifacts, and
 second-level entries (two-hop neighbors in the graph).
 
-Dashboards also provide quick access to the graph explorer and report publishing
+Dashboards also provide quick access to the graph explorer and report exporting
 views.
 
 ## Requesting access to an entry

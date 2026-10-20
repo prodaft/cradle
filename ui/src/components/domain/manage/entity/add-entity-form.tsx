@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
+import { useAuthState } from '@/hooks/auth/use-auth';
 import { useNdjsonQuery } from '@/hooks/query';
 import { SelectOption } from '@/types/models';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -40,6 +41,8 @@ type AdvancedQueryResponse = components['schemas']['AdvancedQueryPaginatedRespon
 
 interface AddEntityFormProps {
     onAdd?: (result: Entity) => void;
+    /** Team that will own the new entity; required for team leads who are not admins. */
+    teamId?: string;
 }
 
 interface SubtypeOption extends SelectOption<string> {
@@ -73,7 +76,8 @@ const entitySchema = z.object({
 
 type AddEntityFormData = z.infer<typeof entitySchema>;
 
-export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
+export default function AddEntityForm({ onAdd, teamId }: AddEntityFormProps) {
+    const { isAdmin } = useAuthState();
     const [subtypeOptions, setSubtypeOptions] = useState<SubtypeOption[]>([]);
 
     const {
@@ -147,7 +151,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
 
             try {
                 const { data: result, error } = await fetchClient.GET(
-                    '/entries/next-name/{class_subtype}/',
+                    '/entries/entry-classes/{class_subtype}/next-name/',
                     { params: { path: { class_subtype: subtype.value } } },
                 );
 
@@ -208,7 +212,8 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
             description: values.description,
             subtype: values.subtype?.value || '',
             is_public: values.isPublic,
-            aliases: values.aliases.map((alias) => alias.value),
+            alias_ids: values.aliases.map((alias) => alias.value),
+            ...(teamId ? { team_id: teamId } : {}),
         };
         await createEntity.mutateAsync(payload);
     };
@@ -306,33 +311,35 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                         )}
                     />
 
-                    <Field
-                        orientation='horizontal'
-                        data-invalid={Boolean(errors.isPublic)}
-                    >
-                        <FieldContent>
-                            <FieldLabel htmlFor='isPublic'>Public</FieldLabel>
-                            <FieldDescription>
-                                Allow public access to this entity
-                            </FieldDescription>
-                            {errors.isPublic && (
-                                <FieldError>{errors.isPublic.message}</FieldError>
-                            )}
-                        </FieldContent>
-                        <Controller
-                            name='isPublic'
-                            control={control}
-                            render={({ field }) => (
-                                <Switch
-                                    id='isPublic'
-                                    name={field.name}
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    className='self-center'
-                                />
-                            )}
-                        />
-                    </Field>
+                    {isAdmin && (
+                        <Field
+                            orientation='horizontal'
+                            data-invalid={Boolean(errors.isPublic)}
+                        >
+                            <FieldContent>
+                                <FieldLabel htmlFor='isPublic'>Public</FieldLabel>
+                                <FieldDescription>
+                                    Allow public access to this entity
+                                </FieldDescription>
+                                {errors.isPublic && (
+                                    <FieldError>{errors.isPublic.message}</FieldError>
+                                )}
+                            </FieldContent>
+                            <Controller
+                                name='isPublic'
+                                control={control}
+                                render={({ field }) => (
+                                    <Switch
+                                        id='isPublic'
+                                        name={field.name}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        className='self-center'
+                                    />
+                                )}
+                            />
+                        </Field>
+                    )}
 
                     <Controller
                         name='description'

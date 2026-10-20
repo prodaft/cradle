@@ -1,20 +1,57 @@
-"""Custom manager for Access model: permission checks and entity/user access queries."""
+"""Custom manager for Access model: permission checks and entity/user access queries.
+
+A user's access to an entity is the strongest of their direct ``Access`` grant and the
+``TeamAccess`` grants of every team they belong to. Public entities are readable by everyone.
+"""
 
 from uuid import UUID
 
+from django.apps import apps
 from django.db import models
-from django.db.models import F, FilteredRelation, Q, QuerySet
+from django.db.models import Case, F, FilteredRelation, IntegerField, OuterRef, Q, QuerySet, Subquery, Value, When
 
 from core.query_lang import search_q
 from entries.enums import EntryType
 from entries.models import Entry
 from user.models import CradleUser
 
-from .enums import AccessType
+from .enums import ACCESS_RANK, AccessType, highest_access
+
+
+def _team_access_model():
+    return apps.get_model("teams", "TeamAccess")
+
+
+def _best_team_access(user_id) -> Subquery:
+    """Subquery (for an entity queryset) of the user's strongest team access, or NULL."""
+    rank = Case(
+        *(When(access_type=access_type, then=Value(r)) for access_type, r in ACCESS_RANK.items()),
+        output_field=IntegerField(),
+    )
+    return Subquery(
+        _team_access_model()
+        .objects.filter(entity_id=OuterRef("pk"), team__memberships__user_id=user_id)
+        .annotate(rank=rank)
+        .order_by("-rank")
+        .values("access_type")[:1]
+    )
 
 
 class AccessManager(models.Manager):
     """Manager for Access with methods for permission checks and access lookups."""
+
+    def granted_entity_ids(self, user_id: UUID, access_types: set[AccessType]) -> QuerySet:
+        """Ids of entities granted to the user with one of ``access_types``, directly or via a team.
+
+        Ignores public visibility and admin privileges.
+        """
+        direct = self.get_queryset().filter(user_id=user_id, access_type__in=access_types).values("entity_id")
+        via_team = (
+            _team_access_model()
+            .objects.filter(team__memberships__user_id=user_id, access_type__in=access_types)
+            .values("entity_id")
+        )
+        return Entry.entities.filter(Q(id__in=direct) | Q(id__in=via_team)).values("id")
 
     def inaccessible_entries(self, user: CradleUser, entries: QuerySet, access_types: set[AccessType]) -> QuerySet:
         """Returns entries (entities) the user cannot access with any of the given access types.
@@ -33,7 +70,7 @@ class AccessManager(models.Manager):
             return Entry.entities.none()
 
         entities = entries.filter(entry_class__type=EntryType.ENTITY)
-        accessible_q = Q(access__user_id=user.pk, access__access_type__in=access_types)
+        accessible_q = Q(id__in=self.granted_entity_ids(user.pk, access_types))
         if AccessType.READ in access_types:
             accessible_q |= Q(is_public=True)
         return entities.exclude(accessible_q)
@@ -56,21 +93,26 @@ class AccessManager(models.Manager):
         if user.is_cradle_admin:
             return True
 
-        count = 0
-        if AccessType.READ in access_types:
-            q = Q(
-                user_id=user.pk,
-                entity__in=[e for e in entities if not e.is_public],
-                access_type__in=access_types,
-            )
-            count = len([e for e in entities if e.is_public])
-        else:
-            q = Q(user_id=user.pk, entity__in=entities, access_type__in=access_types)
+        needed = {e.pk for e in entities if not (AccessType.READ in access_types and e.is_public)}
+        if not needed:
+            return True
 
-        accesses = self.get_queryset().filter(q).distinct().values("id")
-        count += accesses.count()
+        granted = self.granted_entity_ids(user.pk, access_types).filter(id__in=needed)
+        return granted.count() == len(needed)
 
-        return count == len(entities)
+    def effective_access_type(self, user: CradleUser, entity: Entry) -> AccessType:
+        """The strongest access ``user`` has to ``entity`` from any source."""
+        if user.is_cradle_admin:
+            return AccessType.READ_WRITE
+
+        direct = self.get_queryset().filter(user=user, entity=entity).values_list("access_type", flat=True)
+        via_team = (
+            _team_access_model()
+            .objects.filter(entity=entity, team__memberships__user=user)
+            .values_list("access_type", flat=True)
+        )
+        public = AccessType.READ if entity.is_public else None
+        return highest_access(*direct, *via_team, public)
 
     def get_accessible_entity_ids(self, user_id: UUID) -> QuerySet:
         """For a given user id, get entity ids accessible by the user.
@@ -83,15 +125,8 @@ class AccessManager(models.Manager):
         Returns:
             QuerySet of entity ids to which the user has READ or READ_WRITE access.
         """
-        ids = set(
-            self.get_queryset()
-            .filter(Q(user_id=user_id) & (Q(access_type=AccessType.READ) | Q(access_type=AccessType.READ_WRITE)))
-            .values_list("entity_id", flat=True)
-        )
-
-        ids = ids | set(Entry.entities.filter(is_public=True).values_list("id", flat=True))
-
-        return Entry.entities.filter(pk__in=ids).values_list("pk", flat=True)
+        granted = self.granted_entity_ids(user_id, {AccessType.READ, AccessType.READ_WRITE})
+        return Entry.entities.filter(Q(id__in=granted) | Q(is_public=True)).values_list("pk", flat=True)
 
     def get_accesses(self, user_id: UUID, search: str | None = None) -> QuerySet:
         """Retrieves access_type of all entities for a given user id.
@@ -103,14 +138,16 @@ class AccessManager(models.Manager):
                 numeric.
 
         Returns:
-            QuerySet of dicts with keys: id, name, access_type, description.
+            QuerySet of dicts with keys: id, name, access_type (direct grant), team_access_type
+            (strongest grant through a team), description, is_public.
         """
         qs = (
-            Entry.entities.annotate(
-                access_type=FilteredRelation("access", condition=Q(access__user=user_id))
-            )  # left outer join
-            .values("id", "name", "access_type__access_type", "description")  # separate table
-            .annotate(access_type=F("access_type__access_type"))  # rename obscure field
+            Entry.entities.annotate(access_type=FilteredRelation("access", condition=Q(access__user=user_id)))
+            .values("id", "name", "access_type__access_type", "description", "is_public")  # separate table
+            .annotate(
+                access_type=F("access_type__access_type"),  # rename obscure field
+                team_access_type=_best_team_access(user_id),
+            )
             .order_by("name")
         )
         q = search_q(search, ["name", "description"])

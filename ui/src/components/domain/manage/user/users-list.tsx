@@ -10,6 +10,7 @@ import {
 } from '@/components/custom/action-bar';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
+import { DataTableRowActions } from '@/components/custom/data-table/data-table-row-actions';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import {
     AlertDialog,
@@ -31,13 +32,21 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import type { SearchSchema, SearchState } from '@/lib/search-query/search-schema';
-import { PencilIcon, TrashIcon, UserPlusIcon } from '@phosphor-icons/react';
+import { USER_ROLE_OPTIONS } from '@/utils/auth';
+import {
+    ClockCounterClockwiseIcon,
+    LockKeyIcon,
+    PencilIcon,
+    TrashIcon,
+    UserPlusIcon,
+} from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -65,17 +74,9 @@ const roleBadgeVariant = (role?: string) => {
     }
 };
 
-type UserRole = NonNullable<UserRow['role']>;
-
-const ROLE_VALUES = [
-    { value: 'admin', label: 'Admin' },
-    { value: 'manager', label: 'Manager' },
-    { value: 'author', label: 'Author' },
-] as const satisfies readonly { value: UserRole; label: string }[];
-
 const SEARCH_SCHEMA: SearchSchema = {
     qualifiers: [
-        { key: 'role', kind: 'enum', description: 'role', values: ROLE_VALUES },
+        { key: 'role', kind: 'enum', description: 'role', values: USER_ROLE_OPTIONS },
     ],
 };
 
@@ -89,7 +90,9 @@ export default function UsersList() {
     const page = Number(search?.users_page ?? 1) || 1;
     const pageSize = Number(search?.users_pagesize ?? 20) || 20;
     const applied = (search?.users_search ?? '') as string;
-    const appliedRole = ROLE_VALUES.find((r) => r.value === search?.users_role)?.value;
+    const appliedRole = USER_ROLE_OPTIONS.find(
+        (r) => r.value === search?.users_role,
+    )?.value;
     const searchState = useMemo<SearchState>(() => {
         const values: SearchState['values'] = appliedRole
             ? { role: [appliedRole] }
@@ -160,20 +163,22 @@ export default function UsersList() {
                 }),
             );
         },
-        meta: {
-            invalidateQueries: [{ queryKey: queryKeys.users.lists() }],
-            suppressNotification: true,
-        },
         onSuccess: (_, userIds) => {
             toast.success(
                 `Successfully deleted ${userIds.length} user${userIds.length > 1 ? 's' : ''}`,
             );
         },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.users.apiList() });
+        },
     });
 
-    const openUser = useCallback(
-        (item: UserRow) => {
-            router.navigate({ to: `/manage/users/${item.id}` as any });
+    const openSettings = useCallback(
+        (id: string | number, tab?: string) => {
+            router.navigate({
+                to: `/manage/users/${id}` as any,
+                ...(tab ? { search: { tab } as any } : {}),
+            });
         },
         [router],
     );
@@ -184,23 +189,15 @@ export default function UsersList() {
 
     const handleUserCreated = (newUser: UserRow) => {
         setIsAddUserOpen(false);
-        queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
-        if (newUser.id) {
-            router.navigate({ to: `/manage/users/${newUser.id}` as any });
-        }
+        queryClient.invalidateQueries({ queryKey: queryKeys.users.apiList() });
+        if (newUser.id) openSettings(newUser.id);
     };
 
-    const confirmDelete = useCallback(() => {
-        if (checkedIds.length === 0) return;
-        setPendingDeleteIds(checkedIds);
+    const confirmDelete = useCallback((ids: string[]) => {
+        if (ids.length === 0) return;
+        setPendingDeleteIds(ids);
         setIsDeleteOpen(true);
-    }, [checkedIds]);
-
-    const editSelected = useCallback(() => {
-        if (checkedIds.length !== 1) return;
-        const userId = checkedIds[0];
-        router.navigate({ to: `/manage/users/${userId}` as any });
-    }, [checkedIds, router]);
+    }, []);
 
     const totalPages = Math.max(1, usersPage?.total_pages ?? 1);
 
@@ -335,8 +332,51 @@ export default function UsersList() {
                 },
                 enableSorting: false,
             },
+            {
+                id: 'actions',
+                header: '',
+                size: 40,
+                minSize: 40,
+                maxSize: 40,
+                cell: ({ row }) => {
+                    const item = row.original;
+                    const userId = item.id;
+                    if (!userId) return null;
+                    return (
+                        <DataTableRowActions>
+                            <DropdownMenuItem onClick={() => openSettings(userId)}>
+                                <PencilIcon size={16} weight='bold' />
+                                Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => openSettings(userId, 'permissions')}
+                            >
+                                <LockKeyIcon size={16} weight='bold' />
+                                Permissions
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => openSettings(userId, 'activity')}
+                            >
+                                <ClockCounterClockwiseIcon size={16} weight='bold' />
+                                Activity
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                variant='destructive'
+                                onClick={() => confirmDelete([userId])}
+                                disabled={item.role === 'admin' && userId !== selfId}
+                            >
+                                <TrashIcon size={16} weight='bold' />
+                                Delete
+                            </DropdownMenuItem>
+                        </DataTableRowActions>
+                    );
+                },
+                enableSorting: false,
+                enableHiding: false,
+            },
         ],
-        [],
+        [openSettings, confirmDelete, selfId],
     );
 
     const table = useReactTable({
@@ -400,7 +440,7 @@ export default function UsersList() {
                             table={table}
                             showViewOptions
                             isLoading={isPending}
-                            onRowClick={openUser}
+                            onRowClick={(item) => item.id && openSettings(item.id)}
                             getRowHref={(item) => `/manage/users/${item.id}`}
                         >
                             <SearchInput
@@ -426,14 +466,7 @@ export default function UsersList() {
                 <ActionBarSeparator />
                 <ActionBarGroup>
                     <ActionBarItem
-                        onClick={editSelected}
-                        disabled={isPending || checkedIds.length !== 1}
-                    >
-                        <PencilIcon size={18} weight='bold' />
-                        Edit
-                    </ActionBarItem>
-                    <ActionBarItem
-                        onClick={confirmDelete}
+                        onClick={() => confirmDelete(checkedIds)}
                         disabled={
                             isPending ||
                             checkedIds.length === 0 ||

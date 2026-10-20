@@ -11,12 +11,11 @@ from notes.markdown.to_markdown import remap_links
 from notes.models import Note
 from notes.processor.task_scheduler import TaskScheduler
 from notes.tasks import propagate_acvec
-from notes.utils import calculate_acvec
 from user.models import CradleUser
 
 from .constants import SUBTYPE_NOTE
-from .enums import EntryType, RelationReason
-from .models import Edge, Entry, Relation
+from .enums import RelationReason
+from .models import Edge, Entry, Relation, calculate_acvec
 
 
 @shared_task
@@ -24,14 +23,13 @@ from .models import Edge, Entry, Relation
 def update_accesses(entry_id):
     """Propagate access vector changes from an entry to its notes, digests, and enrichments."""
     entry = Entry.objects.get(id=entry_id)
-    entry.status = {"status": "warning", "message": "Updating access controls"}
-    entry.save()
+    Entry.objects.filter(pk=entry.pk).update(status={"status": "warning", "message": "Updating access controls"})
 
     notes = entry.notes.all()
     update_notes = []
 
     for note in notes:
-        newvec = calculate_acvec(note.entries.filter(entry_class__type=EntryType.ENTITY))
+        newvec = calculate_acvec(note.entries.is_entity())
 
         if newvec != note.access_vector:
             note.access_vector = newvec
@@ -42,10 +40,9 @@ def update_accesses(entry_id):
         note_model.objects.bulk_update(update_notes, ["access_vector"])
 
     digest_ids = entry.digests.all().values_list("id", flat=True)
-    enrich_ids = entry.enrichments.all().values_list("id", flat=True)
+    enrich_ids = entry.enrichment_requests.all().values_list("id", flat=True)
 
-    entry.status = {}
-    entry.save()
+    Entry.objects.filter(pk=entry.pk).update(status={})
 
     g_notes = group(*[propagate_acvec.si(n.id) for n in update_notes])
     g_digests = group(*[propagate_acvec_digest.si(d) for d in digest_ids])
@@ -143,5 +140,6 @@ def refresh_edges_materialized_view():
 
 @shared_task
 def delete_hanging_artifacts():
-    """Delete artifacts that have no relations (unreferenced)."""
-    return Entry.artifacts.unreferenced().delete()[0]
+    """Delete artifacts nothing points at (no relations, notes or aliasing entity)."""
+    _, per_model = Entry.artifacts.unreferenced().delete()
+    return per_model.get(Entry._meta.label, 0)

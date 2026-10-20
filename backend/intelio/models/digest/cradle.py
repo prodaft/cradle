@@ -8,7 +8,6 @@ from entries.models import Entry, EntryClass
 from file_transfer.storage import FileTransferStorage
 from notes.processor.task_scheduler import TaskScheduler
 
-from ...enums import DigestStatus
 from ...tasks.cradle import download_file_for_note
 from ..base import BaseDigest
 
@@ -28,71 +27,63 @@ class CradleDigest(BaseDigest):
         with open(self.path, "r") as report_file:
             try:
                 report_data = json.load(report_file)
-            except json.JSONDecodeError:
-                self.status = DigestStatus.ERROR
-                self.errors = ["The file contains invalid JSON."]
-                self.save()
+            except json.JSONDecodeError, UnicodeDecodeError:
+                self.mark_error("The file contains invalid JSON.")
                 return
 
         valid_entryclass_fields = {f.name for f in EntryClass._meta.fields}
 
-        try:
-            for eclass in report_data.get("entry_classes", []):
-                if not EntryClass.objects.filter(subtype=eclass["subtype"]).exists():
-                    fields = {k: v for k, v in eclass.items() if k in valid_entryclass_fields}
-                    if isinstance(fields.get("options"), list):
-                        fields["options"] = "\n".join(fields["options"])
-                    EntryClass.objects.create(**fields)
+        for eclass in report_data.get("entry_classes", []):
+            if not EntryClass.objects.filter(subtype=eclass["subtype"]).exists():
+                fields = {k: v for k, v in eclass.items() if k in valid_entryclass_fields}
+                if isinstance(fields.get("options"), list):
+                    fields["options"] = "\n".join(fields["options"])
+                EntryClass.objects.create(**fields)
 
-            entity_subtypes = set(EntryClass.objects.filter(type=EntryType.ENTITY).values_list("subtype", flat=True))
+        entity_subtypes = set(EntryClass.objects.filter(type=EntryType.ENTITY).values_list("subtype", flat=True))
 
-            for entry in report_data.get("entries", []):
-                if (
-                    entry["subtype"] in entity_subtypes
-                    and not Entry.objects.filter(name=entry["name"], entry_class_id=entry["subtype"]).exists()
-                ):
-                    Entry.objects.create(
-                        name=entry["name"],
-                        entry_class_id=entry["subtype"],
-                        description=entry.get("description", ""),
+        for entry in report_data.get("entries", []):
+            if (
+                entry["subtype"] in entity_subtypes
+                and not Entry.objects.filter(name=entry["name"], entry_class_id=entry["subtype"]).exists()
+            ):
+                Entry.objects.create(
+                    name=entry["name"],
+                    entry_class_id=entry["subtype"],
+                    description=entry.get("description", ""),
+                )
+
+        created_notes = []
+        download_tasks = []
+
+        for note_data in report_data.get("notes", []):
+            scheduler = TaskScheduler(self.user, content=note_data["content"], digest=self)
+            try:
+                created_note = scheduler.run_pipeline(validate=True)
+            except Exception:
+                self.append_error("A note could not be created from this report.")
+                continue
+
+            file_urls = note_data.get("file_urls", {})
+            for file_identifier, url in file_urls.items():
+                download_tasks.append(
+                    download_file_for_note.si(
+                        created_note.id, file_identifier, url, FileTransferStorage.bucket_name, self.id
                     )
+                )
+            created_note.save()
+            created_notes.append(created_note)
 
-            created_notes = []
-            download_tasks = []
+        self.summary = {
+            "notes_imported": len(created_notes),
+            "entry_classes_imported": len(report_data.get("entry_classes", [])),
+            "files_scheduled": len(download_tasks),
+            "files_failed": 0,
+            "files_downloaded": 0,
+        }
+        self.save(update_fields=["summary"])
 
-            for note_data in report_data.get("notes", []):
-                scheduler = TaskScheduler(self.user, content=note_data["content"], digest=self)
-                try:
-                    created_note = scheduler.run_pipeline(validate=True)
-                except Exception:
-                    self._append_error("A note could not be created from this report.")
-                    continue
-
-                file_urls = note_data.get("file_urls", {})
-                for file_identifier, url in file_urls.items():
-                    download_tasks.append(
-                        download_file_for_note.si(
-                            created_note.id, file_identifier, url, FileTransferStorage.bucket_name, self.id
-                        )
-                    )
-                created_note.save()
-                created_notes.append(created_note)
-
-            self.summary = {
-                "notes_imported": len(created_notes),
-                "entry_classes_imported": len(report_data.get("entry_classes", [])),
-                "files_scheduled": len(download_tasks),
-                "files_failed": 0,
-                "files_downloaded": 0,
-            }
-            self.save(update_fields=["summary"])
-
-            if download_tasks:
-                transaction.on_commit(lambda: group(*download_tasks).apply_async())
-            else:
-                self.finalize()
-        except Exception as e:
-            self.status = DigestStatus.ERROR
-            self.errors = ["The file could not be processed."]
-            self.save()
-            raise e
+        if download_tasks:
+            transaction.on_commit(lambda: group(*download_tasks).apply_async())
+        else:
+            self.finalize()

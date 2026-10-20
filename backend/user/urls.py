@@ -1,23 +1,24 @@
 """User app URL configuration."""
 
-from django.urls import path
+from django.urls import include, path
+
+from notes.views.snippet_view import UserMeSnippetsView, UserSnippetsView
+from teams.views import UserTeamList
 
 from .views import user_view
 from .views.oauth_view import OAuthConnectView, OAuthDisconnectView
 from .views.two_factor_view import Disable2FAView, Enable2FAView, Verify2FASetupView
 
 urlpatterns = [
-    path("oauth/connect/", OAuthConnectView.as_view(), name="user_oauth_connect"),
-    path(
-        "oauth/disconnect/<str:provider>/",
-        OAuthDisconnectView.as_view(),
-        name="user_oauth_disconnect",
-    ),
     path("", user_view.UserList.as_view(), name="user_list"),
     path("me/", user_view.UserMeDetail.as_view(), kwargs={"user_id": "me"}, name="user_detail_me"),
     path("<uuid:user_id>/", user_view.UserDetail.as_view(), name="user_detail"),
-    path("me/api-key/", user_view.UserMeAPIKey.as_view(), kwargs={"user_id": "me"}, name="user_api_key_me"),
+    path("<uuid:user_id>/access/", include("access.user_urls")),
+    path("<uuid:user_id>/teams/", UserTeamList.as_view(), name="user_team_list"),
+    path("me/snippets/", UserMeSnippetsView.as_view(), kwargs={"user_id": "me"}, name="user_snippets_me"),
+    path("<uuid:user_id>/snippets/", UserSnippetsView.as_view(), name="user_snippets"),
     path("<uuid:user_id>/api-key/", user_view.APIKey.as_view(), name="user_api_key"),
+    path("<uuid:user_id>/password/", user_view.AdminSetPasswordView.as_view(), name="user_set_password"),
     path(
         "me/default-note-template/",
         user_view.UserMeDefaultNoteTemplateView.as_view(),
@@ -29,16 +30,16 @@ urlpatterns = [
         user_view.DefaultNoteTemplateView.as_view(),
         name="user_default_note_template",
     ),
+    path("<uuid:user_id>/simulate/", user_view.UserSimulateView.as_view(), name="user_simulate"),
     path(
-        "me/manage/<str:action_name>/",
-        user_view.UserMeManage.as_view(),
-        kwargs={"user_id": "me"},
-        name="user_manage_me",
+        "<uuid:user_id>/email/confirmation/",
+        user_view.UserConfirmationEmailView.as_view(),
+        name="user_confirmation_email",
     ),
     path(
-        "<uuid:user_id>/manage/<str:action_name>/",
-        user_view.ManageUser.as_view(),
-        name="user_manage",
+        "<uuid:user_id>/password/reset/",
+        user_view.UserPasswordResetEmailView.as_view(),
+        name="user_password_reset_email",
     ),
     path(
         "me/sessions/",
@@ -62,7 +63,10 @@ urlpatterns = [
         user_view.UserSessionRevokeView.as_view(),
         name="user_session_revoke",
     ),
-    path("2fa/enable/", Enable2FAView.as_view(), name="user_2fa_enable"),
-    path("2fa/verify/", Verify2FASetupView.as_view(), name="user_2fa_verify"),
-    path("2fa/disable/", Disable2FAView.as_view(), name="user_2fa_disable"),
+    path("me/password/", user_view.ChangePasswordView.as_view(), name="user_password_me"),
+    path("me/2fa/enable/", Enable2FAView.as_view(), name="user_2fa_enable"),
+    path("me/2fa/verify/", Verify2FASetupView.as_view(), name="user_2fa_verify"),
+    path("me/2fa/disable/", Disable2FAView.as_view(), name="user_2fa_disable"),
+    path("me/oauth/", OAuthConnectView.as_view(), name="user_oauth_connect"),
+    path("me/oauth/<str:provider>/", OAuthDisconnectView.as_view(), name="user_oauth_disconnect"),
 ]

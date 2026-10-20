@@ -13,8 +13,8 @@ from core.openapi import get_common_error_responses, get_error_responses
 
 from ..authentication import CookieJWTAuthentication
 from ..exceptions import (
-    InvalidTwoFactorCodeException,
     TwoFactorAlreadyEnabledException,
+    TwoFactorCodeIncorrectException,
     TwoFactorNotEnabledException,
     UserErrorCodes,
 )
@@ -24,7 +24,7 @@ from ..utils.step_up import require_step_up, validate_step_up
 
 @extend_schema_view(
     post=extend_schema(
-        operation_id="users_2fa_enable_create",
+        operation_id="users_me_2fa_enable_create",
         summary="Enable 2FA",
         description="Initiates 2FA setup for the user and returns a QR code URL",
         request=StepUpSerializer,
@@ -57,14 +57,14 @@ class Enable2FAView(APIView):
 
 @extend_schema_view(
     post=extend_schema(
-        operation_id="users_2fa_verify_create",
+        operation_id="users_me_2fa_verify_create",
         summary="Verify 2FA Setup",
         description="Verifies the 2FA OTP and completes the setup",
         request=Verify2FASerializer,
         responses={
             200: {"description": "Two-factor authentication setup completed successfully"},
             **get_error_responses(
-                UserErrorCodes.INVALID_TWO_FACTOR_CODE,
+                UserErrorCodes.TWO_FACTOR_CODE_INCORRECT,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -82,7 +82,7 @@ class Verify2FASetupView(APIView):
         otp = serializer.validated_data["otp"]
 
         if not request.user.verify_otp(otp):
-            raise InvalidTwoFactorCodeException(detail="The two-factor authentication code is invalid.")
+            raise TwoFactorCodeIncorrectException(detail="The two-factor authentication code is incorrect.")
 
         with transaction.atomic():
             confirmed_devices = TOTPDevice.objects.select_for_update().filter(user=request.user, confirmed=True)
@@ -102,7 +102,7 @@ class Verify2FASetupView(APIView):
 
 @extend_schema_view(
     post=extend_schema(
-        operation_id="users_2fa_disable_create",
+        operation_id="users_me_2fa_disable_create",
         summary="Disable 2FA",
         description="Disables 2FA for the user",
         request=Disable2FASerializer,
@@ -110,7 +110,7 @@ class Verify2FASetupView(APIView):
             200: {"description": "Two-factor authentication disabled successfully"},
             **get_error_responses(
                 UserErrorCodes.TWO_FACTOR_NOT_ENABLED,
-                UserErrorCodes.INVALID_TWO_FACTOR_CODE,
+                UserErrorCodes.TWO_FACTOR_CODE_INCORRECT,
                 UserErrorCodes.CURRENT_PASSWORD_INCORRECT,
                 include_validation_error=True,
             ),
@@ -141,4 +141,4 @@ class Disable2FAView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        raise InvalidTwoFactorCodeException(detail="The two-factor authentication code is invalid.")
+        raise TwoFactorCodeIncorrectException(detail="The two-factor authentication code is incorrect.")

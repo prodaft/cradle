@@ -91,7 +91,7 @@ export default function OAuthCallback() {
 
             if (action === 'oauth_connect') {
                 const { error: connectError, response: connectResponse } =
-                    await fetchClient.POST('/users/oauth/connect/', { body });
+                    await fetchClient.POST('/users/me/oauth/', { body });
                 if (connectError)
                     throw { response: connectResponse, error: connectError };
                 const returnPath =
@@ -105,16 +105,9 @@ export default function OAuthCallback() {
             const {
                 error: loginError,
                 response: loginResponse,
-                data: resp,
+                data,
             } = await fetchClient.POST('/auth/oauth/login/', { body });
             if (loginError) throw { response: loginResponse, error: loginError };
-
-            const data = resp as {
-                role: string;
-                access_expires_at: string;
-                refresh_expires_at: string;
-                user_id?: string;
-            };
 
             setTokensDirectly({
                 accessExpiresAt: new Date(data.access_expires_at),
@@ -125,10 +118,7 @@ export default function OAuthCallback() {
 
             const redirectPath = sessionStorage.getItem('oauth_login_redirect') || '/';
             const normalizedRedirect =
-                redirectPath === '/oauth/callback' ||
-                redirectPath === '#/oauth/callback'
-                    ? '/'
-                    : redirectPath;
+                redirectPath === '/oauth/callback' ? '/' : redirectPath;
             sessionStorage.removeItem('oauth_login_redirect');
             router.navigate({
                 to: normalizeTo(normalizedRedirect),

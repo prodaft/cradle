@@ -4,6 +4,7 @@ FileReference stores metadata for files uploaded via presigned URLs. PendingUplo
 tracks uploads in progress until they are finalized or expire.
 """
 
+import logging
 import uuid
 
 from django.db import models
@@ -13,11 +14,13 @@ from entries.constants import INTERNAL_ENTRY_CLASS_DEFAULTS, SUBTYPE_FILE
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from management.settings import cradle_settings
-from notes.models import Note
 from user.models import CradleUser
 
+from .s3_utils import presign_get
 from .storage import FileTransferStorage
 from .uploads.models import BasePendingUpload
+
+logger = logging.getLogger(__name__)
 
 
 def file_upload_path(instance: "FileReference", filename: str) -> str:
@@ -58,14 +61,8 @@ class FileReference(models.Model, LifecycleModelMixin):
         help_text="Reference to the file in S3/MinIO storage",
     )
 
-    minio_file_name: models.CharField = models.CharField(
-        max_length=255, null=True, blank=True, help_text="Legacy: object key from old MinIO storage"
-    )
     file_name: models.CharField = models.CharField(
         max_length=255, null=True, blank=True, help_text="Original filename for display and download"
-    )
-    bucket_name: models.CharField = models.CharField(
-        max_length=255, null=True, blank=True, help_text="Legacy: bucket name from old MinIO storage"
     )
 
     note: models.ForeignKey = models.ForeignKey(
@@ -114,7 +111,7 @@ class FileReference(models.Model, LifecycleModelMixin):
         if user.is_cradle_admin:
             return True
         if self.note_id:
-            return Note.objects.get_accessible_notes(user).filter(id=self.note_id).exists()
+            return self.note.has_read_access(user)
         if self.digest_id:
             return self.digest.user_id == user.id
         if self.user_id:
@@ -127,13 +124,26 @@ class FileReference(models.Model, LifecycleModelMixin):
             return self.note.has_write_access(user)
         return self.has_access(user)
 
+    def download_url(self, *, expires_in: int, content_type: str | None = None) -> str:
+        """Presigned URL that downloads the file as an attachment named after its sanitized original name."""
+        from .uploads.flows import sanitize_upload_filename
+
+        filename = sanitize_upload_filename(self.file_name, default="download")
+        return presign_get(
+            FileTransferStorage.bucket_name,
+            self.file.name,
+            expires_in=expires_in,
+            response_content_type=content_type,
+            response_content_disposition=f'attachment; filename="{filename}"',
+        )
+
     @property
     def entities(self) -> list[Entry]:
         """Entity entries linked to this file's note (for relation creation)."""
         if self.note:
             if hasattr(self.note, "_prefetched_objects_cache") and "entries" in self.note._prefetched_objects_cache:
                 return [entry for entry in self.note.entries.all() if entry.entry_class.type == EntryType.ENTITY]
-            return list(self.note.entries.filter(entry_class__type=EntryType.ENTITY).all())
+            return list(self.note.entries.is_entity())
         return []
 
     @property
@@ -158,18 +168,16 @@ class FileReference(models.Model, LifecycleModelMixin):
         """
         from .tasks import process_file_task
 
-        try:
-            # Try to run asynchronously first
-            process_file_task.apply_async(args=(str(self.id),))
-        except Exception:
-            # If async fails (no Celery workers), run synchronously
-            process_file_task(str(self.id))
+        process_file_task.apply_async(args=(str(self.id),))
 
     @hook(AFTER_CREATE)
     def auto_process_file(self):
         """Automatically process the file after it is created.
 
-        Ensures hashes are calculated immediately upon file creation.
+        A broker error is logged rather than failing the upload; the file can be processed again later.
         """
         if cradle_settings.files.autoprocess_files:
-            self.process_file()
+            try:
+                self.process_file()
+            except Exception:
+                logger.exception("Failed to queue processing for file %s", self.id)

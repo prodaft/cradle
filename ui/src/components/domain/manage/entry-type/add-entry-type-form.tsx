@@ -1,4 +1,9 @@
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
+import {
+    entryClassFormat,
+    formatOptions,
+    typeOptions,
+} from '@/components/domain/manage/entry-type/entry-class-options';
 import { Button } from '@/components/ui/button';
 import { DialogClose, DialogFooter } from '@/components/ui/dialog';
 import {
@@ -27,7 +32,7 @@ import { useNdjsonQuery } from '@/hooks/query';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { fetchClient } from '@services/openapi/client';
-import type { components } from '@services/openapi/schema';
+import { entryTypeEnumValues, type components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
@@ -44,32 +49,10 @@ interface AddEntryTypeFormProps {
 
 type ChildOption = Option;
 
-type TypeOption = {
-    value: EntryClassRequest['type'];
-    label: string;
-};
-
-type FormatOptionValue = 'any' | 'options' | 'regex';
-type FormatOption = {
-    value: FormatOptionValue;
-    label: string;
-};
-
-const typeOptions: TypeOption[] = [
-    { value: 'artifact', label: 'Artifact' },
-    { value: 'entity', label: 'Entity' },
-];
-
-const formatOptions: FormatOption[] = [
-    { value: 'any', label: 'Any Format' },
-    { value: 'options', label: 'Enumerator' },
-    { value: 'regex', label: 'Regex' },
-];
-
 const entryTypeSchema = z.object({
     type: z
         .object({
-            value: z.enum(['artifact', 'entity'] as const),
+            value: z.enum(entryTypeEnumValues),
             label: z.string().min(1),
         })
         .nullable()
@@ -165,10 +148,9 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
     });
 
     const onSubmit = async (data: FormData) => {
-        const formatValue = data.typeFormat?.value;
         const payload: EntryClassRequest = {
             generative_regex: data.generativeRegex,
-            format: formatValue === 'any' ? null : (formatValue ?? null),
+            format: entryClassFormat(data.typeFormat?.value),
             type: data.type?.value ?? 'artifact',
             subtype: data.subtype,
             description: data.description,
@@ -176,7 +158,7 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
             color: data.color,
             regex: data.regex,
             options: data.options.split('\n'),
-            children: data.children?.map((child) => child.value) ?? [],
+            child_subtypes: data.children?.map((child) => child.value) ?? [],
         };
         try {
             await createEntryClass.mutateAsync(payload);

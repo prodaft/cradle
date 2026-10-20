@@ -38,12 +38,15 @@ import { Route as AuthenticatedManageManageAuthEnrichmentRouteImport } from './r
 import { Route as AuthenticatedManageManageAuthEntitiesRouteImport } from './routes/_authenticated/manage/_manage-auth/entities'
 import { Route as AuthenticatedManageManageAuthEntryTypesRouteImport } from './routes/_authenticated/manage/_manage-auth/entry-types'
 import { Route as AuthenticatedManageManageAuthSettingsRouteImport } from './routes/_authenticated/manage/_manage-auth/settings'
+import { Route as AuthenticatedManageManageAuthTeamsRouteImport } from './routes/_authenticated/manage/_manage-auth/teams'
 import { Route as AuthenticatedManageManageAuthTypeMappingsRouteImport } from './routes/_authenticated/manage/_manage-auth/type-mappings'
 import { Route as AuthenticatedManageManageAuthUsersRouteImport } from './routes/_authenticated/manage/_manage-auth/users'
 import { Route as AuthenticatedManageManageAuthEntitiesIndexRouteImport } from './routes/_authenticated/manage/_manage-auth/entities/index'
 import { Route as AuthenticatedManageManageAuthEntitiesIdRouteImport } from './routes/_authenticated/manage/_manage-auth/entities/$id'
 import { Route as AuthenticatedManageManageAuthEntryTypesIndexRouteImport } from './routes/_authenticated/manage/_manage-auth/entry-types/index'
 import { Route as AuthenticatedManageManageAuthEntryTypesIdRouteImport } from './routes/_authenticated/manage/_manage-auth/entry-types/$id'
+import { Route as AuthenticatedManageManageAuthTeamsIndexRouteImport } from './routes/_authenticated/manage/_manage-auth/teams/index'
+import { Route as AuthenticatedManageManageAuthTeamsIdRouteImport } from './routes/_authenticated/manage/_manage-auth/teams/$id'
 import { Route as AuthenticatedManageManageAuthUsersIndexRouteImport } from './routes/_authenticated/manage/_manage-auth/users/index'
 import { Route as AuthenticatedManageManageAuthUsersIdRouteImport } from './routes/_authenticated/manage/_manage-auth/users/$id'
 
@@ -199,6 +202,12 @@ const AuthenticatedManageManageAuthSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedManageManageAuthRoute,
   } as any)
+const AuthenticatedManageManageAuthTeamsRoute =
+  AuthenticatedManageManageAuthTeamsRouteImport.update({
+    id: '/teams',
+    path: '/teams',
+    getParentRoute: () => AuthenticatedManageManageAuthRoute,
+  } as any)
 const AuthenticatedManageManageAuthTypeMappingsRoute =
   AuthenticatedManageManageAuthTypeMappingsRouteImport.update({
     id: '/type-mappings',
@@ -234,6 +243,18 @@ const AuthenticatedManageManageAuthEntryTypesIdRoute =
     id: '/$id',
     path: '/$id',
     getParentRoute: () => AuthenticatedManageManageAuthEntryTypesRoute,
+  } as any)
+const AuthenticatedManageManageAuthTeamsIndexRoute =
+  AuthenticatedManageManageAuthTeamsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedManageManageAuthTeamsRoute,
+  } as any)
+const AuthenticatedManageManageAuthTeamsIdRoute =
+  AuthenticatedManageManageAuthTeamsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedManageManageAuthTeamsRoute,
   } as any)
 const AuthenticatedManageManageAuthUsersIndexRoute =
   AuthenticatedManageManageAuthUsersIndexRouteImport.update({
@@ -275,13 +296,16 @@ export interface FileRoutesByFullPath {
   '/manage/entities': typeof AuthenticatedManageManageAuthEntitiesRouteWithChildren
   '/manage/entry-types': typeof AuthenticatedManageManageAuthEntryTypesRouteWithChildren
   '/manage/settings': typeof AuthenticatedManageManageAuthSettingsRoute
+  '/manage/teams': typeof AuthenticatedManageManageAuthTeamsRouteWithChildren
   '/manage/type-mappings': typeof AuthenticatedManageManageAuthTypeMappingsRoute
   '/manage/users': typeof AuthenticatedManageManageAuthUsersRouteWithChildren
   '/manage/entities/$id': typeof AuthenticatedManageManageAuthEntitiesIdRoute
   '/manage/entry-types/$id': typeof AuthenticatedManageManageAuthEntryTypesIdRoute
+  '/manage/teams/$id': typeof AuthenticatedManageManageAuthTeamsIdRoute
   '/manage/users/$id': typeof AuthenticatedManageManageAuthUsersIdRoute
   '/manage/entities/': typeof AuthenticatedManageManageAuthEntitiesIndexRoute
   '/manage/entry-types/': typeof AuthenticatedManageManageAuthEntryTypesIndexRoute
+  '/manage/teams/': typeof AuthenticatedManageManageAuthTeamsIndexRoute
   '/manage/users/': typeof AuthenticatedManageManageAuthUsersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -309,9 +333,11 @@ export interface FileRoutesByTo {
   '/manage/type-mappings': typeof AuthenticatedManageManageAuthTypeMappingsRoute
   '/manage/entities/$id': typeof AuthenticatedManageManageAuthEntitiesIdRoute
   '/manage/entry-types/$id': typeof AuthenticatedManageManageAuthEntryTypesIdRoute
+  '/manage/teams/$id': typeof AuthenticatedManageManageAuthTeamsIdRoute
   '/manage/users/$id': typeof AuthenticatedManageManageAuthUsersIdRoute
   '/manage/entities': typeof AuthenticatedManageManageAuthEntitiesIndexRoute
   '/manage/entry-types': typeof AuthenticatedManageManageAuthEntryTypesIndexRoute
+  '/manage/teams': typeof AuthenticatedManageManageAuthTeamsIndexRoute
   '/manage/users': typeof AuthenticatedManageManageAuthUsersIndexRoute
 }
 export interface FileRoutesById {
@@ -345,13 +371,16 @@ export interface FileRoutesById {
   '/_authenticated/manage/_manage-auth/entities': typeof AuthenticatedManageManageAuthEntitiesRouteWithChildren
   '/_authenticated/manage/_manage-auth/entry-types': typeof AuthenticatedManageManageAuthEntryTypesRouteWithChildren
   '/_authenticated/manage/_manage-auth/settings': typeof AuthenticatedManageManageAuthSettingsRoute
+  '/_authenticated/manage/_manage-auth/teams': typeof AuthenticatedManageManageAuthTeamsRouteWithChildren
   '/_authenticated/manage/_manage-auth/type-mappings': typeof AuthenticatedManageManageAuthTypeMappingsRoute
   '/_authenticated/manage/_manage-auth/users': typeof AuthenticatedManageManageAuthUsersRouteWithChildren
   '/_authenticated/manage/_manage-auth/entities/$id': typeof AuthenticatedManageManageAuthEntitiesIdRoute
   '/_authenticated/manage/_manage-auth/entry-types/$id': typeof AuthenticatedManageManageAuthEntryTypesIdRoute
+  '/_authenticated/manage/_manage-auth/teams/$id': typeof AuthenticatedManageManageAuthTeamsIdRoute
   '/_authenticated/manage/_manage-auth/users/$id': typeof AuthenticatedManageManageAuthUsersIdRoute
   '/_authenticated/manage/_manage-auth/entities/': typeof AuthenticatedManageManageAuthEntitiesIndexRoute
   '/_authenticated/manage/_manage-auth/entry-types/': typeof AuthenticatedManageManageAuthEntryTypesIndexRoute
+  '/_authenticated/manage/_manage-auth/teams/': typeof AuthenticatedManageManageAuthTeamsIndexRoute
   '/_authenticated/manage/_manage-auth/users/': typeof AuthenticatedManageManageAuthUsersIndexRoute
 }
 export interface FileRouteTypes {
@@ -383,13 +412,16 @@ export interface FileRouteTypes {
     | '/manage/entities'
     | '/manage/entry-types'
     | '/manage/settings'
+    | '/manage/teams'
     | '/manage/type-mappings'
     | '/manage/users'
     | '/manage/entities/$id'
     | '/manage/entry-types/$id'
+    | '/manage/teams/$id'
     | '/manage/users/$id'
     | '/manage/entities/'
     | '/manage/entry-types/'
+    | '/manage/teams/'
     | '/manage/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -417,9 +449,11 @@ export interface FileRouteTypes {
     | '/manage/type-mappings'
     | '/manage/entities/$id'
     | '/manage/entry-types/$id'
+    | '/manage/teams/$id'
     | '/manage/users/$id'
     | '/manage/entities'
     | '/manage/entry-types'
+    | '/manage/teams'
     | '/manage/users'
   id:
     | '__root__'
@@ -452,13 +486,16 @@ export interface FileRouteTypes {
     | '/_authenticated/manage/_manage-auth/entities'
     | '/_authenticated/manage/_manage-auth/entry-types'
     | '/_authenticated/manage/_manage-auth/settings'
+    | '/_authenticated/manage/_manage-auth/teams'
     | '/_authenticated/manage/_manage-auth/type-mappings'
     | '/_authenticated/manage/_manage-auth/users'
     | '/_authenticated/manage/_manage-auth/entities/$id'
     | '/_authenticated/manage/_manage-auth/entry-types/$id'
+    | '/_authenticated/manage/_manage-auth/teams/$id'
     | '/_authenticated/manage/_manage-auth/users/$id'
     | '/_authenticated/manage/_manage-auth/entities/'
     | '/_authenticated/manage/_manage-auth/entry-types/'
+    | '/_authenticated/manage/_manage-auth/teams/'
     | '/_authenticated/manage/_manage-auth/users/'
   fileRoutesById: FileRoutesById
 }
@@ -676,6 +713,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManageManageAuthSettingsRouteImport
       parentRoute: typeof AuthenticatedManageManageAuthRoute
     }
+    '/_authenticated/manage/_manage-auth/teams': {
+      id: '/_authenticated/manage/_manage-auth/teams'
+      path: '/teams'
+      fullPath: '/manage/teams'
+      preLoaderRoute: typeof AuthenticatedManageManageAuthTeamsRouteImport
+      parentRoute: typeof AuthenticatedManageManageAuthRoute
+    }
     '/_authenticated/manage/_manage-auth/type-mappings': {
       id: '/_authenticated/manage/_manage-auth/type-mappings'
       path: '/type-mappings'
@@ -717,6 +761,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/manage/entry-types/$id'
       preLoaderRoute: typeof AuthenticatedManageManageAuthEntryTypesIdRouteImport
       parentRoute: typeof AuthenticatedManageManageAuthEntryTypesRoute
+    }
+    '/_authenticated/manage/_manage-auth/teams/': {
+      id: '/_authenticated/manage/_manage-auth/teams/'
+      path: '/'
+      fullPath: '/manage/teams/'
+      preLoaderRoute: typeof AuthenticatedManageManageAuthTeamsIndexRouteImport
+      parentRoute: typeof AuthenticatedManageManageAuthTeamsRoute
+    }
+    '/_authenticated/manage/_manage-auth/teams/$id': {
+      id: '/_authenticated/manage/_manage-auth/teams/$id'
+      path: '/$id'
+      fullPath: '/manage/teams/$id'
+      preLoaderRoute: typeof AuthenticatedManageManageAuthTeamsIdRouteImport
+      parentRoute: typeof AuthenticatedManageManageAuthTeamsRoute
     }
     '/_authenticated/manage/_manage-auth/users/': {
       id: '/_authenticated/manage/_manage-auth/users/'
@@ -801,6 +859,24 @@ const AuthenticatedManageManageAuthEntryTypesRouteWithChildren =
     AuthenticatedManageManageAuthEntryTypesRouteChildren,
   )
 
+interface AuthenticatedManageManageAuthTeamsRouteChildren {
+  AuthenticatedManageManageAuthTeamsIdRoute: typeof AuthenticatedManageManageAuthTeamsIdRoute
+  AuthenticatedManageManageAuthTeamsIndexRoute: typeof AuthenticatedManageManageAuthTeamsIndexRoute
+}
+
+const AuthenticatedManageManageAuthTeamsRouteChildren: AuthenticatedManageManageAuthTeamsRouteChildren =
+  {
+    AuthenticatedManageManageAuthTeamsIdRoute:
+      AuthenticatedManageManageAuthTeamsIdRoute,
+    AuthenticatedManageManageAuthTeamsIndexRoute:
+      AuthenticatedManageManageAuthTeamsIndexRoute,
+  }
+
+const AuthenticatedManageManageAuthTeamsRouteWithChildren =
+  AuthenticatedManageManageAuthTeamsRoute._addFileChildren(
+    AuthenticatedManageManageAuthTeamsRouteChildren,
+  )
+
 interface AuthenticatedManageManageAuthUsersRouteChildren {
   AuthenticatedManageManageAuthUsersIdRoute: typeof AuthenticatedManageManageAuthUsersIdRoute
   AuthenticatedManageManageAuthUsersIndexRoute: typeof AuthenticatedManageManageAuthUsersIndexRoute
@@ -824,6 +900,7 @@ interface AuthenticatedManageManageAuthRouteChildren {
   AuthenticatedManageManageAuthEntitiesRoute: typeof AuthenticatedManageManageAuthEntitiesRouteWithChildren
   AuthenticatedManageManageAuthEntryTypesRoute: typeof AuthenticatedManageManageAuthEntryTypesRouteWithChildren
   AuthenticatedManageManageAuthSettingsRoute: typeof AuthenticatedManageManageAuthSettingsRoute
+  AuthenticatedManageManageAuthTeamsRoute: typeof AuthenticatedManageManageAuthTeamsRouteWithChildren
   AuthenticatedManageManageAuthTypeMappingsRoute: typeof AuthenticatedManageManageAuthTypeMappingsRoute
   AuthenticatedManageManageAuthUsersRoute: typeof AuthenticatedManageManageAuthUsersRouteWithChildren
 }
@@ -838,6 +915,8 @@ const AuthenticatedManageManageAuthRouteChildren: AuthenticatedManageManageAuthR
       AuthenticatedManageManageAuthEntryTypesRouteWithChildren,
     AuthenticatedManageManageAuthSettingsRoute:
       AuthenticatedManageManageAuthSettingsRoute,
+    AuthenticatedManageManageAuthTeamsRoute:
+      AuthenticatedManageManageAuthTeamsRouteWithChildren,
     AuthenticatedManageManageAuthTypeMappingsRoute:
       AuthenticatedManageManageAuthTypeMappingsRoute,
     AuthenticatedManageManageAuthUsersRoute:

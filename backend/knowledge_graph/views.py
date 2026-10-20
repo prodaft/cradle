@@ -1,8 +1,8 @@
 """Knowledge graph API views: path finding, neighbors, and full graph."""
 
 import datetime
-from typing import cast
 
+from django.db.models import prefetch_related_objects
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -17,16 +17,15 @@ from access.enums import AccessType
 from access.models import Access
 from core.exceptions import BadRequestException, CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
-from core.pagination import LazyPaginator, TotalPagesPagination
+from core.pagination import LazyPaginator
 from core.validators import validate_int_list_param, validate_int_param, validate_page_param, validate_page_size
-from entries.enums import EntryType
-from entries.exceptions import EntriesErrorCodes, EntryNotFoundException
+from entries.exceptions import EntriesErrorCodes
+from entries.lookup import get_readable_entry
 from entries.models import Entry, Relation
 from query.exceptions import InvalidSearchSyntaxException, QueryErrorCodes
 from query.filters import EntryFilter
 from query.utils import parse_query
 from user.authentication import CookieJWTAuthentication
-from user.models import CradleUser
 
 from .exceptions import DepthOutOfRangeException, KnowledgeGraphErrorCodes
 from .serializers import (
@@ -36,24 +35,15 @@ from .serializers import (
 )
 from .utils import filter_valid_edges, get_edges_for_paths, get_neighbors, get_neighbors_paginated
 
+MAX_DEPTH = 5
 
-def _get_accessible_entry(user, entry_id: int) -> Entry:
-    """Return entry by ID if the user may use it as a graph anchor; raise EntryNotFoundException otherwise.
 
-    Artifacts must appear in ``Entry.objects.accessible`` (same basis as entry
-    detail). Entities additionally require explicit read access or public flag
-    via ``has_access_to_entities``.
-    """
-    cradle_user = cast(CradleUser, user)
-    try:
-        entry = Entry.objects.accessible(cradle_user).select_related("entry_class").get(pk=entry_id)
-    except Entry.DoesNotExist:
-        raise EntryNotFoundException(detail="That entry could not be found.")
-    if entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
-        cradle_user, {entry}, {AccessType.READ, AccessType.READ_WRITE}
-    ):
-        raise EntryNotFoundException(detail="That entry could not be found.")
-    return entry
+def _validate_depth(value: str | None, default: int) -> int:
+    """Parse the ``depth`` query parameter; raise DepthOutOfRangeException above MAX_DEPTH."""
+    depth = validate_int_param(value, param_name="depth", default=default)  # also rejects negatives
+    if depth > MAX_DEPTH:
+        raise DepthOutOfRangeException()
+    return depth
 
 
 @extend_schema(
@@ -76,17 +66,17 @@ def _get_accessible_entry(user, entry_id: int) -> Entry:
             many=True,
         ),
         OpenApiParameter(
-            name="min_date",
+            name="last_seen_at_gte",
             type=str,
             location=OpenApiParameter.QUERY,
-            description="Minimum date",
+            description="Only use relations last seen at or after this time (ISO datetime format)",
             required=False,
         ),
         OpenApiParameter(
-            name="max_date",
+            name="created_at_lte",
             type=str,
             location=OpenApiParameter.QUERY,
-            description="Maximum date",
+            description="Only use relations created at or before this time (ISO datetime format)",
             required=False,
         ),
     ],
@@ -116,18 +106,21 @@ class GraphPathFindView(APIView):
         if not ends:
             raise BadRequestException(detail="Select at least one destination.")
 
-        _get_accessible_entry(request.user, start)
+        get_readable_entry(request.user, start)
         for eid in ends:
-            _get_accessible_entry(request.user, eid)
+            get_readable_entry(request.user, eid)
 
-        min_date_raw = request.query_params.get("min_date")
-        max_date_raw = request.query_params.get("max_date")
-        min_date = (
-            parse_datetime(min_date_raw)
-            if min_date_raw
-            else datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
-        )
-        max_date = parse_datetime(max_date_raw) if max_date_raw else timezone.now()
+        min_date_raw = request.query_params.get("last_seen_at_gte")
+        max_date_raw = request.query_params.get("created_at_lte")
+        try:
+            min_date = (
+                parse_datetime(min_date_raw)
+                if min_date_raw
+                else datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
+            )
+            max_date = parse_datetime(max_date_raw) if max_date_raw else timezone.now()
+        except ValueError:
+            min_date = max_date = None
         if min_date is None or max_date is None:
             raise BadRequestException(detail="Enter valid start and end values for the date range.")
 
@@ -143,7 +136,7 @@ class GraphPathFindView(APIView):
 
         entry_ids = {edge.src for edge in edges} | {edge.dst for edge in edges}
 
-        entries = Entry.objects.filter(id__in=entry_ids)
+        entries = Entry.objects.filter(id__in=entry_ids).select_related("entry_class")
 
         colors = {e.entry_class.subtype: e.entry_class.color for e in entries if e.entry_class.subtype is not None}
 
@@ -154,7 +147,10 @@ class GraphPathFindView(APIView):
 
 @extend_schema(
     summary="Get graph neighbors",
-    description="Get neighboring entries in the knowledge graph for a given source entry.",
+    description=(
+        "Get neighboring entries in the knowledge graph for a given source entry. Paginated with "
+        "`page` and `has_next` instead of a total count, which is expensive for graph traversals."
+    ),
     parameters=[
         OpenApiParameter(
             name="src",
@@ -249,13 +245,10 @@ class GraphNeighborsView(APIView):
     def get(self, request: Request) -> Response:
         source_id = validate_int_param(request.query_params.get("src"), param_name="src")
         page_size = validate_page_size(request.query_params.get("page_size", "200"), default=200, max_size=200)
-        depth = validate_int_param(request.query_params.get("depth"), param_name="depth", default=1)
+        depth = _validate_depth(request.query_params.get("depth"), default=1)
         page = validate_page_param(request.query_params.get("page"), param_name="page", default=1)
 
-        if depth < 0 or depth > 5:
-            raise DepthOutOfRangeException()
-
-        source_entry = _get_accessible_entry(request.user, source_id)
+        source_entry = get_readable_entry(request.user, source_id)
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
         query_str = request.query_params.get("query")
@@ -300,7 +293,9 @@ class GraphNeighborsView(APIView):
             else:
                 raise DRFValidationError(filterset.errors)
 
-        serializer = EntryWithDepthSerializer(neighbors_qs, many=True)
+        neighbors = list(neighbors_qs)
+        prefetch_related_objects(neighbors, "entry_class")
+        serializer = EntryWithDepthSerializer(neighbors, many=True)
         results = serializer.data[:page_size]
         has_next = len(serializer.data) > page_size
         return LazyPaginator.format_response(page, has_next, results)
@@ -344,19 +339,14 @@ class GraphInaccessibleView(APIView):
 
     def get(self, request: Request) -> Response:
         source_id = validate_int_param(request.query_params.get("src"), param_name="src")
-        depth = validate_int_param(
-            request.query_params.get("depth"),
-            param_name="depth",
-            default=0,
-        )
-
-        if depth < 0 or depth > 5:
-            raise DepthOutOfRangeException()
+        depth = _validate_depth(request.query_params.get("depth"), default=0)
 
         if depth == 0:
-            return Response(GraphInaccessibleResponseSerializer({"inaccessible": []}).data, status=status.HTTP_200_OK)
+            return Response(
+                GraphInaccessibleResponseSerializer({"inaccessible_ids": []}).data, status=status.HTTP_200_OK
+            )
 
-        source_entry = _get_accessible_entry(request.user, source_id)
+        source_entry = get_readable_entry(request.user, source_id)
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
         entities = get_neighbors(
@@ -365,21 +355,21 @@ class GraphInaccessibleView(APIView):
             None,
             True,
             True,
-            lambda qs: qs.filter(entry_class__type=EntryType.ENTITY),
+            lambda qs: qs.is_entity(),
         )
 
         inaccessible = Access.objects.inaccessible_entries(
             request.user, entities, {AccessType.READ, AccessType.READ_WRITE}
         )
-        data = GraphInaccessibleResponseSerializer({"inaccessible": [e.id for e in inaccessible]}).data
+        data = GraphInaccessibleResponseSerializer({"inaccessible_ids": [e.id for e in inaccessible]}).data
         return Response(data, status=status.HTTP_200_OK)
 
 
 @extend_schema(
     summary="Get knowledge graph",
-    description="Returns the full knowledge graph accessible to the user.",
+    description="Returns the full knowledge graph accessible to the user in one response.",
     responses={
-        200: TotalPagesPagination().get_paginated_response_serializer(SubGraphSerializer, many=False),
+        200: SubGraphSerializer,
         **get_common_error_responses(),
     },
 )
@@ -390,18 +380,8 @@ class KnowledgeGraphView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        rels = Relation.objects.accessible(user=request.user)
+        rels = list(Relation.objects.accessible(user=request.user).select_related("e1__entry_class", "e2__entry_class"))
+        if not rels:
+            return Response({"entries": {}, "relations": [], "colors": {}}, status=status.HTTP_200_OK)
 
-        if not rels.exists():
-            return TotalPagesPagination.format_single_page_response(
-                0,
-                {"entries": {}, "relations": [], "colors": {}},
-            )
-
-        # Return full graph in one response (Cosmograph-style)
-        rels_list = list(rels.all())
-        serializer = SubGraphSerializer.from_relations(rels_list)
-        return TotalPagesPagination.format_single_page_response(
-            len(rels_list),
-            serializer.data,
-        )
+        return Response(SubGraphSerializer.from_relations(rels).data, status=status.HTTP_200_OK)

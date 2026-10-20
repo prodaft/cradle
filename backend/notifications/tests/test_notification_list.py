@@ -2,10 +2,10 @@
 
 from django.urls import reverse
 from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import AccessToken
 
 from entries.models import Entry
 from user.models import CradleUser
+from user.testing import session_access_token
 
 from ..models import AccessRequestNotification, MessageNotification
 from .utils import NotificationsTestCase
@@ -34,7 +34,7 @@ class NotificationListTest(NotificationsTestCase):
         )
         self.entity = Entry.objects.create(name="Entity", entry_class=self.entryclass1)
 
-        self.token = str(AccessToken.for_user(self.user))
+        self.token = str(session_access_token(self.user))
         self.headers = {"HTTP_COOKIE": f"access_token={self.token}"}
 
     def test_get_notifications_not_authenticated(self):
@@ -76,8 +76,8 @@ class NotificationListTest(NotificationsTestCase):
 
         self.assertTrue(results[0]["created_at"] >= results[1]["created_at"])
 
-        self.assertFalse(MessageNotification.objects.filter(user=self.user, is_unread=True).exists())
-        self.assertFalse(MessageNotification.objects.filter(user=self.other_user, is_unread=False).exists())
+        self.assertTrue(all(n["is_unread"] for n in results))
+        self.assertFalse(MessageNotification.objects.filter(is_unread=False).exists())
 
     def test_get_notifications_unread_only_filters_and_preserves_natural_unread(self):
         natural = MessageNotification.objects.create(
@@ -118,8 +118,22 @@ class NotificationListTest(NotificationsTestCase):
         read.refresh_from_db()
         self.assertFalse(read.is_unread)
 
-        # Default list still clears natural unreads.
-        r2 = self.client.get(reverse("notification_list"), **self.headers)
-        self.assertEqual(r2.status_code, 200)
+    def test_mark_read_clears_only_own_natural_unreads(self):
+        natural = MessageNotification.objects.create(user=self.user, message="Natural", is_unread=True)
+        marked = MessageNotification.objects.create(
+            user=self.user, message="Marked", is_unread=False, is_marked_unread=True
+        )
+        other = MessageNotification.objects.create(user=self.other_user, message="Other", is_unread=True)
+
+        response = self.client.post(reverse("notification_mark_read"), **self.headers)
+
+        self.assertEqual(response.status_code, 204)
         natural.refresh_from_db()
+        marked.refresh_from_db()
+        other.refresh_from_db()
         self.assertFalse(natural.is_unread)
+        self.assertTrue(marked.is_marked_unread)
+        self.assertTrue(other.is_unread)
+
+    def test_mark_read_not_authenticated(self):
+        self.assertEqual(self.client.post(reverse("notification_mark_read")).status_code, 401)

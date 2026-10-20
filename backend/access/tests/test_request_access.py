@@ -1,9 +1,9 @@
 from django.urls import reverse
-from rest_framework_simplejwt.tokens import AccessToken
 
 from entries.models import Entry
 from notifications.models import AccessRequestNotification
 from user.models import CradleUser, UserRoles
+from user.testing import session_access_token
 
 from ..enums import AccessType
 from ..models import Access
@@ -25,7 +25,7 @@ class RequestAccessTest(AccessTestCase):
         Access.objects.create(user=self.users[2], entity=self.entity, access_type=AccessType.READ)
         Access.objects.create(user=self.users[3], entity=self.entity, access_type=AccessType.NONE)
 
-        self.tokens_users = [str(AccessToken.for_user(self.users[id])) for id in range(5)]
+        self.tokens_users = [str(session_access_token(self.users[id])) for id in range(5)]
 
         self.headers = [{"HTTP_COOKIE": f"access_token={self.tokens_users[id]}"} for id in range(5)]
 

@@ -4,10 +4,10 @@ from uuid import UUID
 
 from django.urls import reverse
 from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import AccessToken
 
 from entries.models import Entry
 from user.models import CradleUser
+from user.testing import session_access_token
 
 from ..models import AccessRequestNotification, MessageNotification
 from .utils import NotificationsTestCase
@@ -36,11 +36,11 @@ class NotificationDetailTest(NotificationsTestCase):
             message="Access Request",
         )
 
-        self.token = str(AccessToken.for_user(self.user))
+        self.token = str(session_access_token(self.user))
         self.headers = {"HTTP_COOKIE": f"access_token={self.token}"}
 
     def test_update_notifications_not_authenticated(self):
-        response = self.client.put(
+        response = self.client.patch(
             reverse("notification_detail", kwargs={"notification_id": self.message_user.id}),
             {"is_unread": True},
             format="json",
@@ -49,7 +49,7 @@ class NotificationDetailTest(NotificationsTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_update_notifications_bad_request(self):
-        response = self.client.put(
+        response = self.client.patch(
             reverse("notification_detail", kwargs={"notification_id": self.message_user.id}),
             {"is_unread": "blabla"},
             format="json",
@@ -59,7 +59,7 @@ class NotificationDetailTest(NotificationsTestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_update_notifications_not_found(self):
-        response = self.client.put(
+        response = self.client.patch(
             reverse("notification_detail", kwargs={"notification_id": UUID(int=0)}),
             {"is_unread": True},
             format="json",
@@ -81,7 +81,7 @@ class NotificationDetailTest(NotificationsTestCase):
             message="Other user message",
         )
 
-        response = self.client.put(
+        response = self.client.patch(
             reverse("notification_detail", kwargs={"notification_id": other_notification.id}),
             {"is_unread": True},
             format="json",
@@ -91,7 +91,7 @@ class NotificationDetailTest(NotificationsTestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_update_notifications_updated_message_notification(self):
-        response = self.client.put(
+        response = self.client.patch(
             reverse("notification_detail", kwargs={"notification_id": self.message_user.id}),
             {"is_unread": True},
             format="json",
@@ -104,7 +104,7 @@ class NotificationDetailTest(NotificationsTestCase):
         self.assertTrue(self.message_user.is_marked_unread)
 
     def test_update_notifications_updated_access_notification(self):
-        response = self.client.put(
+        response = self.client.patch(
             reverse(
                 "notification_detail",
                 kwargs={"notification_id": self.access_request_user.id},
@@ -124,7 +124,7 @@ class NotificationDetailTest(NotificationsTestCase):
         self.message_user.is_marked_unread = True
         self.message_user.save(update_fields=["is_unread", "is_marked_unread"])
 
-        response = self.client.put(
+        response = self.client.patch(
             reverse("notification_detail", kwargs={"notification_id": self.message_user.id}),
             {"is_unread": False},
             format="json",

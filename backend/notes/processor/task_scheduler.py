@@ -8,6 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from entries.enums import EntryType
+from entries.models import calculate_acvec
 from user.models import CradleUser
 
 from ..constants import NOTES_TASK_SCHEDULER_DEFAULT_PIPELINE
@@ -16,7 +17,7 @@ from ..exceptions import (
     MaxLengthExceededException,
 )
 from ..models import Note
-from ..utils import calculate_acvec
+from ..tasks import note_processing_failed_task
 from .base_task import BaseTask
 
 
@@ -80,7 +81,7 @@ class TaskScheduler:
                     tasks.append(async_task)
 
             if tasks:
-                task_chain = chain(*tasks)
+                task_chain = chain(*tasks).on_error(note_processing_failed_task.si(note.id))
                 transaction.on_commit(lambda c=task_chain: c.apply_async())
 
             if update_acvec:

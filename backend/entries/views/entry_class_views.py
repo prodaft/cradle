@@ -140,14 +140,6 @@ class EntryClassList(ListCreateAPIView):
         operation_id="entry_classes_retrieve",
         summary="Get entry class details",
         description="Returns details of a specific entry class.",
-        parameters=[
-            OpenApiParameter(
-                name="class_subtype",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="Subtype of the entry class",
-            )
-        ],
         responses={
             200: EntryClassSerializer,
             **get_error_responses(
@@ -160,14 +152,6 @@ class EntryClassList(ListCreateAPIView):
         operation_id="entry_classes_destroy",
         summary="Delete entry class",
         description="Deletes an entry class. Only available to admin users. Cannot delete the 'alias' entry class.",
-        parameters=[
-            OpenApiParameter(
-                name="class_subtype",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="Subtype of the entry class to delete",
-            )
-        ],
         responses={
             204: {"description": "Entry class successfully deleted"},
             **get_error_responses(
@@ -183,14 +167,6 @@ class EntryClassList(ListCreateAPIView):
         summary="Update entry class",
         description="Updates an existing entry class. Cannot edit the 'alias' entry class.",
         request=EntryClassSerializer,
-        parameters=[
-            OpenApiParameter(
-                name="class_subtype",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="Subtype of the entry class to update",
-            )
-        ],
         responses={
             200: EntryClassSerializer,
             **get_error_responses(
@@ -257,14 +233,6 @@ class EntryClassDetail(APIView):
     get=extend_schema(
         summary="Get next available name",
         description="Returns the next available name for entries of this class based on the class prefix and existing entries.",  # noqa: E501
-        parameters=[
-            OpenApiParameter(
-                name="class_subtype",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="Subtype of the entry class",
-            )
-        ],
         responses={
             200: NextNameResponseSerializer,
             **get_error_responses(

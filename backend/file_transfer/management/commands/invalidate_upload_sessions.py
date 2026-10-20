@@ -4,12 +4,12 @@ This command finds all pending uploads (both file uploads and digest uploads)
 and cleans them up by deleting the S3 objects and database records.
 """
 
-from django.apps import apps
 from django.core.management.base import BaseCommand
 
 from file_transfer.models import PendingUpload
-from file_transfer.s3_utils import delete_object, exists
+from file_transfer.s3_utils import exists
 from file_transfer.storage import DigestStorage, FileTransferStorage
+from intelio.models import PendingDigestUpload
 
 
 class Command(BaseCommand):
@@ -33,18 +33,11 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
         force = options["force"]
 
-        # Count pending uploads
         file_uploads = PendingUpload.objects.all()
         file_upload_count = file_uploads.count()
 
-        if apps.is_installed("intelio"):
-            PendingDigestUpload = apps.get_model("intelio", "PendingDigestUpload")
-            digest_uploads = PendingDigestUpload.objects.all()
-            digest_upload_count = digest_uploads.count()
-        else:
-            self.stdout.write(self.style.WARNING("intelio app not available - skipping digest uploads"))
-            digest_uploads = []
-            digest_upload_count = 0
+        digest_uploads = PendingDigestUpload.objects.all()
+        digest_upload_count = digest_uploads.count()
 
         total_count = file_upload_count + digest_upload_count
 
@@ -52,7 +45,6 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("No pending uploads found."))
             return
 
-        # Show summary
         self.stdout.write(self.style.WARNING(f"\nFound {total_count} pending upload(s):"))
         self.stdout.write(f"  - File uploads: {file_upload_count}")
         self.stdout.write(f"  - Digest uploads: {digest_upload_count}")
@@ -60,65 +52,19 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(self.style.WARNING("\n[DRY RUN MODE - No changes will be made]\n"))
         else:
-            # Confirm deletion
             if not force:
                 confirm = input("\nThis will delete all pending uploads and their S3 objects. Are you sure? [y/N]: ")
                 if confirm.lower() != "y":
                     self.stdout.write(self.style.ERROR("Aborted."))
                     return
 
-        # Clean up file uploads
-        file_deleted_count = 0
-        file_s3_deleted_count = 0
+        file_deleted_count, file_s3_deleted_count = self._invalidate(
+            "file", file_uploads, FileTransferStorage.bucket_name, dry_run
+        )
+        digest_deleted_count, digest_s3_deleted_count = self._invalidate(
+            "digest", digest_uploads, DigestStorage.bucket_name, dry_run
+        )
 
-        self.stdout.write("\nCleaning up file uploads...")
-        for pending in file_uploads:
-            if dry_run:
-                self.stdout.write(f"  [DRY RUN] Would delete: {pending.object_key}")
-                if exists(FileTransferStorage.bucket_name, pending.object_key):
-                    self.stdout.write("    [DRY RUN] Would delete S3 object")
-            else:
-                # Delete S3 object if exists
-                if exists(FileTransferStorage.bucket_name, pending.object_key):
-                    try:
-                        delete_object(FileTransferStorage.bucket_name, pending.object_key)
-                        file_s3_deleted_count += 1
-                        self.stdout.write(self.style.SUCCESS(f"  ✓ Deleted S3 object: {pending.object_key}"))
-                    except Exception as e:
-                        self.stdout.write(self.style.ERROR(f"  ✗ Failed to delete S3 object {pending.object_key}: {e}"))
-
-                # Delete database record
-                pending.delete()
-                file_deleted_count += 1
-
-        # Clean up digest uploads
-        digest_deleted_count = 0
-        digest_s3_deleted_count = 0
-
-        if digest_upload_count > 0:
-            self.stdout.write("\nCleaning up digest uploads...")
-            for pending in digest_uploads:
-                if dry_run:
-                    self.stdout.write(f"  [DRY RUN] Would delete: {pending.object_key}")
-                    if exists(DigestStorage.bucket_name, pending.object_key):
-                        self.stdout.write("    [DRY RUN] Would delete S3 object")
-                else:
-                    # Delete S3 object if exists
-                    if exists(DigestStorage.bucket_name, pending.object_key):
-                        try:
-                            delete_object(DigestStorage.bucket_name, pending.object_key)
-                            digest_s3_deleted_count += 1
-                            self.stdout.write(self.style.SUCCESS(f"  ✓ Deleted S3 object: {pending.object_key}"))
-                        except Exception as e:
-                            self.stdout.write(
-                                self.style.ERROR(f"  ✗ Failed to delete S3 object {pending.object_key}: {e}")
-                            )
-
-                    # Delete database record
-                    pending.delete()
-                    digest_deleted_count += 1
-
-        # Print summary
         self.stdout.write("\n" + "=" * 60)
         if dry_run:
             self.stdout.write(self.style.WARNING("DRY RUN SUMMARY:"))
@@ -136,3 +82,23 @@ class Command(BaseCommand):
                     f"\n✓ Successfully invalidated {file_deleted_count + digest_deleted_count} upload session(s)"
                 )
             )
+
+    def _invalidate(self, label, pending_uploads, bucket_name, dry_run) -> tuple[int, int]:
+        """Discard each pending upload; return (records deleted, objects deleted)."""
+        if not pending_uploads:
+            return 0, 0
+        self.stdout.write(f"\nCleaning up {label} uploads...")
+        records = objects = 0
+        for pending in pending_uploads:
+            if dry_run:
+                self.stdout.write(f"  [DRY RUN] Would delete: {pending.object_key}")
+                if exists(bucket_name, pending.object_key):
+                    self.stdout.write("    [DRY RUN] Would delete S3 object")
+                continue
+            if pending.discard(bucket_name):
+                objects += 1
+                self.stdout.write(self.style.SUCCESS(f"  ✓ Deleted: {pending.object_key}"))
+            else:
+                self.stdout.write(self.style.ERROR(f"  ✗ Failed to delete S3 object {pending.object_key}"))
+            records += 1
+        return records, objects

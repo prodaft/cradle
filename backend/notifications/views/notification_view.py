@@ -4,7 +4,7 @@ from typing import cast
 from uuid import UUID
 
 from django.db import transaction
-from django.db.models import Case, Q, When
+from django.db.models import Case, When
 from drf_spectacular.utils import (
     OpenApiParameter,
     PolymorphicProxySerializer,
@@ -25,6 +25,7 @@ from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser
 
 from ..exceptions import NotificationErrorCodes, NotificationNotFoundException
+from ..managers import UNREAD
 from ..models import MessageNotification
 from ..serializers import (
     AccessGrantedNotificationSerializer,
@@ -36,6 +37,7 @@ from ..serializers import (
     NotificationSerializer,
     ReportProcessingErrorNotificationSerializer,
     ReportRenderNotificationSerializer,
+    TeamMembershipNotificationSerializer,
     UnreadNotificationsSerializer,
     UpdateNotificationSerializer,
 )
@@ -56,8 +58,8 @@ def _get_notification_or_404(user: CradleUser, notification_id: UUID) -> Message
         description=(
             "Retrieve paginated notifications for the authenticated user, sorted with unread "
             "notifications first, then by newest to oldest. When ``unread_only`` is true, only unread "
-            "rows are returned and natural unreads are not cleared; otherwise opening the list marks "
-            "natural unreads (``is_unread``) as read for the user."
+            "rows are returned. Reading the list does not change read state; use "
+            "``POST /notifications/mark-read/``."
         ),  # noqa: E501
         parameters=[
             OpenApiParameter(
@@ -77,10 +79,7 @@ def _get_notification_or_404(user: CradleUser, notification_id: UUID) -> Message
                 name="unread_only",
                 type=bool,
                 location=OpenApiParameter.QUERY,
-                description=(
-                    "If true, return only unread notifications (``is_unread``). Does not mark them as seen; "
-                    "the default list without this flag marks all notifications as seen."
-                ),
+                description="If true, return only unread notifications (``is_unread`` or ``is_marked_unread``).",
                 required=False,
             ),
         ],
@@ -98,6 +97,7 @@ def _get_notification_or_404(user: CradleUser, notification_id: UUID) -> Message
                             AccessGrantedNotificationSerializer,
                             NewUserNotificationSerializer,
                             AccessRequestNotificationSerializer,
+                            TeamMembershipNotificationSerializer,
                             ReportRenderNotificationSerializer,
                             ReportProcessingErrorNotificationSerializer,
                             EnrichmentCompleteNotificationSerializer,
@@ -124,7 +124,7 @@ class NotificationList(APIView):
     pagination_class = TotalPagesPagination
 
     def get(self, request: Request) -> Response:
-        """Return paginated notifications, unread first, and mark them as read."""
+        """Return paginated notifications, unread first."""
         user = cast(CradleUser, request.user)
         unread_only = str(request.query_params.get("unread_only", "")).lower() in (
             "1",
@@ -135,21 +135,18 @@ class NotificationList(APIView):
 
         qs = MessageNotification.objects.filter(user=user)
         if unread_only:
-            qs = qs.filter(Q(is_unread=True) | Q(is_marked_unread=True))
+            qs = qs.unread()
 
         notifications = (
             qs.select_subclasses()  # type: ignore
             .annotate(
                 is_unread_status=Case(
-                    When(Q(is_unread=True) | Q(is_marked_unread=True), then=True),
+                    When(UNREAD, then=True),
                     default=False,
                 )
             )
             .order_by("-is_unread_status", "-timestamp")
         )
-
-        if not unread_only:
-            MessageNotification.objects.filter(user=user, is_unread=True).update(is_unread=False)
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(notifications, request)
@@ -164,7 +161,7 @@ class NotificationDetail(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        operation_id="notifications_update",
+        operation_id="notifications_partial_update",
         summary="Update Notification",
         description="Update a notification's read/unread status by providing its ID.",  # noqa: E501
         request=UpdateNotificationSerializer,
@@ -177,13 +174,39 @@ class NotificationDetail(APIView):
             **get_common_error_responses(),
         },
     )
-    def put(self, request: Request, notification_id: UUID) -> Response:
+    def patch(self, request: Request, notification_id: UUID) -> Response:
         """Update notification read/unread status."""
         notification = _get_notification_or_404(cast(CradleUser, request.user), notification_id)
-        serializer = UpdateNotificationSerializer(notification, data=request.data)
+        serializer = UpdateNotificationSerializer(notification, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         with transaction.atomic():
             serializer.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="notifications_mark_read_create",
+        summary="Mark notifications as read",
+        description=(
+            "Marks all of the authenticated user's unread notifications (``is_unread``) as read. "
+            "Notifications the user explicitly marked unread (``is_marked_unread``) are left unchanged."
+        ),
+        request=None,
+        responses={
+            204: {"description": "Notifications marked as read"},
+            **get_common_error_responses(),
+        },
+    )
+)
+class NotificationMarkRead(APIView):
+    """Mark the user's unread notifications as read."""
+
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        MessageNotification.objects.filter(user=cast(CradleUser, request.user), is_unread=True).update(is_unread=False)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -206,9 +229,5 @@ class NotificationUnread(APIView):
 
     def get(self, request: Request) -> Response:
         """Return the number of unread notifications for the user."""
-        count = (
-            MessageNotification.objects.filter(user=cast(CradleUser, request.user))
-            .filter(Q(is_marked_unread=True) | Q(is_unread=True))
-            .count()
-        )
+        count = MessageNotification.objects.filter(user=cast(CradleUser, request.user)).unread().count()
         return Response(UnreadNotificationsSerializer({"count": count}).data)

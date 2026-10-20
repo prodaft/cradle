@@ -13,7 +13,6 @@ from entries.exceptions import InvalidEntryException
 from entries.models import Entry, EntryClass, Relation
 
 from ...constants import INTELIO_FALCON_DIGEST_CHUNK_SIZE, INTELIO_FALCON_DIGEST_REL_CHUNK_SIZE
-from ...enums import DigestStatus
 from ...tasks.falcon import digest_chunk
 from ..base import BaseDigest
 from ..mappings.falcon import FalconMapping
@@ -45,15 +44,11 @@ class FalconDigest(BaseDigest):
         """Split Falcon data into chunks and schedule Celery tasks for processing."""
         try:
             report_data = self.digest_data()
-        except json.JSONDecodeError:
-            self.status = DigestStatus.ERROR
-            self.errors = ["The file contains invalid JSON."]
-            self.save()
+        except json.JSONDecodeError, UnicodeDecodeError:
+            self.mark_error("The file contains invalid JSON.")
             return
         except ValueError:
-            self.status = DigestStatus.ERROR
-            self.errors = ["The file must contain a list of items."]
-            self.save()
+            self.mark_error("The file must contain a list of items.")
             return
 
         chunks = []
@@ -68,10 +63,9 @@ class FalconDigest(BaseDigest):
             )
 
         if chunks:
-            self.status = DigestStatus.WORKING
-            self.save()
-
             chain(*chunks).apply_async()
+        else:
+            self.finalize()
 
     def digest_chunk(self, start, end):
         """Process a slice of Falcon objects, creating entries and relations."""
@@ -84,7 +78,7 @@ class FalconDigest(BaseDigest):
             entity_obj = obj.get("entity", None)
 
             if entity_obj is None:
-                self._append_warning("Required entity information is missing from this item.")
+                self.append_warning("Required entity information is missing from this item.")
                 continue
 
             if f"{entity_obj.get('type')}:{entity_obj.get('value')}" not in entities:
@@ -95,7 +89,7 @@ class FalconDigest(BaseDigest):
                         "Unknown Falcon digest entity type (not in mapping): %s",
                         entity_obj.get("type"),
                     )
-                    self._append_warning("This item uses a type that is not mapped in settings.")
+                    self.append_warning("This item uses a type that is not mapped in settings.")
                     continue
 
                 entity = Entry.entities.filter(
@@ -111,7 +105,7 @@ class FalconDigest(BaseDigest):
                         entity_obj.get("type"),
                         entity_obj.get("value"),
                     )
-                    self._append_warning("A referenced entity could not be found or is not accessible.")
+                    self.append_warning("A referenced entity could not be found or is not accessible.")
                     continue
 
                 entities[f"{entity_obj.get('type')}:{entity_obj.get('value')}"] = entity
@@ -122,13 +116,13 @@ class FalconDigest(BaseDigest):
 
             if eclass is None:
                 logger.warning("Unknown Falcon digest object type (not in mapping): %s", obj.get("type"))
-                self._append_warning("This item uses a type that is not mapped in settings.")
+                self.append_warning("This item uses a type that is not mapped in settings.")
                 continue
 
             if eclass.type != EntryType.ARTIFACT:
                 st = str(eclass.subtype)
                 label = st.replace("_", " ").strip() or st
-                self._append_warning(
+                self.append_warning(
                     f'This digest can only link artifact entries. The type "{label}" is not an artifact.'
                 )
                 continue
@@ -136,12 +130,12 @@ class FalconDigest(BaseDigest):
             value = obj.get("value", None)
 
             if value is None:
-                self._append_warning("A value is missing for this item.")
+                self.append_warning("A value is missing for this item.")
                 continue
 
             if len(value) > 1024:
                 logger.warning("Falcon digest entity value exceeds max length (%s chars)", len(value))
-                self._append_warning("A value in this item is too long (maximum 1024 characters).")
+                self.append_warning("A value in this item is too long (maximum 1024 characters).")
                 continue
 
             try:
@@ -150,7 +144,7 @@ class FalconDigest(BaseDigest):
                     name=value,
                 )
             except InvalidEntryException as e:
-                self._append_warning(e.detail)
+                self.append_warning(e.detail)
                 continue
             except IntegrityError:
                 try:
@@ -163,7 +157,7 @@ class FalconDigest(BaseDigest):
                         "Falcon digest: duplicate entry exists but could not be loaded (%s)",
                         eclass.subtype,
                     )
-                    self._append_warning(
+                    self.append_warning(
                         "This entry already exists but could not be loaded. Try re-running the import later."
                     )
                     continue
@@ -195,25 +189,25 @@ class FalconDigest(BaseDigest):
                         "Unknown Falcon digest link type (not in mapping): %s",
                         link.get("type"),
                     )
-                    self._append_warning("This item uses a type that is not mapped in settings.")
+                    self.append_warning("This item uses a type that is not mapped in settings.")
                     continue
 
                 if eclass.type != EntryType.ARTIFACT:
                     st = str(eclass.subtype)
                     label = st.replace("_", " ").strip() or st
-                    self._append_warning(
+                    self.append_warning(
                         f'This digest can only link artifact entries. The type "{label}" is not an artifact.'
                     )
                     continue
 
                 value = link.get("value", None)
                 if value is None:
-                    self._append_warning("A value is missing for this link.")
+                    self.append_warning("A value is missing for this link.")
                     continue
 
                 if len(value) > 1024:
                     logger.warning("Falcon digest link value exceeds max length (%s chars)", len(value))
-                    self._append_warning("A value in this item is too long (maximum 1024 characters).")
+                    self.append_warning("A value in this item is too long (maximum 1024 characters).")
                     continue
 
                 try:
@@ -222,7 +216,7 @@ class FalconDigest(BaseDigest):
                         name=value,
                     )
                 except InvalidEntryException as e:
-                    self._append_warning(e.detail)
+                    self.append_warning(e.detail)
                     continue
                 except IntegrityError:
                     try:
@@ -235,7 +229,7 @@ class FalconDigest(BaseDigest):
                             "Falcon digest: duplicate entry exists but could not be loaded (%s)",
                             eclass.subtype,
                         )
-                        self._append_warning(
+                        self.append_warning(
                             "This entry already exists but could not be loaded. Try re-running the import later."
                         )
                         continue

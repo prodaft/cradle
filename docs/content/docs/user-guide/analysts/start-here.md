@@ -6,7 +6,7 @@ weight = 1
 +++
 
 CRADLE is a collaborative threat intelligence platform for analysts. It helps
-teams capture findings, connect related evidence, and publish reports from a
+teams capture findings, connect related evidence, and export reports from a
 shared knowledge base. Use it to turn scattered indicators and notes into a
 traceable investigation record that your team can reuse and build on.
 
@@ -23,7 +23,7 @@ name, or file hash.
 
 Notes capture your analysis and link it to one or more entries. Fleeting notes
 are auto-saved drafts for quick capture and remain private until you
-finalize them and link entries.
+publish them and link entries.
 
 Enrichment pulls in external context to expand an entry with related
 indicators, metadata, or classifications.

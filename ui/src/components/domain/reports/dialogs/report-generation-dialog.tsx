@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/dialog';
 import {
     Field,
+    FieldContent,
+    FieldDescription,
     FieldGroup,
     FieldLabel,
     FieldLegend,
@@ -26,34 +28,42 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
 import {
     ChartBarIcon,
     CodeIcon,
     DownloadSimpleIcon,
-    EyeIcon,
-    EyeSlashIcon,
+    FilePdfIcon,
     FileTextIcon,
 } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
+import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
 import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-/**
- * Report format types
- */
-type ReportFormat = 'html' | 'json' | 'plain';
+type ReportFormat = components['schemas']['DownloadStrategyEnum'];
+type ReportTlp = NonNullable<components['schemas']['PublishReportRequest']['tlp']>;
 
-/**
- * Report mode types
- */
-type ReportMode = 'anonymized' | 'transparent';
+const TLP_ITEMS: Record<ReportTlp, string> = {
+    clear: 'TLP:CLEAR',
+    green: 'TLP:GREEN',
+    amber: 'TLP:AMBER',
+    'amber+strict': 'TLP:AMBER+STRICT',
+    red: 'TLP:RED',
+};
 
 const FORMAT_ITEMS: Record<ReportFormat, React.ReactNode> = {
     html: (
         <>
             <FileTextIcon className='size-4' weight='bold' />
             <span>HTML</span>
+        </>
+    ),
+    pdf: (
+        <>
+            <FilePdfIcon className='size-4' weight='bold' />
+            <span>PDF</span>
         </>
     ),
     json: (
@@ -66,21 +76,6 @@ const FORMAT_ITEMS: Record<ReportFormat, React.ReactNode> = {
         <>
             <DownloadSimpleIcon className='size-4' weight='bold' />
             <span>Plain Text</span>
-        </>
-    ),
-};
-
-const MODE_ITEMS: Record<ReportMode, React.ReactNode> = {
-    anonymized: (
-        <>
-            <EyeSlashIcon className='size-4' weight='bold' />
-            <span>Anonymized</span>
-        </>
-    ),
-    transparent: (
-        <>
-            <EyeIcon className='size-4' weight='bold' />
-            <span>Transparent</span>
         </>
     ),
 };
@@ -104,7 +99,7 @@ interface ReportGenerationDialogProps {
 /**
  * ReportGenerationDialog component - generates reports from notes in various formats
  *
- * Supports HTML, JSON, and plain text formats, with anonymized or transparent modes.
+ * Supports HTML, PDF, JSON, and plain text formats, with an optional anonymized flag.
  *
  * @example
  * ```tsx
@@ -126,21 +121,30 @@ export default function ReportGenerationDialog({
 }: ReportGenerationDialogProps): React.JSX.Element {
     const [title, setTitle] = useState(noteTitle || '');
     const [format, setFormat] = useState<ReportFormat>('html');
-    const [mode, setMode] = useState<ReportMode>('anonymized');
+    const [anonymized, setAnonymized] = useState(true);
+    const [tlp, setTlp] = useState<ReportTlp>('clear');
+    const [includeToc, setIncludeToc] = useState(true);
+    const [includeEntries, setIncludeEntries] = useState(true);
 
     const generateReport = useMutation({
         mutationFn: async (data: {
             title: string;
             format: ReportFormat;
-            mode: ReportMode;
+            anonymized: boolean;
+            tlp: ReportTlp;
+            includeToc: boolean;
+            includeEntries: boolean;
             noteIds: string[];
         }) => {
-            const { error, response } = await fetchClient.POST('/reports/publish/', {
+            const { error, response } = await fetchClient.POST('/reports/', {
                 body: {
                     strategy: data.format,
                     note_ids: data.noteIds,
                     title: data.title.trim(),
-                    anonymized: data.mode === 'anonymized',
+                    anonymized: data.anonymized,
+                    tlp: data.tlp,
+                    include_toc: data.includeToc,
+                    include_entries: data.includeEntries,
                 },
             });
             if (error) throw { response, error };
@@ -165,13 +169,11 @@ export default function ReportGenerationDialog({
         () => new Set(targets.map((t) => t.id)),
     );
 
-    // Optional: keep title in sync when opening / switching notes
     useEffect(() => {
         if (!open) return;
         setTitle(noteTitle || '');
     }, [open, noteTitle]);
 
-    // Update selection only when it actually needs to change
     useEffect(() => {
         if (!open) return;
 
@@ -211,7 +213,10 @@ export default function ReportGenerationDialog({
         generateReport.mutate({
             title: title.trim(),
             format,
-            mode,
+            anonymized,
+            tlp,
+            includeToc,
+            includeEntries,
             noteIds: selectedNotes.map((t) => t.id),
         });
     };
@@ -223,8 +228,8 @@ export default function ReportGenerationDialog({
                     <DialogTitle>Generate Report</DialogTitle>
                     <DialogDescription>
                         {isSingle
-                            ? `Generate a report from "${targets[0]?.title || 'Untitled'}" in various formats (HTML, JSON, or plain text).`
-                            : 'Generate reports from selected notes in various formats (HTML, JSON, or plain text).'}
+                            ? `Generate a report from "${targets[0]?.title || 'Untitled'}" in various formats (HTML, PDF, JSON, or plain text).`
+                            : 'Generate reports from selected notes in various formats (HTML, PDF, JSON, or plain text).'}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -308,30 +313,98 @@ export default function ReportGenerationDialog({
                         </Select>
                     </Field>
 
-                    {/* Mode Selection */}
-                    <Field>
-                        <FieldLabel htmlFor='mode-select'>Mode</FieldLabel>
-                        <Select
-                            items={MODE_ITEMS}
-                            value={mode}
-                            onValueChange={(value) => {
-                                if (value) setMode(value as ReportMode);
-                            }}
+                    {(format === 'html' || format === 'pdf') && (
+                        <>
+                            <Field>
+                                <FieldLabel htmlFor='tlp-select'>TLP Label</FieldLabel>
+                                <Select
+                                    items={TLP_ITEMS}
+                                    value={tlp}
+                                    onValueChange={(value) => {
+                                        if (value) setTlp(value as ReportTlp);
+                                    }}
+                                    disabled={generateReport.isPending}
+                                >
+                                    <SelectTrigger id='tlp-select' className='w-full'>
+                                        <SelectValue placeholder='Select TLP label' />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(Object.keys(TLP_ITEMS) as ReportTlp[]).map(
+                                            (value) => (
+                                                <SelectItem key={value} value={value}>
+                                                    {TLP_ITEMS[value]}
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                                <FieldDescription>
+                                    Sharing label printed on the cover and every page
+                                    header.
+                                </FieldDescription>
+                            </Field>
+
+                            <Field orientation='horizontal'>
+                                <FieldContent className='flex-1'>
+                                    <FieldLabel
+                                        htmlFor='include-toc'
+                                        className='text-sm'
+                                    >
+                                        Table of Contents
+                                    </FieldLabel>
+                                    <FieldDescription>
+                                        Add a contents page after the cover.
+                                    </FieldDescription>
+                                </FieldContent>
+                                <Switch
+                                    id='include-toc'
+                                    checked={includeToc}
+                                    onCheckedChange={setIncludeToc}
+                                    disabled={generateReport.isPending}
+                                    className='self-center'
+                                />
+                            </Field>
+
+                            <Field orientation='horizontal'>
+                                <FieldContent className='flex-1'>
+                                    <FieldLabel
+                                        htmlFor='include-entries'
+                                        className='text-sm'
+                                    >
+                                        Entries Appendix
+                                    </FieldLabel>
+                                    <FieldDescription>
+                                        List every entry in the report on the last
+                                        pages.
+                                    </FieldDescription>
+                                </FieldContent>
+                                <Switch
+                                    id='include-entries'
+                                    checked={includeEntries}
+                                    onCheckedChange={setIncludeEntries}
+                                    disabled={generateReport.isPending}
+                                    className='self-center'
+                                />
+                            </Field>
+                        </>
+                    )}
+
+                    <Field orientation='horizontal'>
+                        <FieldContent className='flex-1'>
+                            <FieldLabel htmlFor='anonymized' className='text-sm'>
+                                Anonymized
+                            </FieldLabel>
+                            <FieldDescription>
+                                Replace identifiable values in the report content.
+                            </FieldDescription>
+                        </FieldContent>
+                        <Switch
+                            id='anonymized'
+                            checked={anonymized}
+                            onCheckedChange={setAnonymized}
                             disabled={generateReport.isPending}
-                        >
-                            <SelectTrigger id='mode-select' className='w-full'>
-                                <SelectValue placeholder='Select mode' />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {(Object.keys(MODE_ITEMS) as ReportMode[]).map(
-                                    (value) => (
-                                        <SelectItem key={value} value={value}>
-                                            {MODE_ITEMS[value]}
-                                        </SelectItem>
-                                    ),
-                                )}
-                            </SelectContent>
-                        </Select>
+                            className='self-center'
+                        />
                     </Field>
                 </FieldGroup>
 

@@ -47,7 +47,7 @@ export function NavUser() {
                 return 'destructive';
             case 'author':
                 return 'default';
-            case 'viewer':
+            case 'manager':
                 return 'secondary';
             default:
                 return 'outline';

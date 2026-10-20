@@ -1,7 +1,11 @@
 import { SearchInput } from '@/components/base/search-input/search-input';
-import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
+import {
+    SettingsHeaderActionsPortal,
+    SettingsSaveButton,
+} from '@/components/base/settings-header-actions/settings-header-actions';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
+import { ACCESS_OPTIONS } from '@/components/domain/manage/access-options';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -16,11 +20,7 @@ import {
     FREE_TEXT_SCHEMA,
     type SearchState,
 } from '@/lib/search-query/search-schema';
-import {
-    ArrowCounterClockwiseIcon,
-    ClockCounterClockwiseIcon,
-    FloppyDiskIcon,
-} from '@phosphor-icons/react';
+import {} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -39,21 +39,14 @@ interface UserPermissionsFormProps {
     readOnly?: boolean;
 }
 
-type AccessType = 'none' | 'read' | 'read-write';
-
 type AccessEntity = components['schemas']['AccessEntity'];
+type AccessType = (typeof ACCESS_OPTIONS)[number]['value'];
 
 interface PermissionEntity {
     id: number;
     name: string;
-    description?: string;
+    teamAccess: AccessType;
 }
-
-const ACCESS_OPTIONS = [
-    { value: 'none', label: 'None' },
-    { value: 'read', label: 'Read' },
-    { value: 'read-write', label: 'Read-Write' },
-];
 
 export default function UserPermissionsForm({
     id,
@@ -89,7 +82,7 @@ export default function UserPermissionsForm({
     } = useQuery({
         queryKey: [
             'get',
-            '/access/user/{user_id}/',
+            '/users/{user_id}/access/',
             id,
             pagination.pageIndex + 1,
             pagination.pageSize,
@@ -97,7 +90,7 @@ export default function UserPermissionsForm({
         ],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/access/user/{user_id}/',
+                '/users/{user_id}/access/',
                 {
                     params: {
                         path: { user_id: id },
@@ -124,7 +117,7 @@ export default function UserPermissionsForm({
         return results.map((c: AccessEntity) => ({
             id: c.id,
             name: c.name,
-            description: undefined,
+            teamAccess: c.team_access_type ?? 'none',
         }));
     }, [permissions?.results]);
 
@@ -227,7 +220,7 @@ export default function UserPermissionsForm({
             await Promise.all(
                 updates.map(async (update) => {
                     const { error, response } = await fetchClient.PUT(
-                        '/access/user/{user_id}/{entity_id}/',
+                        '/entries/entities/{entity_id}/access/users/{user_id}/',
                         {
                             params: {
                                 path: {
@@ -250,7 +243,7 @@ export default function UserPermissionsForm({
             setOriginalAccess(saved);
             setCurrentAccess(saved);
             queryClient.invalidateQueries({
-                queryKey: ['get', '/access/user/{user_id}/', id],
+                queryKey: ['get', '/users/{user_id}/access/', id],
             });
         },
     });
@@ -259,22 +252,6 @@ export default function UserPermissionsForm({
         if (!isDirty) return;
         savePermissions.mutate();
     };
-
-    const revert = () => {
-        setCurrentAccess({ ...originalAccess });
-    };
-
-    const resetToNone = () => {
-        const nextAccess: Record<number, AccessType> = { ...currentAccess };
-        entities.forEach((e) => {
-            nextAccess[e.id] = 'none';
-        });
-        setCurrentAccess(nextAccess);
-    };
-
-    const isAtDefault =
-        entities.length > 0 &&
-        entities.every((e) => (currentAccess[e.id] ?? 'none') === 'none');
 
     const emptyMessage = appliedSearch
         ? 'No entities found matching your search'
@@ -312,19 +289,23 @@ export default function UserPermissionsForm({
                 size: 200,
             },
             {
-                accessorKey: 'description',
-                header: 'Description',
-                meta: { label: 'Description' },
+                accessorKey: 'teamAccess',
+                header: 'Through teams',
+                meta: { label: 'Through teams' },
                 cell: ({ row }) => (
                     <span className='text-muted-foreground text-sm'>
-                        {row.original.description ?? '-'}
+                        {row.original.teamAccess === 'none'
+                            ? '-'
+                            : ACCESS_OPTIONS.find(
+                                  (o) => o.value === row.original.teamAccess,
+                              )?.label}
                     </span>
                 ),
             },
             {
                 id: 'access',
-                header: 'Access',
-                meta: { label: 'Access' },
+                header: 'Direct access',
+                meta: { label: 'Direct access' },
                 enableHiding: false,
                 cell: ({ row }) => {
                     const entity = row.original;
@@ -401,48 +382,11 @@ export default function UserPermissionsForm({
         <>
             {!readOnly && (
                 <SettingsHeaderActionsPortal>
-                    <div className='flex items-center gap-2'>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={!isDirty}
-                            onClick={revert}
-                            title='Revert'
-                        >
-                            <ArrowCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={isAtDefault}
-                            onClick={resetToNone}
-                            title='Default'
-                        >
-                            <ClockCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='default'
-                            size='icon'
-                            disabled={savePermissions.isPending || !isDirty}
-                            onClick={save}
-                            title='Save Settings'
-                        >
-                            {savePermissions.isPending ? (
-                                <Spinner className='size-4' />
-                            ) : (
-                                <FloppyDiskIcon className='size-4' weight='bold' />
-                            )}
-                        </Button>
-                    </div>
+                    <SettingsSaveButton
+                        isDirty={isDirty}
+                        saving={savePermissions.isPending}
+                        onSave={save}
+                    />
                 </SettingsHeaderActionsPortal>
             )}
             <DataTable

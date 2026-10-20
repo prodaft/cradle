@@ -8,7 +8,7 @@ from .models import Note
 
 
 class NoteFilter(django_filters.FilterSet):
-    """Filter notes by content, created_at, updated_at, date, author, and editor."""
+    """Filter notes by content, created_at, updated_at, author, and editor."""
 
     content = django_filters.CharFilter(lookup_expr="icontains", help_text="Filter by content (case-insensitive).")
     created_at = django_filters.DateTimeFilter(field_name="timestamp", help_text="Filter by exact creation time.")
@@ -32,11 +32,6 @@ class NoteFilter(django_filters.FilterSet):
         lookup_expr="lte",
         help_text="Filter by last edit time less than or equal.",
     )
-    date = django_filters.DateFilter(
-        field_name="timestamp",
-        lookup_expr="date",
-        help_text="Filter by date (YYYY-MM-DD).",
-    )
     author = django_filters.CharFilter(
         field_name="author__username",
         lookup_expr="icontains",
@@ -57,7 +52,6 @@ class NoteFilter(django_filters.FilterSet):
             "created_at_lte",
             "updated_at_gte",
             "updated_at_lte",
-            "date",
             "author",
             "editor",
         ]

@@ -20,12 +20,12 @@ class PublishErrorCodes(ErrorCode):
         "report-not-found",
     )
     REPORT_ALREADY_GENERATING = (
-        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_409_CONFLICT,
         "Report Already Generating",
         "report-already-generating",
     )
     REPORT_ALREADY_COMPLETED = (
-        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_409_CONFLICT,
         "Report Already Completed",
         "report-already-completed",
     )

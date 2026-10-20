@@ -74,15 +74,12 @@ export default function ChangePasswordDialog({
 
     const changePassword = useMutation({
         mutationFn: async (data: { oldPassword: string; newPassword: string }) => {
-            const { error, response } = await fetchClient.POST(
-                '/auth/change-password/',
-                {
-                    body: {
-                        old_password: data.oldPassword,
-                        new_password: data.newPassword,
-                    },
+            const { error, response } = await fetchClient.POST('/users/me/password/', {
+                body: {
+                    old_password: data.oldPassword,
+                    new_password: data.newPassword,
                 },
-            );
+            });
             if (error) throw { response, error };
         },
         meta: {

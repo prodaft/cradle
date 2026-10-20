@@ -23,6 +23,17 @@ class DownloadStrategies(models.TextChoices):
     HTML = "html", "HTML"
     PLAINTEXT = "plain", "Plain Text"
     JSON = "json", "JSON"
+    PDF = "pdf", "PDF"
+
+
+class TrafficLightProtocol(models.TextChoices):
+    """FIRST TLP 2.0 sharing labels printed on HTML and PDF reports."""
+
+    CLEAR = "clear", "TLP:CLEAR"
+    GREEN = "green", "TLP:GREEN"
+    AMBER = "amber", "TLP:AMBER"
+    AMBER_STRICT = "amber+strict", "TLP:AMBER+STRICT"
+    RED = "red", "TLP:RED"
 
 
 class ReportStatus(models.TextChoices):
@@ -74,6 +85,12 @@ class PublishedReport(models.Model, LoggableModelMixin):
         default=False,
         help_text="Whether the report content has been anonymized.",
     )
+    tlp = models.CharField(
+        max_length=16,
+        choices=TrafficLightProtocol.choices,
+        default=TrafficLightProtocol.CLEAR,
+        help_text="TLP sharing label shown on the report.",
+    )
     extra_data = models.JSONField(
         null=True,
         blank=True,
@@ -110,6 +127,30 @@ class PublishedReport(models.Model, LoggableModelMixin):
 
     def __str__(self) -> str:
         return f"{self.title} ({self.get_status_display()})"
+
+    @property
+    def publisher(self):
+        """The publish strategy for this report's format and anonymization, or None if the format is unknown."""
+        from .strategies import PUBLISH_STRATEGIES  # the strategies import this module
+
+        factory = PUBLISH_STRATEGIES.get((self.strategy or "").lower())
+        return factory(self.anonymized) if factory else None
+
+    def save_fields(self, *fields: str) -> bool:
+        """Write only ``fields`` and return whether the report still exists.
+
+        Background generation uses this instead of ``save()`` so a report deleted meanwhile is not re-inserted.
+        """
+        values = {f: getattr(self, f) for f in fields}
+        if "file" in values:
+            values["file"] = self.file.name
+        return PublishedReport.objects.filter(pk=self.pk).update(**values) > 0
+
+    def mark_error(self, message: str) -> bool:
+        """Set the error status and message; return whether the report still exists."""
+        self.status = ReportStatus.ERROR
+        self.error_message = message
+        return self.save_fields("status", "error_message")
 
     def propagate_from(self, log: EventLog) -> None:
         """Propagate log context; no-op for PublishedReport (reports do not create event logs)."""

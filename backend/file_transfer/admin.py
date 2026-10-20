@@ -12,10 +12,7 @@ class FileReferenceAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "file_name",
-        "minio_file_name",
-        "bucket_name",
         "note",
     )
-    search_fields = ("file_name", "minio_file_name", "bucket_name")
-    list_filter = ("bucket_name",)
+    search_fields = ("file_name",)
     readonly_fields = ("id",)

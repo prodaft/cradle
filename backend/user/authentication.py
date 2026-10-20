@@ -1,8 +1,9 @@
 """JWT cookie and API key authentication backends."""
 
 import logging
+from dataclasses import dataclass
+from datetime import datetime
 
-import bcrypt
 from django.conf import settings
 from django.http.cookie import parse_cookie
 from django.middleware.csrf import CsrfViewMiddleware
@@ -11,7 +12,8 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
-from .models import CradleUser
+from .models import CradleUser, UserSession
+from .utils.tokens import token_expires_at
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +25,16 @@ class CookieJWTAuthentication(JWTAuthentication):
     """
 
     def authenticate(self, request):
-        cookie_name = getattr(settings, "JWT_ACCESS_COOKIE_NAME", "access_token")
+        cookie_name = settings.JWT_ACCESS_COOKIE_NAME
         raw_token = request.COOKIES.get(cookie_name)
         if not raw_token:
             return None
         self.enforce_csrf(request)
         validated_token = self.get_validated_token(raw_token)
-        return self.get_user(validated_token), validated_token
+        user = self.get_user(validated_token)
+        if not UserSession.is_active(validated_token.get("sid"), user):
+            raise AuthenticationFailed(detail="This session has ended. Please sign in again.")
+        return user, validated_token
 
     def enforce_csrf(self, request):
         """Enforce CSRF check for unsafe methods. Safe methods are skipped."""
@@ -46,17 +51,30 @@ class CookieJWTAuthentication(JWTAuthentication):
             raise AuthenticationFailed(detail="Your session could not be verified. Refresh the page and try again.")
 
 
-def user_from_websocket_scope(scope) -> CradleUser | None:
-    """Return the user for the access-token cookie on a WebSocket scope, or None."""
+@dataclass(frozen=True)
+class WebSocketSession:
+    """The signed-in user of a WebSocket, the login session it belongs to, and when its access token expires."""
+
+    user: CradleUser
+    session_id: str
+    expires_at: datetime
+
+
+def websocket_session(scope) -> WebSocketSession | None:
+    """Return the session for the access-token cookie on a WebSocket scope, or None."""
     cookie_header = dict(scope.get("headers") or []).get(b"cookie", b"").decode("latin-1")
-    token = parse_cookie(cookie_header).get(getattr(settings, "JWT_ACCESS_COOKIE_NAME", "access_token"))
+    token = parse_cookie(cookie_header).get(settings.JWT_ACCESS_COOKIE_NAME)
     if not isinstance(token, str) or not token:
         return None
     auth = JWTAuthentication()
     try:
-        return auth.get_user(auth.get_validated_token(token))
+        validated = auth.get_validated_token(token)
+        user = auth.get_user(validated)
     except InvalidToken, TokenError, AuthenticationFailed:
         return None
+    if not UserSession.is_active(validated.get("sid"), user):
+        return None
+    return WebSocketSession(user, str(validated["sid"]), token_expires_at(validated))
 
 
 class APIKeyAuthentication(BaseAuthentication):
@@ -70,11 +88,8 @@ class APIKeyAuthentication(BaseAuthentication):
         if not auth_header:
             return None
 
-        key = auth_header.encode()
-        users_with_keys = CradleUser.objects.exclude(api_key__isnull=True).exclude(api_key="")
-
-        for user in users_with_keys:
-            if bcrypt.checkpw(key, user.api_key.encode()):
-                return (user, None)
+        user = CradleUser.objects.active().with_api_key(auth_header).first()
+        if user is not None:
+            return (user, None)
 
         raise AuthenticationFailed(detail="The API key is not valid.")

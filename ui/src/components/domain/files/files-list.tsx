@@ -73,7 +73,7 @@ import { useFileDownload } from './use-file-download';
 
 type FileRow = components['schemas']['FileReferenceWithNote'];
 
-type ListQuery = NonNullable<operations['notes_files_retrieve']['parameters']['query']>;
+type ListQuery = NonNullable<operations['files_list']['parameters']['query']>;
 
 type FilesListScopeQuery = Partial<Omit<ListQuery, 'linked_to' | 'references'>> & {
     linked_to?: number | string;
@@ -113,8 +113,8 @@ export default function FilesList({
     const reprocessFile = useMutation({
         mutationFn: async (id: string) => {
             const { error, response } = await fetchClient.POST(
-                '/file-transfer/process/',
-                { body: { file_id: id } },
+                '/files/{file_id}/process/',
+                { params: { path: { file_id: id } } },
             );
             if (error) throw { response, error };
         },
@@ -134,7 +134,6 @@ export default function FilesList({
                 page,
                 page_size: pageSize,
                 order_by: orderBy,
-                date: scope.date,
                 search: searchState.q || scope.search,
                 linked_to:
                     scope.linked_to != null ? String(scope.linked_to) : undefined,
@@ -153,7 +152,7 @@ export default function FilesList({
         isPaused,
     } = $api.useQuery(
         'get',
-        '/notes/files/',
+        '/files/',
         { params: { query: listQuery } },
         {
             meta: {
@@ -233,16 +232,13 @@ export default function FilesList({
 
     const deleteFile = useMutation({
         mutationFn: async (id: string) => {
-            const { error, response } = await fetchClient.DELETE(
-                '/file-transfer/delete/',
-                {
-                    params: {
-                        query: {
-                            file_id: id,
-                        },
+            const { error, response } = await fetchClient.DELETE('/files/{file_id}/', {
+                params: {
+                    path: {
+                        file_id: id,
                     },
                 },
-            );
+            });
             if (error) throw { response, error };
         },
         meta: {

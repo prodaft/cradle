@@ -54,7 +54,6 @@ class NotesErrorCodes(ErrorCode):
         "Entries Not Found",
         "entries-not-found",
     )
-    # Same title as ENTRIES_NOT_FOUND by design (indistinguishable 404); API ``code`` still differs.
     NO_ACCESS_TO_ENTRIES = (
         status.HTTP_404_NOT_FOUND,
         "Entries Not Found",
@@ -75,6 +74,11 @@ class NotesErrorCodes(ErrorCode):
         "Note Edit Conflict",
         "note-edit-conflict",
     )
+    NOTE_IS_PROCESSING = (
+        status.HTTP_409_CONFLICT,
+        "Note Is Processing",
+        "note-is-processing",
+    )
     SNIPPET_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
         "Snippet Not Found",
@@ -87,10 +91,10 @@ class NoteIsEmptyException(CradleAPIException):
 
     error_code = NotesErrorCodes.NOTE_IS_EMPTY
 
-    def __init__(self, detail=None, error_code=None, code=None):
+    def __init__(self, detail=None, error_code=None):
         if detail is None:
             detail = "Add a title or content before saving the note."
-        super().__init__(detail=detail, error_code=error_code, code=code)
+        super().__init__(detail=detail, error_code=error_code)
 
 
 class MaxLengthExceededException(CradleAPIException):
@@ -152,7 +156,8 @@ class EntriesNotFoundException(CradleAPIException):
 
     def __init__(self, links: Iterable[_LinkLike], *args, **kwargs) -> None:
         assert len(links) > 0
-        super().__init__(detail="Some of the linked entries could not be found.", *args, **kwargs)
+        names = ", ".join(f"[[{link.key}:{link.value}]]" for link in links)
+        super().__init__(detail=f"This linked entry does not exist: {names}.", *args, **kwargs)
 
 
 class NoAccessToEntriesException(CradleAPIException):
@@ -170,10 +175,10 @@ class InvalidReferenceCountException(CradleAPIException):
 
     error_code = NotesErrorCodes.INVALID_REFERENCE_COUNT
 
-    def __init__(self, detail=None, error_code=None, code=None):
+    def __init__(self, detail=None, error_code=None):
         if detail is None:
             detail = "Enter a whole number from 1 through the number of entries you listed."
-        super().__init__(detail=detail, error_code=error_code, code=code)
+        super().__init__(detail=detail, error_code=error_code)
 
 
 class CannotEditNoteException(CradleAPIException):
@@ -186,6 +191,17 @@ class NoteEditConflictException(CradleAPIException):
     """Exception raised when a note was changed since the client loaded it."""
 
     error_code = NotesErrorCodes.NOTE_EDIT_CONFLICT
+
+
+class NoteIsProcessingException(CradleAPIException):
+    """Exception raised when an action must wait for the note's processing pipeline to finish."""
+
+    error_code = NotesErrorCodes.NOTE_IS_PROCESSING
+
+    def __init__(self, detail=None, error_code=None):
+        if detail is None:
+            detail = "This note is still being processed. Try again once processing finishes."
+        super().__init__(detail=detail, error_code=error_code)
 
 
 class SnippetNotFoundException(CradleAPIException):

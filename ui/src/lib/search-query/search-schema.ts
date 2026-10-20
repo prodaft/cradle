@@ -89,7 +89,6 @@ const TOKEN_RE =
     /-?[a-zA-Z_][a-zA-Z0-9_.]*:"(?:[^"\\]|\\.)*"|-?[a-zA-Z_][a-zA-Z0-9_.]*:[^\s()"]*|-?=?"(?:[^"\\]|\\.)*"|[()]|[^\s()"]+|"/g;
 const QUALIFIER_RE = /^(-)?([a-zA-Z_][a-zA-Z0-9_.]*):(.*)$/;
 const NOT_RE = /^NOT$/i;
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export function findQualifier(
     schema: SearchSchema,
@@ -143,7 +142,7 @@ function parseDateRange(value: string): DateRange | string {
         range = { after: value, before: value };
     }
     for (const date of [range.after, range.before]) {
-        if (date !== undefined && (!DATE_RE.test(date) || toDay(date) !== date)) {
+        if (date !== undefined && toDay(date) !== date) {
             return `Invalid date '${date}'. Use YYYY-MM-DD.`;
         }
     }

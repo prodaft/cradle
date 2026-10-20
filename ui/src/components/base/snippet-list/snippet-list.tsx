@@ -14,8 +14,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import { logger } from '@/utils/logger';
 import { PencilIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
-import { $api, fetchClient } from '@services/openapi/client';
-import { useMutation } from '@tanstack/react-query';
+import { fetchClient } from '@services/openapi/client';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
     forwardRef,
     MouseEvent,
@@ -31,6 +31,41 @@ interface Snippet {
     content: string;
 }
 
+/** Snippet owner: `null` for system snippets, `'me'` for the current user, or a user's id. */
+type SnippetOwner = string | null;
+
+const SNIPPETS_QUERY_KEY = 'owner-snippets';
+
+async function fetchOwnerSnippets(owner: SnippetOwner): Promise<Snippet[]> {
+    const result =
+        owner === null
+            ? await fetchClient.GET('/notes/snippets/system/')
+            : owner === 'me'
+              ? await fetchClient.GET('/users/me/snippets/')
+              : await fetchClient.GET('/users/{user_id}/snippets/', {
+                    params: { path: { user_id: owner } },
+                });
+    if (result.error) throw { response: result.response, error: result.error };
+    return (result.data ?? []) as Snippet[];
+}
+
+async function createOwnerSnippet(
+    owner: SnippetOwner,
+    body: { name: string; content: string },
+) {
+    const result =
+        owner === null
+            ? await fetchClient.POST('/notes/snippets/system/', { body })
+            : owner === 'me'
+              ? await fetchClient.POST('/users/me/snippets/', { body })
+              : await fetchClient.POST('/users/{user_id}/snippets/', {
+                    params: { path: { user_id: owner } },
+                    body,
+                });
+    if (result.error) throw { response: result.response, error: result.error };
+    return result.data;
+}
+
 interface SnippetListProps {
     userId?: string | null;
     showTitle?: boolean;
@@ -43,58 +78,34 @@ export interface SnippetListRef {
 
 const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
     ({ userId = null, showTitle = true, description }, ref) => {
-        const normalizedUserId = userId === null ? 'null' : String(userId);
-
         const [addSnippetDialogOpen, setAddSnippetDialogOpen] = useState(false);
         const [editSnippetDialogOpen, setEditSnippetDialogOpen] = useState(false);
         const [editingSnippet, setEditingSnippet] = useState<Snippet | null>(null);
         const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
         const [deletingSnippet, setDeletingSnippet] = useState<Snippet | null>(null);
 
-        // Query for snippets
-        const { data: snippetsData, isLoading } = $api.useQuery(
-            'get',
-            '/notes/snippets/user/{user_id}/',
-            { params: { path: { user_id: normalizedUserId } } },
-            {
-                meta: {
-                    showErrorToast: true,
-                },
+        const { data: snippets = [], isLoading } = useQuery({
+            queryKey: [SNIPPETS_QUERY_KEY, userId],
+            queryFn: () => fetchOwnerSnippets(userId),
+            meta: {
+                showErrorToast: true,
             },
-        );
-
-        const snippets: Snippet[] = Array.isArray(snippetsData)
-            ? (snippetsData as Snippet[])
-            : [];
+        });
 
         const invalidateEditorSnippets = useCallback(() => {
             CradleEditor.invalidateSnippetsCache();
         }, []);
 
-        // Mutation for creating snippets
         const createMutation = useMutation({
-            mutationFn: async (data: { name: string; content: string }) => {
-                const {
-                    data: result,
-                    error,
-                    response,
-                } = await fetchClient.POST('/notes/snippets/user/{user_id}/', {
-                    params: { path: { user_id: normalizedUserId } },
-                    body: data,
-                });
-                if (error) throw { response, error };
-                return result;
-            },
+            mutationFn: (data: { name: string; content: string }) =>
+                createOwnerSnippet(userId, data),
             meta: {
-                invalidateQueries: [
-                    { queryKey: ['get', '/notes/snippets/user/{user_id}/'] },
-                ],
+                invalidateQueries: [{ queryKey: [SNIPPETS_QUERY_KEY] }],
                 successMessage: 'Snippet created successfully',
             },
             onSuccess: invalidateEditorSnippets,
         });
 
-        // Mutation for updating snippets
         const updateMutation = useMutation({
             mutationFn: async ({
                 snippetId,
@@ -115,15 +126,12 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                 return result;
             },
             meta: {
-                invalidateQueries: [
-                    { queryKey: ['get', '/notes/snippets/user/{user_id}/'] },
-                ],
+                invalidateQueries: [{ queryKey: [SNIPPETS_QUERY_KEY] }],
                 successMessage: 'Snippet updated successfully',
             },
             onSuccess: invalidateEditorSnippets,
         });
 
-        // Mutation for deleting snippets
         const deleteMutation = useMutation({
             mutationFn: async (snippetId: string) => {
                 const { error, response } = await fetchClient.DELETE(
@@ -133,9 +141,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                 if (error) throw { response, error };
             },
             meta: {
-                invalidateQueries: [
-                    { queryKey: ['get', '/notes/snippets/user/{user_id}/'] },
-                ],
+                invalidateQueries: [{ queryKey: [SNIPPETS_QUERY_KEY] }],
                 successMessage: 'Snippet deleted successfully',
             },
             onSuccess: invalidateEditorSnippets,

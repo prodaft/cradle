@@ -113,7 +113,7 @@ const mapRelationsForEntry = (
     if (!activeArtifactId) return [];
 
     return results.map((result) => {
-        const entries = [result.e1, result.e2].filter(Boolean);
+        const entries = [result.src, result.dst].filter(Boolean);
         const targetEntry =
             entries.find((entry: any) => {
                 const entryId = normalizeId(entry?.id);
@@ -266,7 +266,7 @@ export default function EnrichmentResults() {
         queryKey: queryKeys.enrichment.results.detail(String(id)),
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrich/{enrichment_id}/',
+                '/intelio/enrichments/{enrichment_id}/',
                 { params: { path: { enrichment_id: id } } },
             );
             if (error) throw { response, error };
@@ -284,16 +284,16 @@ export default function EnrichmentResults() {
         if (isError) {
             return 'Not found';
         }
-        if (!id) {
+        if (!id || !request) {
             return 'Enrichment';
         }
-        const t = request?.title;
+        const t = request.title;
         if (typeof t === 'string' && t.trim().length > 0) {
             const s = t.length > 48 ? `${t.slice(0, 45)}…` : t;
             return `Enrichment: ${s}`;
         }
         return `Enrichment: Request #${id}`;
-    }, [id, isError, request?.title]);
+    }, [id, isError, request]);
 
     useDockPanelTab({
         title: dockPanelTitle,
@@ -311,7 +311,7 @@ export default function EnrichmentResults() {
         queryKey: queryKeys.enrichment.results.detail(`${id}-${selectedEnricher}`),
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrich/{enrichment_id}/{enricher_type}/',
+                '/intelio/enrichments/{enrichment_id}/enrichers/{enricher_type}/',
                 {
                     params: {
                         path: { enrichment_id: id, enricher_type: selectedEnricher! },
@@ -338,7 +338,7 @@ export default function EnrichmentResults() {
         }),
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrich/{enrichment_id}/{enricher_type}/relations/',
+                '/intelio/enrichments/{enrichment_id}/enrichers/{enricher_type}/relations/',
                 {
                     params: {
                         path: {
@@ -614,17 +614,17 @@ export default function EnrichmentResults() {
         const formatted = results.map((result) => {
             const entries: Array<{ type: string; name: string }> = [];
 
-            if (result.e1) {
+            if (result.src) {
                 entries.push({
-                    type: result.e1.subtype || 'unknown',
-                    name: result.e1.name || '',
+                    type: result.src.subtype || 'unknown',
+                    name: result.src.name || '',
                 });
             }
 
-            if (result.e2) {
+            if (result.dst) {
                 entries.push({
-                    type: result.e2.subtype || 'unknown',
-                    name: result.e2.name || '',
+                    type: result.dst.subtype || 'unknown',
+                    name: result.dst.name || '',
                 });
             }
 
@@ -791,15 +791,10 @@ export default function EnrichmentResults() {
                                 </span>
                             </div>
                         )}
-                        {(request.user_detail ?? request.userDetail) && (
+                        {request.created_by && (
                             <div className='flex items-center gap-1.5'>
                                 <UserIcon size={14} weight='bold' />
-                                <span>
-                                    {
-                                        (request.user_detail ?? request.userDetail)
-                                            ?.username
-                                    }
-                                </span>
+                                <span>{request.created_by.username}</span>
                             </div>
                         )}
                         {ignoredArtifacts.length > 0 && (

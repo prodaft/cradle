@@ -15,9 +15,6 @@ dist-ssr
 coverage
 
 # Editor directories and files
-.vscode/*
-!.vscode/launch.json
-.idea
 .DS_Store
 *.suo
 *.ntvs*
@@ -26,7 +23,6 @@ coverage
 *.sw?
 
 stats.html
-CLAUDE.md
-tsconfig.tsbuildinfo
+*.tsbuildinfo
 .vite-cache
 .tanstack

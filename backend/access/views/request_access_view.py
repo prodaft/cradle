@@ -2,7 +2,6 @@
 
 from typing import cast
 
-from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -15,38 +14,19 @@ from entries.exceptions import EntityNotFoundException, EntriesErrorCodes
 from entries.models import Entry
 from notifications.models import AccessRequestNotification
 from user.authentication import CookieJWTAuthentication
-from user.models import CradleUser, UserRoles
+from user.models import CradleUser
 
 from ..enums import AccessType
 from ..models import Access
 from ..serializers import RequestAccessSerializer
 
 
-def notify_access_request(user: CradleUser, entity: Entry, message: str) -> None:
-    """Notify everyone who can grant access to ``entity`` (admins and managers) that ``user`` asked for it."""
-    granters = CradleUser.objects.filter(role__in=(UserRoles.ADMIN, UserRoles.MANAGER))
-    with transaction.atomic():
-        for notified_user_id in granters.values_list("id", flat=True):
-            AccessRequestNotification.objects.create(
-                user_id=notified_user_id,
-                requesting_user=user,
-                entity=entity,
-                message=message,
-            )
-
-
 @extend_schema_view(
     post=extend_schema(
-        operation_id="access_request_create",
+        operation_id="entities_access_requests_create",
         summary="Request access to entity",
-        description="Allows a user to request access for an entity. All admins and managers receive a notification. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.",  # noqa: E501
+        description="Allows a user to request access for an entity. The leads of the entity's owning team are notified (admins if it has none); for an entity without an owning team, all admins and managers are. If the user making the request already has read-write access, no notifications are sent but the request is deemed successful.",  # noqa: E501
         parameters=[
-            OpenApiParameter(
-                name="entity_id",
-                type=int,
-                location=OpenApiParameter.PATH,
-                description="ID of the entity to request access for",
-            ),
             OpenApiParameter(
                 name="subtype",
                 type=str,
@@ -93,6 +73,8 @@ class RequestAccess(APIView):
         if Access.objects.has_access_to_entities(user, {entity}, {AccessType.READ_WRITE}):
             return Response({"detail": "Access request sent successfully."}, status=status.HTTP_201_CREATED)
 
-        notify_access_request(user, entity, f"User {user.username} has requested access for entity {entity.name}")
+        AccessRequestNotification.notify_granters(
+            user, entity, f"User {user.username} has requested access for entity {entity.name}"
+        )
 
         return Response({"detail": "Access request sent successfully."}, status=status.HTTP_201_CREATED)

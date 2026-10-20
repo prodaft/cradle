@@ -1,5 +1,7 @@
-import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
-import { Button } from '@/components/ui/button';
+import {
+    SettingsHeaderActionsPortal,
+    SettingsSaveButton,
+} from '@/components/base/settings-header-actions/settings-header-actions';
 import {
     Field,
     FieldContent,
@@ -12,15 +14,10 @@ import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-    ArrowCounterClockwiseIcon,
-    ClockCounterClockwiseIcon,
-    FloppyDiskIcon,
-} from '@phosphor-icons/react';
+import {} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import isEqual from 'lodash/isEqual';
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -51,12 +48,10 @@ function getSearchSettingsFromApi(
 
 export default function SearchSettingsForm() {
     const formId = useId();
-    const loadedValuesRef = useRef<SearchSettingsFormData | null>(null);
 
     const {
         handleSubmit,
         reset,
-        watch,
         control,
         formState: { isDirty, isSubmitting },
     } = useForm<SearchSettingsFormData>({
@@ -106,7 +101,6 @@ export default function SearchSettingsForm() {
     useEffect(() => {
         const values = getSearchSettingsFromApi(settings);
         if (!values) return;
-        loadedValuesRef.current = values;
         reset(values);
     }, [settings, reset]);
 
@@ -126,52 +120,14 @@ export default function SearchSettingsForm() {
         );
     }
 
-    const revert = () => {
-        if (loadedValuesRef.current) reset(loadedValuesRef.current);
-    };
-    const resetToDefaults = () =>
-        reset(SEARCH_SETTINGS_DEFAULTS, { keepDefaultValues: true });
-    const isAtDefault = isEqual(watch(), SEARCH_SETTINGS_DEFAULTS);
-
     return (
         <>
             <SettingsHeaderActionsPortal>
-                <div className='flex items-center gap-2'>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={!isDirty}
-                        onClick={revert}
-                        title='Revert'
-                    >
-                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={isAtDefault}
-                        onClick={resetToDefaults}
-                        title='Default'
-                    >
-                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='submit'
-                        form={formId}
-                        variant='default'
-                        size='icon'
-                        disabled={isSubmitting || !isDirty}
-                        title='Save Settings'
-                    >
-                        {isSubmitting ? (
-                            <Spinner className='size-4' />
-                        ) : (
-                            <FloppyDiskIcon className='size-4' weight='bold' />
-                        )}
-                    </Button>
-                </div>
+                <SettingsSaveButton
+                    isDirty={isDirty}
+                    saving={isSubmitting}
+                    form={formId}
+                />
             </SettingsHeaderActionsPortal>
             <form id={formId} onSubmit={handleSubmit(onSubmit)}>
                 <div className='flex flex-col gap-6'>

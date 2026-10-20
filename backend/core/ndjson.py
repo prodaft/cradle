@@ -25,6 +25,5 @@ def ndjson_streaming_response(rows: Iterator[dict[str, Any]]) -> StreamingHttpRe
 
     response = StreamingHttpResponse(chunks(), content_type="application/x-ndjson")
     response["Cache-Control"] = "no-store"
-    # Hint for nginx to flush chunks to the client instead of buffering the whole body.
     response["X-Accel-Buffering"] = "no"
     return response

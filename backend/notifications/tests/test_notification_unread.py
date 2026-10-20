@@ -2,10 +2,10 @@
 
 from django.urls import reverse
 from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import AccessToken
 
 from entries.models import Entry
 from user.models import CradleUser
+from user.testing import session_access_token
 
 from ..models import AccessRequestNotification, MessageNotification
 from .utils import NotificationsTestCase
@@ -27,7 +27,7 @@ class NotificationUnreadTest(NotificationsTestCase):
         )
         self.entity = Entry.objects.create(name="Entity", entry_class=self.entryclass1)
 
-        self.token = str(AccessToken.for_user(self.user))
+        self.token = str(session_access_token(self.user))
         self.headers = {"HTTP_COOKIE": f"access_token={self.token}"}
 
     def test_unread_notifications_not_authenticated(self):

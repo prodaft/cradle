@@ -46,8 +46,8 @@ import { truncateText } from '@/utils/dashboard';
 import { parseMarkdownInline } from '@/utils/parser';
 import {
     ArrowClockwiseIcon,
-    ChartBarIcon,
     DotsThreeIcon,
+    ExportIcon,
     LockIcon,
     LockKeyOpenIcon,
     PlusCircleIcon,
@@ -247,7 +247,7 @@ export default function NotesTable({
         const apiStatus: ListQuery['status'] | undefined = statuses.length
             ? statuses
             : hideFleetingNotes
-              ? ['finalized']
+              ? ['published']
               : undefined;
 
         return Object.fromEntries(
@@ -263,7 +263,6 @@ export default function NotesTable({
                 include_restricted: scope.search ? true : undefined,
                 author: scope.author,
                 editor: scope.editor,
-                date: scope.date,
                 references: scope.references,
                 created_at_gte:
                     dayStartIso(scope.created_date_from) ?? scope.created_at_gte,
@@ -392,7 +391,7 @@ export default function NotesTable({
 
         if (failures === 0) {
             toast.success(
-                `Successfully relinked ${successes} note${successes > 1 ? 's' : ''}`,
+                `Relinking ${successes} note${successes > 1 ? 's' : ''} in the background`,
             );
         } else if (successes === 0) {
             const firstRejected = results.find(
@@ -402,7 +401,7 @@ export default function NotesTable({
             toast.error(getDisplayMessage(parsed));
         } else {
             toast.warning(
-                `Relinked ${successes} note${successes > 1 ? 's' : ''}, ${failures} failed`,
+                `Relinking ${successes} note${successes > 1 ? 's' : ''}, ${failures} could not be started`,
             );
         }
 
@@ -567,7 +566,7 @@ export default function NotesTable({
                 enableSorting: false,
             },
             {
-                accessorKey: 'author',
+                accessorKey: 'created_by',
                 id: 'author',
                 meta: { label: 'Author' },
                 header: ({ column }) => (
@@ -577,13 +576,13 @@ export default function NotesTable({
                     const item = row.original;
                     return (
                         <div className='truncate w-32'>
-                            {truncateText(item.author?.username || '', 16)}
+                            {truncateText(item.created_by?.username || '', 16)}
                         </div>
                     );
                 },
             },
             {
-                accessorKey: 'editor',
+                accessorKey: 'updated_by',
                 id: 'editor',
                 meta: { label: 'Editor' },
                 header: ({ column }) => (
@@ -593,7 +592,7 @@ export default function NotesTable({
                     const item = row.original;
                     return (
                         <div className='truncate w-32'>
-                            {truncateText(item.editor?.username || '', 16)}
+                            {truncateText(item.updated_by?.username || '', 16)}
                         </div>
                     );
                 },
@@ -693,8 +692,8 @@ export default function NotesTable({
                                                 setIsReportOpen(true);
                                             }}
                                         >
-                                            <ChartBarIcon size={16} weight='bold' />
-                                            Report
+                                            <ExportIcon size={16} weight='bold' />
+                                            Export
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onClick={() => {
@@ -935,8 +934,8 @@ export default function NotesTable({
                             isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                     >
-                        <ChartBarIcon width={18} height={18} />
-                        Report
+                        <ExportIcon width={18} height={18} />
+                        Export
                     </ActionBarItem>
                     <ActionBarItem
                         onClick={enrich}

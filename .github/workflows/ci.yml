@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: "3.14"
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --locked
       - name: Run ruff
         run: uv run ruff check .
 
@@ -95,9 +95,9 @@ jobs:
       - name: Install system dependencies
         run: |
           apt update
-          apt install -y python3-pip libmagic1
+          apt install -y python3-pip libmagic1 libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-liberation fonts-roboto
       - name: Install dependencies
-        run: uv sync --extra dev
+        run: uv sync --locked
       - name: Settings Copy
         run: cp cradle/settings_test.py cradle/settings.py
       - name: Apply Migrations

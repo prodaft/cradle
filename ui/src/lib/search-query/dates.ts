@@ -4,9 +4,11 @@
 import type { DateRange } from '@/lib/search-query/search-schema';
 import { endOfDay, format, isValid, parseISO, startOfDay } from 'date-fns';
 
-/** Local `YYYY-MM-DD` from a day or an ISO datetime (e.g. a URL param); undefined if invalid. */
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** A valid `YYYY-MM-DD` day (e.g. a URL param); undefined otherwise. */
 export function toDay(value: unknown): string | undefined {
-    if (typeof value !== 'string' || !value) return undefined;
+    if (typeof value !== 'string' || !DAY_RE.test(value)) return undefined;
     const date = parseISO(value);
     return isValid(date) ? format(date, 'yyyy-MM-dd') : undefined;
 }
@@ -24,7 +26,7 @@ export function dayEndIso(day: unknown): string | undefined {
 }
 
 /**
- * A date-qualifier range from two URL params (days or legacy ISO datetimes). A reversed range is
+ * A date-qualifier range from two `YYYY-MM-DD` URL params. A reversed range is
  * dropped, since the search box couldn't show it as text that parses.
  */
 export function dateRangeFromUrl(from: unknown, to: unknown): DateRange | undefined {

@@ -46,7 +46,7 @@ function assertNdjsonContentType(response: Response | undefined): void {
  * Parse a UTF-8 NDJSON (newline-delimited JSON) body from a ReadableStream.
  * Each complete line is JSON.parse'd; an incomplete trailing line is parsed after EOF.
  */
-export async function collectNdjsonFromStream<T>(
+async function collectNdjsonFromStream<T>(
     stream: ReadableStream<Uint8Array> | null | undefined,
 ): Promise<T[]> {
     if (!stream) {

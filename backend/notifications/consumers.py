@@ -9,18 +9,16 @@ connection survives proxies.
 
 import asyncio
 
-from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
-from user.authentication import user_from_websocket_scope
+from user.websocket import CLOSE_UNAUTHENTICATED, SessionBoundConsumerMixin
 
 from .realtime import group_name
 
 AUTH_TIMEOUT = 10
-CLOSE_UNAUTHENTICATED = 4401
 
 
-class NotificationConsumer(AsyncJsonWebsocketConsumer):
+class NotificationConsumer(SessionBoundConsumerMixin, AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.user = None
         self.joined = False
@@ -38,6 +36,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         self.auth_timeout = None
         if timeout is not None and timeout is not asyncio.current_task():
             timeout.cancel()
+        await self.unbind_session()
         if self.joined:
             await self.channel_layer.group_discard(group_name(self.user.id), self.channel_name)
 
@@ -61,13 +60,11 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         )
 
     async def _authenticate(self, content):
-        user = None
-        if content.get("type") == "auth":
-            user = await database_sync_to_async(user_from_websocket_scope)(self.scope)
-        if user is None:
-            await self.close(code=CLOSE_UNAUTHENTICATED)
+        session = await self.open_session(content)
+        if session is None:
             return
-        self.user = user
+        self.user = user = session.user
+        await self.bind_session(session)
         await self.channel_layer.group_add(group_name(user.id), self.channel_name)
         self.joined = True
         await self.send_json({"type": "ready"})

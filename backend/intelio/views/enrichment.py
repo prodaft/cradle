@@ -33,6 +33,7 @@ from ..enums import EnrichmentStatus
 from ..exceptions import (
     EnrichmentNotFoundException,
     EnrichmentOptionNotFoundException,
+    EnrichmentRunningException,
     IntelIOErrorCodes,
     UnknownEnrichmentOptionException,
 )
@@ -435,11 +436,12 @@ class EnrichmentDetailAPIView(EnrichmentRequestObjectMixin, APIView):
     post=extend_schema(
         operation_id="enrichment_restart",
         summary="Restart enrichment request",
-        description="Restart a specific enrichment request by resetting its status and rerunning the enrichment process. Only the owner or admin can restart an enrichment request.",
+        description="Restart a specific enrichment request by resetting its status and rerunning the enrichment process. Only the owner or admin can restart an enrichment request. A request that is still running cannot be restarted until it ends, or until it has run long enough to be considered stuck.",
         responses={
             200: EnrichmentRequestDetailSerializer,
             **get_error_responses(
                 IntelIOErrorCodes.ENRICHMENT_NOT_FOUND,
+                IntelIOErrorCodes.ENRICHMENT_RUNNING,
                 CoreErrorCodes.PERMISSION_DENIED,
             ),
             **get_common_error_responses(),
@@ -465,6 +467,9 @@ class EnrichmentRestartAPIView(EnrichmentRequestObjectMixin, APIView):
 
         self._check_owner_or_admin(enrichment_request, request.user, "restart")
         with transaction.atomic():
+            enrichment_request = EnrichmentRequest.objects.select_for_update().get(pk=enrichment_request.pk)
+            if enrichment_request.is_running:
+                raise EnrichmentRunningException(detail="This enrichment is still running. Try again when it ends.")
             enrichment_request.status = EnrichmentStatus.WAITING
             enrichment_request.errors = {}
             enrichment_request.warnings = {}

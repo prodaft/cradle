@@ -24,7 +24,7 @@ class UploadErrorCodes(ErrorCode):
         "file-not-uploaded",
     )
     ALREADY_UPLOADING = (
-        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_409_CONFLICT,
         "Already Uploading",
         "already-uploading",
     )
@@ -34,7 +34,7 @@ class UploadErrorCodes(ErrorCode):
         "invalid-file-name",
     )
     QUOTA_EXCEEDED = (
-        status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+        status.HTTP_409_CONFLICT,
         "Quota Exceeded",
         "quota-exceeded",
     )

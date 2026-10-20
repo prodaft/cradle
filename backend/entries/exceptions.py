@@ -9,12 +9,12 @@ class EntriesErrorCodes(ErrorCode):
     """Error codes for entry operations."""
 
     ENTRY_TYPE_MISMATCH = (
-        status.HTTP_409_CONFLICT,
+        status.HTTP_400_BAD_REQUEST,
         "Entry Type Mismatch",
         "entry-type-mismatch",
     )
     INVALID_ALIAS_TARGET = (
-        status.HTTP_409_CONFLICT,
+        status.HTTP_400_BAD_REQUEST,
         "Invalid Alias Target",
         "invalid-alias-target",
     )
@@ -30,18 +30,18 @@ class EntriesErrorCodes(ErrorCode):
         "duplicate-entity",
     )
     INVALID_PATTERN = (
-        status.HTTP_409_CONFLICT,
+        status.HTTP_400_BAD_REQUEST,
         "Invalid Pattern",
         "invalid-pattern",
     )
-    INVALID_ENTRY = (status.HTTP_409_CONFLICT, "Invalid Entry", "invalid-entry")
+    INVALID_ENTRY = (status.HTTP_400_BAD_REQUEST, "Invalid Entry", "invalid-entry")
     NOTE_REFERENCE_NOT_ALLOWED = (
-        status.HTTP_409_CONFLICT,
+        status.HTTP_400_BAD_REQUEST,
         "Note Reference Not Allowed",
         "note-reference-not-allowed",
     )
     INVALID_ENTRY_TYPE_SETTINGS = (
-        status.HTTP_409_CONFLICT,
+        status.HTTP_400_BAD_REQUEST,
         "Invalid Entry Type Settings",
         "invalid-entry-type-settings",
     )
@@ -51,12 +51,12 @@ class EntriesErrorCodes(ErrorCode):
         "entry-type-required",
     )
     INVALID_ENTRY_HIERARCHY = (
-        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_409_CONFLICT,
         "Invalid Entry Hierarchy",
         "invalid-entry-hierarchy",
     )
     ENTITY_LIMIT_EXCEEDED = (
-        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_409_CONFLICT,
         "Entity Limit Exceeded",
         "entity-limit-exceeded",
     )
@@ -133,10 +133,10 @@ class EntryTypeMismatchException(CradleAPIException):
 
     error_code = EntriesErrorCodes.ENTRY_TYPE_MISMATCH
 
-    def __init__(self, detail=None, error_code=None, code=None):
+    def __init__(self, detail=None, error_code=None):
         if detail is None:
             detail = "The entry type does not match the selection."
-        super().__init__(detail=detail, error_code=error_code, code=code)
+        super().__init__(detail=detail, error_code=error_code)
 
 
 class InvalidAliasTargetException(CradleAPIException):
@@ -144,10 +144,10 @@ class InvalidAliasTargetException(CradleAPIException):
 
     error_code = EntriesErrorCodes.INVALID_ALIAS_TARGET
 
-    def __init__(self, detail=None, error_code=None, code=None):
+    def __init__(self, detail=None, error_code=None):
         if detail is None:
             detail = "Only artifact entries can be used as aliases."
-        super().__init__(detail=detail, error_code=error_code, code=code)
+        super().__init__(detail=detail, error_code=error_code)
 
 
 class EntryTypeNotFoundException(CradleAPIException):
@@ -155,10 +155,10 @@ class EntryTypeNotFoundException(CradleAPIException):
 
     error_code = EntriesErrorCodes.ENTRY_TYPE_NOT_FOUND
 
-    def __init__(self, detail=None, error_code=None, code=None):
+    def __init__(self, detail=None, error_code=None):
         if detail is None:
             detail = "That entry type could not be found."
-        super().__init__(detail=detail, error_code=error_code, code=code)
+        super().__init__(detail=detail, error_code=error_code)
 
 
 class DuplicateEntryException(CradleAPIException):
@@ -196,10 +196,10 @@ class NoteReferenceNotAllowedException(CradleAPIException):
 
     error_code = EntriesErrorCodes.NOTE_REFERENCE_NOT_ALLOWED
 
-    def __init__(self, detail=None, error_code=None, code=None):
+    def __init__(self, detail=None, error_code=None):
         if detail is None:
             detail = "That entry type cannot be referenced from a note."
-        super().__init__(detail=detail, error_code=error_code, code=code)
+        super().__init__(detail=detail, error_code=error_code)
 
 
 class InvalidEntryTypeSettingsException(CradleAPIException):
@@ -213,10 +213,10 @@ class EntryTypeRequiredException(CradleAPIException):
 
     error_code = EntriesErrorCodes.ENTRY_TYPE_REQUIRED
 
-    def __init__(self, detail=None, error_code=None, code=None):
+    def __init__(self, detail=None, error_code=None):
         if detail is None:
             detail = "An entry type is required."
-        super().__init__(detail=detail, error_code=error_code, code=code)
+        super().__init__(detail=detail, error_code=error_code)
 
 
 class InvalidEntryHierarchyException(CradleAPIException):
@@ -236,10 +236,10 @@ class EntityLimitExceededException(CradleAPIException):
 
     error_code = EntriesErrorCodes.ENTITY_LIMIT_EXCEEDED
 
-    def __init__(self, detail=None, error_code=None, code=None):
+    def __init__(self, detail=None, error_code=None):
         if detail is None:
             detail = "The maximum number of entities has been reached."
-        super().__init__(detail=detail, error_code=error_code, code=code)
+        super().__init__(detail=detail, error_code=error_code)
 
 
 class EntryNotFoundException(CradleAPIException):
@@ -261,7 +261,7 @@ class InvalidEntryTypeException(CradleAPIException):
 
 
 class AdminOnlyEntityCreateException(CradleAPIException):
-    """Exception raised when non-admin tries to create entity."""
+    """Raised when a non-admin creates an entity without a team they lead."""
 
     error_code = EntriesErrorCodes.ADMIN_ONLY_ENTITY_CREATE
 
@@ -313,10 +313,10 @@ class InvalidRelatedEntriesException(CradleAPIException):
 
     error_code = EntriesErrorCodes.INVALID_RELATED_ENTRIES
 
-    def __init__(self, detail=None, error_code=None, code=None):
+    def __init__(self, detail=None, error_code=None):
         if detail is None:
             detail = "One or more related entries are invalid or could not be read."
-        super().__init__(detail=detail, error_code=error_code, code=code)
+        super().__init__(detail=detail, error_code=error_code)
 
 
 class RelatedEntriesRequiredException(CradleAPIException):
@@ -324,10 +324,10 @@ class RelatedEntriesRequiredException(CradleAPIException):
 
     error_code = EntriesErrorCodes.RELATED_ENTRIES_REQUIRED
 
-    def __init__(self, detail=None, error_code=None, code=None):
+    def __init__(self, detail=None, error_code=None):
         if detail is None:
             detail = "Select at least one related entry."
-        super().__init__(detail=detail, error_code=error_code, code=code)
+        super().__init__(detail=detail, error_code=error_code)
 
 
 class RelationNotFoundException(CradleAPIException):

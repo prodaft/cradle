@@ -3,7 +3,7 @@
 from typing import cast
 from uuid import UUID
 
-from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -11,9 +11,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from access.models import Access
-from access.views.request_access_view import notify_access_request
 from core.openapi import get_common_error_responses, get_error_responses
-from entries.enums import EntryType
+from notifications.models import AccessRequestNotification
 from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser
 
@@ -23,7 +22,7 @@ from ..models import Note
 
 @extend_schema_view(
     post=extend_schema(
-        operation_id="notes_access_request_create",
+        operation_id="notes_access_requests_create",
         summary="Request access to a note",
         description=(
             "Requests access to the sources/cases of a published note the user cannot read. Admins and "
@@ -31,14 +30,6 @@ from ..models import Note
             "they are. Only available when restricted note search is enabled. If the user can already read the "
             "note, no notifications are sent but the request is deemed successful."
         ),
-        parameters=[
-            OpenApiParameter(
-                name="note_id",
-                type=UUID,
-                location=OpenApiParameter.PATH,
-                description="ID of the note to request access for",
-            ),
-        ],
         request=None,
         responses={
             201: {"description": "Access request sent successfully"},
@@ -63,12 +54,10 @@ class RequestNoteAccess(APIView):
         if note.has_read_access(user):
             return Response({"detail": "Access request sent successfully."}, status=status.HTTP_201_CREATED)
 
-        missing_entities = note.entries.filter(entry_class__type=EntryType.ENTITY).exclude(
-            id__in=Access.objects.get_accessible_entity_ids(user.id)
-        )
+        missing_entities = note.entries.is_entity().exclude(id__in=Access.objects.get_accessible_entity_ids(user.id))
         label = note.title or str(note.id)
         for entity in missing_entities:
-            notify_access_request(
+            AccessRequestNotification.notify_granters(
                 user,
                 entity,
                 f'User {user.username} has requested access for entity {entity.name} to read note "{label}"',

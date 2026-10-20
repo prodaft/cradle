@@ -13,14 +13,20 @@ dns.setDefaultResultOrder('verbatim');
 
 function git(args: string): string {
     try {
-        return execSync(`git ${args}`, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+        return execSync(`git ${args}`, { stdio: ['ignore', 'pipe', 'ignore'] })
+            .toString()
+            .trim();
     } catch {
         return '';
     }
 }
 
-const appVersion: string = JSON.parse(readFileSync(path.resolve(import.meta.dirname, 'package.json'), 'utf-8')).version;
-const gitBranch = (process.env.GIT_BRANCH ?? git('rev-parse --abbrev-ref HEAD')).replace(/^HEAD$/, '');
+const appVersion: string = JSON.parse(
+    readFileSync(path.resolve(import.meta.dirname, 'package.json'), 'utf-8'),
+).version;
+const gitBranch = (
+    process.env.GIT_BRANCH ?? git('rev-parse --abbrev-ref HEAD')
+).replace(/^HEAD$/, '');
 const gitCommit = (process.env.GIT_COMMIT || git('rev-parse HEAD')).slice(0, 8);
 const gitRef = gitCommit && (gitBranch ? `${gitBranch}@${gitCommit}` : gitCommit);
 const appVersionLabel = `v${appVersion}${gitRef ? ` · ${gitRef}` : ''}`;
@@ -44,7 +50,7 @@ export default defineConfig(({ mode }) => {
             }),
             tailwindcss(),
             react(),
-            visualizer(),
+            ...(process.env.ANALYZE === '1' ? [visualizer()] : []),
             ...(sentryAuthToken && sentryOrg && sentryProject
                 ? [
                       sentryTanstackStart({

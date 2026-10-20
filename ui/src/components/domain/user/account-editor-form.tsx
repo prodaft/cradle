@@ -1,5 +1,8 @@
 import MarkdownEditorDialog from '@/components/base/markdown-editor-dialog/markdown-editor-dialog';
-import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
+import {
+    SettingsHeaderActionsPortal,
+    SettingsSaveButton,
+} from '@/components/base/settings-header-actions/settings-header-actions';
 import SnippetList, {
     SnippetListRef,
 } from '@/components/base/snippet-list/snippet-list';
@@ -15,14 +18,10 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
+import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-    ArrowCounterClockwiseIcon,
-    ClockCounterClockwiseIcon,
-    FloppyDiskIcon,
-} from '@phosphor-icons/react';
+import {} from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
-import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -37,10 +36,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-const EDITOR_DEFAULTS: FormData = { vim_mode: false };
-
 export default function AccountEditorForm({ target = 'me' }: AccountEditorFormProps) {
-    const queryClient = useQueryClient();
     const vimModeId = useId();
     const formId = useId();
     const noteTemplateActionId = useId();
@@ -61,11 +57,9 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
     );
 
     const saveSettings = $api.useMutation('patch', '/users/{user_id}/', {
-        meta: { successMessage: 'Settings saved successfully' },
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ['get', '/users/{user_id}/'],
-            });
+        meta: {
+            successMessage: 'Settings saved successfully',
+            invalidateQueries: [{ queryKey: queryKeys.users.apiDetails() }],
         },
     });
 
@@ -92,7 +86,6 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
         reset,
         control,
         handleSubmit,
-        watch,
         formState: { isDirty },
     } = useForm<FormData>({
         resolver: zodResolver(schema) as any,
@@ -118,12 +111,6 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
         });
     };
 
-    const revert = () => {
-        if (userSettings) reset({ vim_mode: userSettings.vim_mode || false });
-    };
-    const resetToDefaults = () => reset(EDITOR_DEFAULTS, { keepDefaultValues: true });
-    const isAtDefault = watch('vim_mode') === EDITOR_DEFAULTS.vim_mode;
-
     const openNoteTemplateDialog = async () => {
         const { data: noteTemplate, error } = await refetchNoteTemplate();
         if (error) return;
@@ -134,42 +121,11 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
     return (
         <>
             <SettingsHeaderActionsPortal>
-                <div className='flex items-center gap-2'>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={!isDirty}
-                        onClick={revert}
-                        title='Revert'
-                    >
-                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={isAtDefault}
-                        onClick={resetToDefaults}
-                        title='Default'
-                    >
-                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='submit'
-                        form={formId}
-                        variant='default'
-                        size='icon'
-                        disabled={saveSettings.isPending || !isDirty}
-                        title='Save Settings'
-                    >
-                        {saveSettings.isPending ? (
-                            <Spinner className='size-4' />
-                        ) : (
-                            <FloppyDiskIcon className='size-4' weight='bold' />
-                        )}
-                    </Button>
-                </div>
+                <SettingsSaveButton
+                    isDirty={isDirty}
+                    saving={saveSettings.isPending}
+                    form={formId}
+                />
             </SettingsHeaderActionsPortal>
             <form id={formId} onSubmit={handleSubmit(save)}>
                 <section id='editor'>

@@ -25,10 +25,11 @@ more.
 | Variable      | Type    | Default Value                                  | Description                                        |
 |---------------|---------|------------------------------------------------|----------------------------------------------------|
 | `SENTRY_DSN`  | String  | `""` (empty string)                            | DSN for Sentry error tracking.                     |
-| `SECRET_KEY`  | String  | `"django-insecure-default-secret-key"`         | Django secret key. **Change for production!**      |
+| `SECRET_KEY`  | String  | None (required)                                | Django secret key. The app refuses to start without it. |
 | `DEBUG`       | Boolean | `False`                                        | Enable or disable Django debug mode.               |
 | `ALLOWED_HOSTS`| List   | `["localhost", "127.0.0.1"]`                     | List of hosts allowed to access the application.   |
 | `CSRF_TRUSTED_ORIGINS` | List | `FRONTEND_URL`, `"http://localhost"`, `"http://127.0.0.1"` | Trusted origins for CSRF protection.               |
+| `TRUSTED_PROXY_COUNT` | Integer | `1` | Reverse proxies in front of the backend that append to `X-Forwarded-For`. The client address (for rate limits and session IPs) is taken that many hops from the end; `0` ignores the header. `docker-compose.prod.yml` sets `2` (outer TLS proxy + bundled nginx). |
 
 ### Database Configuration
 
@@ -55,9 +56,9 @@ more.
 
 | Variable                     | Type    | Default Value | Description                                                           |
 |------------------------------|---------|---------------|-----------------------------------------------------------------------|
-| `BASE_URL`                   | String  | `""` (empty)  | Base URL of the application (if applicable).                          |
 | `STATIC_URL`                 | String  | `"static/"`   | URL path for serving static files.                                    |
 | `FRONTEND_URL`               | String  | `"http://localhost:5173"` | URL for the frontend application.                             |
+| `DIGEST_TRUSTED_FILE_HOSTS`  | List    | `[]`          | Hosts a CRADLE report import may download files from even when they resolve to private addresses (e.g. a peer instance on an internal network). Files on any other private address are refused. |
 
 ### Task Queue & Caching
 
@@ -85,6 +86,6 @@ more.
 
 | Variable              | Type    | Default Value                                  | Description                                                           |
 |-----------------------|---------|------------------------------------------------|-----------------------------------------------------------------------|
-| `CELERY_QUEUES`       | String  | `"email,notes,graph,publish,import,access,enrich,digest,files,cleanup"` | Comma-separated list of Celery task queues (see `cradle/celery.py` `task_routes`). |
+| `CELERY_QUEUES`       | String  | `"email,notes,graph,publish,access,enrich,digest,files,cleanup"` | Comma-separated list of Celery task queues (see `cradle/celery.py` `task_routes`). |
 | `CELERY_CONCURRENCY`  | Integer | `4`                                            | Number of concurrent Celery worker threads per process.               |
 | `NUM_WORKERS`         | Integer | `12`                                           | Number of Gunicorn worker processes.                                  |

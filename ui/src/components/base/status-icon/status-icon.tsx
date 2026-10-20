@@ -7,19 +7,16 @@ import {
     WarningCircleIcon,
     WarningIcon,
 } from '@phosphor-icons/react';
+import type { components } from '@services/openapi/schema';
+
+type Schemas = components['schemas'];
 
 export type StatusType =
-    | 'healthy'
-    | 'processing'
-    | 'warning'
-    | 'invalid'
-    | 'done'
-    | 'working'
-    | 'error'
-    | 'waiting'
+    | Schemas['NoteListStatusEnum']
+    | Schemas['EnrichmentStatusEnum']
+    | Schemas['DigestStatusEnum']
+    | Schemas['ReportStatusEnum']
     | 'info'
-    | 'fleeting'
-    | 'finalized'
     | 'all';
 
 interface StatusIconProps {
@@ -35,7 +32,7 @@ export function StatusIcon({ status, size = 18, className }: StatusIconProps) {
     switch (status) {
         case 'healthy':
         case 'done':
-        case 'finalized':
+        case 'published':
             return (
                 <CheckCircleIcon
                     size={size}

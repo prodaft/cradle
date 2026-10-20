@@ -173,7 +173,7 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
 
     const disconnectProvider = $api.useMutation(
         'delete',
-        '/users/oauth/disconnect/{provider}/',
+        '/users/me/oauth/{provider}/',
         {
             onSuccess: (_, provider) => {
                 const providerId = provider.params.path.provider;

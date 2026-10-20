@@ -1,16 +1,15 @@
 import uuid
 
 from django.urls import reverse
-from rest_framework_simplejwt.tokens import AccessToken
 
 from access.enums import AccessType
 from access.models import Access
-from entries.models import Entry
+from entries.models import Entry, calculate_acvec
 from file_transfer.models import FileReference
 from user.models import CradleUser
+from user.testing import session_access_token
 
 from ..models import Note
-from ..utils import calculate_acvec
 from .utils import NotesTestCase
 
 SHA256 = "a" * 64
@@ -44,20 +43,41 @@ class FileFixtures(NotesTestCase):
             username="other", password="pass", email="o@c.d", is_active=True, email_confirmed=True
         )
         Access.objects.create(user_id=self.other.id, entity_id=self.case.id, access_type=AccessType.READ)
-        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.other)}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={session_access_token(self.other)}"}
 
     def _file(self, note, name, sha256):
-        return FileReference.objects.create(
-            note=note, file_name=name, minio_file_name=name, bucket_name="bucket", sha256_hash=sha256
-        )
+        return FileReference.objects.create(note=note, file_name=name, sha256_hash=sha256)
 
 
 class FileDetailTest(FileFixtures):
     def _get(self, file_id):
-        return self.client.get(reverse("note_file_detail", kwargs={"file_id": file_id}), **self.headers)
+        return self.client.get(reverse("file_detail", kwargs={"file_id": file_id}), **self.headers)
 
     def test_not_authenticated(self):
-        response = self.client.get(reverse("note_file_detail", kwargs={"file_id": self.file.id}))
+        response = self.client.get(reverse("file_detail", kwargs={"file_id": self.file.id}))
+        self.assertEqual(response.status_code, 401)
+
+    def test_unknown_file(self):
+        self.assertEqual(self._get(uuid.uuid4()).status_code, 404)
+
+    def test_file_in_inaccessible_note(self):
+        self.assertEqual(self._get(self.hidden_copy.id).status_code, 404)
+
+    def test_returns_file_metadata(self):
+        response = self._get(self.file.id)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        self.assertEqual((data["name"], data["sha256"]), ("a.bin", SHA256))
+        self.assertNotIn("entries", data)
+
+
+class FileEntriesTest(FileFixtures):
+    def _get(self, file_id, **params):
+        return self.client.get(reverse("note_file_entries", kwargs={"file_id": file_id}), params, **self.headers)
+
+    def test_not_authenticated(self):
+        response = self.client.get(reverse("note_file_entries", kwargs={"file_id": self.file.id}))
         self.assertEqual(response.status_code, 401)
 
     def test_unknown_file(self):
@@ -69,17 +89,22 @@ class FileDetailTest(FileFixtures):
     def test_lists_entries_linked_through_accessible_copies(self):
         response = self._get(self.file.id)
         self.assertEqual(response.status_code, 200)
-        data = response.json()
+        self.assertEqual({e["name"] for e in response.json()["results"]}, {"case-a", "1.1.1.1", "apt"})
 
-        self.assertEqual(data["name"], "a.bin")
-        self.assertEqual({e["name"] for e in data["entries"]}, {"case-a", "1.1.1.1", "apt"})
+    def test_paginates(self):
+        data = self._get(self.file.id, page_size=2).json()
+        self.assertEqual((data["count"], data["total_pages"], len(data["results"])), (3, 2, 2))
+
+        rest = self._get(self.file.id, page_size=2, page=2).json()["results"]
+        self.assertEqual(len(rest), 1)
+        self.assertNotIn(rest[0]["name"], {e["name"] for e in data["results"]})
 
     def test_file_without_hash_only_uses_own_note(self):
         unhashed = self._file(self.copy_note, "nohash.bin", None)
         self._file(self.note, "nohash2.bin", None)
 
         data = self._get(unhashed.id).json()
-        self.assertEqual({e["name"] for e in data["entries"]}, {"case-a", "apt"})
+        self.assertEqual({e["name"] for e in data["results"]}, {"case-a", "apt"})
 
 
 class NoteListFileFilterTest(FileFixtures):

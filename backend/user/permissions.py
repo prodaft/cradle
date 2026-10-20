@@ -31,7 +31,7 @@ class EntryClassListPermission(BasePermission):
 
 
 class EntityListPermission(BasePermission):
-    """GET: HasManagerRole. POST: HasAdminRole only."""
+    """GET: HasManagerRole. POST: any authenticated user; EntitySerializer limits it to admins and team leads."""
 
     message = "You do not have permission to perform this action."
 
@@ -40,19 +40,22 @@ class EntityListPermission(BasePermission):
             return False
         if request.method == "GET":
             return HasManagerRole().has_permission(request, view)
-        if request.method == "POST":
-            return HasAdminRole().has_permission(request, view)
-        return False
+        return request.method == "POST"
 
 
 class EntityDetailPermission(BasePermission):
-    """GET/PATCH/DELETE: HasManagerRole; DELETE admin check is enforced in the view."""
+    """GET: any authenticated user; the view answers 404 for entities they cannot read. PATCH/DELETE: HasManagerRole.
+
+    The DELETE admin check is enforced in the view.
+    """
 
     message = "You do not have permission to perform this action."
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
+        if request.method == "GET":
+            return True
         return HasManagerRole().has_permission(request, view)
 
 

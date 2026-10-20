@@ -28,3 +28,11 @@ export async function uploadFile(presignedUrl: string, file: File): Promise<Resp
 
     return response;
 }
+
+export function formatFileSize(bytes: number): string {
+    if (bytes <= 0 || !Number.isFinite(bytes)) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.min(sizes.length - 1, Math.floor(Math.log(bytes) / Math.log(k)));
+    return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
+}

@@ -1,4 +1,4 @@
-// Common type definitions (theme + graph). Consumed via @/types; generated API model aliases live in @/types/models.
+// Common type definitions (theme). Consumed via @/types; generated API model aliases live in @/types/models.
 
 // ============================================================================
 // Theme Types
@@ -14,24 +14,4 @@ export interface ThemeContextValue {
     activeTheme: ThemeConfig;
     setTheme: (theme: ThemeConfig) => void;
     toggleTheme: () => void;
-}
-
-// ============================================================================
-// Graph Types
-// ============================================================================
-// NOTE: For graph visualization with D3 force simulation properties,
-// use GraphNode and GraphLink from @/types instead.
-
-/**
- * Internal graph edge type for visualization.
- * Note: Entry IDs are numbers (BigAutoField), not strings.
- * Relation IDs are UUIDs (strings).
- */
-export interface GraphEdge {
-    id?: string; // Relation UUID (optional)
-    source: number; // Entry ID (BigAutoField)
-    target: number; // Entry ID (BigAutoField)
-    type?: string;
-    label?: string;
-    properties?: Record<string, any>;
 }

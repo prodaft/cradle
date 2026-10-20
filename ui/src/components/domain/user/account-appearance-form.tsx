@@ -1,4 +1,7 @@
-import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
+import {
+    SettingsHeaderActionsPortal,
+    SettingsSaveButton,
+} from '@/components/base/settings-header-actions/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Command,
@@ -16,20 +19,15 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { DEFAULT_PRESET, PRESET_THEMES } from '@/utils/themes';
-import {
-    ArrowCounterClockwiseIcon,
-    ClockCounterClockwiseIcon,
-    FloppyDiskIcon,
-} from '@phosphor-icons/react';
+import {} from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface AccountAppearanceFormProps {
@@ -39,13 +37,10 @@ interface AccountAppearanceFormProps {
 export default function AccountAppearanceForm({
     target = 'me',
 }: AccountAppearanceFormProps) {
-    const queryClient = useQueryClient();
-
     const [selectedThemeType, setSelectedThemeType] = useState<string>('dark');
     const [customThemeJSON, setCustomThemeJSON] = useState<string>('');
     const [isThemePickerOpen, setIsThemePickerOpen] = useState(false);
     const [pendingTheme, setPendingTheme] = useState<Record<string, any> | null>(null);
-    const loadedThemeRef = useRef<Record<string, any> | null>(null);
 
     const { data: targetUser } = $api.useQuery(
         'get',
@@ -63,23 +58,17 @@ export default function AccountAppearanceForm({
             });
             if (error) throw { response, error };
         },
-        meta: { successMessage: 'Settings saved successfully' },
-        onSuccess: () => {
-            setPendingTheme(null);
-            queryClient.invalidateQueries({
-                queryKey: queryKeys.users.detail(target),
-            });
-            queryClient.invalidateQueries({
-                queryKey: ['get', '/users/{user_id}/'],
-            });
+        meta: {
+            successMessage: 'Settings saved successfully',
+            invalidateQueries: [{ queryKey: queryKeys.users.apiDetails() }],
         },
+        onSuccess: () => setPendingTheme(null),
     });
 
     useEffect(() => {
         if (!targetUser?.theme) return;
 
         const theme = targetUser.theme as Record<string, any>;
-        loadedThemeRef.current = theme;
 
         const themeName = theme?.name;
         if (themeName && themeName !== 'custom') {
@@ -155,76 +144,14 @@ export default function AccountAppearanceForm({
         saveTheme.mutate(pendingTheme);
     };
 
-    const revert = () => {
-        if (loadedThemeRef.current) {
-            setPendingTheme(null);
-            const themeName = (loadedThemeRef.current as any)?.name;
-            if (themeName && themeName !== 'custom') {
-                setSelectedThemeType(themeName);
-                setCustomThemeJSON('');
-            } else {
-                setSelectedThemeType('custom');
-                const { name: _name, ...rest } = loadedThemeRef.current;
-                setCustomThemeJSON(JSON.stringify(rest, null, 2));
-            }
-        }
-    };
-
-    const resetToDefaults = () => {
-        const preset = DEFAULT_PRESET;
-        const themeWithName =
-            preset.theme &&
-            typeof preset.theme === 'object' &&
-            !Array.isArray(preset.theme)
-                ? 'name' in preset.theme
-                    ? preset.theme
-                    : { name: preset.id, ...preset.theme }
-                : { name: preset.id };
-        setPendingTheme(themeWithName);
-        setSelectedThemeType(preset.id);
-        setCustomThemeJSON('');
-    };
-    const isAtDefault = selectedThemeType === DEFAULT_PRESET.id && !pendingTheme;
-
     return (
         <>
             <SettingsHeaderActionsPortal>
-                <div className='flex items-center gap-2'>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={!pendingTheme}
-                        onClick={revert}
-                        title='Revert'
-                    >
-                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={isAtDefault}
-                        onClick={resetToDefaults}
-                        title='Default'
-                    >
-                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='button'
-                        variant='default'
-                        size='icon'
-                        disabled={saveTheme.isPending || !pendingTheme}
-                        onClick={save}
-                        title='Save Settings'
-                    >
-                        {saveTheme.isPending ? (
-                            <Spinner className='size-4' />
-                        ) : (
-                            <FloppyDiskIcon className='size-4' weight='bold' />
-                        )}
-                    </Button>
-                </div>
+                <SettingsSaveButton
+                    isDirty={!!pendingTheme}
+                    saving={saveTheme.isPending}
+                    onSave={save}
+                />
             </SettingsHeaderActionsPortal>
             <section id='appearance'>
                 <div className='flex flex-col gap-4'>

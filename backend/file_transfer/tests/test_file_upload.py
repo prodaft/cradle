@@ -5,16 +5,15 @@ from datetime import datetime
 from datetime import timezone as dt_timezone
 from unittest.mock import patch
 
+from django.test import TestCase
 from django.urls import reverse
-from rest_framework_simplejwt.tokens import AccessToken
 
 from file_transfer.views import file_upload_flow
 from user.models import CradleUser
+from user.testing import session_access_token
 
-from .utils import FileTransferTestCase
 
-
-class TestFileUpload(FileTransferTestCase):
+class TestFileUpload(TestCase):
     """Tests for GET /file/upload/ (initiate upload)."""
 
     def setUp(self):
@@ -28,7 +27,7 @@ class TestFileUpload(FileTransferTestCase):
             is_active=True,
             email_confirmed=True,
         )
-        self.user_token = str(AccessToken.for_user(self.user))
+        self.user_token = str(session_access_token(self.user))
         self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
         self.file_name = "evidence.png"
         self.file_size = 1024

@@ -12,7 +12,7 @@ class BaseDigestFilter(django_filters.FilterSet):
     """Filter set for BaseDigest model.
 
     Supports search by: title (boolean/wildcard query, see core.query_lang), user
-    (username icontains), status (exact), creation date (exact or range).
+    (username icontains), status (exact), creation time (exact or range).
     """
 
     title = django_filters.CharFilter(
@@ -33,9 +33,6 @@ class BaseDigestFilter(django_filters.FilterSet):
     created_at_lte = django_filters.DateTimeFilter(
         field_name="created_at", lookup_expr="lte", help_text="Filter by creation date <= value"
     )
-    created_date = django_filters.DateFilter(
-        field_name="created_at", lookup_expr="date", help_text="Filter by creation date (YYYY-MM-DD)"
-    )
 
     class Meta:
         model = BaseDigest
@@ -46,7 +43,6 @@ class BaseDigestFilter(django_filters.FilterSet):
             "created_at",
             "created_at_gte",
             "created_at_lte",
-            "created_date",
         ]
 
     _TITLE_SEARCH_FIELDS = ("title",)

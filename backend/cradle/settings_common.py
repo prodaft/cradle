@@ -19,12 +19,12 @@ with open(BASE_DIR / "pyproject.toml", "rb") as f:
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "../media")
 
-# CORS: restrict to allowed origins (set CORS_ALLOWED_ORIGINS in env or settings_docker)
+# CORS: restrict to allowed origins (set CORS_ALLOWED_ORIGINS in env or settings.py)
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = []
 CORS_ALLOW_HEADERS = list(default_headers) + ["Api-Key"]
 
-# Default frontend/CSRF origins (override in settings_docker/settings_test)
+# Default frontend/CSRF origins (override in settings.py/settings_test)
 DEFAULT_FRONTEND_URL = "http://localhost:5173"
 DEFAULT_CSRF_ORIGINS = [
     DEFAULT_FRONTEND_URL,
@@ -37,6 +37,8 @@ DEFAULT_CSRF_ORIGINS = [
 AWS_S3_SIGNATURE_VERSION = "s3v4"
 # Public object storage address for presigned URLs; None = AWS_S3_ENDPOINT_URL
 AWS_S3_PUBLIC_ENDPOINT_URL = None
+# Hosts a CRADLE report import may download files from even when they resolve to private addresses
+DIGEST_TRUSTED_FILE_HOSTS: list[str] = []
 
 
 # Application definition
@@ -48,12 +50,12 @@ INSTALLED_APPS = [
     "intelio.apps.IntelIOConfig",
     "management.apps.ManagementConfig",
     "lsp.apps.LspConfig",
-    "stats.apps.StatisticsConfig",
     "notifications.apps.NotificationsConfig",
     "logs.apps.LogsConfig",
     "file_transfer.apps.FileTransferConfig",
     "query.apps.QueryConfig",
     "access.apps.AccessConfig",
+    "teams.apps.TeamsConfig",
     "entries.apps.EntriesConfig",
     "user.apps.UserConfig",
     "notes.apps.NotesConfig",
@@ -174,6 +176,7 @@ SPECTACULAR_SETTINGS = {
         "cradle.schema_processors.postprocess_schema_enums",
         "cradle.schema_processors.postprocess_schema_operation_ids",
         "cradle.schema_processors.postprocess_schema_pagination_refs",
+        "cradle.schema_processors.postprocess_schema_path_parameters",
     ],
     # Error handling - RFC 9457 compliant
     "ENUM_NAME_OVERRIDES": {
@@ -199,7 +202,7 @@ JWT_COOKIE_PATH = "/"
 
 # OAuth provider settings used by backend OAuth flows.
 OAUTH_PROVIDERS = {}
-# Allowed redirect_uri origins for OAuth (scheme + netloc). Override in settings_docker.
+# Allowed redirect_uri origins for OAuth (scheme + netloc). Override in settings.py.
 OAUTH_REDIRECT_URI_WHITELIST = []
 
 
@@ -244,8 +247,8 @@ def channel_layers(redis_url: str | None) -> dict:
 CSRF_COOKIE_NAME = "csrf_token"
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
 
 TEMPLATES = [
     {
@@ -303,6 +306,32 @@ STATICFILES_DIRS = []
 
 # Can be set in specific config files if needed
 MINIO_BACKEND_URL = None
+
+# HTML and PDF report branding. Asset values are local file paths; empty means the built-in default.
+# "stylesheet" is appended after the default styles (use it for @font-face and --report-* overrides).
+REPORT_BRANDING = {
+    "organization": "CRADLE",
+    "tagline": "",
+    "contact": "",
+    "logo": "",
+    "cover_image": "",
+    "watermark": "",
+    "disclaimer": "",
+    "stylesheet": "",
+    # Typography, layout and colors as CSS values; empty uses the built-in default
+    # (25mm, 11pt, 11pt header, 6mm, 400, 700, accent color). Colors are hex, e.g. "#3d536e".
+    "page_margin": "",
+    "font_size": "",
+    "header_font_size": "",
+    "paragraph_indent": "",
+    "font_weight": "",
+    "bold_weight": "",
+    "page_number_color": "",
+    "toc_color": "",
+    # A directory of <Family>-<Style>.otf/.ttf/.woff/.woff2 files, embedded into reports.
+    "font_dir": "",
+    "font_family": "",
+}
 
 # Application-specific config
 # UUID segment for Django admin URL: /admin/<ADMIN_PATH_UUID>/

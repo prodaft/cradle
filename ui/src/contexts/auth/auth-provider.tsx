@@ -1,20 +1,22 @@
 import { parseAPIError } from '@/utils/api';
 import { clearShownNotificationToasts } from '@/utils/notification-toasts';
-import { setClientAuthCallbacks } from '@services/openapi/client';
+import { fetchClient } from '@services/openapi/client';
 import {
     applyClientTokenData,
     clearClientSession,
     clearRefreshTimer,
-    ensureSessionForRequest,
     hasUsableAccessToken,
     isSessionLoggedIn,
     refreshSessionAccessToken,
     setClientAuthRoleListener,
     syncRefreshTimerAfterInit,
-    unregisterOpenapiAuthCallbacks,
 } from '@services/openapi/client-auth';
-import type { paths } from '@services/openapi/schema';
-import createFetchClient from 'openapi-fetch';
+import {
+    getCsrfToken,
+    getStorageItem,
+    removeStorageItem,
+    setStorageItem,
+} from '@services/openapi/session-storage';
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import {
     AuthActionsContext,
@@ -28,40 +30,6 @@ import {
 const getBaseUrl = (): string => {
     return import.meta.env.VITE_API_BASE_URL;
 };
-
-function getStorageItem(key: string): string | null {
-    if (typeof window === 'undefined') return null;
-    try {
-        return localStorage.getItem(key);
-    } catch {
-        return null;
-    }
-}
-
-function setStorageItem(key: string, value: string): void {
-    if (typeof window === 'undefined') return;
-    try {
-        localStorage.setItem(key, value);
-    } catch {
-        // ignore storage failures (private mode, blocked storage, quota)
-    }
-}
-
-function removeStorageItem(key: string): void {
-    if (typeof window === 'undefined') return;
-    try {
-        localStorage.removeItem(key);
-    } catch {
-        // ignore storage failures (private mode, blocked storage, quota)
-    }
-}
-
-function getCsrfToken(): string | null {
-    if (typeof document === 'undefined') return null;
-    const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
-    const captured = match?.[1];
-    return captured !== undefined ? decodeURIComponent(captured) : null;
-}
 
 const AuthResult = {
     SUCCESS: 'success',
@@ -90,11 +58,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const [isInitializing, setIsInitializing] = useState(true);
     const basePath = getBaseUrl();
-
-    const fetchClient = useMemo(
-        () => createFetchClient<paths>({ baseUrl: basePath, credentials: 'include' }),
-        [basePath],
-    );
 
     const isLoggedIn = useCallback(() => isSessionLoggedIn(), []);
 
@@ -144,10 +107,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         return () => clearRefreshTimer();
     }, [isInitializing]);
-
-    if (typeof window !== 'undefined') {
-        setClientAuthCallbacks(ensureSessionForRequest, refreshSessionAccessToken);
-    }
 
     const logIn = useCallback(
         async (
@@ -252,7 +211,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 setIsLoading(false);
             }
         },
-        [fetchClient, storeTokens],
+        [storeTokens],
     );
 
     const logOut = useCallback(async () => {
@@ -267,7 +226,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         clearTokens();
         clearShownNotificationToasts();
-    }, [clearTokens, fetchClient]);
+    }, [clearTokens]);
 
     const setTokensDirectly = useCallback(
         (data: TokenData) => {
@@ -286,10 +245,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const isAdmin = role === 'admin';
     const isManager = role === 'manager' || role === 'admin';
-
-    useEffect(() => {
-        return () => unregisterOpenapiAuthCallbacks();
-    }, []);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;

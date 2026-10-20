@@ -1,11 +1,11 @@
 import uuid
 
 from django.urls import reverse
-from rest_framework_simplejwt.tokens import AccessToken
 
 from entries.models import Entry
 from notifications.models import AccessGrantedNotification, MessageNotification
 from user.models import CradleUser, UserRoles
+from user.testing import session_access_token
 
 from ..enums import AccessType
 from ..models import Access
@@ -26,7 +26,7 @@ class UpdateAccessTest(AccessTestCase):
         )
         self.entity = Entry.objects.create(name="entity", entry_class=self.entryclass1)
 
-        self.tokens = [str(AccessToken.for_user(user)) for user in self.users]
+        self.tokens = [str(session_access_token(user)) for user in self.users]
         self.headers = [{"HTTP_COOKIE": f"access_token={token}"} for token in self.tokens]
 
         Access.objects.create(user=self.users[0], entity=self.entity, access_type=AccessType.READ_WRITE)

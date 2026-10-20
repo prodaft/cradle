@@ -4,17 +4,13 @@ Uses presigned URLs for direct S3 uploads; validates quota and access.
 """
 
 import logging
-import os
 import uuid
 from datetime import timedelta
 
 from botocore.exceptions import ClientError
-from django.core.exceptions import ValidationError
-from django.db.models import Sum
 from django.urls import reverse
 from django.utils import timezone
-from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
-from pathvalidate import sanitize_filename
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -24,6 +20,7 @@ from rest_framework.views import APIView
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from notes.models import Note
+from notes.views.note_view import FileDetail as NoteFileDetail
 from user.authentication import CookieJWTAuthentication
 
 from .constants import FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS
@@ -32,79 +29,32 @@ from .exceptions import (
     FileReferenceNotFoundException,
     FileTransferErrorCodes,
     FileTransferNoteNotFoundException,
-    InvalidFileReferenceException,
-    NoFileSpecifiedException,
     StoredFileNotFoundException,
 )
 from .models import FileReference, PendingUpload
-from .s3_utils import get_file_transfer_storage, presign_get
 from .serializers import (
     FileDownloadSerializer,
-    FileProcessSerializer,
     FileUploadFinalizeResponseSerializer,
     FileUploadFinalizeSerializer,
     FileUploadInitiateSerializer,
     FileUploadResponseSerializer,
 )
 from .storage import FileTransferStorage
-from .uploads import PresignedUploadFlow, UploadConfig, parse_initiate_request
+from .uploads import (
+    PresignedUploadFlow,
+    UploadConfig,
+    check_upload_quota,
+    parse_initiate_request,
+    sanitize_upload_filename,
+)
 from .uploads.exceptions import (
-    InvalidFileNameException,
     InvalidFileSizeException,
     QuotaExceededException,
     UploadAccessDeniedException,
     UploadErrorCodes,
 )
 
-
-def _sanitize_filename(name: str | None, *, default: str | None = None) -> str:
-    """Sanitize filename: strip path traversal, replace invalid chars.
-
-    If default is set, return it on invalid input; otherwise raise InvalidFileNameException.
-    """
-    if not name or not name.strip():
-        if default is not None:
-            return default
-        raise InvalidFileNameException(detail="The file name is invalid or missing.")
-
-    base = os.path.basename(name.strip())
-    if not base:
-        if default is not None:
-            return default
-        raise InvalidFileNameException(detail="The file name is invalid or missing.")
-
-    def _on_empty(_):
-        if default is not None:
-            return default
-        raise InvalidFileNameException(detail="The file name is invalid or missing.")
-
-    try:
-        safe = sanitize_filename(
-            base,
-            replacement_text="_",
-            platform="universal",
-            max_len=255,
-            null_value_handler=_on_empty,
-        )
-        return safe if safe else (default or "")
-    except InvalidFileNameException:
-        raise
-    except ValueError, TypeError, OSError:
-        if default is not None:
-            return default
-        raise InvalidFileNameException(detail="The file name contains invalid characters.")
-
-
 logger = logging.getLogger(__name__)
-
-
-def get_storage():
-    """Get FileTransferStorage, ensuring bucket exists for presigned URL generation."""
-    try:
-        return get_file_transfer_storage(ensure_bucket=True)
-    except (OSError, ClientError) as e:
-        logger.warning("Bucket creation check failed: %s", e)
-        return FileTransferStorage()
 
 
 class FileUploadCallbacks:
@@ -127,9 +77,7 @@ class FileUploadCallbacks:
             InvalidFileSizeException: If file size cannot be determined.
             QuotaExceededException: If file size or total quota is exceeded.
         """
-        storage = get_storage()
-
-        # Get file size (re-check against quota; client could bypass declared size)
+        storage = FileTransferStorage()
         file_size = None
         try:
             file_size = storage.size(pending_upload.object_key)
@@ -140,31 +88,15 @@ class FileUploadCallbacks:
                 pass
             raise InvalidFileSizeException(detail="The file size could not be determined.")
 
-        # Re-validate quota against actual size (client could upload larger than declared)
-        if file_size > pending_upload.user.file_upload_limit:
+        try:
+            check_upload_quota(pending_upload.user, file_size)
+        except QuotaExceededException:
             try:
                 storage.delete(pending_upload.object_key)
             except OSError, ClientError:
                 pass
-            raise QuotaExceededException(
-                detail=f"File size ({file_size} bytes) exceeds your upload limit ({pending_upload.user.file_upload_limit} bytes)."
-            )
-        existing_total = (
-            FileReference.objects.filter(user=pending_upload.user).aggregate(total=Sum("file_size"))["total"] or 0
-        )
-        if existing_total + file_size > pending_upload.user.file_upload_limit:
-            try:
-                storage.delete(pending_upload.object_key)
-            except OSError, ClientError:
-                pass
-            raise QuotaExceededException(
-                detail=f"Upload would exceed your quota. "
-                f"Current usage: {existing_total} bytes, "
-                f"New file: {file_size} bytes, "
-                f"Limit: {pending_upload.user.file_upload_limit} bytes."
-            )
+            raise
 
-        # Get note if provided (verify user has access)
         note = None
         if note_id:
             try:
@@ -180,14 +112,12 @@ class FileUploadCallbacks:
                     detail="You do not have permission to upload files to this note.",
                 )
 
-        # Create FileReference
         file_reference = FileReference(
             file_name=pending_upload.file_name,
             note=note,
             user=pending_upload.user,
             file_size=file_size,
         )
-        # Set the file field to point to the already-uploaded object
         file_reference.file.name = pending_upload.object_key
         file_reference.save()
 
@@ -198,7 +128,6 @@ class FileUploadCallbacks:
         }
 
 
-# Create the upload flow instance
 file_upload_flow = PresignedUploadFlow(
     config=UploadConfig(
         bucket_name=FileTransferStorage.bucket_name,
@@ -210,7 +139,7 @@ file_upload_flow = PresignedUploadFlow(
 
 @extend_schema_view(
     post=extend_schema(
-        operation_id="file_transfer_upload_create",
+        operation_id="files_uploads_create",
         summary="Initiate file upload",
         description="Generates a presigned URL for uploading a file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_at. The upload must be finalized within the expiration time.",
         request=FileUploadInitiateSerializer,
@@ -243,24 +172,15 @@ class FileUpload(APIView):
             Response with upload_id, presigned_url, object_key, and expires_at.
         """
         file_name, file_size = parse_initiate_request(request.data)
-        response_data = file_upload_flow.initiate(request.user, _sanitize_filename(file_name), file_size)
+        response_data = file_upload_flow.initiate(request.user, sanitize_upload_filename(file_name), file_size)
         return Response(FileUploadResponseSerializer(response_data).data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
     post=extend_schema(
-        operation_id="file_transfer_upload_finalize_create",
+        operation_id="files_uploads_finalize_create",
         summary="Finalize file upload",
         description="Verifies the file was uploaded to storage and creates a FileReference. Optionally connects the file to a note.",
-        parameters=[
-            OpenApiParameter(
-                name="upload_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="The upload ID returned from the upload initiation",
-                required=True,
-            ),
-        ],
         request=FileUploadFinalizeSerializer,
         responses={
             201: FileUploadFinalizeResponseSerializer,
@@ -301,7 +221,7 @@ class FileUploadFinalize(APIView):
         serializer.is_valid(raise_exception=True)
 
         response_data = file_upload_flow.finalize(upload_id, request.user, **serializer.validated_data)
-        download_url = reverse("file_download") + f"?file_id={response_data['file_id']}"
+        download_url = reverse("file_download", kwargs={"file_id": response_data["file_id"]})
         location = request.build_absolute_uri(download_url)
         return Response(
             FileUploadFinalizeResponseSerializer(response_data).data,
@@ -310,27 +230,25 @@ class FileUploadFinalize(APIView):
         )
 
 
+def _get_file_or_404(user, file_id: uuid.UUID, *, write: bool = False) -> FileReference:
+    """Return the file if ``user`` can read it, else 404; with ``write``, 403 when it is readable only."""
+    file_reference = FileReference.objects.filter(id=file_id).first()
+    if file_reference is None or not file_reference.has_access(user):
+        raise FileReferenceNotFoundException(detail="That file could not be found.")
+    if write and not file_reference.has_write_access(user):
+        raise FileAccessDeniedException(detail="You do not have permission to change this file.")
+    return file_reference
+
+
 @extend_schema_view(
     get=extend_schema(
-        operation_id="file_transfer_download_retrieve",
+        operation_id="files_download_retrieve",
         summary="Get file download URL",
         description="Generates a presigned URL for downloading a file.",
-        parameters=[
-            OpenApiParameter(
-                name="file_id",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="UUID of the file reference",
-                required=True,
-            ),
-        ],
         responses={
             200: FileDownloadSerializer,
             **get_error_responses(
-                FileTransferErrorCodes.NO_FILE_SPECIFIED,
-                FileTransferErrorCodes.INVALID_FILE_REFERENCE,
                 FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND,
-                FileTransferErrorCodes.FILE_ACCESS_DENIED,
                 FileTransferErrorCodes.STORED_FILE_NOT_FOUND,
             ),
             **get_common_error_responses(),
@@ -341,45 +259,16 @@ class FileDownload(APIView):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request: Request) -> Response:
-        """Generate a presigned URL for file download.
-
-        Args:
-            request: The request with query parameter `file_id`.
-
-        Returns:
-            Response with presigned_url and expires_at.
-        """
-        file_id = request.query_params.get("file_id")
-        if not file_id:
-            raise NoFileSpecifiedException(detail="Specify which file to use.")
-
-        try:
-            file_reference = FileReference.objects.get(id=file_id)
-        except FileReference.DoesNotExist:
-            raise FileReferenceNotFoundException(detail="That file could not be found.")
-        except ValueError, TypeError, ValidationError:
-            raise InvalidFileReferenceException(detail="That is not a valid file.")
-
-        if not file_reference.has_access(request.user):
-            raise FileAccessDeniedException(detail="You do not have access to this file.")
+    def get(self, request: Request, file_id: uuid.UUID) -> Response:
+        """Generate a presigned URL for file download."""
+        file_reference = _get_file_or_404(request.user, file_id)
 
         if not file_reference.file:
             raise StoredFileNotFoundException(detail="The file could not be found.")
 
-        safe_filename = _sanitize_filename(file_reference.file_name, default="download")
-
-        expires_at = timezone.now() + timedelta(seconds=FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS)
-        presigned_url = presign_get(
-            FileTransferStorage.bucket_name,
-            file_reference.file.name,
-            expires_in=FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS,
-            response_content_disposition=f'attachment; filename="{safe_filename}"',
-        )
-
         response_data = {
-            "presigned_url": presigned_url,
-            "expires_at": expires_at,
+            "presigned_url": file_reference.download_url(expires_in=FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS),
+            "expires_at": timezone.now() + timedelta(seconds=FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS),
         }
 
         return Response(FileDownloadSerializer(response_data).data, status=status.HTTP_200_OK)
@@ -387,17 +276,13 @@ class FileDownload(APIView):
 
 @extend_schema_view(
     post=extend_schema(
-        operation_id="file_transfer_process_create",
+        operation_id="files_process_create",
         summary="Process an uploaded file",
         description="Triggers processing for a file (calculates hashes, mimetype, etc.).",
-        request=FileProcessSerializer,
+        request=None,
         responses={
             202: {"description": "Request accepted for processing"},
-            **get_error_responses(
-                FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND,
-                FileTransferErrorCodes.FILE_ACCESS_DENIED,
-                include_validation_error=True,
-            ),
+            **get_error_responses(FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND),
             **get_common_error_responses(),
         },
     )
@@ -406,48 +291,20 @@ class FileProcess(APIView):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: Request) -> Response:
-        """Triggers processing for a file.
-
-        Args:
-            request: The request with file_id in body.
-
-        Returns:
-            Response with success message.
-        """
-        serializer = FileProcessSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        try:
-            file_reference = FileReference.objects.get(id=serializer.validated_data["file_id"])
-            if not file_reference.has_access(request.user):
-                raise FileAccessDeniedException(detail="You do not have access to this file.")
-            file_reference.process_file()
-
-            return Response({"detail": "File processing started"}, status=status.HTTP_202_ACCEPTED)
-        except FileReference.DoesNotExist:
-            raise FileReferenceNotFoundException(detail="That file could not be found.")
+    def post(self, request: Request, file_id: uuid.UUID) -> Response:
+        """Trigger processing for a file."""
+        _get_file_or_404(request.user, file_id).process_file()
+        return Response({"detail": "File processing started"}, status=status.HTTP_202_ACCEPTED)
 
 
 @extend_schema_view(
     delete=extend_schema(
-        operation_id="file_transfer_delete_destroy",
+        operation_id="files_destroy",
         summary="Delete a file reference",
         description="Deletes a file reference and removes the associated file from storage.",
-        parameters=[
-            OpenApiParameter(
-                name="file_id",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="UUID of the file reference to delete",
-                required=True,
-            )
-        ],
         responses={
             204: {"description": "File reference deleted successfully"},
             **get_error_responses(
-                FileTransferErrorCodes.NO_FILE_SPECIFIED,
-                FileTransferErrorCodes.INVALID_FILE_REFERENCE,
                 FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND,
                 FileTransferErrorCodes.FILE_ACCESS_DENIED,
             ),
@@ -455,36 +312,16 @@ class FileProcess(APIView):
         },
     )
 )
-class FileDelete(APIView):
-    authentication_classes = [CookieJWTAuthentication]
-    permission_classes = [IsAuthenticated]
+class FileDetail(NoteFileDetail):
+    """One file: GET (metadata, for files on a readable note) comes from the notes app; DELETE is here."""
 
-    def delete(self, request: Request) -> Response:
-        """Delete a file reference and the associated file from storage.
-
-        Args:
-            request: The request with query parameter `file_id`.
-
-        Returns:
-            Empty response with 204 No Content on success.
-        """
-        file_id = request.query_params.get("file_id")
-        if not file_id:
-            raise NoFileSpecifiedException(detail="Specify which file to use.")
-
-        try:
-            file_reference = FileReference.objects.get(id=file_id)
-            if not file_reference.has_write_access(request.user):
-                raise FileAccessDeniedException(detail="You do not have permission to delete this file.")
-            if file_reference.file:
-                try:
-                    file_reference.file.delete(save=False)
-                except OSError, ClientError:
-                    pass
-            file_reference.delete()
-
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except FileReference.DoesNotExist:
-            raise FileReferenceNotFoundException(detail="That file could not be found.")
-        except ValueError, TypeError, ValidationError:
-            raise InvalidFileReferenceException(detail="That is not a valid file.")
+    def delete(self, request: Request, file_id: uuid.UUID) -> Response:
+        """Delete a file reference and the associated file from storage."""
+        file_reference = _get_file_or_404(request.user, file_id, write=True)
+        if file_reference.file:
+            try:
+                file_reference.file.delete(save=False)
+            except OSError, ClientError:
+                pass
+        file_reference.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

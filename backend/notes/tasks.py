@@ -1,11 +1,9 @@
 """Celery tasks for note processing: linking, population, metadata, access vectors."""
 
-import json
 import logging
 
 from celery import shared_task
 from django.contrib.contenttypes.models import ContentType
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db import close_old_connections, transaction
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -25,10 +23,12 @@ from user.models import CradleUser
 
 from .enums import NoteStatus
 from .exceptions import EntriesNotFoundException, EntryTypesNotFoundException
-from .markdown.to_metadata import infer_metadata
 from .models import Note
 
 logger = logging.getLogger(__name__)
+
+# Failures that a retry cannot fix: the note marks itself INVALID, or it was deleted while queued.
+_PERMANENT_FAILURES = (EntriesNotFoundException, EntryTypesNotFoundException, Note.DoesNotExist)
 
 
 @shared_task
@@ -112,7 +112,7 @@ def smart_linker_task(note_id, user_id=None):
             Relation.objects.bulk_create(to_create)
 
         note.last_linked = timezone.now()
-        note.save()
+        note.write_fields("last_linked")
 
     finally:
         close_old_connections()
@@ -215,7 +215,13 @@ def link_files_task(note_id, file_ref_id=None):
     return note_id
 
 
-@shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=60, max_retries=1)
+@shared_task(
+    autoretry_for=(Exception,),
+    dont_autoretry_for=_PERMANENT_FAILURES,
+    retry_backoff=30,
+    retry_backoff_max=60,
+    max_retries=1,
+)
 def entry_class_creation_task(note_id, user_id=None):
     """Create missing entry classes referenced by a note.
 
@@ -247,13 +253,18 @@ def entry_class_creation_task(note_id, user_id=None):
         if nonexistent_subtypes:
             raise EntryTypesNotFoundException(nonexistent_subtypes)
     except EntryTypesNotFoundException as e:
-        note.set_status(NoteStatus.INVALID, e.detail)
-        note.save()
+        note.write_status(NoteStatus.INVALID, e.detail)
 
         raise e
 
 
-@shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3)
+@shared_task(
+    autoretry_for=(Exception,),
+    dont_autoretry_for=_PERMANENT_FAILURES,
+    retry_backoff=30,
+    retry_backoff_max=300,
+    max_retries=3,
+)
 @distributed_lock("entry_population_note_{note_id}", timeout=1800)
 def entry_population_task(note_id, user_id=None):
     """Create missing entries for a note from its reference tree.
@@ -310,11 +321,10 @@ def entry_population_task(note_id, user_id=None):
                     try:
                         entries.append(Entry(name=r.value, entry_class=ec))
                     except InvalidEntryException as e:
-                        note.set_status(
+                        note.write_status(
                             NoteStatus.INVALID,
                             (note.status_message or "") + e.detail.strip() + "\n",
                         )
-                        note.save()
                         logger.warning(e.detail)
 
             Entry.objects.bulk_create(entries, ignore_conflicts=True)
@@ -356,16 +366,19 @@ def entry_population_task(note_id, user_id=None):
 
             if childscan:
                 scan_for_children.delay(childscan, content_type.id, note.id)
-
-            note.save()
     except EntriesNotFoundException as e:
-        note.set_status(NoteStatus.INVALID, e.detail)
-        note.save()
+        note.write_status(NoteStatus.INVALID, e.detail)
 
         raise e
 
 
-@shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3)
+@shared_task(
+    autoretry_for=(Exception,),
+    dont_autoretry_for=_PERMANENT_FAILURES,
+    retry_backoff=30,
+    retry_backoff_max=300,
+    max_retries=3,
+)
 def connect_aliases(note_id, user_id=None):
     """Create alias entries and relations from note reference tree.
 
@@ -391,7 +404,6 @@ def connect_aliases(note_id, user_id=None):
 
         aliases[r.alias].add((r.key, r.value))
 
-    # Batch fetch all entries needed for alias relations
     all_subtype_name = [(s, n) for entries in aliases.values() for s, n in entries]
     if all_subtype_name:
         entry_conditions = Q()
@@ -404,6 +416,7 @@ def connect_aliases(note_id, user_id=None):
     else:
         entry_map = {}
 
+    relations = []
     for aname, entries in aliases.items():
         if not entries:
             continue
@@ -415,7 +428,6 @@ def connect_aliases(note_id, user_id=None):
 
         note.entries.add(alias)
 
-        relations = []
         for subtype, name in entries:
             e = entry_map.get((subtype, name))
             if e is None:
@@ -433,8 +445,9 @@ def connect_aliases(note_id, user_id=None):
                 )
             )
 
-        if relations:
-            Relation.objects.bulk_create(relations)
+    with transaction.atomic():
+        note.relations.filter(reason=RelationReason.ALIAS).delete()
+        Relation.objects.bulk_create(relations)
 
     refresh_edges_materialized_view.apply_async()
 
@@ -448,13 +461,47 @@ def propagate_acvec(note_id):
 
 
 @shared_task
+def relink_note_task(note_id, user_id):
+    """Rebuild one note's relations: delete them and re-run its pipeline on a locked, freshly loaded copy.
+
+    The lock makes concurrent edits wait, so the pipeline's save cannot overwrite them with stale content.
+    """
+    from .constants import NOTES_RELINK_PIPELINE
+    from .processor.task_scheduler import TaskScheduler
+
+    user = CradleUser.objects.filter(id=user_id).first()
+    if user is None:
+        return
+    with transaction.atomic():
+        note = Note.objects.select_for_update().filter(id=note_id, fleeting=False).first()
+        if note is None:
+            return
+        note.relations.all().delete()
+        TaskScheduler(user, tasks=NOTES_RELINK_PIPELINE).run_pipeline(note, update_acvec=False)
+
+
+@shared_task
+def relink_all_notes_task(user_id):
+    """Queue a relink for every non-fleeting note, one task (and transaction) per note."""
+    for note_id in Note.objects.non_fleeting().values_list("id", flat=True).iterator():
+        relink_note_task.delay(note_id, user_id)
+
+
+@shared_task
+def note_processing_failed_task(note_id):
+    """Error callback for the processing chain: a note must not stay PROCESSING after a task gave up."""
+    note = Note.objects.filter(id=note_id).first()
+    if note is not None and note.status == NoteStatus.PROCESSING:
+        note.write_status(NoteStatus.INVALID, "This note could not be processed. Save it again to retry.")
+
+
+@shared_task
 @distributed_lock("finalize_note_{note_id}", timeout=1800)
 def note_finalize_task(note_id):
     """Mark note as healthy when processing is complete."""
     note = Note.objects.get(id=note_id)
     if note.status == NoteStatus.PROCESSING:
-        note.set_status(NoteStatus.HEALTHY)
-        note.save()
+        note.write_status(NoteStatus.HEALTHY)
 
 
 @shared_task
@@ -463,26 +510,9 @@ def note_metadata_process_task(note_id):
     """Extract and apply metadata (title, description) from note frontmatter."""
     note = Note.objects.get(id=note_id)
 
-    offset, metadata = infer_metadata(note.content)
-
-    for key, field in Note.metadata_fields.items():
-        if field:
-            setattr(note, field, getattr(Note, field, None).field.default)
-        if key not in metadata:
-            continue
-
-        value = metadata.get(key)
-
-        if field is None:
-            metadata.pop(key, None)
-            continue
-
-        setattr(note, field, value)
-
-    note.content_offset = offset
-    note.metadata = json.loads(json.dumps(metadata, cls=DjangoJSONEncoder))
-
+    fields = note.apply_metadata()
     if not (note.title or "").strip():
         note.set_status(NoteStatus.WARNING, "Note title is empty.")
+        fields += Note.STATUS_FIELDS
 
-    note.save()
+    note.write_fields(*fields)

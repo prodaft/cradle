@@ -1,13 +1,13 @@
 import uuid
 
 from django.urls import reverse
-from rest_framework_simplejwt.tokens import AccessToken
 
 from access.enums import AccessType
 from access.models import Access
 from entries.models import Entry
 from logs.models import EventLog
 from user.models import CradleUser
+from user.testing import session_access_token
 
 from ..models import Note
 from .utils import NotesTestCase
@@ -20,8 +20,8 @@ class NoteHistoryTest(NotesTestCase):
         self.other = CradleUser.objects.create_user(
             username="other", password="pass", email="b@c.d", is_active=True, email_confirmed=True
         )
-        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.user)}"}
-        self.other_headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.other)}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={session_access_token(self.user)}"}
+        self.other_headers = {"HTTP_COOKIE": f"access_token={session_access_token(self.other)}"}
 
         self.note = Note.objects.create(author=self.user, content="mine")
         self.note.log_create(self.user)

@@ -1,5 +1,18 @@
-import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
+import {
+    SettingsHeaderActionsPortal,
+    SettingsSaveButton,
+} from '@/components/base/settings-header-actions/settings-header-actions';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -21,22 +34,19 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys, useNdjsonQuery } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { useMutation } from '@tanstack/react-query';
-import { useId, useLayoutEffect, useMemo, useRef } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
+import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import OfflineIndicator from '@/components/feedback/offline-indicator';
 import { SelectOption } from '@/types/models';
-import {
-    ArrowCounterClockwiseIcon,
-    ClockCounterClockwiseIcon,
-    FloppyDiskIcon,
-} from '@phosphor-icons/react';
-import isEqual from 'lodash/isEqual';
+import {} from '@phosphor-icons/react';
 import * as z from 'zod';
 
 type Entity = components['schemas']['Entity'];
@@ -46,13 +56,14 @@ type AdvancedQueryResponse = components['schemas']['AdvancedQueryPaginatedRespon
 
 interface EntityFormProps {
     id?: number | string | null;
-    onAdd?: (result: Entity) => void;
 }
 
 interface AliasOption extends SelectOption<number> {
     value: number;
     label: string;
 }
+
+const NO_OWNER = '__none__';
 
 interface SubtypeOption extends SelectOption<string> {
     value: string;
@@ -64,6 +75,7 @@ const entitySchema = z.object({
     subtype: z.string().min(1, { error: 'Subtype is required' }),
     description: z.string().default(''),
     isPublic: z.boolean().default(false),
+    owningTeamId: z.string().default(NO_OWNER),
     aliases: z
         .array(
             z.object({
@@ -81,6 +93,7 @@ const ENTITY_FORM_DEFAULTS: EntityFormData = {
     subtype: '',
     description: '',
     isPublic: false,
+    owningTeamId: NO_OWNER,
     aliases: [],
 };
 
@@ -89,7 +102,7 @@ function getEntityFormFromApi(
 ): EntityFormData | null {
     if (!entity) return null;
     const aliases =
-        entity.aliases_detail
+        entity.aliases
             ?.filter((a): a is Entry & { id: number } => a.id !== undefined)
             .map((a) => ({
                 value: a.id!,
@@ -100,12 +113,18 @@ function getEntityFormFromApi(
         subtype: entity.subtype || '',
         description: entity.description || '',
         isPublic: entity.is_public ?? false,
+        owningTeamId: (entity.team?.id as string | undefined) ?? NO_OWNER,
         aliases,
     };
 }
 
-export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
+export default function EntityForm({ id = null }: EntityFormProps) {
     const formId = useId();
+    const queryClient = useQueryClient();
+    const { isAdmin } = useAuthState();
+    const router = useRouter();
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [confirmText, setConfirmText] = useState('');
     const searchAliases = useMutation({
         mutationFn: async (searchTerm: string) => {
             const { data, error, response } = await fetchClient.GET(
@@ -150,15 +169,63 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         },
         meta: {
             successMessage: 'Entity updated successfully!',
+            invalidateQueries: queryKeys.entryLists().map((queryKey) => ({ queryKey })),
+        },
+    });
+
+    const setOwner = useMutation({
+        mutationFn: async (teamId: string | null) => {
+            const { error, response } = await fetchClient.PUT(
+                '/entries/entities/{entity_id}/owner/',
+                {
+                    params: { path: { entity_id: Number(id) } },
+                    body: { team_id: teamId },
+                },
+            );
+            if (error) throw { response, error };
+        },
+        meta: {
+            successMessage: 'Owning team updated',
             invalidateQueries: [
-                { queryKey: queryKeys.entities.lists() },
-                { queryKey: queryKeys.entities.detail(String(id)) },
-                { queryKey: queryKeys.notes.apiList() },
+                { queryKey: queryKeys.teams.all },
+                {
+                    queryKey: [
+                        'get',
+                        '/entries/entities/{entity_id}/access/users/',
+                        Number(id),
+                    ],
+                },
+                { queryKey: ['get', '/entries/entities/{entity_id}/'] },
+                { queryKey: ['get', '/users/{user_id}/access/'] },
             ],
         },
-        onSuccess: (result) => {
-            if (onAdd) onAdd(result);
+    });
+
+    const deleteEntity = useMutation({
+        mutationFn: async () => {
+            const { error, response } = await fetchClient.DELETE(
+                '/entries/entities/{entity_id}/',
+                { params: { path: { entity_id: Number(id) } } },
+            );
+            if (error) throw { response, error };
         },
+        meta: {
+            successMessage: 'Entity deleted successfully',
+            invalidateQueries: queryKeys.entryLists().map((queryKey) => ({ queryKey })),
+        },
+        onSuccess: () => router.navigate({ to: '/manage/entities' as any }),
+    });
+
+    const { data: teamsPage } = useQuery({
+        queryKey: queryKeys.teams.list({ page: 1, pageSize: 200 }),
+        queryFn: async () => {
+            const { data, error, response } = await fetchClient.GET('/teams/', {
+                params: { query: { page: 1, page_size: 200 } },
+            });
+            if (error) throw { response, error };
+            return data;
+        },
+        enabled: isAdmin,
     });
 
     const loadedValuesRef = useRef<EntityFormData | null>(null);
@@ -200,6 +267,21 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         },
     );
 
+    const ownerItems = useMemo(() => {
+        const items: { value: string | null; label: string }[] = [
+            { value: null, label: 'Select a team' },
+            ...(teamsPage?.results ?? []).map((team) => ({
+                value: team.id as string,
+                label: team.name,
+            })),
+        ];
+        const current = entity?.team;
+        if (current && !items.some((item) => item.value === current.id)) {
+            items.push({ value: current.id as string, label: current.name });
+        }
+        return items;
+    }, [teamsPage, entity?.team]);
+
     const resolvedSubtypeOptions = useMemo(() => {
         if (!entity?.subtype) return subtypeOptions;
 
@@ -212,7 +294,6 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     const {
         handleSubmit,
         reset,
-        watch,
         control,
         formState: { isSubmitting, isDirty },
     } = useForm<EntityFormData>({
@@ -242,10 +323,24 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
             description: values.description,
             subtype: values.subtype || '',
             is_public: values.isPublic,
-            aliases: values.aliases.map((alias) => alias.value),
+            alias_ids: values.aliases.map((alias) => alias.value),
         };
         try {
             await updateEntity.mutateAsync(payload);
+            if (
+                isAdmin &&
+                values.owningTeamId !== loadedValuesRef.current?.owningTeamId
+            ) {
+                // setOwner refetches the entity; refetching after the update too would
+                // reset the form to the old owner while this request is in flight.
+                await setOwner.mutateAsync(
+                    values.owningTeamId === NO_OWNER ? null : values.owningTeamId,
+                );
+            } else {
+                queryClient.invalidateQueries({
+                    queryKey: queryKeys.entities.apiDetail(Number(id)),
+                });
+            }
         } catch (_error) {
             // errors/toasts handled by mutation/meta; keep form responsive
         }
@@ -267,52 +362,16 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         );
     }
 
-    const revert = () => {
-        if (loadedValuesRef.current) reset(loadedValuesRef.current);
-    };
-    const resetToDefaults = () =>
-        reset(ENTITY_FORM_DEFAULTS, { keepDefaultValues: true });
-    const isAtDefault = isEqual(watch(), ENTITY_FORM_DEFAULTS);
+    const confirmPhrase = entity ? `${entity.subtype}:${entity.name}` : 'DELETE';
 
     return (
         <>
             <SettingsHeaderActionsPortal>
-                <div className='flex items-center gap-2'>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={!isDirty}
-                        onClick={revert}
-                        title='Revert'
-                    >
-                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={isAtDefault}
-                        onClick={resetToDefaults}
-                        title='Default'
-                    >
-                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='submit'
-                        form={formId}
-                        variant='default'
-                        size='icon'
-                        disabled={isSubmitting || !isDirty}
-                        title='Save Changes'
-                    >
-                        {isSubmitting ? (
-                            <Spinner className='size-4' />
-                        ) : (
-                            <FloppyDiskIcon className='size-4' weight='bold' />
-                        )}
-                    </Button>
-                </div>
+                <SettingsSaveButton
+                    isDirty={isDirty}
+                    saving={isSubmitting}
+                    form={formId}
+                />
             </SettingsHeaderActionsPortal>
             <form
                 id={formId}
@@ -485,6 +544,65 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                             <Separator />
 
                             <Controller
+                                name='owningTeamId'
+                                control={control}
+                                render={({ field }) => (
+                                    <Field orientation='responsive'>
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel
+                                                htmlFor='entity-owning-team'
+                                                className='text-sm block mb-0.5'
+                                            >
+                                                Team
+                                            </FieldLabel>
+                                            <FieldDescription>
+                                                Team whose leads manage access to this
+                                                entity
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        {isAdmin ? (
+                                            <Select
+                                                items={ownerItems}
+                                                value={
+                                                    field.value === NO_OWNER
+                                                        ? null
+                                                        : field.value
+                                                }
+                                                onValueChange={(value) =>
+                                                    field.onChange(value ?? NO_OWNER)
+                                                }
+                                            >
+                                                <SelectTrigger
+                                                    id='entity-owning-team'
+                                                    className='w-64 shrink-0 self-start md:self-center'
+                                                >
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {ownerItems.map((item) => (
+                                                        <SelectItem
+                                                            key={item.value ?? NO_OWNER}
+                                                            value={item.value}
+                                                        >
+                                                            {item.value === null
+                                                                ? 'No team'
+                                                                : item.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <p className='w-64 shrink-0 self-start text-sm font-medium md:self-center'>
+                                                {entity?.team?.name ?? 'No team'}
+                                            </p>
+                                        )}
+                                    </Field>
+                                )}
+                            />
+
+                            <Separator />
+
+                            <Controller
                                 name='description'
                                 control={control}
                                 render={({ field, fieldState }) => (
@@ -593,10 +711,86 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                     </Field>
                                 )}
                             />
+
+                            {isAdmin && (
+                                <>
+                                    <Separator />
+
+                                    <Field orientation='responsive'>
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm block'>
+                                                Delete
+                                            </FieldLabel>
+                                            <FieldDescription>
+                                                Related notes are kept, but their links
+                                                to this entity are removed.
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Button
+                                            type='button'
+                                            variant='destructive'
+                                            size='sm'
+                                            className='self-start md:self-center'
+                                            onClick={() => setIsDeleteOpen(true)}
+                                        >
+                                            Delete
+                                        </Button>
+                                    </Field>
+                                </>
+                            )}
                         </FieldGroup>
                     </div>
                 </section>
             </form>
+            {isAdmin && (
+                <AlertDialog
+                    open={isDeleteOpen}
+                    onOpenChange={(open) => {
+                        setIsDeleteOpen(open);
+                        if (!open) setConfirmText('');
+                    }}
+                >
+                    <AlertDialogContent className='sm:max-w-md'>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Delete {confirmPhrase}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This keeps related notes but removes the links to this
+                                entity. It cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <FieldGroup className='gap-4'>
+                            <Field>
+                                <FieldLabel htmlFor='confirm-delete-entity'>
+                                    Type below to confirm
+                                </FieldLabel>
+                                <Input
+                                    id='confirm-delete-entity'
+                                    type='text'
+                                    placeholder={`Type "${confirmPhrase}" to confirm`}
+                                    value={confirmText}
+                                    onChange={(e) => setConfirmText(e.target.value)}
+                                />
+                            </Field>
+                        </FieldGroup>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel variant='outline' size='sm'>
+                                Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                variant='destructive'
+                                size='sm'
+                                disabled={
+                                    confirmText !== confirmPhrase ||
+                                    deleteEntity.isPending
+                                }
+                                onClick={() => deleteEntity.mutate()}
+                            >
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
         </>
     );
 }

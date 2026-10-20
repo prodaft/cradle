@@ -15,7 +15,7 @@ import {
 } from '@tanstack/react-query';
 
 /** Row type: OpenAPI does not type NDJSON line bodies; default ``any`` matches prior ``fetchAll*`` ergonomics. */
-export type UseNdjsonQueryOptions<P extends NdjsonPath, TItem = any> = {
+type UseNdjsonQueryOptions<P extends NdjsonPath, TItem = any> = {
     path: P;
     params?: NdjsonGetParams<P>;
     queryKey: QueryKey;

@@ -10,6 +10,7 @@ import {
 } from '@/components/custom/action-bar';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
+import { DataTableRowActions } from '@/components/custom/data-table/data-table-row-actions';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import {
     AlertDialog,
@@ -31,6 +32,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -54,6 +56,7 @@ import {
 } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import AddEntryTypeForm from './add-entry-type-form';
 
 type EntryClass = components['schemas']['EntryClass'];
@@ -126,67 +129,50 @@ export default function EntryTypesList() {
         }));
     }, [entryClasses?.results]);
 
-    const openEntryType = (item: EntryTypeRow) => {
-        router.navigate({
-            to: `/manage/entry-types/${encodeURIComponent(item.subtype)}` as any,
-        });
-    };
-
-    const deleteEntryType = useMutation({
-        mutationFn: async (subtype: string) => {
-            const { error, response } = await fetchClient.DELETE(
-                '/entries/entry-classes/{class_subtype}/',
-                { params: { path: { class_subtype: subtype } } },
-            );
-            if (error) throw { response, error };
+    const openSettings = useCallback(
+        (id: string | number, tab?: string) => {
+            router.navigate({
+                to: `/manage/entry-types/${encodeURIComponent(id)}` as any,
+                ...(tab ? { search: { tab } as any } : {}),
+            });
         },
-        meta: {
-            invalidateQueries: [
-                { queryKey: queryKeys.entryTypes.apiList() },
-                { queryKey: ['entry_classes'] },
-            ],
-            successMessage: 'Entry type deleted successfully',
+        [router],
+    );
+
+    const deleteEntryTypes = useMutation({
+        mutationFn: async (subtypes: string[]) => {
+            await Promise.all(
+                subtypes.map(async (subtype) => {
+                    const { error, response } = await fetchClient.DELETE(
+                        '/entries/entry-classes/{class_subtype}/',
+                        { params: { path: { class_subtype: subtype } } },
+                    );
+                    if (error) throw { response, error };
+                }),
+            );
+        },
+        onSuccess: (_, subtypes) => {
+            toast.success(
+                `Successfully deleted ${subtypes.length} entry type${subtypes.length > 1 ? 's' : ''}`,
+            );
+            clearSelection();
+        },
+        onSettled: () => {
+            for (const queryKey of [
+                queryKeys.entryTypes.apiList(),
+                ['entry_classes'],
+                ...queryKeys.entryLists(),
+            ]) {
+                queryClient.invalidateQueries({ queryKey });
+            }
         },
     });
 
-    const deleteEntryTypes = async (subtypes: string[]) => {
-        try {
-            await Promise.all(
-                subtypes.map((subtype) => deleteEntryType.mutateAsync(subtype)),
-            );
-            clearSelection();
-            setIsDeleteOpen(false);
-            setPendingDeleteIds([]);
-            setConfirmText('');
-        } catch (_error) {
-            // Error already handled by mutation
-        }
-    };
-
-    const confirmDelete = useCallback(() => {
-        if (checkedIds.length === 0) return;
-        setPendingDeleteIds(checkedIds);
+    const confirmDelete = useCallback((ids: string[]) => {
+        if (ids.length === 0) return;
+        setPendingDeleteIds(ids);
         setIsDeleteOpen(true);
-    }, [checkedIds]);
-
-    const editSelected = useCallback(() => {
-        if (checkedIds.length !== 1) return;
-        const subtype = checkedIds[0];
-        if (subtype === undefined) return;
-        router.navigate({
-            to: `/manage/entry-types/${encodeURIComponent(subtype)}` as any,
-        });
-    }, [checkedIds, router]);
-
-    const viewActivity = useCallback(() => {
-        if (checkedIds.length !== 1) return;
-        const subtype = checkedIds[0];
-        if (subtype === undefined) return;
-        router.navigate({
-            to: `/manage/entry-types/${encodeURIComponent(subtype)}` as any,
-            search: { tab: 'activity' } as any,
-        });
-    }, [checkedIds, router]);
+    }, []);
 
     const totalPages = useMemo(
         () => Math.max(1, entryClasses?.total_pages ?? 1),
@@ -302,8 +288,53 @@ export default function EntryTypesList() {
                 },
                 enableSorting: false,
             },
+            {
+                id: 'actions',
+                header: '',
+                size: 40,
+                minSize: 40,
+                maxSize: 40,
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <DataTableRowActions>
+                            <DropdownMenuItem
+                                onClick={() => openSettings(item.subtype)}
+                            >
+                                <PencilIcon size={16} weight='bold' />
+                                Edit
+                            </DropdownMenuItem>
+                            {isAdmin && (
+                                <>
+                                    <DropdownMenuItem
+                                        onClick={() =>
+                                            openSettings(item.subtype, 'activity')
+                                        }
+                                    >
+                                        <ClockCounterClockwiseIcon
+                                            size={16}
+                                            weight='bold'
+                                        />
+                                        Activity
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        variant='destructive'
+                                        onClick={() => confirmDelete([item.subtype])}
+                                    >
+                                        <TrashIcon size={16} weight='bold' />
+                                        Delete
+                                    </DropdownMenuItem>
+                                </>
+                            )}
+                        </DataTableRowActions>
+                    );
+                },
+                enableSorting: false,
+                enableHiding: false,
+            },
         ],
-        [countLabel],
+        [countLabel, isAdmin, openSettings, confirmDelete],
     );
 
     const table = useReactTable({
@@ -343,11 +374,7 @@ export default function EntryTypesList() {
         queryClient.invalidateQueries({
             queryKey: queryKeys.entryTypes.apiList(),
         });
-        if (newEntryType.subtype) {
-            router.navigate({
-                to: `/manage/entry-types/${encodeURIComponent(newEntryType.subtype)}` as any,
-            });
-        }
+        if (newEntryType.subtype) openSettings(newEntryType.subtype);
     };
 
     return (
@@ -376,7 +403,7 @@ export default function EntryTypesList() {
                             table={table}
                             showViewOptions
                             isLoading={isPending}
-                            onRowClick={openEntryType}
+                            onRowClick={(item) => openSettings(item.subtype)}
                             getRowHref={(item) =>
                                 `/manage/entry-types/${encodeURIComponent(item.subtype)}`
                             }
@@ -403,25 +430,9 @@ export default function EntryTypesList() {
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
-                    <ActionBarItem
-                        onClick={editSelected}
-                        disabled={isPending || checkedIds.length !== 1}
-                    >
-                        <PencilIcon size={18} weight='bold' />
-                        Edit
-                    </ActionBarItem>
                     {isAdmin && (
                         <ActionBarItem
-                            onClick={viewActivity}
-                            disabled={isPending || checkedIds.length !== 1}
-                        >
-                            <ClockCounterClockwiseIcon size={18} weight='bold' />
-                            View Activity
-                        </ActionBarItem>
-                    )}
-                    {isAdmin && (
-                        <ActionBarItem
-                            onClick={confirmDelete}
+                            onClick={() => confirmDelete(checkedIds)}
                             disabled={isPending || checkedIds.length === 0}
                             className='text-destructive'
                         >
@@ -490,7 +501,7 @@ export default function EntryTypesList() {
                             variant='destructive'
                             size='sm'
                             onClick={() => {
-                                deleteEntryTypes(pendingDeleteIds);
+                                deleteEntryTypes.mutate(pendingDeleteIds);
                             }}
                             disabled={
                                 confirmText !==

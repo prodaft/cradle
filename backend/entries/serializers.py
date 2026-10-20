@@ -1,5 +1,6 @@
 """Serializers for entries, entry classes, relations, and attachments."""
 
+from collections.abc import Mapping
 from datetime import timedelta
 
 from django.db.models import Q
@@ -8,20 +9,24 @@ from drf_spectacular.plumbing import ResolvedComponent
 from drf_spectacular.utils import Direction, extend_schema_field
 from rest_framework import serializers
 
-from access.enums import AccessType
-from access.models import Access
 from core.exceptions import PermissionDeniedException
 from file_transfer.s3_utils import presign_get
 from file_transfer.storage import RelationStorage
+from file_transfer.uploads.flows import sanitize_upload_filename
+from teams.exceptions import TeamNotFoundException
+from teams.models import Team
+from teams.serializers import TeamSummarySerializer
 
-from .enums import EntryType
+from .enums import EntryType, EntryTypeFormat
 from .exceptions import (
+    AdminOnlyEntityCreateException,
+    AdminOnlyEntityPublicStatusException,
     DuplicateEntityException,
-    DuplicateEntryException,
     EntryTypeMismatchException,
     EntryTypeNotFoundException,
     EntryTypeRequiredException,
     InvalidAliasTargetException,
+    InvalidEntryException,
 )
 from .models import Attachment, Entry, EntryClass, Relation
 
@@ -32,7 +37,6 @@ class EntryListCompressedTreeSerializerExtension(OpenApiSerializerExtension):
     target_class = "entries.serializers.EntryListCompressedTreeSerializer"
 
     def map_serializer(self, auto_schema, direction: Direction):
-        # --- define the standalone component schema ---
         entry_obj_schema = {
             "type": "object",
             "properties": {
@@ -269,7 +273,12 @@ class EntryClassOptionsField(serializers.ListField):
 class EntryClassSerializerNoChildren(serializers.ModelSerializer):
     """Entry class without children relation (for nesting in entry serializers)."""
 
-    format = serializers.CharField(max_length=20, allow_null=True, help_text="Display format for the entry class")
+    format = serializers.ChoiceField(
+        choices=EntryTypeFormat.choices,
+        allow_null=True,
+        required=False,
+        help_text="Validation format: regex or options.",
+    )
     options = EntryClassOptionsField()
 
     class Meta:
@@ -288,17 +297,23 @@ class EntryClassSerializerNoChildren(serializers.ModelSerializer):
 
 
 class EntryClassSerializer(serializers.ModelSerializer):
-    """Full entry class with children relation and children_detail."""
+    """Full entry class with its children (read) and child_subtypes (write)."""
 
-    children = serializers.PrimaryKeyRelatedField(
+    child_subtypes = serializers.PrimaryKeyRelatedField(
+        source="children",
         queryset=EntryClass.objects.all(),
         many=True,
         write_only=True,
         required=False,
-        help_text="Child entry class IDs",
+        help_text="Subtypes of the child entry classes",
     )
-    children_detail = serializers.SerializerMethodField(read_only=True)
-    format = serializers.CharField(max_length=20, allow_null=True, help_text="Display format for the entry class")
+    children = serializers.SerializerMethodField(read_only=True)
+    format = serializers.ChoiceField(
+        choices=EntryTypeFormat.choices,
+        allow_null=True,
+        required=False,
+        help_text="Validation format: regex or options.",
+    )
     options = EntryClassOptionsField()
 
     class Meta:
@@ -312,10 +327,16 @@ class EntryClassSerializer(serializers.ModelSerializer):
             "options",
             "prefix",
             "color",
-            "children",
+            "child_subtypes",
             "format",
-            "children_detail",
+            "children",
         ]
+
+    def to_internal_value(self, data):
+        if isinstance(data, Mapping) and isinstance(data.get("subtype"), str):
+            data = data.copy()
+            data["subtype"] = EntryClass.normalize_subtype(data["subtype"])
+        return super().to_internal_value(data)
 
     def create(self, validated_data):
         children_data = validated_data.pop("children", [])
@@ -324,7 +345,7 @@ class EntryClassSerializer(serializers.ModelSerializer):
         return eclass
 
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
-    def get_children_detail(self, obj):
+    def get_children(self, obj):
         return EntryClassSerializerNoChildren(obj.children.all(), many=True).data
 
 
@@ -344,13 +365,12 @@ class EntryClassSerializerCount(EntryClassSerializer):
             "options",
             "prefix",
             "color",
+            "child_subtypes",
             "children",
-            "children_detail",
             "count",
         ]
 
     def get_count(self, obj) -> int:
-        # Use annotated count if available (for performance), otherwise fallback to query
         if hasattr(obj, "entry_count"):
             return min(obj.entry_count, 100)
 
@@ -493,14 +513,23 @@ class EntitySerializer(serializers.ModelSerializer):
     """Serializer for entity creation and update with aliases."""
 
     entry_class = EntryClassSerializerNoChildren(read_only=True)
-    aliases = serializers.PrimaryKeyRelatedField(
+    alias_ids = serializers.PrimaryKeyRelatedField(
+        source="aliases",
         queryset=Entry.objects.all(),
         many=True,
         write_only=True,
         required=False,
         help_text="Artifact entry IDs to alias to this entity",
     )
-    aliases_detail = EntrySerializer(source="aliases", many=True, read_only=True)
+    aliases = EntrySerializer(many=True, read_only=True, help_text="Artifact entries aliased to this entity")
+    team = TeamSummarySerializer(read_only=True, allow_null=True, help_text="Team that owns this entity")
+    team_id = serializers.UUIDField(
+        write_only=True,
+        required=False,
+        allow_null=True,
+        help_text="On create, the team that will own the entity: required unless you are an admin, and you must "
+        "lead it. Change an existing entity's team through the owner endpoint.",
+    )
 
     class Meta:
         model = Entry
@@ -510,21 +539,16 @@ class EntitySerializer(serializers.ModelSerializer):
             "description",
             "is_public",
             "entry_class",
+            "alias_ids",
             "aliases",
-            "aliases_detail",
+            "team",
+            "team_id",
         ]
         extra_kwargs = {
             "name": {"help_text": "Entity name (unique per subtype)"},
             "description": {"help_text": "Optional entity description"},
             "is_public": {"help_text": "Whether the entity is publicly visible"},
         }
-
-    def exists(self) -> bool:
-        """Check for duplicate entity (race-condition guard inside transaction)."""
-        return Entry.objects.filter(
-            name=self.validated_data["name"],
-            entry_class__subtype=self.validated_data["entry_class"].subtype,
-        ).exists()
 
     def to_representation(self, instance):
         """Flatten entry_class fields into the representation."""
@@ -536,15 +560,16 @@ class EntitySerializer(serializers.ModelSerializer):
                 continue
             representation[key] = entry_class_repr[key]
 
-        representation.pop("aliases", None)
-
         return representation
 
     def to_internal_value(self, data):
-        """Extract entry_class fields into nested dict for validation."""
-        data["type"] = EntryType.ENTITY
+        """Resolve ``subtype`` to the entity's entry class; a partial update may leave it out."""
+        if not isinstance(data, Mapping):
+            raise serializers.ValidationError({"non_field_errors": ["Send the entity as a JSON object."]})
 
-        if "subtype" not in data or not data["subtype"]:
+        if not data.get("subtype"):
+            if self.partial and self.instance is not None:
+                return super().to_internal_value(data)
             raise EntryTypeRequiredException()
 
         internal = super().to_internal_value(data)
@@ -565,26 +590,43 @@ class EntitySerializer(serializers.ModelSerializer):
 
         Raises:
             DuplicateEntityException: If another entity has the same name (409).
+            InvalidAliasTargetException: If an alias is not an artifact.
+            PermissionDeniedException: If a newly linked alias is not visible to the (non-admin) user.
+            AdminOnlyEntityCreateException: If a non-admin creates an entity without a team they lead.
+            AdminOnlyEntityPublicStatusException: If a non-admin creates a public entity.
+            TeamNotFoundException: If ``team_id`` names no team.
         """
-        if data["entry_class"].type != EntryType.ENTITY:
+        # A partial update keeps the current class and name unless it changes them.
+        entry_class = data.get("entry_class", self.instance.entry_class if self.instance else None)
+        name = data.get("name", self.instance.name if self.instance else None)
+
+        if entry_class.type != EntryType.ENTITY:
             raise EntryTypeMismatchException(detail="This entry is not an entity.")
 
-        if not data.get("name"):
+        if not name:
             raise serializers.ValidationError({"name": "Enter a name."})
 
         aliases = data.get("aliases", [])
         for alias in aliases:
             if alias.entry_class.type != EntryType.ARTIFACT:
                 raise InvalidAliasTargetException()
-        if aliases:
-            request = self.context.get("request")
-            if request and not Access.objects.has_access_to_entities(
-                request.user, set(aliases), {AccessType.READ, AccessType.READ_WRITE}
-            ):
+        request = self.context.get("request")
+        if aliases and request and not request.user.is_cradle_admin:
+            new_ids = {alias.pk for alias in aliases}
+            if self.instance is not None:
+                new_ids -= set(self.instance.aliases.values_list("pk", flat=True))
+            if new_ids and Entry.objects.accessible(request.user).filter(pk__in=new_ids).count() != len(new_ids):
                 raise PermissionDeniedException(detail="You do not have access to one or more of the linked entries.")
 
-        # Check for duplicate entity (same name + subtype)
-        qs = Entry.objects.filter(entry_class=data["entry_class"], name=data["name"])
+        team_id = data.pop("team_id", None)
+        if self.instance is None:
+            data["team"] = self._owning_team(request, team_id)
+            if data.get("is_public") and request is not None and not request.user.is_cradle_admin:
+                raise AdminOnlyEntityPublicStatusException(detail="Only administrators can create public entities.")
+        elif team_id is not None:
+            raise serializers.ValidationError({"team_id": "Change an entity's owning team on its Teams tab."})
+
+        qs = Entry.objects.filter(entry_class=entry_class, name=name)
         if self.instance is not None:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
@@ -592,11 +634,30 @@ class EntitySerializer(serializers.ModelSerializer):
 
         return super().validate(data)
 
+    @staticmethod
+    def _owning_team(request, team_id) -> Team | None:
+        """Team a new entity is created for. Admins may omit it; anyone else must lead it."""
+        is_admin = request is None or request.user.is_cradle_admin
+        if team_id is None:
+            if is_admin:
+                return None
+            raise AdminOnlyEntityCreateException(detail="Choose a team you lead to own the new entity.")
+        try:
+            team = Team.objects.get(pk=team_id)
+        except Team.DoesNotExist:
+            raise TeamNotFoundException(detail="That team could not be found.")
+        if not is_admin and not team.is_lead(request.user):
+            raise AdminOnlyEntityCreateException(detail="You can only create entities for teams you lead.")
+        return team
+
     def create(self, validated_data):
         aliases_data = validated_data.pop("aliases", [])
+        team = validated_data.pop("team", None)
         entry = Entry.objects.create(**validated_data)
         entry.aliases.set(aliases_data)
         entry.reconnect_aliases()
+        if team is not None:
+            team.take_ownership(entry)
         return entry
 
     def update(self, instance, validated_data):
@@ -604,10 +665,8 @@ class EntitySerializer(serializers.ModelSerializer):
         instance = super().update(instance, validated_data)
 
         if aliases_data is not None:
-            # Get current alias IDs from the instance
             current_alias_ids = set(instance.aliases.values_list("id", flat=True))
 
-            # Normalize incoming alias data to IDs
             new_alias_ids = {alias.id if hasattr(alias, "id") else alias for alias in aliases_data}
 
             if current_alias_ids != new_alias_ids:
@@ -647,107 +706,37 @@ class EntitySerializerExtension(OpenApiSerializerExtension):
 
 
 class ArtifactSerializer(serializers.ModelSerializer):
-    """Serializer for artifact creation and update."""
+    """Serializer for artifact creation; the artifact type must already exist."""
 
-    type = serializers.ReadOnlyField(default="artifact")
+    subtype = serializers.CharField(write_only=True, help_text="Entry class subtype (e.g. ip, domain, hash)")
 
     class Meta:
         model = Entry
         fields = ["name", "subtype"]
-        extra_kwargs = {
-            "name": {"help_text": "Artifact name (unique per subtype)"},
-            "subtype": {"help_text": "Entry class subtype (e.g. ip, domain, hash)"},
-        }
-
-    def to_representation(self, instance):
-        """Flatten entry_class fields into the representation."""
-        representation = super().to_representation(instance)
-        entry_class_repr = representation.pop("entry_class")
-
-        for key in entry_class_repr:
-            if key in representation:
-                continue
-            representation[key] = entry_class_repr[key]
-
-        return representation
-
-    def to_internal_value(self, data):
-        """Extract entry_class fields into nested dict for validation."""
-        data["type"] = EntryType.ARTIFACT
-        entry_class_internal = {}
-        for key in EntryClassSerializerNoChildren.Meta.fields:
-            if key in data:
-                entry_class_internal[key] = data.pop(key)
-        if "options" in entry_class_internal:
-            try:
-                entry_class_internal["options"] = EntryClassOptionsField().run_validation(
-                    entry_class_internal["options"]
-                )
-            except serializers.ValidationError as e:
-                raise serializers.ValidationError({"options": e.detail})
-
-        internal = super().to_internal_value(data)
-        internal["entry_class"] = EntryClass(**entry_class_internal)
-        return internal
+        extra_kwargs = {"name": {"help_text": "Artifact name (unique per subtype)"}}
 
     def validate(self, data):
-        """Check for duplicate artifact name, then apply superclass validations.
-
-        Args:
-            data: Dictionary containing the attributes of the Entry.
-
-        Returns:
-            The validated data.
+        """Resolve the artifact type and check the name against its format; the view rejects duplicates.
 
         Raises:
-            DuplicateEntryException: If another artifact has the same name (409).
+            EntryTypeNotFoundException: If the subtype does not exist (404).
+            EntryTypeMismatchException: If the subtype is not an artifact type.
+            InvalidEntryException: If the name does not match the type's regex or options.
         """
+        subtype = data.pop("subtype")
         try:
-            entry_class = EntryClass.objects.get(subtype=data["entry_class"].subtype)
+            entry_class = EntryClass.objects.get(subtype=subtype)
         except EntryClass.DoesNotExist:
-            # New subtype - create() will create it via get_or_create
-            pass
-        else:
-            if entry_class.type != EntryType.ARTIFACT:
-                raise EntryTypeMismatchException(detail="That entry type is not an artifact.")
-            data["entry_class"] = entry_class
+            raise EntryTypeNotFoundException()
+        if entry_class.type != EntryType.ARTIFACT:
+            raise EntryTypeMismatchException(detail="That entry type is not an artifact.")
+        if not entry_class.validate_text(data["name"]):
+            raise InvalidEntryException(entry_class.subtype, data["name"])
+        data["entry_class"] = entry_class
+        return data
 
-        entry_exists = Entry.objects.filter(
-            entry_class__subtype=data["entry_class"].subtype, name=data["name"]
-        ).exists()
-        if entry_exists:
-            raise DuplicateEntryException(detail="An entry with this name already exists.")
-
-        return super().validate(data)
-
-    def exists(self) -> bool:
-        """Check for duplicate entry (race-condition guard inside transaction)."""
-        return Entry.objects.filter(
-            name=self.validated_data["name"],
-            entry_class__subtype=self.validated_data["entry_class"].subtype,
-        ).exists()
-
-    def create(self, validated_data):
-        """Create a new Entry from validated data.
-
-        Ensures EntryClass exists (get_or_create if new subtype).
-
-        Args:
-            validated_data: Dictionary containing the attributes of the Entry.
-
-        Returns:
-            The created Entry.
-        """
-        entry_class = validated_data["entry_class"]
-        defaults = {
-            field: getattr(entry_class, field)
-            for field in EntryClassSerializerNoChildren.Meta.fields
-            if field != "subtype"
-        }
-        entry_class, _ = EntryClass.objects.get_or_create(subtype=entry_class.subtype, defaults=defaults)
-        validated_data["entry_class"] = entry_class
-
-        return super().create(validated_data)
+    def to_representation(self, instance):
+        return EntrySerializer(instance).data
 
 
 class EntryPublishSerializer(serializers.ModelSerializer):
@@ -766,16 +755,16 @@ class EntryPublishSerializer(serializers.ModelSerializer):
 class RelationSerializer(serializers.ModelSerializer):
     """Relation with minimal entry details for list views."""
 
-    e1 = EntrySerializerMinimal(read_only=True)
-    e2 = EntrySerializerMinimal(read_only=True)
+    src = EntrySerializerMinimal(source="e1", read_only=True, help_text="Source entry")
+    dst = EntrySerializerMinimal(source="e2", read_only=True, help_text="Destination entry")
     last_seen_at = serializers.DateTimeField(source="last_seen", read_only=True, help_text="Last observation")
 
     class Meta:
         model = Relation
         fields = [
             "id",
-            "e1",
-            "e2",
+            "src",
+            "dst",
             "created_at",
             "last_seen_at",
             "reason",
@@ -784,8 +773,6 @@ class RelationSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "id"]
         ref_name = "Relation"
         extra_kwargs = {
-            "e1": {"help_text": "Source entry"},
-            "e2": {"help_text": "Target entry"},
             "reason": {"help_text": "Why the relation exists"},
             "details": {"help_text": "Additional relation metadata"},
         }
@@ -823,7 +810,9 @@ class AttachmentSerializer(serializers.ModelSerializer):
                 RelationStorage.bucket_name,
                 obj.file.name,
                 expires_in=int(timedelta(days=7).total_seconds()),
-                response_content_disposition=f'attachment; filename="{obj.name}"',
+                response_content_disposition=(
+                    f'attachment; filename="{sanitize_upload_filename(obj.name, default="download")}"'
+                ),
             )
         except Exception:
             return None
@@ -832,8 +821,8 @@ class AttachmentSerializer(serializers.ModelSerializer):
 class RelationDetailSerializer(serializers.ModelSerializer):
     """Detailed serializer for Relation with attachments."""
 
-    e1 = EntrySerializerMinimal(read_only=True)
-    e2 = EntrySerializerMinimal(read_only=True)
+    src = EntrySerializerMinimal(source="e1", read_only=True, help_text="Source entry")
+    dst = EntrySerializerMinimal(source="e2", read_only=True, help_text="Destination entry")
     attachments = AttachmentSerializer(many=True, read_only=True)
     last_seen_at = serializers.DateTimeField(source="last_seen", read_only=True, help_text="Last observation")
 
@@ -841,8 +830,8 @@ class RelationDetailSerializer(serializers.ModelSerializer):
         model = Relation
         fields = [
             "id",
-            "e1",
-            "e2",
+            "src",
+            "dst",
             "created_at",
             "last_seen_at",
             "reason",

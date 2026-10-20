@@ -1,3 +1,7 @@
+import {
+    revealSelection,
+    revealStateChanged,
+} from '@/utils/editor/plugin-decoration-utils';
 import { syntaxTree } from '@codemirror/language';
 import { EditorState, Range, StateField } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, WidgetType } from '@codemirror/view';
@@ -297,8 +301,7 @@ function buildTableDecorations(
     const widgets: Range<Decoration>[] = [];
     const doc = state.doc;
     const text = doc.toString();
-    const selection = state.selection.main;
-    const cursorPos = selection.head;
+    const cursorPos = revealSelection(state).head;
     const tree = syntaxTree(state);
 
     tree.iterate({
@@ -347,7 +350,7 @@ export function tablePlugin(
             return buildTableDecorations(state, sourceMode, entryColors, navigate);
         },
         update(decorations, tr) {
-            if (tr.docChanged || tr.selection) {
+            if (tr.docChanged || tr.selection || revealStateChanged(tr)) {
                 return buildTableDecorations(
                     tr.state,
                     sourceMode,

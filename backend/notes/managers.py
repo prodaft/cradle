@@ -1,10 +1,10 @@
-"""Note queryset and manager with access control and ordering helpers."""
+"""Note queryset and manager with access control helpers."""
 
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from django.db import models
-from django.db.models import Case, Count, Exists, ExpressionWrapper, F, OuterRef, Q, Value, When
+from django.db.models import Exists, ExpressionWrapper, F, OuterRef, Q, Value
 
 from core.fields import BitStringField
 from entries.enums import EntryType
@@ -19,6 +19,13 @@ class NoteQuerySet(models.QuerySet):
         """Return notes that reference the given entry."""
         return self.filter(entries__id=entry_id)
 
+    def holding_file(self, file) -> models.QuerySet:
+        """Notes holding the ``FileReference`` ``file`` or a copy of it (same SHA-256)."""
+        holds = Q(files__id=file.id)
+        if file.sha256_hash:
+            holds |= Q(files__sha256_hash=file.sha256_hash)
+        return self.filter(holds).distinct()
+
     def fleeting(self) -> models.QuerySet:
         """Return only fleeting notes."""
         return self.filter(fleeting=True)
@@ -26,19 +33,6 @@ class NoteQuerySet(models.QuerySet):
     def non_fleeting(self) -> models.QuerySet:
         """Return only non-fleeting notes."""
         return self.filter(fleeting=False)
-
-    def inaccessible(self, user: CradleUser) -> models.QuerySet:
-        """Return notes not accessible by the user."""
-        if user.is_cradle_admin:
-            return self.none()
-
-        v = user.access_vector
-
-        queryset = self.annotate(
-            bit_or=ExpressionWrapper(F("access_vector").bitor(Value(v)), output_field=fieldtype)
-        ).filter(~Q(bit_or=v))
-
-        return queryset
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
         """Return notes accessible by the user."""
@@ -72,16 +66,6 @@ class NoteManager(models.Manager):
         """Notes visible to ``user`` (bitmask + entity links + orphan author-only rule)."""
         return self.get_queryset().accessible(user)
 
-    def get_all_notes(self, entry_id: UUID | str) -> models.QuerySet:
-        """Return notes for an entry, ordered by timestamp descending."""
-        return self.get_queryset().filter(entries__id=entry_id).order_by("-timestamp")
-
-    def get_entries_from_notes(self, notes: models.QuerySet) -> models.QuerySet:
-        """Return distinct entries referenced by the given notes."""
-        entries = Entry.objects.filter(notes__in=notes).distinct()
-
-        return entries
-
     def get_accessible_notes(self, user: CradleUser, entry_id: Optional[UUID] = None) -> models.QuerySet:
         """Get notes of an entity that the user has access to.
 
@@ -102,28 +86,6 @@ class NoteManager(models.Manager):
             qs = self.get_queryset()
 
         return qs.accessible(user).order_by("-timestamp").distinct()
-
-    def get_in_order(self, note_ids: List) -> models.QuerySet:
-        """Return notes in the order specified by the given list of note IDs."""
-        ordering = Case(*[When(id=nid, then=pos) for pos, nid in enumerate(note_ids)])
-        return self.get_queryset().filter(id__in=note_ids).order_by(ordering)
-
-    def get_links(self, note_list: models.QuerySet) -> models.QuerySet:
-        """Return pairs of entries connected by the given notes (first_node < second_node)."""
-        connected_entries = Entry.objects.annotate(note_count=Count("notes", filter=Q(notes__id__in=note_list)))
-
-        connected_entries = connected_entries.filter(note_count__gt=0)
-
-        entry_pairs = (
-            connected_entries.values(
-                first_node=F("id"),
-                second_node=F("notes__entries__id"),
-            )
-            .distinct()
-            .filter(first_node__lt=F("second_node"))
-        )
-
-        return entry_pairs
 
     def fleeting(self) -> models.QuerySet:
         """Return only fleeting notes."""

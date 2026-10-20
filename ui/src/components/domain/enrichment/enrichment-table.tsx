@@ -211,7 +211,7 @@ export default function EnrichmentTable({
                 },
             },
             {
-                accessorKey: 'user',
+                accessorKey: 'created_by',
                 id: 'user',
                 meta: { label: 'User' },
                 header: ({ column }) => (
@@ -220,9 +220,7 @@ export default function EnrichmentTable({
                 cell: ({ row }) => {
                     const item = row.original;
                     return (
-                        <div className='w-32'>
-                            {item.user_detail?.username || 'N/A'}
-                        </div>
+                        <div className='w-32'>{item.created_by?.username || 'N/A'}</div>
                     );
                 },
             },

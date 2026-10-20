@@ -75,7 +75,7 @@ export default function ResetPassword() {
                 data: resData,
                 error,
                 response,
-            } = await fetchClient.PUT('/auth/reset-password/', {
+            } = await fetchClient.POST('/auth/password/reset/confirm/', {
                 body: { token: data.token, password: data.password },
             });
             if (error) throw { response, error };

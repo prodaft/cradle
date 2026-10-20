@@ -24,9 +24,9 @@ class NoteAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         """Set author on create, editor on update."""
         if not obj.pk:
-            obj.author = request.user  # Set the author when creating
+            obj.author = request.user
         else:
-            obj.editor = request.user  # Update the editor on edit
+            obj.editor = request.user
         super().save_model(request, obj, form, change)
 
 

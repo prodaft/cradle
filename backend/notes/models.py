@@ -1,9 +1,11 @@
 """Note and snippet models for the notes app."""
 
 import hashlib
+import json
 import uuid
 
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils import timezone
 from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, hook
@@ -12,7 +14,6 @@ from django_lifecycle.mixins import LifecycleModelMixin, transaction
 from access.enums import AccessType
 from access.models import Access
 from core.fields import BitStringField
-from entries.enums import EntryType
 from entries.models import Entry, Relation
 from intelio.models.base import BaseDigest
 from logs.models import LoggableModelMixin
@@ -25,7 +26,7 @@ from .markdown.to_links import Node, compress_tree, cradle_connections
 
 
 class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
-    """A note linking entries via cradle markdown syntax. Supports fleeting (quick) and finalized notes."""
+    """A note linking entries via cradle markdown syntax. Supports fleeting (draft) and published notes."""
 
     metadata_fields = {
         "entries": None,
@@ -124,10 +125,42 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
             models.Index(fields=["editor", "-edit_timestamp"]),  # For editor filtering
         ]
 
+    STATUS_FIELDS = ("status", "status_message", "status_timestamp")
+
     def set_status(self, status: NoteStatus, message: str = ""):
         self.status = status
         self.status_message = message
         self.status_timestamp = timezone.now()
+
+    def write_fields(self, *fields: str) -> None:
+        """Write only ``fields`` to this note's row, without hooks or a full save.
+
+        A background task must never overwrite a user's newer edit or re-insert a note deleted while it ran.
+        """
+        Note.objects.filter(pk=self.pk).update(**{f: getattr(self, f) for f in fields})
+
+    def apply_metadata(self) -> list[str]:
+        """Fill title, description, metadata and content offset from the content; return the fields it set.
+
+        Values come from the frontmatter, falling back to the first heading and paragraph; fields with no value are
+        reset to their defaults, and the stored metadata is made JSON-safe (e.g. YAML dates become strings).
+        """
+        from .markdown.to_metadata import infer_metadata  # it imports this module
+
+        offset, metadata = infer_metadata(self.content)
+        for key, field in self.metadata_fields.items():
+            if field is None:
+                metadata.pop(key, None)
+            else:
+                setattr(self, field, metadata.get(key, Note._meta.get_field(field).default))
+        self.content_offset = offset
+        self.metadata = json.loads(json.dumps(metadata, cls=DjangoJSONEncoder))
+        return [f for f in self.metadata_fields.values() if f] + ["metadata", "content_offset"]
+
+    def write_status(self, status: NoteStatus, message: str = "") -> None:
+        """Set the status and write only the status fields (see ``write_fields``)."""
+        self.set_status(status, message)
+        self.write_fields(*self.STATUS_FIELDS)
 
     @property
     def reference_tree(self) -> Node:
@@ -159,7 +192,7 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         if self.fleeting:
             return self.author_id == user.id
 
-        entities = set(self.entries.filter(entry_class__type=EntryType.ENTITY))
+        entities = set(self.entries.is_entity())
         if not entities:
             return self.author_id == user.id
 
@@ -180,7 +213,7 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         if self.fleeting:
             return self.author_id == user.id
 
-        entities = set(self.entries.filter(entry_class__type=EntryType.ENTITY))
+        entities = set(self.entries.is_entity())
         if not entities:
             return self.author_id == user.id
 

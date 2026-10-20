@@ -9,7 +9,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { queryKeys } from '@/hooks/query';
 import { getSuccessMessage } from '@/utils/api';
-import { ArrowClockwiseIcon, HardDrivesIcon } from '@phosphor-icons/react';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -19,7 +19,7 @@ export default function GraphSettingsForm() {
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}/',
-                { params: { path: { action_name: 'refresh_materialized_graph' } } },
+                { params: { path: { action_name: 'refresh-materialized-graph' } } },
             );
             if (error) throw { response, error };
             return data;
@@ -29,29 +29,6 @@ export default function GraphSettingsForm() {
                 { queryKey: queryKeys.notes.apiList() },
                 { queryKey: queryKeys.knowledgeGraph.all },
             ],
-            suppressNotification: true,
-        },
-        onSuccess: (response) => {
-            toast.success(
-                getSuccessMessage(response) || 'Action completed successfully!',
-            );
-        },
-    });
-
-    const recalculateNodePositions = useMutation({
-        mutationFn: async () => {
-            const { data, error, response } = await fetchClient.POST(
-                '/management/actions/{action_name}/',
-                {
-                    params: {
-                        path: { action_name: 'recalculate_node_positions' },
-                    },
-                },
-            );
-            if (error) throw { response, error };
-            return data;
-        },
-        meta: {
             suppressNotification: true,
         },
         onSuccess: (response) => {
@@ -91,32 +68,6 @@ export default function GraphSettingsForm() {
                             {refreshMaterializedGraph.isPending
                                 ? 'Refreshing…'
                                 : 'Refresh'}
-                        </Button>
-                    </Field>
-
-                    <Separator />
-
-                    <Field orientation='responsive'>
-                        <FieldContent className='flex-1'>
-                            <FieldLabel className='text-sm block mb-0.5'>
-                                Recalculate Node Positions
-                            </FieldLabel>
-                            <FieldDescription>
-                                Recompute all node positions in the graph
-                            </FieldDescription>
-                        </FieldContent>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            className='self-start md:self-center'
-                            onClick={() => recalculateNodePositions.mutate()}
-                            disabled={recalculateNodePositions.isPending}
-                        >
-                            <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
-                            {recalculateNodePositions.isPending
-                                ? 'Recalculating…'
-                                : 'Recalculate'}
                         </Button>
                     </Field>
                 </FieldGroup>

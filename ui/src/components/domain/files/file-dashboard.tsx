@@ -10,15 +10,11 @@ import { DownloadSimpleIcon } from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useParams, useRouter, useSearch } from '@tanstack/react-router';
-import {
-    type ColumnDef,
-    getCoreRowModel,
-    getPaginationRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
+import { type ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import bytes from 'bytes';
 import { format } from 'date-fns';
 import { FileText, Share2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import DashboardLayout from '../dashboard/dashboard-layout';
 import NotesList from '../notes/notes-list';
@@ -79,7 +75,7 @@ export default function FileDashboard() {
         isError,
     } = $api.useQuery(
         'get',
-        '/notes/files/{file_id}/',
+        '/files/{file_id}/',
         { params: { path: { file_id: id ?? '' } } },
         { enabled: !!id, retry: false },
     );
@@ -94,13 +90,38 @@ export default function FileDashboard() {
 
     const download = useFileDownload();
 
+    const [entriesPagination, setEntriesPagination] = useState({
+        pageIndex: 0,
+        pageSize: 10,
+    });
+    useEffect(() => {
+        setEntriesPagination((p) => ({ ...p, pageIndex: 0 }));
+    }, [id]);
+    const { data: entriesPage, isPending: entriesPending } = $api.useQuery(
+        'get',
+        '/files/{file_id}/entries/',
+        {
+            params: {
+                path: { file_id: id ?? '' },
+                query: {
+                    page: entriesPagination.pageIndex + 1,
+                    page_size: entriesPagination.pageSize,
+                },
+            },
+        },
+        { enabled: !!file?.id && tab === 'entries' },
+    );
+
     const entriesTable = useReactTable({
-        data: file?.entries ?? EMPTY_ENTRIES,
+        data: entriesPage?.results ?? EMPTY_ENTRIES,
         columns: LINKED_ENTRY_COLUMNS,
+        state: { pagination: entriesPagination },
+        onPaginationChange: setEntriesPagination,
         getRowId: (row, index) => String(row.id ?? index),
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        initialState: { pagination: { pageSize: 10 } },
+        manualPagination: true,
+        pageCount: Math.max(1, entriesPage?.total_pages ?? 1),
+        rowCount: entriesPage?.count,
     });
 
     const copyToClipboard = async (text: string) => {
@@ -181,6 +202,7 @@ export default function FileDashboard() {
             {tab === 'entries' && (
                 <DataTable
                     table={entriesTable}
+                    isLoading={entriesPending}
                     onRowClick={(entry) =>
                         router.navigate({ to: createDashboardLink(entry) as any })
                     }

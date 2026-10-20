@@ -18,7 +18,6 @@ class RelationReason(models.TextChoices):
     ENRICHMENT = "enrichment", _("Enrichment")
     CONTAINS = "contains", _("Contains")
     ALIAS = "alias", _("Alias")
-    ENCOUNTER = "encounter", _("Encounter")
     NOTE = "note", _("Note")
 
 

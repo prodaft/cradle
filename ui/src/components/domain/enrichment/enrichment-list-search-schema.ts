@@ -1,8 +1,7 @@
 import type { SearchSchema } from '@/lib/search-query/search-schema';
+import { enrichmentStatusEnumValues } from '@services/openapi/schema';
 import startCase from 'lodash/startCase';
 import * as z from 'zod';
-
-import { QUERY_SLUGS } from './enrichment-list-status';
 
 export const validateSearchSchema = z.object({
     page: z.coerce.number().optional(),
@@ -11,7 +10,7 @@ export const validateSearchSchema = z.object({
     pagesize: z.coerce.number().optional(),
     title: z.string().optional(),
     user: z.string().optional(),
-    status: z.enum(QUERY_SLUGS).optional().catch(undefined),
+    status: z.enum(enrichmentStatusEnumValues).optional().catch(undefined),
 });
 
 export const SEARCH_SCHEMA: SearchSchema = {
@@ -20,7 +19,10 @@ export const SEARCH_SCHEMA: SearchSchema = {
             key: 'status',
             kind: 'enum',
             description: 'status',
-            values: QUERY_SLUGS.map((value) => ({ value, label: startCase(value) })),
+            values: enrichmentStatusEnumValues.map((value) => ({
+                value,
+                label: startCase(value),
+            })),
         },
         {
             key: 'user',

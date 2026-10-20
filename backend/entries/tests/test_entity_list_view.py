@@ -4,9 +4,9 @@ import json
 
 from django.urls import reverse
 from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import AccessToken
 
 from user.models import CradleUser, UserRoles
+from user.testing import session_access_token
 
 from ..models import Entry
 from .utils import EntriesTestCase
@@ -31,8 +31,8 @@ class EntityListTestCase(EntriesTestCase):
             is_staff=False,
             email="b@c.d",
         )
-        self.token_admin = str(AccessToken.for_user(self.admin_user))
-        self.token_normal = str(AccessToken.for_user(self.normal_user))
+        self.token_admin = str(session_access_token(self.admin_user))
+        self.token_normal = str(session_access_token(self.normal_user))
         self.headers_admin = {"HTTP_COOKIE": f"access_token={self.token_admin}"}
         self.headers_normal = {"HTTP_COOKIE": f"access_token={self.token_normal}"}
 

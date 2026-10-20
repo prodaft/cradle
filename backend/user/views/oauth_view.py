@@ -1,7 +1,5 @@
 """OAuth connect, login, and disconnect views."""
 
-from datetime import datetime
-from datetime import timezone as dt_timezone
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
@@ -34,21 +32,16 @@ from ..serializers import (
     TokenObtainSerializer,
     TokenPairRetrieveSerializer,
 )
-from .token_view import create_or_update_session, set_token_cookies
+from ..utils.tokens import record_session, set_token_cookies, token_expires_at
 
 
-def _get_provider_config(provider: str) -> dict | None:
-    """Return OAuth provider config dict or None if not configured."""
+def _fetch_identity(provider: str, code: str, redirect_uri: str) -> tuple[str, str | None, dict]:
+    """Exchange the OAuth code and return ``(subject, issuer, userinfo)`` of the external account.
+
+    The issuer comes from the userinfo ``iss`` claim, falling back to the provider's configured issuer.
+    """
     config = settings.OAUTH_PROVIDERS.get(provider)
-    if isinstance(config, dict):
-        return config
-    return None
-
-
-def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> tuple[dict, dict]:
-    """Exchange OAuth code for tokens and fetch userinfo. Returns (token_data, userinfo)."""
-    config = _get_provider_config(provider)
-    if not config:
+    if not isinstance(config, dict):
         raise OAuthSignInFailedException(detail="This sign-in method is not available.")
 
     token_url = config.get("token_url")
@@ -96,12 +89,16 @@ def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> 
     if not userinfo_response.ok:
         raise OAuthSignInFailedException(detail="Could not load your profile from the sign-in service.")
 
-    return token_data, userinfo_response.json()
+    userinfo = userinfo_response.json()
+    subject = userinfo.get("sub")
+    if not subject:
+        raise OAuthSignInFailedException(detail="Your profile from the sign-in service is incomplete.")
+    return subject, userinfo.get("iss") or config.get("issuer"), userinfo
 
 
 @extend_schema_view(
     post=extend_schema(
-        operation_id="users_oauth_connect",
+        operation_id="users_me_oauth_create",
         summary="Connect OAuth provider",
         request=OAuthConnectSerializer,
         responses={
@@ -125,12 +122,7 @@ class OAuthConnectView(APIView):
         data = serializer.validated_data
 
         provider = data["provider"]
-        _, userinfo = _exchange_code_for_userinfo(provider, data["code"], data["redirect_uri"])
-        subject = userinfo.get("sub")
-        if not subject:
-            raise OAuthSignInFailedException(detail="Your profile from the sign-in service is incomplete.")
-
-        issuer = userinfo.get("iss") or settings.OAUTH_PROVIDERS.get(provider, {}).get("issuer")
+        subject, issuer, userinfo = _fetch_identity(provider, data["code"], data["redirect_uri"])
         email = userinfo.get("email")
         email_verified = bool(userinfo.get("email_verified"))
         display_name = userinfo.get("name") or userinfo.get("preferred_username")
@@ -195,13 +187,7 @@ class OAuthLoginView(APIView):
         data = serializer.validated_data
 
         provider = data["provider"]
-        _, userinfo = _exchange_code_for_userinfo(provider, data["code"], data["redirect_uri"])
-
-        subject = userinfo.get("sub")
-        if not subject:
-            raise OAuthSignInFailedException(detail="Your profile from the sign-in service is incomplete.")
-
-        issuer = userinfo.get("iss") or settings.OAUTH_PROVIDERS.get(provider, {}).get("issuer")
+        subject, issuer, _ = _fetch_identity(provider, data["code"], data["redirect_uri"])
 
         identity = (
             ExternalIdentity.objects.select_related("user")
@@ -226,8 +212,8 @@ class OAuthLoginView(APIView):
         refresh: RefreshToken = TokenObtainSerializer.get_token(user)
         access_token = refresh.access_token
 
-        access_expires_at = datetime.fromtimestamp(access_token["exp"], tz=dt_timezone.utc)
-        refresh_expires_at = datetime.fromtimestamp(refresh["exp"], tz=dt_timezone.utc)
+        access_expires_at = token_expires_at(access_token)
+        refresh_expires_at = token_expires_at(refresh)
 
         response_data = {
             "role": user.role,
@@ -236,13 +222,11 @@ class OAuthLoginView(APIView):
             "user_id": str(user.id),
         }
 
-        create_or_update_session(request, user, refresh, refresh_expires_at)
+        record_session(request, user, refresh)
 
         response = Response(response_data)
 
-        access_max_age = int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
-        refresh_max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
-        set_token_cookies(response, str(access_token), str(refresh), access_max_age, refresh_max_age)
+        set_token_cookies(response, access_token, refresh)
         get_token(request)
 
         return response
@@ -250,7 +234,7 @@ class OAuthLoginView(APIView):
 
 @extend_schema_view(
     delete=extend_schema(
-        operation_id="users_oauth_disconnect",
+        operation_id="users_me_oauth_destroy",
         summary="Disconnect OAuth provider",
         responses={
             204: None,

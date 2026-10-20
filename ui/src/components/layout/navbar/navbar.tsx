@@ -1,16 +1,16 @@
 import SearchDialog from '@/components/domain/search/search-command';
+import { setNavbarBreadcrumbSlot } from '@/components/layout/navbar/navbar-breadcrumb';
 import { Button } from '@/components/ui/button';
-import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import React, { useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 
 /**
- * Navbar component - sidebar trigger and search
+ * Navbar component - sidebar trigger, page breadcrumb, search and page actions
  */
 export default function Navbar(): React.JSX.Element {
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
 
     useHotkeys(
         '/',
@@ -25,7 +25,7 @@ export default function Navbar(): React.JSX.Element {
             }
             event.preventDefault();
             event.stopPropagation();
-            setIsDialogOpen(true);
+            setIsSearchOpen(true);
         },
         {
             enableOnFormTags: false,
@@ -37,37 +37,27 @@ export default function Navbar(): React.JSX.Element {
     return (
         <div className='relative flex h-14 items-center gap-3 p-4 sm:gap-4 border-b border-border shrink-0 md:rounded-tl-xl md:rounded-tr-xl'>
             <SidebarTrigger className='-ml-1' />
-            <div className='max-sm:static sm:absolute sm:left-1/2 sm:-translate-x-1/2'>
-                {/* Mobile: ghost icon button */}
-                <Button
-                    variant='ghost'
-                    size='icon'
-                    onClick={() => setIsDialogOpen(true)}
-                    className='flex sm:hidden w-8 h-8 text-muted-foreground hover:bg-secondary hover:text-foreground'
-                >
-                    <MagnifyingGlassIcon className='h-4 w-4' weight='bold' />
-                </Button>
-                {/* Desktop: outline pill button */}
-                <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() => setIsDialogOpen(true)}
-                    className='hidden sm:inline-flex w-64 justify-between text-muted-foreground'
-                >
-                    <div className='flex items-center gap-2'>
-                        <MagnifyingGlassIcon className='h-4 w-4' weight='bold' />
-                        <span className='text-sm'>Search...</span>
-                    </div>
-                    <KbdGroup>
-                        <Kbd>/</Kbd>
-                    </KbdGroup>
-                </Button>
-            </div>
+            <Button
+                variant='ghost'
+                size='icon-sm'
+                onClick={() => setIsSearchOpen(true)}
+                title='Search (/)'
+                aria-label='Search'
+                className='-ml-2'
+            >
+                <MagnifyingGlassIcon weight='bold' />
+            </Button>
+            {/* Portal target for the page breadcrumb */}
+            <div
+                id='navbar-breadcrumb'
+                ref={setNavbarBreadcrumbSlot}
+                className='flex min-w-0 items-center'
+            />
             {/* Portal target for page-specific actions */}
             <div id='navbar-actions' className='ml-auto flex items-center gap-2' />
             <SearchDialog
-                isOpen={isDialogOpen}
-                onClose={() => setIsDialogOpen(false)}
+                isOpen={isSearchOpen}
+                onClose={() => setIsSearchOpen(false)}
             />
         </div>
     );

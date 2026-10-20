@@ -31,12 +31,12 @@ class EventLogFilter(filters.FilterSet):
         field_name="user__username",
         help_text="Filter by username.",
     )
-    start_date = filters.DateTimeFilter(
+    created_at_gte = filters.DateTimeFilter(
         field_name="timestamp",
         lookup_expr="gte",
         help_text="Events on or after this datetime.",
     )
-    end_date = filters.DateTimeFilter(
+    created_at_lte = filters.DateTimeFilter(
         field_name="timestamp",
         lookup_expr="lte",
         help_text="Events on or before this datetime.",

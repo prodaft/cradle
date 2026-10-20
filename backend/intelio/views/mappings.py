@@ -23,10 +23,8 @@ from user.permissions import HasManagerRole
 from ..exceptions import (
     DataConflictException,
     IntelIOErrorCodes,
-    InvalidMappingException,
     InvalidMappingSelectionException,
     MappingNotFoundException,
-    MappingRequiredException,
     TargetTypeRequiredException,
     UnknownMappingException,
 )
@@ -47,16 +45,8 @@ def _get_mapping_class(class_name: str):
     return mapping_class
 
 
-def _get_mapping_or_404(mapping_class, mapping_id):
-    """Fetch a mapping by id; raise MappingRequired/InvalidMapping/MappingNotFound on failure."""
-    if not mapping_id:
-        raise MappingRequiredException(detail="A mapping is required.")
-
-    try:
-        uuid.UUID(str(mapping_id))
-    except ValueError, TypeError, AttributeError:
-        raise InvalidMappingException(detail="That mapping is not valid.")
-
+def _get_mapping_or_404(mapping_class, mapping_id: uuid.UUID):
+    """Fetch a mapping by id or raise MappingNotFound."""
     mapping = mapping_class.objects.filter(id=mapping_id).first()
     if mapping is None:
         raise MappingNotFoundException(detail="That mapping could not be found.")
@@ -191,52 +181,6 @@ class MappingKeysSchemaView(APIView):
             **get_common_error_responses(),
         },
     ),
-    patch=extend_schema(
-        operation_id="mappings_schema_partial_update",
-        summary="Update mapping",
-        description="Update an existing mapping for a given class. The body must include the mapping `id`.",
-        request=OpenApiTypes.OBJECT,
-        responses={
-            200: {
-                "type": "object",
-                "description": "Mapping instance data",
-            },
-            **get_error_responses(
-                IntelIOErrorCodes.UNKNOWN_MAPPING,
-                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
-                IntelIOErrorCodes.MAPPING_REQUIRED,
-                IntelIOErrorCodes.INVALID_MAPPING,
-                IntelIOErrorCodes.MAPPING_NOT_FOUND,
-                IntelIOErrorCodes.DATA_CONFLICT,
-                include_validation_error=True,
-            ),
-            **get_common_error_responses(),
-        },
-    ),
-    delete=extend_schema(
-        operation_id="mappings_schema_destroy",
-        summary="Delete mapping",
-        description="Delete a mapping instance for a given class.",
-        parameters=[
-            OpenApiParameter(
-                name="mapping_id",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="The ID of the mapping to delete",
-            ),
-        ],
-        responses={
-            204: {"description": "Mapping successfully deleted"},
-            **get_error_responses(
-                IntelIOErrorCodes.UNKNOWN_MAPPING,
-                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
-                IntelIOErrorCodes.MAPPING_REQUIRED,
-                IntelIOErrorCodes.INVALID_MAPPING,
-                IntelIOErrorCodes.MAPPING_NOT_FOUND,
-            ),
-            **get_common_error_responses(),
-        },
-    ),
 )
 class MappingSchemaView(APIView):
     """Given a class name, return the possible values in a mapping."""
@@ -263,17 +207,80 @@ class MappingSchemaView(APIView):
         with _mapping_conflict_guard():
             mapping = serializer.save()
 
-        mapping_url = reverse("mapping_schema", kwargs={"class_name": class_name})
-        location = request.build_absolute_uri(f"{mapping_url}?mapping_id={mapping.id}")
+        location = request.build_absolute_uri(
+            reverse("mapping_detail", kwargs={"class_name": class_name, "mapping_id": mapping.id})
+        )
         return Response(
             serializer_class(mapping).data,
             status=status.HTTP_201_CREATED,
             headers={"Location": location},
         )
 
-    def patch(self, request: Request, class_name: str) -> Response:
+
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="mappings_retrieve",
+        summary="Get mapping",
+        description="Return one mapping of a given class.",
+        responses={
+            200: {"type": "object", "description": "Mapping instance data"},
+            **get_error_responses(
+                IntelIOErrorCodes.UNKNOWN_MAPPING,
+                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
+                IntelIOErrorCodes.MAPPING_NOT_FOUND,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+    patch=extend_schema(
+        operation_id="mappings_partial_update",
+        summary="Update mapping",
+        description="Update an existing mapping of a given class.",
+        request=OpenApiTypes.OBJECT,
+        responses={
+            200: {
+                "type": "object",
+                "description": "Mapping instance data",
+            },
+            **get_error_responses(
+                IntelIOErrorCodes.UNKNOWN_MAPPING,
+                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
+                IntelIOErrorCodes.MAPPING_NOT_FOUND,
+                IntelIOErrorCodes.DATA_CONFLICT,
+                include_validation_error=True,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+    delete=extend_schema(
+        operation_id="mappings_destroy",
+        summary="Delete mapping",
+        description="Delete a mapping instance for a given class.",
+        responses={
+            204: {"description": "Mapping successfully deleted"},
+            **get_error_responses(
+                IntelIOErrorCodes.UNKNOWN_MAPPING,
+                IntelIOErrorCodes.INVALID_MAPPING_SELECTION,
+                IntelIOErrorCodes.MAPPING_NOT_FOUND,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+)
+class MappingDetailView(APIView):
+    """Read, update or delete one mapping of a given class."""
+
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
+    permission_classes = [IsAuthenticated, HasManagerRole]
+
+    def get(self, request: Request, class_name: str, mapping_id: uuid.UUID) -> Response:
         mapping_class = _get_mapping_class(class_name)
-        mapping = _get_mapping_or_404(mapping_class, request.data.get("id"))
+        mapping = _get_mapping_or_404(mapping_class, mapping_id)
+        return Response(ClassMappingSerializer.get_serializer(mapping_class)(mapping).data, status=status.HTTP_200_OK)
+
+    def patch(self, request: Request, class_name: str, mapping_id: uuid.UUID) -> Response:
+        mapping_class = _get_mapping_class(class_name)
+        mapping = _get_mapping_or_404(mapping_class, mapping_id)
 
         serializer_class = ClassMappingSerializer.get_serializer(mapping_class)
         serializer = serializer_class(mapping, data=request.data, partial=True)
@@ -283,7 +290,6 @@ class MappingSchemaView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def delete(self, request: Request, class_name: str) -> Response:
-        mapping = _get_mapping_or_404(_get_mapping_class(class_name), request.query_params.get("mapping_id"))
-        mapping.delete()
+    def delete(self, request: Request, class_name: str, mapping_id: uuid.UUID) -> Response:
+        _get_mapping_or_404(_get_mapping_class(class_name), mapping_id).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

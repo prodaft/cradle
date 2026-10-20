@@ -1,3 +1,4 @@
+import PasswordConfirmField from '@/components/domain/user/password-confirm-field';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -24,7 +25,7 @@ import {
 import { generatePassword } from '@/utils/password';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { DiceSixIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
-import { fetchClient } from '@services/openapi/client';
+import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -85,6 +86,15 @@ export default function SetUserPasswordDialog({
 }: SetUserPasswordDialogProps): React.JSX.Element {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+    const [adminPassword, setAdminPassword] = useState('');
+
+    const { data: currentUser } = $api.useQuery(
+        'get',
+        '/users/me/',
+        {},
+        { enabled: open, meta: { suppressNotification: true } },
+    );
+    const isStepUpRequired = currentUser?.has_password ?? false;
 
     const form = useForm<FormData>({
         resolver: zodResolver(adminSetPasswordSchema),
@@ -95,15 +105,22 @@ export default function SetUserPasswordDialog({
     });
 
     const setUserPassword = useMutation({
-        mutationFn: async (password: string) => {
-            const { error, response } = await fetchClient.PATCH('/users/{user_id}/', {
-                params: { path: { user_id: userId } },
-                body: { password },
-            });
+        mutationFn: async (newPassword: string) => {
+            const { error, response } = await fetchClient.POST(
+                '/users/{user_id}/password/',
+                {
+                    params: { path: { user_id: userId } },
+                    body: {
+                        new_password: newPassword,
+                        ...(isStepUpRequired ? { password: adminPassword } : {}),
+                    },
+                },
+            );
             if (error) throw { response, error };
         },
         meta: {
-            successMessage: 'Password updated successfully',
+            successMessage:
+                'Password updated. The user has been signed out everywhere.',
         },
         onSuccess: () => {
             form.reset();
@@ -117,6 +134,7 @@ export default function SetUserPasswordDialog({
     useEffect(() => {
         if (!open) {
             form.reset();
+            setAdminPassword('');
             setIsPasswordVisible(false);
             setIsConfirmPasswordVisible(false);
         }
@@ -141,7 +159,8 @@ export default function SetUserPasswordDialog({
                         <DialogTitle>Change Password</DialogTitle>
                         <DialogDescription>
                             Change the password for this user. The user will need to use
-                            this password to log in.
+                            this password to log in, and all of their sessions will be
+                            signed out.
                         </DialogDescription>
                     </DialogHeader>
                     <FieldGroup className='gap-4 py-4'>
@@ -280,6 +299,14 @@ export default function SetUserPasswordDialog({
                                 </Field>
                             )}
                         />
+                        {isStepUpRequired && (
+                            <PasswordConfirmField
+                                label='Your password'
+                                value={adminPassword}
+                                onChange={setAdminPassword}
+                                disabled={setUserPassword.isPending}
+                            />
+                        )}
                     </FieldGroup>
                     <DialogFooter>
                         <DialogClose
@@ -298,7 +325,10 @@ export default function SetUserPasswordDialog({
                             type='submit'
                             variant='default'
                             size='sm'
-                            disabled={setUserPassword.isPending}
+                            disabled={
+                                setUserPassword.isPending ||
+                                (isStepUpRequired && adminPassword.length === 0)
+                            }
                         >
                             {setUserPassword.isPending ? 'Changing...' : 'Change'}
                         </Button>

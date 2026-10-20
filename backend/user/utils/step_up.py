@@ -4,6 +4,7 @@ from typing import Any
 
 from rest_framework.request import Request
 
+from ..authentication import APIKeyAuthentication
 from ..exceptions import CurrentPasswordIncorrectException
 from ..models import CradleUser
 from ..serializers import StepUpSerializer
@@ -14,8 +15,12 @@ def require_step_up(
     user: CradleUser,
     password: str | None,
 ) -> None:
-    """Validate the user's password for a self-service sensitive action."""
-    if request.headers.get("Api-Key") or not user.has_usable_password():
+    """Validate the user's password for a self-service sensitive action.
+
+    Skipped for accounts without a password and for requests actually authenticated by an API key (scripts cannot
+    answer a password prompt). The ``Api-Key`` header alone is not enough: a cookie session could send a fake one.
+    """
+    if isinstance(request.successful_authenticator, APIKeyAuthentication) or not user.has_usable_password():
         return
     if not password:
         raise CurrentPasswordIncorrectException(detail="Your password is required to confirm this action.")

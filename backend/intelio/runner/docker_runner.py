@@ -132,7 +132,7 @@ def _docker_image_slug(enricher_type: str) -> str:
 
 
 def _image_name(enricher_type: str) -> str:
-    prefix = getattr(settings, "ENRICHER_DOCKER_IMAGE_PREFIX", "cradle/enricher")
+    prefix = settings.ENRICHER_DOCKER_IMAGE_PREFIX
     return f"{prefix}/{_docker_image_slug(enricher_type)}"
 
 
@@ -197,10 +197,10 @@ def _apply_result(
             Relation.objects.bulk_create(relations_to_create)
 
     for warning in result.warnings:
-        request._append_warning(warning, enricher_type)
+        request.append_warning(warning, enricher_type)
 
     for error in result.errors:
-        request._append_error(error, enricher_type)
+        request.append_error(error, enricher_type)
 
 
 def run_enricher_container(
@@ -233,7 +233,7 @@ def run_enricher_container(
     # All current enrichers except a hypothetical offline one need external access.
     # Admins can override per-enricher via EnricherSettings.settings["network"].
     network_setting = enricher_settings.get("network", _default_network_for(enricher_type))
-    external_network = getattr(settings, "ENRICHER_EXTERNAL_NETWORK", "enricher_external")
+    external_network = settings.ENRICHER_EXTERNAL_NETWORK
 
     if network_setting == NETWORK_EXTERNAL:
         ensure_enricher_network(external_network)
@@ -264,9 +264,9 @@ def run_enricher_container(
         job_json = json.dumps(job_dict)
 
     image = _image_name(enricher_type)
-    mem_limit = getattr(settings, "ENRICHER_MEM_LIMIT", "256m")
-    cpu_quota = getattr(settings, "ENRICHER_CPU_QUOTA", 50000)
-    timeout = getattr(settings, "ENRICHER_TIMEOUT", 120)
+    mem_limit = settings.ENRICHER_MEM_LIMIT
+    cpu_quota = settings.ENRICHER_CPU_QUOTA
+    timeout = settings.ENRICHER_TIMEOUT
 
     logger.info(
         "Launching enricher container: image=%r network=%r entries=%d",

@@ -27,7 +27,6 @@ const TRIGGER_NAME = 'ColorPickerTrigger';
 const CONTENT_NAME = 'ColorPickerContent';
 const AREA_NAME = 'ColorPickerArea';
 const HUE_SLIDER_NAME = 'ColorPickerHueSlider';
-const ALPHA_SLIDER_NAME = 'ColorPickerAlphaSlider';
 const SWATCH_NAME = 'ColorPickerSwatch';
 const EYE_DROPPER_NAME = 'ColorPickerEyeDropper';
 const FORMAT_SELECT_NAME = 'ColorPickerFormatSelect';
@@ -981,64 +980,6 @@ function ColorPickerHueSlider(props: SliderPrimitive.Root.Props<number>) {
     );
 }
 
-function ColorPickerAlphaSlider(props: SliderPrimitive.Root.Props<number>) {
-    const { className, ...sliderProps } = props;
-
-    const context = useColorPickerContext(ALPHA_SLIDER_NAME);
-    const store = useStoreContext(ALPHA_SLIDER_NAME);
-
-    const color = useStore((state) => state.color);
-    const hsv = useStore((state) => state.hsv);
-
-    const onValueChange = React.useCallback(
-        (values: number | readonly number[]) => {
-            const alpha = ((Array.isArray(values) ? values[0] : values) ?? 0) / 100;
-            const newColor = { ...color, a: alpha };
-            const newHsv = { ...hsv, a: alpha };
-            store.setColor(newColor);
-            store.setHsv(newHsv);
-        },
-        [color, hsv, store],
-    );
-
-    const gradientColor = `rgb(${color?.r ?? 0}, ${color?.g ?? 0}, ${color?.b ?? 0})`;
-
-    return (
-        <SliderPrimitive.Root
-            data-slot='color-picker-alpha-slider'
-            {...sliderProps}
-            max={100}
-            step={1}
-            disabled={context.disabled}
-            thumbAlignment='edge'
-            className={cn('w-full', className)}
-            value={Math.round((color?.a ?? 1) * 100)}
-            onValueChange={onValueChange}
-        >
-            <SliderPrimitive.Control className='relative flex w-full touch-none select-none items-center'>
-                <SliderPrimitive.Track
-                    className='relative h-3 w-full grow overflow-hidden rounded-full'
-                    style={{
-                        background:
-                            'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)',
-                        backgroundSize: '8px 8px',
-                        backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px',
-                    }}
-                >
-                    <div
-                        className='absolute inset-0 rounded-full'
-                        style={{
-                            background: `linear-gradient(to right, transparent, ${gradientColor})`,
-                        }}
-                    />
-                    <SliderPrimitive.Indicator className='absolute h-full' />
-                </SliderPrimitive.Track>
-                <SliderPrimitive.Thumb className='block size-4 rounded-full border border-primary/50 bg-background shadow transition-colors has-focus-visible:outline-none has-focus-visible:ring-1 has-focus-visible:ring-ring data-disabled:pointer-events-none data-disabled:opacity-50' />
-            </SliderPrimitive.Control>
-        </SliderPrimitive.Root>
-    );
-}
-
 function ColorPickerSwatch(props: DivProps) {
     const { asChild, className, ...swatchProps } = props;
 
@@ -1666,7 +1607,6 @@ function HsbInput(props: HsbInputProps) {
 
 export {
     ColorPicker,
-    ColorPickerAlphaSlider,
     ColorPickerArea,
     ColorPickerContent,
     ColorPickerEyeDropper,
@@ -1675,6 +1615,4 @@ export {
     ColorPickerInput,
     ColorPickerSwatch,
     ColorPickerTrigger,
-    //
-    useStore as useColorPicker,
 };

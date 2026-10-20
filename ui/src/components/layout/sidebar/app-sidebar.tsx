@@ -1,5 +1,6 @@
 import Logo from '@/components/base/logo/logo';
 import { useAuthState } from '@/hooks/auth/use-auth';
+import { $api } from '@services/openapi/client';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import {
     Archive,
@@ -16,6 +17,7 @@ import {
     Network,
     Sparkles,
     Users,
+    UsersRound,
     Wrench,
 } from 'lucide-react';
 import * as React from 'react';
@@ -60,11 +62,21 @@ export function AppSidebar({
         '/manage/entities',
         '/manage/entry-types',
         '/manage/type-mappings',
+        '/manage/teams',
         '/manage/users',
         '/manage/enrichment',
         '/manage/settings',
     ];
     const isManageActive = manageRoutes.some(isActive);
+
+    const { data: myTeams } = $api.useQuery(
+        'get',
+        '/teams/',
+        { params: { query: { mine: true, page_size: 200 } } },
+        { enabled: !isManager },
+    );
+    const leadsTeam =
+        !isManager && !!myTeams?.results?.some((team) => team.my_role === 'lead');
 
     const isProd = import.meta.env.VITE_ENV === 'production';
 
@@ -114,7 +126,7 @@ export function AppSidebar({
     return (
         <Sidebar collapsible='icon' {...props}>
             <SidebarHeader
-                className={`flex ${useExpandedLogo ? 'flex-col items-start gap-2 pt-4 px-4 pb-0' : 'flex-row items-center justify-center gap-2 pt-4 px-2 pb-2'}`}
+                className={`flex flex-col gap-2 pt-4 ${useExpandedLogo ? 'items-start px-4 pb-2' : 'items-center px-2 pb-2'}`}
             >
                 <Link
                     to='/notes'
@@ -155,6 +167,11 @@ export function AppSidebar({
                                               url: '/manage/type-mappings',
                                               icon: Link2,
                                           },
+                                          {
+                                              title: 'Teams',
+                                              url: '/manage/teams',
+                                              icon: UsersRound,
+                                          },
                                           ...(isAdmin
                                               ? [
                                                     {
@@ -177,7 +194,16 @@ export function AppSidebar({
                                       ],
                                   },
                               ]
-                            : []),
+                            : leadsTeam
+                              ? [
+                                    {
+                                        title: 'Teams',
+                                        url: '/manage/teams',
+                                        icon: UsersRound,
+                                        isActive: isActive('/manage/teams'),
+                                    },
+                                ]
+                              : []),
                         {
                             title: 'Documentation',
                             url: 'https://cradle.sh/docs/',

@@ -1,8 +1,7 @@
 import logging
 import os
 import uuid
-from collections import defaultdict
-from typing import Any, Optional
+from typing import Any
 
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
@@ -20,7 +19,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from entries.constants import SUBTYPE_DIGEST, SUBTYPE_ENRICHMENT
 from entries.enums import EntryType
-from entries.models import Entry, EntryClass, Relation
+from entries.models import Entry, EntryClass, Relation, calculate_acvec
 from file_transfer.storage import DigestStorage
 from user.models import CradleUser
 
@@ -39,7 +38,19 @@ def digest_upload_path(instance: "BaseDigest", _filename: str) -> str:
     return f"{instance.user_id}/{instance.id}"
 
 
-class BaseDigest(LifecycleModel):
+class EntitiesAccessVectorMixin:
+    """For models with ``entities`` and generic ``relations``: their access vector comes from those entities."""
+
+    @property
+    def access_vector(self) -> int:
+        return calculate_acvec(self.entities.all())
+
+    def update_access_vector(self) -> None:
+        """Give the model's relations its current access vector."""
+        self.relations.update(access_vector=self.access_vector)
+
+
+class BaseDigest(EntitiesAccessVectorMixin, LifecycleModel):
     """An import of multiple external objects and connections, bulk "digested" into the platform."""
 
     infer_entities = False
@@ -108,12 +119,6 @@ class BaseDigest(LifecycleModel):
         )
         return entry
 
-    @property
-    def access_vector(self):
-        from notes.utils import calculate_acvec
-
-        return calculate_acvec(self.entities.all())
-
     @classmethod
     def from_db(cls, db, field_names, values):
         if cls.__name__ != "BaseDigest":
@@ -171,22 +176,8 @@ class BaseDigest(LifecycleModel):
         fpath = os.path.join(upload_dir, str(self.id))
         return fpath
 
-    @property
-    def storage_key(self) -> str:
-        """Object key for this digest in the digests bucket.
-
-        Returns the file.name if FileField is set, otherwise computes
-        deterministic key for backward compatibility.
-        """
-        if self.file:
-            return self.file.name
-        return f"{self.user_id}/{self.id}"
-
     def ensure_local_file(self) -> None:
-        """Ensure the digest file exists at self.path by fetching it from S3.
-
-        Downloads from FileField if available, otherwise uses legacy storage_key.
-        """
+        """Ensure the digest file exists at self.path by fetching it from S3."""
         if os.path.exists(self.path) and os.path.getsize(self.path) > 0:
             return
 
@@ -206,19 +197,22 @@ class BaseDigest(LifecycleModel):
             pass
 
     def digest(self):
-        """Perform the actual digesting of the external data."""
+        """Perform the actual digesting of the external data.
+
+        ``_digest`` may hand work to background tasks that finalize the digest on their own, so nothing here
+        saves the whole row afterwards: that would overwrite their status, errors and warnings.
+        """
         try:
             self.ensure_local_file()
             self.status = DigestStatus.WORKING
             self.save(update_fields=["status"])
             self._digest()
-        except OSError as e:
-            self.status = DigestStatus.ERROR
-            self.errors.append("An unknown error has occurred, please contact your administrator")
-            self.save()
-            raise e
-
-        self.save()
+        except OSError:
+            self.mark_error("An unknown error has occurred, please contact your administrator")
+            raise
+        except Exception:
+            self.mark_error("The file could not be processed.")
+            raise
 
     def _digest(self):
         raise NotImplementedError
@@ -234,7 +228,14 @@ class BaseDigest(LifecycleModel):
         self.save(update_fields=["status"])
         self.cleanup_local_file()
 
-    def _append_error(self, error):
+    def mark_error(self, error: str) -> None:
+        """Record ``error``, end the digest with ERROR status and drop the local file."""
+        self.append_error(error)
+        self.status = DigestStatus.ERROR
+        self.save(update_fields=["status"])
+        self.cleanup_local_file()
+
+    def append_error(self, error):
         if error in self.errors:
             return
         with transaction.atomic():
@@ -246,7 +247,7 @@ class BaseDigest(LifecycleModel):
             # Update the current instance to reflect the change
             self.errors = instance.errors
 
-    def _append_warning(self, warning):
+    def append_warning(self, warning):
         if warning in self.warnings:
             return
         with transaction.atomic():
@@ -258,32 +259,10 @@ class BaseDigest(LifecycleModel):
             # Update the current instance to reflect the change
             self.warnings = instance.warnings
 
-    def update_access_vector(self):
-        from notes.utils import calculate_acvec
-
-        access_vector = calculate_acvec(self.entities.all())
-        self.relations.update(access_vector=access_vector)
-
 
 class BaseEnricher:
     display_name = None
     settings_fields = {}
-
-    def __init__(self, settings: dict, request: "EnrichmentRequest"):
-        self.settings = settings
-        self.request = request
-
-    def pre_enrich(self, entries: list[Entry]) -> Optional[str]:
-        """Validate config and entries before enrichment. Return error message or None."""
-        raise NotImplementedError
-
-    def enrich(self, entries: list[Entry]) -> None:
-        """Perform enrichment on the given entries, creating relations as needed."""
-        raise NotImplementedError
-
-    @property
-    def name(self):
-        return self.__class__.__name__
 
     @classmethod
     def get_subclass(cls, name):
@@ -380,13 +359,6 @@ class EnricherSettings(models.Model):
         if errors:
             raise ValidationError({str(k): v for k, v in errors.items()})
 
-    def enricher(self, request: "EnrichmentRequest"):
-        """Return the enricher class based on the enricher_type."""
-        config = BaseEnricher.get_subclass(self.enricher_type)
-        if config is None:
-            raise ValidationError("That enrichment is not available.")
-        return config(settings=self.settings, request=request)
-
 
 class ClassMapping(models.Model):
     """Abstract model for mapping internal entry class to external type.
@@ -416,15 +388,6 @@ class ClassMapping(models.Model):
         if not isinstance(display_name, str):
             raise TypeError(f"{cls.__name__} must define a class attribute 'display_name' as a string")
 
-    @classmethod
-    def get_typemapping(cls):
-        typemapping = defaultdict(lambda: None)
-
-        for mapping in cls.objects.all():
-            typemapping[mapping.internal_class] = mapping
-
-        return typemapping
-
 
 class EnrichmentRequestArtifactSchema(BaseModel):
     """Schema for the single artifact on an enrichment request."""
@@ -433,12 +396,13 @@ class EnrichmentRequestArtifactSchema(BaseModel):
     name: str
 
 
-class EnrichmentRequest(LifecycleModel):
+class EnrichmentRequest(EntitiesAccessVectorMixin, LifecycleModel):
     """A request to enrich exactly one artifact using configured enrichers."""
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
     enrichers_settings = models.ManyToManyField(EnricherSettings, help_text="Enrichers to run for this request")
     title = models.CharField(max_length=255, help_text="Human-readable title")
+    started_at = models.DateTimeField(null=True, blank=True, help_text="When enrichment last started")
     completed_at = models.DateTimeField(null=True, blank=True, help_text="When all enrichers finished")
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
@@ -518,22 +482,6 @@ class EnrichmentRequest(LifecycleModel):
         )
         return entry
 
-    @property
-    def enrichers(self):
-        """Return the enricher class based on the enrichers_settings."""
-        enrichers = []
-
-        for enricher_settings in self.enrichers_settings.all():
-            subclass = BaseEnricher.get_subclass(enricher_settings.enricher_type)
-
-            if subclass is None:
-                raise ValidationError("That enrichment is not available.")
-            config = subclass(settings=enricher_settings.settings, request=self)
-            config.id = enricher_settings.id
-            enrichers.append(config)
-
-        return enrichers
-
     def entries(self, classes: set[str] | None = None):
         req = self.artifact
         if not req or not isinstance(req, dict):
@@ -571,19 +519,22 @@ class EnrichmentRequest(LifecycleModel):
         else:
             self.status = EnrichmentStatus.WORKING
 
-        self.save(update_fields=["status", "ignored"])
-        start_enrich.apply_async((self.id,))
+        self.started_at = timezone.now()
+        self.save(update_fields=["status", "ignored", "started_at"])
+        transaction.on_commit(lambda: start_enrich.apply_async((self.id,)))
 
     @property
-    def access_vector(self):
-        from notes.utils import calculate_acvec
+    def is_running(self) -> bool:
+        """Unfinished and started recently enough that its enrichers may still be working."""
+        from ..constants import INTELIO_ENRICHMENT_RESTART_AFTER
 
-        return calculate_acvec(self.entities.all())
+        return (
+            self.completed_at is None
+            and self.started_at is not None
+            and timezone.now() - self.started_at < INTELIO_ENRICHMENT_RESTART_AFTER
+        )
 
-    def update_access_vector(self):
-        self.relations.update(access_vector=self.access_vector)
-
-    def _set_enricher_status(self, enricher_type: str, status: EnrichmentStatus):
+    def set_enricher_status(self, enricher_type: str, status: EnrichmentStatus):
         if self.enricher_status and self.enricher_status.get(enricher_type) == status.value:
             return
         terminal = frozenset({EnrichmentStatus.DONE.value, EnrichmentStatus.ERROR.value})
@@ -628,7 +579,12 @@ class EnrichmentRequest(LifecycleModel):
         if notify_instance is not None:
             self._send_enrichment_notification(notify_instance)
 
-    def _append_error(self, error, enricher_type: str):
+    def fail_enricher(self, enricher_type: str, error: str) -> None:
+        """Record ``error`` for one enricher, then mark it failed (which may complete the request)."""
+        self.append_error(error, enricher_type)
+        self.set_enricher_status(enricher_type, EnrichmentStatus.ERROR)
+
+    def append_error(self, error, enricher_type: str):
         if error in self.errors.get(enricher_type, []):
             return
         with transaction.atomic():
@@ -643,7 +599,7 @@ class EnrichmentRequest(LifecycleModel):
             # Update the current instance to reflect the change
             self.errors = instance.errors
 
-    def _append_warning(self, warning, enricher_type: str):
+    def append_warning(self, warning, enricher_type: str):
         if warning in self.warnings.get(enricher_type, []):
             return
         with transaction.atomic():

@@ -1,5 +1,6 @@
 """User serializers for CRUD, auth, OAuth, 2FA, sessions, and config."""
 
+import uuid
 from typing import Any, Dict, List, cast
 from urllib.parse import urlsplit
 
@@ -136,13 +137,9 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
         return super().validate(data, nocheck_pw=True)
 
     def update(self, instance: CradleUser, validated_data: dict[str, Any]):
-        """Update user fields. Handles password separately via set_password."""
+        """Update user fields. Passwords are set through ``AdminSetPasswordView``, never here."""
         for field, value in validated_data.items():
-            if field != "password":
-                setattr(instance, field, value)
-
-        if "password" in validated_data:
-            instance.set_password(validated_data["password"])
+            setattr(instance, field, value)
 
         instance.save()
 
@@ -150,11 +147,13 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
 
 
 class UserUpdateSerializer(UserCreateSerializerAdmin):
-    """Schema for PATCH user; all fields optional."""
+    """Schema for PATCH user; all fields optional. Passwords are not accepted here."""
 
     email = serializers.EmailField(required=False)
     username = serializers.CharField(required=False)
-    password = serializers.CharField(required=False)
+
+    class Meta(UserCreateSerializerAdmin.Meta):
+        fields = [f for f in UserCreateSerializerAdmin.Meta.fields if f != "password"]
 
 
 @extend_schema_serializer(component_name="ChangePassword")
@@ -204,13 +203,7 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
         """Return dict of provider -> connected for each configured OAuth provider."""
         from .models import ExternalIdentity
 
-        available = []
-        for method in settings.OAUTH_METHODS:
-            if not isinstance(method, dict):
-                continue
-            method_id = method.get("id") or method.get("provider") or method.get("name")
-            if method_id:
-                available.append(method_id)
+        available = [method["id"] for method in settings.OAUTH_METHODS]
 
         connected = set(ExternalIdentity.objects.filter(user=obj).values_list("provider", flat=True))
 
@@ -239,7 +232,7 @@ class OAuthConnectSerializer(serializers.Serializer):
     redirect_uri = serializers.URLField(help_text="Redirect URI used in the OAuth flow")
 
     def validate_redirect_uri(self, value: str) -> str:
-        whitelist = getattr(settings, "OAUTH_REDIRECT_URI_WHITELIST", [])
+        whitelist = settings.OAUTH_REDIRECT_URI_WHITELIST
         if not whitelist:
             return value
         parsed = urlsplit(value)
@@ -290,6 +283,7 @@ class TokenObtainSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
 
         token["role"] = cast(CradleUser, user).role
+        token["sid"] = str(uuid.uuid4())
 
         return token
 
@@ -344,6 +338,20 @@ class StepUpSerializer(serializers.Serializer):
     )
 
 
+@extend_schema_serializer(component_name="AdminSetPassword")
+class AdminSetPasswordSerializer(StepUpSerializer):
+    """Serializer for an admin setting another user's password, with step-up for the admin."""
+
+    new_password = serializers.CharField(required=True, help_text="New password for the user")
+
+    def validate_new_password(self, value: str) -> str:
+        try:
+            password_validation.validate_password(value, password_validators=password_validator())
+        except DjangoValidationError as e:
+            raise InvalidPasswordException(list(e.messages))
+        return value
+
+
 @extend_schema_serializer(component_name="Disable2FA")
 class Disable2FASerializer(StepUpSerializer, OTPSerializer):
     """Serializer for disabling 2FA with step-up password confirmation."""
@@ -380,21 +388,16 @@ class APIKeyResponseSerializer(serializers.Serializer):
         ref_name = "APIKeyResponse"
 
 
-class UserManageResponseSerializer(serializers.Serializer):
-    """Serializer for user management action response."""
+class UserSimulateResponseSerializer(serializers.Serializer):
+    """Response of simulating a user: the session now belongs to that user."""
 
-    user_id = serializers.UUIDField(required=False, help_text="Simulated user ID (simulate action only)")
-    message = serializers.CharField(required=False, help_text="Success message for other actions")
-    access_expires_at = serializers.DateTimeField(
-        required=False, help_text="Access token expiry (simulate action only)"
-    )
-    refresh_expires_at = serializers.DateTimeField(
-        required=False, help_text="Refresh token expiry (simulate action only)"
-    )
-    role = serializers.CharField(required=False, help_text="User role (simulate action only)")
+    user_id = serializers.UUIDField(help_text="Simulated user ID")
+    role = serializers.CharField(help_text="Simulated user's role")
+    access_expires_at = serializers.DateTimeField(help_text="Access token expiry")
+    refresh_expires_at = serializers.DateTimeField(help_text="Refresh token expiry")
 
     class Meta:
-        ref_name = "UserManageResponse"
+        ref_name = "UserSimulateResponse"
 
 
 class ChangePasswordResponseSerializer(serializers.Serializer):
@@ -434,6 +437,7 @@ class UserSessionSerializer(serializers.ModelSerializer):
     last_activity_at = serializers.DateTimeField(
         source="last_activity", read_only=True, help_text="Last activity timestamp"
     )
+    is_current = serializers.SerializerMethodField(help_text="Whether this is the session making the request")
 
     class Meta:
         model = UserSession
@@ -447,3 +451,7 @@ class UserSessionSerializer(serializers.ModelSerializer):
             "is_current",
         ]
         read_only_fields = fields
+
+    def get_is_current(self, obj: UserSession) -> bool:
+        current_jti = self.context.get("current_jti")
+        return current_jti is not None and obj.refresh_token_jti == current_jti

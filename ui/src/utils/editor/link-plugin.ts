@@ -1,8 +1,20 @@
-import { pluginReplaceSpansLineBreak } from '@/utils/editor/plugin-decoration-utils';
+import {
+    pluginReplaceSpansLineBreak,
+    revealSelection,
+    revealStateChanged,
+} from '@/utils/editor/plugin-decoration-utils';
+import type { CopyableWidget } from '@/utils/editor/rendered-copy';
 import { syntaxTree } from '@codemirror/language';
 import { Diagnostic, forEachDiagnostic } from '@codemirror/lint';
-import { EditorState, Range, type Text } from '@codemirror/state';
-import { Decoration, EditorView, ViewPlugin, WidgetType } from '@codemirror/view';
+import { EditorState, Range, RangeSetBuilder, type Text } from '@codemirror/state';
+import {
+    Decoration,
+    EditorView,
+    gutterLineClass,
+    GutterMarker,
+    ViewPlugin,
+    WidgetType,
+} from '@codemirror/view';
 import { SyntaxNode } from '@lezer/common';
 import { WarningCircleIcon } from '@phosphor-icons/react';
 import type { NavigateOptions } from '@tanstack/react-router';
@@ -12,7 +24,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 /**
  * Widget to render Cradle links as clickable elements in the editor
  */
-class CradleLinkWidget extends WidgetType {
+class CradleLinkWidget extends WidgetType implements CopyableWidget {
     type: string;
     name: string;
     alias: string;
@@ -58,6 +70,11 @@ class CradleLinkWidget extends WidgetType {
             other.hasPrefix === this.hasPrefix &&
             other.lintIssues.length === this.lintIssues.length
         );
+    }
+
+    copyText(): string {
+        const name = this.alias || this.name;
+        return this.timestamp ? `${name} ${this.timestamp}` : name;
     }
 
     toDOM(_view: EditorView): HTMLElement {
@@ -189,6 +206,7 @@ export function cradleLinksPlugin(
                     update.docChanged ||
                     update.viewportChanged ||
                     update.selectionSet ||
+                    revealStateChanged(update) ||
                     diagnosticsChanged
                 ) {
                     this.decorations = this.buildDecorations(update.view);
@@ -203,10 +221,11 @@ export function cradleLinksPlugin(
                 const widgets: Range<Decoration>[] = [];
                 const doc = view.state.doc;
                 const text = doc.toString();
-                const selection = view.state.selection.main;
-                const cursorPos = selection.head;
-                const selFrom = selection.from;
-                const selTo = selection.to;
+                const {
+                    head: cursorPos,
+                    from: selFrom,
+                    to: selTo,
+                } = revealSelection(view.state);
                 const tree = syntaxTree(view.state);
                 const diagnostics = collectDiagnostics(view.state);
 
@@ -298,6 +317,35 @@ export function headingLineClassPlugin(sourceMode: boolean) {
     );
 }
 
+class HeadingGutterClass extends GutterMarker {
+    constructor(readonly elementClass: string) {
+        super();
+    }
+}
+
+const headingGutterClasses = [1, 2, 3].map(
+    (level) => new HeadingGutterClass(`cm-gutter-heading-${level}`),
+);
+
+/**
+ * Tags gutter rows of ATX heading lines (levels 1-3, the ones prosemark enlarges)
+ * so gutter markers can be sized to the heading's row. A plain line scan instead
+ * of the syntax tree, which finishes parsing in transactions without doc changes
+ * and would leave this stale. A false hit (e.g. a `#` comment in a code block)
+ * only resizes an empty gutter row; setext headings and headings nested in
+ * quotes or lists are not tagged.
+ */
+export const headingGutterLineClass = gutterLineClass.compute(['doc'], (state) => {
+    const builder = new RangeSetBuilder<GutterMarker>();
+    for (let i = 1; i <= state.doc.lines; i++) {
+        const line = state.doc.line(i);
+        const hashes = /^ {0,3}(#{1,3})(?:\s|$)/.exec(line.text)?.[1];
+        const marker = hashes && headingGutterClasses[hashes.length - 1];
+        if (marker) builder.add(line.from, line.from, marker);
+    }
+    return builder.finish();
+});
+
 /**
  * Creates a ViewPlugin to style CradleLink text when uncollapsed
  */
@@ -333,6 +381,7 @@ export function cradleLinkColorPlugin(
                     update.docChanged ||
                     update.viewportChanged ||
                     update.selectionSet ||
+                    revealStateChanged(update) ||
                     diagnosticsChanged
                 ) {
                     this.decorations = this.buildDecorations(update.view);
@@ -343,10 +392,11 @@ export function cradleLinkColorPlugin(
                 const marks: Range<Decoration>[] = [];
                 const doc = view.state.doc;
                 const text = doc.toString();
-                const selection = view.state.selection.main;
-                const cursorPos = selection.head;
-                const selFrom = selection.from;
-                const selTo = selection.to;
+                const {
+                    head: cursorPos,
+                    from: selFrom,
+                    to: selTo,
+                } = revealSelection(view.state);
                 const tree = syntaxTree(view.state);
                 const diagnostics = collectDiagnostics(view.state);
 
@@ -450,9 +500,6 @@ function parseCradleLink(
         child = child.nextSibling;
     }
 
-    // Half-open [from, widgetEnd) matches the replace decoration. Cursor-only
-    // check is needed: collapsed at `from` has selFrom === selTo === from, so
-    // range overlap (selFrom < W && selTo > from) is false.
     const cursorInLink = cursorPos >= from && cursorPos < widgetEnd;
     const selectionOverlapsLink = selFrom < widgetEnd && selTo > from;
     if (cursorInLink || selectionOverlapsLink) {

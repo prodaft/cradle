@@ -23,8 +23,8 @@ request from the case notes so the artifact list and associated entities are
 captured automatically. If you receive a report or dataset from another team,
 use a digest to ingest it and connect it back to the case entity.
 
-## Produce a publishable report
+## Produce a report
 Curate the relevant notes, order them to match the narrative you want, choose
-anonymization settings, and export or publish the report. If you are
-publishing to another CRADLE instance, use the JSON output format and verify
+anonymization settings, and export the report. If you are
+importing it into another CRADLE instance, use the JSON output format and verify
 the rendered report once the job completes.

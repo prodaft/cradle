@@ -5,7 +5,7 @@ export function useRequestNoteAccess() {
     return useMutation({
         mutationFn: async (noteId: string) => {
             const { error, response } = await fetchClient.POST(
-                '/notes/{note_id}/access/request/',
+                '/notes/{note_id}/access/requests/',
                 { params: { path: { note_id: noteId } } },
             );
             if (error) throw { response, error };

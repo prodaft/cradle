@@ -25,14 +25,13 @@ class that provides mocks and utilities.
 Example:
 
 ```python
-from django.test import TestEntity
+from django.test import TestCase
 from unittest.mock import patch
-from collections import Counter
 
-class HelloWorldTestEntity(TestEntity):
+class HelloWorldTestEntity(TestCase):
     def setUp(self):
-        self.patcher = patch("file_transfer.utils.MinioClient.create_user_bucket")
-        self.mocked_create_user_bucket = self.patcher.start()
+        self.patcher = patch("file_transfer.s3_utils.put_bytes")
+        self.mocked_put_bytes = self.patcher.start()
 
     def tearDown(self):
         self.patcher.stop()

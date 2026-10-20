@@ -1,10 +1,15 @@
+import logging
 from typing import Dict
+
+from django.core.files.base import ContentFile
 
 from entries.models import Entry, EntryClass
 from notes.markdown.to_markdown import Anonymizer, anonymize_markdown
 from notes.models import Note
 
 from ..models import PublishedReport
+
+logger = logging.getLogger(__name__)
 
 
 class BasePublishStrategy:
@@ -52,14 +57,37 @@ class BasePublishStrategy:
             entry_class=entry.entry_class,
         )
 
-    def edit_report(self, report: PublishedReport) -> bool:
-        """Edit an existing published resource."""
-        raise NotImplementedError()
-
     def create_report(self, report: PublishedReport) -> bool:
         """Create a brand new report/publication from scratch."""
         raise NotImplementedError()
 
     def delete_report(self, report: PublishedReport) -> bool:
-        """Delete an existing published resource (given its location)."""
-        raise NotImplementedError()
+        """Delete the report file from S3. Returns False (and marks the report as failed) on error."""
+        try:
+            if report.file:
+                report.file.delete(save=False)
+        except Exception:
+            logger.exception("Failed to delete published report %s.", report.id)
+            report.mark_error("The published report file could not be removed.")
+            return False
+        return True
+
+    def _save_report_file(self, content: bytes, filename: str, report: PublishedReport) -> bool:
+        """Upload report bytes to S3 and record the file on the report. Returns False on failure.
+
+        Only the ``file`` column is written, so a report deleted during generation is not re-created;
+        the just-uploaded file is removed instead.
+        """
+        try:
+            if report.file:
+                report.file.delete(save=False)
+            report.file.save(filename, ContentFile(content), save=False)
+        except Exception:
+            logger.exception("Failed to upload %s report %s.", report.strategy, report.id)
+            report.mark_error("The report could not be saved. Please try again.")
+            return False
+
+        if not report.save_fields("file"):
+            report.file.delete(save=False)
+            return False
+        return True

@@ -2,13 +2,13 @@ import uuid
 from unittest.mock import patch
 
 from django.urls import reverse
-from rest_framework_simplejwt.tokens import AccessToken
 
 from access.enums import AccessType
 from access.models import Access
 from entries.models import Entry
 from file_transfer.models import FileReference
 from user.models import CradleUser
+from user.testing import session_access_token
 
 from ..models import Note
 from .utils import NotesTestCase
@@ -29,9 +29,9 @@ class GetNoteTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user_token = str(AccessToken.for_user(self.user))
+        self.user_token = str(session_access_token(self.user))
         self.not_owner = CradleUser.objects.create_user(username="not_owner", password="pass", email="b@c.d")
-        self.not_owner_token = AccessToken.for_user(self.not_owner)
+        self.not_owner_token = session_access_token(self.not_owner)
         self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
         self.not_owner_headers = {"HTTP_COOKIE": f"access_token={self.not_owner_token}"}
 
@@ -104,9 +104,9 @@ class DeleteNoteTest(NotesTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user_token = str(AccessToken.for_user(self.user))
+        self.user_token = str(session_access_token(self.user))
         self.not_owner = CradleUser.objects.create_user(username="not_owner", password="pass", email="b@c.d")
-        self.not_owner_token = str(AccessToken.for_user(self.not_owner))
+        self.not_owner_token = str(session_access_token(self.not_owner))
         self.headers = {"HTTP_COOKIE": f"access_token={self.user_token}"}
         self.not_owner_headers = {"HTTP_COOKIE": f"access_token={self.not_owner_token}"}
 
@@ -190,7 +190,8 @@ class DeleteNoteTest(NotesTestCase):
             reverse("note_detail", kwargs={"note_id": note.id}),
             **self.not_owner_headers,
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["code"], "CANNOT_EDIT_NOTE")
 
         get_response = self.client.get(
             reverse("note_detail", kwargs={"note_id": note.id}),
@@ -227,7 +228,7 @@ class DeleteNoteTest(NotesTestCase):
 class NoteEditConflictTest(NotesTestCase):
     def setUp(self):
         super().setUp()
-        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.user)}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={session_access_token(self.user)}"}
         self.note = Note.objects.create(author=self.user, fleeting=True, content="original")
         self.url = reverse("note_detail", kwargs={"note_id": self.note.id})
 
@@ -295,7 +296,7 @@ class NoteWritePermissionTest(NotesTestCase):
         self.other = CradleUser.objects.create_user(
             username="other", password="pass", email="o@c.d", is_active=True, email_confirmed=True
         )
-        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.other)}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={session_access_token(self.other)}"}
         self.url = reverse("note_detail", kwargs={"note_id": self.note.id})
 
     def grant(self, access_type):
@@ -313,10 +314,8 @@ class NoteWritePermissionTest(NotesTestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_note_file_delete_requires_write(self):
-        file = FileReference.objects.create(
-            note=self.note, file_name="a.txt", minio_file_name="a.txt", bucket_name="bucket"
-        )
-        url = f"{reverse('file_delete')}?file_id={file.id}"
+        file = FileReference.objects.create(note=self.note, file_name="a.txt")
+        url = reverse("file_detail", kwargs={"file_id": file.id})
 
         self.grant(AccessType.READ)
         self.assertEqual(self.client.delete(url, **self.headers).status_code, 403)

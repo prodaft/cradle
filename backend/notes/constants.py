@@ -11,10 +11,19 @@ from .processor.metadata_process_task import MetadataProcessTask
 from .processor.smart_linker_task import SmartLinkerTask
 from .processor.validate_note_task import ValidateNoteTask
 
-# Default note processing pipeline (class list; TaskScheduler instantiates per user).
 NOTES_TASK_SCHEDULER_DEFAULT_PIPELINE: list[type[BaseTask]] = [
     ValidateNoteTask,
     AccessControlTask,
+    EntryClassCreationTask,
+    EntryPopulationTask,
+    SmartLinkerTask,
+    LinkFilesTask,
+    MetadataProcessTask,
+    AliasConnectionTask,
+    FinalizeNoteTask,
+]
+
+NOTES_RELINK_PIPELINE: list[type[BaseTask]] = [
     EntryClassCreationTask,
     EntryPopulationTask,
     SmartLinkerTask,

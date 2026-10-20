@@ -139,7 +139,7 @@ export default function EnrichmentRequestDialog({
         queryKey: ['enrichment', 'subclasses'],
         queryFn: async () => {
             const { data, error, response } =
-                await fetchClient.GET('/intelio/enrichment/');
+                await fetchClient.GET('/intelio/enrichers/');
             if (error) throw { response, error };
             return data;
         },
@@ -347,14 +347,14 @@ export default function EnrichmentRequestDialog({
             notes: string[];
         }) => {
             const { data, error, response } = await fetchClient.POST(
-                '/intelio/enrich/',
+                '/intelio/enrichments/',
                 {
                     body: {
                         title: payload.title,
                         enricher_names: payload.enricherNames,
                         ...(payload.artifact ? { artifact: payload.artifact } : {}),
-                        entities: payload.entities,
-                        notes: payload.notes,
+                        entity_ids: payload.entities,
+                        note_ids: payload.notes,
                     } as any,
                 },
             );

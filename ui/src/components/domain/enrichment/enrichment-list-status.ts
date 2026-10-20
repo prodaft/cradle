@@ -1,5 +1,4 @@
 import { createStatusFilter } from '@/utils/status-filter';
+import { enrichmentStatusEnumValues } from '@services/openapi/schema';
 
-export const QUERY_SLUGS = ['waiting', 'working', 'warning', 'done', 'error'] as const;
-
-export const { parseParam } = createStatusFilter(QUERY_SLUGS);
+export const { parseParam } = createStatusFilter(enrichmentStatusEnumValues);

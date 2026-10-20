@@ -8,14 +8,9 @@ import tseslint from 'typescript-eslint';
 export default [
     {
         ignores: [
-            '*out/*',
-            'node_modules/*',
-            'docs/*',
-            'src/services/**',
+            'src/services/openapi/schema.ts',
             'src/routeTree.gen.ts',
             'src/components/ui/**',
-            'src/components/custom/data-grid/**',
-            'src/components/custom/data-table/**',
         ],
     },
     { languageOptions: { globals: globals.browser } },

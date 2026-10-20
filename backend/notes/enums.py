@@ -11,3 +11,13 @@ class NoteStatus(models.TextChoices):
     PROCESSING = "processing", _("Processing")
     WARNING = "warning", _("Warning")
     INVALID = "invalid", _("Invalid")
+
+
+NoteListStatus = models.TextChoices(
+    "NoteListStatus",
+    [
+        ("FLEETING", ("fleeting", _("Fleeting"))),
+        ("PUBLISHED", ("published", _("Published"))),
+        *((status.name, (status.value, status.label)) for status in NoteStatus),
+    ],
+)

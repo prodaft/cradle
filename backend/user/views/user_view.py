@@ -1,12 +1,8 @@
 """User CRUD, signup, config, sessions, API key, password reset, and management views."""
 
-import secrets
-from datetime import datetime
-from datetime import timezone as dt_timezone
 from typing import cast
 from uuid import UUID
 
-import bcrypt
 from django.conf import settings
 from django.db import transaction
 from django.db.utils import IntegrityError
@@ -20,8 +16,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
@@ -29,8 +23,9 @@ from core.pagination import TotalPagesPagination
 from core.query_lang import search_q
 from core.throttling import AuthRateThrottle
 from core.utils import validate_order_by
+from management.serializers import ManagementActionResponseSerializer
 from management.settings import cradle_settings
-from notifications.models import NewUserNotification
+from notifications.models import MessageNotification, NewUserNotification
 
 from ..authentication import APIKeyAuthentication, CookieJWTAuthentication
 from ..exceptions import (
@@ -38,18 +33,18 @@ from ..exceptions import (
     CurrentPasswordIncorrectException,
     EmailAlreadyConfirmedException,
     EmailConfirmationFailedException,
+    EmailDeliveryUnavailableException,
     InvalidPasswordResetLinkException,
     RegistrationUnavailableException,
     SessionNotFoundException,
-    UnsupportedOperationException,
     UserAlreadyExistsException,
     UserErrorCodes,
-    UserNotFoundException,
 )
 from ..filters import UserFilter
-from ..models import BlacklistedToken, CradleUser, UserRoles, UserSession
+from ..models import CradleUser, UserSession
 from ..permissions import HasAdminRole
 from ..serializers import (
+    AdminSetPasswordSerializer,
     APIKeyResponseSerializer,
     ChangePasswordResponseSerializer,
     ChangePasswordSerializer,
@@ -63,23 +58,14 @@ from ..serializers import (
     UserConfigSerializer,
     UserCreateSerializer,
     UserCreateSerializerAdmin,
-    UserManageResponseSerializer,
     UserRetrieveSerializer,
     UserSessionSerializer,
+    UserSimulateResponseSerializer,
     UserUpdateSerializer,
 )
-from ..utils.step_up import validate_step_up
-from .token_view import create_or_update_session, set_token_cookies
-
-
-def _resolve_user(initiator: CradleUser, user_id: str | UUID) -> CradleUser:
-    """Return ``initiator`` for "me", else the user with ``user_id``."""
-    if user_id == "me":
-        return initiator
-    try:
-        return CradleUser.objects.get(id=user_id)
-    except CradleUser.DoesNotExist:
-        raise UserNotFoundException(detail="That user could not be found.")
+from ..utils.lookup import resolve_visible_user
+from ..utils.step_up import require_step_up, validate_step_up
+from ..utils.tokens import current_refresh_jti, record_session, set_token_cookies, token_expires_at
 
 
 @extend_schema_view(
@@ -202,7 +188,7 @@ class SignupView(APIView):
         try:
             with transaction.atomic():
                 user = serializer.save()
-                admins = CradleUser.objects.filter(role=UserRoles.ADMIN)
+                admins = CradleUser.objects.admins()
                 for i in admins:
                     NewUserNotification.objects.create(
                         user_id=i.id,
@@ -211,17 +197,21 @@ class SignupView(APIView):
                     )
         except IntegrityError:
             raise UserAlreadyExistsException(detail="A user with this email or username already exists.")
-        user.send_email_confirmation()
+        email_sent = user.send_email_confirmation()
         serializer = UserRetrieveSerializer(user)
         data = dict(serializer.data)
         if not user.email_confirmed:
-            data["detail"] = "Please check your email for a confirmation link."
+            data["detail"] = (
+                "Please check your email for a confirmation link."
+                if email_sent
+                else "Your account was created, but the confirmation email could not be sent. "
+                "Ask an administrator to resend it."
+            )
         elif not user.is_active:
             data["detail"] = "Your account must be activated by an administrator before you can log in."
         else:
             data["detail"] = "Account created successfully."
 
-        # Signup is at /api/auth/signup/ but user resource is at /api/users/<id>/
         location = request.build_absolute_uri(reverse("user_detail", kwargs={"user_id": user.id}))
         return Response(data, status=status.HTTP_201_CREATED, headers={"Location": location})
 
@@ -257,19 +247,10 @@ class UserConfigView(APIView):
         operation_id="users_retrieve",
         summary="Get user details",
         description="Returns details of a specific user. Regular users can only access their own details. Admin users can access any user's details.",  # noqa: E501
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' to get own details",
-            )
-        ],
         responses={
             200: UserRetrieveSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -278,14 +259,6 @@ class UserConfigView(APIView):
         operation_id="users_update",
         summary="Update user details",
         description="Updates details of a specific user. Regular users can only update their own details. Admin users can update details of non-admin users.",  # noqa: E501
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' to update own details",
-            )
-        ],
         request=UserUpdateSerializer,
         responses={
             200: UserRetrieveSerializer,
@@ -301,14 +274,6 @@ class UserConfigView(APIView):
         operation_id="users_destroy",
         summary="Delete user",
         description="Deletes a user account. Users can delete their own account; admins can delete non-admin users.",
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' to delete own account",
-            )
-        ],
         request=StepUpSerializer,
         responses={
             204: {"description": "User successfully deleted"},
@@ -328,20 +293,22 @@ class UserDetail(APIView):
 
     def get(self, request: Request, user_id: str | UUID) -> Response:
         initiator = cast(CradleUser, request.user)
-        user = _resolve_user(initiator, user_id)
-
-        if not initiator.can_view(user):
-            raise ActionNotAllowedException(detail="You do not have permission to view this user.")
+        user = resolve_visible_user(initiator, user_id)
 
         json_user = UserRetrieveSerializer(user).data
         return Response(json_user, status=status.HTTP_200_OK)
 
     def patch(self, request: Request, user_id: str | UUID) -> Response:
         editor = cast(CradleUser, request.user)
-        edited = _resolve_user(editor, user_id)
+        edited = resolve_visible_user(editor, user_id)
 
         if not editor.can_manage(edited):
             raise ActionNotAllowedException(detail="You do not have permission to edit this user.")
+
+        if "password" in request.data:
+            raise ActionNotAllowedException(
+                detail="Passwords cannot be changed this way. Use the change password option instead."
+            )
 
         data = dict(request.data)
         if data.get("username") == edited.username:
@@ -350,7 +317,7 @@ class UserDetail(APIView):
             data.pop("email", None)
 
         if editor.is_cradle_admin and editor.pk != edited.pk:
-            serializer = UserCreateSerializerAdmin(edited, data=data, partial=True)
+            serializer = UserUpdateSerializer(edited, data=data, partial=True)
         else:
             serializer = UserCreateSerializer(edited, data=data, partial=True)
 
@@ -361,7 +328,7 @@ class UserDetail(APIView):
 
     def delete(self, request: Request, user_id: str | UUID) -> Response:
         user = cast(CradleUser, request.user)
-        target = _resolve_user(user, user_id)
+        target = resolve_visible_user(user, user_id)
 
         if not user.can_manage(target):
             raise ActionNotAllowedException(detail="You do not have permission to delete this user.")
@@ -382,7 +349,6 @@ class UserDetail(APIView):
             200: UserRetrieveSerializer,
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
@@ -425,8 +391,9 @@ class UserMeDetail(UserDetail):
 
 @extend_schema_view(
     post=extend_schema(
+        operation_id="users_me_password_create",
         summary="Change Password",
-        description="Allows authenticated users to change their password by providing their old password and a new password.",  # noqa: E501
+        description="Allows authenticated users to change their password by providing their old password and a new password. All other sessions are revoked.",  # noqa: E501
         request=ChangePasswordSerializer,
         responses={
             200: ChangePasswordResponseSerializer,
@@ -436,7 +403,6 @@ class UserMeDetail(UserDetail):
             ),
             **get_common_error_responses(),
         },
-        tags=["auth"],
     )
 )
 class ChangePasswordView(APIView):
@@ -456,146 +422,164 @@ class ChangePasswordView(APIView):
         if not user.check_password(old_password):
             raise CurrentPasswordIncorrectException(detail="The current password is incorrect.")
 
-        user.set_password(new_password)
-        user.save()
+        user.change_password(new_password, keep_jti=current_refresh_jti(request))
 
         return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
     post=extend_schema(
-        operation_id="users_manage_create",
-        summary="Manage user actions",
-        description="Perform various admin actions on a user account. Available actions: simulate, send_email_confirmation, password_reset_email",  # noqa: E501
-        request=None,
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' for the current user",
-            ),
-            OpenApiParameter(
-                name="action_name",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="Action to perform: simulate, send_email_confirmation, or password_reset_email",
-            ),
-        ],
+        operation_id="users_password_create",
+        summary="Set a user's password",
+        description=(
+            "Admins set a new password for another non-admin user. Requires the admin's own password (step-up). "
+            "The new password must meet the password policy. All of the user's sessions are revoked and the "
+            "user is notified. Users change their own password through /auth/change-password/."
+        ),
+        request=AdminSetPasswordSerializer,
         responses={
-            200: UserManageResponseSerializer,
+            200: ChangePasswordResponseSerializer,
             **get_error_responses(
-                UserErrorCodes.UNSUPPORTED_OPERATION,
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.EMAIL_ALREADY_CONFIRMED,
                 UserErrorCodes.ACTION_NOT_ALLOWED,
+                UserErrorCodes.CURRENT_PASSWORD_INCORRECT,
+                UserErrorCodes.INVALID_PASSWORD,
+                include_validation_error=True,
             ),
             **get_common_error_responses(),
         },
     )
 )
-class ManageUser(APIView):
+class AdminSetPasswordView(APIView):
+    """Set another user's password (admins only)."""
+
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
 
-    def post(self, request: Request, user_id: str | UUID, action_name: str, *args, **kwargs) -> Response:
-        if action_name not in [
-            "simulate",
-            "send_email_confirmation",
-            "password_reset_email",
-        ]:
-            raise UnsupportedOperationException(detail="That operation is not supported.")
-        return getattr(self, action_name)(request, user_id, *args, **kwargs)
+    def post(self, request: Request, user_id: UUID) -> Response:
+        admin = cast(CradleUser, request.user)
+        target = resolve_visible_user(admin, user_id)
 
-    def password_reset_email(self, request: Request, user_id: str | UUID, *args, **kwargs) -> Response:
-        user = _resolve_user(request.user, user_id)
+        if target.pk == admin.pk:
+            raise ActionNotAllowedException(detail="Use the change password option to change your own password.")
+        if not admin.can_manage(target):
+            raise ActionNotAllowedException(detail="You do not have permission to change this user's password.")
 
-        user.send_password_reset()
+        serializer = AdminSetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        require_step_up(request, admin, serializer.validated_data.get("password") or None)
 
-        return Response(
-            {"detail": "Password reset email has been sent."},
-            status=status.HTTP_200_OK,
-        )
+        with transaction.atomic():
+            target.change_password(serializer.validated_data["new_password"])
+            target.log_edit(admin, details="set a new password")
+            MessageNotification.objects.create(
+                user=target,
+                message="An administrator set a new password for your account. You have been signed out everywhere.",
+            )
 
-    def send_email_confirmation(self, request: Request, user_id: str | UUID, *args, **kwargs) -> Response:
-        user = _resolve_user(request.user, user_id)
+        return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
 
-        if user.email_confirmed:
-            raise EmailAlreadyConfirmedException(detail="This email address is already confirmed.")
 
-        user.send_email_confirmation()
-        return Response(
-            {"detail": "Email confirmation has been sent."},
-            status=status.HTTP_200_OK,
-        )
+class _AdminUserAction(APIView):
+    """An admin action on one user account (``POST /users/<id>/<action>/``)."""
 
-    def simulate(self, request: Request, user_id: str | UUID, *args, **kwargs) -> Response:
-        user = _resolve_user(request.user, user_id)
-        if user.is_cradle_admin:
-            raise ActionNotAllowedException(detail="You do not have permission to impersonate an administrator.")
-
-        admin_refresh_str = request.COOKIES.get(getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token"))
-        if admin_refresh_str:
-            try:
-                admin_refresh = RefreshToken(admin_refresh_str)
-                admin_jti = admin_refresh.get("jti")
-                if admin_jti:
-                    BlacklistedToken.blacklist_token(
-                        admin_jti, datetime.fromtimestamp(admin_refresh["exp"], tz=dt_timezone.utc)
-                    )
-                    UserSession.objects.filter(refresh_token_jti=admin_jti).delete()
-            except TokenError, InvalidToken:
-                pass
-
-        refresh = TokenObtainSerializer.get_token(user)
-        access = refresh.access_token
-        refresh_expires_at = datetime.fromtimestamp(refresh["exp"], tz=dt_timezone.utc)
-        create_or_update_session(request, user, refresh, refresh_expires_at)
-        response = Response(
-            {
-                "role": user.role,
-                "user_id": str(user.id),
-                "access_expires_at": datetime.fromtimestamp(access["exp"], tz=dt_timezone.utc),
-                "refresh_expires_at": refresh_expires_at,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-        access_max_age = int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
-        refresh_max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
-        set_token_cookies(response, str(access), str(refresh), access_max_age, refresh_max_age)
-
-        return response
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated, HasAdminRole]
 
 
 @extend_schema_view(
     post=extend_schema(
-        operation_id="users_me_manage_create",
-        summary="Manage current user actions",
-        description="Perform admin actions on the current user. Available actions: simulate, send_email_confirmation, password_reset_email.",
+        operation_id="users_password_reset_create",
+        summary="Send password reset email",
+        description="Sends the user a password reset email. Admin only.",
         request=None,
-        parameters=[
-            OpenApiParameter(
-                name="action_name",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="Action to perform: simulate, send_email_confirmation, or password_reset_email",
-            ),
-        ],
         responses={
-            200: UserManageResponseSerializer,
+            200: ManagementActionResponseSerializer,
             **get_error_responses(
-                UserErrorCodes.UNSUPPORTED_OPERATION,
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.EMAIL_DELIVERY_UNAVAILABLE,
+            ),
+            **get_common_error_responses(),
+        },
+    )
+)
+class UserPasswordResetEmailView(_AdminUserAction):
+    def post(self, request: Request, user_id: UUID) -> Response:
+        user = resolve_visible_user(request.user, user_id)
+        if not user.send_password_reset():
+            raise EmailDeliveryUnavailableException(detail="The email could not be sent. Try again later.")
+        return Response({"detail": "Password reset email has been sent."}, status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="users_email_confirmation_create",
+        summary="Send email confirmation",
+        description="Sends the user a new email confirmation link. Admin only.",
+        request=None,
+        responses={
+            200: ManagementActionResponseSerializer,
+            **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
                 UserErrorCodes.EMAIL_ALREADY_CONFIRMED,
+                UserErrorCodes.EMAIL_DELIVERY_UNAVAILABLE,
+            ),
+            **get_common_error_responses(),
+        },
+    )
+)
+class UserConfirmationEmailView(_AdminUserAction):
+    def post(self, request: Request, user_id: UUID) -> Response:
+        user = resolve_visible_user(request.user, user_id)
+        if user.email_confirmed:
+            raise EmailAlreadyConfirmedException(detail="This email address is already confirmed.")
+        if not user.send_email_confirmation():
+            raise EmailDeliveryUnavailableException(detail="The email could not be sent. Try again later.")
+        return Response({"detail": "Email confirmation has been sent."}, status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="users_simulate_create",
+        summary="Simulate user",
+        description="Signs the admin in as this (non-admin) user and ends the admin's own session. Admin only.",
+        request=None,
+        responses={
+            200: UserSimulateResponseSerializer,
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
                 UserErrorCodes.ACTION_NOT_ALLOWED,
             ),
             **get_common_error_responses(),
         },
     )
 )
-class UserMeManage(ManageUser):
-    """Same as ManageUser but with distinct operation_id for /users/me/manage/."""
+class UserSimulateView(_AdminUserAction):
+    def post(self, request: Request, user_id: UUID) -> Response:
+        user = resolve_visible_user(request.user, user_id)
+        if user.is_cradle_admin:
+            raise ActionNotAllowedException(detail="You do not have permission to impersonate an administrator.")
+
+        admin_jti = current_refresh_jti(request)
+        if admin_jti:
+            UserSession.objects.filter(refresh_token_jti=admin_jti).revoke()
+
+        refresh = TokenObtainSerializer.get_token(user)
+        access = refresh.access_token
+        record_session(request, user, refresh)
+        response = Response(
+            {
+                "role": user.role,
+                "user_id": str(user.id),
+                "access_expires_at": token_expires_at(access),
+                "refresh_expires_at": token_expires_at(refresh),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+        set_token_cookies(response, access, refresh)
+
+        return response
 
 
 @extend_schema_view(
@@ -605,14 +589,6 @@ class UserMeManage(ManageUser):
         description="Generates a new API key for the specified user. Users can only "
         "generate keys for themselves, or admins can generate keys for non-admin users. "
         "Regenerating invalidates any existing key.",
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' to generate key for self",
-            )
-        ],
         request=StepUpSerializer,
         responses={
             201: APIKeyResponseSerializer,
@@ -629,14 +605,6 @@ class UserMeManage(ManageUser):
         operation_id="users_api_key_destroy",
         summary="Revoke API key",
         description="Revokes the API key for the specified user. Users can revoke their own key; admins can revoke non-admin users' keys.",
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' to revoke own key",
-            )
-        ],
         responses={
             204: {"description": "API key revoked successfully"},
             **get_error_responses(
@@ -653,7 +621,7 @@ class APIKey(APIView):
     permission_classes = [IsAuthenticated]
 
     def _get_user_and_check_permission(self, user: CradleUser, user_id: str | UUID) -> CradleUser:
-        target = _resolve_user(user, user_id)
+        target = resolve_visible_user(user, user_id)
 
         if not user.can_manage(target):
             raise ActionNotAllowedException(detail="You do not have permission to manage access keys for this user.")
@@ -669,11 +637,7 @@ class APIKey(APIView):
             is_self=user.pk == target.pk,
         )
 
-        key = secrets.token_hex(24)
-        hashed_key = bcrypt.hashpw(key.encode(), bcrypt.gensalt()).decode()
-        target.api_key = hashed_key
-        target.save(update_fields=["api_key"])
-        return Response({"api_key": key}, status=status.HTTP_201_CREATED)
+        return Response({"api_key": target.generate_api_key()}, status=status.HTTP_201_CREATED)
 
     def delete(self, request: Request, user_id: str | UUID) -> Response:
         user = cast(CradleUser, request.user)
@@ -681,41 +645,6 @@ class APIKey(APIView):
         target.api_key = None
         target.save(update_fields=["api_key"])
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@extend_schema_view(
-    post=extend_schema(
-        operation_id="users_me_api_key_create",
-        summary="Generate API key for current user",
-        description="Generates a new API key for the authenticated user.",
-        request=StepUpSerializer,
-        responses={
-            201: APIKeyResponseSerializer,
-            **get_error_responses(
-                UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.ACTION_NOT_ALLOWED,
-                UserErrorCodes.CURRENT_PASSWORD_INCORRECT,
-                include_validation_error=True,
-            ),
-            **get_common_error_responses(),
-        },
-    ),
-    delete=extend_schema(
-        operation_id="users_me_api_key_destroy",
-        summary="Revoke API key for current user",
-        description="Revokes the API key for the authenticated user.",
-        responses={
-            204: {"description": "API key revoked successfully"},
-            **get_error_responses(
-                UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.ACTION_NOT_ALLOWED,
-            ),
-            **get_common_error_responses(),
-        },
-    ),
-)
-class UserMeAPIKey(APIKey):
-    """Same as APIKey but with distinct operation_ids for /users/me/api-key/."""
 
 
 @extend_schema(
@@ -745,22 +674,23 @@ class EmailConfirm(APIView):
         user = serializer.user
 
         if user.email_confirmation_token_expiry < timezone.now():
-            user.send_email_confirmation()
-            raise EmailConfirmationFailedException(
-                detail="Your confirmation link has expired. A new one was sent to your email."
-            )
+            if user.send_email_confirmation():
+                detail = "Your confirmation link has expired. A new one was sent to your email."
+            else:
+                detail = "Your confirmation link has expired, and a new one could not be sent. Try again later."
+            raise EmailConfirmationFailedException(detail=detail)
 
         user.email_confirmed = True
         user.email_confirmation_token = None
         user.email_confirmation_token_expiry = None
-        user.save()
+        user.save(update_fields=["email_confirmed", "email_confirmation_token", "email_confirmation_token_expiry"])
 
         return Response({"detail": "Email confirmed."}, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
     post=extend_schema(
-        operation_id="auth_reset_password_create",
+        operation_id="auth_password_reset_create",
         summary="Request password reset",
         description="Sends a password reset email to the user using their email address.",
         request=PasswordResetRequestSerializer,
@@ -772,10 +702,33 @@ class EmailConfirm(APIView):
         },
         tags=["auth"],
     ),
-    put=extend_schema(
-        operation_id="auth_reset_password_update",
+)
+class PasswordResetRequest(APIView):
+    """Send a password reset email (same response whether or not the email exists)."""
+
+    permission_classes = ()
+    authentication_classes = ()
+    throttle_classes = [AuthRateThrottle]
+
+    def post(self, request: Request) -> Response:
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"]
+
+        user_qs = CradleUser.objects.active().filter(email=email)
+
+        if user_qs.exists():
+            user_qs[0].send_password_reset()
+
+        return Response({"detail": "Password change email sent to your inbox!"}, status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="auth_password_reset_confirm_create",
         summary="Reset password with token",
-        description="Resets user password using a valid reset token and new password.",
+        description="Resets user password using a valid reset token and new password. All sessions are revoked.",
         request=PasswordResetConfirmSerializer,
         auth=[],
         responses={
@@ -790,26 +743,14 @@ class EmailConfirm(APIView):
         tags=["auth"],
     ),
 )
-class PasswordReset(APIView):
+class PasswordResetConfirm(APIView):
+    """Set a new password with a reset token; revokes every session."""
+
     permission_classes = ()
     authentication_classes = ()
     throttle_classes = [AuthRateThrottle]
 
     def post(self, request: Request) -> Response:
-        serializer = PasswordResetRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        email = serializer.validated_data["email"]
-
-        user_qs = CradleUser.objects.active().filter(email=email)
-
-        if user_qs.exists():
-            user = user_qs[0]
-            user.send_password_reset()
-
-        return Response({"detail": "Password change email sent to your inbox!"}, status=status.HTTP_200_OK)
-
-    def put(self, request: Request) -> Response:
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -825,9 +766,7 @@ class PasswordReset(APIView):
             if user.password_reset_token_expiry < timezone.now():
                 raise InvalidPasswordResetLinkException(detail="The password reset link is invalid or has expired.")
 
-            user.password_reset_token = None
-            user.set_password(password)
-            user.save(update_fields=["password_reset_token", "password"])
+            user.change_password(password)
 
             return Response({"detail": "Password reset successfully."}, status=status.HTTP_200_OK)
 
@@ -837,14 +776,6 @@ class PasswordReset(APIView):
         operation_id="users_default_note_template_retrieve",
         summary="Get default note template",
         description="Returns the user's default note template. Users can only retrieve their own template.",
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' to get own template",
-            )
-        ],
         responses={
             200: DefaultNoteTemplateResponseSerializer,
             **get_error_responses(
@@ -858,14 +789,6 @@ class PasswordReset(APIView):
         operation_id="users_default_note_template_partial_update",
         summary="Update default note template",
         description="Updates a user's default note template. Users can only update their own template.",
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' to update own template",
-            )
-        ],
         request=DefaultNoteTemplateSerializer,
         responses={
             200: DefaultNoteTemplateResponseSerializer,
@@ -884,7 +807,7 @@ class DefaultNoteTemplateView(APIView):
 
     def get(self, request: Request, user_id: str | UUID) -> Response:
         initiator = cast(CradleUser, request.user)
-        user = _resolve_user(initiator, user_id)
+        user = resolve_visible_user(initiator, user_id)
 
         if not initiator.can_manage(user):
             raise ActionNotAllowedException(detail="You do not have permission to view this template.")
@@ -896,7 +819,7 @@ class DefaultNoteTemplateView(APIView):
 
     def patch(self, request: Request, user_id: str | UUID) -> Response:
         editor = cast(CradleUser, request.user)
-        edited = _resolve_user(editor, user_id)
+        edited = resolve_visible_user(editor, user_id)
 
         if not editor.can_manage(edited):
             raise ActionNotAllowedException(detail="You do not have permission to edit this template.")
@@ -953,12 +876,6 @@ class UserMeDefaultNoteTemplateView(DefaultNoteTemplateView):
         description="Returns a list of active sessions for the specified user. Users can view their own sessions; admins can view any user's sessions.",
         parameters=[
             OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' to list sessions for the current user",
-            ),
-            OpenApiParameter(
                 name="search",
                 type=str,
                 location=OpenApiParameter.QUERY,
@@ -994,7 +911,6 @@ class UserMeDefaultNoteTemplateView(DefaultNoteTemplateView):
             200: TotalPagesPagination().get_paginated_response_serializer(UserSessionSerializer),
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.ACTION_NOT_ALLOWED,
                 CoreErrorCodes.INVALID_PAGE_SIZE,
                 CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
             ),
@@ -1010,12 +926,9 @@ class UserSessionsListView(APIView):
     def get(self, request: Request, user_id: str | UUID) -> Response:
         """List all active sessions for a user."""
         initiator = cast(CradleUser, request.user)
-        user = _resolve_user(initiator, user_id)
+        user = resolve_visible_user(initiator, user_id)
 
-        if not initiator.can_view(user):
-            raise ActionNotAllowedException(detail="You do not have permission to view sessions for this user.")
-
-        sessions = UserSession.objects.filter(user=user, expires_at__gt=timezone.now()).order_by("-last_activity")
+        sessions = UserSession.objects.active().filter(user=user).order_by("-last_activity")
 
         search = search_q(request.query_params.get("search"), ("device_info", "ip_address"))
         if search is not None:
@@ -1034,22 +947,9 @@ class UserSessionsListView(APIView):
             if order_fields:
                 sessions = sessions.order_by(*order_fields)
 
-        current_jti = None
-        refresh_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
-        refresh_cookie = request.COOKIES.get(refresh_name)
-        if refresh_cookie:
-            try:
-                rt = RefreshToken(refresh_cookie)
-                current_jti = rt.get("jti")
-            except TokenError, InvalidToken:
-                pass
-        sessions.update(is_current=False)
-        if current_jti:
-            sessions.filter(refresh_token_jti=current_jti).update(is_current=True)
-
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(sessions, request)
-        serializer = UserSessionSerializer(page, many=True)
+        serializer = UserSessionSerializer(page, many=True, context={"current_jti": current_refresh_jti(request)})
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -1058,19 +958,12 @@ class UserSessionsListView(APIView):
         operation_id="users_me_sessions_list",
         summary="List current user's sessions",
         description="Returns a list of active sessions for the authenticated user.",
-        parameters=[
-            OpenApiParameter(name="search", type=str, location=OpenApiParameter.QUERY, required=False),
-            OpenApiParameter(name="order_by", type=str, location=OpenApiParameter.QUERY, required=False),
-            OpenApiParameter(name="page", type=int, location=OpenApiParameter.QUERY, required=False),
-            OpenApiParameter(name="page_size", type=int, location=OpenApiParameter.QUERY, required=False),
-        ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(
                 UserSessionSerializer, name="UserMeSessionsPaginatedResponse"
             ),
             **get_error_responses(
                 UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.ACTION_NOT_ALLOWED,
                 CoreErrorCodes.INVALID_PAGE_SIZE,
                 CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
             ),
@@ -1087,20 +980,6 @@ class UserMeSessionsListView(UserSessionsListView):
         operation_id="users_sessions_destroy",
         summary="Revoke user session",
         description="Revokes a specific session by ID. Users can revoke their own sessions; admins can revoke non-admin users' sessions.",
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' to revoke session for the current user",
-            ),
-            OpenApiParameter(
-                name="session_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the session to revoke",
-            ),
-        ],
         responses={
             204: {"description": "Session revoked successfully"},
             **get_error_responses(
@@ -1119,22 +998,14 @@ class UserSessionRevokeView(APIView):
     def delete(self, request: Request, user_id: str | UUID, session_id: UUID) -> Response:
         """Revoke a specific session."""
         initiator = cast(CradleUser, request.user)
-        user = _resolve_user(initiator, user_id)
+        user = resolve_visible_user(initiator, user_id)
 
         if not initiator.can_manage(user):
             raise ActionNotAllowedException(detail="You do not have permission to revoke sessions for this user.")
 
-        try:
-            session = UserSession.objects.get(id=session_id, user=user)
-            refresh_token_jti = session.refresh_token_jti
-            expires_at = session.expires_at
-
-            BlacklistedToken.blacklist_token(refresh_token_jti, expires_at)
-
-            session.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except UserSession.DoesNotExist:
+        if not UserSession.objects.filter(id=session_id, user=user).revoke():
             raise SessionNotFoundException(detail="That session could not be found.")
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(
@@ -1142,14 +1013,6 @@ class UserSessionRevokeView(APIView):
         operation_id="users_me_sessions_destroy",
         summary="Revoke current user's session",
         description="Revokes a specific session for the authenticated user.",
-        parameters=[
-            OpenApiParameter(
-                name="session_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the session to revoke",
-            ),
-        ],
         responses={
             204: {"description": "Session revoked successfully"},
             **get_error_responses(

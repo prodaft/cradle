@@ -14,7 +14,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
-BASE_URL = ""
 STATIC_URL = "static/"
 FRONTEND_URL = DEFAULT_FRONTEND_URL  # noqa: F405
 
@@ -29,13 +28,6 @@ DATABASES = {
         "HOST": "postgres",
         "PORT": "5432",
     }
-}
-
-MINIO_CONFIG = {
-    "endpoint": "minio:9000",
-    "access_key": "admin",
-    "secret_key": "cradle_minio",
-    "secure": False,
 }
 
 STORAGES = {

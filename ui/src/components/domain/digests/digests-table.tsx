@@ -207,7 +207,7 @@ export default function DigestsTable({
                 enableSorting: false,
             },
             {
-                accessorKey: 'user',
+                accessorKey: 'created_by',
                 id: 'user',
                 meta: { label: 'User' },
                 header: ({ column }) => (
@@ -218,9 +218,9 @@ export default function DigestsTable({
                     return (
                         <div
                             className='truncate w-32'
-                            title={item.user_detail?.username}
+                            title={item.created_by?.username}
                         >
-                            {truncateText(item.user_detail?.username || '', 16)}
+                            {truncateText(item.created_by?.username || '', 16)}
                         </div>
                     );
                 },
@@ -355,7 +355,7 @@ export default function DigestsTable({
             const results = await Promise.allSettled(
                 digestIds.map(async (id) => {
                     const { error, response } = await fetchClient.DELETE(
-                        '/intelio/digest/{digest_id}/',
+                        '/intelio/digests/{digest_id}/',
                         { params: { path: { digest_id: id } } },
                     );
                     if (error) throw { response, error };

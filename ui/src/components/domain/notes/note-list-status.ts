@@ -1,14 +1,6 @@
-/** Allowed `status` query values for GET `/notes/` (repeat param = OR). */
-export const QUERY_SLUGS = [
-    'fleeting',
-    'finalized',
-    'healthy',
-    'processing',
-    'warning',
-    'invalid',
-] as const;
+import { noteListStatusEnumValues } from '@services/openapi/schema';
 
-export type StatusSlug = (typeof QUERY_SLUGS)[number];
+export type StatusSlug = (typeof noteListStatusEnumValues)[number];
 
 /** Dedupe after values are already validated as status slugs (e.g. post-zod). */
 export function dedupeSlugs(slugs: readonly StatusSlug[]): StatusSlug[] {

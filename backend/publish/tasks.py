@@ -1,4 +1,7 @@
-"""Celery tasks for asynchronous report generation and editing."""
+"""Celery tasks for asynchronous report generation.
+
+Reports are written with ``save_fields()``, never ``save()``: a report deleted while it is generated must stay deleted.
+"""
 
 import logging
 
@@ -10,7 +13,6 @@ from notifications.models import (
 )
 
 from .models import PublishedReport, ReportStatus
-from .strategies import PUBLISH_STRATEGIES
 
 logger = logging.getLogger(__name__)
 
@@ -24,12 +26,24 @@ def _get_report(report_id):
         return None
 
 
-def _get_publisher(report):
-    """Return publisher for report. Raises ValueError if strategy not found."""
-    factory = PUBLISH_STRATEGIES.get((report.strategy or "").lower())
-    if factory is None:
-        raise ValueError("Strategy not found.")
-    return factory(report.anonymized)
+def _notify_error(report, action):
+    """Tell the owner that ``action`` failed, unless the report was deleted meanwhile."""
+    if report.user and PublishedReport.objects.filter(pk=report.pk).exists():
+        ReportProcessingErrorNotification.objects.create(
+            user=report.user,
+            message=f"There was an error {action} your report: {report.title}",
+            published_report=report,
+            error_message=report.error_message,
+        )
+
+
+def _notify_ready(report):
+    if report.user:
+        ReportRenderNotification.objects.create(
+            user=report.user,
+            message=f'Your report "{report.title}" is now ready.',
+            published_report=report,
+        )
 
 
 @shared_task
@@ -39,96 +53,19 @@ def generate_report(report_id):
     if report is None:
         return
 
-    user = report.user
-
     try:
-        publisher = _get_publisher(report)
-        result = publisher.create_report(report)
-
-        if not result:
-            if user:
-                ReportProcessingErrorNotification.objects.create(
-                    user=user,
-                    message=f"There was an error generating your report: {report.title}",
-                    published_report=report,
-                    error_message=report.error_message,
-                )
+        publisher = report.publisher
+        if publisher is None:
+            raise ValueError("Strategy not found.")
+        if not publisher.create_report(report):
+            _notify_error(report, "generating")
             return
 
         report.status = ReportStatus.DONE
-        report.save()
-
-        if user:
-            ReportRenderNotification.objects.create(
-                user=user,
-                message=f'Your report "{report.title}" is now ready.',
-                published_report=report,
-            )
+        if report.save_fields("status"):
+            _notify_ready(report)
     except Exception:
         logger.exception("Report generation failed for report %s.", report_id)
-        report.status = ReportStatus.ERROR
-        report.error_message = (
-            "An unknown error occurred while generating the report. Please contact your administrator."
-        )
-        report.save()
-
-        if user:
-            ReportProcessingErrorNotification.objects.create(
-                user=user,
-                message=f"There was an error generating your report: {report.title}",
-                published_report=report,
-                error_message=report.error_message,
-            )
-        raise
-
-
-@shared_task
-def edit_report(report_id):
-    """Edit a published report asynchronously and notify the user when done. Not yet wired to any view."""
-    report = _get_report(report_id)
-    if report is None:
-        return
-
-    user = report.user
-    notes = list(report.notes.all())
-    title = report.title
-
-    try:
-        publisher = _get_publisher(report)
-        result = publisher.edit_report(report)
-
-        if not result:
-            if user:
-                ReportProcessingErrorNotification.objects.create(
-                    user=user,
-                    message=f"There was an error editing your report: {report.title}",
-                    published_report=report,
-                    error_message=report.error_message,
-                )
-            return
-
-        report.title = title
-        report.notes.set(notes)
-        report.status = ReportStatus.DONE
-        report.save()
-
-        if user:
-            ReportRenderNotification.objects.create(
-                user=user,
-                message=f'Your report "{report.title}" is now ready.',
-                published_report=report,
-            )
-    except Exception:
-        logger.exception("Report edit failed for report %s.", report_id)
-        report.status = ReportStatus.ERROR
-        report.error_message = "Something went wrong while updating the report. Please try again or contact support."
-        report.save()
-
-        if user:
-            ReportProcessingErrorNotification.objects.create(
-                user=user,
-                message=f"There was an error editing your report: {report.title}",
-                published_report=report,
-                error_message=report.error_message,
-            )
+        report.mark_error("An unknown error occurred while generating the report. Please contact your administrator.")
+        _notify_error(report, "generating")
         raise

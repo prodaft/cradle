@@ -8,11 +8,12 @@ import {
     type SearchSchema,
     type SearchState,
 } from '@/lib/search-query/search-schema';
+import { noteListStatusEnumValues } from '@services/openapi/schema';
 import * as z from 'zod';
 
-import { QUERY_SLUGS, dedupeSlugs, type StatusSlug } from './note-list-status';
+import { dedupeSlugs, type StatusSlug } from './note-list-status';
 
-const slug = z.enum(QUERY_SLUGS);
+const slug = z.enum(noteListStatusEnumValues);
 
 /**
  * TanStack Router `validateSearch` for notes list routes (file-based `/notes` and dock panel).
@@ -54,14 +55,19 @@ export const dashboardValidateSearchSchema = validateSearchSchema
     })
     .loose();
 
-const STATUS_VALUES: readonly { value: StatusSlug; label: string }[] = [
-    { value: 'fleeting', label: 'Fleeting (your drafts)' },
-    { value: 'finalized', label: 'Finalized (any status)' },
-    { value: 'healthy', label: 'Healthy' },
-    { value: 'warning', label: 'Warning' },
-    { value: 'invalid', label: 'Invalid' },
-    { value: 'processing', label: 'Processing' },
-];
+const STATUS_LABELS = {
+    fleeting: 'Fleeting (your drafts)',
+    published: 'Published (any status)',
+    healthy: 'Healthy',
+    warning: 'Warning',
+    invalid: 'Invalid',
+    processing: 'Processing',
+} satisfies Record<StatusSlug, string>;
+
+const STATUS_VALUES = (Object.keys(STATUS_LABELS) as StatusSlug[]).map((value) => ({
+    value,
+    label: STATUS_LABELS[value],
+}));
 
 const DEFAULT_ORDER_BY = '-created_at';
 

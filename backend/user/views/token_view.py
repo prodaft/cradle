@@ -1,7 +1,6 @@
 """Token obtain, refresh, and logout views with session tracking and cookie support."""
 
 import logging
-from datetime import datetime, timezone
 
 from django.conf import settings
 from django.db import DatabaseError, IntegrityError
@@ -33,65 +32,15 @@ from ..exceptions import (
 )
 from ..models import BlacklistedToken, UserSession
 from ..serializers import TokenObtainSerializer, TokenPairRetrieveSerializer
+from ..utils.tokens import (
+    clear_token_cookies,
+    current_refresh_jti,
+    record_session,
+    set_token_cookies,
+    token_expires_at,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def _cookie_kwargs():
-    """Return cookie options (httponly, secure, samesite, domain, path) from settings."""
-    return dict(
-        httponly=True,
-        secure=getattr(settings, "JWT_COOKIE_SECURE", True),
-        samesite=getattr(settings, "JWT_COOKIE_SAMESITE", "Lax"),
-        domain=getattr(settings, "JWT_COOKIE_DOMAIN", None),
-        path=getattr(settings, "JWT_COOKIE_PATH", "/"),
-    )
-
-
-def set_token_cookies(response, access, refresh, access_max_age, refresh_max_age):
-    """Set HttpOnly JWT cookies on the response."""
-    access_name = getattr(settings, "JWT_ACCESS_COOKIE_NAME", "access_token")
-    refresh_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
-    kwargs = _cookie_kwargs()
-    response.set_cookie(access_name, access, max_age=access_max_age, **kwargs)
-    response.set_cookie(refresh_name, refresh, max_age=refresh_max_age, **kwargs)
-    return response
-
-
-def get_client_ip(request: Request) -> str:
-    """Extract client IP address from request."""
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(",")[0]
-    else:
-        ip = request.META.get("REMOTE_ADDR", "")
-    return ip
-
-
-def get_device_info(request: Request) -> str:
-    """Extract device/browser information from request."""
-    user_agent = request.META.get("HTTP_USER_AGENT", "Unknown")
-    return user_agent[:255]
-
-
-def create_or_update_session(request: Request, user, refresh_token: RefreshToken, expires_at: datetime):
-    """Create or update a session record for a user."""
-    jti = refresh_token.get("jti")
-    if not jti:
-        return
-
-    device_info = get_device_info(request)
-    ip_address = get_client_ip(request)
-
-    UserSession.objects.update_or_create(
-        refresh_token_jti=jti,
-        defaults={
-            "user": user,
-            "device_info": device_info,
-            "ip_address": ip_address,
-            "expires_at": expires_at,
-        },
-    )
 
 
 @extend_schema_view(
@@ -147,10 +96,10 @@ class TokenObtainPairLogView(TokenObtainPairView):
                 raise InvalidTwoFactorCodeException(detail="The two-factor authentication code is invalid.")
 
         access_token = AccessToken(serializer.validated_data["access"])
-        access_expires_at = datetime.fromtimestamp(access_token["exp"], tz=timezone.utc)
+        access_expires_at = token_expires_at(access_token)
 
         refresh_token = RefreshToken(serializer.validated_data["refresh"])
-        refresh_expires_at = datetime.fromtimestamp(refresh_token["exp"], tz=timezone.utc)
+        refresh_expires_at = token_expires_at(refresh_token)
 
         response_data = {
             "role": user.role,
@@ -159,19 +108,11 @@ class TokenObtainPairLogView(TokenObtainPairView):
             "refresh_expires_at": refresh_expires_at,
         }
 
-        create_or_update_session(request, user, refresh_token, refresh_expires_at)
+        record_session(request, user, refresh_token)
 
         response = Response(response_data, status=status.HTTP_200_OK)
 
-        access_max_age = int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
-        refresh_max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
-        set_token_cookies(
-            response,
-            serializer.validated_data["access"],
-            serializer.validated_data["refresh"],
-            access_max_age,
-            refresh_max_age,
-        )
+        set_token_cookies(response, serializer.validated_data["access"], serializer.validated_data["refresh"])
         get_token(request)
 
         return response
@@ -199,7 +140,7 @@ class TokenRefreshLogView(TokenRefreshView):
     throttle_classes = [AuthRateThrottle]
 
     def post(self, request: Request, *args, **kwargs) -> Response:
-        refresh_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
+        refresh_name = settings.JWT_REFRESH_COOKIE_NAME
         refresh_token_str = request.COOKIES.get(refresh_name)
         if not refresh_token_str:
             raise UnauthenticatedException(detail="Your session could not be renewed. Please sign in again.")
@@ -210,6 +151,9 @@ class TokenRefreshLogView(TokenRefreshView):
             old_refresh_token = RefreshToken(refresh_token_str)
             jti = old_refresh_token.get("jti")
             if jti and BlacklistedToken.is_blacklisted(jti):
+                raise SessionRenewalFailedException(detail="This session has ended. Please sign in again.")
+            sid = old_refresh_token.get("sid")
+            if not sid or not UserSession.objects.filter(id=sid).exists():
                 raise SessionRenewalFailedException(detail="This session has ended. Please sign in again.")
         except TokenError, InvalidToken:
             raise SessionRenewalFailedException(detail="Your session could not be renewed. Please sign in again.")
@@ -224,43 +168,30 @@ class TokenRefreshLogView(TokenRefreshView):
         if response.status_code == 200:
             old_refresh_token = RefreshToken(refresh_token_str)
             role = old_refresh_token.get("role", "")
-            old_jti = old_refresh_token.get("jti")
-            rotated = "refresh" in response.data
+            old_expires_at = token_expires_at(old_refresh_token)
+            if not BlacklistedToken.blacklist_token(old_refresh_token["jti"], old_expires_at):
+                raise SessionRenewalFailedException(detail="This session has ended. Please sign in again.")
 
-            if rotated and old_jti:
-                old_expires_at = datetime.fromtimestamp(old_refresh_token["exp"], tz=timezone.utc)
-                if not BlacklistedToken.blacklist_token(old_jti, old_expires_at):
-                    raise SessionRenewalFailedException(detail="This session has ended. Please sign in again.")
-
-            access_token = AccessToken(response.data["access"])
-            access_expires_at = datetime.fromtimestamp(access_token["exp"], tz=timezone.utc)
-
-            new_refresh_token_str = response.data.get("refresh", refresh_token_str)
+            access_token_str = response.data.pop("access")
+            new_refresh_token_str = response.data.pop("refresh")
             new_refresh_token = RefreshToken(new_refresh_token_str)
-            refresh_expires_at = datetime.fromtimestamp(new_refresh_token["exp"], tz=timezone.utc)
+
+            access_token = AccessToken(access_token_str)
+            access_expires_at = token_expires_at(access_token)
+            refresh_expires_at = token_expires_at(new_refresh_token)
 
             response.data["role"] = role
             response.data["access_expires_at"] = access_expires_at
             response.data["refresh_expires_at"] = refresh_expires_at
 
-            access_max_age = int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
-            refresh_max_age = int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
-            set_token_cookies(
-                response,
-                response.data.pop("access"),
-                new_refresh_token_str,
-                access_max_age,
-                refresh_max_age,
-            )
-            response.data.pop("refresh", None)
+            set_token_cookies(response, access_token_str, new_refresh_token_str)
 
             try:
                 jwt_auth = JWTAuthentication()
                 user = jwt_auth.get_user(old_refresh_token)
 
-                if rotated and old_jti:
-                    UserSession.objects.filter(refresh_token_jti=old_jti).delete()
-                create_or_update_session(request, user, new_refresh_token, refresh_expires_at)
+                # Updates the session row in place (same sid), so its sockets stay open.
+                record_session(request, user, new_refresh_token)
             except (
                 TokenError,
                 InvalidToken,
@@ -293,32 +224,7 @@ class LogoutView(APIView):
     throttle_classes = [AuthRateThrottle]
 
     def post(self, request: Request) -> Response:
-        refresh_cookie_name = getattr(settings, "JWT_REFRESH_COOKIE_NAME", "refresh_token")
-        refresh_token_str = request.COOKIES.get(refresh_cookie_name)
-        if refresh_token_str:
-            try:
-                token = RefreshToken(refresh_token_str)
-                jti = token.get("jti")
-                exp = datetime.fromtimestamp(token["exp"], tz=timezone.utc)
-                if jti:
-                    BlacklistedToken.blacklist_token(jti, exp)
-                    UserSession.objects.filter(refresh_token_jti=jti).delete()
-            except Exception:
-                pass
-
-        access_name = getattr(settings, "JWT_ACCESS_COOKIE_NAME", "access_token")
-        response = Response(status=status.HTTP_204_NO_CONTENT)
-        kwargs = _cookie_kwargs()
-        response.delete_cookie(
-            access_name,
-            path=kwargs["path"],
-            domain=kwargs.get("domain"),
-            samesite=kwargs["samesite"],
-        )
-        response.delete_cookie(
-            refresh_cookie_name,
-            path=kwargs["path"],
-            domain=kwargs.get("domain"),
-            samesite=kwargs["samesite"],
-        )
-        return response
+        jti = current_refresh_jti(request)
+        if jti:
+            UserSession.objects.filter(refresh_token_jti=jti).revoke()
+        return clear_token_cookies(Response(status=status.HTTP_204_NO_CONTENT))

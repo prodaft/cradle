@@ -1,5 +1,5 @@
+import { SettingsSaveButton } from '@/components/base/settings-header-actions/settings-header-actions';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
-import { Button } from '@/components/ui/button';
 import {
     Field,
     FieldContent,
@@ -19,21 +19,15 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { SelectOption } from '@/types/models';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-    ArrowCounterClockwiseIcon,
-    ClockCounterClockwiseIcon,
-    FloppyDiskIcon,
-} from '@phosphor-icons/react';
+import {} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { fetchNdjson } from '@services/openapi/ndjson-stream';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import isEqual from 'lodash/isEqual';
 import startCase from 'lodash/startCase';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -132,7 +126,7 @@ export default function EnrichmentSettingsForm({
     const saveSettings = useMutation({
         mutationFn: async (formatted_data: any) => {
             const { error, response } = await fetchClient.PATCH(
-                '/intelio/enrichment/{enricher_type}/',
+                '/intelio/enrichers/{enricher_type}/',
                 {
                     params: { path: { enricher_type: enrichment_class } },
                     body: formatted_data,
@@ -165,10 +159,6 @@ export default function EnrichmentSettingsForm({
         formState: { isSubmitting, isDirty },
     } = form;
 
-    const loadedValuesRef = useRef<z.infer<
-        ReturnType<typeof createEnrichmentSchema>
-    > | null>(null);
-
     const fetchEntryClasses = async (q: string): Promise<EclassOption[]> => {
         try {
             return await fetchClasses.mutateAsync(q);
@@ -181,7 +171,7 @@ export default function EnrichmentSettingsForm({
         queryKey: ['enrichment', 'settings', enrichment_class],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrichment/{enricher_type}/',
+                '/intelio/enrichers/{enricher_type}/',
                 {
                     params: { path: { enricher_type: enrichment_class } },
                 },
@@ -211,7 +201,7 @@ export default function EnrichmentSettingsForm({
                 }
             });
 
-            const eclassesDetail = sd.for_eclasses_detail ?? sd.forEclassesDetail ?? [];
+            const eclassesDetail = sd.for_eclasses ?? [];
             const formattedEclasses = eclassesDetail.map((eclass: any) => ({
                 value: eclass.subtype,
                 label: eclass.subtype,
@@ -223,7 +213,6 @@ export default function EnrichmentSettingsForm({
                 settings: initialSettings,
                 id: sd.id,
             };
-            loadedValuesRef.current = values;
             reset(values);
         }
     }, [enrichmentSettings, reset]);
@@ -244,7 +233,7 @@ export default function EnrichmentSettingsForm({
         const { for_eclasses, ...rest } = values;
         const formatted_data = {
             ...rest,
-            for_eclasses: for_eclasses?.map((item) => item.value),
+            for_eclass_subtypes: for_eclasses?.map((item) => item.value),
         };
         await saveSettings.mutateAsync(formatted_data);
     };
@@ -483,31 +472,6 @@ export default function EnrichmentSettingsForm({
         );
     }
 
-    const revert = () => {
-        if (loadedValuesRef.current) reset(loadedValuesRef.current);
-    };
-
-    const getDefaultSettings = () => {
-        const initialSettings: Record<string, string | number | boolean> = {};
-        (Object.entries(formFields) as [string, FormField][]).forEach(
-            ([key, field]) => {
-                if (field.type === 'boolean') {
-                    initialSettings[key] = false;
-                } else {
-                    initialSettings[key] = field.type === 'number' ? 0 : '';
-                }
-            },
-        );
-        return {
-            for_eclasses: [],
-            enabled: false,
-            settings: initialSettings,
-        };
-    };
-    const resetToDefaults = () =>
-        reset(getDefaultSettings(), { keepDefaultValues: true });
-    const isAtDefault = isEqual(form.watch(), getDefaultSettings());
-
     return (
         <div className='w-full h-full'>
             {/* Header Section */}
@@ -534,48 +498,11 @@ export default function EnrichmentSettingsForm({
             <div className='px-4 pb-4'>
                 {headerContainer &&
                     createPortal(
-                        <div className='flex items-center gap-2'>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='icon'
-                                disabled={!isDirty}
-                                onClick={revert}
-                                title='Revert'
-                            >
-                                <ArrowCounterClockwiseIcon
-                                    className='size-4'
-                                    weight='bold'
-                                />
-                            </Button>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='icon'
-                                disabled={isAtDefault}
-                                onClick={resetToDefaults}
-                                title='Default'
-                            >
-                                <ClockCounterClockwiseIcon
-                                    className='size-4'
-                                    weight='bold'
-                                />
-                            </Button>
-                            <Button
-                                type='submit'
-                                form={formId}
-                                variant='default'
-                                size='icon'
-                                disabled={isSubmitting || !isDirty}
-                                title='Save Changes'
-                            >
-                                {isSubmitting ? (
-                                    <Spinner className='size-4' />
-                                ) : (
-                                    <FloppyDiskIcon className='size-4' weight='bold' />
-                                )}
-                            </Button>
-                        </div>,
+                        <SettingsSaveButton
+                            isDirty={isDirty}
+                            saving={isSubmitting}
+                            form={formId}
+                        />,
                         headerContainer,
                     )}
                 <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>

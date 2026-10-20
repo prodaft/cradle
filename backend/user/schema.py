@@ -14,7 +14,7 @@ class CookieJWTAuthenticationScheme(OpenApiAuthenticationExtension):
         return {"CookieJWT": []}
 
     def get_security_definition(self, auto_schema):
-        cookie_name = getattr(settings, "JWT_ACCESS_COOKIE_NAME", "access_token")
+        cookie_name = settings.JWT_ACCESS_COOKIE_NAME
         return {
             "type": "apiKey",
             "in": "cookie",
@@ -40,5 +40,5 @@ class APIKeyAuthenticationScheme(OpenApiAuthenticationExtension):
             "type": "apiKey",
             "in": "header",
             "name": "Api-Key",
-            "description": "API key in header. Obtain via POST /users/me/api-key/ when authenticated.",
+            "description": "API key in header. Obtain via POST /users/{user_id}/api-key/ when authenticated.",
         }

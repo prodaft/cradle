@@ -45,11 +45,10 @@ class ValidateNoteTask(BaseTask):
         links = note.reference_tree.all_links(ignore_connectors=True)
         unique_subtypes = {r.key for r in links}
 
-        # Check if the note tries to link to an internal subtype (e.g. alias)
-        if unique_subtypes & INTERNAL_SUBTYPES:
-            raise NoteReferenceNotAllowedException()
+        if blocked := sorted(unique_subtypes & INTERNAL_SUBTYPES):
+            listed = ", ".join(f"[[{subtype}:...]]" for subtype in blocked)
+            raise NoteReferenceNotAllowedException(detail=f"Notes cannot link to these entry types: {listed}.")
 
-        # Prefetch all relevant EntryClass objects in one query
         eclasses = EntryClass.objects.filter(subtype__in=unique_subtypes)
         eclass_cache = {e.subtype: e for e in eclasses}
 

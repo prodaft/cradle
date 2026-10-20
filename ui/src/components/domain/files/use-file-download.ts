@@ -6,10 +6,10 @@ export function useFileDownload() {
     return useMutation({
         mutationFn: async (id: string) => {
             const { data, error, response } = await fetchClient.GET(
-                '/file-transfer/download/',
+                '/files/{file_id}/download/',
                 {
                     params: {
-                        query: {
+                        path: {
                             file_id: id,
                         },
                     },

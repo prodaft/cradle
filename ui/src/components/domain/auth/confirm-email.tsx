@@ -84,7 +84,7 @@ export default function ConfirmEmail() {
 
         setStatus('loading');
         fetchClient
-            .POST('/auth/email-confirm/', { body: { token } })
+            .POST('/auth/email/confirm/', { body: { token } })
             .then(({ data, error: err, response }) => {
                 if (err) throw { response, error: err };
                 tokensInFlight.delete(token);

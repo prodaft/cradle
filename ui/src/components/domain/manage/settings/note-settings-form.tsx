@@ -1,4 +1,7 @@
-import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
+import {
+    SettingsHeaderActionsPortal,
+    SettingsSaveButton,
+} from '@/components/base/settings-header-actions/settings-header-actions';
 import SnippetList, {
     SnippetListRef,
 } from '@/components/base/snippet-list/snippet-list';
@@ -18,16 +21,9 @@ import { Switch } from '@/components/ui/switch';
 import { queryKeys } from '@/hooks/query';
 import { getSuccessMessage } from '@/utils/api';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-    ArrowClockwiseIcon,
-    ArrowCounterClockwiseIcon,
-    ClockCounterClockwiseIcon,
-    FloppyDiskIcon,
-    PlusIcon,
-} from '@phosphor-icons/react';
+import { ArrowClockwiseIcon, PlusIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import isEqual from 'lodash/isEqual';
 import { useEffect, useId, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -75,12 +71,9 @@ export default function NoteSettingsForm() {
     const formId = useId();
     const snippetListRef = useRef<SnippetListRef>(null);
 
-    const loadedValuesRef = useRef<NoteSettingsFormData | null>(null);
-
     const {
         handleSubmit,
         reset,
-        watch,
         control,
         formState: { isDirty },
     } = useForm<NoteSettingsFormData>({
@@ -150,7 +143,6 @@ export default function NoteSettingsForm() {
     useEffect(() => {
         const values = getNoteSettingsFromApi(settings);
         if (!values) return;
-        loadedValuesRef.current = values;
         reset(values);
     }, [settings, reset]);
 
@@ -164,52 +156,14 @@ export default function NoteSettingsForm() {
         );
     }
 
-    const revert = () => {
-        if (loadedValuesRef.current) reset(loadedValuesRef.current);
-    };
-    const resetToDefaults = () =>
-        reset(NOTE_SETTINGS_DEFAULTS, { keepDefaultValues: true });
-    const isAtDefault = isEqual(watch(), NOTE_SETTINGS_DEFAULTS);
-
     return (
         <>
             <SettingsHeaderActionsPortal>
-                <div className='flex items-center gap-2'>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={!isDirty}
-                        onClick={revert}
-                        title='Revert'
-                    >
-                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={isAtDefault}
-                        onClick={resetToDefaults}
-                        title='Default'
-                    >
-                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='submit'
-                        form={formId}
-                        variant='default'
-                        size='icon'
-                        disabled={saveSettings.isPending || !isDirty}
-                        title='Save Settings'
-                    >
-                        {saveSettings.isPending ? (
-                            <Spinner className='size-4' />
-                        ) : (
-                            <FloppyDiskIcon className='size-4' weight='bold' />
-                        )}
-                    </Button>
-                </div>
+                <SettingsSaveButton
+                    isDirty={isDirty}
+                    saving={saveSettings.isPending}
+                    form={formId}
+                />
             </SettingsHeaderActionsPortal>
             <form id={formId} onSubmit={handleSubmit(onSubmit)}>
                 <div className='flex flex-col gap-6'>

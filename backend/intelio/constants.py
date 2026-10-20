@@ -1,4 +1,10 @@
-"""IntelIO constants: user-visible enrichment messages (never raw exception text)."""
+"""IntelIO constants: user-visible enrichment messages (never raw exception text) and limits."""
+
+from datetime import timedelta
+
+# An unfinished enrichment may be restarted once it has run this long: each enricher is capped at ENRICHER_TIMEOUT
+# (plus a kill grace period) and they run in parallel, so anything older is stuck, e.g. after a worker crash.
+INTELIO_ENRICHMENT_RESTART_AFTER = timedelta(minutes=15)
 
 INTELIO_ENRICHMENT_MESSAGE_INIT_FAILED = "Could not connect to this service. Check configuration and credentials."
 INTELIO_ENRICHMENT_MESSAGE_REQUEST_FAILED = "The external request could not be completed. Try again later."

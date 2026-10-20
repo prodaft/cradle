@@ -15,6 +15,7 @@ from .models import (
     NewUserNotification,
     ReportProcessingErrorNotification,
     ReportRenderNotification,
+    TeamMembershipNotification,
 )
 
 
@@ -39,7 +40,7 @@ class MessageNotificationSerializer(serializers.ModelSerializer):
         return self.type_value
 
     def get_is_unread(self, obj: MessageNotification) -> bool:
-        return obj.is_unread or obj.is_marked_unread
+        return obj.shows_as_unread
 
 
 class AccessGrantedNotificationSerializer(MessageNotificationSerializer):
@@ -76,6 +77,17 @@ class AccessRequestNotificationSerializer(MessageNotificationSerializer):
     class Meta:
         model = AccessRequestNotification
         fields = ["id", "message", "is_unread", "entity_id", "requesting_user_id", "created_at", "type"]
+
+
+class TeamMembershipNotificationSerializer(MessageNotificationSerializer):
+    """Serializer for team membership notifications."""
+
+    type_value = "team_membership_notification"
+    team_id = serializers.UUIDField(help_text="ID of the team the user was added to.")
+
+    class Meta:
+        model = TeamMembershipNotification
+        fields = ["id", "message", "is_unread", "created_at", "team_id", "type"]
 
 
 class ReportRenderNotificationSerializer(MessageNotificationSerializer):
@@ -126,12 +138,12 @@ class EnrichmentErrorNotificationSerializer(MessageNotificationSerializer):
         fields = ["id", "message", "is_unread", "created_at", "enrichment_request_id", "error_message", "type"]
 
 
-# Maps notification model classes to their serializers for polymorphic dispatch.
 NOTIFICATION_SERIALIZER_MAP: dict[type, type[serializers.ModelSerializer]] = {
     MessageNotification: MessageNotificationSerializer,
     AccessGrantedNotification: AccessGrantedNotificationSerializer,
     NewUserNotification: NewUserNotificationSerializer,
     AccessRequestNotification: AccessRequestNotificationSerializer,
+    TeamMembershipNotification: TeamMembershipNotificationSerializer,
     ReportRenderNotification: ReportRenderNotificationSerializer,
     ReportProcessingErrorNotification: ReportProcessingErrorNotificationSerializer,
     EnrichmentCompleteNotification: EnrichmentCompleteNotificationSerializer,

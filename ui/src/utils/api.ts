@@ -5,8 +5,6 @@
  * All functions are explicit and require manual invocation.
  */
 
-import { toast } from 'sonner';
-
 /**
  * Parsed API error structure
  */
@@ -38,14 +36,6 @@ interface APIErrorResponse {
     errors?: Record<string, unknown>;
 }
 
-/**
- * Parse RFC 9457 error response into structured format
- *
- * @param error - Error object: { response, error? } from openapi-fetch throw,
- *   parsed body from openapi-react-query ($api.useMutation throws it directly),
- *   or axios-style { response } (body may be consumed)
- * @returns Parsed error object
- */
 function isRfc9457Error(obj: unknown): obj is APIErrorResponse {
     if (!obj || typeof obj !== 'object') return false;
     const o = obj as Record<string, unknown>;
@@ -56,6 +46,13 @@ function isRfc9457Error(obj: unknown): obj is APIErrorResponse {
     );
 }
 
+/**
+ * Parse RFC 9457 error response into structured format
+ *
+ * @param error - Error object: { response, error? } from openapi-fetch throw,
+ *   or the parsed body from openapi-react-query ($api.useMutation throws it directly)
+ * @returns Parsed error object
+ */
 export async function parseAPIError(error: any): Promise<ParsedAPIError> {
     // openapi-react-query throws the parsed body directly (no .response)
     if (isRfc9457Error(error)) {
@@ -127,7 +124,7 @@ export async function parseAPIError(error: any): Promise<ParsedAPIError> {
         status: data.status ?? error.response?.status ?? 500,
         title: data.title || 'Error',
         type: data.type,
-        instance: data.instance || error.config?.url || 'unknown',
+        instance: data.instance || 'unknown',
         timestamp: data.timestamp || new Date().toISOString(),
         isValidationError: data.code === 'VALIDATION_ERROR',
         fieldErrors: flattenFieldErrors(data.errors),
@@ -181,35 +178,4 @@ export function getDisplayMessage(parsed: ParsedAPIError): string {
 export function getSuccessMessage(data: any): string | undefined {
     if (!data || typeof data !== 'object') return undefined;
     return data.detail;
-}
-
-/**
- * Options for handling API errors
- */
-interface HandleAPIErrorOptions {
-    message?: string;
-    duration?: number;
-    notifyValidation?: boolean;
-}
-
-/**
- * Show error notification via toast.
- *
- * @param parsed - Parsed error object
- * @param options - Options (message, duration, notifyValidation)
- * @returns Parsed error object
- */
-function _handleAPIError(
-    parsed: ParsedAPIError,
-    options: HandleAPIErrorOptions = {},
-): ParsedAPIError {
-    if (parsed.isValidationError && !options.notifyValidation) {
-        return parsed;
-    }
-
-    toast.error(options.message || getDisplayMessage(parsed), {
-        duration: options.duration || 5000,
-    });
-
-    return parsed;
 }

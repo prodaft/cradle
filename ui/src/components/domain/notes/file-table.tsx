@@ -52,10 +52,10 @@ export default function FileTable({
     const { mutateAsync: fetchDownloadUrl } = useMutation({
         mutationFn: async (id: string) => {
             const { data, error, response } = await fetchClient.GET(
-                '/file-transfer/download/',
+                '/files/{file_id}/download/',
                 {
                     params: {
-                        query: {
+                        path: {
                             file_id: id,
                         },
                     },
@@ -75,10 +75,9 @@ export default function FileTable({
 
     const { mutate: deleteFile } = useMutation({
         mutationFn: async (id: string) => {
-            const { error, response } = await fetchClient.DELETE(
-                '/file-transfer/delete/',
-                { params: { query: { file_id: id } } },
-            );
+            const { error, response } = await fetchClient.DELETE('/files/{file_id}/', {
+                params: { path: { file_id: id } },
+            });
             if (error) throw { response, error };
         },
         meta: {
@@ -279,7 +278,7 @@ export default function FileTable({
                     No files uploaded yet.
                 </p>
             ) : (
-                <DataTable table={table} showViewOptions />
+                <DataTable table={table} showViewOptions showPagination={false} />
             )}
             <AlertDialog
                 open={Boolean(pendingRemoveFile)}

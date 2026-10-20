@@ -37,7 +37,7 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.layers import get_channel_layer
 from django.conf import settings
 
-from user.authentication import user_from_websocket_scope
+from user.websocket import CLOSE_UNAUTHENTICATED, SessionBoundConsumerMixin
 
 from .changes import InvalidChangeSet, apply_changes, normalize_newlines, replace_all
 from .persist import PersistResult, current_access, load_note, persist_document, read_note_content
@@ -52,7 +52,6 @@ AUTH_TIMEOUT = 10
 ACCESS_RECHECK = 30
 MAX_POSITION = 50_000_000
 
-CLOSE_UNAUTHENTICATED = 4401
 CLOSE_FORBIDDEN = 4403
 
 
@@ -294,7 +293,7 @@ async def persist_now(note_id: str, force: bool = False) -> None:
         )
 
 
-class NoteCollabConsumer(AsyncJsonWebsocketConsumer):
+class NoteCollabConsumer(SessionBoundConsumerMixin, AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.note_id = str(self.scope["url_route"]["kwargs"]["note_id"])
         self.user = None
@@ -313,6 +312,7 @@ class NoteCollabConsumer(AsyncJsonWebsocketConsumer):
         self.auth_timeout.cancel()
         if self.access_watch:
             self.access_watch.cancel()
+        await self.unbind_session()
         if self.joined:
             await self.channel_layer.group_discard(_group(self.note_id), self.channel_name)
             await _broadcast(self.note_id, {"type": "presence", "peer": self.peer_id, "gone": True})
@@ -351,18 +351,17 @@ class NoteCollabConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json(event["payload"])
 
     async def _authenticate(self, content):
-        user = None
-        if content.get("type") == "auth":
-            user = await database_sync_to_async(user_from_websocket_scope)(self.scope)
-        if user is None:
-            await self.close(code=CLOSE_UNAUTHENTICATED)
+        session = await self.open_session(content)
+        if session is None:
             return
+        user = session.user
         access = await database_sync_to_async(load_note)(self.note_id, user)
         if access is None or not access.can_read:
             await self.close(code=CLOSE_FORBIDDEN)
             return
 
         self.user = user
+        await self.bind_session(session)
         self.can_write = access.can_write
         self.access_watch = asyncio.get_running_loop().create_task(self._watch_access())
         self.peer_id = uuid.uuid4().hex[:12]

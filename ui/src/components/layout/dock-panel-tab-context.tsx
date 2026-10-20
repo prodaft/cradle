@@ -20,6 +20,7 @@ export type DockPanelTabIcon =
     | 'manage-entities'
     | 'manage-entry-types'
     | 'manage-settings'
+    | 'manage-teams'
     | 'manage-type-mappings'
     | 'manage-users'
     | 'knowledge-graph'

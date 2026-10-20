@@ -3,8 +3,6 @@
 from collections.abc import Iterable
 from typing import Any
 
-from django.db.models import QuerySet
-
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from user.models import CradleUser
@@ -45,39 +43,26 @@ class Trie:
         return _serialize_node(self.root)
 
 
-def get_lsp_entries(user: CradleUser, eclass: EntryClass, initial: str) -> QuerySet[Entry]:
-    """Return entries accessible to the user for the given class, filtered by name prefix."""
-    return Entry.objects.accessible(user).filter(entry_class=eclass, name__istartswith=initial).distinct()
-
-
-def get_entities(user: CradleUser) -> QuerySet[Entry]:
-    """Return entities accessible to the user (all if admin, else by access)."""
-    return Entry.entities.readable_entities(user).distinct()
-
-
 def get_lsp_pack(user: CradleUser, classes: Iterable[EntryClass], initial: str = "") -> dict[str, dict[str, Any]]:
     """Build a map of subtype -> serialized trie for LSP completion from the given entry classes."""
     tries: dict[str, dict[str, Any]] = {}
 
     for eclass in classes:
-        if eclass.type == EntryType.ENTITY:
-            entries = get_entities(user).filter(entry_class=eclass)
-            if initial:
-                entries = entries.filter(name__istartswith=initial)
-        elif eclass.options:
-            trie = Trie()
-            for opt in eclass.options.split("\n"):
-                if stripped := opt.strip():
-                    trie.insert(stripped)
-            tries[eclass.subtype] = trie.serialize()
-            continue
-        else:
-            entries = get_lsp_entries(user, eclass, initial)
-
         trie = Trie()
-        if entries.exists():
-            for entry in entries:
-                trie.insert(entry.name)
+        # Artifact types with fixed options complete from those; everything else from the entries the user may read.
+        uses_options = eclass.type != EntryType.ENTITY and bool(eclass.options)
+        if uses_options:
+            names = (opt.strip() for opt in eclass.options.split("\n"))
+        else:
+            names = (
+                Entry.objects.readable(user)
+                .filter(entry_class=eclass, name__istartswith=initial)
+                .values_list("name", flat=True)
+            )
+        for name in names:
+            if name:
+                trie.insert(name)
+        if uses_options or trie.root.children:
             tries[eclass.subtype] = trie.serialize()
 
     return tries

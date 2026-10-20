@@ -1,6 +1,6 @@
 """Query API views for entry list and advanced query."""
 
-from django.db.models import Q, Subquery
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -10,12 +10,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from access.models import Access
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from core.validators import validate_str_list_param
-from entries.enums import EntryType
 from entries.models import Entry
 from entries.serializers import EntryResponseSerializer
 from user.authentication import APIKeyAuthentication, CookieJWTAuthentication
@@ -27,21 +25,12 @@ from ..utils import parse_query
 
 def _get_accessible_entries(user):
     """Base queryset of entries accessible to the user, with access control applied."""
-    qs = (
-        Entry.objects.accessible(user)
+    return (
+        Entry.objects.readable(user)
         .non_virtual()
         .select_related("entry_class")
         .prefetch_related("entry_class__children")
     )
-    if not user.is_cradle_admin:
-        qs = qs.filter(
-            Q(
-                entry_class__type=EntryType.ENTITY,
-                id__in=Subquery(Access.objects.get_accessible_entity_ids(user.id)),
-            )
-            | Q(entry_class__type=EntryType.ARTIFACT)
-        )
-    return qs
 
 
 @extend_schema(
@@ -82,7 +71,6 @@ class AdvancedQueryView(APIView):
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
 
-    # Add a queryset attribute to handle schema generation
     queryset = Entry.objects.none()
 
     @extend_schema(
@@ -132,7 +120,6 @@ class AdvancedQueryView(APIView):
         request=None,
     )
     def get(self, request: Request) -> Response:
-        # Check if this is a schema generation request
         if getattr(self, "swagger_fake_view", False):
             return Response(
                 {"page": 1, "count": 0, "total_pages": 1, "results": []},
@@ -158,14 +145,11 @@ class AdvancedQueryView(APIView):
 
         accessible_entries = _get_accessible_entries(request.user)
 
-        # Apply the parsed query filter
         filtered_entries = accessible_entries.filter(query_filter)
 
-        # Order and paginate the results
         filtered_entries = filtered_entries.order_by("-last_seen")
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(filtered_entries, request)
 
-        # Serialize and return the response
         serializer = EntryResponseSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)

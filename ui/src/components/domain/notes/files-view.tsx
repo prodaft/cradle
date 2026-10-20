@@ -31,10 +31,10 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
     const { mutate: requestDownload, isPending: isDownloading } = useMutation({
         mutationFn: async ({ fileId }: DownloadVars) => {
             const { data, error, response } = await fetchClient.GET(
-                '/file-transfer/download/',
+                '/files/{file_id}/download/',
                 {
                     params: {
-                        query: {
+                        path: {
                             file_id: fileId,
                         },
                     },
@@ -216,7 +216,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
         <ScrollArea className='w-full h-full'>
             <div className='flex items-start justify-center w-full min-h-full py-4 px-4'>
                 <div className='w-full flex flex-col'>
-                    <DataTable table={table} showViewOptions />
+                    <DataTable table={table} showViewOptions showPagination={false} />
                 </div>
             </div>
         </ScrollArea>

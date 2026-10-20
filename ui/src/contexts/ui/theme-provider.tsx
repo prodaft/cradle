@@ -8,10 +8,11 @@
  */
 
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
+import { queryKeys } from '@/hooks/query';
 import type { ThemeConfig, ThemeContextValue } from '@/types';
 import { darkTheme, lightTheme } from '@/utils/themes';
 import { $api, fetchClient } from '@services/openapi/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import React, {
     ReactNode,
     useCallback,
@@ -27,7 +28,7 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value);
 
 // Radius, fonts, shadows and spacing belong to the base-lyra style in globals.css, not to
-// themes. Older presets saved in profiles/localStorage still carry them, so drop them here.
+// themes, so a theme can never override them.
 const STRUCTURAL_VAR = /^--(radius|font-|shadow|spacing|tracking|letter-spacing)/;
 
 const sanitizeThemeVars = (vars: Record<string, unknown>): ThemeConfig => {
@@ -38,32 +39,42 @@ const sanitizeThemeVars = (vars: Record<string, unknown>): ThemeConfig => {
     return Object.fromEntries(entries) as ThemeConfig;
 };
 
-const coerceThemeConfig = (value: unknown): ThemeConfig | null => {
-    if (typeof value === 'string') {
-        try {
-            return coerceThemeConfig(JSON.parse(value));
-        } catch {
-            return null;
-        }
-    }
-    if (!isPlainObject(value)) {
-        return null;
-    }
+const coerceThemeConfig = (value: unknown): ThemeConfig | null =>
+    isPlainObject(value) ? sanitizeThemeVars(value) : null;
 
-    // If theme has a 'vars' key, extract it (legacy format)
-    if ('vars' in value && isPlainObject(value.vars)) {
-        return sanitizeThemeVars(value.vars);
+/**
+ * Lightness (0-1) of a theme colour in the formats the presets use (`#rgb`, `#rrggbb[aa]`,
+ * `oklch(L ...)`), or null when it can't be read.
+ */
+const colorLightness = (value: string | undefined): number | null => {
+    const color = value?.trim().toLowerCase();
+    if (!color) return null;
+    const oklch = /^oklch\(\s*([\d.]+)(%?)/.exec(color);
+    if (oklch?.[1]) {
+        const l = Number(oklch[1]);
+        return oklch[2] ? l / 100 : l;
     }
+    const hex = /^#([\da-f]{3}|[\da-f]{6}|[\da-f]{8})$/.exec(color)?.[1];
+    if (!hex) return null;
+    const full = hex.length === 3 ? [...hex].map((c) => c + c).join('') : hex;
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) / 255);
+    return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+};
 
-    // Otherwise, treat the whole object as theme vars
-    return sanitizeThemeVars(value);
+const isDarkTheme = (theme: ThemeConfig): boolean => {
+    const lightness = colorLightness(theme['--background']);
+    return lightness === null ? theme.name !== 'light' : lightness < 0.5;
 };
 
 const parseStoredTheme = (value: string | null): ThemeConfig | null => {
     if (!value) {
         return null;
     }
-    return coerceThemeConfig(value);
+    try {
+        return coerceThemeConfig(JSON.parse(value));
+    } catch {
+        return null;
+    }
 };
 
 /**
@@ -80,7 +91,6 @@ interface ThemeProviderProps {
 export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Element {
     const { isLoggedIn } = useAuthActions();
     const { isInitializing } = useAuthState();
-    const queryClient = useQueryClient();
     const { data: profile } = $api.useQuery(
         'get',
         '/users/{user_id}/',
@@ -90,16 +100,6 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
         {
             enabled: isLoggedIn() && !isInitializing,
             meta: { showErrorToast: false },
-            select: (raw) => {
-                const user = raw as Record<string, unknown>;
-                return {
-                    ...user,
-                    theme:
-                        (user.theme as unknown) ??
-                        (user.theme_settings as unknown) ??
-                        null,
-                };
-            },
         },
     );
 
@@ -111,7 +111,6 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
     }, []);
     const appliedVarsRef = useRef<string[]>([]);
 
-    // Mutation to update theme on server
     const updateThemeMutation = useMutation({
         mutationFn: async (theme: ThemeConfig) => {
             const { data, error, response } = await fetchClient.PATCH(
@@ -124,11 +123,9 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
             if (error) throw { response, error };
             return data;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['get', '/users/{user_id}/'] });
-        },
         meta: {
             suppressNotification: true, // Theme changes are silent
+            invalidateQueries: [{ queryKey: queryKeys.users.apiDetails() }],
         },
     });
 
@@ -138,17 +135,7 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
     );
     const activeTheme: ThemeConfig = profileTheme ?? localTheme ?? darkTheme;
 
-    // Determine if current theme is dark mode by checking the name field
-    const isDarkMode = useMemo(() => {
-        // If theme has a name field, use it
-        if (activeTheme.name) {
-            return activeTheme.name !== 'light';
-        }
-        // Fallback to comparing with light theme
-        const activeThemeStr = JSON.stringify(activeTheme);
-        const lightThemeStr = JSON.stringify(lightTheme);
-        return activeThemeStr !== lightThemeStr;
-    }, [activeTheme]);
+    const isDarkMode = isDarkTheme(activeTheme);
 
     // Sync profile theme to localStorage for instant load on refresh
     useEffect(() => {

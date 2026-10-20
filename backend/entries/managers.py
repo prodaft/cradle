@@ -39,8 +39,10 @@ class EntryQuerySet(models.QuerySet):
         return self.filter(entry_class__type=EntryType.ENTITY)
 
     def unreferenced(self) -> models.QuerySet:
-        """Filter to entries with no relations."""
-        return self.filter(Q(relations_1=None) & Q(relations_2=None))
+        """Filter to entries nothing points at: no relations, no notes, not an alias, and not an internal type."""
+        return self.filter(relations_1=None, relations_2=None, notes=None, aliased_by=None).exclude(
+            entry_class__subtype__in=INTERNAL_SUBTYPES
+        )
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
         """Filter to entries accessible to the user (via edges or entity type)."""
@@ -55,6 +57,16 @@ class EntryQuerySet(models.QuerySet):
             return entities
         Access = apps.get_model("access", "Access")
         return entities.filter(id__in=Access.objects.get_accessible_entity_ids(user.id))
+
+    def readable(self, user: CradleUser) -> models.QuerySet:
+        """Filter to entries the user may read: accessible entries, with entities also needing read access."""
+        accessible = self.accessible(user)
+        if user.is_cradle_admin:
+            return accessible
+        Access = apps.get_model("access", "Access")
+        return accessible.filter(
+            ~Q(entry_class__type=EntryType.ENTITY) | Q(id__in=Access.objects.get_accessible_entity_ids(user.id))
+        )
 
     def non_virtual(self) -> models.QuerySet:
         """Exclude internal/virtual entry classes."""
@@ -114,6 +126,10 @@ class EntryManager(models.Manager):
         """Filter to entities the user has read access to (all entities for admins)."""
         return self.get_queryset().readable_entities(user)
 
+    def readable(self, user: CradleUser) -> models.QuerySet:
+        """Filter to entries the user may read (see EntryQuerySet.readable)."""
+        return self.get_queryset().readable(user)
+
     def is_artifact(self) -> models.QuerySet:
         """Filter to artifact entries only."""
         return self.get_queryset().is_artifact()
@@ -123,7 +139,7 @@ class EntryManager(models.Manager):
         return self.get_queryset().is_entity()
 
     def unreferenced(self) -> models.QuerySet:
-        """Filter to entries with no relations."""
+        """Filter to entries nothing points at (see EntryQuerySet.unreferenced)."""
         return self.get_queryset().unreferenced()
 
 

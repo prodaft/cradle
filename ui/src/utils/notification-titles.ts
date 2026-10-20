@@ -5,6 +5,7 @@ import {
     ShieldCheckIcon,
     SparkleIcon,
     UserPlusIcon,
+    UsersThreeIcon,
     WarningCircleIcon,
     type IconWeight,
 } from '@phosphor-icons/react';
@@ -16,25 +17,31 @@ type NotificationIcon = ComponentType<{
     className?: string;
 }>;
 
-const NOTIFICATIONS: Record<string, { title: string; icon: NotificationIcon; destructive?: boolean }> =
-    {
-        request_access_notification: { title: 'Access request', icon: ShieldCheckIcon },
-        access_granted_notification: { title: 'Access granted', icon: CheckCircleIcon },
-        new_user_notification: { title: 'New user', icon: UserPlusIcon },
-        report_render_notification: { title: 'Report ready', icon: FileTextIcon },
-        report_processing_error_notification: {
-            title: 'Report failed',
-            icon: WarningCircleIcon,
-            destructive: true,
-        },
-        enrichment_complete_notification: { title: 'Enrichment complete', icon: SparkleIcon },
-        enrichment_error_notification: {
-            title: 'Enrichment failed',
-            icon: WarningCircleIcon,
-            destructive: true,
-        },
-        message_notification: { title: 'Message', icon: BellSimpleIcon },
-    };
+const NOTIFICATIONS: Record<
+    string,
+    { title: string; icon: NotificationIcon; destructive?: boolean }
+> = {
+    request_access_notification: { title: 'Access request', icon: ShieldCheckIcon },
+    access_granted_notification: { title: 'Access granted', icon: CheckCircleIcon },
+    new_user_notification: { title: 'New user', icon: UserPlusIcon },
+    team_membership_notification: { title: 'Team membership', icon: UsersThreeIcon },
+    report_render_notification: { title: 'Report ready', icon: FileTextIcon },
+    report_processing_error_notification: {
+        title: 'Report failed',
+        icon: WarningCircleIcon,
+        destructive: true,
+    },
+    enrichment_complete_notification: {
+        title: 'Enrichment complete',
+        icon: SparkleIcon,
+    },
+    enrichment_error_notification: {
+        title: 'Enrichment failed',
+        icon: WarningCircleIcon,
+        destructive: true,
+    },
+    message_notification: { title: 'Message', icon: BellSimpleIcon },
+};
 
 /** Title shown on a notification card, toast, and system notification. */
 export function notificationTitle(type: string | undefined): string {

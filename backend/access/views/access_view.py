@@ -9,10 +9,11 @@ from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from entries.exceptions import EntriesErrorCodes
 from entries.models import Entry
+from teams.permissions import CanViewEntityAccess
 from user.authentication import CookieJWTAuthentication
 from user.exceptions import UserErrorCodes, UserNotFoundException
 from user.models import CradleUser
-from user.permissions import HasAdminRole, HasManagerRole
+from user.permissions import HasAdminRole
 
 from ..entity_access_rows import build_entity_access_user_rows
 from ..models import Access
@@ -21,16 +22,10 @@ from ..serializers import AccessEntitySerializer, AccessUserSerializer
 
 @extend_schema_view(
     get=extend_schema(
-        operation_id="access_user_retrieve",
+        operation_id="users_access_list",
         summary="Get user access privileges",
         description="Returns a list of all entities with their access types for a specific user. Only available to admin users.",  # noqa: E501
         parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user to get access privileges for",
-            ),
             OpenApiParameter(
                 name="page",
                 type=int,
@@ -94,16 +89,10 @@ class UserAccessList(ListAPIView):
 
 @extend_schema_view(
     get=extend_schema(
-        operation_id="access_entity_retrieve",
+        operation_id="entities_access_users_list",
         summary="Get entity access privileges",
-        description="Returns a list of all users with their access types for a specific entity. Only available to admins and managers.",  # noqa: E501
+        description="Returns a list of all users with their access types for a specific entity. Available to managers and the leads of the entity's owning team.",  # noqa: E501
         parameters=[
-            OpenApiParameter(
-                name="entity_id",
-                type=int,
-                location=OpenApiParameter.PATH,
-                description="ID of the entity to get access privileges for",
-            ),
             OpenApiParameter(
                 name="search",
                 type=str,
@@ -141,10 +130,10 @@ class UserAccessList(ListAPIView):
     )
 )
 class EntityAccessList(ListAPIView):
-    """List users and their access types for a given entity (admins and managers)."""
+    """List users and their access types for a given entity (managers and owning-team leads)."""
 
     authentication_classes = [CookieJWTAuthentication]
-    permission_classes = [IsAuthenticated, HasManagerRole]
+    permission_classes = [IsAuthenticated, CanViewEntityAccess]
     pagination_class = TotalPagesPagination
     serializer_class = AccessUserSerializer
 

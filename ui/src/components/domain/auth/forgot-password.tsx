@@ -46,7 +46,7 @@ export default function ForgotPassword() {
     const requestReset = useMutation({
         mutationFn: async (email: string) => {
             const { data, error, response } = await fetchClient.POST(
-                '/auth/reset-password/',
+                '/auth/password/reset/',
                 { body: { email } },
             );
             if (error) throw { response, error };

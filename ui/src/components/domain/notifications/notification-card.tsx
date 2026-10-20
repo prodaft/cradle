@@ -23,6 +23,7 @@ type ReportRenderNotification = components['schemas']['ReportRenderNotification'
 type EnrichmentCompleteNotification =
     components['schemas']['EnrichmentCompleteNotification'];
 type EnrichmentErrorNotification = components['schemas']['EnrichmentErrorNotification'];
+type AccessType = components['schemas']['AccessTypeEnum'];
 
 interface NotificationCardProps {
     notification: Notification;
@@ -42,11 +43,13 @@ export default function NotificationCard({
 
     const title = notificationTitle(notification.type);
     const Icon = notificationIcon(notification.type);
-    const variant = notificationDestructive(notification.type) ? 'destructive' : 'default';
+    const variant = notificationDestructive(notification.type)
+        ? 'destructive'
+        : 'default';
 
     const updateUnreadStatus = useMutation({
         mutationFn: async ({ id, is_unread }: { id: string; is_unread: boolean }) => {
-            const { error, response } = await fetchClient.PUT(
+            const { error, response } = await fetchClient.PATCH(
                 '/notifications/{notification_id}/',
                 {
                     params: { path: { notification_id: id } },
@@ -77,10 +80,10 @@ export default function NotificationCard({
         }: {
             userId: string;
             entityId: number;
-            accessType: 'none' | 'read' | 'read-write';
+            accessType: AccessType;
         }) => {
             const { error, response } = await fetchClient.PUT(
-                '/access/user/{user_id}/{entity_id}/',
+                '/entries/entities/{entity_id}/access/users/{user_id}/',
                 {
                     params: { path: { user_id: userId, entity_id: entityId } },
                     body: { access_type: accessType },
@@ -103,6 +106,10 @@ export default function NotificationCard({
         },
         meta: {
             successMessage: 'User activated successfully.',
+            invalidateQueries: [
+                { queryKey: queryKeys.users.apiList() },
+                { queryKey: queryKeys.users.apiDetails() },
+            ],
         },
     });
 
@@ -140,7 +147,7 @@ export default function NotificationCard({
         updateUnreadStatus.mutate({ id, is_unread: next });
     };
 
-    const grantAccess = (access: 'read' | 'read-write') => () => {
+    const grantAccess = (access: Exclude<AccessType, 'none'>) => () => {
         const notif = notification as AccessRequestNotification;
         if (!notif.requesting_user_id || !notif.entity_id) return;
         updateAccess.mutate({

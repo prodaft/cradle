@@ -14,44 +14,33 @@ from entries.serializers import (
     EntryTypesCompressedTreeSerializer,
 )
 from file_transfer.models import FileReference
-from file_transfer.serializers import FileReferenceSerializer
 from management.settings import cradle_settings
 from user.models import CradleUser
-from user.serializers import EssentialUserRetrieveSerializer, UserRetrieveSerializer
+from user.serializers import EssentialUserRetrieveSerializer
 
-from .markdown.to_metadata import infer_metadata
 from .models import Note, Snippet
 from .processor.task_scheduler import TaskScheduler
 
 
 def _serialize_entities(entries):
-    """Serialize entity entries to minimal dict (id, name, type, subtype, color)."""
-    result = []
-    for entry in entries:
-        if hasattr(entry, "entry_class") and entry.entry_class and entry.entry_class.type == EntryType.ENTITY:
-            result.append(
-                {
-                    "id": str(entry.id),
-                    "name": entry.name,
-                    "type": entry.entry_class.type,
-                    "subtype": entry.entry_class.subtype,
-                    "color": entry.entry_class.color,
-                }
-            )
-    return result
+    """The entities among ``entries``, as ``OptimizedEntryResponseSerializer`` data (the schema these fields declare)."""
+    entities = [entry for entry in entries if entry.entry_class.type == EntryType.ENTITY]
+    return OptimizedEntryResponseSerializer(entities, many=True).data
 
 
 class SnippetSerializer(serializers.ModelSerializer):
     """Serializer for snippet create, read, update."""
 
-    owner = UserRetrieveSerializer(read_only=True)
+    created_by = EssentialUserRetrieveSerializer(
+        source="owner", read_only=True, allow_null=True, help_text="Who created the snippet; null for system snippets."
+    )
     created_at = serializers.DateTimeField(
         source="created_on", read_only=True, help_text="When the snippet was created."
     )
 
     class Meta:
         model = Snippet
-        fields = ["id", "owner", "name", "content", "created_at"]
+        fields = ["id", "created_by", "name", "content", "created_at"]
         read_only_fields = ["id"]
         extra_kwargs = {
             "name": {"help_text": "Snippet name identifier"},
@@ -88,11 +77,8 @@ class NoteEditSerializer(serializers.ModelSerializer):
         else:
             content = validated_data.get("content")
             if content is not None:
-                offset, metadata = infer_metadata(content)
-                instance.title = metadata.get("title", "")
-                instance.description = metadata.get("description", "")
-                instance.metadata = metadata
-                instance.content_offset = offset
+                instance.content = content
+                instance.apply_metadata()
                 instance.editor = user
 
         return super().update(instance, validated_data)
@@ -161,9 +147,7 @@ class FileReferenceWithNoteSerializer(FileReferenceBaseSerializer):
 
 
 class FileDetailSerializer(FileReferenceBaseSerializer):
-    """File metadata plus the entries linked through the accessible notes holding it or a copy of it."""
-
-    entries = OptimizedEntryResponseSerializer(many=True, read_only=True, source="linked_entries")
+    """File metadata for the file dashboard."""
 
     class Meta:
         model = FileReference
@@ -176,7 +160,6 @@ class FileDetailSerializer(FileReferenceBaseSerializer):
             "md5",
             "sha1",
             "sha256",
-            "entries",
         ]
 
 
@@ -232,8 +215,8 @@ class NoteListResponseSerializer(serializers.Serializer):
     created_at = serializers.DateTimeField(read_only=True, help_text="When the note was created")
     updated_at = serializers.DateTimeField(read_only=True, allow_null=True, help_text="When the note was last edited")
     linked_at = serializers.DateTimeField(read_only=True, allow_null=True, help_text="When entries were last linked")
-    author = EssentialUserRetrieveSerializer(allow_null=True, read_only=True, help_text="Note author")
-    editor = EssentialUserRetrieveSerializer(allow_null=True, read_only=True, help_text="Last editor")
+    created_by = EssentialUserRetrieveSerializer(allow_null=True, read_only=True, help_text="Who created the note")
+    updated_by = EssentialUserRetrieveSerializer(allow_null=True, read_only=True, help_text="Who last edited the note")
     entities = OptimizedEntryResponseSerializer(many=True, read_only=True, help_text="Entities referenced in the note")
     entry_classes = serializers.ListField(
         child=serializers.CharField(), read_only=True, help_text="Entry class subtypes in the note"
@@ -313,22 +296,22 @@ class NoteListSerializer:
         }
 
         if note.author:
-            data["author"] = {
+            data["created_by"] = {
                 "id": str(note.author.id),
                 "username": note.author.username,
             }
         else:
-            data["author"] = None
+            data["created_by"] = None
 
         if note.editor:
-            data["editor"] = {
+            data["updated_by"] = {
                 "id": str(note.editor.id),
                 "username": note.editor.username,
             }
         else:
-            data["editor"] = None
+            data["updated_by"] = None
 
-        data["entities"] = _serialize_entities(note.entries.all())
+        data["entities"] = entities = _serialize_entities(note.entries.all())
 
         data["entry_classes"] = list(note.entries.values_list("entry_class__subtype", flat=True).distinct())
 
@@ -343,7 +326,7 @@ class NoteListSerializer:
                 "md5": file_ref.md5_hash,
                 "sha1": file_ref.sha1_hash,
                 "sha256": file_ref.sha256_hash,
-                "entities": _serialize_entities(note.entries.all()),
+                "entities": entities,
             }
             files_data.append(file_data)
         data["files"] = files_data
@@ -369,11 +352,15 @@ class NoteListSerializer:
 
 
 class NoteRetrieveSerializer(serializers.ModelSerializer):
-    """Full note detail with entries, files, author, editor."""
+    """Full note detail with entries, files, creator and last editor."""
 
     files = FileReferenceWithNoteSerializer(many=True)
-    author = EssentialUserRetrieveSerializer()
-    editor = EssentialUserRetrieveSerializer()
+    created_by = EssentialUserRetrieveSerializer(
+        source="author", read_only=True, allow_null=True, help_text="Who created the note."
+    )
+    updated_by = EssentialUserRetrieveSerializer(
+        source="editor", read_only=True, allow_null=True, help_text="Who last edited the note."
+    )
     entries = EntryTypesCompressedTreeSerializer(exclude=INTERNAL_SUBTYPES)
     entities = OptimizedEntryResponseSerializer(many=True, read_only=True)
     permission = serializers.SerializerMethodField()
@@ -421,10 +408,10 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
             "description",
             "metadata",
             "created_at",
-            "author",
+            "created_by",
             "entries",
             "updated_at",
-            "editor",
+            "updated_by",
             "linked_at",
             "files",
             "permission",
@@ -449,16 +436,6 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         return data
 
 
-class NoteReportSerializer(serializers.ModelSerializer):
-    """Serializer for note content in reports."""
-
-    files = FileReferenceSerializer(many=True)
-
-    class Meta:
-        model = Note
-        fields = ["content", "timestamp", "files"]
-
-
 class FleetingNoteSerializer(serializers.ModelSerializer):
     """Serializer for fleeting notes; bypasses processing pipeline for quick note taking."""
 
@@ -475,9 +452,8 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
             "created_at",
             "title",
             "description",
-            "fleeting",
         ]
-        read_only_fields = ["id", "fleeting"]
+        read_only_fields = ["id"]
 
     def create(self, validated_data):
         request = self.context.get("request")
@@ -491,15 +467,10 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
         if not content:
             validated_data["content"] = user.default_note_template or cradle_settings.notes.default_note_template
 
-        content = validated_data.get("content", "")
-        if not validated_data.get("title"):
-            offset, metadata = infer_metadata(content)
-            validated_data["title"] = metadata.get("title", "")
-            validated_data["description"] = metadata.get("description", "")
-            validated_data["metadata"] = metadata
-            validated_data["content_offset"] = offset
-
-        note = Note.objects.create(**validated_data)
+        note = Note(**validated_data)
+        if not note.title:
+            note.apply_metadata()
+        note.save(force_insert=True)
         return note
 
     def update(self, instance, validated_data):
@@ -512,13 +483,8 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
         instance.editor = user
         instance.fleeting = True
 
-        content = instance.content
         if not instance.title:
-            offset, metadata = infer_metadata(content)
-            instance.title = metadata.get("title", "")
-            instance.description = metadata.get("description", "")
-            instance.metadata = metadata
-            instance.content_offset = offset
+            instance.apply_metadata()
 
         instance.save()
         return instance

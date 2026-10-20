@@ -1,6 +1,7 @@
 """Generic two-phase presigned upload flow."""
 
 import logging
+import os
 import uuid
 from dataclasses import dataclass
 from datetime import timedelta
@@ -8,13 +9,13 @@ from typing import TYPE_CHECKING, Callable, Generic, Protocol, Type, TypeVar
 
 from django.db import models
 from django.utils import timezone
+from pathvalidate import sanitize_filename
 
 from file_transfer.s3_utils import (
-    _get_storage_for_bucket,
     delete_object,
-    ensure_bucket_exists,
     exists,
     presign_client,
+    storage_for_bucket,
 )
 
 from .exceptions import (
@@ -37,6 +38,45 @@ logger = logging.getLogger("django.request")
 T = TypeVar("T", bound="BasePendingUpload")
 
 
+def sanitize_upload_filename(name: str | None, *, default: str | None = None) -> str:
+    """Sanitize filename: strip path traversal, replace invalid chars.
+
+    If default is set, return it on invalid input; otherwise raise InvalidFileNameException.
+    """
+    if not name or not name.strip():
+        if default is not None:
+            return default
+        raise InvalidFileNameException(detail="The file name is invalid or missing.")
+
+    # Treat backslashes as separators too: Windows paths (e.g. C:\fakepath\x.png) must not survive as names.
+    base = os.path.basename(name.strip().replace("\\", "/"))
+    if not base:
+        if default is not None:
+            return default
+        raise InvalidFileNameException(detail="The file name is invalid or missing.")
+
+    def _on_empty(_):
+        if default is not None:
+            return default
+        raise InvalidFileNameException(detail="The file name is invalid or missing.")
+
+    try:
+        safe = sanitize_filename(
+            base,
+            replacement_text="_",
+            platform="universal",
+            max_len=255,
+            null_value_handler=_on_empty,
+        )
+        return safe if safe else (default or "")
+    except InvalidFileNameException:
+        raise
+    except ValueError, TypeError, OSError:
+        if default is not None:
+            return default
+        raise InvalidFileNameException(detail="The file name contains invalid characters.")
+
+
 def parse_initiate_request(data) -> tuple[str, int]:
     """Read `file_name` and `file_size` from an upload initiation request body."""
     file_name = data.get("file_name")
@@ -51,6 +91,24 @@ def parse_initiate_request(data) -> tuple[str, int]:
         return file_name, int(file_size)
     except ValueError, TypeError:
         raise InvalidFileSizeException(detail="Use a whole number for the file size.")
+
+
+def check_upload_quota(user, file_size: int) -> None:
+    """Raise QuotaExceededException if one file of ``file_size`` bytes is over the user's limit or quota."""
+    from file_transfer.models import FileReference
+
+    limit = user.file_upload_limit
+    if file_size > limit:
+        raise QuotaExceededException(detail=f"File size ({file_size} bytes) exceeds your upload limit ({limit} bytes).")
+
+    existing_total = FileReference.objects.filter(user=user).aggregate(total=models.Sum("file_size"))["total"] or 0
+    if existing_total + file_size > limit:
+        raise QuotaExceededException(
+            detail=f"Upload would exceed your quota. "
+            f"Current usage: {existing_total} bytes, "
+            f"New file: {file_size} bytes, "
+            f"Limit: {limit} bytes."
+        )
 
 
 @dataclass
@@ -134,12 +192,7 @@ class PresignedUploadFlow(Generic[T]):
 
     def _get_storage(self):
         """Get storage instance for the configured bucket."""
-        storage = _get_storage_for_bucket(self.config.bucket_name)
-        try:
-            ensure_bucket_exists(self.config.bucket_name)
-        except Exception as e:
-            logger.warning(f"Could not ensure bucket exists: {e}")
-        return storage
+        return storage_for_bucket(self.config.bucket_name)
 
     def initiate(self, user: "CradleUser", file_name: str, file_size: int) -> dict:
         """Phase 1: Generate presigned URL and create pending upload.
@@ -159,28 +212,13 @@ class PresignedUploadFlow(Generic[T]):
         Raises:
             AlreadyUploadingException: If user has pending upload and
                 allow_concurrent_per_user is False.
-            InvalidFileSizeException: If file_size is invalid (<= 0 or exceeds the per-file upload limit).
-            QuotaExceededException: If upload would exceed user's quota.
+            InvalidFileSizeException: If file_size is <= 0.
+            QuotaExceededException: If the file exceeds the user's upload limit or quota.
         """
         if file_size <= 0:
             raise InvalidFileSizeException(detail="The file size must be greater than zero.")
 
-        if file_size > user.file_upload_limit:
-            raise InvalidFileSizeException(
-                detail=f"File size ({file_size} bytes) exceeds your upload limit ({user.file_upload_limit} bytes)."
-            )
-
-        from file_transfer.models import FileReference
-
-        existing_total = FileReference.objects.filter(user=user).aggregate(total=models.Sum("file_size"))["total"] or 0
-
-        if existing_total + file_size > user.file_upload_limit:
-            raise QuotaExceededException(
-                detail=f"Upload would exceed your quota. "
-                f"Current usage: {existing_total} bytes, "
-                f"New file: {file_size} bytes, "
-                f"Limit: {user.file_upload_limit} bytes."
-            )
+        check_upload_quota(user, file_size)
 
         if not self.config.allow_concurrent_per_user:
             if self.pending_model.objects.filter(user=user).exists():
@@ -262,16 +300,15 @@ class PresignedUploadFlow(Generic[T]):
             raise FileNotUploadedException(detail="The file upload did not complete.")
 
         if pending_upload.is_expired:
-            try:
-                delete_object(self.config.bucket_name, pending_upload.object_key)
-            except Exception as e:
-                logger.warning(f"Could not delete expired upload {pending_upload.object_key}: {e}")
-
-            pending_upload.delete()
+            pending_upload.discard(self.config.bucket_name)
             raise UploadExpiredException(detail="This upload session has expired. Please initiate a new upload.")
 
+        claimed, _ = self.pending_model.objects.filter(pk=pending_upload.pk).delete()
+        if not claimed:
+            raise UploadNotFoundException(detail="That upload could not be found.")
+
         try:
-            response_data = self.callbacks.on_finalize_success(pending_upload, **kwargs)
+            return self.callbacks.on_finalize_success(pending_upload, **kwargs)
         except Exception:
             try:
                 delete_object(self.config.bucket_name, pending_upload.object_key)
@@ -281,9 +318,4 @@ class PresignedUploadFlow(Generic[T]):
                     upload_id,
                     exc,
                 )
-            pending_upload.delete()
             raise
-
-        pending_upload.delete()
-
-        return response_data

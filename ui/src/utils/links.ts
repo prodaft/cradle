@@ -12,12 +12,25 @@ import type { FileReferenceWithNote } from '@/types/models';
  * @param apiBaseUrl - Base URL of the backend
  * @returns Download link
  */
-export const createDownloadPath = (
+const createDownloadPath = (
     file: FileReferenceWithNote,
     apiBaseUrl: string,
 ): string => {
-    const params = new URLSearchParams({ file_id: file.id! });
-    return `${apiBaseUrl}/file-transfer/download/?${params.toString()}`;
+    return `${apiBaseUrl}/files/${encodeURIComponent(file.id!)}/download/`;
+};
+
+/**
+ * Returns the file id from a download path made by `createDownloadPath`, or null for any other URL.
+ */
+export const fileIdFromDownloadPath = (href: string): string | null => {
+    let url: URL;
+    try {
+        url = new URL(href, window.location.origin);
+    } catch {
+        return null;
+    }
+    const match = url.pathname.match(/\/files\/([^/]+)\/download\/$/);
+    return match ? decodeURIComponent(match[1]!) : null;
 };
 
 /**

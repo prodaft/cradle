@@ -1,4 +1,8 @@
-import { pluginReplaceSpansLineBreak } from '@/utils/editor/plugin-decoration-utils';
+import {
+    pluginReplaceSpansLineBreak,
+    revealSelection,
+    revealStateChanged,
+} from '@/utils/editor/plugin-decoration-utils';
 import { syntaxTree } from '@codemirror/language';
 import { EditorState, Range, type Text } from '@codemirror/state';
 import {
@@ -356,7 +360,8 @@ export function referenceLinksPlugin(
                 if (
                     update.docChanged ||
                     update.viewportChanged ||
-                    update.selectionSet
+                    update.selectionSet ||
+                    revealStateChanged(update)
                 ) {
                     this.decorations = this.buildDecorations(update.view);
                 }
@@ -366,8 +371,7 @@ export function referenceLinksPlugin(
                 const widgets: Range<Decoration>[] = [];
                 const state = view.state;
                 const doc = state.doc;
-                const selection = state.selection.main;
-                const cursorPos = selection.head;
+                const cursorPos = revealSelection(state).head;
 
                 syntaxTree(state).iterate({
                     enter: (node) => {

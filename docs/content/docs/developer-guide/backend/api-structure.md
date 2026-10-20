@@ -37,30 +37,31 @@ Include it in the main URL configuration:
 
 ```python
 from django.urls import include, path
-import os
 
-BASE_URL = (os.environ.get("BASE_URL", "").strip("/") + "/").removeprefix("/")
+api_patterns = [
+    path("auth/", include("user.auth_urls")),
+    path("reports/", include("publish.urls")),
+    path("users/", include("user.urls")),
+    path("logs/", include("logs.urls")),
+    path("entries/", include("entries.urls")),
+    path("notes/", include("notes.urls")),
+    path("teams/", include("teams.urls")),
+    path("query/", include("query.urls")),
+    path("files/", include("file_transfer.urls")),
+    path("notifications/", include("notifications.urls")),
+    path("knowledge-graph/", include("knowledge_graph.urls")),
+    path("lsp/", include("lsp.urls")),
+    path("intelio/", include("intelio.urls")),
+    path("management/", include("management.urls")),
+    path("hello-world/", include("newapp.urls")),
+]
+
 urlpatterns = [
-    path(
-        BASE_URL,
-        include([
-            path("users/", include("user.urls")),
-            path("reports/", include("publish.urls")),
-            path("logs/", include("logs.urls")),
-            path("entries/", include("entries.urls")),
-            path("notes/", include("notes.urls")),
-            path("access/", include("access.urls")),
-            path("query/", include("query.urls")),
-            path("file-transfer/", include("file_transfer.urls")),
-            path("fleeting-notes/", include("fleeting_notes.urls")),
-            path("notifications/", include("notifications.urls")),
-            path("knowledge-graph/", include("knowledge_graph.urls")),
-            path("statistics/", include("stats.urls")),
-            path("lsp/", include("lsp.urls")),
-            path("intelio/", include("intelio.urls")),
-            path("management/", include("management.urls")),
-            path("hello-world/", include("newapp.urls")),
-        ])
-    )
+    path("api/", include(api_patterns)),
 ]
 ```
+
+Routes that act on another app's resource are mounted under that resource, not under their own app's prefix.
+For example, entity access and ownership are served from `/entries/entities/<id>/access/...` and
+`/entries/entities/<id>/owner/`: `access/entity_urls.py` and `teams/entity_urls.py` are included from
+`entries/urls.py`, and a user's access list (`access/user_urls.py`) is included under `/users/<id>/access/`.

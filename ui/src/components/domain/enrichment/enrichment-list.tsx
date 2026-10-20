@@ -132,7 +132,7 @@ export default function EnrichmentList({
         queryKey: queryKeys.enrichment.requests.list(listQuery),
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrich/',
+                '/intelio/enrichments/',
                 { params: { query: listQuery } },
             );
             if (error) throw { response, error };
@@ -188,7 +188,7 @@ export default function EnrichmentList({
     const deleteRequest = useMutation({
         mutationFn: async (id: string) => {
             const { error, response } = await fetchClient.DELETE(
-                '/intelio/enrich/{enrichment_id}/',
+                '/intelio/enrichments/{enrichment_id}/',
                 { params: { path: { enrichment_id: id } } },
             );
             if (error) throw { response, error };
@@ -201,7 +201,7 @@ export default function EnrichmentList({
     const rerunRequest = useMutation({
         mutationFn: async (id: string) => {
             const { data, error, response } = await fetchClient.POST(
-                '/intelio/enrich/{enrichment_id}/restart/',
+                '/intelio/enrichments/{enrichment_id}/restart/',
                 { params: { path: { enrichment_id: id } } },
             );
             if (error) throw { response, error };

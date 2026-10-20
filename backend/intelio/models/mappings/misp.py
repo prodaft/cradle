@@ -80,25 +80,5 @@ class MISPMapping(ClassMapping):
 
         return typemapping
 
-    @classmethod
-    def get_misp_types_for_entry_class(cls, entry_class_subtype: str):
-        """Returns a list of MISP attribute types that map to a given CRADLE entry class subtype.
-
-        This is used when querying MISP to filter by attribute type.
-
-        Args:
-            entry_class_subtype: CRADLE entry class subtype (e.g., "ip", "domain").
-
-        Returns:
-            list: List of MISP attribute types.
-        """
-        misp_types = []
-
-        for mapping in cls.objects.all():
-            if mapping.internal_class.subtype == entry_class_subtype:
-                misp_types.append(mapping.attribute_type)
-
-        return misp_types
-
     def __str__(self):
         return f"MISP {self.attribute_type} -> {self.internal_class.subtype}"

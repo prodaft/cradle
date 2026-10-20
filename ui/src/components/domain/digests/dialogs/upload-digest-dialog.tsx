@@ -1,14 +1,18 @@
 import {
     FileUpload,
     FileUploadDropzone,
-    FileUploadItem,
-    FileUploadItemDelete,
-    FileUploadItemMetadata,
-    FileUploadItemPreview,
-    FileUploadList,
     FileUploadTrigger,
 } from '@/components/custom/file-upload';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
+import {
+    Attachment,
+    AttachmentAction,
+    AttachmentActions,
+    AttachmentContent,
+    AttachmentDescription,
+    AttachmentMedia,
+    AttachmentTitle,
+} from '@/components/ui/attachment';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -31,9 +35,14 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { queryKeys } from '@/hooks/query';
-import { uploadFile } from '@/utils/files';
+import { formatFileSize, uploadFile } from '@/utils/files';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
+import {
+    CloudArrowUpIcon,
+    FileIcon,
+    UploadSimpleIcon,
+    XIcon,
+} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import React, { useEffect } from 'react';
@@ -95,7 +104,7 @@ export default function UploadDigestDialog({
         queryKey: [...queryKeys.digests.all, 'options'],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/intelio/digest/options/',
+                '/intelio/digest-types/',
             );
             if (error) throw { response, error };
             return data;
@@ -139,7 +148,7 @@ export default function UploadDigestDialog({
                 data: init,
                 error: initError,
                 response: initResponse,
-            } = await fetchClient.POST('/intelio/digest/upload/', {
+            } = await fetchClient.POST('/intelio/digests/uploads/', {
                 body: {
                     file_name: file.name,
                     file_size: file.size,
@@ -157,13 +166,13 @@ export default function UploadDigestDialog({
             const uploadId = initPayload.upload_id;
 
             const { data, error, response } = await fetchClient.POST(
-                '/intelio/digest/upload/{upload_id}/finalize/',
+                '/intelio/digests/uploads/{upload_id}/finalize/',
                 {
                     params: { path: { upload_id: uploadId } },
                     body: {
                         title: values.title,
                         digest_type: values.dataType!.value,
-                        entities: entities.length > 0 ? entities : undefined,
+                        entity_ids: entities.length > 0 ? entities : undefined,
                     } as any,
                 },
             );
@@ -377,42 +386,51 @@ export default function UploadDigestDialog({
                                                 )}
 
                                                 {/* Show selected file */}
-                                                <FileUploadList>
-                                                    {files.map((file: File) => (
-                                                        <FileUploadItem
-                                                            key={
-                                                                file.name +
-                                                                file.lastModified
-                                                            }
-                                                            value={file}
-                                                            className='group'
-                                                        >
-                                                            <FileUploadItemPreview />
-                                                            <FileUploadItemMetadata size='sm' />
-                                                            <FileUploadItemDelete
-                                                                asChild
+                                                {files.map((file: File) => (
+                                                    <Attachment
+                                                        key={
+                                                            file.name +
+                                                            file.lastModified
+                                                        }
+                                                        state={
+                                                            isUploading
+                                                                ? 'uploading'
+                                                                : 'done'
+                                                        }
+                                                        className='w-full'
+                                                    >
+                                                        <AttachmentMedia>
+                                                            <FileIcon />
+                                                        </AttachmentMedia>
+                                                        <AttachmentContent>
+                                                            <AttachmentTitle>
+                                                                {file.name}
+                                                            </AttachmentTitle>
+                                                            <AttachmentDescription>
+                                                                {formatFileSize(
+                                                                    file.size,
+                                                                )}
+                                                            </AttachmentDescription>
+                                                        </AttachmentContent>
+                                                        <AttachmentActions>
+                                                            <AttachmentAction
+                                                                onClick={() =>
+                                                                    onChange(
+                                                                        files.filter(
+                                                                            (f: File) =>
+                                                                                f !==
+                                                                                file,
+                                                                        ),
+                                                                    )
+                                                                }
+                                                                disabled={isUploading}
+                                                                aria-label={`Remove ${file.name}`}
                                                             >
-                                                                <Button
-                                                                    type='button'
-                                                                    variant='ghost'
-                                                                    size='icon'
-                                                                    className='h-6 w-6'
-                                                                    disabled={
-                                                                        isUploading
-                                                                    }
-                                                                >
-                                                                    <XIcon
-                                                                        className='h-4 w-4'
-                                                                        weight='bold'
-                                                                    />
-                                                                    <span className='sr-only'>
-                                                                        Remove file
-                                                                    </span>
-                                                                </Button>
-                                                            </FileUploadItemDelete>
-                                                        </FileUploadItem>
-                                                    ))}
-                                                </FileUploadList>
+                                                                <XIcon weight='bold' />
+                                                            </AttachmentAction>
+                                                        </AttachmentActions>
+                                                    </Attachment>
+                                                ))}
                                             </FileUpload>
                                         </div>
                                         {isInvalid && (

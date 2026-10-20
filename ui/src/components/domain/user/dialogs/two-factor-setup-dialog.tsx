@@ -69,7 +69,7 @@ export default function TwoFactorSetupDialog({
     } = useMutation({
         mutationFn: async (confirmedPassword?: string) => {
             const { data, error, response } = await fetchClient.POST(
-                '/users/2fa/enable/',
+                '/users/me/2fa/enable/',
                 {
                     body: confirmedPassword ? { password: confirmedPassword } : {},
                 },
@@ -122,7 +122,7 @@ export default function TwoFactorSetupDialog({
             try {
                 if (isDisabling) {
                     const { error, response } = await fetchClient.POST(
-                        '/users/2fa/disable/',
+                        '/users/me/2fa/disable/',
                         {
                             body: {
                                 otp,
@@ -133,7 +133,7 @@ export default function TwoFactorSetupDialog({
                     if (error) throw { response, error };
                 } else {
                     const { error, response } = await fetchClient.POST(
-                        '/users/2fa/verify/',
+                        '/users/me/2fa/verify/',
                         { body: { otp } },
                     );
                     if (error) throw { response, error };

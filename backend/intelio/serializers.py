@@ -1,6 +1,7 @@
 """Serializers for intelio API: digests, enrichment, and mappings."""
 
-from django.db import transaction
+from collections.abc import Mapping
+
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -20,7 +21,6 @@ from entries.serializers import (
 )
 from notes.exceptions import NoteNotFoundException
 from notes.models import Note
-from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer
 
 from .enums import EnrichmentStatus
@@ -90,17 +90,18 @@ class ClassMappingSerializer(serializers.ModelSerializer):
 
 
 class EnrichmentSettingsSerializer(serializers.ModelSerializer):
-    """Serializer for enricher configuration (settings, enabled, for_eclasses)."""
+    """Serializer for enricher configuration (settings, enabled, entry classes it applies to)."""
 
     display_name = serializers.SerializerMethodField()
-    for_eclasses = serializers.PrimaryKeyRelatedField(
+    for_eclass_subtypes = serializers.PrimaryKeyRelatedField(
+        source="for_eclasses",
         queryset=EntryClass.objects.all(),
         many=True,
         write_only=True,
         required=False,
-        help_text="Entry class IDs this enricher applies to",
+        help_text="Subtypes of the entry classes this enricher applies to",
     )
-    for_eclasses_detail = EntryClassSerializer(source="for_eclasses", many=True, read_only=True)
+    for_eclasses = EntryClassSerializer(many=True, read_only=True, help_text="Entry classes this enricher applies to")
     enricher_type = serializers.CharField(
         read_only=True, help_text="Stable identifier for this enrichment implementation"
     )
@@ -111,8 +112,8 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "enabled",
+            "for_eclass_subtypes",
             "for_eclasses",
-            "for_eclasses_detail",
             "enricher_type",
             "settings",
             "display_name",
@@ -128,20 +129,19 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
         config = BaseEnricher.get_subclass(obj.enricher_type)
         return fields_to_form(config.settings_fields) if config else {}
 
-    def create(self, validated_data):
-        for_eclasses_data = validated_data.pop("for_eclasses", [])
-        settings = EnricherSettings.objects.create(**validated_data)
 
-        settings.for_eclasses.set(for_eclasses_data)
-        return settings
+def _select_digest_model(serializer, data):
+    """Point ``serializer.Meta.model`` at the digest subclass named by ``data["digest_type"]``.
 
-    def update(self, instance, validated_data):
-        for_eclasses_data = validated_data.pop("for_eclasses", [])
-        instance = super().update(instance, validated_data)
-
-        instance.for_eclasses.set(for_eclasses_data)
-
-        return instance
+    The override is set on the instance; assigning to the class-level Meta would leak across requests.
+    """
+    if not isinstance(data, Mapping) or "digest_type" not in data:
+        return data
+    model = BaseDigest.get_subclass(data.get("digest_type"))
+    if model is None:
+        raise serializers.ValidationError({"digest_type": "That digest format is not supported."})
+    serializer.Meta = type("Meta", (type(serializer).Meta,), {"model": model})
+    return data
 
 
 class BaseDigestSerializer(serializers.ModelSerializer):
@@ -149,46 +149,27 @@ class BaseDigestSerializer(serializers.ModelSerializer):
 
     id = serializers.UUIDField(read_only=True)
     display_name = serializers.SerializerMethodField()
-    entity = serializers.PrimaryKeyRelatedField(
-        queryset=Entry.objects.none(), write_only=True, required=False, help_text="Optional entity to associate"
-    )
-    entity_detail = EntrySerializer(source="entity", read_only=True)
-    user = serializers.PrimaryKeyRelatedField(
-        queryset=CradleUser.objects.all(), write_only=True, required=True, help_text="User who owns the digest"
-    )
-    user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        request = self.context.get("request")
-        if request and request.user:
-            self.fields["entity"].queryset = Entry.objects.accessible(request.user)
+    entities = EntrySerializer(many=True, read_only=True, help_text="Entities associated with this digest")
+    created_by = EssentialUserRetrieveSerializer(source="user", read_only=True, help_text="Who uploaded the digest")
 
     class Meta:
         model = BaseDigest
         fields = [
             "id",
-            "user",
             "title",
-            "user_detail",
+            "created_by",
             "created_at",
             "status",
             "errors",
             "warnings",
             "digest_type",
             "display_name",
-            "entity",
-            "entity_detail",
+            "entities",
         ]
         read_only_fields = ["id", "created_at", "display_name"]
 
     def to_internal_value(self, data):
-        self.Meta.model = BaseDigest.get_subclass(data["digest_type"])
-
-        if self.Meta.model is None:
-            raise serializers.ValidationError({"digest_type": "That digest format is not supported."})
-
-        return super().to_internal_value(data)
+        return super().to_internal_value(_select_digest_model(self, data))
 
     @extend_schema_field(serializers.CharField())
     def get_display_name(self, obj):
@@ -200,33 +181,25 @@ class BaseDigestCreateSerializer(serializers.ModelSerializer):
 
     file = serializers.FileField(write_only=True, help_text="The file to be processed by the digest")
 
-    entities = serializers.ListField(
+    entity_ids = serializers.ListField(
+        source="entities",
         child=serializers.PrimaryKeyRelatedField(queryset=Entry.objects.none()),
         required=False,
-        help_text="Optional entities to associate with this digest",
+        help_text="Optional entity IDs to associate with this digest",
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
         if request and request.user:
-            self.fields["entities"].child.queryset = Entry.objects.accessible(request.user)
+            self.fields["entity_ids"].child.queryset = Entry.objects.accessible(request.user)
 
     class Meta:
         model = BaseDigest
-        fields = ["title", "digest_type", "entities", "file"]
+        fields = ["title", "digest_type", "entity_ids", "file"]
 
     def to_internal_value(self, data):
-        self.Meta.model = BaseDigest.get_subclass(data["digest_type"])
-
-        if self.Meta.model is None:
-            raise serializers.ValidationError({"digest_type": "That digest format is not supported."})
-
-        return super().to_internal_value(data)
-
-    def create(self, validated_data):
-        validated_data.pop("file", None)
-        return super().create(validated_data)
+        return super().to_internal_value(_select_digest_model(self, data))
 
 
 class DigestUploadResponseSerializer(serializers.Serializer):
@@ -242,32 +215,28 @@ class DigestUploadFinalizeCreateSerializer(serializers.ModelSerializer):
     """Serializer for finalizing digest upload (creates digest metadata only).
 
     The digest file is uploaded directly to storage via presigned URL and must exist
-    at BaseDigest.storage_key before finalization.
+    at the pending upload's object key before finalization.
     """
 
-    entities = serializers.ListField(
+    entity_ids = serializers.ListField(
+        source="entities",
         child=serializers.PrimaryKeyRelatedField(queryset=Entry.objects.none()),
         required=False,
-        help_text="Optional entities to associate with this digest",
+        help_text="Optional entity IDs to associate with this digest",
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
         if request and request.user:
-            self.fields["entities"].child.queryset = Entry.objects.accessible(request.user)
+            self.fields["entity_ids"].child.queryset = Entry.objects.accessible(request.user)
 
     class Meta:
         model = BaseDigest
-        fields = ["title", "digest_type", "entities"]
+        fields = ["title", "digest_type", "entity_ids"]
 
     def to_internal_value(self, data):
-        self.Meta.model = BaseDigest.get_subclass(data["digest_type"])
-
-        if self.Meta.model is None:
-            raise serializers.ValidationError({"digest_type": "That digest format is not supported."})
-
-        return super().to_internal_value(data)
+        return super().to_internal_value(_select_digest_model(self, data))
 
 
 class EnrichmentRequestEnricherMinimal(serializers.Serializer):
@@ -373,7 +342,7 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
 class EnrichmentRequestListSerializer(serializers.ModelSerializer):
     """Serializer for enrichment request list items (summary view)."""
 
-    user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
+    created_by = EssentialUserRetrieveSerializer(source="user", read_only=True, help_text="Who created the request")
     enrichers = serializers.SerializerMethodField(read_only=True)
     ignored_count = serializers.SerializerMethodField(read_only=True)
 
@@ -386,7 +355,7 @@ class EnrichmentRequestListSerializer(serializers.ModelSerializer):
             "created_at",
             "completed_at",
             "status",
-            "user_detail",
+            "created_by",
             "enrichers",
             "artifact",
         ]
@@ -409,7 +378,7 @@ class EnrichmentRequestListSerializer(serializers.ModelSerializer):
 class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
     """Serializer for full enrichment request detail including ignored items."""
 
-    user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
+    created_by = EssentialUserRetrieveSerializer(source="user", read_only=True, help_text="Who created the request")
     enrichers = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -421,7 +390,7 @@ class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
             "created_at",
             "completed_at",
             "status",
-            "user_detail",
+            "created_by",
             "enrichers",
             "artifact",
         ]
@@ -439,41 +408,37 @@ class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
 class EnrichmentRequestSerializer(serializers.ModelSerializer):
     """Serializer for enrichment requests."""
 
-    # Input: allow multiple enricher names
     enricher_names = serializers.ListField(
         child=serializers.CharField(),
         write_only=True,
         help_text="The names of the enrichers to use for this request",
     )
 
-    # Return IDs of all enrichment settings
-    enrichment_settings = serializers.SerializerMethodField(
+    enrichment_setting_ids = serializers.SerializerMethodField(
         read_only=True, help_text="The enrichment settings used for this request"
     )
 
-    # ManyToMany entities (optional; scopes who can see the request when set)
-    entities = serializers.PrimaryKeyRelatedField(
+    entity_ids = serializers.PrimaryKeyRelatedField(
+        source="entities",
         queryset=Entry.objects.none(),
         many=True,
+        write_only=True,
         required=False,
         allow_empty=True,
         help_text="Optional entity IDs for access control",
     )
 
-    user = serializers.PrimaryKeyRelatedField(read_only=True, help_text="The user who created the request")
+    created_by = EssentialUserRetrieveSerializer(source="user", read_only=True, help_text="Who created the request")
+    entities = EntrySerializer(many=True, read_only=True, help_text="Entities that scope who can see the request")
 
-    # Read-only details
-    user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
-    entities_detail = EntrySerializer(source="entities", many=True, read_only=True)
-
-    # Return classes and display names for all enrichers
     enricher_classes = serializers.SerializerMethodField(read_only=True)
     enricher_names_display = serializers.SerializerMethodField(read_only=True)
     artifact = serializers.JSONField(
         required=False,
         help_text='Single artifact {"entry_class": subtype, "name": value}',
     )
-    notes = serializers.ListSerializer(
+    note_ids = serializers.ListSerializer(
+        source="notes",
         write_only=True,
         child=serializers.PrimaryKeyRelatedField(queryset=Note.objects.none()),
         required=False,
@@ -490,24 +455,23 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request and request.user:
             user = request.user
-            self.fields["entities"].queryset = Entry.entities.readable_entities(user)
-            self.fields["notes"].child.queryset = Note.objects.get_accessible_notes(user)
+            self.fields["entity_ids"].child_relation.queryset = Entry.entities.readable_entities(user)
+            self.fields["note_ids"].child.queryset = Note.objects.get_accessible_notes(user)
 
     class Meta:
         model = EnrichmentRequest
         fields = [
             "id",
-            "notes",
+            "note_ids",
             "title",
             "created_at",
             "completed_at",
             "status",
-            "user",
-            "user_detail",
+            "created_by",
+            "entity_ids",
             "entities",
-            "entities_detail",
             "enricher_names",  # write-only input field
-            "enrichment_settings",
+            "enrichment_setting_ids",
             "enricher_classes",
             "enricher_names_display",
             "artifact",
@@ -517,16 +481,15 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
             "id",
             "created_at",
             "completed_at",
-            "user",
             "status",
             "errors",
-            "enrichment_settings",
+            "enrichment_setting_ids",
             "enricher_classes",
             "enricher_names_display",
         ]
 
     @extend_schema_field(serializers.ListField(child=serializers.UUIDField()))
-    def get_enrichment_settings(self, obj):
+    def get_enrichment_setting_ids(self, obj):
         """Return a list of enrichment_settings IDs."""
         return list(obj.enrichers_settings.values_list("id", flat=True))
 
@@ -567,7 +530,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
 
         return list(validated)
 
-    def validate_entities(self, values):
+    def validate_entity_ids(self, values):
         """Validate multiple entity IDs."""
         user = self.context["request"].user
         values = set(values or [])
@@ -579,7 +542,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
 
         return list(values)
 
-    def validate_notes(self, values):
+    def validate_note_ids(self, values):
         """Validate multiple note IDs."""
         user = self.context["request"].user
 
@@ -641,9 +604,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         validated_data["user"] = self.context["request"].user
 
         instance = super().create(validated_data)
-
-        # on_commit start_enrichment
-        transaction.on_commit(lambda: instance.start_enrichment())
+        instance.start_enrichment()  # queues its task only after this transaction commits
 
         return instance
 
@@ -655,16 +616,16 @@ class EnrichmentRelationSerializer(serializers.ModelSerializer):
     when generating OpenAPI schema pagination wrappers.
     """
 
-    e1 = EntrySerializerMinimal(read_only=True)
-    e2 = EntrySerializerMinimal(read_only=True)
+    src = EntrySerializerMinimal(source="e1", read_only=True, help_text="Source entry")
+    dst = EntrySerializerMinimal(source="e2", read_only=True, help_text="Destination entry")
     last_seen_at = serializers.DateTimeField(source="last_seen", read_only=True, help_text="Last observation")
 
     class Meta:
         model = Relation
         fields = [
             "id",
-            "e1",
-            "e2",
+            "src",
+            "dst",
             "created_at",
             "last_seen_at",
             "reason",

@@ -8,7 +8,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from access.models import Access
-from entries.models import Entry
+from entries.models import Entry, calculate_acvec
 from logs.enums import EventType
 from logs.models import EventLog
 from management.models import Setting
@@ -16,7 +16,6 @@ from notifications.models import AccessRequestNotification
 from user.models import CradleUser, UserRoles
 
 from ..models import Note
-from ..utils import calculate_acvec
 from .utils import NotesTestCase
 
 
@@ -107,7 +106,7 @@ class RestrictedNoteSearchTest(NotesTestCase):
     def test_other_filters_disable_restricted_notes(self):
         self.enable()
         for params in [
-            {"status": "finalized"},
+            {"status": "published"},
             {"author": "author2"},
             {"content": "1.1.1.1"},
             {"linked_to": str(self.case_open.id)},

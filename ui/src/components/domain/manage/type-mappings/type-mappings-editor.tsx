@@ -247,15 +247,8 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     const deleteMapping = useMutation({
         mutationFn: async (mappingId: string) => {
             const { error, response } = await fetchClient.DELETE(
-                '/intelio/mappings/{class_name}/',
-                {
-                    params: {
-                        path: { class_name: id },
-                        query: {
-                            mapping_id: mappingId,
-                        },
-                    },
-                },
+                '/intelio/mappings/{class_name}/{mapping_id}/',
+                { params: { path: { class_name: id, mapping_id: mappingId } } },
             );
             if (error) throw { response, error };
         },
@@ -265,13 +258,15 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     });
 
     const sendMapping = async (body: Record<string, any>) => {
-        const init = {
-            params: { path: { class_name: id } },
-            body: body satisfies Record<string, unknown>,
-        };
         const { data, error, response } = body.id
-            ? await fetchClient.PATCH('/intelio/mappings/{class_name}/', init)
-            : await fetchClient.POST('/intelio/mappings/{class_name}/', init);
+            ? await fetchClient.PATCH('/intelio/mappings/{class_name}/{mapping_id}/', {
+                  params: { path: { class_name: id, mapping_id: body.id } },
+                  body: body satisfies Record<string, unknown>,
+              })
+            : await fetchClient.POST('/intelio/mappings/{class_name}/', {
+                  params: { path: { class_name: id } },
+                  body: body satisfies Record<string, unknown>,
+              });
         if (error) throw { response, error };
         return data;
     };

@@ -1,5 +1,7 @@
-import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
-import { Button } from '@/components/ui/button';
+import {
+    SettingsHeaderActionsPortal,
+    SettingsSaveButton,
+} from '@/components/base/settings-header-actions/settings-header-actions';
 import {
     Field,
     FieldContent,
@@ -17,15 +19,13 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import { USER_ROLE_OPTIONS } from '@/utils/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowCounterClockwiseIcon, FloppyDiskIcon } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import bytes from 'bytes';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -63,7 +63,6 @@ export default function UserAccountForm({
     userId,
     isOtherAdmin,
 }: UserAccountFormProps) {
-    const queryClient = useQueryClient();
     const { userId: currentUserId } = useAuthState();
     const isSelf = userId === currentUserId;
 
@@ -82,11 +81,12 @@ export default function UserAccountForm({
             });
             if (error) throw { response, error };
         },
-        meta: { successMessage: 'User settings saved successfully' },
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: queryKeys.users.detail(userId),
-            });
+        meta: {
+            successMessage: 'User settings saved successfully',
+            invalidateQueries: [
+                { queryKey: queryKeys.users.apiDetails() },
+                { queryKey: queryKeys.users.apiList() },
+            ],
         },
     });
 
@@ -153,35 +153,11 @@ export default function UserAccountForm({
         <>
             {!isOtherAdmin && (
                 <SettingsHeaderActionsPortal>
-                    <div className='flex items-center gap-2'>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            disabled={!isDirty}
-                            onClick={() => reset()}
-                            title='Revert'
-                        >
-                            <ArrowCounterClockwiseIcon
-                                className='size-4'
-                                weight='bold'
-                            />
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='default'
-                            size='icon'
-                            disabled={updateUser.isPending || !isDirty}
-                            onClick={handleSubmit(save)}
-                            title='Save Settings'
-                        >
-                            {updateUser.isPending ? (
-                                <Spinner className='size-4' />
-                            ) : (
-                                <FloppyDiskIcon className='size-4' weight='bold' />
-                            )}
-                        </Button>
-                    </div>
+                    <SettingsSaveButton
+                        isDirty={isDirty}
+                        saving={updateUser.isPending}
+                        onSave={handleSubmit(save)}
+                    />
                 </SettingsHeaderActionsPortal>
             )}
             <section id='account'>

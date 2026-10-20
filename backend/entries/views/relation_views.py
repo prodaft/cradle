@@ -90,7 +90,6 @@ class RelationListView(APIView):
             )
             raise InvalidRelatedEntriesException(detail=detail)
 
-        # Get relations where both e1 and e2 are in the provided list
         relations = (
             Relation.objects.accessible(request.user)
             .filter(~Q(reason=RelationReason.NOTE) & Q(e1__in=entry_ids) & Q(e2__in=entry_ids))
@@ -108,14 +107,6 @@ class RelationListView(APIView):
         operation_id="entries_relations_retrieve",
         summary="Get relation details",
         description="Retrieves detailed information about a relation including its attachments with presigned URLs.",
-        parameters=[
-            OpenApiParameter(
-                name="relation_id",
-                type=UUID,
-                location=OpenApiParameter.PATH,
-                description="UUID of the relation",
-            ),
-        ],
         responses={
             200: RelationDetailSerializer,
             **get_error_responses(EntriesErrorCodes.RELATION_NOT_FOUND),
@@ -126,14 +117,6 @@ class RelationListView(APIView):
         operation_id="entries_relations_destroy",
         summary="Delete a relation",
         description="Deletes a specific relation by ID. Only admin users can perform this action.",
-        parameters=[
-            OpenApiParameter(
-                name="relation_id",
-                type=UUID,
-                location=OpenApiParameter.PATH,
-                description="UUID of the relation",
-            ),
-        ],
         responses={
             204: {"description": "Relation deleted successfully"},
             **get_error_responses(EntriesErrorCodes.RELATION_NOT_FOUND),

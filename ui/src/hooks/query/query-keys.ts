@@ -6,7 +6,6 @@
 export const queryKeys = {
     // Notes
     notes: {
-        all: ['notes'] as const,
         apiList: () => ['get', '/notes/'] as const,
         apiDetail: (id: string) =>
             [
@@ -15,17 +14,6 @@ export const queryKeys = {
                 { params: { path: { note_id: id } } },
             ] as const,
         apiDetails: () => ['get', '/notes/{note_id}/'] as const,
-        lists: () => [...queryKeys.notes.all, 'list'] as const,
-        list: (filters?: {
-            page?: number;
-            pageSize?: number;
-            sortField?: string;
-            sortDirection?: 'asc' | 'desc';
-            query?: Record<string, any>;
-            columnFilters?: Record<string, any>;
-        }) => [...queryKeys.notes.lists(), filters] as const,
-        details: () => [...queryKeys.notes.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.notes.details(), id] as const,
     },
 
     // Reports
@@ -34,30 +22,22 @@ export const queryKeys = {
         lists: () => [...queryKeys.reports.all, 'list'] as const,
         list: (params?: Record<string, unknown>) =>
             [...queryKeys.reports.lists(), params] as const,
-        details: () => [...queryKeys.reports.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.reports.details(), id] as const,
     },
 
     // Files
     files: {
-        apiList: () => ['get', '/notes/files/'] as const,
-        apiDetails: () => ['get', '/notes/files/{file_id}/'] as const,
+        apiList: () => ['get', '/files/'] as const,
+        apiDetails: () => ['get', '/files/{file_id}/'] as const,
     },
 
     // Enrichment
     enrichment: {
-        all: ['enrichment'] as const,
         requests: {
-            all: ['enrichment', 'requests'] as const,
             lists: () => ['enrichment', 'requests', 'list'] as const,
             list: (params?: Record<string, unknown>) =>
                 ['enrichment', 'requests', 'list', params] as const,
-            details: () => ['enrichment', 'requests', 'detail'] as const,
-            detail: (id: string) => ['enrichment', 'requests', 'detail', id] as const,
         },
         results: {
-            all: ['enrichment', 'results'] as const,
-            details: () => ['enrichment', 'results', 'detail'] as const,
             detail: (id: string) => ['enrichment', 'results', 'detail', id] as const,
             relations: (params: {
                 id: string;
@@ -70,49 +50,15 @@ export const queryKeys = {
         },
     },
 
-    // Activity
-    activity: {
-        all: ['activity'] as const,
-        lists: () => [...queryKeys.activity.all, 'list'] as const,
-        list: (filters?: {
-            name?: string;
-            objectId?: string;
-            contentType?: string;
-            username?: string;
-        }) => [...queryKeys.activity.lists(), filters] as const,
-    },
-
     // Knowledge Graph
     knowledgeGraph: {
         all: ['knowledgeGraph'] as const,
-        graph: (page?: number) =>
-            [...queryKeys.knowledgeGraph.all, 'graph', page] as const,
-    },
-
-    // Graph (Relations)
-    graph: {
-        all: ['graph'] as const,
-        neighbors: (params: {
-            src: string;
-            depth: number;
-            page: number;
-            pageSize: number;
-            query?: string;
-            filters?: string[];
-        }) => [...queryKeys.graph.all, 'neighbors', params] as const,
-        inaccessible: (params: { src: string; depth: number }) =>
-            [...queryKeys.graph.all, 'inaccessible', params] as const,
     },
 
     // Users
     users: {
-        all: ['users'] as const,
-        lists: () => [...queryKeys.users.all, 'list'] as const,
-        list: (filters?: { page?: number; pageSize?: number; search?: string }) =>
-            [...queryKeys.users.lists(), filters] as const,
-        details: () => [...queryKeys.users.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.users.details(), id] as const,
-        config: () => [...queryKeys.users.all, 'config'] as const,
+        apiList: () => ['get', '/users/'] as const,
+        apiDetails: () => ['get', '/users/{user_id}/'] as const,
     },
 
     // Entities
@@ -121,13 +67,39 @@ export const queryKeys = {
         lists: () => [...queryKeys.entities.all, 'list'] as const,
         list: (filters?: { page?: number; pageSize?: number; search?: string }) =>
             [...queryKeys.entities.lists(), filters] as const,
-        details: () => [...queryKeys.entities.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.entities.details(), id] as const,
+        apiDetail: (id: number) =>
+            [
+                'get',
+                '/entries/entities/{entity_id}/',
+                { params: { path: { entity_id: id } } },
+            ] as const,
+    },
+
+    // Lists that display entries: the entities list, and notes and files with their linked entities.
+    // Refresh these whenever entries or entry types change.
+    entryLists: () =>
+        [
+            queryKeys.entities.lists(),
+            queryKeys.notes.apiList(),
+            queryKeys.files.apiList(),
+        ] as const,
+
+    // Teams
+    teams: {
+        all: ['teams'] as const,
+        lists: () => [...queryKeys.teams.all, 'list'] as const,
+        list: (filters?: { page?: number; pageSize?: number; search?: string }) =>
+            [...queryKeys.teams.lists(), filters] as const,
+        detail: (id: string) => [...queryKeys.teams.all, 'detail', id] as const,
+        members: (id: string) => [...queryKeys.teams.all, 'members', id] as const,
+        access: (id: string) => [...queryKeys.teams.all, 'access', id] as const,
+        entity: (entityId: number) =>
+            [...queryKeys.teams.all, 'entity', entityId] as const,
+        user: (userId: string) => [...queryKeys.teams.all, 'user', userId] as const,
     },
 
     // Entry Types
     entryTypes: {
-        all: ['entryTypes'] as const,
         apiList: () => ['get', '/entries/entry-classes/'] as const,
         apiDetail: (subtype: string) =>
             [
@@ -135,11 +107,6 @@ export const queryKeys = {
                 '/entries/entry-classes/{class_subtype}/',
                 { params: { path: { class_subtype: subtype } } },
             ] as const,
-        lists: () => [...queryKeys.entryTypes.all, 'list'] as const,
-        list: (filters?: { page?: number; pageSize?: number; search?: string }) =>
-            [...queryKeys.entryTypes.lists(), filters] as const,
-        details: () => [...queryKeys.entryTypes.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.entryTypes.details(), id] as const,
     },
 
     // Management
@@ -160,17 +127,5 @@ export const queryKeys = {
     digests: {
         all: ['digests'] as const,
         lists: () => [...queryKeys.digests.all, 'list'] as const,
-        list: (filters?: {
-            page?: number;
-            pageSize?: number;
-            title?: string;
-            author?: string;
-            status?: string;
-            createdAtGte?: string;
-            createdAtLte?: string;
-            orderBy?: string;
-        }) => [...queryKeys.digests.lists(), filters] as const,
-        details: () => [...queryKeys.digests.all, 'detail'] as const,
-        detail: (id: string) => [...queryKeys.digests.details(), id] as const,
     },
 } as const;

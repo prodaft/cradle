@@ -5,11 +5,20 @@ import {
     type SearchSchema,
     type SearchState,
 } from '@/lib/search-query/search-schema';
+import {
+    pathsFilesGetParametersQueryStatusValues as FILE_STATUSES,
+    type operations,
+} from '@services/openapi/schema';
 import * as z from 'zod';
 
-const FILE_STATUSES = ['healthy', 'warning'] as const;
+type FileStatus = NonNullable<
+    NonNullable<operations['files_list']['parameters']['query']>['status']
+>;
 
-type FileStatus = (typeof FILE_STATUSES)[number];
+const FILE_STATUS_LABELS = {
+    healthy: 'Healthy (hashed)',
+    warning: 'Warning (missing hash)',
+} satisfies Record<FileStatus, string>;
 
 const DEFAULT_ORDER_BY = '-created_at';
 
@@ -33,10 +42,10 @@ export const FILES_SEARCH_SCHEMA: SearchSchema = {
             key: 'status',
             kind: 'enum',
             description: 'status',
-            values: [
-                { value: 'healthy', label: 'Healthy (hashed)' },
-                { value: 'warning', label: 'Warning (missing hash)' },
-            ],
+            values: FILE_STATUSES.map((value) => ({
+                value,
+                label: FILE_STATUS_LABELS[value],
+            })),
         },
         {
             key: 'mimetype',

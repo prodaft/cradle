@@ -5,6 +5,7 @@ FROM oven/bun:1-alpine AS builder
 WORKDIR /ui
 
 COPY ./ui/package.json ./ui/bun.lock ./ui/bunfig.toml ./
+COPY ./ui/patches ./patches
 RUN bun install --frozen-lockfile
 
 COPY ./ui ./

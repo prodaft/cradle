@@ -60,19 +60,6 @@ class TotalPagesPagination(PageSizeValidationMixin, PageNumberPagination):
             }
         )
 
-    @staticmethod
-    def format_single_page_response(count: int, data):
-        """Build paginated response for single-page custom data (e.g. full graph)."""
-        return Response(
-            {
-                "page": 1,
-                "count": count,
-                "total_pages": 1,
-                "results": data,
-            },
-            status=status.HTTP_200_OK,
-        )
-
     def get_paginated_response_schema(self, schema):
         """Return OpenAPI schema for paginated response."""
         return {
@@ -98,13 +85,12 @@ class TotalPagesPagination(PageSizeValidationMixin, PageNumberPagination):
             "required": ["page", "count", "total_pages", "results"],
         }
 
-    def get_paginated_response_serializer(self, serializer_class, name=None, many=True):
+    def get_paginated_response_serializer(self, serializer_class, name=None):
         """Returns an inline serializer for the paginated response.
 
         Args:
             serializer_class: The serializer class for the results.
             name: Optional name for the inline serializer (auto-generated if not provided).
-            many: Whether results is a list (True) or single object (False).
         """
         if name is None:
             name = f"Paginated{serializer_class.__name__}Response"
@@ -115,7 +101,7 @@ class TotalPagesPagination(PageSizeValidationMixin, PageNumberPagination):
                 "page": serializers.IntegerField(help_text="Current page number"),
                 "count": serializers.IntegerField(help_text="Total number of items"),
                 "total_pages": serializers.IntegerField(help_text="Total number of pages"),
-                "results": serializer_class(many=many),
+                "results": serializer_class(many=True),
             },
         )
 
@@ -168,13 +154,12 @@ class LazyPaginator(PageSizeValidationMixin, PageNumberPagination):
             "required": ["page", "has_next", "results"],
         }
 
-    def get_paginated_response_serializer(self, serializer_class, name=None, many=True):
+    def get_paginated_response_serializer(self, serializer_class, name=None):
         """Returns an inline serializer for the paginated response.
 
         Args:
             serializer_class: The serializer class for the results.
             name: Optional name for the inline serializer (auto-generated if not provided).
-            many: Whether results is a list (True) or single object (False).
         """
         if name is None:
             name = f"LazyPaginated{serializer_class.__name__}Response"
@@ -184,6 +169,6 @@ class LazyPaginator(PageSizeValidationMixin, PageNumberPagination):
             fields={
                 "page": serializers.IntegerField(help_text="Current page number"),
                 "has_next": serializers.BooleanField(help_text="Whether there are more pages available"),
-                "results": serializer_class(many=many),
+                "results": serializer_class(many=True),
             },
         )

@@ -9,12 +9,15 @@ import { CradleEditor } from '@/utils/editor/enhancements';
 import {
     cradleLinkColorPlugin,
     cradleLinksPlugin,
+    headingGutterLineClass,
     headingLineClassPlugin,
 } from '@/utils/editor/link-plugin';
+import { revealAfterPointerSelection } from '@/utils/editor/plugin-decoration-utils';
 import {
     referenceLinksPlugin,
     referenceLinkSyntax,
 } from '@/utils/editor/reference-links';
+import { renderedCopy } from '@/utils/editor/rendered-copy';
 import { codemirrorEditorSyncPeerExtensions } from '@/utils/editor/sync/codemirror-peer';
 import {
     connectLiveNote,
@@ -69,7 +72,7 @@ import {
 } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
 import { GFM } from '@lezer/markdown';
-import { CaretDownIcon } from '@phosphor-icons/react';
+import { CaretDownIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import {
     additionalMarkdownSyntaxTags,
     baseSyntaxHighlights,
@@ -145,6 +148,7 @@ interface RichEditorProps {
     saveError?: string | null;
     onSaveErrorClick?: () => void;
     onLiveSessionChange?: (session: LiveNoteSession | null) => void;
+    onLiveUsersChange?: (users: LivePeer[]) => void;
     noteStatus?: NoteProcessingStatus;
     noteStatusMessage?: string | null;
     onEditorViewChange?: (view: EditorView | null) => void;
@@ -236,6 +240,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         saveError = null,
         onSaveErrorClick,
         onLiveSessionChange,
+        onLiveUsersChange,
         noteStatus,
         noteStatusMessage,
         onEditorViewChange,
@@ -310,6 +315,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         () => [...new Map(livePeers.map((p) => [p.username, p])).values()],
         [livePeers],
     );
+    useEffect(() => {
+        onLiveUsersChange?.(liveUsers);
+        return () => onLiveUsersChange?.([]);
+    }, [liveUsers, onLiveUsersChange]);
 
     const needsEditorSyncHydration = Boolean(noteid) && enableEditing;
     const [editorSyncHydrated, setEditorSyncHydrated] = useState(
@@ -458,10 +467,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const downloadFile = useMutation({
         mutationFn: async (fileId: string) => {
             const { data, error, response } = await fetchClient.GET(
-                '/file-transfer/download/',
+                '/files/{file_id}/download/',
                 {
                     params: {
-                        query: {
+                        path: {
                             file_id: fileId,
                         },
                     },
@@ -604,7 +613,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     }
                     return false;
                 },
-                dragover: (event) => {
+                dragover: (event, view) => {
+                    if (view.state.readOnly) return false;
                     const types = event.dataTransfer?.types;
                     if (!types) return false;
 
@@ -619,7 +629,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     }
                     return true;
                 },
-                drop: (event) => {
+                drop: (event, view) => {
+                    if (view.state.readOnly) return false;
                     const droppedFiles = Array.from(event.dataTransfer?.files ?? []);
                     if (droppedFiles.length === 0) return false;
 
@@ -676,6 +687,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                       prosemarkBaseThemeSetup(),
                       htmlBlockExtension,
                       codeBlockCopyExtension,
+                      renderedCopy,
+                      revealAfterPointerSelection,
                       clickLinkHandler.of(openExternalLink),
                       EditorView.domEventHandlers({
                           click: onLinkClick,
@@ -692,7 +705,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             highlightSelectionMatches(),
             drawSelection(),
             rectangularSelection(),
-            highlightActiveLine(),
+            ...(canEdit ? [highlightActiveLine()] : []),
             indentOnInput(),
             closeBrackets(),
             Prec.highest(
@@ -735,11 +748,57 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         if (source) {
             exts.push(lineNumbers());
         } else {
+            // Only the fold gutter is present here; drop the source-mode gutter chrome
+            // from cradleTheme (Prec.high) so it reads like prosemark's.
             exts.push(
-                EditorView.theme({
-                    '.cm-gutters': { display: 'none' },
-                    '.cm-content': { padding: '1rem' },
-                }),
+                headingGutterLineClass,
+                Prec.highest(
+                    EditorView.theme({
+                        '.cm-gutters': {
+                            backgroundColor: 'transparent',
+                            borderRight: 'none',
+                        },
+                        // Rows take the line's font size (headings via
+                        // headingGutterLineClass), so a 1lh-tall marker centers on
+                        // the line's first visual row, including wrapped lines.
+                        // paddingLeft mirrors .cm-line's 6px left padding so the
+                        // chevron is centered between the editor edge and the text.
+                        '.cm-foldGutter .cm-gutterElement': {
+                            fontSize: '0.9rem',
+                            paddingLeft: '6px',
+                            cursor: 'pointer',
+                        },
+                        '.cm-foldGutter .cm-gutter-heading-1': { fontSize: '1.44rem' },
+                        '.cm-foldGutter .cm-gutter-heading-2': { fontSize: '1.26rem' },
+                        '.cm-foldGutter .cm-gutter-heading-3': { fontSize: '1.08rem' },
+                        // The text glyphs (⌄ ›) sit off-center in their box, so they
+                        // are hidden and a centered chevron is drawn instead.
+                        '.cm-foldGutter .cm-gutterElement > span': {
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '14px',
+                            height: '1lh',
+                            padding: '0',
+                            color: 'transparent',
+                            position: 'relative',
+                        },
+                        '.cm-foldGutter .cm-gutterElement > span::before': {
+                            content: '""',
+                            position: 'absolute',
+                            width: '12px',
+                            height: '12px',
+                            backgroundColor: 'var(--muted-foreground)',
+                            mask: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E") center / contain no-repeat`,
+                        },
+                        '.cm-foldGutter .cm-gutterElement:hover > span::before': {
+                            backgroundColor: 'var(--foreground)',
+                        },
+                        '.cm-foldGutter .cm-gutterElement > span[title="Unfold line"]::before':
+                            { transform: 'rotate(-90deg)' },
+                        '.cm-content': { padding: '1rem 1rem 1rem 0' },
+                    }),
+                ),
             );
         }
 
@@ -1003,33 +1062,34 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 </div>
             )}
 
+            {saveStatus === 'error' && saveError && (
+                <div
+                    role='alert'
+                    className='flex-none flex items-start gap-2 px-3 py-2 border-t border-destructive/40 bg-destructive/10 text-destructive text-xs'
+                    data-testid='save-error-banner'
+                >
+                    <WarningCircleIcon
+                        className='size-4 shrink-0 mt-px'
+                        weight='bold'
+                    />
+                    <span className='flex-1 min-w-0 break-words'>
+                        <span className='font-semibold'>Not saved: </span>
+                        {saveError}
+                    </span>
+                    {onSaveErrorClick && (
+                        <button
+                            type='button'
+                            onClick={onSaveErrorClick}
+                            className='shrink-0 font-semibold underline underline-offset-2 cursor-pointer'
+                        >
+                            Resolve
+                        </button>
+                    )}
+                </div>
+            )}
+
             {/* Bottom toolbar: word count, character count, vim, save status, check badge */}
             <div className='flex-none flex items-center justify-end gap-2 px-3 py-1.5 border-t border-border bg-muted/30 text-muted-foreground text-xs'>
-                {liveUsers.length > 0 && (
-                    <Tooltip>
-                        <TooltipTrigger
-                            render={
-                                <span
-                                    className='inline-flex items-center -space-x-1 cursor-default'
-                                    data-testid='live-peers'
-                                />
-                            }
-                        >
-                            {liveUsers.map((p) => (
-                                <span
-                                    key={p.username}
-                                    className='inline-flex items-center justify-center size-5 rounded-full text-[10px] font-semibold text-white ring-2 ring-background'
-                                    style={{ backgroundColor: p.color }}
-                                >
-                                    {p.username.charAt(0).toUpperCase()}
-                                </span>
-                            ))}
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            Also editing: {liveUsers.map((p) => p.username).join(', ')}
-                        </TooltipContent>
-                    </Tooltip>
-                )}
                 <span>{wordCount} words</span>
                 <span>{charCount} chars</span>
                 {profile?.vim_mode && (
@@ -1164,6 +1224,7 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.saveError === nextProps.saveError &&
         prevProps.onSaveErrorClick === nextProps.onSaveErrorClick &&
         prevProps.onLiveSessionChange === nextProps.onLiveSessionChange &&
+        prevProps.onLiveUsersChange === nextProps.onLiveUsersChange &&
         prevProps.noteStatus === nextProps.noteStatus &&
         prevProps.noteStatusMessage === nextProps.noteStatusMessage
     );

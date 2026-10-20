@@ -9,7 +9,7 @@
  *
  * For performance-sensitive components, use the split hooks to avoid unnecessary rerenders.
  *
- * Note: For profile data, use TanStack Query directly with queryKeys.users.detail('me')
+ * Note: For profile data, use $api.useQuery('get', '/users/{user_id}/') and invalidate with queryKeys.users.apiDetails()
  *
  * @example
  * ```typescript

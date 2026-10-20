@@ -15,13 +15,18 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.exceptions import CoreErrorCodes, InvalidRequestException
+from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
 from file_transfer.serializers import FileUploadInitiateSerializer
 from file_transfer.storage import DigestStorage
-from file_transfer.uploads import PresignedUploadFlow, UploadConfig, parse_initiate_request
+from file_transfer.uploads import (
+    PresignedUploadFlow,
+    UploadConfig,
+    parse_initiate_request,
+    sanitize_upload_filename,
+)
 from file_transfer.uploads.exceptions import (
     AlreadyUploadingException,
     FileNotUploadedException,
@@ -38,7 +43,6 @@ from ..exceptions import (
     DigestUploadIncompleteException,
     DigestUploadNotFoundException,
     IntelIOErrorCodes,
-    MissingFileException,
 )
 from ..filters import BaseDigestFilter
 from ..models.base import BaseDigest
@@ -61,7 +65,6 @@ def _get_digest_or_404(request: Request, pk: uuid.UUID) -> BaseDigest:
         raise DigestNotFoundException(detail="That digest could not be found.")
 
 
-# Digest upload flow configuration and callbacks
 def _digest_object_key_generator(upload_id: uuid.UUID, file_name: str, user) -> str:
     """Generate object key for digest uploads: {user_id}/{upload_id}."""
     return f"{user.id}/{upload_id}"
@@ -102,12 +105,11 @@ class DigestUploadCallbacks:
         return {"digest": digest}
 
 
-# Create the digest upload flow instance
 digest_upload_flow = PresignedUploadFlow(
     config=UploadConfig(
         bucket_name=DigestStorage.bucket_name,
         object_key_generator=_digest_object_key_generator,
-        allow_concurrent_per_user=True,  # Admins can have concurrent uploads
+        allow_concurrent_per_user=True,
     ),
     pending_model=PendingDigestUpload,
     callbacks=DigestUploadCallbacks(),
@@ -142,28 +144,17 @@ class DigestUploadAPIView(APIView):
                 detail="You already have an open upload session. Please finalize the previous upload before starting a new one."
             )
 
-        response_data = digest_upload_flow.initiate(request.user, file_name, file_size)
+        response_data = digest_upload_flow.initiate(request.user, sanitize_upload_filename(file_name), file_size)
         return Response(DigestUploadResponseSerializer(response_data).data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(
     summary="Finalize digest file upload",
     description="Verifies the digest file was uploaded to storage and creates the digest record, then triggers processing.",
-    parameters=[
-        OpenApiParameter(
-            name="upload_id",
-            type=str,
-            location=OpenApiParameter.PATH,
-            description="The upload ID returned from initiation",
-            required=True,
-        ),
-    ],
     request=DigestUploadFinalizeCreateSerializer,
     responses={
         201: BaseDigestSerializer,
         **get_error_responses(
-            CoreErrorCodes.INVALID_REQUEST_DATA,
-            CoreErrorCodes.INVALID_REQUEST,
             IntelIOErrorCodes.DIGEST_UPLOAD_NOT_FOUND,
             IntelIOErrorCodes.DIGEST_UPLOAD_EXPIRED,
             IntelIOErrorCodes.DIGEST_UPLOAD_INCOMPLETE,
@@ -177,20 +168,15 @@ class DigestUploadFinalizeAPIView(APIView):
     authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: Request, upload_id: str) -> Response:
+    def post(self, request: Request, upload_id: uuid.UUID) -> Response:
         serializer = DigestUploadFinalizeCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
         validated_data = serializer.validated_data.copy()
-        validated_data["_digest_model"] = serializer.Meta.model or BaseDigest
+        validated_data["_digest_model"] = serializer.Meta.model
 
         try:
-            upload_uuid = uuid.UUID(upload_id)
-        except ValueError:
-            raise InvalidRequestException(detail="That upload session is not valid.")
-
-        try:
-            response_data = digest_upload_flow.finalize(upload_uuid, request.user, **validated_data)
+            response_data = digest_upload_flow.finalize(upload_id, request.user, **validated_data)
         except UploadNotFoundException as exc:
             raise DigestUploadNotFoundException(detail=exc.detail) from exc
         except UploadExpiredException as exc:
@@ -267,12 +253,6 @@ class DigestSubclassesAPIView(APIView):
                 enum=list(map(lambda x: x[0], DigestStatus.choices)),
             ),
             OpenApiParameter(
-                name="created_date",
-                description="Filter by creation date (YYYY-MM-DD format)",
-                required=False,
-                type=str,
-            ),
-            OpenApiParameter(
                 name="created_at_gte",
                 description="Filter by creation date greater than or equal to (ISO datetime format)",
                 required=False,
@@ -324,7 +304,6 @@ class DigestSubclassesAPIView(APIView):
         responses={
             201: BaseDigestSerializer,
             **get_error_responses(
-                IntelIOErrorCodes.MISSING_FILE,
                 include_validation_error=True,
             ),
             **get_common_error_responses(),
@@ -374,25 +353,11 @@ class DigestAPIView(GenericAPIView):
 
     def post(self, request: Request) -> Response:
         """Create a new digest for the current user."""
-        data = request.data.copy()
-
-        create_serializer = BaseDigestCreateSerializer(data=data, context={"request": request})
+        create_serializer = BaseDigestCreateSerializer(data=request.data, context={"request": request})
         create_serializer.is_valid(raise_exception=True)
 
-        digest_data = create_serializer.validated_data.copy()
-        digest_data.pop("file", None)
-        digest_data["user"] = request.user
-
-        digest = BaseDigest(**digest_data)
-
-        file = request.FILES.get("file")
-
-        if not file:
-            raise MissingFileException(detail="Upload a file to create a digest.")
-
         with transaction.atomic():
-            digest.file = file
-            digest.save()
+            digest = create_serializer.save(user=request.user)
 
         transaction.on_commit(lambda: start_digest.delay(digest.id))
         location = request.build_absolute_uri(reverse("digest_detail", kwargs={"digest_id": digest.id}))

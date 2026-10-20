@@ -17,6 +17,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+    Avatar,
+    AvatarFallback,
+    AvatarGroup,
+    AvatarGroupCount,
+} from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -37,11 +43,11 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthState } from '@/hooks/auth';
 import { queryKeys } from '@/hooks/query';
-import { cn } from '@/lib/utils';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import extractHeaderHierarchy, { HeaderNode } from '@/utils/editor/outline';
 import type { LiveNoteSession, LiveStatus } from '@/utils/editor/sync/live-connection';
+import type { LivePeer } from '@/utils/editor/sync/remote-cursors';
 import { parseMarkdownInline } from '@/utils/parser';
 import { Prec } from '@codemirror/state';
 import { keymap, type EditorView } from '@codemirror/view';
@@ -65,7 +71,6 @@ import FindReplace from './find-replace';
 import NoteOutline from './note-outline';
 import ReferenceTree from './reference-tree';
 import RichEditor from './rich-editor';
-import StaticRender from './static-render';
 
 type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 type NoteRetrieve = components['schemas']['NoteRetrieve'];
@@ -82,6 +87,7 @@ interface LocationState {
 }
 
 const EMPTY_FILES: FileReferenceWithNote[] = [];
+const MAX_LIVE_AVATARS = 3;
 
 /**
  * NoteViewer component - displays note content with editing capabilities
@@ -113,7 +119,7 @@ export default function NoteViewer() {
         return match?.[1] ?? '';
     }, [params, location.pathname]);
     const locationState = (location.state as LocationState) || {};
-    const { isAdmin } = useAuthState();
+    const { isAdmin, userId } = useAuthState();
     const { from } = locationState;
 
     const [note, setNote] = useState<NoteRetrieve | null>(null);
@@ -127,6 +133,7 @@ export default function NoteViewer() {
     >(undefined);
     const [isReportOpen, setIsReportOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isUnpublishOpen, setIsUnpublishOpen] = useState(false);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isAboutOpen, setIsAboutOpen] = useState(false);
     const [files, setFiles] = useState<FileReferenceWithNote[]>([]);
@@ -138,6 +145,7 @@ export default function NoteViewer() {
     const [saveError, setSaveError] = useState<string | null>(null);
     const [isConflictOpen, setIsConflictOpen] = useState(false);
     const [liveSession, setLiveSession] = useState<LiveNoteSession | null>(null);
+    const [liveUsers, setLiveUsers] = useState<LivePeer[]>([]);
     const liveSessionRef = useRef<LiveNoteSession | null>(null);
     const liveUnsentRef = useRef(false);
     const [isFindOpen, setIsFindOpen] = useState(false);
@@ -166,10 +174,10 @@ export default function NoteViewer() {
         return () => setNavbarActionsEl(null);
     }, []);
 
-    const finalizeNote = useMutation({
+    const publishNote = useMutation({
         mutationFn: async (noteId: string) => {
-            const { data, error, response } = await fetchClient.PUT(
-                '/notes/{note_id}/finalize/',
+            const { data, error, response } = await fetchClient.POST(
+                '/notes/{note_id}/publish/',
                 { params: { path: { note_id: noteId } } },
             );
             if (error) throw { response, error };
@@ -180,10 +188,28 @@ export default function NoteViewer() {
                 { queryKey: queryKeys.notes.apiDetail(noteId) },
                 { queryKey: queryKeys.notes.apiList() },
             ],
-            successMessage: 'Note finalized successfully.',
+            successMessage: 'Note published successfully.',
         },
         onSuccess: (response) => {
             router.navigate({ to: `/notes/${response.id}` as any, replace: true });
+        },
+    });
+
+    const unpublishNote = useMutation({
+        mutationFn: async (noteId: string) => {
+            const { data, error, response } = await fetchClient.POST(
+                '/notes/{note_id}/unpublish/',
+                { params: { path: { note_id: noteId } } },
+            );
+            if (error) throw { response, error };
+            return data;
+        },
+        meta: {
+            invalidateQueries: [
+                { queryKey: queryKeys.notes.apiDetail(noteId) },
+                { queryKey: queryKeys.notes.apiList() },
+            ],
+            successMessage: 'Note unpublished. It is a private draft again.',
         },
     });
 
@@ -391,13 +417,13 @@ export default function NoteViewer() {
             parsedTitle = raw;
         }
         const icon = isSourceFleeting ? 'fleeting-note' : 'notes';
-        if (!parsedTitle) {
-            return {
-                title: isSourceFleeting ? 'Fleeting note' : 'Note',
-                icon,
-            };
-        }
         const prefix = isSourceFleeting ? 'Fleeting note' : 'Note';
+        if (!src) {
+            return { title: prefix, icon };
+        }
+        if (!parsedTitle) {
+            return { title: `${prefix}: Untitled`, icon };
+        }
         const title =
             parsedTitle.length > 56
                 ? `${prefix}: ${parsedTitle.slice(0, 53)}...`
@@ -411,6 +437,7 @@ export default function NoteViewer() {
         permissionSource?.permission === 'read' ||
         permissionSource?.permission === 'read-write';
     const isWritable = permissionSource?.permission === 'read-write';
+    const isAuthor = Boolean(userId) && permissionSource?.created_by?.id === userId;
     const hasFiles = files.length > 0;
 
     const enableEditingRef = useRef(enableEditing);
@@ -587,19 +614,19 @@ export default function NoteViewer() {
         }
     }, [noteId, deleteNote, queryClient, router, from]);
 
-    const finalize = useCallback(() => {
+    const publish = useCallback(() => {
         if (!noteId || !markdownContent || markdownContent.trim().length === 0) {
-            toast.error('Cannot save empty note.');
+            toast.error('Cannot publish an empty note.');
             return;
         }
 
         setIsSaving(true);
-        finalizeNote.mutate(noteId, {
+        publishNote.mutate(noteId, {
             onSettled: () => {
                 setIsSaving(false);
             },
         });
-    }, [noteId, markdownContent, finalizeNote]);
+    }, [noteId, markdownContent, publishNote]);
 
     const relink = useCallback(() => {
         if (!noteId) return;
@@ -607,7 +634,7 @@ export default function NoteViewer() {
         toast.info('Relinking note...');
     }, [noteId, relinkNote]);
 
-    const publish = useCallback(() => {
+    const exportReport = useCallback(() => {
         if (!note || !noteId) return;
         setIsReportOpen(true);
     }, [note, noteId]);
@@ -615,6 +642,15 @@ export default function NoteViewer() {
     const confirmDelete = useCallback(() => {
         setIsDeleteOpen(true);
     }, []);
+
+    const confirmUnpublish = useCallback(() => {
+        setIsUnpublishOpen(true);
+    }, []);
+
+    const unpublish = useCallback(() => {
+        if (!noteId) return;
+        unpublishNote.mutate(noteId);
+    }, [noteId, unpublishNote]);
 
     const openUpload = useCallback((_filesList?: any[]) => {
         setIsUploadOpen(true);
@@ -708,15 +744,7 @@ export default function NoteViewer() {
                         }
                     }
                 },
-                (headerText: string) => {
-                    const slug = encodeURIComponent(
-                        headerText.trim().toLowerCase().replace(/\s+/g, '-'),
-                    );
-                    const element = document.getElementById(slug);
-                    if (element) {
-                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                },
+                undefined,
             ),
         );
     }, [markdownContent, editorRef]);
@@ -741,6 +769,38 @@ export default function NoteViewer() {
                 isNavbarActive &&
                 createPortal(
                     <>
+                        {liveUsers.length > 0 && (
+                            <Tooltip>
+                                <TooltipTrigger
+                                    render={
+                                        <AvatarGroup
+                                            className='mr-1 cursor-default'
+                                            data-testid='live-peers'
+                                        />
+                                    }
+                                >
+                                    {liveUsers.slice(0, MAX_LIVE_AVATARS).map((p) => (
+                                        <Avatar key={p.username} size='sm'>
+                                            <AvatarFallback
+                                                className='text-[10px] font-semibold text-white'
+                                                style={{ backgroundColor: p.color }}
+                                            >
+                                                {p.username.charAt(0).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    ))}
+                                    {liveUsers.length > MAX_LIVE_AVATARS && (
+                                        <AvatarGroupCount>
+                                            +{liveUsers.length - MAX_LIVE_AVATARS}
+                                        </AvatarGroupCount>
+                                    )}
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    Also editing:{' '}
+                                    {liveUsers.map((p) => p.username).join(', ')}
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
                         {note && (
                             <Tooltip>
                                 <TooltipTrigger
@@ -798,10 +858,12 @@ export default function NoteViewer() {
                                 relink={relink}
                                 isFleeting={isFleeting}
                                 hasFiles={hasFiles}
-                                finalize={finalize}
-                                isSaving={isSaving}
                                 publish={publish}
+                                isSaving={isSaving}
+                                exportReport={exportReport}
                                 confirmDelete={confirmDelete}
+                                canUnpublish={!isFleeting && isAuthor}
+                                confirmUnpublish={confirmUnpublish}
                                 isWritable={isWritable}
                                 openUpload={openUpload}
                                 find={find}
@@ -827,14 +889,7 @@ export default function NoteViewer() {
                                     >
                                         {/* Editor Panel - conditionally renders Rich or Normal editor */}
                                         <ResizablePanel defaultSize='85%' minSize='50%'>
-                                            <div
-                                                className={cn(
-                                                    'h-full flex flex-col border-r border-border relative',
-                                                    !enableEditing &&
-                                                        richEditor &&
-                                                        'overflow-hidden',
-                                                )}
-                                            >
+                                            <div className='h-full flex flex-col border-r border-border relative'>
                                                 {isFindOpen && (
                                                     <FindReplace
                                                         view={findPanelEditorView}
@@ -844,126 +899,8 @@ export default function NoteViewer() {
                                                         initialReplace={isReplaceMode}
                                                     />
                                                 )}
-                                                {/* Embedded Rich Editor or Static Render */}
-                                                <div
-                                                    className={cn(
-                                                        'flex-1 min-h-0',
-                                                        !enableEditing &&
-                                                            richEditor &&
-                                                            'overflow-hidden',
-                                                    )}
-                                                >
-                                                    {enableEditing || !richEditor ? (
-                                                        <>
-                                                            <RichEditor
-                                                                editorUtils={
-                                                                    editorUtils
-                                                                }
-                                                                additionalExtensions={
-                                                                    customKeymap
-                                                                }
-                                                                key={`${noteId}-${richEditor ? 'rich' : 'source'}`}
-                                                                ref={editorRef}
-                                                                noteid={noteId || ''}
-                                                                markdownContent={
-                                                                    markdownContent
-                                                                }
-                                                                setMarkdownContent={
-                                                                    setMarkdownContent
-                                                                }
-                                                                files={files}
-                                                                setFiles={setFiles}
-                                                                source={!richEditor}
-                                                                saveNote={saveNow}
-                                                                enableEditing={
-                                                                    enableEditing
-                                                                }
-                                                                setLineNumber={
-                                                                    setLineNumber
-                                                                }
-                                                                isSaving={isSaving}
-                                                                isDirty={isDirty}
-                                                                saveError={saveError}
-                                                                onSaveErrorClick={
-                                                                    openSaveError
-                                                                }
-                                                                onLiveSessionChange={
-                                                                    setLiveSession
-                                                                }
-                                                                noteStatus={
-                                                                    note?.status
-                                                                }
-                                                                noteStatusMessage={
-                                                                    note?.status_message
-                                                                }
-                                                                onEditorViewChange={
-                                                                    handleEditorViewChange
-                                                                }
-                                                            />
-                                                            {/* Reference Tree below the editor */}
-                                                            {note && (
-                                                                <ReferenceTree
-                                                                    note={note}
-                                                                    className='mt-4'
-                                                                />
-                                                            )}
-                                                        </>
-                                                    ) : (
-                                                        note && (
-                                                            <StaticRender
-                                                                markdownContent={
-                                                                    markdownContent
-                                                                }
-                                                                files={files}
-                                                            />
-                                                        )
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </ResizablePanel>
-                                        <ResizableHandle className='w-[2px] border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
-                                        {/* Outline sidebar - right */}
-                                        <ResizablePanel
-                                            defaultSize='15%'
-                                            minSize='10%'
-                                            maxSize='30%'
-                                        >
-                                            <ScrollArea className='h-full'>
-                                                <NoteOutline
-                                                    data={noteOutline}
-                                                    showSeparators={true}
-                                                    currentLine={lineNumber}
-                                                />
-                                            </ScrollArea>
-                                        </ResizablePanel>
-                                    </ResizablePanelGroup>
-                                ) : (
-                                    <div
-                                        className={cn(
-                                            'h-full flex flex-col border-l border-border relative',
-                                            !enableEditing &&
-                                                richEditor &&
-                                                'overflow-hidden',
-                                        )}
-                                    >
-                                        {isFindOpen && (
-                                            <FindReplace
-                                                view={findPanelEditorView}
-                                                onClose={() => setIsFindOpen(false)}
-                                                initialReplace={isReplaceMode}
-                                            />
-                                        )}
-                                        {/* Embedded Rich Editor or Static Render */}
-                                        <div
-                                            className={cn(
-                                                'flex-1 min-h-0',
-                                                !enableEditing &&
-                                                    richEditor &&
-                                                    'overflow-hidden',
-                                            )}
-                                        >
-                                            {enableEditing || !richEditor ? (
-                                                <>
+                                                {/* Embedded Rich Editor */}
+                                                <div className='flex-1 min-h-0'>
                                                     <RichEditor
                                                         editorUtils={editorUtils}
                                                         additionalExtensions={
@@ -991,6 +928,7 @@ export default function NoteViewer() {
                                                         onLiveSessionChange={
                                                             setLiveSession
                                                         }
+                                                        onLiveUsersChange={setLiveUsers}
                                                         noteStatus={note?.status}
                                                         noteStatusMessage={
                                                             note?.status_message
@@ -1006,16 +944,68 @@ export default function NoteViewer() {
                                                             className='mt-4'
                                                         />
                                                     )}
-                                                </>
-                                            ) : (
-                                                note && (
-                                                    <StaticRender
-                                                        markdownContent={
-                                                            markdownContent
-                                                        }
-                                                        files={files}
-                                                    />
-                                                )
+                                                </div>
+                                            </div>
+                                        </ResizablePanel>
+                                        <ResizableHandle className='w-[2px] border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
+                                        {/* Outline sidebar - right */}
+                                        <ResizablePanel
+                                            defaultSize='15%'
+                                            minSize='10%'
+                                            maxSize='30%'
+                                        >
+                                            <ScrollArea className='h-full'>
+                                                <NoteOutline
+                                                    data={noteOutline}
+                                                    showSeparators={true}
+                                                    currentLine={lineNumber}
+                                                />
+                                            </ScrollArea>
+                                        </ResizablePanel>
+                                    </ResizablePanelGroup>
+                                ) : (
+                                    <div className='h-full flex flex-col border-l border-border relative'>
+                                        {isFindOpen && (
+                                            <FindReplace
+                                                view={findPanelEditorView}
+                                                onClose={() => setIsFindOpen(false)}
+                                                initialReplace={isReplaceMode}
+                                            />
+                                        )}
+                                        {/* Embedded Rich Editor */}
+                                        <div className='flex-1 min-h-0'>
+                                            <RichEditor
+                                                editorUtils={editorUtils}
+                                                additionalExtensions={customKeymap}
+                                                key={`${noteId}-${richEditor ? 'rich' : 'source'}`}
+                                                ref={editorRef}
+                                                noteid={noteId || ''}
+                                                markdownContent={markdownContent}
+                                                setMarkdownContent={setMarkdownContent}
+                                                files={files}
+                                                setFiles={setFiles}
+                                                source={!richEditor}
+                                                saveNote={saveNow}
+                                                enableEditing={enableEditing}
+                                                setLineNumber={setLineNumber}
+                                                isSaving={isSaving}
+                                                isDirty={isDirty}
+                                                saveError={saveError}
+                                                onSaveErrorClick={openSaveError}
+                                                onLiveSessionChange={setLiveSession}
+                                                onLiveUsersChange={setLiveUsers}
+                                                noteStatus={note?.status}
+                                                noteStatusMessage={note?.status_message}
+                                                onEditorViewChange={
+                                                    handleEditorViewChange
+                                                }
+                                            />
+                                            {/* Reference Tree below the editor */}
+                                            {note && (
+                                                <ReferenceTree
+                                                    note={note}
+                                                    className='mt-4'
+                                                />
                                             )}
                                         </div>
                                     </div>
@@ -1111,6 +1101,30 @@ export default function NoteViewer() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            <AlertDialog open={isUnpublishOpen} onOpenChange={setIsUnpublishOpen}>
+                <AlertDialogContent className='sm:max-w-md'>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Unpublish this note?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            The note becomes a private draft again. It is removed from
+                            the graph, and only you can see it until you publish it
+                            again.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel variant='outline' size='sm'>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant='destructive'
+                            size='sm'
+                            onClick={unpublish}
+                        >
+                            Unpublish
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <FileUploadDialog
                 open={isUploadOpen}
                 onOpenChange={setIsUploadOpen}
@@ -1158,14 +1172,14 @@ export default function NoteViewer() {
                                             readOnly
                                             className='bg-muted/50'
                                             value={
-                                                note?.author
-                                                    ? note.author.username
+                                                note?.created_by
+                                                    ? note.created_by.username
                                                     : 'Unknown'
                                             }
                                         />
                                     </Field>
                                 )}
-                                {!isFleeting && note.editor && (
+                                {!isFleeting && note.updated_by && (
                                     <>
                                         <Field>
                                             <FieldLabel htmlFor='about-edited'>
@@ -1194,8 +1208,8 @@ export default function NoteViewer() {
                                                 readOnly
                                                 className='bg-muted/50'
                                                 value={
-                                                    note?.editor
-                                                        ? note.editor.username
+                                                    note?.updated_by
+                                                        ? note.updated_by.username
                                                         : 'Unknown'
                                                 }
                                             />

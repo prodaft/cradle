@@ -1,6 +1,4 @@
 import { createStatusFilter } from '@/utils/status-filter';
+import { reportStatusEnumValues } from '@services/openapi/schema';
 
-/** Allowed `status` query values for GET `/reports/`. */
-export const QUERY_SLUGS = ['working', 'done', 'error'] as const;
-
-export const { parseParam } = createStatusFilter(QUERY_SLUGS);
+export const { parseParam } = createStatusFilter(reportStatusEnumValues);

@@ -1,10 +1,8 @@
-import json
-
 from django.urls import reverse
-from rest_framework_simplejwt.tokens import AccessToken
 
 from entries.models import Entry
 from user.models import CradleUser, UserRoles
+from user.testing import session_access_token
 
 from ..enums import AccessType
 from ..models import Access
@@ -22,8 +20,8 @@ class AccessListTest(AccessTestCase):
             is_active=True,
         )
         self.admin = CradleUser.objects.create_superuser(username="admin", password="pass", email="b@c.d")
-        self.token_admin = str(AccessToken.for_user(self.admin))
-        self.token_normal = str(AccessToken.for_user(self.user))
+        self.token_admin = str(session_access_token(self.admin))
+        self.token_normal = str(session_access_token(self.user))
         self.headers_admin = {"HTTP_COOKIE": f"access_token={self.token_admin}"}
         self.headers_normal = {"HTTP_COOKIE": f"access_token={self.token_normal}"}
         self.entity, created = Entry.objects.get_or_create(
@@ -39,7 +37,15 @@ class AccessListTest(AccessTestCase):
             **self.headers_admin,
         )
 
-        expected_results = [{"id": self.entity.id, "name": "Entity 1", "access_type": "none"}]
+        expected_results = [
+            {
+                "id": self.entity.id,
+                "name": "Entity 1",
+                "access_type": "none",
+                "team_access_type": "none",
+                "effective_access_type": "none",
+            }
+        ]
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["results"], expected_results)
@@ -64,7 +70,15 @@ class AccessListTest(AccessTestCase):
             **self.headers_admin,
         )
 
-        expected_results = [{"id": self.entity.id, "name": "Entity 1", "access_type": "read-write"}]
+        expected_results = [
+            {
+                "id": self.entity.id,
+                "name": "Entity 1",
+                "access_type": "read-write",
+                "team_access_type": "none",
+                "effective_access_type": "read-write",
+            }
+        ]
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["results"], expected_results)
@@ -89,7 +103,15 @@ class AccessListTest(AccessTestCase):
             **self.headers_admin,
         )
 
-        expected_results = [{"id": self.entity.id, "name": "Entity 1", "access_type": "read"}]
+        expected_results = [
+            {
+                "id": self.entity.id,
+                "name": "Entity 1",
+                "access_type": "read",
+                "team_access_type": "none",
+                "effective_access_type": "read",
+            }
+        ]
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["results"], expected_results)
@@ -107,59 +129,38 @@ class AccessListTest(AccessTestCase):
         )
 
         expected_results = [
-            {"id": self.entity.id, "name": "Entity 1", "access_type": "read"},
-            {"id": entity2.id, "name": "Entity 2", "access_type": "none"},
+            {
+                "id": self.entity.id,
+                "name": "Entity 1",
+                "access_type": "read",
+                "team_access_type": "none",
+                "effective_access_type": "read",
+            },
+            {
+                "id": entity2.id,
+                "name": "Entity 2",
+                "access_type": "none",
+                "team_access_type": "none",
+                "effective_access_type": "none",
+            },
         ]
 
         self.assertEqual(response.status_code, 200)
         self.assertCountEqual(response.json()["results"], expected_results)
 
-    def test_user_access_list_stream_matches_paginated_list(self):
-        response_list = self.client.get(
-            reverse("user_access_list", kwargs={"user_id": self.user.id}),
-            {"page": "1", "page_size": "200"},
-            **self.headers_admin,
-        )
-        response_stream = self.client.get(
-            reverse("user_access_list_stream", kwargs={"user_id": self.user.id}),
-            **self.headers_admin,
-        )
-        self.assertEqual(response_stream.status_code, 200)
-        self.assertEqual(response_stream.headers["Content-Type"], "application/x-ndjson")
-        text = b"".join(response_stream.streaming_content).decode()
-        rows = [json.loads(line) for line in text.splitlines() if line.strip()]
-        self.assertEqual(rows, response_list.json()["results"])
-
     def test_entity_access_list_manager(self):
         manager = CradleUser.objects.create_user(
             username="manager", password="pass", email="m@c.d", role=UserRoles.MANAGER
         )
-        headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(manager)}"}
-        for name in ("entity_access_list", "entity_access_list_stream"):
-            response = self.client.get(reverse(name, kwargs={"entity_id": self.entity.id}), **headers)
-            self.assertEqual(response.status_code, 200)
+        headers = {"HTTP_COOKIE": f"access_token={session_access_token(manager)}"}
+        response = self.client.get(reverse("entity_access_list", kwargs={"entity_id": self.entity.id}), **headers)
+        self.assertEqual(response.status_code, 200)
         response = self.client.get(
             reverse("entity_access_list", kwargs={"entity_id": self.entity.id}), **self.headers_normal
         )
         self.assertEqual(response.status_code, 403)
 
-    def test_entity_access_list_stream_matches_paginated_list(self):
-        response_list = self.client.get(
-            reverse("entity_access_list", kwargs={"entity_id": self.entity.id}),
-            {"page": "1", "page_size": "200"},
-            **self.headers_admin,
-        )
-        response_stream = self.client.get(
-            reverse("entity_access_list_stream", kwargs={"entity_id": self.entity.id}),
-            **self.headers_admin,
-        )
-        self.assertEqual(response_stream.status_code, 200)
-        self.assertEqual(response_stream.headers["Content-Type"], "application/x-ndjson")
-        text = b"".join(response_stream.streaming_content).decode()
-        rows = [json.loads(line) for line in text.splitlines() if line.strip()]
-        self.assertEqual(rows, response_list.json()["results"])
-
-    def test_user_access_list_search_matches_stream(self):
+    def test_user_access_list_search(self):
         Access.objects.create(user=self.user, entity=self.entity, access_type=AccessType.READ)
         Entry.objects.create(name="Other entity", entry_class=self.entryclass1)
         response_list = self.client.get(
@@ -171,13 +172,3 @@ class AccessListTest(AccessTestCase):
         results = response_list.json()["results"]
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["name"], "Entity 1")
-
-        response_stream = self.client.get(
-            reverse("user_access_list_stream", kwargs={"user_id": self.user.id}),
-            {"search": "Entity 1"},
-            **self.headers_admin,
-        )
-        self.assertEqual(response_stream.status_code, 200)
-        text = b"".join(response_stream.streaming_content).decode()
-        rows = [json.loads(line) for line in text.splitlines() if line.strip()]
-        self.assertEqual(rows, results)

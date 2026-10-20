@@ -10,6 +10,7 @@ import {
 } from '@/components/custom/action-bar';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
+import { DataTableRowActions } from '@/components/custom/data-table/data-table-row-actions';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import {
     AlertDialog,
@@ -31,6 +32,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -54,6 +56,7 @@ import {
 } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import AddEntityForm from './add-entity-form';
 
 type Entity = components['schemas']['Entity'];
@@ -119,61 +122,46 @@ export default function EntitiesList() {
 
     const rows = (entitiesPage?.results ?? []) as EntityRow[];
 
-    const openEntity = (item: EntityRow) => {
-        router.navigate({ to: `/manage/entities/${item.id}` as any });
-    };
-
-    const deleteEntity = useMutation({
-        mutationFn: async (entityId: number) => {
-            const { error, response } = await fetchClient.DELETE(
-                '/entries/entities/{entity_id}/',
-                { params: { path: { entity_id: entityId } } },
-            );
-            if (error) throw { response, error };
+    const openSettings = useCallback(
+        (id: string | number, tab?: string) => {
+            router.navigate({
+                to: `/manage/entities/${id}` as any,
+                ...(tab ? { search: { tab } as any } : {}),
+            });
         },
-        meta: {
-            invalidateQueries: [
-                { queryKey: queryKeys.entities.lists() },
-                { queryKey: queryKeys.notes.apiList() },
-            ],
-            successMessage: 'Entity deleted successfully',
+        [router],
+    );
+
+    const deleteEntities = useMutation({
+        mutationFn: async (entityIds: string[]) => {
+            await Promise.all(
+                entityIds.map(async (entityId) => {
+                    const { error, response } = await fetchClient.DELETE(
+                        '/entries/entities/{entity_id}/',
+                        { params: { path: { entity_id: Number(entityId) } } },
+                    );
+                    if (error) throw { response, error };
+                }),
+            );
+        },
+        onSuccess: (_, entityIds) => {
+            toast.success(
+                `Successfully deleted ${entityIds.length} ${entityIds.length > 1 ? 'entities' : 'entity'}`,
+            );
+            clearSelection();
+        },
+        onSettled: () => {
+            for (const queryKey of queryKeys.entryLists()) {
+                queryClient.invalidateQueries({ queryKey });
+            }
         },
     });
 
-    const deleteEntities = async (entityIds: string[]) => {
-        try {
-            await Promise.all(
-                entityIds.map((entityId) => deleteEntity.mutateAsync(Number(entityId))),
-            );
-            clearSelection();
-            setIsDeleteOpen(false);
-            setPendingDeleteIds([]);
-            setConfirmText('');
-        } catch {
-            // Error already handled by mutation meta/toasts
-        }
-    };
-
-    const confirmDelete = useCallback(() => {
-        if (checkedIds.length === 0) return;
-        setPendingDeleteIds(checkedIds);
+    const confirmDelete = useCallback((ids: string[]) => {
+        if (ids.length === 0) return;
+        setPendingDeleteIds(ids);
         setIsDeleteOpen(true);
-    }, [checkedIds]);
-
-    const editSelected = useCallback(() => {
-        if (checkedIds.length !== 1) return;
-        const entityId = checkedIds[0];
-        router.navigate({ to: `/manage/entities/${entityId}` as any });
-    }, [checkedIds, router]);
-
-    const viewActivity = useCallback(() => {
-        if (checkedIds.length !== 1) return;
-        const entityId = checkedIds[0];
-        router.navigate({
-            to: `/manage/entities/${entityId}` as any,
-            search: { tab: 'activity' } as any,
-        });
-    }, [checkedIds, router]);
+    }, []);
 
     const totalPages = useMemo(
         () => Math.max(1, entitiesPage?.total_pages ?? 1),
@@ -313,8 +301,51 @@ export default function EntitiesList() {
                 },
                 enableSorting: false,
             },
+            {
+                id: 'actions',
+                header: '',
+                size: 40,
+                minSize: 40,
+                maxSize: 40,
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <DataTableRowActions>
+                            <DropdownMenuItem onClick={() => openSettings(item.id)}>
+                                <PencilIcon size={16} weight='bold' />
+                                Edit
+                            </DropdownMenuItem>
+                            {isAdmin && (
+                                <>
+                                    <DropdownMenuItem
+                                        onClick={() =>
+                                            openSettings(item.id, 'activity')
+                                        }
+                                    >
+                                        <ClockCounterClockwiseIcon
+                                            size={16}
+                                            weight='bold'
+                                        />
+                                        Activity
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        variant='destructive'
+                                        onClick={() => confirmDelete([String(item.id)])}
+                                    >
+                                        <TrashIcon size={16} weight='bold' />
+                                        Delete
+                                    </DropdownMenuItem>
+                                </>
+                            )}
+                        </DataTableRowActions>
+                    );
+                },
+                enableSorting: false,
+                enableHiding: false,
+            },
         ],
-        [],
+        [isAdmin, openSettings, confirmDelete],
     );
 
     const table = useReactTable({
@@ -353,7 +384,7 @@ export default function EntitiesList() {
         setIsAddOpen(false);
         queryClient.invalidateQueries({ queryKey: queryKeys.entities.lists() });
         if (entity.id) {
-            router.navigate({ to: `/manage/entities/${entity.id}` as any });
+            openSettings(entity.id);
         }
     };
 
@@ -383,7 +414,7 @@ export default function EntitiesList() {
                             table={table}
                             showViewOptions
                             isLoading={isPending}
-                            onRowClick={openEntity}
+                            onRowClick={(item) => openSettings(item.id)}
                             getRowHref={(item) => `/manage/entities/${item.id}`}
                         >
                             <SearchInput
@@ -408,25 +439,9 @@ export default function EntitiesList() {
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
-                    <ActionBarItem
-                        onClick={editSelected}
-                        disabled={isPending || checkedIds.length !== 1}
-                    >
-                        <PencilIcon size={18} weight='bold' />
-                        Edit
-                    </ActionBarItem>
                     {isAdmin && (
                         <ActionBarItem
-                            onClick={viewActivity}
-                            disabled={isPending || checkedIds.length !== 1}
-                        >
-                            <ClockCounterClockwiseIcon size={18} weight='bold' />
-                            View Activity
-                        </ActionBarItem>
-                    )}
-                    {isAdmin && (
-                        <ActionBarItem
-                            onClick={confirmDelete}
+                            onClick={() => confirmDelete(checkedIds)}
                             disabled={isPending || checkedIds.length === 0}
                             className='text-destructive'
                         >
@@ -503,7 +518,7 @@ export default function EntitiesList() {
                         <AlertDialogAction
                             variant='destructive'
                             size='sm'
-                            onClick={() => deleteEntities(pendingDeleteIds)}
+                            onClick={() => deleteEntities.mutate(pendingDeleteIds)}
                             disabled={
                                 confirmText !==
                                 (pendingDeleteIds.length === 1

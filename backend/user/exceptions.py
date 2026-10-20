@@ -50,12 +50,12 @@ class UserErrorCodes(ErrorCode):
         "sign-in-failed",
     )
     TWO_FACTOR_ALREADY_ENABLED = (
-        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_409_CONFLICT,
         "Two Factor Already Enabled",
         "two-factor-already-enabled",
     )
     TWO_FACTOR_NOT_ENABLED = (
-        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_409_CONFLICT,
         "Two Factor Not Enabled",
         "two-factor-not-enabled",
     )
@@ -74,13 +74,18 @@ class UserErrorCodes(ErrorCode):
         "Current Password Incorrect",
         "current-password-incorrect",
     )
-    UNSUPPORTED_OPERATION = (
+    TWO_FACTOR_CODE_INCORRECT = (
         status.HTTP_400_BAD_REQUEST,
-        "Unsupported Operation",
-        "unsupported-operation",
+        "Two-Factor Code Incorrect",
+        "two-factor-code-incorrect",
+    )
+    EMAIL_DELIVERY_UNAVAILABLE = (
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        "Email Delivery Unavailable",
+        "email-delivery-unavailable",
     )
     EMAIL_ALREADY_CONFIRMED = (
-        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_409_CONFLICT,
         "Email Already Confirmed",
         "email-already-confirmed",
     )
@@ -203,16 +208,22 @@ class UserAlreadyExistsException(CradleAPIException):
     error_code = UserErrorCodes.USER_ALREADY_EXISTS
 
 
+class TwoFactorCodeIncorrectException(CradleAPIException):
+    """Exception raised when a signed-in user enters a wrong two-factor code."""
+
+    error_code = UserErrorCodes.TWO_FACTOR_CODE_INCORRECT
+
+
 class CurrentPasswordIncorrectException(CradleAPIException):
     """Exception raised when the current password is wrong during a password change."""
 
     error_code = UserErrorCodes.CURRENT_PASSWORD_INCORRECT
 
 
-class UnsupportedOperationException(CradleAPIException):
-    """Exception raised when an unknown action is requested."""
+class EmailDeliveryUnavailableException(CradleAPIException):
+    """Exception raised when an email could not be queued for delivery."""
 
-    error_code = UserErrorCodes.UNSUPPORTED_OPERATION
+    error_code = UserErrorCodes.EMAIL_DELIVERY_UNAVAILABLE
 
 
 class EmailAlreadyConfirmedException(CradleAPIException):

@@ -5,7 +5,15 @@ import {
     FileUploadTrigger,
 } from '@/components/custom/file-upload';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import {
+    Attachment,
+    AttachmentAction,
+    AttachmentActions,
+    AttachmentContent,
+    AttachmentDescription,
+    AttachmentMedia,
+    AttachmentTitle,
+} from '@/components/ui/attachment';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -17,23 +25,19 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatFileSize } from '@/lib/data-grid';
 import { cn } from '@/lib/utils';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
-import { TrashIcon, UploadSimpleIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import {
+    CheckCircleIcon,
+    FileIcon,
+    TrashIcon,
+    UploadSimpleIcon,
+    WarningCircleIcon,
+} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
-import { uploadFile } from '@utils/files';
-import { BadgeCheck, CircleX, Clock } from 'lucide-react';
+import { formatFileSize, uploadFile } from '@utils/files';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -48,18 +52,43 @@ interface QueueEntry {
     error?: string;
 }
 
-function getStatusRowClassName(status: FileUploadStatus): string | undefined {
+const ATTACHMENT_STATE = {
+    pending: 'idle',
+    uploading: 'uploading',
+    success: 'done',
+    error: 'error',
+} as const satisfies Record<
+    FileUploadStatus,
+    React.ComponentProps<typeof Attachment>['state']
+>;
+
+function describeStatus(
+    status: FileUploadStatus,
+    progress: number,
+    error?: string,
+): string {
     switch (status) {
-        case 'error':
-            return 'bg-destructive/5';
-        case 'success':
-            return 'bg-green-500/5';
-        case 'uploading':
-            return 'bg-secondary/20';
         case 'pending':
-            return 'bg-amber-500/5';
+            return 'Pending';
+        case 'uploading':
+            return `Uploading ${Math.round(progress)}%`;
+        case 'success':
+            return 'Uploaded';
+        case 'error':
+            return error || 'Upload failed';
+    }
+}
+
+function StatusMedia({ status }: { status: FileUploadStatus }) {
+    switch (status) {
+        case 'uploading':
+            return <Spinner />;
+        case 'success':
+            return <CheckCircleIcon weight='fill' className='text-primary' />;
+        case 'error':
+            return <WarningCircleIcon weight='fill' />;
         default:
-            return undefined;
+            return <FileIcon />;
     }
 }
 
@@ -201,7 +230,7 @@ export default function FileUploadDialog({
                             data: uploadData,
                             error: uploadError,
                             response: uploadResp,
-                        } = await fetchClient.POST('/file-transfer/upload/', {
+                        } = await fetchClient.POST('/files/uploads/', {
                             body: {
                                 file_name: file.name,
                                 file_size: file.size,
@@ -219,7 +248,7 @@ export default function FileUploadDialog({
                             error: finalizeError,
                             response: finalizeResp,
                         } = await fetchClient.POST(
-                            '/file-transfer/upload/{upload_id}/finalize/',
+                            '/files/uploads/{upload_id}/finalize/',
                             {
                                 params: { path: { upload_id: uploadData.upload_id } },
                                 body: noteId ? { note_id: noteId } : {},
@@ -375,183 +404,88 @@ export default function FileUploadDialog({
                                     </div>
                                 </div>
 
-                                <div className='rounded-lg border'>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow className='hover:bg-transparent'>
-                                                <TableHead className='h-9 ps-4'>
-                                                    Status
-                                                </TableHead>
-                                                <TableHead className='h-9'>
-                                                    Name
-                                                </TableHead>
-                                                <TableHead className='h-9'>
-                                                    Size
-                                                </TableHead>
-                                                <TableHead className='h-9 w-[108px] text-right pe-3'>
-                                                    Actions
-                                                </TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {fileEntries.map((entry) => {
-                                                const {
-                                                    file,
-                                                    status,
-                                                    progress,
-                                                    error,
-                                                } = entry;
-
-                                                return (
-                                                    <TableRow
-                                                        key={getListItemId(file)}
-                                                        className={getStatusRowClassName(
-                                                            status,
-                                                        )}
-                                                    >
-                                                        <TableCell className='py-2 ps-4 align-middle'>
-                                                            {status === 'uploading' && (
-                                                                <Badge
-                                                                    variant='secondary'
-                                                                    className='text-xs font-normal tabular-nums'
-                                                                >
-                                                                    {Math.round(
-                                                                        progress,
-                                                                    )}
-                                                                    %
-                                                                    <Spinner data-icon='inline-end' />
-                                                                </Badge>
+                                {fileEntries.length > 0 && (
+                                    <div className='flex flex-col gap-2'>
+                                        {fileEntries.map(
+                                            ({ file, status, progress, error }) => (
+                                                <Attachment
+                                                    key={getListItemId(file)}
+                                                    state={ATTACHMENT_STATE[status]}
+                                                    className='w-full'
+                                                >
+                                                    <AttachmentMedia>
+                                                        <StatusMedia status={status} />
+                                                    </AttachmentMedia>
+                                                    <AttachmentContent>
+                                                        <AttachmentTitle>
+                                                            {file.name}
+                                                        </AttachmentTitle>
+                                                        <AttachmentDescription
+                                                            title={error}
+                                                        >
+                                                            {formatFileSize(file.size)}{' '}
+                                                            ·{' '}
+                                                            {describeStatus(
+                                                                status,
+                                                                progress,
+                                                                error,
                                                             )}
-                                                            {status === 'pending' && (
-                                                                <Badge
-                                                                    variant='outline'
-                                                                    className='border-amber-500/20 bg-amber-500/10 text-xs font-normal text-amber-700 dark:text-amber-400'
-                                                                >
-                                                                    <Clock data-icon='inline-start' />
-                                                                    Pending
-                                                                </Badge>
-                                                            )}
-                                                            {status === 'success' && (
-                                                                <Badge
-                                                                    variant='outline'
-                                                                    className='border-green-500/20 bg-green-500/10 text-xs font-normal text-green-700 dark:text-green-400'
-                                                                >
-                                                                    <BadgeCheck data-icon='inline-start' />
-                                                                    Done
-                                                                </Badge>
-                                                            )}
-                                                            {status === 'error' &&
-                                                                (error ? (
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger
-                                                                            render={
-                                                                                <Badge
-                                                                                    variant='destructive'
-                                                                                    className='cursor-help text-xs font-normal'
-                                                                                />
+                                                        </AttachmentDescription>
+                                                    </AttachmentContent>
+                                                    <AttachmentActions>
+                                                        {(status === 'pending' ||
+                                                            status === 'error') && (
+                                                            <Tooltip>
+                                                                <TooltipTrigger
+                                                                    render={
+                                                                        <AttachmentAction
+                                                                            onClick={() =>
+                                                                                uploadOne(
+                                                                                    file,
+                                                                                )
                                                                             }
-                                                                        >
-                                                                            <CircleX data-icon='inline-start' />
-                                                                            Failed
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent
-                                                                            side='top'
-                                                                            className='max-w-xs text-left'
-                                                                        >
-                                                                            {error}
-                                                                        </TooltipContent>
-                                                                    </Tooltip>
-                                                                ) : (
-                                                                    <Badge
-                                                                        variant='destructive'
-                                                                        className='text-xs font-normal'
-                                                                    >
-                                                                        <CircleX data-icon='inline-start' />
-                                                                        Failed
-                                                                    </Badge>
-                                                                ))}
-                                                        </TableCell>
-                                                        <TableCell className='max-w-[min(280px,40vw)] py-2 align-middle'>
-                                                            <p className='truncate text-sm font-medium'>
-                                                                {file.name}
-                                                            </p>
-                                                        </TableCell>
-                                                        <TableCell className='text-muted-foreground py-2 align-middle text-sm tabular-nums'>
-                                                            {formatFileSize(file.size)}
-                                                        </TableCell>
-                                                        <TableCell className='py-2 pe-2 text-right align-middle'>
-                                                            <div className='flex items-center justify-end gap-0.5'>
-                                                                {(status ===
-                                                                    'pending' ||
-                                                                    status ===
-                                                                        'error') && (
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger
-                                                                            render={
-                                                                                <Button
-                                                                                    type='button'
-                                                                                    variant='ghost'
-                                                                                    size='icon'
-                                                                                    className='size-8'
-                                                                                    onClick={() =>
-                                                                                        uploadOne(
-                                                                                            file,
-                                                                                        )
-                                                                                    }
-                                                                                    disabled={
-                                                                                        isUploading
-                                                                                    }
-                                                                                    aria-label={`Upload ${file.name}`}
-                                                                                />
+                                                                            disabled={
+                                                                                isUploading
                                                                             }
-                                                                        >
-                                                                            <UploadSimpleIcon
-                                                                                className='h-4 w-4'
-                                                                                weight='bold'
-                                                                            />
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent side='top'>
-                                                                            Upload
-                                                                        </TooltipContent>
-                                                                    </Tooltip>
-                                                                )}
-                                                                <Tooltip>
-                                                                    <TooltipTrigger
-                                                                        render={
-                                                                            <Button
-                                                                                type='button'
-                                                                                variant='ghost'
-                                                                                size='icon'
-                                                                                className='size-8'
-                                                                                onClick={() =>
-                                                                                    removeFile(
-                                                                                        file,
-                                                                                    )
-                                                                                }
-                                                                                disabled={
-                                                                                    isUploading
-                                                                                }
-                                                                                aria-label={`Remove ${file.name}`}
-                                                                            />
-                                                                        }
-                                                                    >
-                                                                        <TrashIcon
-                                                                            className='h-4 w-4'
-                                                                            weight='bold'
+                                                                            aria-label={`Upload ${file.name}`}
                                                                         />
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent side='top'>
-                                                                        Remove
-                                                                    </TooltipContent>
-                                                                </Tooltip>
-                                                            </div>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                </div>
+                                                                    }
+                                                                >
+                                                                    <UploadSimpleIcon weight='bold' />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent side='top'>
+                                                                    Upload
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        )}
+                                                        <Tooltip>
+                                                            <TooltipTrigger
+                                                                render={
+                                                                    <AttachmentAction
+                                                                        onClick={() =>
+                                                                            removeFile(
+                                                                                file,
+                                                                            )
+                                                                        }
+                                                                        disabled={
+                                                                            isUploading
+                                                                        }
+                                                                        aria-label={`Remove ${file.name}`}
+                                                                    />
+                                                                }
+                                                            >
+                                                                <TrashIcon weight='bold' />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side='top'>
+                                                                Remove
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </AttachmentActions>
+                                                </Attachment>
+                                            ),
+                                        )}
+                                    </div>
+                                )}
 
                                 {rejectMessages.length > 0 && (
                                     <Alert variant='destructive'>

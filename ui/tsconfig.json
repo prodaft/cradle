@@ -50,6 +50,5 @@
         }
     },
     "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],
-    "exclude": ["node_modules", "dist", "out", "build"],
     "references": [{ "path": "./tsconfig.node.json" }]
 }

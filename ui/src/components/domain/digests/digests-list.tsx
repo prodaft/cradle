@@ -123,7 +123,7 @@ export default function DigestsList() {
         queryKey: ['digests', listQuery],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/intelio/digest/',
+                '/intelio/digests/',
                 { params: { query: listQuery } },
             );
             if (error) throw { response, error };

@@ -45,7 +45,7 @@ Example: `~[[domain:example.com]]`.
 ### Best practices
 Use aliases to improve readability, keep notes concise since CRADLE aggregates
 them under related entries, and save work in progress as fleeting notes until
-you are ready to finalize.
+you are ready to publish.
 
 ## Adding and referencing files in notes
 
@@ -62,7 +62,7 @@ with an exclamation mark, for example `![image][image.png]`.
 
 ## Role of notes in linking entries
 
-Finalizing a note triggers detection of entry links. Links that appear in the
+Publishing a note triggers detection of entry links. Links that appear in the
 same markdown section are connected to each other in the graph. If a section
 contains too many links, CRADLE creates a `virtual` note node and connects all
 linked entries to that node instead of creating every pairwise edge. This keeps
@@ -75,6 +75,11 @@ only changes how connections are rendered and stored.
 ## Fleeting notes
 
 Fleeting notes are temporary drafts that auto-save as you type. They remain
-private, are marked as drafts, and can be edited or deleted before finalization.
+private, are marked as drafts, and can be edited or deleted before publishing.
 Fleeting notes support file attachments and sync across devices. Once you click
-Save as Final, the note is added to the knowledge graph and becomes searchable.
+Publish, the note is added to the knowledge graph and becomes searchable.
+
+The author of a published note can turn it back into a fleeting note with
+Unpublish. The note is removed from the knowledge graph and becomes private to
+its author until it is published again. A note cannot be unpublished while it
+is still being processed.

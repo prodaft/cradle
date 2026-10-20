@@ -5,9 +5,10 @@ import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
@@ -18,7 +19,7 @@ from mail.models import ConfirmationMail, ResetPasswordMail
 from management.settings import cradle_settings
 
 from .constants import USER_ACCESS_VECTOR_LENGTH, USER_DEFAULT_THEME
-from .managers import CradleUserManager
+from .managers import CradleUserManager, UserSessionQuerySet, hash_api_key
 
 _ACCESS_VECTOR_FIELD = BitStringField(max_length=USER_ACCESS_VECTOR_LENGTH, null=False, default=1, varying=False)
 
@@ -44,7 +45,11 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     )
 
     api_key: models.CharField = models.CharField(
-        max_length=128, blank=True, null=True, help_text="API key for programmatic access"
+        max_length=64,
+        blank=True,
+        null=True,
+        unique=True,
+        help_text="SHA-256 hex digest of the API key; the key itself is shown once and never stored",
     )
 
     password_reset_token: models.TextField = models.TextField(
@@ -100,10 +105,13 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
         return value.pk == self.pk
 
-    def send_email_confirmation(self) -> None:
-        """Generate token, save, and send confirmation email. No-op if already confirmed."""
+    def send_email_confirmation(self) -> bool:
+        """Generate token, save, and queue the confirmation email. No-op if already confirmed.
+
+        Returns False if the email could not be queued; the failure is logged and the new token stays saved.
+        """
         if self.email_confirmed:
-            return
+            return True
 
         self.email_confirmation_token = secrets.token_hex(32)
         self.email_confirmation_token_expiry = timezone.now() + timedelta(hours=24)
@@ -114,17 +122,18 @@ class CradleUser(AbstractUser, LoggableModelMixin):
             ]
         )
 
-        mail = ConfirmationMail(self)
-        mail.dispatch()
+        return ConfirmationMail(self).dispatch_safely()
 
-    def send_password_reset(self) -> None:
-        """Generate token, save, and send password reset email."""
+    def send_password_reset(self) -> bool:
+        """Generate token, save, and queue the password reset email.
+
+        Returns False if the email could not be queued; the failure is logged and the new token stays saved.
+        """
         self.password_reset_token = secrets.token_hex(32)
         self.password_reset_token_expiry = timezone.now() + timedelta(hours=1)
         self.save(update_fields=["password_reset_token", "password_reset_token_expiry"])
 
-        mail = ResetPasswordMail(self)
-        mail.dispatch()
+        return ResetPasswordMail(self).dispatch_safely()
 
     def __hash__(self) -> int:
         """Hash by primary key for use in sets/dicts."""
@@ -165,6 +174,35 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         """
         return not self.is_cradle_admin and cradle_settings.search.reveal_restricted_matches
 
+    def generate_api_key(self) -> str:
+        """Issue a new API key, replacing any previous one, and return it.
+
+        Only its digest is stored, so the returned raw key cannot be recovered later.
+        """
+        key = secrets.token_hex(24)
+        self.api_key = hash_api_key(key)
+        self.save(update_fields=["api_key"])
+        return key
+
+    def change_password(self, raw_password: str, *, keep_jti: str | None = None) -> None:
+        """Set a new password, invalidate any pending reset link and end every session except ``keep_jti``'s."""
+        with transaction.atomic():
+            self.set_password(raw_password)
+            self.password_reset_token = None
+            self.save(update_fields=["password", "password_reset_token"])
+            self.revoke_sessions(keep_jti=keep_jti)
+
+    def revoke_sessions(self, keep_jti: str | None = None) -> None:
+        """End every login session except the one whose refresh token is ``keep_jti``.
+
+        Blacklists the refresh tokens and deletes the session rows; deleting a row also stops its access tokens
+        and closes its WebSockets (see ``user.signals``).
+        """
+        sessions = UserSession.objects.filter(user=self)
+        if keep_jti:
+            sessions = sessions.exclude(refresh_token_jti=keep_jti)
+        sessions.revoke()
+
     def can_view(self, other: "CradleUser") -> bool:
         """Whether this user may view ``other``'s account data (themselves, or any user if admin)."""
         return self.pk == other.pk or self.is_cradle_admin
@@ -174,12 +212,13 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         return self.pk == other.pk or (self.is_cradle_admin and not other.is_cradle_admin)
 
     def _compute_access_bitmask(self) -> int:
-        """Compute the access bitmask from user's entity accesses."""
+        """Compute the access bitmask from the user's direct and team entity accesses."""
+        Access = apps.get_model("access", "Access")
+        Entry = apps.get_model("entries", "Entry")
+        granted = Access.objects.granted_entity_ids(self.pk, {AccessType.READ, AccessType.READ_WRITE})
         acvec = 1
-        for access in self.accesses.all():
-            if access.access_type == AccessType.NONE or access.entity is None:
-                continue
-            acvec |= 1 << access.entity.acvec_offset
+        for offset in Entry.objects.filter(id__in=granted).values_list("acvec_offset", flat=True):
+            acvec |= 1 << offset
         return acvec
 
     @property
@@ -204,8 +243,6 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         when multiple requests are sent simultaneously. Returns None if 2FA is
         already enabled.
         """
-        from django.db import transaction
-
         if not self.two_factor_enabled:
             with transaction.atomic():
                 devices = TOTPDevice.objects.select_for_update().filter(user=self)
@@ -229,8 +266,6 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
     def verify_otp(self, otp: str) -> bool:
         """Verify a 2FA one-time password against the user's TOTP devices."""
-        from django.db import transaction
-
         with transaction.atomic():
             unconfirmed_devices = TOTPDevice.objects.select_for_update().filter(user=self, confirmed=False)
 
@@ -250,8 +285,6 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
     def disable_2fa(self) -> None:
         """Disable 2FA and remove all TOTP devices for the user."""
-        from django.db import transaction
-
         with transaction.atomic():
             TOTPDevice.objects.filter(user=self).delete()
             self.two_factor_enabled = False
@@ -328,9 +361,8 @@ class UserSession(models.Model):
     created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True, help_text="When the session was created")
     last_activity: models.DateTimeField = models.DateTimeField(auto_now=True, help_text="Last activity timestamp")
     expires_at: models.DateTimeField = models.DateTimeField(help_text="When the refresh token expires")
-    is_current: models.BooleanField = models.BooleanField(
-        default=False, help_text="Whether this is the current session"
-    )
+
+    objects = UserSessionQuerySet.as_manager()
 
     class Meta:
         ordering = ["-last_activity"]
@@ -342,9 +374,13 @@ class UserSession(models.Model):
         """Return session description with user and device."""
         return f"Session for {self.user.username} - {self.device_info or 'Unknown device'}"
 
-    def is_expired(self) -> bool:
-        """Return True if the session has expired."""
-        return timezone.now() > self.expires_at
+    @classmethod
+    def is_active(cls, session_id: str | None, user: CradleUser) -> bool:
+        """Whether the login session exists for ``user`` and has not expired.
+
+        Revoking a session deletes its row, so this stops its access tokens before they expire.
+        """
+        return bool(session_id) and cls.objects.active().filter(id=session_id, user=user).exists()
 
 
 class BlacklistedToken(models.Model):

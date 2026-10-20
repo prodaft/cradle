@@ -18,3 +18,9 @@ that node so you can trace where the data came from.
 Importing a JSON report from another CRADLE instance. When you create the
 digest, CRADLE automatically creates the artifacts and related objects in the
 backend, and links them into the graph.
+
+Files attached to the report's notes are downloaded from the links in the
+report. Links to this instance's own storage and to public addresses work.
+Links to other internal addresses are refused unless an administrator lists
+that host in `DIGEST_TRUSTED_FILE_HOSTS`; refused files are counted as failed
+in the digest summary. Each file must also fit within your upload limit.

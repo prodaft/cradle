@@ -3,6 +3,7 @@ from uuid import UUID
 from django.db import transaction
 from django.db.models import Q
 from django.http import Http404
+from django.urls import reverse
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
@@ -19,17 +20,21 @@ from core.pagination import TotalPagesPagination
 from core.query_lang import search_q
 from core.utils import validate_order_by
 from core.validators import validate_choice_param
+from notes.models import Note
 from user.authentication import APIKeyAuthentication, CookieJWTAuthentication
 
 from ..exceptions import (
+    ExportFormatNotFoundException,
+    NotesNotFoundException,
     PublishErrorCodes,
     ReportAlreadyCompletedException,
     ReportAlreadyGeneratingException,
     ReportDeleteFailedException,
     ReportNotFoundException,
 )
-from ..models import PublishedReport, ReportStatus
+from ..models import DownloadStrategies, PublishedReport, ReportStatus, TrafficLightProtocol
 from ..serializers import (
+    PublishReportSerializer,
     ReportDetailSerializer,
     ReportListSerializer,
 )
@@ -80,6 +85,7 @@ from ..tasks import generate_report
                 location=OpenApiParameter.QUERY,
                 description="Filter reports by status (e.g. done, working, error)",
                 required=False,
+                enum=list(ReportStatus.values),
             ),
         ],
         responses={
@@ -93,10 +99,25 @@ from ..tasks import generate_report
             ),
             **get_common_error_responses(),
         },
-    )
+    ),
+    post=extend_schema(
+        operation_id="reports_create",
+        summary="Create published report",
+        description="Creates a new published report from selected notes using specified strategy.",  # noqa: E501
+        request=PublishReportSerializer,
+        responses={
+            201: ReportListSerializer,
+            **get_error_responses(
+                PublishErrorCodes.NOTES_NOT_FOUND,
+                PublishErrorCodes.EXPORT_FORMAT_NOT_FOUND,
+                include_validation_error=True,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
 )
 class ReportListAPIView(generics.ListAPIView):
-    """List published reports for the authenticated user with search, filter, and ordering."""
+    """List published reports (search, filter, ordering) or create one from selected notes."""
 
     serializer_class = ReportListSerializer
     authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
@@ -147,6 +168,52 @@ class ReportListAPIView(generics.ListAPIView):
         page = paginator.paginate_queryset(queryset, request)
         serializer = self.get_serializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+    def post(self, request: Request) -> Response:
+        """Create a report from selected notes and enqueue generation task."""
+        serializer = PublishReportSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        note_ids = data["note_ids"]
+        title = data["title"]
+        strategy_key = data["strategy"]
+        anonymized = data["anonymized"]
+        is_document = strategy_key in (DownloadStrategies.HTML, DownloadStrategies.PDF)
+
+        user = request.user
+
+        notes = Note.objects.get_accessible_notes(user).filter(id__in=note_ids)
+        if notes.count() != len(set(note_ids)):
+            raise NotesNotFoundException(detail="Some of the selected notes could not be found.")
+
+        if (strategy_key or "").lower() not in PUBLISH_STRATEGIES:
+            raise ExportFormatNotFoundException(detail="That export format could not be found.")
+
+        with transaction.atomic():
+            report = PublishedReport.objects.create(
+                title=title,
+                user=user,
+                strategy=strategy_key,
+                anonymized=anonymized,
+                tlp=data["tlp"] if is_document else TrafficLightProtocol.CLEAR,
+                extra_data=(
+                    {"include_toc": data["include_toc"], "include_entries": data["include_entries"]}
+                    if is_document
+                    else None
+                ),
+            )
+            report.notes.set(notes)
+            report.log_create(user)
+
+        generate_report.delay(report.id)
+
+        location = request.build_absolute_uri(reverse("report_detail", kwargs={"report_id": report.id}))
+        return Response(
+            ReportListSerializer(report).data,
+            status=status.HTTP_201_CREATED,
+            headers={"Location": location},
+        )
 
 
 @extend_schema_view(
@@ -259,13 +326,8 @@ class ReportDetailAPIView(generics.RetrieveDestroyAPIView):
     def destroy(self, request: Request, *args, **kwargs) -> Response:
         """Delete the report and any associated external resources."""
         report = self.get_object()
-        with transaction.atomic():
-            publisher_factory = PUBLISH_STRATEGIES.get((report.strategy or "").lower())
-            if publisher_factory is not None:
-                publisher = publisher_factory(report.anonymized)
-                try:
-                    publisher.delete_report(report)
-                except OSError, IOError:
-                    raise ReportDeleteFailedException(detail="The report could not be deleted. Please try again later.")
-            report.delete()
+        publisher = report.publisher
+        if publisher is not None and not publisher.delete_report(report):
+            raise ReportDeleteFailedException(detail="The report could not be deleted. Please try again later.")
+        report.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

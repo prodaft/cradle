@@ -6,6 +6,7 @@ Relation (links between entries), Edge (materialized graph edges), and Attachmen
 
 import re
 import uuid
+from collections.abc import Iterable
 from typing import Optional
 
 from django.apps import apps
@@ -42,8 +43,16 @@ from .managers import (
 )
 
 
+def calculate_acvec(entities: Iterable["Entry"]) -> int:
+    """Access vector bitmask of the given entities: bit 0 plus each entity's ``acvec_offset`` bit."""
+    acvec = 1
+    for entity in entities:
+        acvec |= 1 << entity.acvec_offset
+    return acvec
+
+
 def attachment_upload_path(instance: "Attachment", filename: str) -> str:
-    """Generate upload path for attachments: attachments/{uuid}-{filename}."""
+    """Generate upload path for attachments: {uuid}-{filename}."""
     return f"{instance.id}-{filename}"
 
 
@@ -315,11 +324,19 @@ class Entry(LifecycleModel, LoggableModelMixin):
         default=dict, null=True, help_text="Transient status (e.g. during access updates)"
     )
 
+    team: models.ForeignKey = models.ForeignKey(
+        "teams.Team",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="owned_entities",
+        help_text="Owning team, whose leads decide who may access this entity",
+    )
+
     class Meta:
         ordering = ["-last_seen"]
         constraints = [
             models.UniqueConstraint(fields=["name", "entry_class"], name="unique_name_class"),
-            # Enforces uniqueness on non-zero acvec_offset values.
             models.UniqueConstraint(
                 fields=["acvec_offset"],
                 condition=~Q(acvec_offset=0),
@@ -369,7 +386,6 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
     def setup_access(self):
         """Set is_public and acvec_offset based on entry type and visibility."""
-        # Artifacts and public entities have public access
         if self.entry_class.type == EntryType.ARTIFACT or self.is_public:
             self.is_public = True
             self.acvec_offset = 0
@@ -405,11 +421,6 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
         super().delete(*args, **kwargs)
 
-    def ping(self):
-        """Update last_seen to now."""
-        self.last_seen = timezone.now()
-        self.save(update_fields=["last_seen"])
-
     @hook(AFTER_UPDATE, condition=WhenFieldHasChanged("acvec_offset", True))
     def acvec_offset_updated(self):
         from .tasks import update_accesses
@@ -423,7 +434,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
     def reconnect_aliases(self):
         from entries.models import Relation
 
-        Relation.objects.filter(e1=self, reason=RelationReason.ALIAS).delete()
+        self.relations.filter(reason=RelationReason.ALIAS).delete()
 
         root = self.__class__.objects.select_related("entry_class").get(pk=self.pk)
         alias_entries = root.aliases.all().select_related("entry_class")

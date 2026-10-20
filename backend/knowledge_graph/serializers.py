@@ -36,7 +36,7 @@ class EdgeRelationSerializer(serializers.ModelSerializer):
 class GraphInaccessibleResponseSerializer(serializers.Serializer):
     """Serializer for graph inaccessible response."""
 
-    inaccessible = serializers.ListField(
+    inaccessible_ids = serializers.ListField(
         child=serializers.IntegerField(),
         help_text="List of inaccessible entry IDs",
     )
@@ -57,7 +57,7 @@ class SubGraphSerializer(serializers.Serializer):
 
     @classmethod
     def from_relations(cls, relations: list[Relation]) -> "SubGraphSerializer":
-        """Create a SubGraphSerializer instance from a Relation queryset.
+        """Create a SubGraphSerializer instance from relations (select e1/e2 entry classes up front).
 
         Ensures consistent ID types (integers) for src and dst. Calculates node degrees.
         """
@@ -70,21 +70,21 @@ class SubGraphSerializer(serializers.Serializer):
 
         for entry in entries:
             entry.degree = degree_map.get(int(entry.id), 0)
-
+            entry.note_id = None
             if entry.entry_class.subtype == SUBTYPE_NOTE and entry.name and len(entry.name) >= 36:
                 try:
-                    note_uuid = str(uuid.UUID(entry.name[:36]))
-                    entry.note_id = note_uuid
-                    try:
-                        note = Note.objects.get(id=note_uuid)
-                        entry.name = (note.metadata or {}).get("title") or note.title or note_uuid
-                    except Note.DoesNotExist:
-                        entry.name = note_uuid
-                        entry.note_id = note_uuid
+                    entry.note_id = str(uuid.UUID(entry.name[:36]))
                 except ValueError:
-                    entry.note_id = None
-            else:
-                entry.note_id = None
+                    pass
+
+        note_ids = {entry.note_id for entry in entries if entry.note_id}
+        titles = {
+            str(note.id): (note.metadata or {}).get("title") or note.title
+            for note in Note.objects.filter(id__in=note_ids).only("id", "title", "metadata")
+        }
+        for entry in entries:
+            if entry.note_id:
+                entry.name = titles.get(entry.note_id) or entry.note_id
 
         colors = {e.entry_class.subtype: e.entry_class.color for e in entries if e.entry_class.subtype is not None}
 

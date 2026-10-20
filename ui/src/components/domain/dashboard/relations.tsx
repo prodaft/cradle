@@ -310,7 +310,7 @@ export default function Relations({ obj }: RelationsProps) {
                 entities.map(async (entity) => {
                     const entityId = Number(entity);
                     const { error, response } = await fetchClient.POST(
-                        '/access/request/{entity_id}/',
+                        '/entries/entities/{entity_id}/access/requests/',
                         {
                             params: { path: { entity_id: entityId } },
                             body: { entity_id: entityId },
@@ -431,7 +431,7 @@ export default function Relations({ obj }: RelationsProps) {
         },
         enabled: !!obj.id && depth > 0,
         meta: { suppressNotification: true },
-        select: (response) => response?.inaccessible ?? [],
+        select: (response) => response?.inaccessible_ids ?? [],
     });
 
     const hasInaccessible = inaccessibleIds.length > 0;

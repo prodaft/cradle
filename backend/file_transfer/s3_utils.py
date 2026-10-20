@@ -8,28 +8,21 @@ from __future__ import annotations
 
 from functools import cache
 from io import BytesIO
-from typing import Optional
+from typing import IO, Optional
 
 from django.conf import settings
 
 from .storage import DigestStorage, FileTransferStorage, RelationStorage, ReportStorage
 
+_STORAGES = {cls.bucket_name: cls for cls in (FileTransferStorage, RelationStorage, ReportStorage, DigestStorage)}
 
-def _get_storage_for_bucket(bucket_name: str):
-    """Return the django-storages backend for a known bucket.
 
-    Notes:
-    - Keep this mapping centralized so other apps can move away from the legacy
-      MinIO client while still using boto3 via django-storages.
-    """
-    if bucket_name == ReportStorage.bucket_name:
-        return ReportStorage()
-    if bucket_name == DigestStorage.bucket_name:
-        return DigestStorage()
-    if bucket_name == RelationStorage.bucket_name:
-        return RelationStorage()
-    # Default: files bucket
-    return FileTransferStorage()
+def storage_for_bucket(bucket_name: str):
+    """Return the django-storages backend for one of our buckets; raise ValueError for any other name."""
+    try:
+        return _STORAGES[bucket_name]()
+    except KeyError:
+        raise ValueError(f"Unknown storage bucket {bucket_name!r}.") from None
 
 
 @cache
@@ -48,14 +41,14 @@ def presign_client(storage):
     return _public_storage(type(storage)).connection.meta.client
 
 
-def _ensure_bucket_exists(storage) -> None:
-    """Best-effort ensure bucket exists.
+def ensure_bucket_exists(bucket_name: str) -> None:
+    """Create one of our buckets if it does not exist yet; safe to call repeatedly.
 
-    S3/MinIO do not auto-create buckets on PutObject. This helper avoids
-    NoSuchBucket errors for our fixed, app-owned buckets.
+    S3/MinIO do not auto-create buckets on PutObject, so this avoids NoSuchBucket errors.
     """
     from botocore.exceptions import ClientError
 
+    storage = storage_for_bucket(bucket_name)
     client = storage.connection.meta.client
     bucket = storage.bucket_name
 
@@ -67,7 +60,6 @@ def _ensure_bucket_exists(storage) -> None:
         if code not in ("404", "NoSuchBucket", "NotFound"):
             raise
 
-    # Create the bucket (AWS needs LocationConstraint for non-us-east-1 regions).
     params: dict = {"Bucket": bucket}
     region = getattr(client.meta, "region_name", None)
     if region and region != "us-east-1":
@@ -82,38 +74,15 @@ def _ensure_bucket_exists(storage) -> None:
         raise
 
 
-def ensure_bucket_exists(bucket_name: str) -> None:
-    """Public wrapper to ensure a bucket exists.
-
-    This is safe to call repeatedly; it is best-effort and will only create the bucket
-    if it does not already exist.
-    """
-    storage = _get_storage_for_bucket(bucket_name)
-    _ensure_bucket_exists(storage)
-
-
-def get_file_transfer_storage(*, ensure_bucket: bool = True):
-    """Get FileTransferStorage instance. Set ensure_bucket=False when bucket is known to exist (e.g. in tasks)."""
-    storage = FileTransferStorage()
-    if ensure_bucket:
-        _ensure_bucket_exists(storage)
-    return storage
-
-
 def ensure_cradle_buckets_exist() -> None:
     """Ensure all CRADLE-owned buckets exist (best-effort)."""
-    for bucket in (
-        FileTransferStorage.bucket_name,
-        RelationStorage.bucket_name,
-        ReportStorage.bucket_name,
-        DigestStorage.bucket_name,
-    ):
+    for bucket in _STORAGES:
         ensure_bucket_exists(bucket)
 
 
 def fetch_bytes(bucket_name: str, key: str) -> Optional[BytesIO]:
     """Fetch an object and return it as an in-memory BytesIO (or None if missing)."""
-    storage = _get_storage_for_bucket(bucket_name)
+    storage = storage_for_bucket(bucket_name)
     try:
         with storage.open(key, "rb") as f:
             return BytesIO(f.read())
@@ -133,8 +102,7 @@ def presign_get(
 
     We use boto3 via django-storages' storage.connection.
     """
-    storage = _get_storage_for_bucket(bucket_name)
-    _ensure_bucket_exists(storage)
+    storage = storage_for_bucket(bucket_name)
     params: dict = {"Bucket": storage.bucket_name, "Key": key}
     if response_content_type:
         params["ResponseContentType"] = response_content_type
@@ -152,12 +120,11 @@ def put_bytes(
     bucket_name: str,
     key: str,
     *,
-    body: bytes,
+    body: bytes | IO[bytes],
     content_type: str,
 ) -> None:
-    """Write bytes to the given bucket/key."""
-    storage = _get_storage_for_bucket(bucket_name)
-    _ensure_bucket_exists(storage)
+    """Write bytes or a readable file object to the given bucket/key."""
+    storage = storage_for_bucket(bucket_name)
     storage.connection.meta.client.put_object(
         Bucket=storage.bucket_name,
         Key=key,
@@ -168,15 +135,13 @@ def put_bytes(
 
 def delete_object(bucket_name: str, key: str) -> None:
     """Delete an object from the given bucket/key."""
-    storage = _get_storage_for_bucket(bucket_name)
-    _ensure_bucket_exists(storage)
+    storage = storage_for_bucket(bucket_name)
     storage.connection.meta.client.delete_object(Bucket=storage.bucket_name, Key=key)
 
 
 def exists(bucket_name: str, key: str) -> bool:
     """Check if an object exists in the given bucket/key."""
-    storage = _get_storage_for_bucket(bucket_name)
-    _ensure_bucket_exists(storage)
+    storage = storage_for_bucket(bucket_name)
     try:
         return storage.exists(key)
     except Exception:

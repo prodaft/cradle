@@ -10,20 +10,24 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { queryKeys } from '@/hooks/query';
-import { ClockCounterClockwiseIcon, GearIcon } from '@phosphor-icons/react';
+import { useAuthState } from '@/hooks/auth/use-auth';
+import {
+    ClockCounterClockwiseIcon,
+    GearIcon,
+    UserIcon,
+    UsersThreeIcon,
+} from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
-import { useQueryClient } from '@tanstack/react-query';
 import {
     useParams,
     useRouter,
     useRouterState,
     useSearch,
 } from '@tanstack/react-router';
-import { Shield } from 'lucide-react';
 import { useMemo } from 'react';
 import EntityForm from './entity-form';
 import EntityPermissionsForm from './entity-permissions-form';
+import EntityTeamsForm from './entity-teams-form';
 
 const ENTITY_SETTINGS_ITEMS = [
     {
@@ -31,22 +35,30 @@ const ENTITY_SETTINGS_ITEMS = [
         label: 'Settings',
         icon: GearIcon,
         description: 'Manage entity properties and settings',
+        managerOnly: true,
     },
     {
-        id: 'permissions',
-        label: 'Permissions',
-        icon: Shield,
-        description: 'Manage user access permissions',
+        id: 'users',
+        label: 'Users',
+        icon: UserIcon,
+        description: 'Direct access per user, and the access they get through teams',
+        managerOnly: false,
+    },
+    {
+        id: 'teams',
+        label: 'Teams',
+        icon: UsersThreeIcon,
+        description: 'Teams with access to this entity',
+        managerOnly: false,
     },
     {
         id: 'activity',
         label: 'Activity',
         icon: ClockCounterClockwiseIcon,
         description: 'View entity activity and audit logs',
+        managerOnly: true,
     },
 ];
-
-const defaultEntitySettingsTabId = ENTITY_SETTINGS_ITEMS[0]?.id ?? 'settings';
 
 export default function EntitySettingsPage() {
     const params = useParams({ strict: false });
@@ -56,8 +68,15 @@ export default function EntitySettingsPage() {
         select: (state) => state.location,
     });
     const search = useSearch({ strict: false });
-    const tab = (search as any)?.tab ?? defaultEntitySettingsTabId;
-    const queryClient = useQueryClient();
+    const { isManager } = useAuthState();
+    const settingsItems = ENTITY_SETTINGS_ITEMS.filter(
+        (item) => isManager || !item.managerOnly,
+    );
+    const defaultTabId = settingsItems[0]?.id ?? 'users';
+    const requestedTab = (search as any)?.tab;
+    const tab = settingsItems.some((item) => item.id === requestedTab)
+        ? requestedTab
+        : defaultTabId;
 
     const { data, isLoading, isError } = $api.useQuery(
         'get',
@@ -74,12 +93,7 @@ export default function EntitySettingsPage() {
     );
 
     const dockPanelTitle = useMemo(
-        () =>
-            isError
-                ? 'Not found'
-                : data?.name
-                  ? `Manage: ${data.name}`
-                  : 'Manage: Entity',
+        () => (isError ? 'Not found' : data?.name ? `Manage: ${data.name}` : 'Manage'),
         [data?.name, isError],
     );
     useDockPanelTab({
@@ -95,9 +109,7 @@ export default function EntitySettingsPage() {
         });
     };
 
-    const currentTab =
-        ENTITY_SETTINGS_ITEMS.find((item) => item.id === tab) ??
-        ENTITY_SETTINGS_ITEMS.find((item) => item.id === defaultEntitySettingsTabId);
+    const currentTab = settingsItems.find((item) => item.id === tab);
     const currentDescription = currentTab?.description ?? '';
 
     if (isLoading) {
@@ -135,7 +147,7 @@ export default function EntitySettingsPage() {
                     <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
                         <Tabs value={tab} onValueChange={changeTab}>
                             <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
-                                {ENTITY_SETTINGS_ITEMS.map((item) => {
+                                {settingsItems.map((item) => {
                                     const Icon = item.icon;
                                     return (
                                         <TabsTrigger key={item.id} value={item.id}>
@@ -168,30 +180,16 @@ export default function EntitySettingsPage() {
                                                 contentType='entry'
                                                 objectId={entityId}
                                             />
-                                        ) : tab === 'permissions' ? (
+                                        ) : tab === 'teams' ? (
+                                            <EntityTeamsForm
+                                                entityId={Number(entityId)}
+                                            />
+                                        ) : tab === 'users' ? (
                                             <EntityPermissionsForm
                                                 entityId={Number(entityId)}
                                             />
                                         ) : (
-                                            <EntityForm
-                                                id={Number(entityId)}
-                                                onAdd={() => {
-                                                    queryClient.invalidateQueries({
-                                                        queryKey:
-                                                            queryKeys.entities.lists(),
-                                                    });
-                                                    queryClient.invalidateQueries({
-                                                        queryKey:
-                                                            queryKeys.entities.detail(
-                                                                String(entityId),
-                                                            ),
-                                                    });
-                                                    queryClient.invalidateQueries({
-                                                        queryKey:
-                                                            queryKeys.notes.apiList(),
-                                                    });
-                                                }}
-                                            />
+                                            <EntityForm id={Number(entityId)} />
                                         )}
                                     </CardContent>
                                 </ScrollArea>

@@ -7,4 +7,4 @@ class UserConfig(AppConfig):
     name = "user"
 
     def ready(self):
-        from . import schema  # noqa: F401
+        from . import schema, signals  # noqa: F401

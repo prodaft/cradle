@@ -1,3 +1,4 @@
+import { fileIdFromDownloadPath } from '@/utils/links';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import matter from 'gray-matter';
@@ -118,9 +119,9 @@ export function isFileDownloadUrl(url: string): boolean {
 function fetchMinioDownloadLink(fileId: string): Promise<FileDownload> {
     if (!DownloadLinkPromiseCache[fileId]) {
         DownloadLinkPromiseCache[fileId] = fetchClient
-            .GET('/file-transfer/download/', {
+            .GET('/files/{file_id}/download/', {
                 params: {
-                    query: {
+                    path: {
                         file_id: fileId,
                     },
                 },
@@ -148,17 +149,7 @@ async function resolveMinioLinks(token: Token): Promise<void> {
         const hrefTuple = attrs[hrefIndex];
         if (!hrefTuple || hrefTuple.length < 2) return;
         const href = String(hrefTuple[1] ?? '');
-        if (!href || !href.includes('/file-transfer/download/')) return;
-
-        let url: URL;
-        try {
-            url = new URL(href, window.location.origin);
-        } catch {
-            return;
-        }
-
-        const params = new URLSearchParams(url.search);
-        const fileId = params.get('file_id');
+        const fileId = href ? fileIdFromDownloadPath(href) : null;
         if (!fileId) return;
 
         const cached = MinioCache[fileId];

@@ -23,8 +23,9 @@ def ensure_storage_buckets(modeladmin: admin.ModelAdmin, request: HttpRequest, q
 @admin.action(description="Send Confirmation Email")
 def send_email_confirmation(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet[CradleUser]) -> None:
     """Send email confirmation to each selected user. No-op for already confirmed users."""
-    for user in queryset:
-        user.send_email_confirmation()
+    failed = [user.username for user in queryset if not user.send_email_confirmation()]
+    if failed:
+        modeladmin.message_user(request, f"Could not send to: {', '.join(failed)}", level=40)
 
 
 class CradleUserAdmin(UserAdmin):

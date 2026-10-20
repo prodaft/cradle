@@ -16,6 +16,7 @@ from access.models import Access
 from core.exceptions import CoreErrorCodes, PermissionDeniedException
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
+from teams.exceptions import TeamErrorCodes
 from user.authentication import CookieJWTAuthentication
 from user.permissions import EntityDetailPermission, EntityListPermission
 
@@ -23,20 +24,12 @@ from ..exceptions import (
     AdminOnlyEntityDeleteException,
     AdminOnlyEntityPublicStatusException,
     DuplicateEntityException,
-    EntityNotFoundException,
     EntriesErrorCodes,
 )
+from ..lookup import get_readable_entity
 from ..models import Entry
 from ..serializers import EntitySerializer, EntryResponseSerializer
 from ..tasks import refresh_edges_materialized_view
-
-
-def _get_entity_or_404(entity_id: int) -> Entry:
-    """Fetch entity by id or raise EntityNotFoundException."""
-    try:
-        return Entry.entities.get(pk=entity_id)
-    except Entry.DoesNotExist:
-        raise EntityNotFoundException(detail="That entity could not be found.")
 
 
 @extend_schema_view(
@@ -70,13 +63,18 @@ def _get_entity_or_404(entity_id: int) -> Entry:
     post=extend_schema(
         operation_id="entities_create",
         summary="Create entity",
-        description="Creates a new entity. Only available to admin users.",
+        description=(
+            "Creates a new entity. Admins can create any entity; team leads can create entities owned by a "
+            "team they lead (`team_id`)."
+        ),
         request=EntitySerializer,
         responses={
             201: EntitySerializer,
             **get_error_responses(
                 EntriesErrorCodes.DUPLICATE_ENTITY,
                 EntriesErrorCodes.ADMIN_ONLY_ENTITY_CREATE,
+                EntriesErrorCodes.ADMIN_ONLY_ENTITY_PUBLIC_STATUS,
+                TeamErrorCodes.TEAM_NOT_FOUND,
                 CoreErrorCodes.PERMISSION_DENIED,
                 include_validation_error=True,
             ),
@@ -102,12 +100,8 @@ class EntityList(ListCreateAPIView):
         return EntryResponseSerializer
 
     def perform_create(self, serializer):
-        name = serializer.validated_data.get("name")
-        entry_class = serializer.validated_data.get("entry_class")
         try:
             with transaction.atomic():
-                if Entry.entities.select_for_update().filter(name=name, entry_class=entry_class).exists():
-                    raise DuplicateEntityException(detail="An entity with this name already exists.")
                 serializer.save()
                 serializer.instance.log_create(self.request.user)
         except IntegrityError:
@@ -123,21 +117,13 @@ class EntityList(ListCreateAPIView):
     get=extend_schema(
         operation_id="entities_retrieve",
         summary="Get entity details",
-        description="Returns details of a specific entity. Managers can only access entities they have permissions for. Admin users can access any entity.",  # noqa: E501
-        parameters=[
-            OpenApiParameter(
-                name="entity_id",
-                type=int,
-                location=OpenApiParameter.PATH,
-                description="Id of the entity",
-            )
-        ],
+        description=(
+            "Returns an entity with its aliases and owning team. Anyone who can read the entity may fetch it; "
+            "entities the user cannot read return 404."
+        ),
         responses={
             200: EntitySerializer,
-            **get_error_responses(
-                EntriesErrorCodes.ENTITY_NOT_FOUND,
-                CoreErrorCodes.PERMISSION_DENIED,
-            ),
+            **get_error_responses(EntriesErrorCodes.ENTITY_NOT_FOUND),
             **get_common_error_responses(),
         },
     ),
@@ -145,14 +131,6 @@ class EntityList(ListCreateAPIView):
         operation_id="entities_destroy",
         summary="Delete entity",
         description="Deletes an entity. Only available to admin users.",
-        parameters=[
-            OpenApiParameter(
-                name="entity_id",
-                type=int,
-                location=OpenApiParameter.PATH,
-                description="Id of the entity to delete",
-            )
-        ],
         responses={
             204: {"description": "Entity successfully deleted"},
             **get_error_responses(
@@ -164,18 +142,10 @@ class EntityList(ListCreateAPIView):
         },
     ),
     patch=extend_schema(
-        operation_id="entities_update",
+        operation_id="entities_partial_update",
         summary="Update entity",
-        description="Updates an existing entity.",
+        description="Partially updates an entity: only the fields sent are changed.",
         request=EntitySerializer,
-        parameters=[
-            OpenApiParameter(
-                name="entity_id",
-                type=int,
-                location=OpenApiParameter.PATH,
-                description="Id of the entity to update",
-            )
-        ],
         responses={
             200: EntitySerializer,
             **get_error_responses(
@@ -196,21 +166,14 @@ class EntityDetail(APIView):
 
     def get(self, request: Request, entity_id: int) -> Response:
         """Return entity details; requires access permission."""
-        entity = _get_entity_or_404(entity_id)
-        if not Access.objects.has_access_to_entities(request.user, {entity}, {AccessType.READ, AccessType.READ_WRITE}):
-            raise PermissionDeniedException(detail="You do not have access to this entity.")
-
+        entity = get_readable_entity(request.user, entity_id)
         serializer = EntitySerializer(entity)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request: Request, entity_id: int) -> Response:
         """Delete entity and remap note links (admin only)."""
-        entity = _get_entity_or_404(entity_id)
+        entity = get_readable_entity(request.user, entity_id)
         if not request.user.is_cradle_admin:
-            if not Access.objects.has_access_to_entities(
-                request.user, {entity}, {AccessType.READ, AccessType.READ_WRITE}
-            ):
-                raise PermissionDeniedException(detail="You do not have access to this entity.")
             raise AdminOnlyEntityDeleteException(detail="Only administrators can delete entities.")
         entity.delete_renaming(request.user.id)
         refresh_edges_materialized_view.apply_async()
@@ -219,14 +182,13 @@ class EntityDetail(APIView):
 
     def patch(self, request: Request, entity_id: int) -> Response:
         """Update entity; is_public change requires admin."""
-        entity = _get_entity_or_404(entity_id)
+        entity = get_readable_entity(request.user, entity_id)
         if not Access.objects.has_access_to_entities(request.user, {entity}, {AccessType.READ_WRITE}):
             raise PermissionDeniedException(detail="You do not have write access to this entity.")
 
-        serializer = EntitySerializer(entity, data=request.data)
+        serializer = EntitySerializer(entity, data=request.data, partial=True, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
-        # Non-Admin cannot change public status of entity
         if (
             serializer.validated_data.get("is_public", entity.is_public) != entity.is_public
             and not request.user.is_cradle_admin

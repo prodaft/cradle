@@ -37,7 +37,7 @@ def load_note(note_id: UUID, user: CradleUser) -> NoteAccess | None:
 
 def current_access(note_id: UUID, user_id: UUID | str) -> NoteAccess | None:
     """Re-check what an already connected user may do; None if they are no longer active."""
-    user = CradleUser.objects.filter(id=user_id, is_active=True).first()
+    user = CradleUser.objects.active().filter(id=user_id).first()
     return load_note(note_id, user) if user else None
 
 
@@ -72,7 +72,7 @@ def persist_document(note_id: UUID, doc: str, base_hash: str, user_id: UUID | st
             if not force and note.content_hash != base_hash:
                 return PersistResult("conflict", message="This note was changed outside the live session.")
 
-            user = CradleUser.objects.filter(id=user_id, is_active=True).first()
+            user = CradleUser.objects.active().filter(id=user_id).first()
             if user is None or not note.has_write_access(user):
                 return PersistResult("error", message="You no longer have permission to edit this note.")
 

@@ -1,8 +1,7 @@
 /**
  * JWT session + openapi-fetch auth hooks for `client.ts`.
  * Call `registerOpenapiAuthCallbacks()` from the client entry before `hydrateRoot` so route loaders
- * can authenticate; `AuthProvider` re-registers the same callbacks and syncs React (TanStack Start
- * does not prescribe a module name for this — it is app-specific wiring).
+ * can authenticate; `AuthProvider` syncs React state through `setClientAuthRoleListener`.
  */
 
 import type { TokenData } from '@/contexts/auth/auth-context';
@@ -12,40 +11,12 @@ import {
     SessionExpiredException,
 } from '@services/openapi/auth-exceptions';
 import { fetchClient, setClientAuthCallbacks } from './client';
-
-function getStorageItem(key: string): string | null {
-    if (typeof window === 'undefined') return null;
-    try {
-        return localStorage.getItem(key);
-    } catch {
-        return null;
-    }
-}
-
-function setStorageItem(key: string, value: string): void {
-    if (typeof window === 'undefined') return;
-    try {
-        localStorage.setItem(key, value);
-    } catch {
-        // ignore
-    }
-}
-
-function removeStorageItem(key: string): void {
-    if (typeof window === 'undefined') return;
-    try {
-        localStorage.removeItem(key);
-    } catch {
-        // ignore
-    }
-}
-
-function getCsrfToken(): string | null {
-    if (typeof document === 'undefined') return null;
-    const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
-    const raw = match?.[1];
-    return raw === undefined ? null : decodeURIComponent(raw);
-}
+import {
+    getCsrfToken,
+    getStorageItem,
+    removeStorageItem,
+    setStorageItem,
+} from './session-storage';
 
 const state = {
     accessExpiresAt: null as string | null,
@@ -77,16 +48,23 @@ function scheduleTokenRefresh() {
     }, refreshIn);
 }
 
-export function loadSessionFromStorage(): void {
+function loadSessionFromStorage(): void {
     state.accessExpiresAt = getStorageItem('access_expires_at');
     state.refreshExpiresAt = getStorageItem('refresh_expires_at');
 }
 
-export function isSessionLoggedIn(): boolean {
+function isRefreshValid(): boolean {
     if (!state.refreshExpiresAt) {
         return false;
     }
     return new Date(state.refreshExpiresAt) > new Date();
+}
+
+export function isSessionLoggedIn(): boolean {
+    if (!isRefreshValid()) {
+        loadSessionFromStorage();
+    }
+    return isRefreshValid();
 }
 
 export function hasUsableAccessToken(): boolean {
@@ -182,7 +160,7 @@ function withRefreshLock(fn: () => Promise<boolean>): Promise<boolean> {
     return navigator.locks.request('cradle-session-refresh', fn);
 }
 
-export async function ensureSessionForRequest(): Promise<void> {
+async function ensureSessionForRequest(): Promise<void> {
     if (hasUsableAccessToken()) return;
     if (!isSessionLoggedIn()) {
         throw new AuthTokenException('Not signed in');
@@ -198,10 +176,6 @@ export function registerOpenapiAuthCallbacks(): void {
     if (typeof window === 'undefined') return;
     loadSessionFromStorage();
     setClientAuthCallbacks(ensureSessionForRequest, refreshSessionAccessToken);
-}
-
-export function unregisterOpenapiAuthCallbacks(): void {
-    setClientAuthCallbacks(null, null);
 }
 
 export function syncRefreshTimerAfterInit(): void {

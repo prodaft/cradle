@@ -8,8 +8,8 @@ x-backend-env: &backend-env
   ALLOWED_HOSTS: ${CRADLE_HOST:?set CRADLE_HOST}
   CSRF_TRUSTED_ORIGINS: https://${CRADLE_HOST}
   FRONTEND_URL: https://${CRADLE_HOST}
-  BASE_URL: api
   TRUST_X_FORWARDED_PROTO: "true"
+  TRUSTED_PROXY_COUNT: ${TRUSTED_PROXY_COUNT:-2}
 
   DB_HOST: postgres
   DB_PORT: "5432"

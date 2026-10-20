@@ -1,4 +1,7 @@
-import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
+import {
+    SettingsHeaderActionsPortal,
+    SettingsSaveButton,
+} from '@/components/base/settings-header-actions/settings-header-actions';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -23,17 +26,11 @@ import { queryKeys, useNdjsonQuery } from '@/hooks/query';
 import { SelectOption } from '@/types/models';
 import { getSuccessMessage } from '@/utils/api';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-    ArrowClockwiseIcon,
-    ArrowCounterClockwiseIcon,
-    ClockCounterClockwiseIcon,
-    FloppyDiskIcon,
-} from '@phosphor-icons/react';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import bytes from 'bytes';
-import isEqual from 'lodash/isEqual';
-import { useEffect, useId, useMemo, useRef } from 'react';
+import { useEffect, useId, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -132,7 +129,7 @@ export default function FileSettingsForm() {
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
                 '/management/actions/{action_name}/',
-                { params: { path: { action_name: 'reprocess_all_files' } } },
+                { params: { path: { action_name: 'reprocess-all-files' } } },
             );
             if (error) throw { response, error };
             return data;
@@ -147,8 +144,6 @@ export default function FileSettingsForm() {
             );
         },
     });
-
-    const loadedValuesRef = useRef<FileSettingsFormValues | null>(null);
 
     const { data: entryClasses } = useNdjsonQuery({
         path: '/entries/entry-classes/stream/',
@@ -188,10 +183,10 @@ export default function FileSettingsForm() {
                             sha1_subtype: values.sha1Subtype?.value || null,
                             sha256_subtype: values.sha256Subtype?.value || null,
                             max_file_size_for_hashing: values.maxFileSizeForHashing
-                                ? bytes.parse(values.maxFileSizeForHashing)
+                                ? Math.round(bytes.parse(values.maxFileSizeForHashing)!) // the API takes whole bytes
                                 : null,
                             upload_limit: values.uploadLimit
-                                ? bytes.parse(values.uploadLimit)
+                                ? Math.round(bytes.parse(values.uploadLimit)!) // the API takes whole bytes
                                 : null,
                         },
                     },
@@ -204,7 +199,6 @@ export default function FileSettingsForm() {
             successMessage: 'File settings updated successfully!',
         },
         onSuccess: (_, variables) => {
-            loadedValuesRef.current = variables;
             reset(variables);
         },
     });
@@ -219,7 +213,6 @@ export default function FileSettingsForm() {
     const {
         handleSubmit,
         reset,
-        watch,
         control,
         formState: { isDirty },
     } = useForm<FileSettingsFormValues>({
@@ -230,7 +223,6 @@ export default function FileSettingsForm() {
     useEffect(() => {
         const values = getFileSettingsFromApi(settings);
         if (!values) return;
-        loadedValuesRef.current = values;
         reset(values);
     }, [settings, reset]);
 
@@ -267,52 +259,14 @@ export default function FileSettingsForm() {
         );
     }
 
-    const revert = () => {
-        if (loadedValuesRef.current) reset(loadedValuesRef.current);
-    };
-    const resetToDefaults = () =>
-        reset(FILE_SETTINGS_DEFAULTS, { keepDefaultValues: true });
-    const isAtDefault = isEqual(watch(), FILE_SETTINGS_DEFAULTS);
-
     return (
         <>
             <SettingsHeaderActionsPortal>
-                <div className='flex items-center gap-2'>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={!isDirty}
-                        onClick={revert}
-                        title='Revert'
-                    >
-                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={isAtDefault}
-                        onClick={resetToDefaults}
-                        title='Default'
-                    >
-                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='submit'
-                        form={formId}
-                        variant='default'
-                        size='icon'
-                        disabled={saveSettings.isPending || !isDirty}
-                        title='Save Settings'
-                    >
-                        {saveSettings.isPending ? (
-                            <Spinner className='size-4' />
-                        ) : (
-                            <FloppyDiskIcon className='size-4' weight='bold' />
-                        )}
-                    </Button>
-                </div>
+                <SettingsSaveButton
+                    isDirty={isDirty}
+                    saving={saveSettings.isPending}
+                    form={formId}
+                />
             </SettingsHeaderActionsPortal>
             <form id={formId} onSubmit={handleSubmit(onSubmit)}>
                 <div className='flex flex-col gap-6'>

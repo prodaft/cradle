@@ -97,13 +97,12 @@ class CradleAPIException(APIException):
 
     error_code: ErrorCode | None = None
 
-    def __init__(self, detail=None, error_code: ErrorCode | None = None, code=None):
+    def __init__(self, detail=None, error_code: ErrorCode | None = None):
         """Initialize the exception.
 
         Args:
             detail: Specific details about this occurrence of the error (overrides default).
             error_code: ErrorCode enum value for this exception (overrides class-level).
-            code: Passed to DRF APIException (legacy; our handler uses error_code instead).
         """
         if error_code:
             self.error_code = error_code
@@ -115,7 +114,7 @@ class CradleAPIException(APIException):
             elif isinstance(detail, str) and not detail.strip():
                 detail = self.error_code.title
 
-        super().__init__(detail, code)
+        super().__init__(detail)
 
     def get_error_code(self) -> str:
         """Get the machine-readable error code."""
@@ -172,11 +171,6 @@ class CoreErrorCodes(ErrorCode):
         "Invalid Request",
         "invalid-request",
     )
-    INVALID_REQUEST_DATA = (
-        status.HTTP_400_BAD_REQUEST,
-        "Invalid Request Data",
-        "invalid-request-data",
-    )
 
     # Pagination
     INVALID_PAGE_SIZE = (
@@ -197,12 +191,6 @@ class CoreErrorCodes(ErrorCode):
 
 
 # Convenience exception classes for common errors
-class ValidationErrorException(CradleAPIException):
-    """Exception for validation errors."""
-
-    error_code = CoreErrorCodes.VALIDATION_ERROR
-
-
 class UnauthenticatedException(CradleAPIException):
     """Exception for authentication errors."""
 
@@ -227,22 +215,10 @@ class NotFoundException(CradleAPIException):
     error_code = CoreErrorCodes.NOT_FOUND
 
 
-class InternalServerErrorException(CradleAPIException):
-    """Server error (matches handler mapping for unhandled 5xx)."""
-
-    error_code = CoreErrorCodes.INTERNAL_SERVER_ERROR
-
-
 class InvalidRequestException(CradleAPIException):
     """Exception for invalid request parameters."""
 
     error_code = CoreErrorCodes.INVALID_REQUEST
-
-
-class InvalidRequestDataException(CradleAPIException):
-    """Exception for malformed or unreadable request body (e.g. invalid JSON)."""
-
-    error_code = CoreErrorCodes.INVALID_REQUEST_DATA
 
 
 class InvalidPageSizeException(CradleAPIException):

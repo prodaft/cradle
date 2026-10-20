@@ -1,4 +1,4 @@
-"""Build the in-memory user/access rows for an entity (shared by paginated list and NDJSON stream)."""
+"""Build the in-memory user/access rows for an entity (used by the paginated entity access list)."""
 
 from __future__ import annotations
 
@@ -9,14 +9,30 @@ from django.db.models import Q
 from core.query_lang import parse_search, to_q
 from entries.exceptions import EntityNotFoundException
 from entries.models import Entry
+from teams.models import TeamAccess
 from user.models import CradleUser, UserRoles
 
-from .enums import AccessType
+from .enums import AccessType, highest_access
 from .models import Access
 
 
+def _team_grants_by_user(entity: Entry) -> dict:
+    """Map user id -> list of ``{id, name, access_type}`` for the teams giving them access to ``entity``."""
+    grants: dict = {}
+    rows = TeamAccess.objects.filter(entity=entity).values(
+        "team_id", "team__name", "access_type", "team__memberships__user_id"
+    )
+    for row in rows.order_by("team__name"):
+        if row["team__memberships__user_id"] is None:
+            continue
+        grants.setdefault(row["team__memberships__user_id"], []).append(
+            {"id": row["team_id"], "name": row["team__name"], "access_type": row["access_type"]}
+        )
+    return grants
+
+
 def build_entity_access_user_rows(entity_id: int, search: str | None) -> list[dict]:
-    """Return sorted rows ``{user, access_type}`` for entity access UI (matches paginated list)."""
+    """Return sorted rows for the entity access UI: direct grant, team grants and effective access per user."""
     try:
         entity = Entry.entities.get(pk=entity_id)
     except Entry.DoesNotExist as exc:
@@ -24,9 +40,7 @@ def build_entity_access_user_rows(entity_id: int, search: str | None) -> list[di
 
     accesses = Access.objects.filter(Q(entity=entity) & ~Q(user__role=UserRoles.ADMIN)).select_related("user")
 
-    none_users = CradleUser.objects.filter(
-        ~Q(id__in=accesses.values_list("user_id", flat=True)) & ~Q(role=UserRoles.ADMIN)
-    )
+    none_users = CradleUser.objects.non_admins().exclude(id__in=accesses.values_list("user_id", flat=True))
 
     node = parse_search(search)
     if node is not None:
@@ -43,7 +57,21 @@ def build_entity_access_user_rows(entity_id: int, search: str | None) -> list[di
             none_search_filter |= Q(id=search_uuid)
         none_users = none_users.filter(none_search_filter)
 
-    combined = [{"user": access.user, "access_type": access.access_type} for access in accesses] + [
-        {"user": user, "access_type": AccessType.NONE} for user in none_users
+    team_grants = _team_grants_by_user(entity)
+    public = AccessType.READ if entity.is_public else None
+
+    def row(user: CradleUser, direct: str) -> dict:
+        teams = team_grants.get(user.id, [])
+        team_access = highest_access(*(t["access_type"] for t in teams))
+        return {
+            "user": user,
+            "access_type": direct,
+            "team_access_type": team_access,
+            "effective_access_type": highest_access(direct, team_access, public),
+            "teams": teams,
+        }
+
+    combined = [row(access.user, access.access_type) for access in accesses] + [
+        row(user, AccessType.NONE) for user in none_users
     ]
-    return sorted(combined, key=lambda row: (row["user"].username or "").lower())
+    return sorted(combined, key=lambda r: (r["user"].username or "").lower())

@@ -50,12 +50,8 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
     const simulateSession = useMutation({
         mutationFn: async () => {
             const { data, error, response } = await fetchClient.POST(
-                '/users/{user_id}/manage/{action_name}/',
-                {
-                    params: {
-                        path: { user_id: userId, action_name: 'simulate' },
-                    },
-                },
+                '/users/{user_id}/simulate/',
+                { params: { path: { user_id: userId } } },
             );
             if (error) throw { response, error };
             return data;
@@ -75,15 +71,8 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
     const sendConfirmationEmail = useMutation({
         mutationFn: async () => {
             const { error, response } = await fetchClient.POST(
-                '/users/{user_id}/manage/{action_name}/',
-                {
-                    params: {
-                        path: {
-                            user_id: userId,
-                            action_name: 'send_email_confirmation',
-                        },
-                    },
-                },
+                '/users/{user_id}/email/confirmation/',
+                { params: { path: { user_id: userId } } },
             );
             if (error) throw { response, error };
         },
@@ -93,15 +82,8 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
     const sendPasswordReset = useMutation({
         mutationFn: async () => {
             const { error, response } = await fetchClient.POST(
-                '/users/{user_id}/manage/{action_name}/',
-                {
-                    params: {
-                        path: {
-                            user_id: userId,
-                            action_name: 'password_reset_email',
-                        },
-                    },
-                },
+                '/users/{user_id}/password/reset/',
+                { params: { path: { user_id: userId } } },
             );
             if (error) throw { response, error };
         },
@@ -117,7 +99,10 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
             if (error) throw { response, error };
             return data;
         },
-        meta: { suppressNotification: true },
+        meta: {
+            suppressNotification: true,
+            invalidateQueries: [{ queryKey: queryKeys.users.apiList() }],
+        },
         onSuccess: (response) => {
             toast.success(getSuccessMessage(response) || 'User deleted successfully');
             router.navigate({ to: '/manage/users' } as any);
@@ -246,7 +231,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                     userId={user.id}
                     onSuccess={() => {
                         queryClient.invalidateQueries({
-                            queryKey: queryKeys.users.detail(userId),
+                            queryKey: queryKeys.users.apiDetails(),
                         });
                     }}
                 />

@@ -1,4 +1,4 @@
-"""Note list, detail, finalize, files, and graph API views."""
+"""Note list, detail, publish, unpublish, files, and graph API views."""
 
 import json
 import re
@@ -19,8 +19,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from access.enums import AccessType
-from access.models import Access
 from core.exceptions import CoreErrorCodes, InvalidRequestException, PermissionDeniedException
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
@@ -34,37 +32,32 @@ from core.validators import (
 )
 from entries.constants import INTERNAL_SUBTYPES
 from entries.enums import EntryType
-from entries.exceptions import EntriesErrorCodes, EntryNotFoundException
-from entries.models import Entry, Relation
+from entries.exceptions import EntriesErrorCodes
+from entries.lookup import get_readable_entry
+from entries.models import Entry
 from entries.tasks import refresh_edges_materialized_view
 from file_transfer.exceptions import FileReferenceNotFoundException, FileTransferErrorCodes
 from file_transfer.models import FileReference
 from knowledge_graph.serializers import SubGraphSerializer
 from logs.models import EventLog
 from logs.serializers import EVENT_LOG_PAGE_RESPONSE, EventLogSerializer
+from management.serializers import ManagementActionResponseSerializer
 from user.authentication import CookieJWTAuthentication
 from user.models import CradleUser
 from user.permissions import HasAdminRole
 
-from ..enums import NoteStatus
+from ..enums import NoteListStatus, NoteStatus
 from ..exceptions import (
     CannotEditNoteException,
     InvalidReferenceCountException,
-    NoAccessToEntriesException,
     NoteEditConflictException,
     NoteIsEmptyException,
+    NoteIsProcessingException,
     NoteNotFoundException,
     NotesErrorCodes,
 )
 from ..filters import NoteFilter, NoteHistoryFilter
 from ..models import Note
-from ..processor.connect_aliases_task import AliasConnectionTask
-from ..processor.entry_class_creation_task import EntryClassCreationTask
-from ..processor.entry_population_task import EntryPopulationTask
-from ..processor.finalize_note_task import FinalizeNoteTask
-from ..processor.link_files_task import LinkFilesTask
-from ..processor.metadata_process_task import MetadataProcessTask
-from ..processor.smart_linker_task import SmartLinkerTask
 from ..processor.task_scheduler import TaskScheduler
 from ..serializers import (
     FileDetailSerializer,
@@ -75,12 +68,15 @@ from ..serializers import (
     NoteListResponseSerializer,
     NoteListSerializer,
     NoteRetrieveSerializer,
+    OptimizedEntryResponseSerializer,
 )
+from ..tasks import relink_all_notes_task, relink_note_task
 
 NOTE_SEARCH_FIELDS = ("content", "title", "author__username", "editor__username")
 FILE_SEARCH_FIELDS = ("file_name", "mimetype", "md5_hash", "sha1_hash", "sha256_hash")
+FILE_STATUS_CHOICES = ["healthy", "warning"]
 
-_NOTE_LIST_STATUS_QUERY_CHOICES: list[str] = ["fleeting", "finalized", *[c[0] for c in NoteStatus.choices]]
+_NOTE_LIST_STATUS_QUERY_CHOICES: list[str] = list(NoteListStatus.values)
 
 RESTRICTED_NOTE_SEARCH_FIELDS = ("content", "title")
 RESTRICTED_NOTE_MIN_TERM_LENGTH = 3
@@ -132,14 +128,6 @@ def _log_restricted_notes(user: CradleUser, notes) -> None:
     note_ids = [str(note.id) for note in notes if getattr(note, "is_accessible", True) is False]
     if note_ids:
         user.log_fetch(user, details=json.dumps({"reason": "restricted_note_search", "notes": note_ids}))
-
-
-def notes_holding_file(queryset, file: FileReference):
-    """Notes in ``queryset`` holding ``file`` or a copy of it (same SHA-256)."""
-    holds = Q(files__id=file.id)
-    if file.sha256_hash:
-        holds |= Q(files__sha256_hash=file.sha256_hash)
-    return queryset.filter(holds).distinct()
 
 
 def get_readable_note(user: CradleUser, note_id: UUID) -> Note:
@@ -200,18 +188,11 @@ def get_readable_note(user: CradleUser, note_id: UUID) -> Note:
                 location=OpenApiParameter.QUERY,
                 description=(
                     "Filter by note status (repeat for OR). "
-                    "`finalized` means non-fleeting notes; `fleeting` limits to the current user's fleeting notes. "
+                    "`published` means non-fleeting notes; `fleeting` limits to the current user's fleeting notes. "
                     "Omit this parameter for the default list (accessible notes plus your fleeting notes)."
                 ),
-                enum=list(map(lambda x: x[0], NoteStatus.choices)) + ["fleeting", "finalized"],
+                enum=list(NoteListStatus.values),
                 many=True,
-            ),
-            OpenApiParameter(
-                name="date",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="Filter by note date (YYYY-MM-DD format)",
-                required=False,
             ),
             OpenApiParameter(
                 name="linked_to",
@@ -352,21 +333,17 @@ class NoteList(APIView):
                 )
                 status_tokens = validated_status or None
 
-        if status_tokens is None:
-            queryset = Note.objects.get_accessible_notes(user)
-        else:
-            queryset = Note.objects.none()
+        queryset = Note.objects.get_accessible_notes(user)
+        if status_tokens is not None:
+            status_filter = Q()
             for token in status_tokens:
                 if token == "fleeting":
-                    queryset = queryset | Note.objects.filter(author=user, fleeting=True)
-                elif token == "finalized":
-                    queryset = queryset | Note.objects.get_accessible_notes(user).filter(fleeting=False)
+                    status_filter |= Q(fleeting=True)
+                elif token == "published":
+                    status_filter |= Q(fleeting=False)
                 else:
-                    queryset = queryset | Note.objects.get_accessible_notes(user).filter(
-                        fleeting=False,
-                        status=token,
-                    )
-            queryset = queryset.distinct()
+                    status_filter |= Q(fleeting=False, status=token)
+            queryset = queryset.filter(status_filter)
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
@@ -388,14 +365,7 @@ class NoteList(APIView):
                 request.query_params.get("linked_to"),
                 param_name="linked_to",
             )
-            try:
-                entry = Entry.objects.get(id=entryid)
-            except Entry.DoesNotExist:
-                raise EntryNotFoundException(detail="That entry could not be found.")
-            if entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
-                user, {entry}, {AccessType.READ, AccessType.READ_WRITE}
-            ):
-                raise EntryNotFoundException(detail="That entry could not be found.")
+            entry = get_readable_entry(user, entryid)
 
             linked_to_exact_match = request.query_params.get("linked_to_exact_match", "false") == "true"
 
@@ -414,7 +384,7 @@ class NoteList(APIView):
             except ValueError:
                 raise InvalidRequestException(detail='Query parameter "file" must be a UUID.')
             file = FileReference.objects.filter(id=file_id).first()
-            queryset = notes_holding_file(queryset, file) if file else queryset.none()
+            queryset = queryset.holding_file(file) if file else queryset.none()
 
         search = search_q(request.query_params.get("search"), NOTE_SEARCH_FIELDS)
         if search is not None:
@@ -527,14 +497,6 @@ class NoteList(APIView):
             "When restricted note search is enabled, a published note the user cannot read returns 403 "
             "instead of 404."
         ),
-        parameters=[
-            OpenApiParameter(
-                name="note_id",
-                type=UUID,
-                location=OpenApiParameter.PATH,
-                description="ID of the note to retrieve.",
-            ),
-        ],
         responses={
             200: NoteRetrieveSerializer,
             **get_error_responses(
@@ -548,14 +510,6 @@ class NoteList(APIView):
         summary="Update note",
         description="Updates an existing note. User must have note write permission (admin, or read-write access to all referenced entities).",  # noqa: E501
         request=NoteEditSerializer,
-        parameters=[
-            OpenApiParameter(
-                name="note_id",
-                type=UUID,
-                location=OpenApiParameter.PATH,
-                description="ID of the note to update. Must be a valid UUID",
-            )
-        ],
         responses={
             200: NoteRetrieveSerializer,
             **get_error_responses(
@@ -571,19 +525,11 @@ class NoteList(APIView):
         operation_id="notes_delete",
         summary="Delete note",
         description="Deletes an existing note. User must have note write permission (admin, or read-write access to all referenced entities).",
-        parameters=[
-            OpenApiParameter(
-                name="note_id",
-                type=UUID,
-                location=OpenApiParameter.PATH,
-                description="ID of the note to delete. Must be a valid UUID",
-            )
-        ],
         responses={
             204: {"description": "Note was deleted successfully"},
             **get_error_responses(
                 NotesErrorCodes.NOTE_NOT_FOUND,
-                NotesErrorCodes.NO_ACCESS_TO_ENTRIES,
+                NotesErrorCodes.CANNOT_EDIT_NOTE,
             ),
             **get_common_error_responses(),
         },
@@ -633,9 +579,7 @@ class NoteDetail(APIView):
         user = cast(CradleUser, request.user)
         note_to_delete = get_readable_note(user, note_id)
         if not note_to_delete.has_write_access(user):
-            raise NoAccessToEntriesException(
-                list(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)),
-            )
+            raise CannotEditNoteException(detail="You do not have permission to delete this note.")
         with transaction.atomic():
             note_to_delete.delete()
 
@@ -645,17 +589,9 @@ class NoteDetail(APIView):
 
 
 @extend_schema_view(
-    put=extend_schema(
-        summary="Convert fleeting note to regular note",
-        description="Converts a fleeting note to a regular note. Only the owner can convert it.",
-        parameters=[
-            OpenApiParameter(
-                name="note_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the fleeting note to convert",
-            )
-        ],
+    post=extend_schema(
+        summary="Publish a fleeting note",
+        description="Publishes a fleeting (draft) note as a regular note and runs the processing pipeline. Only the owner can publish it.",
         request=None,
         responses={
             200: NoteRetrieveSerializer,
@@ -667,26 +603,72 @@ class NoteDetail(APIView):
         },
     )
 )
-class NoteFinalize(APIView):
-    """Convert a fleeting note to a regular note (triggers processing pipeline)."""
+class NotePublish(APIView):
+    """Publish a fleeting note as a regular note (triggers processing pipeline)."""
 
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def put(self, request: Request, note_id: UUID) -> Response:
-        try:
-            note = Note.objects.get(id=note_id, author=request.user, fleeting=True)
-        except Note.DoesNotExist:
-            raise NoteNotFoundException(detail="That note could not be found.")
-
-        if not note.content:
-            raise NoteIsEmptyException()
-
+    def post(self, request: Request, note_id: UUID) -> Response:
         with transaction.atomic():
+            # The lock makes a concurrent publish wait, then find the note no longer fleeting (404).
+            try:
+                note = Note.objects.select_for_update().get(id=note_id, author=request.user, fleeting=True)
+            except Note.DoesNotExist:
+                raise NoteNotFoundException(detail="That note could not be found.")
+
+            if not note.content:
+                raise NoteIsEmptyException()
+
             note.fleeting = False
-            finalized_note = TaskScheduler(request.user).run_pipeline(note)
+            published_note = TaskScheduler(request.user).run_pipeline(note)
         return Response(
-            NoteRetrieveSerializer(finalized_note, context={"request": request}).data,
+            NoteRetrieveSerializer(published_note, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema_view(
+    post=extend_schema(
+        summary="Unpublish a note",
+        description="Turns a published note back into a fleeting (draft) note: removes it from the graph and makes it "
+        "private to its owner. Only the owner can unpublish it, and not while it is being processed.",
+        request=None,
+        responses={
+            200: NoteRetrieveSerializer,
+            **get_error_responses(
+                NotesErrorCodes.NOTE_NOT_FOUND,
+                NotesErrorCodes.NOTE_IS_PROCESSING,
+            ),
+            **get_common_error_responses(),
+        },
+    )
+)
+class NoteUnpublish(APIView):
+    """Turn a published note back into a fleeting note, removing what processing added to the graph."""
+
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, note_id: UUID) -> Response:
+        with transaction.atomic():
+            try:
+                note = Note.objects.select_for_update().get(id=note_id, author=request.user, fleeting=False)
+            except Note.DoesNotExist:
+                raise NoteNotFoundException(detail="That note could not be found.")
+
+            if note.status == NoteStatus.PROCESSING:
+                raise NoteIsProcessingException()
+
+            note.relations.all().delete()
+            note.entries.clear()
+            note.fleeting = True
+            note.last_linked = None
+            note.set_status(NoteStatus.HEALTHY)
+            note.save()
+            transaction.on_commit(refresh_edges_materialized_view.apply_async)
+        return Response(
+            NoteRetrieveSerializer(note, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 
@@ -695,19 +677,14 @@ class NoteFinalize(APIView):
     post=extend_schema(
         operation_id="notes_relink",
         summary="Relink a single note",
-        description="Re-run the note processing pipeline (entry creation, linking, metadata) for this note. Admin only.",
-        parameters=[
-            OpenApiParameter(
-                name="note_id",
-                type=UUID,
-                location=OpenApiParameter.PATH,
-                description="ID of the note to relink.",
-            ),
-        ],
+        description=(
+            "Queues a re-run of the note processing pipeline (entry creation, linking, metadata) for this note, "
+            "rebuilding its relations in the background. Admin only."
+        ),
         request=None,
         responses={
-            200: NoteRetrieveSerializer,
-            **get_error_responses(NotesErrorCodes.NOTE_NOT_FOUND),
+            202: ManagementActionResponseSerializer,
+            **get_error_responses(NotesErrorCodes.NOTE_NOT_FOUND, NotesErrorCodes.CANNOT_EDIT_NOTE),
             **get_common_error_responses(),
         },
     )
@@ -717,7 +694,6 @@ class NoteRelink(APIView):
 
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]
-    serializer_class = NoteRetrieveSerializer
 
     def post(self, request: Request, note_id: UUID) -> Response:
         try:
@@ -728,39 +704,22 @@ class NoteRelink(APIView):
         if note.fleeting:
             raise CannotEditNoteException(detail="Quick notes cannot be relinked.")
 
-        Relation.objects.filter(
-            content_type=ContentType.objects.get_for_model(Note),
-            object_id=note_id,
-        ).delete()
-
-        scheduler = TaskScheduler(
-            cast(CradleUser, request.user),
-            tasks=[
-                EntryClassCreationTask,
-                EntryPopulationTask,
-                SmartLinkerTask,
-                LinkFilesTask,
-                MetadataProcessTask,
-                AliasConnectionTask,
-                FinalizeNoteTask,
-            ],
-        )
-        relinked_note = scheduler.run_pipeline(note, update_acvec=False)
-
-        return Response(
-            NoteRetrieveSerializer(relinked_note, context={"request": request}).data,
-            status=status.HTTP_200_OK,
-        )
+        user_id = request.user.id
+        transaction.on_commit(lambda: relink_note_task.delay(note.id, user_id))
+        return Response({"detail": "Relinking started."}, status=status.HTTP_202_ACCEPTED)
 
 
 @extend_schema_view(
     post=extend_schema(
         operation_id="notes_relink_all",
         summary="Relink all notes",
-        description="Re-run the note processing pipeline for all non-fleeting notes. Admin only.",
+        description=(
+            "Queues a re-run of the note processing pipeline for every non-fleeting note, one note at a time in "
+            "the background. Admin only."
+        ),
         request=None,
         responses={
-            200: {"description": "Relinking completed."},
+            202: ManagementActionResponseSerializer,
             **get_common_error_responses(),
         },
     )
@@ -772,32 +731,15 @@ class NoteRelinkAll(APIView):
     permission_classes = [IsAuthenticated, HasAdminRole]
 
     def post(self, request: Request) -> Response:
-        notes = list(Note.objects.non_fleeting())
-        Relation.objects.filter(content_type=ContentType.objects.get_for_model(Note)).delete()
-
-        scheduler = TaskScheduler(
-            cast(CradleUser, request.user),
-            tasks=[
-                EntryClassCreationTask,
-                EntryPopulationTask,
-                SmartLinkerTask,
-                LinkFilesTask,
-                MetadataProcessTask,
-                AliasConnectionTask,
-                FinalizeNoteTask,
-            ],
-        )
-        for note in notes:
-            scheduler.run_pipeline(note, update_acvec=False)
-
-        return Response(
-            {"detail": f"Relinked {len(notes)} notes."},
-            status=status.HTTP_200_OK,
-        )
+        count = Note.objects.non_fleeting().count()
+        user_id = request.user.id
+        transaction.on_commit(lambda: relink_all_notes_task.delay(user_id))
+        return Response({"detail": f"Relinking {count} notes in the background."}, status=status.HTTP_202_ACCEPTED)
 
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="files_list",
         summary="Get files from accessible notes",
         description="Returns paginated list of files that are linked to notes the user has access to. Can filter by references and other parameters. Results are ordered by file creation time descending.",  # noqa: E501
         parameters=[
@@ -805,14 +747,14 @@ class NoteRelinkAll(APIView):
                 name="references",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter notes by referenced entry IDs",
+                description="Only files whose note references these entry IDs",
                 many=True,
             ),
             OpenApiParameter(
                 name="linked_to",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter notes by being linked to a specific entry",
+                description="Only files whose note is linked to this entry",
             ),
             OpenApiParameter(
                 name="page_size",
@@ -837,24 +779,17 @@ class NoteRelinkAll(APIView):
                 description="Filter files by MIME type (case-insensitive partial match; `*` is a wildcard, e.g. image/*)",
             ),
             OpenApiParameter(
-                name="date",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="Filter notes by date (YYYY-MM-DD format)",
-                required=False,
-            ),
-            OpenApiParameter(
                 name="created_at_gte",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter notes by creation time greater than or equal to (ISO datetime format)",
+                description="Only files whose note was created at or after this time (ISO datetime format)",
                 required=False,
             ),
             OpenApiParameter(
                 name="created_at_lte",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter notes by creation time less than or equal to (ISO datetime format)",
+                description="Only files whose note was created at or before this time (ISO datetime format)",
                 required=False,
             ),
             OpenApiParameter(
@@ -867,7 +802,7 @@ class NoteRelinkAll(APIView):
                 name="order_by",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Order files by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, name, mime_type, note__created_at, size. Default: -created_at",  # noqa: E501
+                description="Order files by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, name, mime_type, note_created_at, size. Default: -created_at",  # noqa: E501
                 required=False,
                 default="-created_at",
             ),
@@ -875,6 +810,7 @@ class NoteRelinkAll(APIView):
                 name="status",
                 type=str,
                 location=OpenApiParameter.QUERY,
+                enum=FILE_STATUS_CHOICES,
                 description="Filter files by status: 'healthy' (has sha256 hash) or 'warning' (missing sha256 hash)",
                 required=False,
             ),
@@ -922,14 +858,7 @@ class NoteFiles(APIView):
                 request.query_params.get("linked_to"),
                 param_name="linked_to",
             )
-            try:
-                entry = Entry.objects.get(id=entryid)
-            except Entry.DoesNotExist:
-                raise EntryNotFoundException(detail="That entry could not be found.")
-            if entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
-                user, {entry}, {AccessType.READ, AccessType.READ_WRITE}
-            ):
-                raise EntryNotFoundException(detail="That entry could not be found.")
+            entry = get_readable_entry(user, entryid)
             linked_to_exact_match = request.query_params.get("linked_to_exact_match", "false") == "true"
             if linked_to_exact_match:
                 queryset = queryset.annotate(
@@ -973,7 +902,7 @@ class NoteFiles(APIView):
 
         status_filter = validate_choice_param(
             request.query_params.get("status"),
-            ["healthy", "warning"],
+            FILE_STATUS_CHOICES,
             param_name="status",
         )
         if status_filter == "healthy":
@@ -986,7 +915,7 @@ class NoteFiles(APIView):
             "created_at": "timestamp",
             "name": "file_name",
             "mime_type": "mimetype",
-            "note__created_at": "note__timestamp",
+            "note_created_at": "note__timestamp",
             "size": "file_size",
         }
 
@@ -1002,13 +931,24 @@ class NoteFiles(APIView):
         return paginator.get_paginated_response(serializer.data)
 
 
+def get_readable_file(user: CradleUser, file_id: UUID) -> tuple[FileReference, Note]:
+    """Return the file and its note if ``user`` may read the note, else raise FileReferenceNotFoundException."""
+    file = FileReference.objects.filter(id=file_id, note__isnull=False).first()
+    if file is None:
+        raise FileReferenceNotFoundException(detail="That file could not be found.")
+    try:
+        return file, get_readable_note(user, file.note_id)
+    except NoteNotFoundException:
+        raise FileReferenceNotFoundException(detail="That file could not be found.")
+
+
 @extend_schema_view(
     get=extend_schema(
-        operation_id="notes_files_detail",
+        operation_id="files_retrieve",
         summary="Get file dashboard data",
         description=(
-            "Returns a file's metadata and the entries linked through the accessible notes holding it or a copy "
-            "of it (same SHA-256). List those notes with `GET /notes/?file=<id>`."
+            "Returns a file's metadata. List the accessible notes holding it or a copy of it (same SHA-256) with "
+            "`GET /notes/?file=<id>` and the entries linked through them with `GET /files/<id>/entries/`."
         ),
         responses={
             200: FileDetailSerializer,
@@ -1024,38 +964,70 @@ class FileDetail(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request, file_id: UUID) -> Response:
-        user = cast(CradleUser, request.user)
-        file = FileReference.objects.filter(id=file_id, note__isnull=False).first()
-        if file is None:
-            raise FileReferenceNotFoundException(detail="That file could not be found.")
-        try:
-            note = get_readable_note(user, file.note_id)
-        except NoteNotFoundException:
-            raise FileReferenceNotFoundException(detail="That file could not be found.")
+        file, _ = get_readable_file(cast(CradleUser, request.user), file_id)
+        return Response(FileDetailSerializer(file).data, status=status.HTTP_200_OK)
 
-        copies = notes_holding_file(Note.objects.get_accessible_notes(user), file)
-        file.linked_entries = (
+
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="files_entries_list",
+        summary="List entries linked to a file",
+        description=(
+            "Returns a paginated list of the entries linked through the accessible notes holding the file or a "
+            "copy of it (same SHA-256)."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of entries to return per page",
+            ),
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number for pagination",
+            ),
+        ],
+        responses={
+            200: TotalPagesPagination().get_paginated_response_serializer(OptimizedEntryResponseSerializer),
+            **get_error_responses(
+                FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND,
+                CoreErrorCodes.INVALID_PAGE_SIZE,
+                CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+)
+class FileEntries(APIView):
+    """Entries linked to a file through the accessible notes holding it or a copy of it."""
+
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = TotalPagesPagination
+
+    def get(self, request: Request, file_id: UUID) -> Response:
+        user = cast(CradleUser, request.user)
+        file, note = get_readable_file(user, file_id)
+        copies = Note.objects.get_accessible_notes(user).holding_file(file)
+        entries = (
             Entry.objects.filter(Q(notes=note) | Q(notes__in=copies.values("id")))
             .exclude(entry_class__subtype__in=INTERNAL_SUBTYPES)
             .select_related("entry_class")
             .distinct()
             .order_by("entry_class__type", "entry_class__subtype", "name")
         )
-        return Response(FileDetailSerializer(file).data, status=status.HTTP_200_OK)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(entries, request)
+        return paginator.get_paginated_response(OptimizedEntryResponseSerializer(page, many=True).data)
 
 
 @extend_schema_view(
     get=extend_schema(
         summary="Get subgraph formed by note",
         description="Returns the full subgraph formed by a single note the user has access to.",  # noqa: E501
-        parameters=[
-            OpenApiParameter(
-                name="note_id",
-                type=UUID,
-                location=OpenApiParameter.PATH,
-                description="The note's id",
-            ),
-        ],
         responses={
             200: SubGraphSerializer,
             **get_error_responses(NotesErrorCodes.NOTE_NOT_FOUND),
@@ -1075,15 +1047,18 @@ class NoteGraph(APIView):
         except Note.DoesNotExist:
             raise NoteNotFoundException(detail="That note could not be found.")
 
-        rels = note.relations.accessible(user=cast(CradleUser, request.user))
-
-        if not rels.exists():
+        rels = list(
+            note.relations.accessible(user=cast(CradleUser, request.user)).select_related(
+                "e1__entry_class", "e2__entry_class"
+            )
+        )
+        if not rels:
             return Response(
                 {"entries": {}, "relations": [], "colors": {}},
                 status=status.HTTP_200_OK,
             )
 
-        serializer = SubGraphSerializer.from_relations(rels.all())
+        serializer = SubGraphSerializer.from_relations(rels)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -1096,14 +1071,6 @@ class NoteGraph(APIView):
             "Available to any user with read access to the note. Unlike ``/logs/``, rows that "
             "were propagated to linked entries are still listed."
         ),
-        parameters=[
-            OpenApiParameter(
-                name="note_id",
-                type=UUID,
-                location=OpenApiParameter.PATH,
-                description="The note's id",
-            ),
-        ],
         responses={
             200: EVENT_LOG_PAGE_RESPONSE,
             **get_error_responses(

@@ -1,7 +1,12 @@
 import { SearchInput } from '@/components/base/search-input/search-input';
-import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
+import {
+    SettingsHeaderActionsPortal,
+    SettingsSaveButton,
+} from '@/components/base/settings-header-actions/settings-header-actions';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
+import { ACCESS_OPTIONS } from '@/components/domain/manage/access-options';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -16,11 +21,7 @@ import {
     FREE_TEXT_SCHEMA,
     type SearchState,
 } from '@/lib/search-query/search-schema';
-import {
-    ArrowCounterClockwiseIcon,
-    ClockCounterClockwiseIcon,
-    FloppyDiskIcon,
-} from '@phosphor-icons/react';
+import {} from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -34,7 +35,8 @@ import {
     useState,
 } from 'react';
 
-type AccessLevel = 'none' | 'read' | 'read-write';
+type AccessUser = components['schemas']['AccessUser'];
+type AccessLevel = (typeof ACCESS_OPTIONS)[number]['value'];
 
 interface EntityPermissionsFormProps {
     entityId: number;
@@ -44,16 +46,9 @@ interface EntityUserRow {
     userId: string;
     shortId: string;
     username: string;
-    description: string;
+    effectiveAccess: AccessLevel;
+    teams: AccessUser['teams'];
 }
-
-const ACCESS_OPTIONS = [
-    { value: 'none', label: 'None' },
-    { value: 'read', label: 'Read' },
-    { value: 'read-write', label: 'Read-Write' },
-];
-
-type AccessUser = components['schemas']['AccessUser'];
 
 export default function EntityPermissionsForm({
     entityId,
@@ -88,7 +83,7 @@ export default function EntityPermissionsForm({
     } = useQuery({
         queryKey: [
             'get',
-            '/access/entity/{entity_id}/',
+            '/entries/entities/{entity_id}/access/users/',
             entityId,
             pagination.pageIndex + 1,
             pagination.pageSize,
@@ -96,7 +91,7 @@ export default function EntityPermissionsForm({
         ],
         queryFn: async () => {
             const { data, error, response } = await fetchClient.GET(
-                '/access/entity/{entity_id}/',
+                '/entries/entities/{entity_id}/access/users/',
                 {
                     params: {
                         path: { entity_id: entityId },
@@ -133,7 +128,8 @@ export default function EntityPermissionsForm({
                     userId,
                     shortId: userId.slice(0, 8),
                     username: access.user.username ?? '',
-                    description: '-',
+                    effectiveAccess: access.effective_access_type,
+                    teams: access.teams,
                 };
             });
     }, [entityAccess?.results]);
@@ -236,7 +232,7 @@ export default function EntityPermissionsForm({
             await Promise.all(
                 updates.map(async (update) => {
                     const { error, response } = await fetchClient.PUT(
-                        '/access/user/{user_id}/{entity_id}/',
+                        '/entries/entities/{entity_id}/access/users/{user_id}/',
                         {
                             params: {
                                 path: {
@@ -259,7 +255,11 @@ export default function EntityPermissionsForm({
             setOriginalAccess(saved);
             setCurrentAccess(saved);
             queryClient.invalidateQueries({
-                queryKey: ['get', '/access/entity/{entity_id}/', entityId],
+                queryKey: [
+                    'get',
+                    '/entries/entities/{entity_id}/access/users/',
+                    entityId,
+                ],
             });
         },
     });
@@ -268,22 +268,6 @@ export default function EntityPermissionsForm({
         if (!isDirty) return;
         saveAccess.mutate();
     };
-
-    const revert = () => {
-        setCurrentAccess({ ...originalAccess });
-    };
-
-    const resetToNone = () => {
-        const nextAccess: Record<string, AccessLevel> = { ...currentAccess };
-        userRows.forEach((row) => {
-            nextAccess[row.userId] = 'none';
-        });
-        setCurrentAccess(nextAccess);
-    };
-
-    const isAtDefault =
-        userRows.length > 0 &&
-        userRows.every((row) => (currentAccess[row.userId] ?? 'none') === 'none');
 
     const emptyMessage = appliedSearch
         ? 'No users found matching your search'
@@ -323,19 +307,40 @@ export default function EntityPermissionsForm({
                 size: 200,
             },
             {
-                accessorKey: 'description',
-                header: 'Description',
-                meta: { label: 'Description' },
-                cell: ({ row }) => (
-                    <span className='text-muted-foreground text-sm'>
-                        {row.original.description}
-                    </span>
-                ),
+                accessorKey: 'effectiveAccess',
+                header: 'Effective access',
+                meta: { label: 'Effective access' },
+                cell: ({ row }) => {
+                    const { effectiveAccess, teams } = row.original;
+                    const label =
+                        ACCESS_OPTIONS.find((o) => o.value === effectiveAccess)
+                            ?.label ?? effectiveAccess;
+                    return (
+                        <div className='flex flex-wrap items-center gap-1.5 text-sm'>
+                            <Badge
+                                variant={
+                                    effectiveAccess === 'none' ? 'outline' : 'secondary'
+                                }
+                            >
+                                {label}
+                            </Badge>
+                            {teams.map((team) => (
+                                <span key={team.id} className='text-muted-foreground'>
+                                    via {team.name} (
+                                    {ACCESS_OPTIONS.find(
+                                        (o) => o.value === team.access_type,
+                                    )?.label ?? team.access_type}
+                                    )
+                                </span>
+                            ))}
+                        </div>
+                    );
+                },
             },
             {
                 id: 'access',
-                header: 'Access',
-                meta: { label: 'Access' },
+                header: 'Direct access',
+                meta: { label: 'Direct access' },
                 enableHiding: false,
                 cell: ({ row }) => {
                     const { userId } = row.original;
@@ -409,42 +414,11 @@ export default function EntityPermissionsForm({
     return (
         <>
             <SettingsHeaderActionsPortal>
-                <div className='flex items-center gap-2'>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={!isDirty}
-                        onClick={revert}
-                        title='Revert'
-                    >
-                        <ArrowCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        disabled={isAtDefault}
-                        onClick={resetToNone}
-                        title='Default'
-                    >
-                        <ClockCounterClockwiseIcon className='size-4' weight='bold' />
-                    </Button>
-                    <Button
-                        type='button'
-                        variant='default'
-                        size='icon'
-                        disabled={saveAccess.isPending || !isDirty}
-                        onClick={save}
-                        title='Save Settings'
-                    >
-                        {saveAccess.isPending ? (
-                            <Spinner className='size-4' />
-                        ) : (
-                            <FloppyDiskIcon className='size-4' weight='bold' />
-                        )}
-                    </Button>
-                </div>
+                <SettingsSaveButton
+                    isDirty={isDirty}
+                    saving={saveAccess.isPending}
+                    onSave={save}
+                />
             </SettingsHeaderActionsPortal>
             <DataTable
                 table={table}

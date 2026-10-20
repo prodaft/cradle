@@ -15,7 +15,7 @@ This section covers analyst-facing workflows and daily usage patterns.
 {{< card link="files" title="Files and Evidence" icon="paper-clip" >}}
 {{< card link="enrichment" title="Enrichment" icon="lightning-bolt" >}}
 {{< card link="digests" title="Digests" icon="archive" >}}
-{{< card link="reports" title="Reports and Publishing" icon="download" >}}
+{{< card link="reports" title="Reports and Exporting" icon="download" >}}
 {{< card link="personal-settings" title="Personal Settings" icon="cog" >}}
 {{< card link="workflows" title="Common Workflows" icon="clipboard" >}}
 {{< /cards >}}

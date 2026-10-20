@@ -20,7 +20,7 @@ class DepthOutOfRangeException(CradleAPIException):
 
     error_code = KnowledgeGraphErrorCodes.DEPTH_OUT_OF_RANGE
 
-    def __init__(self, detail=None, error_code=None, code=None):
+    def __init__(self, detail=None, error_code=None):
         if detail is None:
             detail = "Choose a depth from 0 to 5."
-        super().__init__(detail=detail, error_code=error_code, code=code)
+        super().__init__(detail=detail, error_code=error_code)

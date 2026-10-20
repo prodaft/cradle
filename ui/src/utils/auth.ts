@@ -1,39 +1,5 @@
-/**
- * Authentication utilities
- * These functions work outside React context (e.g., in router beforeLoad hooks)
- * They match the logic in AuthProvider but read directly from localStorage
- *
- * IMPORTANT: This is the single source of truth for router guards.
- * AuthProvider methods use the same logic but read from refs/state (for performance).
- * Both check the same localStorage values, ensuring consistency.
- */
-
-/**
- * Check if user is logged in by verifying refresh token exists and is valid
- * This matches the logic in AuthProvider.isLoggedIn() but works outside React context
- *
- * Used in router beforeLoad hooks where React context is not available.
- * For components, use useAuthActions().isLoggedIn() instead.
- *
- * @returns true if user has a valid refresh token
- */
-export function isLoggedIn(): boolean {
-    if (typeof window === 'undefined') return false;
-    try {
-        const refreshExpiresAt = localStorage.getItem('refresh_expires_at');
-
-        if (!refreshExpiresAt) {
-            return false;
-        }
-
-        const refreshExpiry = new Date(refreshExpiresAt);
-        const now = new Date();
-
-        return refreshExpiry > now;
-    } catch {
-        return false;
-    }
-}
+import type { components } from '@services/openapi/schema';
+import { getStorageItem } from '@services/openapi/session-storage';
 
 /**
  * Get user role from localStorage
@@ -46,12 +12,7 @@ export function isLoggedIn(): boolean {
  * @returns user role string or empty string if not logged in
  */
 function getRole(): string {
-    if (typeof window === 'undefined') return '';
-    try {
-        return localStorage.getItem('role') || '';
-    } catch {
-        return '';
-    }
+    return getStorageItem('role') || '';
 }
 
 /**
@@ -63,7 +24,7 @@ function getRole(): string {
  *
  * @returns true if user is an admin
  */
-export function isAdmin(): boolean {
+function isAdmin(): boolean {
     return getRole() === 'admin';
 }
 
@@ -76,13 +37,35 @@ export function isAdmin(): boolean {
  *
  * @returns true if user is a manager or admin
  */
-export function isManager(): boolean {
+function isManager(): boolean {
     const role = getRole();
     return role === 'manager' || role === 'admin';
 }
 
-export const USER_ROLE_OPTIONS = [
-    { value: 'author', label: 'User' },
-    { value: 'manager', label: 'Manager' },
-    { value: 'admin', label: 'Admin' },
-];
+const ADMIN_MANAGE_PATHS = ['/manage/users', '/manage/settings'];
+// Team leads need not be managers, so team pages and entity settings stay open to everyone;
+// the API decides what each user may see there.
+const TEAM_MANAGE_PATHS = [/^\/manage\/teams(\/|$)/, /^\/manage\/entities\/[^/]+\/?$/];
+
+/**
+ * Whether the current user may open a page under /manage.
+ *
+ * Used in router beforeLoad hooks: admin pages need admin, team pages and entity settings
+ * are open to everyone, and the rest needs manager.
+ */
+export function canOpenManagePath(path: string): boolean {
+    if (ADMIN_MANAGE_PATHS.some((p) => path.startsWith(p))) return isAdmin();
+    return isManager() || TEAM_MANAGE_PATHS.some((pattern) => pattern.test(path));
+}
+
+type UserRole = components['schemas']['UserRoleEnum'];
+
+const USER_ROLE_LABELS = {
+    author: 'Author',
+    manager: 'Manager',
+    admin: 'Admin',
+} satisfies Record<UserRole, string>;
+
+export const USER_ROLE_OPTIONS = (Object.keys(USER_ROLE_LABELS) as UserRole[]).map(
+    (value) => ({ value, label: USER_ROLE_LABELS[value] }),
+);

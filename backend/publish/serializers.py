@@ -9,8 +9,8 @@ from file_transfer.s3_utils import presign_get
 from file_transfer.storage import ReportStorage
 
 from .constants import PUBLISH_REPORT_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS
-from .models import DownloadStrategies, PublishedReport, ReportStatus
-from .strategies import PUBLISH_STRATEGIES
+from .models import DownloadStrategies, PublishedReport, ReportStatus, TrafficLightProtocol
+from .strategies.html import download_title
 
 
 class ReportDetailSerializer(serializers.ModelSerializer):
@@ -27,6 +27,7 @@ class ReportDetailSerializer(serializers.ModelSerializer):
             "title",
             "status",
             "anonymized",
+            "tlp",
             "created_at",
             "strategy",
             "strategy_label",
@@ -47,15 +48,15 @@ class ReportDetailSerializer(serializers.ModelSerializer):
         if obj.status != ReportStatus.DONE:
             return None
 
-        strategy_factory = PUBLISH_STRATEGIES.get((obj.strategy or "").lower())
         download_url = self.context.get("download_url", False)
         response_disposition = (
-            f'attachment; filename="{obj.title}.{(obj.strategy or "").lower()}"' if download_url else None
+            f'attachment; filename="{download_title(obj.title, obj.anonymized)}.{(obj.strategy or "").lower()}"'
+            if download_url
+            else None
         )
 
         if obj.file:
-            publisher = strategy_factory(False) if strategy_factory else None
-            response_content_type = getattr(publisher, "content_type", None) if publisher else None
+            response_content_type = getattr(obj.publisher, "content_type", None)
             return presign_get(
                 ReportStorage.bucket_name,
                 obj.file.name,
@@ -81,6 +82,7 @@ class ReportListSerializer(ReportDetailSerializer):
             "title",
             "status",
             "anonymized",
+            "tlp",
             "created_at",
             "strategy",
             "strategy_label",
@@ -106,6 +108,19 @@ class PublishReportSerializer(serializers.Serializer):
     anonymized = serializers.BooleanField(
         default=False,
         help_text="Whether the report content should be anonymized.",
+    )
+    tlp = serializers.ChoiceField(
+        choices=TrafficLightProtocol.choices,
+        default=TrafficLightProtocol.CLEAR,
+        help_text="TLP sharing label printed on the report.",
+    )
+    include_toc = serializers.BooleanField(
+        default=True,
+        help_text="HTML and PDF: add a table of contents after the cover page.",
+    )
+    include_entries = serializers.BooleanField(
+        default=True,
+        help_text="HTML and PDF: add an appendix listing every entry in the report.",
     )
 
 

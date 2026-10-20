@@ -43,7 +43,7 @@ export default function ManageEnrichmentList() {
                 ...(applied ? { search: applied } : {}),
             };
             const { data, error, response } = await fetchClient.GET(
-                '/intelio/enrichment/',
+                '/intelio/enrichers/',
                 {
                     params: { query: listQuery },
                 },

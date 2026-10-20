@@ -1,9 +1,20 @@
 """Abstract base model for pending uploads."""
 
+import logging
 import uuid
 
 from django.db import models
 from django.utils import timezone
+
+from file_transfer.s3_utils import delete_object
+
+logger = logging.getLogger(__name__)
+
+
+class PendingUploadQuerySet(models.QuerySet):
+    def expired(self):
+        """Return uploads whose presigned URL has expired without being finalized."""
+        return self.filter(expires_at__lt=timezone.now())
 
 
 class BasePendingUpload(models.Model):
@@ -33,6 +44,8 @@ class BasePendingUpload(models.Model):
         help_text="When the presigned URL expires and the upload session becomes invalid"
     )
 
+    objects = PendingUploadQuerySet.as_manager()
+
     class Meta:
         abstract = True
         indexes = [
@@ -43,3 +56,18 @@ class BasePendingUpload(models.Model):
     def is_expired(self) -> bool:
         """Check if the upload has expired."""
         return timezone.now() > self.expires_at
+
+    def discard(self, bucket_name: str) -> bool:
+        """Delete the uploaded object (if any) from ``bucket_name`` and this record.
+
+        Returns False if the object could not be deleted (logged); the record is deleted either way.
+        Deleting a missing object succeeds, so no existence check is needed.
+        """
+        try:
+            delete_object(bucket_name, self.object_key)
+            removed = True
+        except Exception:
+            logger.exception("Could not delete uploaded object %s", self.object_key)
+            removed = False
+        self.delete()
+        return removed

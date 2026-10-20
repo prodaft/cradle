@@ -8,17 +8,26 @@ def migrate_files_to_single_bucket(apps, schema_editor):
     FileReference = apps.get_model('file_transfer', 'FileReference')
     CradleUser = apps.get_model('user', 'CradleUser')
 
-    from file_transfer.utils import MinioClient
-    from file_transfer.storage import FileTransferStorage
-
-    minio_client = MinioClient()
-    target_bucket = FileTransferStorage.bucket_name
-
-    if not minio_client.client.bucket_exists(target_bucket):
-        minio_client.client.make_bucket(target_bucket)
-
     # Cast to list immediately to avoid cursor issues during deletion
     files_to_migrate = list(FileReference.objects.filter(bucket_name__isnull=False).exclude(bucket_name=''))
+    if not files_to_migrate:
+        return
+
+    from botocore.exceptions import ClientError
+    from file_transfer.s3_utils import ensure_bucket_exists
+    from file_transfer.storage import FileTransferStorage
+
+    target_bucket = FileTransferStorage.bucket_name
+    ensure_bucket_exists(target_bucket)
+    client = FileTransferStorage().connection.meta.client
+
+    def object_exists(bucket, key):
+        try:
+            client.head_object(Bucket=bucket, Key=key)
+            return True
+        except ClientError:
+            return False
+
     failures = []
     for file_ref in files_to_migrate:
         try:
@@ -37,10 +46,12 @@ def migrate_files_to_single_bucket(apps, schema_editor):
                     pass
 
                 new_file_path = f"{new_id}-{file_ref.file_name}"
-                if file_ref.minio_file_name and minio_client.file_exists_at_path(file_ref.bucket_name, file_ref.minio_file_name):
-                    from minio.commonconfig import CopySource
-                    copy_source = CopySource(file_ref.bucket_name, file_ref.minio_file_name)
-                    minio_client.client.copy_object(target_bucket, new_file_path, copy_source)
+                if file_ref.minio_file_name and object_exists(file_ref.bucket_name, file_ref.minio_file_name):
+                    client.copy_object(
+                        Bucket=target_bucket,
+                        Key=new_file_path,
+                        CopySource={"Bucket": file_ref.bucket_name, "Key": file_ref.minio_file_name},
+                    )
                 else:
                     print(f"File missing in MinIO for {file_ref.id}, skipping DB record swap.")
                     continue

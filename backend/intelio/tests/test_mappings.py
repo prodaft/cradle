@@ -1,4 +1,4 @@
-"""Tests for mapping create (POST) and update (PATCH) endpoints."""
+"""Tests for the mapping collection (list/create) and detail (get/update/delete) endpoints."""
 
 import uuid
 
@@ -27,11 +27,19 @@ class MappingSchemaViewTest(TestCase):
         self.entry_class = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype="ip")
         self.payload = {"internal_class": "ip", "type": "ip", "field": "value", "link_type": "related"}
 
+    def detail_url(self, mapping_id):
+        return reverse("mapping_detail", kwargs={"class_name": "catalystmapping", "mapping_id": mapping_id})
+
+    def create_mapping(self):
+        return CatalystMapping.objects.create(
+            internal_class=self.entry_class, type="ip", field="value", link_type="related"
+        )
+
     def test_post_creates_mapping(self):
         response = self.client.post(self.url, self.payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn(f"mapping_id={response.json()['id']}", response["Location"])
+        self.assertTrue(response["Location"].endswith(self.detail_url(response.json()["id"])))
         self.assertEqual(CatalystMapping.objects.count(), 1)
 
     def test_post_ignores_id_and_creates(self):
@@ -56,37 +64,35 @@ class MappingSchemaViewTest(TestCase):
         self.assertFalse(CatalystMapping.objects.exists())
 
     def test_patch_updates_mapping(self):
-        mapping = CatalystMapping.objects.create(
-            internal_class=self.entry_class, type="ip", field="value", link_type="related"
-        )
-        response = self.client.patch(self.url, {"id": str(mapping.id), "field": "address"}, format="json")
+        mapping = self.create_mapping()
+        response = self.client.patch(self.detail_url(mapping.id), {"field": "address"}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["field"], "address")
         mapping.refresh_from_db()
         self.assertEqual(mapping.field, "address")
 
-    def test_patch_requires_id(self):
-        response = self.client.patch(self.url, {"field": "address"}, format="json")
+    def test_get_returns_mapping(self):
+        mapping = self.create_mapping()
+        response = self.client.get(self.detail_url(mapping.id))
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["id"], str(mapping.id))
 
     def test_patch_unknown_id_returns_404(self):
-        response = self.client.patch(self.url, {"id": str(uuid.uuid4()), "field": "address"}, format="json")
+        response = self.client.patch(self.detail_url(uuid.uuid4()), {"field": "address"}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertFalse(CatalystMapping.objects.exists())
 
     def test_delete_removes_mapping(self):
-        mapping = CatalystMapping.objects.create(
-            internal_class=self.entry_class, type="ip", field="value", link_type="related"
-        )
-        response = self.client.delete(f"{self.url}?mapping_id={mapping.id}")
+        mapping = self.create_mapping()
+        response = self.client.delete(self.detail_url(mapping.id))
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(CatalystMapping.objects.exists())
 
-    def test_delete_invalid_id_returns_400(self):
-        response = self.client.delete(f"{self.url}?mapping_id=not-a-uuid")
+    def test_delete_unknown_id_returns_404(self):
+        response = self.client.delete(self.detail_url(uuid.uuid4()))
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

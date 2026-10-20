@@ -5,9 +5,9 @@ from unittest.mock import patch
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import AccessToken
 
 from user.models import CradleUser, UserRoles
+from user.testing import session_access_token
 
 from ..enums import EntryType
 from ..exceptions import EntryTypeRequiredException, InvalidEntryTypeSettingsException
@@ -88,7 +88,7 @@ class EntryClassRenameAPITestCase(EntriesTestCase):
             email="entrymgr@example.com",
             is_active=True,
         )
-        self.headers = {"HTTP_COOKIE": f"access_token={AccessToken.for_user(self.manager)}"}
+        self.headers = {"HTTP_COOKIE": f"access_token={session_access_token(self.manager)}"}
         self.entry_class = EntryClass.objects.create(
             type=EntryType.ARTIFACT,
             subtype="PTI",
@@ -113,7 +113,7 @@ class EntryClassRenameAPITestCase(EntriesTestCase):
             "options": [],
             "generative_regex": "",
             "format": None,
-            "children": [],
+            "child_subtypes": [],
         }
         response = self.client.put(
             reverse("entry_class_detail", kwargs={"class_subtype": "PTI"}),
