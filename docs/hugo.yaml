@@ -1,6 +1,9 @@
 # Hugo configuration file
 baseURL: "https://cradle.sh/"
-title: CRADLE Hub
+title: CRADLE
+author:
+  name: "CRADLE Team"
+  email: "cradle@prodaft.com"
 
 enableRobotsTXT: true
 enableGitInfo: true
@@ -15,14 +18,16 @@ module:
 outputs:
   home: [HTML]
   page: [HTML]
-  section: [HTML, RSS]
+  section: [HTML]
+  taxonomy: [HTML]
+  term: [HTML]
 
 defaultContentLanguage: en
 languages:
   en:
     languageName: English
     weight: 1
-    title: CRADLE Hub
+    title: CRADLE
 
 markup:
   goldmark:
@@ -36,7 +41,7 @@ menu:
   main:
     - identifier: menu-docs
       name: Documentation
-      pageRef: /docs/
+      pageRef: /docs/getting-started
       weight: 1
     - identifier: menu-help
       name: "Issues"

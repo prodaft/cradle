@@ -1,201 +1,162 @@
-from entries.enums import EntryType
-from django.db import models
-from typing import Set
-from .enums import AccessType
-from user.models import CradleUser
-from django.db.models import Q, F, FilteredRelation
-from entries.models import Entry
-from django.db.models import QuerySet
+"""Custom manager for Access model: permission checks and entity/user access queries.
+
+A user's access to an entity is the strongest of their direct ``Access`` grant and the
+``TeamAccess`` grants of every team they belong to. Public entities are readable by everyone.
+"""
 
 from uuid import UUID
 
+from django.apps import apps
+from django.db import models
+from django.db.models import Case, F, FilteredRelation, IntegerField, OuterRef, Q, QuerySet, Subquery, Value, When
+
+from core.query_lang import search_q
+from entries.enums import EntryType
+from entries.models import Entry
+from user.models import CradleUser
+
+from .enums import ACCESS_RANK, AccessType, highest_access
+
+
+def _team_access_model():
+    return apps.get_model("teams", "TeamAccess")
+
+
+def _best_team_access(user_id) -> Subquery:
+    """Subquery (for an entity queryset) of the user's strongest team access, or NULL."""
+    rank = Case(
+        *(When(access_type=access_type, then=Value(r)) for access_type, r in ACCESS_RANK.items()),
+        output_field=IntegerField(),
+    )
+    return Subquery(
+        _team_access_model()
+        .objects.filter(entity_id=OuterRef("pk"), team__memberships__user_id=user_id)
+        .annotate(rank=rank)
+        .order_by("-rank")
+        .values("access_type")[:1]
+    )
+
 
 class AccessManager(models.Manager):
-    def inaccessible_entries(
-        self, user: CradleUser, entries: QuerySet, access_types: Set[AccessType]
-    ):
-        """Checks whether a user has one of the specified access types
-        to each of the entities in the set of entities. Assumes that AccessType.NONE
-        is not given as an access type in the set. If the user is a superuser,
-        the method returns true.
+    """Manager for Access with methods for permission checks and access lookups."""
+
+    def granted_entity_ids(self, user_id: UUID, access_types: set[AccessType]) -> QuerySet:
+        """Ids of entities granted to the user with one of ``access_types``, directly or via a team.
+
+        Ignores public visibility and admin privileges.
+        """
+        direct = self.get_queryset().filter(user_id=user_id, access_type__in=access_types).values("entity_id")
+        via_team = (
+            _team_access_model()
+            .objects.filter(team__memberships__user_id=user_id, access_type__in=access_types)
+            .values("entity_id")
+        )
+        return Entry.entities.filter(Q(id__in=direct) | Q(id__in=via_team)).values("id")
+
+    def inaccessible_entries(self, user: CradleUser, entries: QuerySet, access_types: set[AccessType]) -> QuerySet:
+        """Returns entries (entities) the user cannot access with any of the given access types.
+
+        Assumes AccessType.NONE is not in access_types. Admins get empty result.
 
         Args:
-            user: the user we perform the check on
-            entities: the set of entities we perform the check on
-            access_types: the set of access types
+            user: User we perform the check on.
+            entries: Queryset of entries to check (entities are filtered from this).
+            access_types: The access types to consider (e.g. READ, READ_WRITE).
 
         Returns:
-            True: if the user's access types for all entities are in access_types
-            False: if there is an entity where the user has a different access type
-            than those specified
+            QuerySet of entity entries the user cannot access.
         """
-
         if user.is_cradle_admin:
-            return Entry.objects.none()
+            return Entry.entities.none()
 
         entities = entries.filter(entry_class__type=EntryType.ENTITY)
-
-        q = models.Q(user_id=user.pk, entity__in=entities, access_type__in=access_types)
-        accesses = self.get_queryset().filter(q).values("entity_id")
-
+        accessible_q = Q(id__in=self.granted_entity_ids(user.pk, access_types))
         if AccessType.READ in access_types:
-            accesses = accesses.union(
-                Entry.entities.filter(
-                    entry_class__type=EntryType.ENTITY, is_public=True
-                ).values("id")
-            )
+            accessible_q |= Q(is_public=True)
+        return entities.exclude(accessible_q)
 
-        accessible = accesses
+    def has_access_to_entities(self, user: CradleUser, entities: set[Entry], access_types: set[AccessType]) -> bool:
+        """Checks whether a user has one of the specified access types to each entity.
 
-        return entities.filter(~Q(pk__in=accessible))
-
-    def has_access_to_entities(
-        self, user: CradleUser, entities: Set[Entry], access_types: Set[AccessType]
-    ) -> bool:
-        """Checks whether a user has one of the specified access types
-        to each of the entities in the set of entities. Assumes that AccessType.NONE
-        is not given as an access type in the set. If the user is a superuser,
-        the method returns true.
+        Assumes AccessType.NONE is not in access_types. If the user is a superuser,
+        returns True.
 
         Args:
-            user: the user we perform the check on
-            entities: the set of entities we perform the check on
-            access_types: the set of access types
+            user: User we perform the check on.
+            entities: Set of entities we perform the check on.
+            access_types: Set of access types.
 
         Returns:
-            True: if the user's access types for all entities are in access_types
-            False: if there is an entity where the user has a different access type
-            than those specified
+            True if the user's access types for all entities are in access_types;
+            False if any entity has a different access type.
         """
-
         if user.is_cradle_admin:
             return True
 
-        count = 0
-        if AccessType.READ in access_types:
-            q = models.Q(
-                user_id=user.pk,
-                entity__in=[e for e in entities if not e.is_public],
-                access_type__in=access_types,
+        needed = {e.pk for e in entities if not (AccessType.READ in access_types and e.is_public)}
+        if not needed:
+            return True
+
+        granted = self.granted_entity_ids(user.pk, access_types).filter(id__in=needed)
+        return granted.count() == len(needed)
+
+    def effective_access_type(self, user: CradleUser, entity: Entry) -> AccessType:
+        """The strongest access ``user`` has to ``entity`` from any source."""
+        if user.is_cradle_admin:
+            return AccessType.READ_WRITE
+
+        direct = self.get_queryset().filter(user=user, entity=entity).values_list("access_type", flat=True)
+        via_team = (
+            _team_access_model()
+            .objects.filter(entity=entity, team__memberships__user=user)
+            .values_list("access_type", flat=True)
+        )
+        public = AccessType.READ if entity.is_public else None
+        return highest_access(*direct, *via_team, public)
+
+    def get_accessible_entity_ids(self, user_id: UUID) -> QuerySet:
+        """For a given user id, get entity ids accessible by the user.
+
+        Does not consider admin privileges; do not use for admin users.
+
+        Args:
+            user_id: ID of the user.
+
+        Returns:
+            QuerySet of entity ids to which the user has READ or READ_WRITE access.
+        """
+        granted = self.granted_entity_ids(user_id, {AccessType.READ, AccessType.READ_WRITE})
+        return Entry.entities.filter(Q(id__in=granted) | Q(is_public=True)).values_list("pk", flat=True)
+
+    def get_accesses(self, user_id: UUID, search: str | None = None) -> QuerySet:
+        """Retrieves access_type of all entities for a given user id.
+
+        Args:
+            user_id: ID of the user whose access is to be retrieved.
+            search: Optional query (AND/OR/NOT, -term, "phrases", =exact, * wildcards) over
+                entity name and description, or exact match on entity id when ``search`` is
+                numeric.
+
+        Returns:
+            QuerySet of dicts with keys: id, name, access_type (direct grant), team_access_type
+            (strongest grant through a team), description, is_public.
+        """
+        qs = (
+            Entry.entities.annotate(access_type=FilteredRelation("access", condition=Q(access__user=user_id)))
+            .values("id", "name", "access_type__access_type", "description", "is_public")  # separate table
+            .annotate(
+                access_type=F("access_type__access_type"),  # rename obscure field
+                team_access_type=_best_team_access(user_id),
             )
-            count = len([e for e in entities if e.is_public])
-        else:
-            q = models.Q(
-                user_id=user.pk, entity__in=entities, access_type__in=access_types
-            )
-
-        accesses = self.get_queryset().filter(q).distinct().values("id")
-        count += accesses.count()
-
-        return count == len(entities)
-
-    def get_accessible_entity_ids(self, user_id: UUID) -> models.QuerySet:
-        """For a given user id, get a list of all entity ids which
-        are accessible by the user. This method does not take into consideration
-        the access privileges of the user. Hence, this method should not be used
-        for admin users.
-
-        Args:
-            user_id: the id of the user.
-
-        Returns:
-            a QuerySet instance which gives all the entity ids to which the user
-            id has READ or READ_WRITE access.
-        """
-        ids = set(
-            (
-                self.get_queryset()
-                .filter(
-                    (
-                        Q(user_id=user_id)
-                        & (
-                            Q(access_type=AccessType.READ)
-                            | Q(access_type=AccessType.READ_WRITE)
-                        )
-                    )
-                )
-                .values_list("entity_id", flat=True)
-            )
+            .order_by("name")
         )
-
-        ids = ids | set(
-            Entry.objects.filter(
-                entry_class__type=EntryType.ENTITY, is_public=True
-            ).values_list("id", flat=True)
-        )
-
-        return Entry.entities.filter(pk__in=ids).values_list("pk", flat=True)
-
-    def get_accesses(self, user_id: UUID) -> models.QuerySet:
-        """Retrieves from the database the access_type of all
-        entities for a given user id.
-
-        Args:
-            user_id: Id of the user whose access is to be updated.
-
-        Returns:
-            A QuerySet containing instances which are dictionaries.
-            The dictionaries are as follows:
-            {
-                "id" : 2,
-                "name" : "Entity 2",
-                "access_type" : AccessType.NONE
-            }
-        """
-        return (
-            Entry.entities.annotate(
-                access_type=FilteredRelation(
-                    "access", condition=Q(access__user=user_id)
-                )
-            )  # left outer join
-            .values("id", "name", "access_type__access_type")  # separate table
-            .annotate(access_type=F("access_type__access_type"))  # rename obscure field
-        )
-
-    def get_users_with_access(self, entity_id: UUID) -> models.QuerySet:
-        """Retrieves the ids of the users that can provide access for the given
-        entity. Those users are the ones that have read-write access to the entity
-        and the superusers.
-
-        Args:
-            entity_id: The id of the entity we perform the check for
-
-        Returns:
-            A QuerySet containing the ids of the users that are allowed to give
-            access to the entity.
-        """
-
-        return (
-            self.get_queryset()
-            .filter(entity_id=entity_id, access_type=AccessType.READ_WRITE)
-            .values_list("user_id", flat=True)
-            .union(CradleUser.objects.filter(role="admin").values_list("id", flat=True))
-        )
-
-    def check_user_access(
-        self, user: CradleUser, entity: Entry, access_type: AccessType
-    ) -> bool:
-        """Checks whether the user has an access access_type for the provided entity.
-        The method should not be called when the user is a superuser or when
-        access_type is NONE.
-
-        Args:
-            user: User whose access is checked
-            entity: The entity for which the check is performed
-            access_type: The access type for which the method checks
-
-        Returns:
-            True: If the user has access access_type for the entity
-            False: If the user does not have access access_type for the entity.
-        """
-
-        assert not user.is_cradle_admin, "The user parameter should not be a superuser"
-        assert access_type != AccessType.NONE, (
-            "The provided access type should not be NONE"
-        )
-
-        return (
-            self.get_queryset()
-            .filter(user=user, entity=entity, access_type=access_type)
-            .exists()
-        )
+        q = search_q(search, ["name", "description"])
+        if q is not None:
+            term = (search or "").strip()
+            if term.isdigit():
+                try:
+                    q |= Q(id=int(term))
+                except ValueError, OverflowError:
+                    pass
+            qs = qs.filter(q)
+        return qs

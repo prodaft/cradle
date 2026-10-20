@@ -17,6 +17,17 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunSQL(
+            sql="""
+            ALTER TABLE notes_note_entries DROP CONSTRAINT IF EXISTS notes_note_entries_entry_id_0c8c0492_fk_entries_entry_id;
+            ALTER TABLE entries_entry_aliases DROP CONSTRAINT IF EXISTS entries_entry_aliase_from_entry_id_dc27e48a_fk_entries_e;
+            ALTER TABLE entries_entry_aliases DROP CONSTRAINT IF EXISTS entries_entry_aliases_to_entry_id_a6295c3a_fk_entries_entry_id;
+            ALTER TABLE entries_relation DROP CONSTRAINT IF EXISTS entries_relation_e1_id_a685169c_fk_entries_entry_id;
+            ALTER TABLE entries_relation DROP CONSTRAINT IF EXISTS entries_relation_e2_id_4ba42ab7_fk_entries_entry_id;
+            ALTER TABLE access_access DROP CONSTRAINT IF EXISTS access_access_entity_id_eae3de6a_fk_entries_entry_id;
+            """,
+            reverse_sql=migrations.RunSQL.noop,
+        ),
         migrations.RemoveField(
             model_name="entry",
             name="new_id",

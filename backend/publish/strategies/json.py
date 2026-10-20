@@ -1,46 +1,29 @@
 import json
-from io import BytesIO
+import logging
 from datetime import timedelta
 from typing import List
 
-from file_transfer.models import FileReference
-from notes.models import Note
-from publish.models import PublishedReport, ReportStatus
-from publish.strategies.base import BasePublishStrategy
-from file_transfer.utils import MinioClient
-
 from entries.serializers import EntryClassSerializer, EntryPublishSerializer
+from notes.models import Note
+
+from ..models import PublishedReport
+from .base import BasePublishStrategy
+
+logger = logging.getLogger(__name__)
 
 
 class JSONPublish(BasePublishStrategy):
-    """
-    A publishing strategy that generates a JSON report from a list of notes.
-    """
+    """A publishing strategy that generates a JSON report from a list of notes."""
 
     content_type = "application/json"
 
     def create_report(self, report: PublishedReport) -> bool:
+        """Build JSON report and upload to S3."""
         content = self._build_report(report.title, report.notes.all())
-        return self._upload_report(content, report)
-
-    def edit_report(self, report: PublishedReport) -> bool:
-        content = self._build_report(report.title, report.notes.all())
-        return self._upload_report(content, report)
-
-    def delete_report(self, report: PublishedReport) -> bool:
-        bucket_name = str(report.user.id)
-        client = MinioClient().client
-        try:
-            client.remove_object(bucket_name, f"{report.id}.json")
-        except Exception:
-            report.error_message = "Failed to delete JSON report."
-            report.status = ReportStatus.ERROR
-            report.save()
-            return False
-
-        return True
+        return self._save_report_file(json.dumps(content).encode("utf-8"), f"{report.id}.json", report)
 
     def _build_report(self, title: str, notes: List[Note]) -> dict:
+        """Build JSON report structure with notes, entries, and entry classes."""
         report = {
             "title": title,
             "notes": [],
@@ -62,14 +45,15 @@ class JSONPublish(BasePublishStrategy):
                 linked_entries_set.add(self._anonymize_entry(entry))
 
             for file_ref in files.all():
+                if not file_ref.file:
+                    continue
+
                 try:
-                    url = MinioClient().create_presigned_get(
-                        file_ref.bucket_name,
-                        file_ref.minio_file_name,
-                        timedelta(days=7),
+                    note_data["file_urls"][file_ref.file.name] = file_ref.download_url(
+                        expires_in=int(timedelta(days=7).total_seconds()), content_type="application/octet-stream"
                     )
-                    note_data["file_urls"][file_ref.minio_file_name] = url
-                except Exception:
+                except Exception as e:
+                    logger.debug("Failed to presign file %s: %s", file_ref.file.name, e)
                     continue
 
             report["notes"].append(note_data)
@@ -82,31 +66,3 @@ class JSONPublish(BasePublishStrategy):
         report["entry_classes"] = entry_classes_data
 
         return report
-
-    def _upload_report(self, content: dict, report: PublishedReport) -> bool:
-        report_json = json.dumps(content)
-        bucket_name = str(report.user.id)
-        client = MinioClient().client
-        data = BytesIO(report_json.encode("utf-8"))
-        size = len(report_json)
-        content_type = "application/json"
-        file_name = f"{report.id}.json"
-
-        try:
-            client.put_object(
-                bucket_name, file_name, data, size, content_type=content_type
-            )
-            FileReference.objects.filter(report=report).delete()
-            FileReference.objects.create(
-                minio_file_name=file_name,
-                file_name=file_name,
-                bucket_name=bucket_name,
-                report=report,
-            )
-        except Exception:
-            report.error_message = "Failed to upload JSON report."
-            report.status = ReportStatus.ERROR
-            report.save()
-            return False
-
-        return True

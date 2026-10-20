@@ -1,206 +1,327 @@
+"""File transfer API views: upload (initiate/finalize), download, delete, process.
+
+Uses presigned URLs for direct S3 uploads; validates quota and access.
+"""
+
+import logging
+import uuid
 from datetime import timedelta
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.request import Request
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
+
+from botocore.exceptions import ClientError
+from django.urls import reverse
+from django.utils import timezone
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
-from .utils import MinioClient
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from core.exceptions import CoreErrorCodes
+from core.openapi import get_common_error_responses, get_error_responses
+from notes.models import Note
+from notes.views.note_view import FileDetail as NoteFileDetail
+from user.authentication import CookieJWTAuthentication
+
+from .constants import FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS
+from .exceptions import (
+    FileAccessDeniedException,
+    FileReferenceNotFoundException,
+    FileTransferErrorCodes,
+    FileTransferNoteNotFoundException,
+    StoredFileNotFoundException,
+)
+from .models import FileReference, PendingUpload
 from .serializers import (
-    FileUploadSerializer,
     FileDownloadSerializer,
-    FileProcessSerializer,
+    FileUploadFinalizeResponseSerializer,
+    FileUploadFinalizeSerializer,
+    FileUploadInitiateSerializer,
+    FileUploadResponseSerializer,
 )
-from .models import FileReference
-import time
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
-
-
-@extend_schema_view(
-    get=extend_schema(
-        summary="Generate file upload URL",
-        description="Generates a presigned URL that allows uploading a file to MinIO storage without requiring credentials. The URL expires after 5 minutes.",  # noqa: E501
-        parameters=[
-            OpenApiParameter(
-                name="fileName",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="Name of the file to be uploaded",
-                required=True,
-            )
-        ],
-        responses={
-            200: FileUploadSerializer,
-            400: {"description": "Query parameters are invalid"},
-            401: {"description": "User is not authenticated"},
-        },
-    )
+from .storage import FileTransferStorage
+from .uploads import (
+    PresignedUploadFlow,
+    UploadConfig,
+    check_upload_quota,
+    parse_initiate_request,
+    sanitize_upload_filename,
 )
-class FileUpload(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+from .uploads.exceptions import (
+    InvalidFileSizeException,
+    QuotaExceededException,
+    UploadAccessDeniedException,
+    UploadErrorCodes,
+)
 
-    def get(self, request: Request) -> Response:
-        """Generate a new UUID which concatenated with the original file
-        name describe the path where the user should upload a new file.
-        Provides a presigned put URL that allows the client to make this
-        transfer without requiring the Minio credentials.
+logger = logging.getLogger(__name__)
+
+
+class FileUploadCallbacks:
+    """Callbacks for file upload lifecycle."""
+
+    def on_finalize_success(self, pending_upload, note_id=None, **kwargs) -> dict:
+        """Create FileReference after successful upload.
 
         Args:
-            request: The request that was sent. It expects the query string
-        `fileName` whose value should be the name of the file the user wants
-        to upload to Minio.
+            pending_upload: The pending upload record.
+            note_id: Optional UUID of note to link file to.
+            **kwargs: Additional parameters.
 
         Returns:
-            Response(body, status=200): a JSON response. The JSON response contains
-            the name of the bucket where the resource should be placed, the file path
-            inside this bucket and the presigned put URL.
-            Response("Query parameters are invalid", status=400): if the user does not
-            send the required query parameters.
-            Response("User is not authenticated", status=401): if the user making the
-            request is not authenticated.
+            dict with file_id, file_name, object_key.
+
+        Raises:
+            FileTransferNoteNotFoundException: If note_id provided but note not found or not readable.
+            UploadAccessDeniedException: If note_id provided but user lacks write access on the note.
+            InvalidFileSizeException: If file size cannot be determined.
+            QuotaExceededException: If file size or total quota is exceeded.
         """
+        storage = FileTransferStorage()
+        file_size = None
+        try:
+            file_size = storage.size(pending_upload.object_key)
+        except OSError, ClientError:
+            try:
+                storage.delete(pending_upload.object_key)
+            except OSError, ClientError:
+                pass
+            raise InvalidFileSizeException(detail="The file size could not be determined.")
 
-        file_name = request.query_params.get("fileName")
-        if not file_name:
-            return Response(
-                "Query parameters are invalid", status=status.HTTP_400_BAD_REQUEST
-            )
+        try:
+            check_upload_quota(pending_upload.user, file_size)
+        except QuotaExceededException:
+            try:
+                storage.delete(pending_upload.object_key)
+            except OSError, ClientError:
+                pass
+            raise
 
-        response_data = {}
-        response_data["bucket_name"] = str(request.user.id)
-        response_data["expires_at"] = 5 * 60 + int(time.time())
+        note = None
+        if note_id:
+            try:
+                note = Note.objects.get_accessible_notes(pending_upload.user).get(id=note_id)
+            except Note.DoesNotExist:
+                raise FileTransferNoteNotFoundException(detail="That note could not be found.")
+            if not note.has_write_access(pending_upload.user):
+                try:
+                    storage.delete(pending_upload.object_key)
+                except OSError, ClientError:
+                    pass
+                raise UploadAccessDeniedException(
+                    detail="You do not have permission to upload files to this note.",
+                )
 
-        (
-            response_data["minio_file_name"],
-            response_data["presigned"],
-        ) = MinioClient().create_presigned_put(
-            response_data["bucket_name"], file_name, timedelta(minutes=5)
+        file_reference = FileReference(
+            file_name=pending_upload.file_name,
+            note=note,
+            user=pending_upload.user,
+            file_size=file_size,
         )
+        file_reference.file.name = pending_upload.object_key
+        file_reference.save()
 
-        return Response(FileUploadSerializer(response_data).data)
+        return {
+            "file_id": file_reference.id,
+            "file_name": file_reference.file_name,
+            "object_key": pending_upload.object_key,
+        }
 
 
-@extend_schema_view(
-    get=extend_schema(
-        summary="Get file download URL",
-        description="Generates a presigned URL that allows clients to download files from Minio without requiring credentials. The URL expires after 7 days.",  # noqa: E501
-        parameters=[
-            OpenApiParameter(
-                name="bucketName",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="Name of the bucket where the file is stored",
-                required=True,
-            ),
-            OpenApiParameter(
-                name="minioFileName",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="Name of the file in Minio storage",
-                required=True,
-            ),
-        ],
-        responses={
-            200: FileDownloadSerializer,
-            400: {"description": "Query parameters are invalid"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "The requested file does not exist"},
-        },
-    )
+file_upload_flow = PresignedUploadFlow(
+    config=UploadConfig(
+        bucket_name=FileTransferStorage.bucket_name,
+    ),
+    pending_model=PendingUpload,
+    callbacks=FileUploadCallbacks(),
 )
-class FileDownload(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request: Request) -> Response:
-        """Provides a presigned download URL that allows clients to download files
-        from Minio without requiring the credentials.
-
-        Args:
-            request: The request that was sent. It expects the query strings
-        `bucketName` and `minioFileName` which should contains the name of the
-        Minio bucket where the file is located and the file name on Minio
-        respectively.
-
-        Returns:
-            Response(body, status=200): a JSON response. The JSON response contains
-            the presigned get URL.
-            Response("Query parameters are invalid", status=400): if the user does not
-            send the required query parameters.
-            Response("User is not authenticated", status=401): if the user making the
-            request is not authenticated.
-            Response("The requested resource does not exist, status=404"): if the
-            resource at the indicated path does not exist.
-        """
-
-        bucket_name = request.query_params.get("bucketName")
-        minio_file_name = request.query_params.get("minioFileName")
-
-        if bucket_name is None or minio_file_name is None:
-            return Response(
-                "Query parameters are invalid", status=status.HTTP_400_BAD_REQUEST
-            )
-
-        response_data = {}
-
-        response_data["expires_at"] = 7 * 24 * 60 * 60 + int(time.time())
-        response_data["presigned"] = MinioClient().create_presigned_get(
-            bucket_name, minio_file_name, timedelta(days=7)
-        )
-
-        return Response(FileDownloadSerializer(response_data).data)
 
 
 @extend_schema_view(
     post=extend_schema(
-        summary="Process an uploaded file",
-        description="Triggers processing for a file that has been uploaded to MinIO.",
-        request=FileProcessSerializer,
+        operation_id="files_uploads_create",
+        summary="Initiate file upload",
+        description="Generates a presigned URL for uploading a file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_at. The upload must be finalized within the expiration time.",
+        request=FileUploadInitiateSerializer,
         responses={
-            200: {"description": "File processing started successfully"},
-            400: {"description": "Request body is invalid"},
-            401: {"description": "User is not authenticated"},
-            404: {"description": "File reference not found"},
+            201: FileUploadResponseSerializer,
+            **get_error_responses(
+                UploadErrorCodes.INVALID_FILE_NAME,
+                UploadErrorCodes.INVALID_FILE_SIZE,
+                UploadErrorCodes.QUOTA_EXCEEDED,
+            ),
+            **get_common_error_responses(),
+        },
+    )
+)
+class FileUpload(APIView):
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        """Generate a presigned URL for file upload.
+
+        Creates a PendingUpload record and schedules a cleanup task for when the
+        upload expires. The client should upload the file to the presigned URL
+        and then call the finalize endpoint.
+
+        Args:
+            request: The request with body fields `file_name` and `file_size`.
+
+        Returns:
+            Response with upload_id, presigned_url, object_key, and expires_at.
+        """
+        file_name, file_size = parse_initiate_request(request.data)
+        response_data = file_upload_flow.initiate(request.user, sanitize_upload_filename(file_name), file_size)
+        return Response(FileUploadResponseSerializer(response_data).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="files_uploads_finalize_create",
+        summary="Finalize file upload",
+        description="Verifies the file was uploaded to storage and creates a FileReference. Optionally connects the file to a note.",
+        request=FileUploadFinalizeSerializer,
+        responses={
+            201: FileUploadFinalizeResponseSerializer,
+            **get_error_responses(
+                CoreErrorCodes.UNAUTHENTICATED,
+                CoreErrorCodes.PERMISSION_DENIED,
+                CoreErrorCodes.INTERNAL_SERVER_ERROR,
+                UploadErrorCodes.UPLOAD_NOT_FOUND,
+                UploadErrorCodes.UPLOAD_EXPIRED,
+                UploadErrorCodes.FILE_NOT_UPLOADED,
+                UploadErrorCodes.INVALID_FILE_SIZE,
+                UploadErrorCodes.QUOTA_EXCEEDED,
+                FileTransferErrorCodes.FILE_TRANSFER_NOTE_NOT_FOUND,
+                UploadErrorCodes.FILE_UPLOAD_ACCESS_DENIED,
+                include_validation_error=True,
+            ),
+        },
+    )
+)
+class FileUploadFinalize(APIView):
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, upload_id: uuid.UUID) -> Response:
+        """Finalize a file upload.
+
+        Verifies the file exists in storage, creates a FileReference record,
+        and optionally connects it to a note.
+
+        Args:
+            request: The request with optional note_id in body.
+            upload_id: The upload ID from the initiation step (UUID object from URL).
+
+        Returns:
+            Response with file_id, file_name, and object_key.
+        """
+        serializer = FileUploadFinalizeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        response_data = file_upload_flow.finalize(upload_id, request.user, **serializer.validated_data)
+        download_url = reverse("file_download", kwargs={"file_id": response_data["file_id"]})
+        location = request.build_absolute_uri(download_url)
+        return Response(
+            FileUploadFinalizeResponseSerializer(response_data).data,
+            status=status.HTTP_201_CREATED,
+            headers={"Location": location},
+        )
+
+
+def _get_file_or_404(user, file_id: uuid.UUID, *, write: bool = False) -> FileReference:
+    """Return the file if ``user`` can read it, else 404; with ``write``, 403 when it is readable only."""
+    file_reference = FileReference.objects.filter(id=file_id).first()
+    if file_reference is None or not file_reference.has_access(user):
+        raise FileReferenceNotFoundException(detail="That file could not be found.")
+    if write and not file_reference.has_write_access(user):
+        raise FileAccessDeniedException(detail="You do not have permission to change this file.")
+    return file_reference
+
+
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="files_download_retrieve",
+        summary="Get file download URL",
+        description="Generates a presigned URL for downloading a file.",
+        responses={
+            200: FileDownloadSerializer,
+            **get_error_responses(
+                FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND,
+                FileTransferErrorCodes.STORED_FILE_NOT_FOUND,
+            ),
+            **get_common_error_responses(),
+        },
+    )
+)
+class FileDownload(APIView):
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, file_id: uuid.UUID) -> Response:
+        """Generate a presigned URL for file download."""
+        file_reference = _get_file_or_404(request.user, file_id)
+
+        if not file_reference.file:
+            raise StoredFileNotFoundException(detail="The file could not be found.")
+
+        response_data = {
+            "presigned_url": file_reference.download_url(expires_in=FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS),
+            "expires_at": timezone.now() + timedelta(seconds=FILE_TRANSFER_PRESIGNED_DOWNLOAD_EXPIRY_SECONDS),
+        }
+
+        return Response(FileDownloadSerializer(response_data).data, status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="files_process_create",
+        summary="Process an uploaded file",
+        description="Triggers processing for a file (calculates hashes, mimetype, etc.).",
+        request=None,
+        responses={
+            202: {"description": "Request accepted for processing"},
+            **get_error_responses(FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND),
+            **get_common_error_responses(),
         },
     )
 )
 class FileProcess(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: Request) -> Response:
-        """Triggers processing for a file that has been uploaded to MinIO.
+    def post(self, request: Request, file_id: uuid.UUID) -> Response:
+        """Trigger processing for a file."""
+        _get_file_or_404(request.user, file_id).process_file()
+        return Response({"detail": "File processing started"}, status=status.HTTP_202_ACCEPTED)
 
-        Args:
-            request: The request that was sent. It expects a JSON body with
-            `file_id` containing the UUID of the FileReference to process.
 
-        Returns:
-            Response({"message": "File processing started"}, status=200): if processing was started successfully
-            Response({"error": "Invalid request body"}, status=400): if the request body is invalid
-            Response({"error": "File reference not found"}, status=404): if the file reference doesn't exist
-        """
-        serializer = FileProcessSerializer(data=request.data)
+@extend_schema_view(
+    delete=extend_schema(
+        operation_id="files_destroy",
+        summary="Delete a file reference",
+        description="Deletes a file reference and removes the associated file from storage.",
+        responses={
+            204: {"description": "File reference deleted successfully"},
+            **get_error_responses(
+                FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND,
+                FileTransferErrorCodes.FILE_ACCESS_DENIED,
+            ),
+            **get_common_error_responses(),
+        },
+    )
+)
+class FileDetail(NoteFileDetail):
+    """One file: GET (metadata, for files on a readable note) comes from the notes app; DELETE is here."""
 
-        if not serializer.is_valid():
-            return Response(
-                {"error": "Invalid request body", "details": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            file_reference = FileReference.objects.get(
-                id=serializer.validated_data["file_id"]
-            )
-
-            # Call the process_file method on the file reference
-            file_reference.process_file()
-
-            return Response(
-                {"message": "File processing started"}, status=status.HTTP_200_OK
-            )
-        except FileReference.DoesNotExist:
-            return Response(
-                {"error": "File reference not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+    def delete(self, request: Request, file_id: uuid.UUID) -> Response:
+        """Delete a file reference and the associated file from storage."""
+        file_reference = _get_file_or_404(request.user, file_id, write=True)
+        if file_reference.file:
+            try:
+                file_reference.file.delete(save=False)
+            except OSError, ClientError:
+                pass
+        file_reference.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

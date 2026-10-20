@@ -1,25 +1,20 @@
-from collections.abc import Iterable
+import datetime
 import enum
-from typing import Any, Dict, List, Optional, Set, Tuple
+import hashlib
+from collections.abc import Iterable
+from typing import Any, Optional
+
+import frontmatter
 import mistune
 from mistune.core import BaseRenderer, BlockState
-from django.utils.timezone import make_aware
-from ..exceptions import InvalidDateFormatException
-import uuid
-import hashlib
-import datetime
-import frontmatter
-import itertools
+from mistune.plugins.table import table
 
-if __name__ == "__main__":
-    from common import cradle_link_plugin, footnote_plugin, ErrorBypassYAMLHandler
-    from table import table
-else:
-    from .common import cradle_link_plugin, footnote_plugin, ErrorBypassYAMLHandler
-    from .table import table
+from .utils import ErrorBypassYAMLHandler, cradle_link_plugin, footnote_plugin, parse_entry_date
 
 
 class NodeType(enum.Enum):
+    """Node type in the markdown AST (heading, paragraph, list, etc.)."""
+
     ROOT = "<root>"
     HEADING = "heading"
     PARAGRAPH = "paragraph"
@@ -35,6 +30,8 @@ class NodeType(enum.Enum):
 
 
 class Link:
+    """A cradle link: type:value with optional alias and date."""
+
     def __init__(
         self,
         key: str,
@@ -49,10 +46,10 @@ class Link:
         self.virtual = virtual
         self.date = date
 
-    def __eq__(self, value: object, /) -> bool:
-        if not isinstance(value, Link):
+    def __eq__(self, other: object, /) -> bool:
+        if not isinstance(other, Link):
             return False
-        return self.key == value.key and self.value == value.value
+        return self.key == other.key and self.value == other.value
 
     def __hash__(self) -> int:
         return hash((self.key, self.value))
@@ -72,8 +69,8 @@ class NodeFactory:
     def create_node(
         self,
         parent: Optional["Node"] = None,
-        children: Optional[List["Node"]] = None,
-        links: Optional[Set["Link"]] = None,
+        children: Optional[list["Node"]] = None,
+        links: Optional[set["Link"]] = None,
         type: Optional["NodeType"] = None,
         level: int = 0,
     ) -> "Node":
@@ -89,11 +86,13 @@ class NodeFactory:
 
 
 class Node:
+    """AST node for markdown structure; holds links and children."""
+
     def __init__(
         self,
         parent: Optional["Node"] = None,
-        children: Optional[List["Node"]] = None,
-        links: Optional[Set["Link"]] = None,
+        children: Optional[list["Node"]] = None,
+        links: Optional[set["Link"]] = None,
         type: Optional["NodeType"] = None,
         level: int = 0,
         base_id: str = "",
@@ -103,19 +102,9 @@ class Node:
         self.links = links if links is not None else set()
         self.type = type
         self.level = level
-        self.uid = uuid.uuid4().hex
         self.base_id = base_id
         # Track the path to this node (will be populated when building the tree)
         self._path_index = -1
-
-    def dict(self) -> Dict[str, Any]:
-        return {
-            "type": self.type.kind if self.type else None,
-            "level": self.level,
-            "parent": id(self.parent) if self.parent else None,
-            "children": [c.dict() for c in self.children],
-            "links": [repr(link) for link in self.links],
-        }
 
     def add_child(self, child: "Node") -> None:
         """Adds a child node and sets its parent to self (only one parent allowed)."""
@@ -145,11 +134,10 @@ class Node:
         return "-".join(reversed(path))
 
     def merge_children(self) -> None:
-        """
-        Merges this node with its children by:
-        1. Absorbing all children's links
-        2. Moving all grandchildren to be direct children
-        3. Removing the original children
+        """Merge this node with its children.
+
+        Absorbs children's links, promotes grandchildren to direct children,
+        removes original children.
         """
         if not self.children:
             return  # Nothing to merge
@@ -180,14 +168,14 @@ class Node:
             child._path_index = i
 
     def combine_with_virtual_children(self) -> None:
-        if not self.children or len(self.links) > 0:
+        if not self.children or self.links:
             return
 
         children = self.children
         self.children = []
 
         for i in children:
-            if len(i.links) > 0:
+            if i.links:
                 self.children.append(i)
 
             for grandchild in i.children:
@@ -197,7 +185,7 @@ class Node:
     def get_deterministic_id(self) -> str:
         """Generate a deterministic ID based on the base_id and node's path in the tree."""
         path = self.get_path()
-        node_type = str(self.type.value) if self.type else "none"
+        node_type = self.type.value if self.type else "none"
 
         # Combine base_id with path, node type and level to ensure uniqueness
         id_str = f"{path}-{node_type}-{self.level}"
@@ -205,40 +193,19 @@ class Node:
         # Use a hash function to create a fixed-length ID
         return f"{self.base_id}-" + hashlib.md5(id_str.encode()).hexdigest()[:16]
 
-    def get_effective_links(self, ignore_connectors: bool = False) -> Set[Any]:
+    def get_effective_links(self, ignore_connectors: bool = False) -> set[Link]:
         if self.links:
             return self.links
         elif not ignore_connectors:
             # Use deterministic ID instead of random UUID
-            virtual_link = Link(
-                key="virtual", value=self.get_deterministic_id(), virtual=True
-            )
-            return {virtual_link}
+            note_link = Link(key="note", value=self.get_deterministic_id(), virtual=True)
+            return {note_link}
 
         return set()
 
-    def get_relation_tuples(self) -> List[Tuple[Link, Link]]:
-        node_links = self.get_effective_links()
-        result = set()
-
-        for link_pair in itertools.combinations(node_links, 2):
-            result.add(link_pair)
-
-        for child in self.children:
-            child_links = child.get_effective_links()
-
-            for node_link in node_links:
-                for child_link in child_links:
-                    if node_link != child_link:
-                        result.add((node_link, child_link))
-
-            result = result.union(child.get_relation_tuples())
-
-        return result
-
-    def all_links(self, ignore_connectors: bool = False) -> Set[Link]:
+    def all_links(self, ignore_connectors: bool = False) -> set[Link]:
         """Returns all links in the node and its children."""
-        all_links = self.get_effective_links(ignore_connectors)
+        all_links = set(self.get_effective_links(ignore_connectors))
 
         for child in self.children:
             all_links.update(child.all_links(ignore_connectors))
@@ -246,28 +213,13 @@ class Node:
         return all_links
 
     def __eq__(self, other: object) -> bool:
-        if other is None:
-            return False
         if not isinstance(other, Node):
-            raise NotImplementedError(
-                "Cannot compare Node with non-Node object: " + str(other)
-            )
+            return NotImplemented
         return (
             self.level == other.level
             and self.type == other.type
             and self.parent == other.parent
             and self.links == other.links
-        )
-
-    def __hash__(self) -> int:
-        return hash(
-            (
-                self.level,
-                self.type,
-                id(self.parent) if self.parent else None,
-                tuple(sorted(id(c) for c in self.children)),
-                frozenset(self.links),
-            )
         )
 
     def __str__(self) -> str:
@@ -284,26 +236,24 @@ class Node:
 
 
 class LinksRenderer(BaseRenderer):
-    """A renderer for converting Markdown to HTML."""
+    """A renderer for converting Markdown tokens to a Node tree."""
 
     NAME = "cradle"
 
     def __init__(
         self,
         base_id: str = "",
-        root_links: Set[Link] = None,
+        root_links: Optional[set[Link]] = None,
     ) -> None:
-        super(LinksRenderer, self).__init__()
+        super().__init__()
         self.node_factory = NodeFactory(base_id)
-        self.root_links = root_links
+        self.root_links = root_links if root_links is not None else set()
 
-    def traverse_up(self, src: Node, target: Node):
-        """
-        This function traverses upwards in the link tree starting from src, until it finds
-        a node that is on a level that can semantically parent the node
-        - target: level 2 heading. Should keep traversing until it reaches a heading of
-          level 1. If it reaches root, first, insert a dummy node of level 1 heading
-        - Similar logic with lists
+    def traverse_up(self, src: Node, target: Node) -> Node:
+        """Traverse upwards in the link tree from src to find a semantic parent.
+
+        For headings: traverse until level can parent target; insert dummy if needed.
+        Similar logic for lists.
         """
         if target.type == NodeType.HEADING:
             if src.type != NodeType.HEADING and src.type != NodeType.ROOT:
@@ -312,9 +262,7 @@ class LinksRenderer(BaseRenderer):
             if (src.type == NodeType.HEADING and target.level > src.level + 1) or (
                 src.type == NodeType.ROOT and target.level > 1
             ):
-                dummy = self.node_factory.create_node(
-                    type=NodeType.HEADING, level=src.level + 1
-                )
+                dummy = self.node_factory.create_node(type=NodeType.HEADING, level=src.level + 1)
                 src.add_child(dummy)
                 return self.traverse_up(dummy, target)
             elif src.type == NodeType.HEADING and target.level <= src.level:
@@ -376,9 +324,7 @@ class LinksRenderer(BaseRenderer):
 
         return src
 
-    def render_token(
-        self, token: Dict[str, Any], state: BlockState, parent: Node
-    ) -> Node:
+    def render_token(self, token: dict[str, Any], state: BlockState, parent: Node) -> Node:
         func = self._get_method(token["type"])
         attrs = token.get("attrs", {})
 
@@ -395,16 +341,12 @@ class LinksRenderer(BaseRenderer):
 
         return node
 
-    def render_tokens(
-        self, tokens: Iterable[Dict[str, Any]], state: BlockState, parent: Node
-    ) -> Node:
+    def render_tokens(self, tokens: Iterable[dict[str, Any]], state: BlockState, parent: Node) -> None:
         for tok in tokens:
             parent = self.render_token(tok, state, parent)
 
-    def __call__(self, tokens: Iterable[Dict[str, Any]], state: BlockState) -> str:
-        root = self.node_factory.create_node(
-            type=NodeType.ROOT, level=0, links=self.root_links
-        )
+    def __call__(self, tokens: Iterable[dict[str, Any]], state: BlockState) -> Node:
+        root = self.node_factory.create_node(type=NodeType.ROOT, level=0, links=self.root_links)
         self.render_tokens(tokens, state, root)
         return root
 
@@ -442,10 +384,14 @@ class LinksRenderer(BaseRenderer):
         self,
         key: str,
         value: str,
+        hidden: bool,
         alias: Optional[str],
         date: Optional[datetime.datetime],
         time: Optional[datetime.datetime],
-    ) -> Node:
+    ) -> Node | None:
+        if hidden:
+            return None
+
         if date and time:
             date = date.replace(hour=time.hour, minute=time.minute)
 
@@ -482,26 +428,24 @@ class LinksRenderer(BaseRenderer):
         return self.node_factory.create_node(type=NodeType.OTHER)
 
     def list(self, ordered: bool, **attrs: Any) -> Node:
-        return self.node_factory.create_node(
-            type=NodeType.LIST, level=attrs.get("depth", 0) + 1
-        )
+        return self.node_factory.create_node(type=NodeType.LIST, level=attrs.get("depth", 0) + 1)
 
-    def list_item(self) -> List:
+    def list_item(self) -> Node:
         return self.node_factory.create_node(type=NodeType.LIST_ITEM, level=-1)
 
-    def table(self) -> List:
+    def table(self) -> Node:
         return self.node_factory.create_node(type=NodeType.TABLE)
 
-    def table_head(self) -> List:
+    def table_head(self) -> Node:
         return self.node_factory.create_node(type=NodeType.TABLE_ROW)
 
-    def table_body(self) -> List:
+    def table_body(self) -> Node:
         return self.node_factory.create_node(type=NodeType.TABLE_ROW)
 
     def table_row(self) -> Node:
         return self.node_factory.create_node(type=NodeType.TABLE_ROW)
 
-    def table_cell(self, align: Optional[str] = None, head: bool = False) -> List:
+    def table_cell(self, align: Optional[str] = None, head: bool = False) -> Node:
         return self.node_factory.create_node(type=NodeType.TABLE_CELL)
 
     def inline_html(self, *args, **kwargs) -> None:
@@ -512,6 +456,7 @@ def cradle_connections(
     md: str,
     base_id: str = "",
 ) -> Node:
+    """Parse markdown into a Node tree with cradle links and frontmatter entries."""
     metadata, content = frontmatter.parse(md, handler=ErrorBypassYAMLHandler())
     root_entries = metadata.pop("entries", {})
 
@@ -525,99 +470,32 @@ def cradle_connections(
             for item in value:
                 if isinstance(item, str):
                     entries.add(Link(key=subtype, value=item))
+                else:
+                    raise ValueError("Each list item must be an entry name.")
         elif isinstance(value, dict):
             for k, v in value.items():
                 if isinstance(v, str):
-                    date = None
-                    try:
-                        # First try to parse with time component (HH:MM dd-mm-yyyy)
-                        if ":" in v and " " in v:
-                            time_part, date_part = v.split(" ", 1)
-                            if ":" in time_part:
-                                time_format = "%H:%M %d-%m-%Y"
-
-                                try:
-                                    date = make_aware(
-                                        datetime.datetime.strptime(v, time_format)
-                                    )
-                                except ValueError:
-                                    raise InvalidDateFormatException(v)
-
-                        if date is None:
-                            try:
-                                date = make_aware(
-                                    datetime.datetime.strptime(v, "%d-%m-%Y")
-                                )
-                            except ValueError:
-                                raise InvalidDateFormatException(v)
-                    except ValueError:
-                        pass
-
+                    date = parse_entry_date(v)
                     entries.add(Link(key=subtype, value=k, date=date))
-                elif isinstance(v, Iterable):
-                    raise ValueError(
-                        f"Unsupported value type for {subtype}:{k}. Expected str, got {type(v)}."
-                    )
+                else:
+                    raise ValueError("Each date must be given as text.")
 
         elif isinstance(value, str):
             entries.add(Link(key=subtype, value=value))
+        else:
+            raise ValueError("Use a single entry name, a list of names, or names paired with dates.")
 
     renderer = LinksRenderer(base_id=base_id, root_links=entries)
 
-    markdown = mistune.create_markdown(
-        renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin]
-    )
+    markdown = mistune.create_markdown(renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin])
 
     result, state = markdown.parse(content)
 
     return result
 
 
-def print_tree(
-    node: "Node", indent: str = "", is_last: bool = True, show_details: bool = False
-) -> None:
-    """
-    Print a Node object as a tree structure.
-
-    Args:
-        node: The Node object to print
-        indent: Current indentation string
-        is_last: Whether this node is the last child of its parent
-        show_details: Whether to show additional node details (links, etc.)
-    """
-    # Handle the case when node is None
-    if node is None:
-        return
-
-    # Branch symbols
-    branch = "└── " if is_last else "├── "
-
-    # Print the current node
-    type_str = str(node.type) if node.type else "None"
-    node_str = f"{type_str} (level={node.level})"
-
-    if show_details:
-        details = []
-        if node.links:
-            details.append(", ".join(map(repr, node.links)))
-        if show_details:
-            details.append(f"id={node.get_deterministic_id()}")
-
-        if details:
-            node_str += f" | {' | '.join(details)}"
-
-    print(f"{indent}{branch}{node_str}")
-
-    # Prepare indentation for children
-    child_indent = indent + ("    " if is_last else "│   ")
-
-    # Print children
-    for i, child in enumerate(node.children):
-        is_last_child = i == len(node.children) - 1
-        print_tree(child, child_indent, is_last_child, show_details)
-
-
 def compress_tree(node: "Node", max_clique_size: int) -> bool:
+    """Merge children when total links <= max_clique_size; remove empty nodes. Returns True if node has content."""
     nonempty_children = []
 
     count = 0
@@ -628,23 +506,11 @@ def compress_tree(node: "Node", max_clique_size: int) -> bool:
 
     node.children = nonempty_children
 
-    if len(node.children) > 0 and len(node.links) + count <= max_clique_size:
+    if node.children and len(node.links) + count <= max_clique_size:
         node.merge_children()
-    elif len(node.children) == 1 and len(node.links) == 0:
+    elif len(node.children) == 1 and not node.links:
         node.merge_children()
 
     node.combine_with_virtual_children()
 
     return len(node.children) + len(node.links) > 0
-
-
-if __name__ == "__main__":
-    with open("example_note.md", "r") as f:
-        md = f.read()
-
-    # Now you can specify a base_id when creating the tree
-    node = cradle_connections(md, base_id="document123")
-    print_tree(node, show_details=True)
-    compress_tree(node, 3)
-    print_tree(node, show_details=True)
-    print(node.get_relation_tuples())

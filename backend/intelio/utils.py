@@ -1,13 +1,18 @@
-from .models.base import EnricherSettings
-from .models.base import BaseEnricher
+"""Utilities for intelio: enricher settings lookup and defaults."""
+
+from .models.base import BaseEnricher, EnricherSettings
 
 
-def get_or_default_enricher(enricher_type):
+def get_or_default_enricher(enricher_type: str):
+    """Retrieve EnricherSettings for a given enricher type, or return a default instance.
+
+    Args:
+        enricher_type: Class name of the enricher (e.g. "AbuseIPDBEnricher").
+
+    Returns:
+        EnricherSettings instance with stored or default settings, or None if
+        enricher_type is unknown.
     """
-    Retrieve an enricher for a given entry class and type,
-    or return a default instance with empty settings.
-    """
-
     try:
         return EnricherSettings.objects.get(enricher_type=enricher_type)
     except EnricherSettings.DoesNotExist:

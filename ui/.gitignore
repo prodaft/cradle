@@ -14,13 +14,7 @@ dist-ssr
 
 coverage
 
-out
-docs
-
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
 .DS_Store
 *.suo
 *.ntvs*
@@ -28,8 +22,7 @@ docs
 *.sln
 *.sw?
 
-#Tailwind CSS
-src/renderer/src/styles/output.css
-
-.env
-.vscode
+stats.html
+*.tsbuildinfo
+.vite-cache
+.tanstack

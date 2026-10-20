@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cradle-enricher-mwdb"
+version = "0.0.0"
+description = "CRADLE Docker enricher: MWDB"
+requires-python = ">=3.14"
+dependencies = [
+    "mwdblib>=4.0,<5",
+]
+
+[tool.setuptools]
+packages = []

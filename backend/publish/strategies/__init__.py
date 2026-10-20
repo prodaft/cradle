@@ -1,19 +1,13 @@
-from django.conf import settings
-
-from .plaintext import PlaintextPublish
+"""Registry of publish strategies (download as HTML, PDF, plaintext, or JSON)."""
 
 from .html import HTMLPublish
-from .catalyst import CatalystPublish
 from .json import JSONPublish
+from .pdf import PDFPublish
+from .plaintext import PlaintextPublish
 
 PUBLISH_STRATEGIES = {
-    "catalyst": lambda anon: CatalystPublish(
-        "TLP:RED",
-        settings.CATALYST_PUBLISH_CATEGORY,
-        settings.CATALYST_PUBLISH_SUBCATEGORY,
-        anon,
-    ),
     "html": lambda anon: HTMLPublish(anon),
     "json": lambda anon: JSONPublish(anon),
+    "pdf": lambda anon: PDFPublish(anon),
     "plain": lambda anon: PlaintextPublish(anon),
 }

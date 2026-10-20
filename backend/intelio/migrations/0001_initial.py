@@ -207,7 +207,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="basedigest",
             constraint=models.CheckConstraint(
-                check=models.Q(("digest_type", "BaseDigest"), _negated=True),
+                condition=models.Q(("digest_type", "BaseDigest"), _negated=True),
                 name="digest_type_not_base_digest",
             ),
         ),
