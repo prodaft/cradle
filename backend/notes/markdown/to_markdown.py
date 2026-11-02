@@ -1,4 +1,4 @@
-"""Convert markdown with cradle links; supports remapping and anonymization."""
+"""Convert markdown with entry links; supports remapping and anonymization."""
 
 import random
 from typing import TYPE_CHECKING, Any, Dict, Tuple
@@ -10,14 +10,14 @@ from mistune.renderers.markdown import MarkdownRenderer as BaseMarkdownRenderer
 from xeger import Xeger
 
 from .block_parser import NewlineAwareBlockParser
-from .utils import cradle_link_plugin, footnote_plugin
+from .utils import entry_link_plugin, footnote_plugin
 
 if TYPE_CHECKING:
     from entries.models import EntryClass
 
 
 class Anonymizer:
-    """Maps cradle link values to anonymized replacements for reports."""
+    """Maps entry link values to anonymized replacements for reports."""
 
     def __init__(self):
         self.value_map = {}
@@ -69,7 +69,7 @@ class MarkdownRenderer(BaseMarkdownRenderer):
         text = self.render_children(token, state)
         return text + "\n"
 
-    def cradle_link(self, token: Dict[str, Any], state: BlockState) -> str:
+    def entry_link(self, token: Dict[str, Any], state: BlockState) -> str:
         orig_key, value, alias, date, time, hidden = (
             token["attrs"].get("key"),
             token["attrs"].get("value"),
@@ -137,15 +137,15 @@ class MarkdownRenderer(BaseMarkdownRenderer):
 
 
 class AnonymizedMarkdownRenderer(MarkdownRenderer):
-    """A renderer for creating anonymized Markdown with randomized cradle links."""
+    """A renderer for creating anonymized Markdown with randomized entry links."""
 
     def __init__(self, entry_classes: Dict[str, "EntryClass"], anonymizer: Anonymizer):
         super().__init__()
         self.entry_classes = entry_classes
         self.anonymizer = anonymizer
 
-    def cradle_link(self, token: Dict[str, Any], state: BlockState) -> str:
-        """Render anonymized cradle links."""
+    def entry_link(self, token: Dict[str, Any], state: BlockState) -> str:
+        """Render anonymized entry links."""
         key = token["attrs"].get("key", "")
         value = token["attrs"].get("value", "")
         hidden = token["attrs"].get("hidden", False)
@@ -161,10 +161,10 @@ class AnonymizedMarkdownRenderer(MarkdownRenderer):
 
 
 def _create_markdown(renderer: BaseMarkdownRenderer, *, hard_wrap: bool = False) -> mistune.Markdown:
-    """Create mistune Markdown instance with cradle link and footnote plugins."""
+    """Create mistune Markdown instance with entry link and footnote plugins."""
     md = mistune.create_markdown(
         renderer=renderer,
-        plugins=[table, cradle_link_plugin, footnote_plugin],
+        plugins=[table, entry_link_plugin, footnote_plugin],
         hard_wrap=hard_wrap,
     )
     md.block = NewlineAwareBlockParser()
@@ -176,7 +176,7 @@ def anonymize_markdown(
     entry_classes: Dict[str, "EntryClass"],
     anonymizer: Anonymizer,
 ) -> str:
-    """Create anonymized markdown by replacing cradle links with randomized values."""
+    """Create anonymized markdown by replacing entry links with randomized values."""
     renderer = AnonymizedMarkdownRenderer(entry_classes, anonymizer)
     return _create_markdown(renderer)(md).strip()
 
@@ -186,6 +186,6 @@ def remap_links(
     entryclass_remap: Dict[str, str],
     entry_remap: Dict[Tuple[str, str], str | None],
 ) -> str:
-    """Remap cradle links by entry class and entry; returns markdown with updated links."""
+    """Remap entry links by entry class and entry; returns markdown with updated links."""
     renderer = MarkdownRenderer(entryclass_remap=entryclass_remap, entry_remap=entry_remap)
     return _create_markdown(renderer, hard_wrap=True)(md).strip()

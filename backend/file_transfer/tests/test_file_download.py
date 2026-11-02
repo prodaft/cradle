@@ -19,7 +19,7 @@ class TestFileDownload(TestCase):
 
     def setUp(self):
         super().setUp()
-        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         self.patcher.start()
         self.user = CradleUser.objects.create_user(
             username="user",
@@ -100,6 +100,13 @@ class TestFileDownload(TestCase):
 
         self.assertEqual(response.status_code, 204)
         self.assertFalse(FileReference.objects.filter(pk=file_ref.pk).exists())
+
+    def test_creating_file_queues_processing(self):
+        """Creating a file reference queues hashing via the AFTER_CREATE hook."""
+        with patch.object(FileReference, "process_file") as process:
+            self.private_file(self.user)
+
+        process.assert_called_once()
 
     def test_process_queues_processing(self):
         file_ref = self.private_file(self.user)

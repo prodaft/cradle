@@ -6,8 +6,9 @@ weight = 9
 +++
 
 ## Profile and sessions
-Update profile details and preferences, and review active sessions so
-you can sign out other devices if needed. The active sessions list shows where
+The Account tab shows your ID, username, email, platform role and team
+memberships. Your role is assigned by an administrator. Review active sessions
+so you can sign out other devices if needed. The active sessions list shows where
 you are signed in and lets you revoke access from other devices.
 
 ## API keys
@@ -19,6 +20,10 @@ Enable two-factor authentication for additional account security and store
 recovery details securely.
 
 ## Editor preferences
-Set a default note template, enable or disable `Vim` mode, and choose a
-theme. You can also edit the default note template and manage snippets for
-commonly used markdown patterns.
+Set a default note template and enable or disable `Vim` mode. You can also
+edit the default note template and manage snippets for commonly used markdown
+patterns.
+
+## Appearance
+Choose a light or dark theme, or follow your system setting. The choice is
+saved in your browser, so each device keeps its own theme.

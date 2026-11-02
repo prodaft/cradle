@@ -1,8 +1,9 @@
-"""URL routing for notes app: notes, snippets, files, graph, history, access requests."""
+"""URL routing for notes app: notes, snippets, files, graph, history, shares, access requests."""
 
 from django.urls import path
 
 from .views.note_access_view import RequestNoteAccess
+from .views.note_share_view import NoteShareCandidates, NoteShareDetail, NoteShareList
 from .views.note_view import (
     NoteDetail,
     NoteGraph,
@@ -36,5 +37,8 @@ urlpatterns = [
     path("<uuid:note_id>/history/", NoteHistory.as_view(), name="note_history"),
     path("<uuid:note_id>/graph/", NoteGraph.as_view(), name="note_graph"),
     path("<uuid:note_id>/relink/", NoteRelink.as_view(), name="note_relink"),
+    path("<uuid:note_id>/shares/", NoteShareList.as_view(), name="note_share_list"),
+    path("<uuid:note_id>/shares/candidates/", NoteShareCandidates.as_view(), name="note_share_candidates"),
+    path("<uuid:note_id>/shares/<uuid:user_id>/", NoteShareDetail.as_view(), name="note_share_detail"),
     path("<uuid:note_id>/access/requests/", RequestNoteAccess.as_view(), name="note_request_access"),
 ]

@@ -14,6 +14,14 @@ def get_readable_entry(user: CradleUser, entry_id: int) -> Entry:
     return entry
 
 
+def get_entity(entity_id: int) -> Entry:
+    """Return the entity with its owning team, without a visibility check; callers enforce permissions."""
+    entity = Entry.entities.select_related("team").filter(pk=entity_id).first()
+    if entity is None:
+        raise EntityNotFoundException(detail="That entity could not be found.")
+    return entity
+
+
 def get_readable_entity(user: CradleUser, entity_id: int) -> Entry:
     """Return the entity if ``user`` may read it; missing and unreadable entities both raise EntityNotFoundException."""
     entity = Entry.entities.readable_entities(user).filter(pk=entity_id).first()

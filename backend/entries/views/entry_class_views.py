@@ -108,10 +108,10 @@ class EntryClassList(ListCreateAPIView):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return EntryClass.objects.none()
-        qs = EntryClass.objects.prefetch_related("children")
+        qs = EntryClass.objects.prefetch_related("children", "teams")
 
         if self.request.query_params.get("show_count") == "true":
-            if not self.request.user.is_cradle_admin:
+            if not self.request.user.is_admin:
                 raise AdminOnlyViewCountException(detail="Only administrators can view the entry type count.")
             qs = qs.annotate(entry_count=Count("entries"))
         return qs
@@ -187,14 +187,14 @@ class EntryClassDetail(APIView):
 
     def get(self, request: Request, class_subtype: str) -> Response:
         entry_class = _get_entry_class_or_404(class_subtype)
-        serializer = EntryClassSerializer(entry_class)
+        serializer = EntryClassSerializer(entry_class, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request: Request, class_subtype: str) -> Response:
         if class_subtype in INTERNAL_SUBTYPES:
             raise CannotDeleteAliasEntryTypeException(detail="This entry type is an alias and cannot be deleted.")
 
-        if not request.user.is_cradle_admin:
+        if not request.user.is_admin:
             raise AdminOnlyEntryTypeDeleteException(detail="Only administrators can delete entry types.")
 
         entry_class = _get_entry_class_or_404(class_subtype)
@@ -210,7 +210,7 @@ class EntryClassDetail(APIView):
         user = cast(CradleUser, request.user)
         entry_class = _get_entry_class_or_404(class_subtype)
 
-        if not user.is_cradle_admin and "type" in request.data and request.data["type"] != entry_class.type:
+        if not user.is_admin and "type" in request.data and request.data["type"] != entry_class.type:
             raise AdminOnlyEntryTypeChangeException(detail="Only administrators can change the entry type.")
 
         new_subtype = request.data.get("subtype")
@@ -219,7 +219,7 @@ class EntryClassDetail(APIView):
             if new_subtype is not None:
                 entry_class = entry_class.rename(new_subtype, user.id)
 
-            serializer = EntryClassSerializer(entry_class, data=request.data)
+            serializer = EntryClassSerializer(entry_class, data=request.data, context={"request": request})
             serializer.is_valid(raise_exception=True)
             serializer.save()
 

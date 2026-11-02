@@ -1,4 +1,5 @@
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
+import { SelectContent } from '@/components/custom/select';
 import { Button } from '@/components/ui/button';
 import { DialogClose, DialogFooter } from '@/components/ui/dialog';
 import {
@@ -14,13 +15,7 @@ import {
     InputGroupInput,
     InputGroupTextarea,
 } from '@/components/ui/input-group';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { useAuthState } from '@/hooks/auth/use-auth';
@@ -172,7 +167,13 @@ export default function AddEntityForm({ onAdd, teamId }: AddEntityFormProps) {
     useEffect(() => {
         if (entryClasses == null || subtypeDefaultedRef.current) return;
         const results = entryClasses;
-        const entityClasses = results.filter((entity) => entity.type === 'entity');
+        const entityClasses = results.filter(
+            (entity) =>
+                entity.type === 'entity' &&
+                (isAdmin ||
+                    !entity.is_team ||
+                    entity.teams?.some((team) => team.id === teamId)),
+        );
         const options = entityClasses.map((c) => ({
             value: c.subtype,
             label: c.subtype,
@@ -186,7 +187,7 @@ export default function AddEntityForm({ onAdd, teamId }: AddEntityFormProps) {
                 selectSubtype(first);
             }
         }
-    }, [entryClasses, selectSubtype]);
+    }, [entryClasses, selectSubtype, isAdmin, teamId]);
 
     const createEntity = useMutation({
         mutationFn: async (payload: EntityRequest) => {

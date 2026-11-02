@@ -16,7 +16,7 @@ export default function OfflineIndicator({
 }: OfflineIndicatorProps) {
     return (
         <Alert variant='default' className={className}>
-            <WifiOff className='size-4' />
+            <WifiOff />
             <AlertDescription>{message}</AlertDescription>
         </Alert>
     );

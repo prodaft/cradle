@@ -25,16 +25,16 @@ class ReportDetailSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
-            "status",
-            "anonymized",
-            "tlp",
-            "created_at",
             "strategy",
             "strategy_label",
-            "report_url",
-            "error_message",
+            "tlp",
+            "anonymized",
             "note_ids",
+            "status",
+            "error_message",
+            "report_url",
             "extra_data",
+            "created_at",
         ]
 
     @extend_schema_field(serializers.ListField(child=serializers.UUIDField()))
@@ -80,14 +80,14 @@ class ReportListSerializer(ReportDetailSerializer):
         fields = [
             "id",
             "title",
-            "status",
-            "anonymized",
-            "tlp",
-            "created_at",
             "strategy",
             "strategy_label",
+            "tlp",
+            "anonymized",
+            "status",
             "error_message",
             "extra_data",
+            "created_at",
         ]
 
 

@@ -56,6 +56,20 @@ class CreateFleetingNoteTest(NotesTestCase):
         self.assertTrue(saved_note.fleeting)
         self.assertEqual(saved_note.content, note_content)
 
+    def test_create_fleeting_note_with_title_skips_frontmatter(self):
+        content = "---\ntitle: From frontmatter\n---\nBody"
+        response = self.client.post(
+            reverse("note_list"),
+            {"content": content, "title": "Explicit"},
+            content_type="application/json",
+            **self.headers,
+        )
+
+        self.assertEqual(response.status_code, 201)
+        saved_note = Note.objects.get()
+        self.assertEqual(saved_note.title, "Explicit")
+        self.assertEqual(saved_note.content[saved_note.content_offset :].strip(), "Body")
+
 
 class NoteListStatusFilterTest(NotesTestCase):
     def setUp(self):
@@ -198,8 +212,8 @@ class NoteListTimestampTest(NotesTestCase):
         self.headers = {"HTTP_COOKIE": f"access_token={session_access_token(self.user)}"}
         self.older = Note.objects.create(author=self.user, fleeting=False, content="older")
         self.newer = Note.objects.create(author=self.user, fleeting=False, content="newer")
-        Note.objects.filter(id=self.older.id).update(timestamp=datetime(2026, 1, 1, tzinfo=dt_timezone.utc))
-        Note.objects.filter(id=self.newer.id).update(timestamp=datetime(2026, 6, 1, tzinfo=dt_timezone.utc))
+        Note.objects.filter(id=self.older.id).update(created_at=datetime(2026, 1, 1, tzinfo=dt_timezone.utc))
+        Note.objects.filter(id=self.newer.id).update(created_at=datetime(2026, 6, 1, tzinfo=dt_timezone.utc))
 
     def test_results_use_created_at_and_updated_at(self):
         response = self.client.get(reverse("note_list"), **self.headers)

@@ -19,7 +19,7 @@ from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
-from file_transfer.serializers import FileUploadInitiateSerializer
+from file_transfer.serializers import FileUploadInitiateSerializer, FileUploadResponseSerializer
 from file_transfer.storage import DigestStorage
 from file_transfer.uploads import (
     PresignedUploadFlow,
@@ -52,7 +52,6 @@ from ..serializers import (
     BaseDigestSerializer,
     DigestSubclassSerializer,
     DigestUploadFinalizeCreateSerializer,
-    DigestUploadResponseSerializer,
 )
 from ..tasks import start_digest
 
@@ -121,7 +120,7 @@ digest_upload_flow = PresignedUploadFlow(
     description="Generates a presigned URL for uploading a digest file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_at. The upload must be finalized within the expiration time.",
     request=FileUploadInitiateSerializer,
     responses={
-        201: DigestUploadResponseSerializer,
+        201: FileUploadResponseSerializer,
         **get_error_responses(
             UploadErrorCodes.INVALID_FILE_NAME,
             UploadErrorCodes.ALREADY_UPLOADING,
@@ -139,13 +138,13 @@ class DigestUploadAPIView(APIView):
     def post(self, request: Request) -> Response:
         file_name, file_size = parse_initiate_request(request.data)
 
-        if not request.user.is_cradle_admin and PendingDigestUpload.objects.filter(user=request.user).exists():
+        if not request.user.is_admin and PendingDigestUpload.objects.filter(user=request.user).exists():
             raise AlreadyUploadingException(
                 detail="You already have an open upload session. Please finalize the previous upload before starting a new one."
             )
 
         response_data = digest_upload_flow.initiate(request.user, sanitize_upload_filename(file_name), file_size)
-        return Response(DigestUploadResponseSerializer(response_data).data, status=status.HTTP_201_CREATED)
+        return Response(FileUploadResponseSerializer(response_data).data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(

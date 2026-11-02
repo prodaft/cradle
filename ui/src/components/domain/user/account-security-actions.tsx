@@ -1,10 +1,10 @@
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
 import ApiKeyGenerateDialog from '@/components/domain/user/dialogs/api-key-generate-dialog';
 import ChangePasswordDialog from '@/components/domain/user/dialogs/change-password-dialog';
 import TwoFactorSetupDialog from '@/components/domain/user/dialogs/two-factor-setup-dialog';
 import PasswordConfirmField from '@/components/domain/user/password-confirm-field';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -99,8 +99,8 @@ export default function AccountSecurityActions({
             <section id='security'>
                 <div className='flex flex-col gap-4'>
                     <FieldGroup className='gap-4'>
-                        <Field orientation='horizontal' className='gap-2'>
-                            <FieldContent className='flex-1'>
+                        <Field orientation='horizontal'>
+                            <FieldContent>
                                 <FieldLabel
                                     className='text-sm block mb-0.5'
                                     htmlFor={changeId}
@@ -126,8 +126,8 @@ export default function AccountSecurityActions({
 
                         <Separator />
 
-                        <Field orientation='horizontal' className='gap-2'>
-                            <FieldContent className='flex-1'>
+                        <Field orientation='horizontal'>
+                            <FieldContent>
                                 <FieldLabel
                                     className='text-sm block mb-0.5'
                                     htmlFor={apiKeyId}
@@ -153,8 +153,8 @@ export default function AccountSecurityActions({
 
                         <Separator />
 
-                        <Field orientation='horizontal' className='gap-2'>
-                            <FieldContent className='flex-1'>
+                        <Field orientation='horizontal'>
+                            <FieldContent>
                                 <FieldLabel
                                     className='text-sm block mb-0.5'
                                     htmlFor={twoFactorId}
@@ -183,8 +183,8 @@ export default function AccountSecurityActions({
 
                         <Separator />
 
-                        <Field orientation='horizontal' className='gap-2'>
-                            <FieldContent className='flex-1'>
+                        <Field orientation='horizontal'>
+                            <FieldContent>
                                 <FieldLabel
                                     className='text-sm block mb-0.5'
                                     htmlFor={deleteId}

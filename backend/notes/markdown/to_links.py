@@ -9,7 +9,7 @@ import mistune
 from mistune.core import BaseRenderer, BlockState
 from mistune.plugins.table import table
 
-from .utils import ErrorBypassYAMLHandler, cradle_link_plugin, footnote_plugin, parse_entry_date
+from .utils import ErrorBypassYAMLHandler, entry_link_plugin, footnote_plugin, parse_entry_date
 
 
 class NodeType(enum.Enum):
@@ -25,12 +25,12 @@ class NodeType(enum.Enum):
     TABLE_ROW = "table_row"
     TABLE_CELL = "table_cell"
     BLOCKQUOTE = "blockquote"
-    CRADLELINK = "link"
+    ENTRY_LINK = "link"
     OTHER = "other"
 
 
 class Link:
-    """A cradle link: type:value with optional alias and date."""
+    """An entry link: type:value with optional alias and date."""
 
     def __init__(
         self,
@@ -380,7 +380,7 @@ class LinksRenderer(BaseRenderer):
     def paragraph(self) -> Node | None:
         return self.node_factory.create_node(type=NodeType.PARAGRAPH)
 
-    def cradle_link(
+    def entry_link(
         self,
         key: str,
         value: str,
@@ -396,7 +396,7 @@ class LinksRenderer(BaseRenderer):
             date = date.replace(hour=time.hour, minute=time.minute)
 
         link = Link(key=key, value=value, alias=alias, date=date)
-        node = self.node_factory.create_node(type=NodeType.CRADLELINK)
+        node = self.node_factory.create_node(type=NodeType.ENTRY_LINK)
         node.links.add(link)
         return node
 
@@ -452,11 +452,11 @@ class LinksRenderer(BaseRenderer):
         return None
 
 
-def cradle_connections(
+def build_reference_tree(
     md: str,
     base_id: str = "",
 ) -> Node:
-    """Parse markdown into a Node tree with cradle links and frontmatter entries."""
+    """Parse markdown into a Node tree with entry links and frontmatter entries."""
     metadata, content = frontmatter.parse(md, handler=ErrorBypassYAMLHandler())
     root_entries = metadata.pop("entries", {})
 
@@ -487,7 +487,7 @@ def cradle_connections(
 
     renderer = LinksRenderer(base_id=base_id, root_links=entries)
 
-    markdown = mistune.create_markdown(renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin])
+    markdown = mistune.create_markdown(renderer=renderer, plugins=[table, entry_link_plugin, footnote_plugin])
 
     result, state = markdown.parse(content)
 

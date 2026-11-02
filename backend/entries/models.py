@@ -62,14 +62,15 @@ class Edge(LifecycleModel):
     id = models.CharField(primary_key=True)
     src = models.BigIntegerField(help_text="Source entry ID")
     dst = models.BigIntegerField(help_text="Destination entry ID")
-
-    objects = EdgeManager()
+    virtual = models.BooleanField(help_text="Whether this edge is virtual (e.g. alias)")
 
     access_vector: BitStringField = BitStringField(max_length=2048, null=False, default=1 << 2047, varying=False)
 
     created_at = models.DateTimeField(help_text="When the edge was first created")
-    last_seen = models.DateTimeField(help_text="Last time the edge was observed")
-    virtual = models.BooleanField(help_text="Whether this edge is virtual (e.g. alias)")
+
+    last_seen_at = models.DateTimeField(help_text="When the newest relation between the two entries was created")
+
+    objects = EdgeManager()
 
     class Meta:
         managed = False
@@ -87,7 +88,6 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
     description: models.TextField = models.TextField(
         null=True, blank=True, help_text="Human-readable description of this entry class"
     )
-    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True, help_text="When this class was created")
     format: models.CharField = models.CharField(
         max_length=20,
         choices=EntryTypeFormat.choices,
@@ -105,11 +105,11 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         max_length=65536, blank=True, default="", help_text="Newline-separated allowed values (alternative to regex)"
     )
 
-    color: models.CharField = models.CharField(max_length=7, default="#e66100", help_text="Hex color for UI display")
-
     prefix: models.CharField = models.CharField(
         max_length=64, blank=True, help_text="Prefix for entity names (e.g. E- for cases)"
     )
+
+    color: models.CharField = models.CharField(max_length=7, default="#e66100", help_text="Hex color for UI display")
 
     children = models.ManyToManyField(
         "self",
@@ -118,6 +118,15 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         related_name="parents",
         help_text="Possible children of this entry class",
     )
+
+    teams = models.ManyToManyField(
+        "teams.Team",
+        blank=True,
+        related_name="entry_classes",
+        help_text="Teams whose leads may create entities of this type; empty means any team",
+    )
+
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True, help_text="When this class was created")
 
     @classmethod
     def normalize_subtype(cls, subtype: str) -> str:
@@ -161,6 +170,7 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
                     if field.attname != self._meta.pk.attname
                 }
                 renamed = EntryClass.objects.create(subtype=new_subtype, **field_values)
+                renamed.teams.set(self.teams.all())
                 _update_entry_class_references(old_subtype, new_subtype)
                 self.delete()
             else:
@@ -263,6 +273,8 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
 
     @hook(AFTER_UPDATE, when="type", has_changed=True)
     def update_access_level_of_children(self):
+        if self.type == EntryType.ENTITY:
+            self.entries.update(is_public=False)
         for i in self.entries.all():
             i.save()
 
@@ -295,9 +307,9 @@ class Entry(LifecycleModel, LoggableModelMixin):
     """A node in the knowledge graph: either an entity (user-defined) or artifact (data)."""
 
     id = models.BigAutoField(primary_key=True)
-    is_public: models.BooleanField = models.BooleanField(
-        default=False, help_text="Whether this entry is visible to all users"
-    )
+
+    name: models.CharField = models.CharField(max_length=1024, help_text="Display name, validated by entry_class rules")
+    description: models.TextField = models.TextField(null=True, blank=True, help_text="Optional description")
 
     entry_class: models.ForeignKey[uuid.UUID, EntryClass] = models.ForeignKey(
         EntryClass,
@@ -306,22 +318,8 @@ class Entry(LifecycleModel, LoggableModelMixin):
         related_name="entries",
         help_text="Type of this entry (entity or artifact subtype)",
     )
-
-    name: models.CharField = models.CharField(max_length=1024, help_text="Display name, validated by entry_class rules")
-    description: models.TextField = models.TextField(null=True, blank=True, help_text="Optional description")
-    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True, help_text="Creation timestamp")
-    last_seen: models.DateTimeField = models.DateTimeField(
-        auto_now_add=True, null=False, help_text="Last activity timestamp"
-    )
-
-    relations = GenericRelation("entries.Relation", related_query_name="entry")
-
-    acvec_offset: models.PositiveIntegerField = models.PositiveIntegerField(
-        default=0, help_text="Bit offset in access vector for entity visibility"
-    )
-
-    status: models.JSONField = models.JSONField(
-        default=dict, null=True, help_text="Transient status (e.g. during access updates)"
+    is_public: models.BooleanField = models.BooleanField(
+        default=False, help_text="Whether this entry is visible to all users"
     )
 
     team: models.ForeignKey = models.ForeignKey(
@@ -333,8 +331,31 @@ class Entry(LifecycleModel, LoggableModelMixin):
         help_text="Owning team, whose leads decide who may access this entity",
     )
 
+    aliases = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        related_name="aliased_by",
+        help_text="Entries that are equivalent to this one",
+    )
+
+    location: gis_models.PointField = gis_models.PointField(
+        null=True, blank=True, srid=0, dim=2, help_text="Optional geographic location"
+    )
+
+    acvec_offset: models.PositiveIntegerField = models.PositiveIntegerField(
+        default=0, help_text="Bit offset in access vector for entity visibility"
+    )
+
+    relations = GenericRelation("entries.Relation", related_query_name="entry")
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True, help_text="Creation timestamp")
+
+    objects = EntryManager()
+    entities = EntityManager()
+    artifacts = ArtifactManager()
+
     class Meta:
-        ordering = ["-last_seen"]
+        ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(fields=["name", "entry_class"], name="unique_name_class"),
             models.UniqueConstraint(
@@ -343,23 +364,6 @@ class Entry(LifecycleModel, LoggableModelMixin):
                 name="unique_non_zero_acvec_offset",
             ),
         ]
-
-    objects = EntryManager()
-    entities = EntityManager()
-    artifacts = ArtifactManager()
-
-    location: gis_models.PointField = gis_models.PointField(
-        null=True, blank=True, srid=0, dim=2, help_text="Optional geographic location"
-    )
-    degree: models.IntegerField = models.IntegerField(default=0, help_text="Number of outgoing edges in the graph")
-
-    aliases = models.ManyToManyField(
-        "self",
-        symmetrical=False,
-        blank=True,
-        related_name="aliased_by",
-        help_text="Entries that are equivalent to this one",
-    )
 
     def __init__(self, *args, **kwargs):
         if "name" in kwargs:
@@ -470,23 +474,12 @@ class Relation(LifecycleModel):
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
-    access_vector: BitStringField = BitStringField(max_length=2048, null=False, default=1 << 2047, varying=False)
-
-    inherit_av = models.BooleanField(default=False, help_text="Whether to inherit access from content_object")
-
     e1 = models.ForeignKey(
         Entry, on_delete=models.CASCADE, related_name="relations_1", help_text="First entry (lower ID)"
     )
     e2 = models.ForeignKey(
         Entry, on_delete=models.CASCADE, related_name="relations_2", help_text="Second entry (higher ID)"
     )
-
-    created_at = models.DateTimeField(default=timezone.now, help_text="Creation timestamp")
-    last_seen = models.DateTimeField(default=timezone.now, help_text="Last observation")
-
-    object_id = models.UUIDField(help_text="ID of the content object")
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    content_object = GenericForeignKey("content_type", "object_id")
 
     reason: models.CharField = models.CharField(
         max_length=255,
@@ -501,9 +494,17 @@ class Relation(LifecycleModel):
 
     details: models.JSONField = models.JSONField(default=dict, blank=True, help_text="Extra relation metadata")
 
-    objects = RelationManager()
-
     virtual = models.BooleanField(default=False, help_text="Whether this relation is virtual (e.g. alias)")
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+
+    object_id = models.UUIDField(help_text="ID of the content object")
+    content_object = GenericForeignKey("content_type", "object_id")
+
+    access_vector: BitStringField = BitStringField(max_length=2048, null=False, default=1 << 2047, varying=False)
+
+    created_at = models.DateTimeField(default=timezone.now, help_text="Creation timestamp")
+
+    objects = RelationManager()
 
     @staticmethod
     def includes_entity(e1: "Entry", e2: "Entry") -> bool:
@@ -518,7 +519,7 @@ class Relation(LifecycleModel):
         super().save(*args, **kwargs)
 
     class Meta:
-        ordering = ["-last_seen"]
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"Relation [{self.reason}]({self.e1}-{self.e2}) "

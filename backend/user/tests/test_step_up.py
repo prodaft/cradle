@@ -1,6 +1,7 @@
 import json
 
 from django.urls import reverse
+from django_otp.oath import TOTP
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from user.testing import session_access_token
@@ -117,8 +118,6 @@ class TwoFactorCodeWhileSignedInTest(UserTestCase):
     def test_wrong_code_is_400(self):
         user = CradleUser.objects.create_user(username="tfa", password="tfaR1#1234112", email="t@b.c")
         TOTPDevice.objects.create(user=user, name="default", confirmed=True)
-        user.two_factor_enabled = True
-        user.save(update_fields=["two_factor_enabled"])
         headers = {"HTTP_COOKIE": f"access_token={session_access_token(user)}"}
 
         for name in ("user_2fa_verify", "user_2fa_disable"):
@@ -131,3 +130,42 @@ class TwoFactorCodeWhileSignedInTest(UserTestCase):
                 )
                 self.assertEqual(response.status_code, 400, response.content)
                 self.assertEqual(response.json()["code"], "TWO_FACTOR_CODE_INCORRECT")
+
+
+class TwoFactorFlowTest(UserTestCase):
+    """2FA is on exactly while the user has a confirmed TOTP device."""
+
+    def setUp(self):
+        super().setUp()
+        self.password = "tfaR1#1234112"
+        self.user = CradleUser.objects.create_user(username="tfa", password=self.password, email="t@b.c")
+        self.headers = {"HTTP_COOKIE": f"access_token={session_access_token(self.user)}"}
+
+    def _post(self, name, body):
+        return self.client.post(reverse(name), data=json.dumps(body), content_type="application/json", **self.headers)
+
+    def _otp(self):
+        device = TOTPDevice.objects.get(user=self.user)
+        device.last_t = -1  # let tests reuse a code within one time step
+        device.save(update_fields=["last_t"])
+        return TOTP(device.bin_key, device.step, device.t0, device.digits, device.drift).token()
+
+    def _login(self, **extra):
+        body = {"username": "tfa", "password": self.password, **extra}
+        return self.client.post(reverse("auth_login"), data=json.dumps(body), content_type="application/json")
+
+    def test_enable_verify_login_disable(self):
+        self.assertEqual(self._post("user_2fa_enable", {"password": self.password}).status_code, 200)
+        self.assertFalse(self.user.two_factor_enabled)
+        self.assertEqual(self._login().status_code, 200)
+
+        self.assertEqual(self._post("user_2fa_verify", {"otp": self._otp()}).status_code, 200)
+        self.assertTrue(self.user.two_factor_enabled)
+        self.assertEqual(self._post("user_2fa_enable", {"password": self.password}).status_code, 409)
+        self.assertEqual(self._login().json()["code"], "TWO_FACTOR_REQUIRED")
+        self.assertEqual(self._login(otp=self._otp()).status_code, 200)
+
+        response = self._post("user_2fa_disable", {"otp": self._otp(), "password": self.password})
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertFalse(self.user.two_factor_enabled)
+        self.assertEqual(self._login().status_code, 200)

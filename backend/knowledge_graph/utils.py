@@ -86,7 +86,7 @@ def get_neighbors_paginated(
     level_filter: Optional[Callable[[QuerySet], QuerySet]] = None,
     page_size: int = 1000,
     page_number: int = 1,
-    order_by: str = "-last_seen",
+    order_by: str = "-created_at",
 ) -> QuerySet:
     """Return paginated neighbors at `depth` hops from the source set.
 
@@ -178,7 +178,7 @@ def get_edges_for_paths(
         SELECT id, src AS source, dst AS target, age AS cost
         FROM edges
         WHERE created_at <= %s
-          AND last_seen >= %s
+          AND last_seen_at >= %s
           AND (%s & access_vector) = '{fieldtype.get_prep_value(0)}'
     """
 

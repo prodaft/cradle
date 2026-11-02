@@ -50,6 +50,8 @@ class Enable2FAView(APIView):
         validate_step_up(request, request.user, request.data)
 
         config_url = request.user.enable_2fa()
+        if config_url is None:
+            raise TwoFactorAlreadyEnabledException(detail="Two-factor authentication is already enabled.")
         serializer = Enable2FASerializer(data={"config_url": config_url})
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -90,9 +92,6 @@ class Verify2FASetupView(APIView):
             if confirmed_devices.count() > 1:
                 newest_device = confirmed_devices.order_by("-id").first()
                 confirmed_devices.exclude(id=newest_device.id).delete()
-
-            request.user.two_factor_enabled = True
-            request.user.save(update_fields=["two_factor_enabled"])
 
         return Response(
             {"detail": "Two-factor authentication has been enabled."},

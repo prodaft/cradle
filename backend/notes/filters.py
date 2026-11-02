@@ -11,24 +11,24 @@ class NoteFilter(django_filters.FilterSet):
     """Filter notes by content, created_at, updated_at, author, and editor."""
 
     content = django_filters.CharFilter(lookup_expr="icontains", help_text="Filter by content (case-insensitive).")
-    created_at = django_filters.DateTimeFilter(field_name="timestamp", help_text="Filter by exact creation time.")
+    created_at = django_filters.DateTimeFilter(field_name="created_at", help_text="Filter by exact creation time.")
     created_at_gte = django_filters.DateTimeFilter(
-        field_name="timestamp",
+        field_name="created_at",
         lookup_expr="gte",
         help_text="Filter by creation time greater than or equal.",
     )
     created_at_lte = django_filters.DateTimeFilter(
-        field_name="timestamp",
+        field_name="created_at",
         lookup_expr="lte",
         help_text="Filter by creation time less than or equal.",
     )
     updated_at_gte = django_filters.DateTimeFilter(
-        field_name="edit_timestamp",
+        field_name="updated_at",
         lookup_expr="gte",
         help_text="Filter by last edit time greater than or equal.",
     )
     updated_at_lte = django_filters.DateTimeFilter(
-        field_name="edit_timestamp",
+        field_name="updated_at",
         lookup_expr="lte",
         help_text="Filter by last edit time less than or equal.",
     )

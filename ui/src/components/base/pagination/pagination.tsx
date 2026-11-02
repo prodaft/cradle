@@ -1,13 +1,8 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
+import { SelectContent } from '@/components/custom/select';
 import { Button } from '@/components/ui/button';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import React from 'react';
 
@@ -105,7 +100,7 @@ export default function Pagination({
                             onValueChange={handlePageSizeChange}
                             disabled={disabled}
                         >
-                            <SelectTrigger className='h-8 w-18 data-size:h-8'>
+                            <SelectTrigger className='w-18'>
                                 <SelectValue placeholder={pageSize} />
                             </SelectTrigger>
                             <SelectContent side='top'>
@@ -135,7 +130,7 @@ export default function Pagination({
                         aria-label='Go to first page'
                         variant='outline'
                         size='icon'
-                        className='hidden size-8 lg:flex'
+                        className='hidden lg:flex'
                         onClick={() => onPageChange(1)}
                         disabled={!canGoPrevious || disabled}
                     >
@@ -145,7 +140,6 @@ export default function Pagination({
                         aria-label='Go to previous page'
                         variant='outline'
                         size='icon'
-                        className='size-8'
                         onClick={() => onPageChange(currentPage - 1)}
                         disabled={!canGoPrevious || disabled}
                     >
@@ -155,7 +149,6 @@ export default function Pagination({
                         aria-label='Go to next page'
                         variant='outline'
                         size='icon'
-                        className='size-8'
                         onClick={() => onPageChange(currentPage + 1)}
                         disabled={!canGoNext || disabled}
                     >
@@ -165,7 +158,7 @@ export default function Pagination({
                         aria-label='Go to last page'
                         variant='outline'
                         size='icon'
-                        className='hidden size-8 lg:flex'
+                        className='hidden lg:flex'
                         onClick={() => onPageChange(totalPages)}
                         disabled={!canGoNext || disabled}
                     >

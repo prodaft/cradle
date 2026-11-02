@@ -8,13 +8,15 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/custom/action-bar';
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
+import { Badge } from '@/components/custom/badge';
+import { Checkbox } from '@/components/custom/checkbox';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
 import { DataTableRowActions } from '@/components/custom/data-table/data-table-row-actions';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -22,9 +24,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -39,7 +39,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';
 import type { SearchSchema, SearchState } from '@/lib/search-query/search-schema';
-import { USER_ROLE_OPTIONS } from '@/utils/auth';
+import { roleBadgeVariant, USER_ROLE_LABELS, USER_ROLE_OPTIONS } from '@/utils/auth';
 import {
     ClockCounterClockwiseIcon,
     LockKeyIcon,
@@ -62,17 +62,6 @@ import { toast } from 'sonner';
 import AddUserForm from './add-user-form';
 
 type UserRow = components['schemas']['UserRetrieve'];
-
-const roleBadgeVariant = (role?: string) => {
-    switch (role) {
-        case 'admin':
-            return 'destructive';
-        case 'manager':
-            return 'default';
-        default:
-            return 'outline';
-    }
-};
 
 const SEARCH_SCHEMA: SearchSchema = {
     qualifiers: [
@@ -307,7 +296,7 @@ export default function UsersList() {
                     if (!role) return <span className='text-muted-foreground'>-</span>;
                     return (
                         <Badge variant={roleBadgeVariant(role)}>
-                            {role.charAt(0).toUpperCase() + role.slice(1)}
+                            {USER_ROLE_LABELS[role]}
                         </Badge>
                     );
                 },
@@ -345,19 +334,19 @@ export default function UsersList() {
                     return (
                         <DataTableRowActions>
                             <DropdownMenuItem onClick={() => openSettings(userId)}>
-                                <PencilIcon size={16} weight='bold' />
+                                <PencilIcon weight='bold' />
                                 Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={() => openSettings(userId, 'permissions')}
                             >
-                                <LockKeyIcon size={16} weight='bold' />
+                                <LockKeyIcon weight='bold' />
                                 Permissions
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={() => openSettings(userId, 'activity')}
                             >
-                                <ClockCounterClockwiseIcon size={16} weight='bold' />
+                                <ClockCounterClockwiseIcon weight='bold' />
                                 Activity
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -366,7 +355,7 @@ export default function UsersList() {
                                 onClick={() => confirmDelete([userId])}
                                 disabled={item.role === 'admin' && userId !== selfId}
                             >
-                                <TrashIcon size={16} weight='bold' />
+                                <TrashIcon weight='bold' />
                                 Delete
                             </DropdownMenuItem>
                         </DataTableRowActions>
@@ -427,7 +416,7 @@ export default function UsersList() {
                     actions={
                         <Tooltip>
                             <TooltipTrigger render={<Button onClick={openAddUser} />}>
-                                <UserPlusIcon size={18} weight='bold' />
+                                <UserPlusIcon weight='bold' />
                                 Add User
                             </TooltipTrigger>
                             <TooltipContent>Create a new user account</TooltipContent>
@@ -474,7 +463,7 @@ export default function UsersList() {
                         }
                         className='text-destructive'
                     >
-                        <TrashIcon size={18} weight='bold' />
+                        <TrashIcon weight='bold' />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>

@@ -2,15 +2,16 @@ import uuid
 from unittest.mock import patch
 
 from django.urls import reverse
+from drf_spectacular.generators import SchemaGenerator
 
 from access.enums import AccessType
 from access.models import Access
 from entries.models import Entry
 from file_transfer.models import FileReference
-from user.models import CradleUser
+from user.models import CradleUser, UserRoles
 from user.testing import session_access_token
 
-from ..models import Note
+from ..models import Note, NoteShare
 from .utils import NotesTestCase
 
 
@@ -98,6 +99,23 @@ class GetNoteTest(NotesTestCase):
         self.assertEqual(response.status_code, 200)
         body = response.json()
         self.assertEqual(body["permission"], AccessType.READ_WRITE)
+
+    def test_get_note_lists_entry_classes(self):
+        entity = Entry.objects.create(name="Listed entity", entry_class=self.entryclass1)
+        artifact = Entry.objects.create(name="1.1.1.1", entry_class=self.entryclass_ip)
+        note = Note.objects.create(author=self.user, fleeting=False)
+        note.entries.add(entity, artifact)
+        Access.objects.create(user_id=self.user.id, entity_id=entity.id, access_type=AccessType.READ)
+        response = self.client.get(
+            reverse("note_detail", kwargs={"note_id": note.id}),
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertCountEqual(body["entry_classes"], ["case", "ip"])
+
+        schema = SchemaGenerator().get_schema(public=True)["components"]["schemas"]["NoteRetrieve"]
+        self.assertEqual(list(schema["properties"]), list(body))
 
 
 class DeleteNoteTest(NotesTestCase):
@@ -324,3 +342,34 @@ class NoteWritePermissionTest(NotesTestCase):
         Access.objects.filter(user_id=self.other.id).update(access_type=AccessType.READ_WRITE)
         self.assertEqual(self.client.delete(url, **self.headers).status_code, 204)
         self.assertFalse(FileReference.objects.filter(id=file.id).exists())
+
+
+class AdminFleetingNoteTest(NotesTestCase):
+    """Fleeting notes stay private to their author and share recipients, admins included."""
+
+    def setUp(self):
+        super().setUp()
+        self.admin = CradleUser.objects.create_user(
+            username="admin", password="pass", email="admin@c.d", role=UserRoles.ADMIN
+        )
+        self.headers = {"HTTP_COOKIE": f"access_token={session_access_token(self.admin)}"}
+        self.draft = Note.objects.create(author=self.user, fleeting=True, content="draft")
+        self.file = FileReference.objects.create(note=self.draft, file_name="draft.bin")
+
+    def test_admin_cannot_read_unshared_draft(self):
+        for name in ("note_detail", "note_graph"):
+            with self.subTest(name):
+                response = self.client.get(reverse(name, kwargs={"note_id": self.draft.id}), **self.headers)
+                self.assertEqual(response.status_code, 404)
+        self.assertFalse(self.draft.has_write_access(self.admin))
+
+    def test_admin_cannot_read_unshared_draft_file(self):
+        self.assertFalse(self.file.has_access(self.admin))
+        response = self.client.get(reverse("file_detail", kwargs={"file_id": self.file.id}), **self.headers)
+        self.assertEqual(response.status_code, 404)
+
+    def test_admin_reads_draft_shared_with_them(self):
+        NoteShare.objects.create(note=self.draft, user=self.admin, access_type=AccessType.READ)
+        response = self.client.get(reverse("note_detail", kwargs={"note_id": self.draft.id}), **self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(self.file.has_access(self.admin))

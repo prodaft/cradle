@@ -53,7 +53,7 @@ class EntryQuerySet(models.QuerySet):
     def readable_entities(self, user: CradleUser) -> models.QuerySet:
         """Filter to entities the user has read access to (all entities for admins)."""
         entities = self.is_entity()
-        if user.is_cradle_admin:
+        if user.is_admin:
             return entities
         Access = apps.get_model("access", "Access")
         return entities.filter(id__in=Access.objects.get_accessible_entity_ids(user.id))
@@ -61,7 +61,7 @@ class EntryQuerySet(models.QuerySet):
     def readable(self, user: CradleUser) -> models.QuerySet:
         """Filter to entries the user may read: accessible entries, with entities also needing read access."""
         accessible = self.accessible(user)
-        if user.is_cradle_admin:
+        if user.is_admin:
             return accessible
         Access = apps.get_model("access", "Access")
         return accessible.filter(
@@ -83,7 +83,7 @@ class RelationQuerySet(models.QuerySet):
         access rules (access-vector alone is insufficient for orphan notes).
         """
         qs = _accessible_by_access_vector(self, user)
-        if user.is_cradle_admin:
+        if user.is_admin:
             return qs
 
         Note = apps.get_model("notes", "Note")

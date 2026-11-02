@@ -37,3 +37,12 @@ class GraphPathFindTest(GraphTestCase):
 
         self.assertEqual(len(long["relations"]), 4)
         self.assertEqual(short_queries, long_queries)
+
+    def test_degree_counts_links_within_the_path(self):
+        mid = self.entity("mid")
+        self.link(self.src, mid)
+        self.link(mid, self.dst)
+        data, _ = self.find_path(self.dst)
+
+        degrees = {e["name"]: e["degree"] for group in data["entries"]["entities"].values() for e in group}
+        self.assertEqual(degrees, {"a": 1, "mid": 2, "b": 1})

@@ -13,8 +13,8 @@ from rest_framework.views import APIView
 
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
-from entries.exceptions import EntityNotFoundException, EntriesErrorCodes
-from entries.models import Entry
+from entries.exceptions import EntriesErrorCodes
+from entries.lookup import get_entity
 from notifications.models import AccessGrantedNotification
 from teams.rules import can_set_user_access
 from user.authentication import CookieJWTAuthentication
@@ -64,10 +64,7 @@ class UpdateAccess(APIView):
         except CradleUser.DoesNotExist:
             raise UserNotFoundException(detail="That user could not be found.")
 
-        try:
-            updated_entity = Entry.entities.get(id=entity_id)
-        except Entry.DoesNotExist:
-            raise EntityNotFoundException(detail="That entity could not be found.")
+        updated_entity = get_entity(entity_id)
 
         serializer = AccessSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

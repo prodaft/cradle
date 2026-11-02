@@ -1,4 +1,4 @@
-"""Markdown utilities: cradle link regex, YAML handler, image embedding, plugins."""
+"""Markdown utilities: entry link regex, YAML handler, image embedding, plugins."""
 
 import base64
 import datetime
@@ -13,7 +13,7 @@ from mistune import InlineParser, Markdown
 from mistune.core import InlineState
 
 from ..exceptions import InvalidDateFormatException
-from .constants import INLINE_FOOTNOTE, INLINE_FOOTNOTE_IMG, LINK_REGEX
+from .constants import ENTRY_LINK_REGEX, INLINE_FOOTNOTE, INLINE_FOOTNOTE_IMG
 
 
 def parse_entry_date(v: str) -> datetime.datetime:
@@ -52,21 +52,20 @@ class ErrorBypassYAMLHandler(frontmatter.YAMLHandler):
             return {}
 
 
-def parse_cradle_link(inline: InlineParser, m: Match[str], state: InlineState) -> int:
-    """Parse a cradle link of the form [[type:value|alias]] (HH:MM dd-mm-yyyy)."""
-    # Extract timestamp components
-    time = m.group("cl_time").strip() if m.group("cl_time") else None
-    date = m.group("cl_date") if m.group("cl_date") else None
+def parse_entry_link(inline: InlineParser, m: Match[str], state: InlineState) -> int:
+    """Parse an entry link of the form [[type:value|alias]] (HH:MM dd-mm-yyyy)."""
+    time = m.group("el_time").strip() if m.group("el_time") else None
+    date = m.group("el_date") if m.group("el_date") else None
 
     try:
         state.append_token(
             {
-                "type": "cradle_link",
+                "type": "entry_link",
                 "attrs": {
-                    "key": m.group("cl_type").strip(),
-                    "value": m.group("cl_value").strip(),
-                    "hidden": bool(m.group("cl_hidden")),
-                    "alias": m.group("cl_alias").strip() if m.group("cl_alias") else None,
+                    "key": m.group("el_type").strip(),
+                    "value": m.group("el_value").strip(),
+                    "hidden": bool(m.group("el_hidden")),
+                    "alias": m.group("el_alias").strip() if m.group("el_alias") else None,
                     "time": (make_aware(datetime.datetime.strptime(time, "%H:%M")) if time else None),
                     "date": (make_aware(datetime.datetime.strptime(date, "%d-%m-%Y")) if date else None),
                 },
@@ -107,9 +106,9 @@ def parse_img_footnote(inline: InlineParser, m: Match[str], state: InlineState) 
     return _parse_footnote_ref(m, state, "img_footnote_ref", "img_footnote_key", "img_footnote_value")
 
 
-def cradle_link_plugin(md: Markdown) -> None:
-    """Plugin to enable cradle link parsing."""
-    md.inline.register("url_link", LINK_REGEX, parse_cradle_link, before="link")
+def entry_link_plugin(md: Markdown) -> None:
+    """Plugin to enable entry link parsing."""
+    md.inline.register("entry_link", ENTRY_LINK_REGEX, parse_entry_link, before="link")
 
 
 def footnote_plugin(md: Markdown) -> None:

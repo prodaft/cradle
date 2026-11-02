@@ -9,12 +9,13 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/custom/action-bar';
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
+import { Checkbox } from '@/components/custom/checkbox';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -23,7 +24,6 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -528,7 +528,6 @@ export default function ReportsList() {
                                         }
                                     >
                                         <DotsThreeIcon
-                                            className='w-4 h-4'
                                             weight='bold'
                                             aria-hidden='true'
                                         />
@@ -537,16 +536,13 @@ export default function ReportsList() {
                                         <DropdownMenuItem
                                             onClick={() => download(item.id!)}
                                         >
-                                            <DownloadIcon size={16} weight='bold' />
+                                            <DownloadIcon weight='bold' />
                                             Download
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onClick={() => retry(item.id!)}
                                         >
-                                            <ArrowsClockwiseIcon
-                                                size={16}
-                                                weight='bold'
-                                            />
+                                            <ArrowsClockwiseIcon weight='bold' />
                                             Retry
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
@@ -554,7 +550,7 @@ export default function ReportsList() {
                                             variant='destructive'
                                             onClick={() => confirmDelete(item.id!)}
                                         >
-                                            <TrashIcon size={16} weight='bold' />
+                                            <TrashIcon weight='bold' />
                                             Delete
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -653,7 +649,7 @@ export default function ReportsList() {
                             isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                     >
-                        <DownloadIcon size={18} weight='bold' />
+                        <DownloadIcon weight='bold' />
                         Download
                     </ActionBarItem>
                     <ActionBarItem
@@ -662,7 +658,7 @@ export default function ReportsList() {
                             isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                     >
-                        <ArrowsClockwiseIcon size={18} weight='bold' />
+                        <ArrowsClockwiseIcon weight='bold' />
                         Retry
                     </ActionBarItem>
                     <ActionBarItem
@@ -672,7 +668,7 @@ export default function ReportsList() {
                         }
                         className='text-destructive'
                     >
-                        <TrashIcon size={18} weight='bold' />
+                        <TrashIcon weight='bold' />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>

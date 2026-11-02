@@ -213,8 +213,8 @@ export default function AccountOAuthList({ target = 'me' }: AccountOAuthListProp
             <div className='flex flex-col gap-4'>
                 {providerRows.map(({ provider, label, connected }, index) => (
                     <div key={provider}>
-                        <Field orientation='horizontal' className='gap-2'>
-                            <FieldContent className='flex-1'>
+                        <Field orientation='horizontal'>
+                            <FieldContent>
                                 <FieldLabel className='text-sm block mb-0.5'>
                                     {label}
                                 </FieldLabel>

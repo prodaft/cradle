@@ -1,8 +1,9 @@
 import { SearchInput } from '@/components/base/search-input/search-input';
 import { SettingsHeaderActionsPortal } from '@/components/base/settings-header-actions/settings-header-actions';
+import { Badge } from '@/components/custom/badge';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
-import { Badge } from '@/components/ui/badge';
+import { SelectContent } from '@/components/custom/select';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -20,13 +21,7 @@ import {
     FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuthState } from '@/hooks/auth/use-auth';
 import { queryKeys } from '@/hooks/query';

@@ -18,7 +18,7 @@ class TestFileUpload(TestCase):
 
     def setUp(self):
         super().setUp()
-        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         self.patcher.start()
         self.user = CradleUser.objects.create_user(
             username="user",

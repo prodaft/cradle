@@ -13,7 +13,7 @@ from core.safe_fetch import fetch_url
 from file_transfer.models import FileReference
 from file_transfer.s3_utils import put_bytes
 from file_transfer.uploads.flows import sanitize_upload_filename
-from management.settings import cradle_settings
+from management.settings import system_settings
 from notes.models import Note
 
 from ..models.base import BaseDigest
@@ -66,7 +66,7 @@ def download_file_for_note(note_id, file_identifier, file_url, bucket_name, dige
             content_type = fetch_url(
                 file_url,
                 file_data,
-                max_bytes=digest.user.file_upload_limit,
+                max_bytes=system_settings.files.upload_limit,
                 is_trusted=lambda parsed: _is_own_storage_url(parsed, bucket_name) or _is_trusted_host(parsed),
             )
             file_data.seek(0)
@@ -84,7 +84,7 @@ def download_file_for_note(note_id, file_identifier, file_url, bucket_name, dige
             )
         note.files.add(fr)
 
-        if cradle_settings.files.autoprocess_files:
+        if system_settings.files.autoprocess_files:
             fr.process_file()
 
         with transaction.atomic():

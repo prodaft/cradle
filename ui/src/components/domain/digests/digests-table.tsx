@@ -7,11 +7,12 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/custom/action-bar';
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
+import { Checkbox } from '@/components/custom/checkbox';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -19,7 +20,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { truncateText } from '@/utils/dashboard';
@@ -413,7 +413,7 @@ export default function DigestsTable({
                         }
                         className='text-destructive'
                     >
-                        <TrashIcon size={18} weight='bold' />
+                        <TrashIcon weight='bold' />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>

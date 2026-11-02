@@ -7,7 +7,7 @@ from uuid import UUID
 from django.db.models import Q
 
 from core.query_lang import parse_search, to_q
-from entries.exceptions import EntityNotFoundException
+from entries.lookup import get_entity
 from entries.models import Entry
 from teams.models import TeamAccess
 from user.models import CradleUser, UserRoles
@@ -33,10 +33,7 @@ def _team_grants_by_user(entity: Entry) -> dict:
 
 def build_entity_access_user_rows(entity_id: int, search: str | None) -> list[dict]:
     """Return sorted rows for the entity access UI: direct grant, team grants and effective access per user."""
-    try:
-        entity = Entry.entities.get(pk=entity_id)
-    except Entry.DoesNotExist as exc:
-        raise EntityNotFoundException(detail="That entity could not be found.") from exc
+    entity = get_entity(entity_id)
 
     accesses = Access.objects.filter(Q(entity=entity) & ~Q(user__role=UserRoles.ADMIN)).select_related("user")
 

@@ -13,7 +13,7 @@ from django_lifecycle import AFTER_CREATE, LifecycleModelMixin, hook
 from entries.constants import INTERNAL_ENTRY_CLASS_DEFAULTS, SUBTYPE_FILE
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
-from management.settings import cradle_settings
+from management.settings import system_settings
 from user.models import CradleUser
 
 from .s3_utils import presign_get
@@ -38,7 +38,7 @@ class PendingUpload(BasePendingUpload):
         db_table = "file_transfer_pendingupload"
 
 
-class FileReference(models.Model, LifecycleModelMixin):
+class FileReference(LifecycleModelMixin, models.Model):
     """Metadata record for a file stored in S3/MinIO.
 
     Links files to notes, digests, or users. Supports automatic hash calculation
@@ -47,9 +47,6 @@ class FileReference(models.Model, LifecycleModelMixin):
 
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, help_text="Unique identifier for the file reference"
-    )
-    timestamp: models.DateTimeField = models.DateTimeField(
-        auto_now_add=True, help_text="When the file was first uploaded"
     )
 
     file: models.FileField = models.FileField(
@@ -63,6 +60,23 @@ class FileReference(models.Model, LifecycleModelMixin):
 
     file_name: models.CharField = models.CharField(
         max_length=255, null=True, blank=True, help_text="Original filename for display and download"
+    )
+
+    mime_type: models.CharField = models.CharField(
+        max_length=255, null=True, blank=True, help_text="MIME type detected from file content"
+    )
+    file_size: models.BigIntegerField = models.PositiveBigIntegerField(
+        null=True, blank=True, help_text="File size in bytes"
+    )
+
+    md5_hash: models.CharField = models.CharField(
+        max_length=32, null=True, blank=True, help_text="MD5 hash of file contents"
+    )
+    sha1_hash: models.CharField = models.CharField(
+        max_length=40, null=True, blank=True, help_text="SHA-1 hash of file contents"
+    )
+    sha256_hash: models.CharField = models.CharField(
+        max_length=64, null=True, blank=True, help_text="SHA-256 hash of file contents"
     )
 
     note: models.ForeignKey = models.ForeignKey(
@@ -90,28 +104,16 @@ class FileReference(models.Model, LifecycleModelMixin):
         help_text="User who uploaded the file",
     )
 
-    md5_hash: models.CharField = models.CharField(
-        max_length=32, null=True, blank=True, help_text="MD5 hash of file contents"
-    )
-    sha1_hash: models.CharField = models.CharField(
-        max_length=40, null=True, blank=True, help_text="SHA-1 hash of file contents"
-    )
-    sha256_hash: models.CharField = models.CharField(
-        max_length=64, null=True, blank=True, help_text="SHA-256 hash of file contents"
-    )
-    mimetype: models.CharField = models.CharField(
-        max_length=255, null=True, blank=True, help_text="MIME type detected from file content"
-    )
-    file_size: models.BigIntegerField = models.PositiveBigIntegerField(
-        null=True, blank=True, help_text="File size in bytes"
+    created_at: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True, help_text="When the file was first uploaded"
     )
 
     def has_access(self, user: CradleUser) -> bool:
         """Whether the user may download or otherwise use this file reference."""
-        if user.is_cradle_admin:
-            return True
         if self.note_id:
             return self.note.has_read_access(user)
+        if user.is_admin:
+            return True
         if self.digest_id:
             return self.digest.user_id == user.id
         if self.user_id:
@@ -176,7 +178,7 @@ class FileReference(models.Model, LifecycleModelMixin):
 
         A broker error is logged rather than failing the upload; the file can be processed again later.
         """
-        if cradle_settings.files.autoprocess_files:
+        if system_settings.files.autoprocess_files:
             try:
                 self.process_file()
             except Exception:

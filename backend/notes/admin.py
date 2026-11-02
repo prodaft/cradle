@@ -12,14 +12,14 @@ class NoteAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "content",
-        "timestamp",
         "author",
         "editor",
-        "edit_timestamp",
+        "created_at",
+        "updated_at",
     )
-    list_filter = ("timestamp", "author", "editor")
+    list_filter = ("author", "editor", "created_at")
     search_fields = ("content", "author__username", "editor__username")
-    readonly_fields = ("id", "timestamp", "edit_timestamp")
+    readonly_fields = ("id", "created_at", "updated_at")
 
     def save_model(self, request, obj, form, change):
         """Set author on create, editor on update."""
@@ -34,7 +34,7 @@ class NoteAdmin(admin.ModelAdmin):
 class ArchivedNoteAdmin(admin.ModelAdmin):
     """Admin for ArchivedNote model."""
 
-    list_display = ("id", "content", "timestamp")
-    list_filter = ("timestamp",)
+    list_display = ("id", "content", "archived_at")
+    list_filter = ("archived_at",)
     search_fields = ("content",)
-    readonly_fields = ("id", "timestamp")
+    readonly_fields = ("id", "archived_at")

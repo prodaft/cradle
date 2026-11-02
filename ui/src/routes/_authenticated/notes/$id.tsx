@@ -13,7 +13,7 @@ export const Route = createFileRoute('/_authenticated/notes/$id')({
     },
     validateSearch: z.object({
         heading: z.string().optional(),
-        view: z.enum(['content', 'graph', 'history', 'files']).optional(),
+        view: z.enum(['content', 'graph', 'history']).optional().catch(undefined),
         source: z.boolean().optional(),
     }),
     component: NoteViewer,

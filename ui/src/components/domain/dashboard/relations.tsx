@@ -8,6 +8,8 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/custom/action-bar';
+import { Badge } from '@/components/custom/badge';
+import { Checkbox } from '@/components/custom/checkbox';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
 import {
@@ -21,9 +23,7 @@ import {
     StepperTrigger,
 } from '@/components/custom/stepper';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNdjsonQuery } from '@/hooks/query';
@@ -52,11 +52,7 @@ import {
 import React, { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-type RelationEntry = components['schemas']['EntryWithDepth'] & {
-    color?: string | null;
-    depth?: number;
-    type?: string;
-};
+type RelationEntry = components['schemas']['EntryWithDepth'];
 
 interface RelationsProps {
     obj: {
@@ -205,7 +201,7 @@ function ExpandedRowContent({
                                 <div className='flex items-center gap-2'>
                                     <Badge
                                         variant='secondary'
-                                        className='text-[10px] px-1.5 py-0 h-4'
+                                        size='sm'
                                         style={{
                                             backgroundColor: activeStep.color
                                                 ? activeStep.color
@@ -634,7 +630,7 @@ export default function Relations({ obj }: RelationsProps) {
             const dashboardLink = createDashboardLink({
                 name: result.name ?? '',
                 subtype: result.subtype,
-                type: result.entry_class?.type,
+                type: result.type,
             });
             return {
                 onClick: (e: React.MouseEvent<HTMLTableCellElement>) => {
@@ -657,7 +653,7 @@ export default function Relations({ obj }: RelationsProps) {
         <ScrollArea className='flex w-full flex-col gap-2.5'>
             {hasInaccessible && (
                 <AlertComponent variant='default'>
-                    <WarningCircleIcon size={18} weight='bold' />
+                    <WarningCircleIcon weight='bold' />
                     <AlertDescription>
                         {inaccessibleIds.length} related{' '}
                         {inaccessibleIds.length === 1 ? 'entity is' : 'entities are'}{' '}
@@ -706,7 +702,7 @@ export default function Relations({ obj }: RelationsProps) {
                                 onClick={copyToCSV}
                                 disabled={isLoading || selectedCount === 0}
                             >
-                                <CopyIcon size={18} weight='bold' />
+                                <CopyIcon weight='bold' />
                                 Copy to CSV
                             </ActionBarItem>
                         </ActionBarGroup>

@@ -48,7 +48,7 @@ export default function GraphSettingsForm() {
                 </div>
                 <FieldGroup className='gap-4'>
                     <Field orientation='responsive'>
-                        <FieldContent className='flex-1'>
+                        <FieldContent>
                             <FieldLabel className='text-sm block mb-0.5'>
                                 Refresh Materialized Graph
                             </FieldLabel>
@@ -64,7 +64,7 @@ export default function GraphSettingsForm() {
                             onClick={() => refreshMaterializedGraph.mutate()}
                             disabled={refreshMaterializedGraph.isPending}
                         >
-                            <ArrowClockwiseIcon className='w-3.5 h-3.5' weight='bold' />
+                            <ArrowClockwiseIcon weight='bold' />
                             {refreshMaterializedGraph.isPending
                                 ? 'Refreshing…'
                                 : 'Refresh'}

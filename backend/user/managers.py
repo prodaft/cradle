@@ -8,7 +8,7 @@ from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from management.settings import cradle_settings
+from management.settings import system_settings
 
 from .utils.tokens import token_expires_at
 
@@ -73,8 +73,8 @@ class CradleUserManager(BaseUserManager.from_queryset(CradleUserQuerySet)):  # t
         user = self.model(
             username=username,
             email=email,
-            is_active=extra_fields.pop("is_active", not cradle_settings.users.require_admin_confirmation),
-            email_confirmed=extra_fields.pop("email_confirmed", not cradle_settings.users.require_email_confirmation),
+            is_active=extra_fields.pop("is_active", not system_settings.users.require_admin_confirmation),
+            email_confirmed=extra_fields.pop("email_confirmed", not system_settings.users.require_email_confirmation),
             **extra_fields,
         )
         user.set_password(password)

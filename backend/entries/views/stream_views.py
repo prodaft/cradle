@@ -97,18 +97,18 @@ class EntryClassListStreamView(APIView):
         if getattr(self, "swagger_fake_view", False):
             return ndjson_streaming_response(iter(()))
 
-        qs = EntryClass.objects.prefetch_related("children")
+        qs = EntryClass.objects.prefetch_related("children", "teams")
         if request.query_params.get("show_count") == "true":
-            if not request.user.is_cradle_admin:
+            if not request.user.is_admin:
                 raise AdminOnlyViewCountException(detail="Only administrators can view the entry type count.")
             qs = qs.annotate(entry_count=Count("entries"))
 
         qs = EntryClassFilter(request.GET, queryset=qs).qs
 
         if request.query_params.get("show_count") == "true":
-            serializer = EntryClassSerializerCount()
+            serializer = EntryClassSerializerCount(context={"request": request})
         else:
-            serializer = EntryClassSerializer()
+            serializer = EntryClassSerializer(context={"request": request})
 
         def rows():
             for instance in qs.iterator(chunk_size=200):

@@ -174,7 +174,7 @@ export default function ExplorerPanel({
                                                 onClick={() =>
                                                     toggleConnections(node.id)
                                                 }
-                                                className='text-xs h-auto p-0'
+                                                className='h-auto p-0'
                                             >
                                                 {expanded
                                                     ? 'Show less'
@@ -187,12 +187,11 @@ export default function ExplorerPanel({
                                             <Button
                                                 key={connectedNode.id}
                                                 variant='outline'
-                                                size='sm'
+                                                size='xs'
                                                 type='button'
                                                 onClick={() =>
                                                     onNodeClick?.(connectedNode)
                                                 }
-                                                className='inline-flex items-center gap-1.5 px-2 py-1 text-xs h-auto'
                                                 title={`Click to select ${getDisplayLabel(connectedNode)}`}
                                             >
                                                 {connectedNode.color && (

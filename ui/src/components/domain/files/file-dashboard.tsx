@@ -1,8 +1,8 @@
 import { PageLoader } from '@/components/base/page-loader';
+import { Badge } from '@/components/custom/badge';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { createDashboardLink, FILE_DASHBOARD_SUBTYPE } from '@/utils/dashboard';
@@ -186,11 +186,10 @@ export default function FileDashboard() {
                 <Button
                     variant='outline'
                     size='sm'
-                    className='shrink-0'
                     onClick={() => download.mutate(fileId)}
                     disabled={download.isPending}
                 >
-                    <DownloadSimpleIcon size={16} weight='bold' />
+                    <DownloadSimpleIcon weight='bold' />
                     Download
                 </Button>
             }

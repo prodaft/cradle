@@ -70,7 +70,7 @@ class _SnippetCollectionView(APIView):
 )
 class SystemSnippetsView(_SnippetCollectionView):
     def owner(self, request: Request, creating: bool, **kwargs) -> None:
-        if creating and not cast(CradleUser, request.user).is_cradle_admin:
+        if creating and not cast(CradleUser, request.user).is_admin:
             raise NotFoundException(detail="That resource could not be found.")
         return None
 
@@ -156,7 +156,7 @@ class SnippetDetailView(APIView):
 
         current_user = cast(CradleUser, request.user)
 
-        if not (snippet.owner == current_user or snippet.owner is None or current_user.is_cradle_admin):
+        if not (snippet.owner == current_user or snippet.owner is None or current_user.is_admin):
             raise SnippetNotFoundException(detail="That snippet could not be found.")
 
         return snippet
@@ -164,7 +164,7 @@ class SnippetDetailView(APIView):
     def _check_modify_permissions(self, snippet, request):
         """Check if user has permission to modify/delete this snippet (404 to avoid revealing)."""
         current_user = cast(CradleUser, request.user)
-        if current_user.is_cradle_admin:
+        if current_user.is_admin:
             return
         if snippet.owner is None:
             raise SnippetNotFoundException(detail="That snippet could not be found.")

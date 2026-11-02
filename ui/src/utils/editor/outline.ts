@@ -1,3 +1,6 @@
+import { titleHeadingNumber } from '@/utils/editor/title-line';
+import { Text } from '@codemirror/state';
+
 export interface HeaderNode {
     nodeName: string;
     onNodeClick: () => void;
@@ -11,7 +14,8 @@ export interface HeaderNode {
  * Extracts header nodes from markdown content.
  * It detects header lines (those starting with '#' characters)
  * and marks a header with `separatorBefore: true` if a markdown
- * separator was found between it and the previous header.
+ * separator was found between it and the previous header. The note's title
+ * heading is left out.
  *
  * Additionally, each header node's onNodeClick calls the provided `onClick`
  * callback with the offset (the line number in the file) of the header's start.
@@ -27,6 +31,7 @@ export default function extractHeaderHierarchy(
     onClickHeaderName: ((headerName: string) => void) | undefined,
 ): HeaderNode[] {
     const lines = content.split('\n');
+    const titleNumber = titleHeadingNumber(Text.of(lines));
     const result: HeaderNode[] = [];
 
     const stack: { level: number; node: HeaderNode }[] = [];
@@ -47,7 +52,7 @@ export default function extractHeaderHierarchy(
 
     for (let i = 0; i < lines.length; i++) {
         const raw = lines[i];
-        if (raw === undefined) continue;
+        if (raw === undefined || i + 1 === titleNumber) continue;
         const line = raw.trim();
 
         if (isHorizontalRule(line)) {

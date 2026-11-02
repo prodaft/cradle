@@ -6,7 +6,15 @@ import {
 import type { CopyableWidget } from '@/utils/editor/rendered-copy';
 import { syntaxTree } from '@codemirror/language';
 import { Diagnostic, forEachDiagnostic } from '@codemirror/lint';
-import { EditorState, Range, RangeSetBuilder, type Text } from '@codemirror/state';
+import {
+    EditorState,
+    Range,
+    RangeSet,
+    RangeSetBuilder,
+    StateEffect,
+    StateField,
+    type Text,
+} from '@codemirror/state';
 import {
     Decoration,
     EditorView,
@@ -317,14 +325,15 @@ export function headingLineClassPlugin(sourceMode: boolean) {
     );
 }
 
-class HeadingGutterClass extends GutterMarker {
+/** A gutter "marker" that only adds a class to its gutter row. */
+export class GutterClass extends GutterMarker {
     constructor(readonly elementClass: string) {
         super();
     }
 }
 
 const headingGutterClasses = [1, 2, 3].map(
-    (level) => new HeadingGutterClass(`cm-gutter-heading-${level}`),
+    (level) => new GutterClass(`cm-gutter-heading-${level}`),
 );
 
 /**
@@ -345,6 +354,74 @@ export const headingGutterLineClass = gutterLineClass.compute(['doc'], (state) =
     }
     return builder.finish();
 });
+
+const setHoveredLine = StateEffect.define<number | null>();
+
+/** Start of the line under the mouse, gutter included; null when it is outside. */
+const hoveredLine = StateField.define<number | null>({
+    create: () => null,
+    update(pos, tr) {
+        for (const e of tr.effects) if (e.is(setHoveredLine)) return e.value;
+        return pos === null ? null : tr.changes.mapPos(pos);
+    },
+});
+
+const hoveredGutterClass = new GutterClass('cm-gutter-hovered');
+
+/**
+ * Tags the gutter row of the line under the mouse (`cm-gutter-hovered`), so
+ * gutter markers such as fold chevrons can show only on hover.
+ */
+export const hoveredGutterLineClass = [
+    hoveredLine,
+    gutterLineClass.compute([hoveredLine], (state) => {
+        const pos = state.field(hoveredLine);
+        if (pos === null) return RangeSet.empty;
+        return RangeSet.of(hoveredGutterClass.range(state.doc.lineAt(pos).from));
+    }),
+    ViewPlugin.define((view) => {
+        const hover = (pos: number | null) => {
+            if (view.state.field(hoveredLine) !== pos) {
+                view.dispatch({ effects: setHoveredLine.of(pos) });
+            }
+        };
+        // Last mouse position over the editor, to follow the line under it while
+        // the editor scrolls, which fires no mousemove.
+        let mouse: { x: number; y: number } | null = null;
+        const update = () => {
+            if (!mouse) return hover(null);
+            // lineBlockAtHeight clamps to the first or last line, so check that
+            // the mouse is on a line, not on padding, empty space or a panel.
+            const height = mouse.y - view.documentTop;
+            const block = view.lineBlockAtHeight(height);
+            const target = view.dom.ownerDocument.elementFromPoint(mouse.x, mouse.y);
+            const onLine =
+                !!target &&
+                view.scrollDOM.contains(target) &&
+                height >= block.top &&
+                height < block.bottom;
+            hover(onLine ? block.from : null);
+        };
+        const move = (event: MouseEvent) => {
+            mouse = { x: event.clientX, y: event.clientY };
+            update();
+        };
+        const leave = () => {
+            mouse = null;
+            update();
+        };
+        view.dom.addEventListener('mousemove', move);
+        view.dom.addEventListener('mouseleave', leave);
+        view.scrollDOM.addEventListener('scroll', update);
+        return {
+            destroy() {
+                view.dom.removeEventListener('mousemove', move);
+                view.dom.removeEventListener('mouseleave', leave);
+                view.scrollDOM.removeEventListener('scroll', update);
+            },
+        };
+    }),
+];
 
 /**
  * Creates a ViewPlugin to style CradleLink text when uncollapsed

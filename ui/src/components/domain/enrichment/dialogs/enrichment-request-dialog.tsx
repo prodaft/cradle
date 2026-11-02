@@ -1,6 +1,6 @@
+import { Checkbox } from '@/components/custom/checkbox';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogClose,
@@ -509,7 +509,7 @@ export default function EnrichmentRequestDialog({
                             </FieldTitle>
                             {isLoading ? (
                                 <div className='flex items-center gap-2 py-1 text-muted-foreground text-sm'>
-                                    <Spinner className='size-4' />
+                                    <Spinner />
                                     Loading enrichment techniques...
                                 </div>
                             ) : null}
@@ -599,7 +599,7 @@ export default function EnrichmentRequestDialog({
                             <Textarea
                                 id='artifactInput'
                                 name='artifactInput'
-                                className='min-h-[80px]'
+                                className='min-h-20'
                                 placeholder='One line only, e.g. ip:203.0.113.1 or domain:example.com'
                                 value={form.artifactInput}
                                 onChange={updateField}

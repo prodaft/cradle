@@ -10,12 +10,12 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldLabel, FieldTitle } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { useTheme } from '@/contexts/ui';
 import { markdown } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { EditorView } from '@codemirror/view';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import CodeMirror from '@uiw/react-codemirror';
+import { useTheme } from 'next-themes';
 import { useEffect, useId, useState } from 'react';
 
 /**
@@ -83,7 +83,7 @@ export default function MarkdownEditorDialog({
     const [userInput, setUserInput] = useState(initialContent);
     const [noteTitle, setNoteTitle] = useState(title || '');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const { isDarkMode } = useTheme();
+    const isDarkMode = useTheme().resolvedTheme === 'dark';
     const titleFieldId = useId();
     const contentLabelId = useId();
 

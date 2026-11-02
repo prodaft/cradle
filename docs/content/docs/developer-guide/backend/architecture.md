@@ -45,8 +45,11 @@ Several users can edit a note at the same time. The editor uses
   and accepts edits only on top of the latest version; clients rebase and retry.
 - Edits are broadcast to everyone in the note and saved to the note shortly after
   typing stops, and when an editor leaves, through the normal note pipeline.
-  Validation errors and conflicts with changes made outside the session are
-  reported to every editor.
+  An edit whose links don't validate is still saved: the note becomes `invalid`
+  with each problem link in `status_issues`, keeps its last processed entries
+  and links, and its access vector only narrows until it validates again
+  (`TaskScheduler.run_pipeline(allow_invalid=True)`). Other save errors and
+  conflicts with changes made outside the session are reported to every editor.
 - Joining requires read access to the note; pushing edits requires read-write.
   Open connections re-check this every 30 seconds, so revoking access or
   deleting the note also ends live sessions.

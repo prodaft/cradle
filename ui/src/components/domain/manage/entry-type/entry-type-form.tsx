@@ -2,6 +2,7 @@ import {
     SettingsHeaderActionsPortal,
     SettingsSaveButton,
 } from '@/components/base/settings-header-actions/settings-header-actions';
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
 import {
     ColorPicker,
     ColorPickerArea,
@@ -14,15 +15,16 @@ import {
     ColorPickerTrigger,
 } from '@/components/custom/color-picker';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
+import { SelectContent } from '@/components/custom/select';
 import {
     entryClassFormat,
     formatOptions,
     typeOptions,
 } from '@/components/domain/manage/entry-type/entry-class-options';
+import { useTeamOptions } from '@/components/domain/manage/entry-type/use-team-options';
 import OfflineIndicator from '@/components/feedback/offline-indicator';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -45,13 +47,7 @@ import {
     InputGroupAddon,
     InputGroupButton,
 } from '@/components/ui/input-group';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
@@ -106,6 +102,7 @@ const entryTypeSchema = z.object({
     generativeRegex: z.string().default(''),
     color: z.string().min(1, { error: 'Color is required' }),
     children: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
+    teams: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
 });
 
 type EntryTypeFormValues = z.infer<typeof entryTypeSchema>;
@@ -121,6 +118,7 @@ const getEntryTypeDefaults = (color: string): EntryTypeFormValues => ({
     generativeRegex: '',
     color,
     children: [],
+    teams: [],
 });
 
 function getEntryTypeFormFromApi(
@@ -144,6 +142,11 @@ function getEntryTypeFormFromApi(
                 const c = x as { subtype: string };
                 return { value: c.subtype, label: c.subtype };
             }) || [],
+        teams:
+            data.teams?.map((team) => ({
+                value: team.id as string,
+                label: team.name,
+            })) || [],
     };
 }
 
@@ -197,6 +200,8 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
+
+    const teamOptions = useTeamOptions();
 
     const entryTypes = useMemo<ChildOption[]>(() => {
         const results = entryClasses ?? [];
@@ -272,6 +277,10 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
             regex: data.regex,
             options: data.options.split('\n'),
             child_subtypes: data.children.map((child) => child.value),
+            team_ids:
+                data.type?.value === 'entity'
+                    ? data.teams.map((team) => team.value)
+                    : [],
         };
         saveEntryClass.mutate(payload);
     };
@@ -333,7 +342,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel className='text-sm block mb-0.5'>
                                                 Class Type
                                                 <span className='text-destructive ml-1'>
@@ -402,7 +411,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='subtype'
                                                 className='text-sm block mb-0.5'
@@ -487,7 +496,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel className='text-sm block mb-0.5'>
                                                 Color
                                                 <span className='text-destructive ml-1'>
@@ -575,7 +584,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                 orientation='responsive'
                                                 data-invalid={fieldState.invalid}
                                             >
-                                                <FieldContent className='flex-1'>
+                                                <FieldContent>
                                                     <FieldLabel
                                                         htmlFor='prefix'
                                                         className='text-sm block mb-0.5'
@@ -610,6 +619,45 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                         )}
                                     />
                                     <Separator />
+                                    <Controller
+                                        name='teams'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='responsive'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent>
+                                                    <FieldLabel className='text-sm block mb-0.5'>
+                                                        Teams
+                                                    </FieldLabel>
+                                                    <FieldDescription>
+                                                        Only admins and leads of these
+                                                        teams can create entities of
+                                                        this type. Leave empty to allow
+                                                        any team.
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <div className='w-64 shrink-0 self-start md:self-center'>
+                                                    <MultipleSelector
+                                                        value={field.value}
+                                                        defaultOptions={teamOptions}
+                                                        placeholder='Any team'
+                                                        onChange={field.onChange}
+                                                        emptyIndicator={
+                                                            <p>No teams found</p>
+                                                        }
+                                                    />
+                                                </div>
+                                            </Field>
+                                        )}
+                                    />
+                                    <Separator />
                                 </>
                             )}
 
@@ -623,7 +671,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                 orientation='responsive'
                                                 data-invalid={fieldState.invalid}
                                             >
-                                                <FieldContent className='flex-1'>
+                                                <FieldContent>
                                                     <FieldLabel className='text-sm block mb-0.5'>
                                                         Format
                                                     </FieldLabel>
@@ -803,7 +851,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                             fieldState.invalid
                                                         }
                                                     >
-                                                        <FieldContent className='flex-1'>
+                                                        <FieldContent>
                                                             <FieldLabel
                                                                 htmlFor='generativeRegex'
                                                                 className='text-sm block mb-0.5'
@@ -855,7 +903,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel className='text-sm block mb-0.5'>
                                                 Children
                                             </FieldLabel>
@@ -901,7 +949,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                     <Separator />
 
                                     <Field orientation='responsive'>
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel className='text-sm block'>
                                                 Delete
                                             </FieldLabel>

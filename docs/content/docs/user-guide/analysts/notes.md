@@ -72,6 +72,12 @@ an administrator.
 This graph clustering does not change graph search or discovery algorithms; it
 only changes how connections are rendered and stored.
 
+If an edit to a published note adds a link CRADLE can't use, such as an
+unknown entry type or an entity that doesn't exist, the edit is still saved,
+but the note is marked **Invalid**. Click the status in the editor's bottom bar
+to see every problem link with its line, and click one to jump to it. Until
+the problems are fixed, the note keeps the links it had at its last valid save.
+
 ## Fleeting notes
 
 Fleeting notes are temporary drafts that auto-save as you type. They remain

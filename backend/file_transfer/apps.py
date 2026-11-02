@@ -32,8 +32,8 @@ class FileTransferConfig(AppConfig):
             return
 
         try:
-            from .s3_utils import ensure_cradle_buckets_exist
+            from .s3_utils import ensure_all_buckets_exist
 
-            ensure_cradle_buckets_exist()
+            ensure_all_buckets_exist()
         except Exception as e:
             logger.warning(f"Bucket auto-create skipped/failed: {e}")

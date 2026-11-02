@@ -10,6 +10,9 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/custom/action-bar';
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
+import { Badge } from '@/components/custom/badge';
+import { Checkbox } from '@/components/custom/checkbox';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
 import EnrichmentRequestDialog from '@/components/domain/enrichment/dialogs/enrichment-request-dialog';
@@ -17,7 +20,6 @@ import ReportGenerationDialog from '@/components/domain/reports/dialogs/report-g
 import OfflineIndicator from '@/components/feedback/offline-indicator';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -25,9 +27,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -89,14 +89,9 @@ function RestrictedStatusBadge() {
     return (
         <Tooltip>
             <TooltipTrigger
-                render={
-                    <Badge
-                        variant='outline'
-                        className='h-auto py-1 pl-1.5 [&>svg]:size-3.5! text-muted-foreground'
-                    />
-                }
+                render={<Badge variant='outline' className='text-muted-foreground' />}
             >
-                <LockIcon />
+                <LockIcon data-icon='inline-start' />
                 <span>Restricted</span>
             </TooltipTrigger>
             <TooltipContent>You don&apos;t have access to this note</TooltipContent>
@@ -122,18 +117,14 @@ function RestrictedNoteActions({ noteId }: { noteId: string }) {
                         />
                     }
                 >
-                    <DotsThreeIcon
-                        className='w-4 h-4'
-                        weight='bold'
-                        aria-hidden='true'
-                    />
+                    <DotsThreeIcon weight='bold' aria-hidden='true' />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='end'>
                     <DropdownMenuItem
                         onClick={() => requestAccess.mutate(noteId)}
                         disabled={requestAccess.isPending || requestAccess.isSuccess}
                     >
-                        <LockKeyOpenIcon size={16} weight='bold' />
+                        <LockKeyOpenIcon weight='bold' />
                         {requestAccess.isSuccess
                             ? 'Access requested'
                             : 'Request access'}
@@ -490,11 +481,11 @@ export default function NotesTable({
                                 render={
                                     <Badge
                                         variant='outline'
-                                        className='h-auto py-1 pl-1.5 [&>svg]:size-3.5! capitalize'
+                                        className='pl-1.5 capitalize'
                                     />
                                 }
                             >
-                                <StatusIcon status={status as StatusType} size={14} />
+                                <StatusIcon status={status as StatusType} />
                                 <span>{label}</span>
                             </TooltipTrigger>
                             {item.status_message && (
@@ -659,7 +650,6 @@ export default function NotesTable({
                                         }
                                     >
                                         <DotsThreeIcon
-                                            className='w-4 h-4'
                                             weight='bold'
                                             aria-hidden='true'
                                         />
@@ -669,10 +659,7 @@ export default function NotesTable({
                                             <DropdownMenuItem
                                                 onClick={() => confirmRelink(item)}
                                             >
-                                                <ArrowClockwiseIcon
-                                                    size={16}
-                                                    weight='bold'
-                                                />
+                                                <ArrowClockwiseIcon weight='bold' />
                                                 Relink
                                             </DropdownMenuItem>
                                         )}
@@ -692,7 +679,7 @@ export default function NotesTable({
                                                 setIsReportOpen(true);
                                             }}
                                         >
-                                            <ExportIcon size={16} weight='bold' />
+                                            <ExportIcon weight='bold' />
                                             Export
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
@@ -712,7 +699,7 @@ export default function NotesTable({
                                                 setIsEnrichOpen(true);
                                             }}
                                         >
-                                            <SparkleIcon size={16} weight='bold' />
+                                            <SparkleIcon weight='bold' />
                                             Enrich
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
@@ -720,7 +707,7 @@ export default function NotesTable({
                                             variant='destructive'
                                             onClick={() => confirmDelete(item)}
                                         >
-                                            <TrashIcon size={16} weight='bold' />
+                                            <TrashIcon weight='bold' />
                                             Delete
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>

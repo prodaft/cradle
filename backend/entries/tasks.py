@@ -3,7 +3,6 @@
 from celery import group, shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection, transaction
-from django.db.models import Count
 
 from core.decorators import debounce_task, distributed_lock
 from intelio.tasks import propagate_acvec_digest, propagate_acvec_enrich
@@ -13,9 +12,8 @@ from notes.processor.task_scheduler import TaskScheduler
 from notes.tasks import propagate_acvec
 from user.models import CradleUser
 
-from .constants import SUBTYPE_NOTE
 from .enums import RelationReason
-from .models import Edge, Entry, Relation, calculate_acvec
+from .models import Entry, Relation, calculate_acvec
 
 
 @shared_task
@@ -23,7 +21,6 @@ from .models import Edge, Entry, Relation, calculate_acvec
 def update_accesses(entry_id):
     """Propagate access vector changes from an entry to its notes, digests, and enrichments."""
     entry = Entry.objects.get(id=entry_id)
-    Entry.objects.filter(pk=entry.pk).update(status={"status": "warning", "message": "Updating access controls"})
 
     notes = entry.notes.all()
     update_notes = []
@@ -41,8 +38,6 @@ def update_accesses(entry_id):
 
     digest_ids = entry.digests.all().values_list("id", flat=True)
     enrich_ids = entry.enrichment_requests.all().values_list("id", flat=True)
-
-    Entry.objects.filter(pk=entry.pk).update(status={})
 
     g_notes = group(*[propagate_acvec.si(n.id) for n in update_notes])
     g_digests = group(*[propagate_acvec_digest.si(d) for d in digest_ids])
@@ -101,7 +96,6 @@ def scan_for_children(entry_ids, content_type_id, content_id):
                     e1=e,
                     e2=entry,
                     reason=RelationReason.CONTAINS,
-                    inherit_av=True,
                     access_vector=getattr(content_object, "access_vector", 1),
                     content_object=content_object,
                 )
@@ -127,15 +121,6 @@ def refresh_edges_materialized_view():
     """
     with connection.cursor() as cursor:
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY edges;")
-
-    degree_map = dict(Edge.objects.values("src").annotate(degree=Count("id")).values_list("src", "degree"))
-    entry_ids = list(Entry.objects.exclude(entry_class__subtype=SUBTYPE_NOTE).values_list("id", flat=True))
-    updates = [Entry(id=eid, degree=degree_map.get(eid, 0)) for eid in entry_ids]
-
-    if updates:
-        Entry.objects.bulk_update(updates, ["degree"])
-
-    Entry.objects.filter(entry_class__subtype=SUBTYPE_NOTE).update(degree=0)
 
 
 @shared_task

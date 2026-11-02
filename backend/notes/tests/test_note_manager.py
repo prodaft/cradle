@@ -92,7 +92,7 @@ class AccessibleNotesTest(NotesTestCase):
 
     def test_get_accessible_notes_admin(self):
         notes = Note.objects.get_accessible_notes(self.admin_user, self.entity1.id)
-        expected = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
+        expected = Note.objects.exclude(id=self.note3.id).order_by("-created_at")
         self.assertQuerySetEqual(notes, expected)
 
     def test_get_accessible_notes_read_write_access(self):
@@ -102,7 +102,7 @@ class AccessibleNotesTest(NotesTestCase):
 
     def test_get_accessible_notes_read_access(self):
         notes = Note.objects.get_accessible_notes(self.user2, self.entity1.id)
-        expected = Note.objects.exclude(id=self.note3.id).order_by("-timestamp")
+        expected = Note.objects.exclude(id=self.note3.id).order_by("-created_at")
         self.assertQuerySetEqual(notes, expected)
 
     def test_get_accessible_notes_no_access(self):
@@ -112,7 +112,7 @@ class AccessibleNotesTest(NotesTestCase):
 
     def test_get_all_accessible_notes_admin(self):
         notes = Note.objects.get_accessible_notes(self.admin_user)
-        expected = Note.objects.all().order_by("-timestamp")
+        expected = Note.objects.all().order_by("-created_at")
 
         self.assertQuerySetEqual(notes, expected)
 
@@ -237,13 +237,13 @@ class GetEntriesOfTypeTest(NotesTestCase):
         self.create_access()
 
     def test_get_accessible_notes_admin(self):
-        expected = Note.objects.all().order_by("-timestamp")
+        expected = Note.objects.all().order_by("-created_at")
         notes = Note.objects.get_accessible_notes(self.admin_user, self.entity1.id)
 
         self.assertQuerySetEqual(notes, expected)
 
     def test_get_accessible_notes_read_write_access(self):
-        expected = Note.objects.all().order_by("-timestamp")
+        expected = Note.objects.all().order_by("-created_at")
         notes = Note.objects.get_accessible_notes(self.user1, self.entity1.id)
 
         self.assertQuerySetEqual(notes, expected)

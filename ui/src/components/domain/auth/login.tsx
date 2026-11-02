@@ -1,13 +1,7 @@
-import Logo from '@/components/base/logo/logo';
+import { AuthHeader, AuthLayout } from '@/components/domain/auth/auth-layout';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import {
-    Field,
-    FieldDescription,
-    FieldGroup,
-    FieldLabel,
-    FieldSeparator,
-} from '@/components/ui/field';
+import { Field, FieldGroup, FieldLabel, FieldSeparator } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
     InputGroup,
@@ -17,22 +11,12 @@ import {
 } from '@/components/ui/input-group';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Spinner } from '@/components/ui/spinner';
-import { useTheme } from '@/contexts/ui';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
-import {
-    ArrowUUpLeftIcon,
-    EyeIcon,
-    EyeSlashIcon,
-    MoonIcon,
-    SunIcon,
-    WarningCircleIcon,
-} from '@phosphor-icons/react';
+import { EyeIcon, EyeSlashIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { $api } from '@services/openapi/client';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { useEffect, useId, useState } from 'react';
-
-const LOGIN_IMAGES = ['/1.png', '/2.png', '/3.png', '/4.png'];
 
 interface OAuthMethod {
     id?: string;
@@ -69,15 +53,10 @@ export default function Login() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
     const [formErrorTitle, setFormErrorTitle] = useState<string | undefined>(undefined);
-    const [loginImage] = useState(
-        () => LOGIN_IMAGES[Math.floor(Math.random() * LOGIN_IMAGES.length)],
-    );
     const loginTwoFactorOtpId = useId();
     const location = useRouterState({
         select: (state) => state.location,
     });
-
-    const { isDarkMode, toggleTheme } = useTheme();
 
     const { from } = (location.state as { from?: string | { pathname: string } }) || {
         from: { pathname: '/' },
@@ -251,340 +230,199 @@ export default function Login() {
         return null;
     }
 
+    const errorAlert = formError && (
+        <Alert variant='destructive'>
+            <WarningCircleIcon weight='bold' />
+            <AlertTitle>{formErrorTitle || 'Error'}</AlertTitle>
+            <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+    );
+
     return (
-        <div className='relative min-h-svh w-full overflow-hidden'>
-            {/* Left Column - Form */}
-            <div className='relative z-10 flex h-full min-h-svh flex-col gap-4 bg-background p-6 md:p-10 lg:w-1/2'>
-                {/* Branding */}
-                <div className='flex justify-between items-center gap-2'>
-                    <Link to='/' className='flex items-center gap-2 font-medium'>
-                        <Logo text={true} width='120px' />
-                    </Link>
-                    {/* Theme Button */}
-                    {isTwoFactorRequired ? (
+        <AuthLayout>
+            <form onSubmit={submit}>
+                {isTwoFactorRequired ? (
+                    <FieldGroup className='sm:gap-[18px]'>
+                        <AuthHeader
+                            title='Enter your code'
+                            description='Open your authenticator app and type the 6-digit code.'
+                        />
+                        <Field>
+                            <FieldLabel
+                                htmlFor={loginTwoFactorOtpId}
+                                className='sr-only'
+                            >
+                                Verification code
+                            </FieldLabel>
+                            <InputOTP
+                                id={loginTwoFactorOtpId}
+                                name='login-2fa-otp'
+                                autoComplete='one-time-code'
+                                maxLength={6}
+                                value={otp}
+                                onChange={(value) => setOtp(value)}
+                                containerClassName='w-full'
+                                autoFocus={true}
+                            >
+                                <InputOTPGroup className='w-full gap-2'>
+                                    {OTP_INDICES.map((i) => (
+                                        <InputOTPSlot
+                                            key={i}
+                                            index={i}
+                                            className='h-14 flex-1 border font-mono text-2xl sm:h-[52px] sm:text-[22px]'
+                                        />
+                                    ))}
+                                </InputOTPGroup>
+                            </InputOTP>
+                        </Field>
+                        {errorAlert}
                         <Button
-                            onClick={() => {
-                                setIsTwoFactorRequired(false);
-                                setOtp('');
-                            }}
-                            variant='ghost'
-                            size='icon-sm'
-                            data-testid='back-button'
-                            title='Back to Login'
+                            type='submit'
+                            className='w-full'
+                            disabled={isSubmitting || otp.length < 6}
+                            data-testid='login-register-button'
                         >
-                            <ArrowUUpLeftIcon size={18} weight='bold' />
+                            {isSubmitting && <Spinner />}
+                            Verify
                         </Button>
-                    ) : (
-                        <Button
-                            onClick={toggleTheme}
-                            variant='ghost'
-                            size='icon-sm'
-                            className='p-2 rounded-lg'
-                            data-testid='theme-button'
-                            title='Toggle Theme'
-                        >
-                            {isDarkMode ? (
-                                <SunIcon size={18} weight='bold' />
-                            ) : (
-                                <MoonIcon size={18} weight='bold' />
-                            )}
-                        </Button>
-                    )}
-                </div>
-
-                {/* Form Container */}
-                <div className='flex flex-1 items-center justify-center'>
-                    <div className='w-full max-w-xs'>
-                        <form className='flex flex-col gap-6' onSubmit={submit}>
-                            <FieldGroup className='gap-4'>
-                                {!isTwoFactorRequired && (
-                                    <div className='flex flex-col items-center gap-1 text-center'>
-                                        <h1 className='text-2xl font-bold'>
-                                            Login to your account
-                                        </h1>
-                                        <p className='text-muted-foreground text-sm text-balance'>
-                                            Enter your credentials below to login to
-                                            your account
-                                        </p>
-                                    </div>
-                                )}
-                                {isTwoFactorRequired && (
-                                    <div className='flex flex-col items-center gap-1 text-center'>
-                                        <h1 className='text-2xl font-bold'>
-                                            2FA Authentication
-                                        </h1>
-                                        <p className='text-muted-foreground text-sm text-balance'>
-                                            Please verify your identity
-                                        </p>
-                                    </div>
-                                )}
-                                {isTwoFactorRequired ? (
-                                    <>
-                                        <Field>
-                                            <FieldLabel
-                                                htmlFor={loginTwoFactorOtpId}
-                                                className='sr-only'
-                                            >
-                                                Verification code
-                                            </FieldLabel>
-                                            <InputOTP
-                                                id={loginTwoFactorOtpId}
-                                                name='login-2fa-otp'
-                                                autoComplete='one-time-code'
-                                                maxLength={6}
-                                                value={otp}
-                                                onChange={(value) =>
-                                                    setOtp(value)
-                                                }
-                                                containerClassName='w-full'
-                                            >
-                                                <InputOTPGroup className='w-full'>
-                                                    {OTP_INDICES.map((i) => (
-                                                        <InputOTPSlot
-                                                            key={i}
-                                                            index={i}
-                                                            className='flex-1 h-12'
-                                                        />
-                                                    ))}
-                                                </InputOTPGroup>
-                                            </InputOTP>
-                                            <FieldDescription>
-                                                Enter the 6-digit code from your
-                                                authenticator app
-                                            </FieldDescription>
-                                        </Field>
-                                        {formError && (
-                                            <Alert variant='destructive'>
-                                                <WarningCircleIcon
-                                                    className='size-4'
-                                                    weight='bold'
-                                                />
-                                                <AlertTitle>
-                                                    {formErrorTitle || 'Error'}
-                                                </AlertTitle>
-                                                <AlertDescription>
-                                                    {formError}
-                                                </AlertDescription>
-                                            </Alert>
-                                        )}
-                                        <Field>
-                                            <Button
-                                                type='submit'
-                                                variant='default'
-                                                size='default'
-                                                className='w-full'
-                                                disabled={isSubmitting}
-                                                data-testid='login-register-button'
-                                            >
-                                                {isSubmitting && (
-                                                    <Spinner className='size-4' />
-                                                )}
-                                                Verify
-                                            </Button>
-                                        </Field>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Field>
-                                            <FieldLabel htmlFor='username'>
-                                                Username
-                                            </FieldLabel>
-                                            <Input
-                                                id='username'
-                                                name='username'
-                                                type='text'
-                                                value={username}
-                                                onChange={(e) =>
-                                                    setUsername(e.target.value)
-                                                }
-                                                autoComplete='username'
-                                                autoFocus={true}
-                                                required
-                                            />
-                                        </Field>
-                                        <Field>
-                                            <div className='flex items-center'>
-                                                <FieldLabel htmlFor='password'>
-                                                    Password
-                                                </FieldLabel>
-                                                <Link
-                                                    to='/forgot-password'
-                                                    className='ml-auto text-sm underline-offset-4 hover:underline'
-                                                    replace={true}
-                                                    onClick={() =>
-                                                        setIsTwoFactorRequired(false)
-                                                    }
-                                                >
-                                                    Forgot password?
-                                                </Link>
-                                            </div>
-                                            <InputGroup>
-                                                <InputGroupInput
-                                                    id='password'
-                                                    name='password'
-                                                    type={
-                                                        isPasswordVisible
-                                                            ? 'text'
-                                                            : 'password'
-                                                    }
-                                                    value={password}
-                                                    onChange={(e) =>
-                                                        setPassword(e.target.value)
-                                                    }
-                                                    autoComplete='current-password'
-                                                    required
-                                                />
-                                                <InputGroupAddon align='inline-end'>
-                                                    <InputGroupButton
-                                                        type='button'
-                                                        onClick={() =>
-                                                            setIsPasswordVisible(
-                                                                !isPasswordVisible,
-                                                            )
-                                                        }
-                                                        aria-label={
-                                                            isPasswordVisible
-                                                                ? 'Hide password'
-                                                                : 'Show password'
-                                                        }
-                                                        title={
-                                                            isPasswordVisible
-                                                                ? 'Hide password'
-                                                                : 'Show password'
-                                                        }
-                                                    >
-                                                        {isPasswordVisible ? (
-                                                            <EyeSlashIcon
-                                                                className='size-4'
-                                                                weight='bold'
-                                                            />
-                                                        ) : (
-                                                            <EyeIcon
-                                                                className='size-4'
-                                                                weight='bold'
-                                                            />
-                                                        )}
-                                                    </InputGroupButton>
-                                                </InputGroupAddon>
-                                            </InputGroup>
-                                        </Field>
-                                        {formError && (
-                                            <Alert variant='destructive'>
-                                                <WarningCircleIcon
-                                                    className='size-4'
-                                                    weight='bold'
-                                                />
-                                                <AlertTitle>
-                                                    {formErrorTitle || 'Error'}
-                                                </AlertTitle>
-                                                <AlertDescription>
-                                                    {formError}
-                                                </AlertDescription>
-                                            </Alert>
-                                        )}
-                                        <Field>
-                                            <Button
-                                                type='submit'
-                                                variant='default'
-                                                size='default'
-                                                className='w-full'
-                                                disabled={isSubmitting}
-                                                data-testid='login-register-button'
-                                            >
-                                                {isSubmitting && (
-                                                    <Spinner className='size-4' />
-                                                )}
-                                                Log in
-                                            </Button>
-                                        </Field>
-                                        {oauthOptions.length > 0 && (
-                                            <>
-                                                <FieldSeparator />
-                                                <Field>
-                                                    <FieldDescription className='text-center'>
-                                                        Or continue with
-                                                    </FieldDescription>
-                                                </Field>
-                                                {oauthOptions.map(
-                                                    ({ key, label, redirectUrl }) => (
-                                                        <Field key={key}>
-                                                            <Button
-                                                                type='button'
-                                                                variant='outline'
-                                                                size='default'
-                                                                className='w-full'
-                                                                onClick={() => {
-                                                                    sessionStorage.setItem(
-                                                                        'oauth_login_redirect',
-                                                                        getRedirectPath(
-                                                                            from,
-                                                                        ),
-                                                                    );
-                                                                    window.location.href =
-                                                                        redirectUrl;
-                                                                }}
-                                                            >
-                                                                {label}
-                                                            </Button>
-                                                        </Field>
-                                                    ),
-                                                )}
-                                            </>
-                                        )}
-                                        {basePath && userConfig?.signup !== false && (
-                                            <>
-                                                <FieldSeparator />
-                                                <Field>
-                                                    <FieldDescription className='text-center'>
-                                                        Don&apos;t have an account?{' '}
-                                                        <Link
-                                                            to='/signup'
-                                                            className='underline underline-offset-4'
-                                                            replace={true}
-                                                            state={
-                                                                {
-                                                                    from: from,
-                                                                } as any
-                                                            }
-                                                            onClick={() =>
-                                                                setIsTwoFactorRequired(
-                                                                    false,
-                                                                )
-                                                            }
-                                                        >
-                                                            Sign up
-                                                        </Link>
-                                                    </FieldDescription>
-                                                </Field>
-                                            </>
-                                        )}
-                                    </>
-                                )}
-                            </FieldGroup>
-                        </form>
-
-                        {/* Version/Status Indicator */}
-                        <div className='mt-6 text-center'>
-                            <span className='text-xs text-muted-foreground font-mono tracking-wide tracking-wider'>
-                                {__APP_VERSION_LABEL__}
+                        <div className='flex items-center gap-3 border-t pt-3.5 text-sm text-muted-foreground sm:text-[13px]'>
+                            <span className='min-w-0 truncate'>
+                                Signing in as {username}
                             </span>
+                            <button
+                                type='button'
+                                className='ml-auto py-2.5 text-primary hover:underline underline-offset-4'
+                                data-testid='back-button'
+                                onClick={() => {
+                                    setIsTwoFactorRequired(false);
+                                    setOtp('');
+                                    setFormError(null);
+                                }}
+                            >
+                                Back
+                            </button>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Right Column - Image */}
-            <div
-                className='absolute bottom-0 right-0 top-0 hidden w-[65%] overflow-hidden bg-muted dark:bg-black lg:block select-none'
-                onContextMenu={(e) => e.preventDefault()}
-            >
-                <img
-                    src={loginImage}
-                    alt=''
-                    className='block h-full w-full object-cover pointer-events-none'
-                    draggable={false}
-                />
-            </div>
-        </div>
+                    </FieldGroup>
+                ) : (
+                    <FieldGroup className='gap-[18px] sm:gap-4'>
+                        <AuthHeader
+                            title='Sign in'
+                            description={
+                                basePath &&
+                                userConfig?.signup !== false && (
+                                    <>
+                                        Don&apos;t have an account?{' '}
+                                        <Link
+                                            to='/signup'
+                                            className='text-primary underline-offset-4 hover:underline'
+                                            replace={true}
+                                            state={{ from: from } as any}
+                                        >
+                                            Sign up
+                                        </Link>
+                                    </>
+                                )
+                            }
+                        />
+                        {errorAlert}
+                        <Field>
+                            <FieldLabel htmlFor='username'>Username</FieldLabel>
+                            <Input
+                                id='username'
+                                name='username'
+                                type='text'
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                autoComplete='username'
+                                autoFocus={true}
+                                required
+                            />
+                        </Field>
+                        <Field>
+                            <div className='flex items-center'>
+                                <FieldLabel htmlFor='password'>Password</FieldLabel>
+                                <Link
+                                    to='/forgot-password'
+                                    className='ml-auto text-xs text-primary underline-offset-4 hover:underline'
+                                    replace={true}
+                                >
+                                    Forgot password?
+                                </Link>
+                            </div>
+                            <InputGroup>
+                                <InputGroupInput
+                                    id='password'
+                                    name='password'
+                                    type={isPasswordVisible ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    autoComplete='current-password'
+                                    required
+                                />
+                                <InputGroupAddon align='inline-end'>
+                                    <InputGroupButton
+                                        type='button'
+                                        onClick={() =>
+                                            setIsPasswordVisible(!isPasswordVisible)
+                                        }
+                                        aria-label={
+                                            isPasswordVisible
+                                                ? 'Hide password'
+                                                : 'Show password'
+                                        }
+                                        aria-pressed={isPasswordVisible}
+                                        title={
+                                            isPasswordVisible
+                                                ? 'Hide password'
+                                                : 'Show password'
+                                        }
+                                    >
+                                        {isPasswordVisible ? (
+                                            <EyeSlashIcon
+                                                className='size-4'
+                                                weight='bold'
+                                            />
+                                        ) : (
+                                            <EyeIcon className='size-4' weight='bold' />
+                                        )}
+                                    </InputGroupButton>
+                                </InputGroupAddon>
+                            </InputGroup>
+                        </Field>
+                        <Button
+                            type='submit'
+                            className='w-full'
+                            disabled={isSubmitting}
+                            data-testid='login-register-button'
+                        >
+                            {isSubmitting && <Spinner />}
+                            Sign in
+                        </Button>
+                        {oauthOptions.length > 0 && (
+                            <>
+                                <FieldSeparator>or</FieldSeparator>
+                                {oauthOptions.map(({ key, label, redirectUrl }) => (
+                                    <Button
+                                        key={key}
+                                        type='button'
+                                        variant='outline'
+                                        className='w-full'
+                                        onClick={() => {
+                                            sessionStorage.setItem(
+                                                'oauth_login_redirect',
+                                                getRedirectPath(from),
+                                            );
+                                            window.location.href = redirectUrl;
+                                        }}
+                                    >
+                                        Continue with {label}
+                                    </Button>
+                                ))}
+                            </>
+                        )}
+                    </FieldGroup>
+                )}
+            </form>
+        </AuthLayout>
     );
 }

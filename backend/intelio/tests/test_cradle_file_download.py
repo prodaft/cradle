@@ -2,13 +2,14 @@
 
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 from urllib.parse import urlparse
 
 from django.test import SimpleTestCase, TestCase, override_settings
 
 from intelio.models.digest.cradle import CradleDigest
 from intelio.tasks.cradle import _is_own_storage_url, _is_trusted_host, download_file_for_note
+from management.settings import FileSettings
 from notes.models import Note
 from user.models import CradleUser
 
@@ -81,7 +82,7 @@ class DownloadFileForNoteTest(TestCase):
         super().tearDownClass()
 
     def setUp(self):
-        patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         patcher.start()
         self.addCleanup(patcher.stop)
         self.user = CradleUser.objects.create_user(username="user", password="user", email="user@example.com")
@@ -127,11 +128,11 @@ class DownloadFileForNoteTest(TestCase):
         self.assertEqual(file_ref.file_name, "abc-report.pdf")
         self.assertEqual(self.stored, {f"{file_ref.id}-abc-report.pdf": (b"report-bytes", "application/pdf")})
 
-    def test_download_over_user_limit_is_refused(self):
-        self.user.file_upload_limit_override = 4
-        self.user.save(update_fields=["file_upload_limit_override"])
-
-        with override_settings(DIGEST_TRUSTED_FILE_HOSTS=["127.0.0.1"]):
+    def test_download_over_upload_limit_is_refused(self):
+        with (
+            patch.object(FileSettings, "upload_limit", new_callable=PropertyMock, return_value=4),
+            override_settings(DIGEST_TRUSTED_FILE_HOSTS=["127.0.0.1"]),
+        ):
             summary = self.download(f"{self.origin}/file")
 
         self.assertEqual((summary["files_downloaded"], summary["files_failed"]), (0, 1))

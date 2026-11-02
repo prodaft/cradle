@@ -159,7 +159,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                 control={control}
                                 render={({ field }) => (
                                     <Field orientation='responsive'>
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='allowRegistration'
                                                 className='text-sm block mb-0.5'
@@ -188,7 +188,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                 control={control}
                                 render={({ field }) => (
                                     <Field orientation='responsive'>
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='requireEmailActivation'
                                                 className='text-sm block mb-0.5'
@@ -218,7 +218,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                 control={control}
                                 render={({ field }) => (
                                     <Field orientation='responsive'>
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='requireAdminConfirmation'
                                                 className='text-sm block mb-0.5'

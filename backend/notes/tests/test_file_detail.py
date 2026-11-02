@@ -132,8 +132,8 @@ class NoteListFileFilterTest(FileFixtures):
 class FileListTest(FileFixtures):
     def setUp(self):
         super().setUp()
-        FileReference.objects.filter(file_name="a.bin").update(mimetype="application/pdf", file_size=10)
-        FileReference.objects.filter(file_name="copy.bin").update(mimetype="image/png", file_size=20)
+        FileReference.objects.filter(file_name="a.bin").update(mime_type="application/pdf", file_size=10)
+        FileReference.objects.filter(file_name="copy.bin").update(mime_type="image/png", file_size=20)
 
     def _list(self, **params):
         response = self.client.get(reverse("note_files"), params, **self.headers)
@@ -150,6 +150,11 @@ class FileListTest(FileFixtures):
             self.assertIn(key, row)
         for key in ("file_name", "mimetype", "file_size", "md5_hash", "sha1_hash", "sha256_hash"):
             self.assertNotIn(key, row)
+
+    def test_order_by_every_documented_field(self):
+        for field in ("created_at", "name", "mime_type", "note_created_at", "size"):
+            with self.subTest(field=field):
+                self.assertEqual(len(self._list(order_by=field)), 2)
 
     def test_filter_by_mime_type(self):
         self.assertEqual([row["name"] for row in self._list(mime_type="image/*")], ["copy.bin"])

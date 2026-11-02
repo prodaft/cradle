@@ -37,7 +37,7 @@ class PasswordSessionRevocationTest(UserTestCase):
 
     def test_reset_password_revokes_all_sessions(self):
         self.user.password_reset_token = "reset-token"
-        self.user.password_reset_token_expiry = timezone.now() + timedelta(hours=1)
+        self.user.password_reset_token_expires_at = timezone.now() + timedelta(hours=1)
         self.user.save()
 
         response = self.client.post(

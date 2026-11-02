@@ -8,7 +8,7 @@ from entries.models import EntryClass
 
 class AccessTestCase(TestCase):
     def setUp(self):
-        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         self.patcher.start()
 
         self.entryclass1 = EntryClass.objects.create(type=EntryType.ENTITY, subtype="case")

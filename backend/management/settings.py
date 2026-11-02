@@ -100,7 +100,7 @@ class SearchSettings(BaseSettingsSection):
         return self.get("reveal_restricted_matches", False)
 
 
-class CradleSettings:
+class SystemSettings:
     """Aggregate of all settings sections."""
 
     def __init__(self):
@@ -110,4 +110,4 @@ class CradleSettings:
         self.search = SearchSettings()
 
 
-cradle_settings = CradleSettings()
+system_settings = SystemSettings()

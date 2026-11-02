@@ -15,7 +15,6 @@ import {
     ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useTheme } from '@/contexts/ui';
 import { cn } from '@/lib/utils';
 import {
     createMemoryHistory,
@@ -68,6 +67,7 @@ import {
     X,
     type LucideIcon,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import '@styles/dockview.css';
@@ -637,20 +637,20 @@ function AppDockviewTab(
                         api.close();
                     }}
                 >
-                    <X aria-hidden className='size-3' strokeWidth={2.2} />
+                    <X aria-hidden strokeWidth={2.2} />
                 </Button>
             </ContextMenuTrigger>
             <ContextMenuContent className={cn('w-52', 'z-[10050]')}>
                 <ContextMenuItem onClick={onCloseTab}>
-                    <X aria-hidden className='size-4' strokeWidth={2} />
+                    <X aria-hidden strokeWidth={2} />
                     Close
                 </ContextMenuItem>
                 <ContextMenuItem onClick={onCloseOtherTabs} disabled={!canCloseOthers}>
-                    <ListMinus aria-hidden className='size-4' strokeWidth={2} />
+                    <ListMinus aria-hidden strokeWidth={2} />
                     Close others
                 </ContextMenuItem>
                 <ContextMenuItem variant='destructive' onClick={onCloseAllTabs}>
-                    <ListX aria-hidden className='size-4' strokeWidth={2} />
+                    <ListX aria-hidden strokeWidth={2} />
                     Close all
                 </ContextMenuItem>
             </ContextMenuContent>
@@ -683,7 +683,7 @@ function DockviewGroupHeaderActions(props: IDockviewHeaderActionsProps) {
                         />
                     }
                 >
-                    <Columns2 className='size-4' strokeWidth={2} />
+                    <Columns2 strokeWidth={2} />
                 </TooltipTrigger>
                 <TooltipContent side='bottom' className='z-[10050]'>
                     Split right
@@ -708,7 +708,7 @@ function DockviewGroupHeaderActions(props: IDockviewHeaderActionsProps) {
                         />
                     }
                 >
-                    <Plus className='size-4' strokeWidth={2} />
+                    <Plus strokeWidth={2} />
                 </TooltipTrigger>
                 <TooltipContent side='bottom' className='z-[10050]'>
                     New tab
@@ -721,7 +721,7 @@ function DockviewGroupHeaderActions(props: IDockviewHeaderActionsProps) {
 export function AppDockviewShell(): React.JSX.Element {
     const router = useRouter();
     const location = useLocation();
-    const { isDarkMode } = useTheme();
+    const isDarkMode = useTheme().resolvedTheme === 'dark';
     const [dockApi, setDockApi] = useState<DockviewApi | null>(null);
     const dockApiRef = useRef<DockviewApi | null>(null);
     const pendingOuterHrefRef = useRef<string | null>(null);

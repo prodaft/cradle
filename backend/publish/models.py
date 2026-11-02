@@ -53,13 +53,6 @@ class PublishedReport(models.Model, LoggableModelMixin):
         editable=False,
         help_text="Unique identifier for the report.",
     )
-    user = models.ForeignKey(
-        CradleUser,
-        on_delete=models.SET_NULL,
-        related_name="published_reports",
-        null=True,
-        help_text="User who created the report.",
-    )
     title = models.CharField(
         max_length=512,
         default="Title",
@@ -67,14 +60,17 @@ class PublishedReport(models.Model, LoggableModelMixin):
         blank=False,
         help_text="Display title of the report.",
     )
+    user = models.ForeignKey(
+        CradleUser,
+        on_delete=models.SET_NULL,
+        related_name="published_reports",
+        null=True,
+        help_text="User who created the report.",
+    )
     notes = models.ManyToManyField(
         Note,
         related_name="published_reports",
         help_text="Notes included in this report.",
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        help_text="When the report was created.",
     )
     strategy = models.CharField(
         max_length=255,
@@ -116,6 +112,10 @@ class PublishedReport(models.Model, LoggableModelMixin):
         null=True,
         blank=True,
         help_text="Report file stored in S3.",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When the report was created.",
     )
 
     objects = PublishedReportManager()

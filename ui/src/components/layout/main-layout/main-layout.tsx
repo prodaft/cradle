@@ -66,7 +66,7 @@ export default function MainLayout(): React.JSX.Element {
             />
 
             {/* Main Content Area with Navbar */}
-            <SidebarInset className='flex flex-col overflow-hidden'>
+            <SidebarInset className='overflow-hidden'>
                 {/* Navbar - Top of screen */}
                 <Navbar />
 

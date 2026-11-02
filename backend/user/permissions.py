@@ -7,7 +7,7 @@ class HasAdminRole(BasePermission):
     """Allow only users with admin role."""
 
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_cradle_admin)
+        return bool(request.user and request.user.is_admin)
 
 
 class HasManagerRole(BasePermission):

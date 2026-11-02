@@ -19,7 +19,7 @@ from ..strategies.pdf import PDFPublish, _LocalAssetFetcher
 
 class ReportPublishTest(TestCase):
     def setUp(self):
-        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         self.patcher.start()
         self.user = CradleUser.objects.create_user(
             username="user", password="user", email="user@example.com", is_active=True, email_confirmed=True
@@ -259,10 +259,19 @@ class ReportPublishTest(TestCase):
                 (Path(tmp) / name).write_bytes(b"font")
             (Path(tmp) / "Brand-Wobbly.otf").write_bytes(b"font")
             (Path(tmp) / "Brand-Bold.otf").mkdir()
-            unreadable = Path(tmp) / "Brand-Black.otf"
-            unreadable.write_bytes(b"font")
-            unreadable.chmod(0)
-            with override_settings(REPORT_BRANDING={"font_dir": tmp, "font_family": "brand"}):
+            (Path(tmp) / "Brand-Black.otf").write_bytes(b"font")
+            read_bytes = Path.read_bytes
+
+            # chmod(0) does not stop root (as in CI) from reading, so fail the read directly
+            def fake_read_bytes(path):
+                if path.name == "Brand-Black.otf":
+                    raise PermissionError(path)
+                return read_bytes(path)
+
+            with (
+                override_settings(REPORT_BRANDING={"font_dir": tmp, "font_family": "brand"}),
+                patch.object(Path, "read_bytes", fake_read_bytes),
+            ):
                 publisher = HTMLPublish(anonymize=False)
                 branding = publisher._branding()
                 html = publisher._build_report_html(self.report, branding)

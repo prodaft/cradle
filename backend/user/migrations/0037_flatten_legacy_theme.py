@@ -3,11 +3,7 @@
 The UI now expects a flat object of CSS variables plus a ``name`` (``"light"`` selects light mode).
 """
 
-from copy import deepcopy
-
 from django.db import migrations
-
-from user.constants import USER_DEFAULT_THEME
 
 
 def flatten_theme(theme: dict) -> dict:
@@ -15,7 +11,7 @@ def flatten_theme(theme: dict) -> dict:
     mode = theme.get("mode")
     legacy_vars = theme.get("vars")
     if not isinstance(legacy_vars, dict) or not legacy_vars:
-        return {"name": "light"} if mode == "light" else deepcopy(USER_DEFAULT_THEME)
+        return {"name": "light" if mode == "light" else "dark"}
 
     flat = {key: value for key, value in legacy_vars.items() if isinstance(value, str)}
     flat["name"] = "light" if mode == "light" else theme.get("name") or "custom"

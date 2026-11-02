@@ -182,7 +182,7 @@ export default function NoteSettingsForm() {
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='minEntries'
                                                 className='text-sm block mb-0.5'
@@ -229,7 +229,7 @@ export default function NoteSettingsForm() {
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='minEntities'
                                                 className='text-sm block mb-0.5'
@@ -276,7 +276,7 @@ export default function NoteSettingsForm() {
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='maxCliqueSize'
                                                 className='text-sm block mb-0.5'
@@ -322,7 +322,7 @@ export default function NoteSettingsForm() {
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='allowDynamicEntryClassCreation'
                                                 className='text-sm block mb-0.5'
@@ -368,7 +368,7 @@ export default function NoteSettingsForm() {
                         </div>
                         <FieldGroup className='gap-4'>
                             <Field orientation='responsive'>
-                                <FieldContent className='flex-1'>
+                                <FieldContent>
                                     <FieldLabel className='text-sm block mb-0.5'>
                                         Global Snippets
                                     </FieldLabel>
@@ -385,7 +385,7 @@ export default function NoteSettingsForm() {
                                         snippetListRef.current?.handleAddSnippet();
                                     }}
                                 >
-                                    <PlusIcon className='w-3.5 h-3.5' weight='bold' />
+                                    <PlusIcon weight='bold' />
                                     New Snippet
                                 </Button>
                             </Field>
@@ -404,7 +404,7 @@ export default function NoteSettingsForm() {
                         </div>
                         <FieldGroup className='gap-4'>
                             <Field orientation='responsive'>
-                                <FieldContent className='flex-1'>
+                                <FieldContent>
                                     <FieldLabel className='text-sm block mb-0.5'>
                                         Re-Link All Notes
                                     </FieldLabel>
@@ -421,10 +421,7 @@ export default function NoteSettingsForm() {
                                     disabled={relinkNotes.isPending}
                                     onClick={() => relinkNotes.mutate()}
                                 >
-                                    <ArrowClockwiseIcon
-                                        className='w-3.5 h-3.5'
-                                        weight='bold'
-                                    />
+                                    <ArrowClockwiseIcon weight='bold' />
                                     Re-Link
                                 </Button>
                             </Field>

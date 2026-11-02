@@ -9,6 +9,7 @@ from django.db.models import Count, Q
 from django.utils import timezone
 
 from core.decorators import distributed_lock
+from core.exceptions import CradleAPIException
 from entries.constants import (
     INTERNAL_ENTRY_CLASS_DEFAULTS,
     SUBTYPE_ALIAS,
@@ -18,7 +19,7 @@ from entries.constants import (
 from entries.enums import EntryType, RelationReason
 from entries.exceptions import InvalidEntryException
 from entries.models import Entry, EntryClass, Relation
-from management.settings import cradle_settings
+from management.settings import system_settings
 from user.models import CradleUser
 
 from .enums import NoteStatus
@@ -90,7 +91,6 @@ def smart_linker_task(note_id, user_id=None):
                     virtual=False,
                     reason=RelationReason.NOTE,
                     created_at=now,
-                    last_seen=now,
                 )
             )
 
@@ -111,8 +111,8 @@ def smart_linker_task(note_id, user_id=None):
         if to_create:
             Relation.objects.bulk_create(to_create)
 
-        note.last_linked = timezone.now()
-        note.write_fields("last_linked")
+        note.linked_at = timezone.now()
+        note.write_fields("linked_at")
 
     finally:
         close_old_connections()
@@ -134,9 +134,9 @@ def link_files_task(note_id, file_ref_id=None):
 
     note = Note.objects.get(id=note_id)
 
-    md5_subclass = cradle_settings.files.md5_subtype
-    sha256_subclass = cradle_settings.files.sha256_subtype
-    sha1_subclass = cradle_settings.files.sha1_subtype
+    md5_subclass = system_settings.files.md5_subtype
+    sha256_subclass = system_settings.files.sha256_subtype
+    sha1_subclass = system_settings.files.sha1_subtype
 
     md5_et = EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=md5_subclass).first() if md5_subclass else None
     sha256_et = (
@@ -243,7 +243,7 @@ def entry_class_creation_task(note_id, user_id=None):
 
         nonexistent_subtypes = set()
         for subtype in missing:
-            if not cradle_settings.notes.allow_dynamic_entry_class_creation:
+            if not system_settings.notes.allow_dynamic_entry_class_creation:
                 nonexistent_subtypes.add(subtype)
             else:
                 entry = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype=subtype)
@@ -311,7 +311,7 @@ def entry_population_task(note_id, user_id=None):
                     continue
                 ec = entry_classes.get(r.key)
                 if not ec:
-                    if cradle_settings.notes.allow_dynamic_entry_class_creation:
+                    if system_settings.notes.allow_dynamic_entry_class_creation:
                         continue
                     logger.warning(f"Entry class {r.key} does not exist. Skipping entry creation.")
                     continue
@@ -455,9 +455,13 @@ def connect_aliases(note_id, user_id=None):
 @shared_task
 @distributed_lock("propagate_acvec_{note_id}", timeout=3600)
 def propagate_acvec(note_id):
-    """Propagate note's access vector to all its relations."""
+    """Propagate note's access vector to all its relations, then to the edges built from them."""
+    from entries.tasks import refresh_edges_materialized_view
+
     note = Note.objects.get(id=note_id)
-    return note.relations.update(access_vector=note.access_vector)
+    updated = note.relations.update(access_vector=note.access_vector)
+    refresh_edges_materialized_view.apply_async()
+    return updated
 
 
 @shared_task
@@ -468,6 +472,7 @@ def relink_note_task(note_id, user_id):
     """
     from .constants import NOTES_RELINK_PIPELINE
     from .processor.task_scheduler import TaskScheduler
+    from .processor.validate_note_task import ValidateNoteTask
 
     user = CradleUser.objects.filter(id=user_id).first()
     if user is None:
@@ -476,6 +481,14 @@ def relink_note_task(note_id, user_id):
         note = Note.objects.select_for_update().filter(id=note_id, fleeting=False).first()
         if note is None:
             return
+        # A note with bad links keeps its last links until it is fixed, as after an invalid
+        # edit; relinking only refreshes its problems (an entry type may exist by now).
+        try:
+            ValidateNoteTask(user).run(note, [])
+        except CradleAPIException as e:
+            if getattr(e, "link_issues", None):
+                note.write_status(NoteStatus.INVALID, str(e.detail), e.link_issues)
+                return
         note.relations.all().delete()
         TaskScheduler(user, tasks=NOTES_RELINK_PIPELINE).run_pipeline(note, update_acvec=False)
 

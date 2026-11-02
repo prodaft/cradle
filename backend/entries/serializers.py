@@ -25,6 +25,7 @@ from .exceptions import (
     EntryTypeMismatchException,
     EntryTypeNotFoundException,
     EntryTypeRequiredException,
+    EntryTypeTeamRestrictedException,
     InvalidAliasTargetException,
     InvalidEntryException,
 )
@@ -138,6 +139,26 @@ class EntryTypesCompressedTreeSerializerExtension(OpenApiSerializerExtension):
         ]
 
 
+def flatten_entry_class_schema(auto_schema, schema: dict, serializer) -> dict:
+    """Swap the nested ``entry_class`` property of a response schema for the fields ``to_representation`` lifts out.
+
+    The lifted fields come from the nested entry class serializer's own schema, so they cannot drift from it.
+    Fields the entry declares itself keep their own schema.
+    """
+    entry_class_field = serializer.fields["entry_class"]
+    entry_class_schema = auto_schema.resolve_serializer(entry_class_field, "response").schema
+
+    properties = schema["properties"]
+    properties.pop("entry_class", None)
+    for name, field_schema in entry_class_schema["properties"].items():
+        properties.setdefault(name, field_schema)
+
+    required = [name for name in schema.get("required", []) if name != "entry_class"]
+    required += [name for name in entry_class_schema.get("required", []) if name not in required]
+    schema["required"] = required
+    return schema
+
+
 class EntrySerializerMinimalExtension(OpenApiSerializerExtension):
     """OpenAPI schema extension for EntrySerializerMinimal."""
 
@@ -145,15 +166,8 @@ class EntrySerializerMinimalExtension(OpenApiSerializerExtension):
 
     def map_serializer(self, auto_schema, direction):
         schema = super().map_serializer(auto_schema, direction)
-        schema["properties"]["type"] = {
-            "type": "string",
-        }
-        schema["properties"]["subtype"] = {
-            "type": "string",
-        }
-        schema["properties"]["color"] = {
-            "type": "string",
-        }
+        if direction == "response":
+            flatten_entry_class_schema(auto_schema, schema, self.target)
         return schema
 
 
@@ -287,12 +301,12 @@ class EntryClassSerializerNoChildren(serializers.ModelSerializer):
             "type",
             "subtype",
             "description",
-            "generative_regex",
+            "format",
             "regex",
+            "generative_regex",
             "options",
             "prefix",
             "color",
-            "format",
         ]
 
 
@@ -308,6 +322,20 @@ class EntryClassSerializer(serializers.ModelSerializer):
         help_text="Subtypes of the child entry classes",
     )
     children = serializers.SerializerMethodField(read_only=True)
+    team_ids = serializers.PrimaryKeyRelatedField(
+        source="teams",
+        queryset=Team.objects.all(),
+        many=True,
+        write_only=True,
+        required=False,
+        help_text="Teams this entity type is reserved for; only admins and their leads may create such entities",
+    )
+    teams = serializers.SerializerMethodField(
+        help_text="Teams this entity type is reserved for, limited to the teams the requester may see"
+    )
+    is_team = serializers.SerializerMethodField(
+        help_text="Whether this entity type is reserved for teams; if not, any team may use it"
+    )
     format = serializers.ChoiceField(
         choices=EntryTypeFormat.choices,
         allow_null=True,
@@ -322,14 +350,17 @@ class EntryClassSerializer(serializers.ModelSerializer):
             "type",
             "subtype",
             "description",
-            "generative_regex",
+            "format",
             "regex",
+            "generative_regex",
             "options",
             "prefix",
             "color",
             "child_subtypes",
-            "format",
             "children",
+            "team_ids",
+            "teams",
+            "is_team",
         ]
 
     def to_internal_value(self, data):
@@ -338,15 +369,56 @@ class EntryClassSerializer(serializers.ModelSerializer):
             data["subtype"] = EntryClass.normalize_subtype(data["subtype"])
         return super().to_internal_value(data)
 
+    def validate(self, data):
+        entry_type = data.get("type", self.instance.type if self.instance else None)
+        if "team_ids" in self.fields and entry_type != EntryType.ENTITY:
+            if data.get("teams"):
+                raise serializers.ValidationError({"team_ids": "Only entity types can be reserved for teams."})
+            data["teams"] = []
+        return super().validate(data)
+
     def create(self, validated_data):
         children_data = validated_data.pop("children", [])
+        teams_data = validated_data.pop("teams", [])
         eclass = EntryClass.objects.create(**validated_data)
         eclass.children.set(children_data)
+        eclass.teams.set(teams_data)
         return eclass
 
-    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
+    @extend_schema_field(EntryClassSerializerNoChildren(many=True))
     def get_children(self, obj):
         return EntryClassSerializerNoChildren(obj.children.all(), many=True).data
+
+    def _visible_team_ids(self) -> set | None:
+        """Ids of the teams the requester belongs to, or None when they may see every team (managers)."""
+        if not hasattr(self, "_team_ids_cache"):
+            request = self.context.get("request")
+            user = getattr(request, "user", None)
+            if user is None or user.is_manager:
+                self._team_ids_cache = None
+            else:
+                self._team_ids_cache = set(Team.objects.member_of(user).values_list("pk", flat=True))
+        return self._team_ids_cache
+
+    @extend_schema_field(TeamSummarySerializer(many=True))
+    def get_teams(self, obj):
+        visible = self._visible_team_ids()
+        teams = [team for team in obj.teams.all() if visible is None or team.pk in visible]
+        return TeamSummarySerializer(teams, many=True).data
+
+    def get_is_team(self, obj) -> bool:
+        return bool(obj.teams.all())
+
+
+class EntryClassSerializerNoTeams(EntryClassSerializer):
+    """Entry class without its team reservation, for nesting in entries, enricher settings and reports."""
+
+    team_ids = None
+    teams = None
+    is_team = None
+
+    class Meta(EntryClassSerializer.Meta):
+        fields = [field for field in EntryClassSerializer.Meta.fields if field not in ("team_ids", "teams", "is_team")]
 
 
 class EntryClassSerializerCount(EntryClassSerializer):
@@ -360,13 +432,17 @@ class EntryClassSerializerCount(EntryClassSerializer):
             "type",
             "subtype",
             "description",
-            "generative_regex",
+            "format",
             "regex",
+            "generative_regex",
             "options",
             "prefix",
             "color",
             "child_subtypes",
             "children",
+            "team_ids",
+            "teams",
+            "is_team",
             "count",
         ]
 
@@ -389,39 +465,12 @@ class EntryResponseSerializerExtension(OpenApiSerializerExtension):
     """OpenAPI schema extension for EntryResponseSerializer."""
 
     target_class = "entries.serializers.EntryResponseSerializer"
-    match_subclasses = True
 
     def map_serializer(self, auto_schema, direction):
         schema = super().map_serializer(auto_schema, direction)
-
-        properties = schema.get("properties", {})
-        properties.pop("entry_class", None)
-
-        properties["type"] = {
-            "type": "string",
-            "description": "Type of the entry (e.g., entity, artifact)",
-        }
-        properties["subtype"] = {
-            "type": "string",
-            "description": "Subtype for the entry",
-        }
-        properties["description"] = {
-            "type": "string",
-            "description": "Description of the entry",
-            "nullable": True,
-        }
-        properties["color"] = {
-            "type": "string",
-            "description": "Color associated with the entry class",
-            "nullable": True,
-        }
-
-        required = set(schema.get("required", []))
-
-        required.add("subtype")
-        required.add("type")
-        schema["required"] = list(required)
-
+        if direction == "response":
+            flatten_entry_class_schema(auto_schema, schema, self.target)
+            schema["properties"]["description"]["nullable"] = True
         return schema
 
 
@@ -429,7 +478,7 @@ class EntryResponseSerializer(serializers.ModelSerializer):
     """Entry with flattened entry_class fields for API responses."""
 
     description = serializers.CharField(required=False, allow_blank=True)
-    entry_class = EntryClassSerializer(read_only=True)
+    entry_class = EntryClassSerializerNoTeams(read_only=True)
 
     class Meta:
         model = Entry
@@ -450,7 +499,7 @@ class EntryResponseSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         """Extract entry_class fields into nested dict for validation."""
         entry_class_internal = {}
-        for key in EntryClassSerializer.Meta.fields:
+        for key in EntryClassSerializerNoTeams.Meta.fields:
             if key in data:
                 entry_class_internal[key] = data.pop(key)
 
@@ -466,7 +515,10 @@ class EntrySerializerExtension(OpenApiSerializerExtension):
     match_subclasses = True
 
     def map_serializer(self, auto_schema, direction):
-        schema = super().map_serializer(auto_schema, direction)
+        schema = auto_schema._map_serializer(self.target, direction, bypass_extensions=True)
+        if direction == "response":
+            return flatten_entry_class_schema(auto_schema, schema, self.target)
+
         schema["properties"]["subtype"] = {
             "type": "string",
             "description": "Subtype for the entry",
@@ -594,9 +646,10 @@ class EntitySerializer(serializers.ModelSerializer):
             PermissionDeniedException: If a newly linked alias is not visible to the (non-admin) user.
             AdminOnlyEntityCreateException: If a non-admin creates an entity without a team they lead.
             AdminOnlyEntityPublicStatusException: If a non-admin creates a public entity.
+            EntryTypeTeamRestrictedException: If a non-admin creates an entity of a type linked to teams, or
+                changes an entity to such a type, for an owning team not among them.
             TeamNotFoundException: If ``team_id`` names no team.
         """
-        # A partial update keeps the current class and name unless it changes them.
         entry_class = data.get("entry_class", self.instance.entry_class if self.instance else None)
         name = data.get("name", self.instance.name if self.instance else None)
 
@@ -611,7 +664,7 @@ class EntitySerializer(serializers.ModelSerializer):
             if alias.entry_class.type != EntryType.ARTIFACT:
                 raise InvalidAliasTargetException()
         request = self.context.get("request")
-        if aliases and request and not request.user.is_cradle_admin:
+        if aliases and request and not request.user.is_admin:
             new_ids = {alias.pk for alias in aliases}
             if self.instance is not None:
                 new_ids -= set(self.instance.aliases.values_list("pk", flat=True))
@@ -621,10 +674,14 @@ class EntitySerializer(serializers.ModelSerializer):
         team_id = data.pop("team_id", None)
         if self.instance is None:
             data["team"] = self._owning_team(request, team_id)
-            if data.get("is_public") and request is not None and not request.user.is_cradle_admin:
+            self._check_entry_class_teams(request, entry_class, data["team"])
+            if data.get("is_public") and request is not None and not request.user.is_admin:
                 raise AdminOnlyEntityPublicStatusException(detail="Only administrators can create public entities.")
-        elif team_id is not None:
-            raise serializers.ValidationError({"team_id": "Change an entity's owning team on its Teams tab."})
+        else:
+            if team_id is not None:
+                raise serializers.ValidationError({"team_id": "Change an entity's owning team on its Teams tab."})
+            if entry_class != self.instance.entry_class:
+                self._check_entry_class_teams(request, entry_class, self.instance.team)
 
         qs = Entry.objects.filter(entry_class=entry_class, name=name)
         if self.instance is not None:
@@ -637,7 +694,7 @@ class EntitySerializer(serializers.ModelSerializer):
     @staticmethod
     def _owning_team(request, team_id) -> Team | None:
         """Team a new entity is created for. Admins may omit it; anyone else must lead it."""
-        is_admin = request is None or request.user.is_cradle_admin
+        is_admin = request is None or request.user.is_admin
         if team_id is None:
             if is_admin:
                 return None
@@ -649,6 +706,15 @@ class EntitySerializer(serializers.ModelSerializer):
         if not is_admin and not team.is_lead(request.user):
             raise AdminOnlyEntityCreateException(detail="You can only create entities for teams you lead.")
         return team
+
+    @staticmethod
+    def _check_entry_class_teams(request, entry_class: EntryClass, team: Team | None) -> None:
+        """An entity type linked to teams is reserved for them: only admins use it for entities of other teams."""
+        if request is None or request.user.is_admin:
+            return
+        linked = entry_class.teams.all()
+        if linked.exists() and (team is None or not linked.filter(pk=team.pk).exists()):
+            raise EntryTypeTeamRestrictedException(detail="This entity type is reserved for other teams.")
 
     def create(self, validated_data):
         aliases_data = validated_data.pop("aliases", [])
@@ -680,10 +746,11 @@ class EntitySerializerExtension(OpenApiSerializerExtension):
     """OpenAPI schema extension for EntitySerializer."""
 
     target_class = "entries.serializers.EntitySerializer"
-    match_subclasses = True
 
     def map_serializer(self, auto_schema, direction):
         schema = super().map_serializer(auto_schema, direction)
+        if direction == "response":
+            return flatten_entry_class_schema(auto_schema, schema, self.target)
 
         properties = schema.get("properties", {})
         properties.pop("entry_class", None)
@@ -700,7 +767,7 @@ class EntitySerializerExtension(OpenApiSerializerExtension):
         required = set(schema.get("required", []))
         required.add("subtype")
         required.add("type")
-        schema["required"] = list(required)
+        schema["required"] = sorted(required)
 
         return schema
 
@@ -757,7 +824,6 @@ class RelationSerializer(serializers.ModelSerializer):
 
     src = EntrySerializerMinimal(source="e1", read_only=True, help_text="Source entry")
     dst = EntrySerializerMinimal(source="e2", read_only=True, help_text="Destination entry")
-    last_seen_at = serializers.DateTimeField(source="last_seen", read_only=True, help_text="Last observation")
 
     class Meta:
         model = Relation
@@ -765,10 +831,9 @@ class RelationSerializer(serializers.ModelSerializer):
             "id",
             "src",
             "dst",
-            "created_at",
-            "last_seen_at",
             "reason",
             "details",
+            "created_at",
         ]
         read_only_fields = ["created_at", "id"]
         ref_name = "Relation"
@@ -824,7 +889,6 @@ class RelationDetailSerializer(serializers.ModelSerializer):
     src = EntrySerializerMinimal(source="e1", read_only=True, help_text="Source entry")
     dst = EntrySerializerMinimal(source="e2", read_only=True, help_text="Destination entry")
     attachments = AttachmentSerializer(many=True, read_only=True)
-    last_seen_at = serializers.DateTimeField(source="last_seen", read_only=True, help_text="Last observation")
 
     class Meta:
         model = Relation
@@ -832,13 +896,12 @@ class RelationDetailSerializer(serializers.ModelSerializer):
             "id",
             "src",
             "dst",
-            "created_at",
-            "last_seen_at",
             "reason",
             "reason_context",
             "details",
             "virtual",
             "attachments",
+            "created_at",
         ]
         read_only_fields = ["created_at", "id"]
         ref_name = "RelationDetail"

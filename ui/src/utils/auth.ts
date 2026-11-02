@@ -60,11 +60,24 @@ export function canOpenManagePath(path: string): boolean {
 
 type UserRole = components['schemas']['UserRoleEnum'];
 
-const USER_ROLE_LABELS = {
+export const USER_ROLE_LABELS = {
     author: 'Author',
     manager: 'Manager',
     admin: 'Admin',
 } satisfies Record<UserRole, string>;
+
+export function roleBadgeVariant(
+    role?: UserRole,
+): 'destructive' | 'default' | 'outline' {
+    switch (role) {
+        case 'admin':
+            return 'destructive';
+        case 'manager':
+            return 'default';
+        default:
+            return 'outline';
+    }
+}
 
 export const USER_ROLE_OPTIONS = (Object.keys(USER_ROLE_LABELS) as UserRole[]).map(
     (value) => ({ value, label: USER_ROLE_LABELS[value] }),

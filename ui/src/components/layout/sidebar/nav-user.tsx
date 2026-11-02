@@ -1,4 +1,4 @@
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/custom/badge';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { $api } from '@services/openapi/client';
 import { useRouter } from '@tanstack/react-router';
@@ -67,7 +67,7 @@ export function NavUser() {
                             />
                         }
                     >
-                        <User className='size-4 shrink-0' />
+                        <User />
                         <div className='grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden'>
                             <div className='flex items-center gap-2'>
                                 <span className='truncate font-medium'>
@@ -76,7 +76,7 @@ export function NavUser() {
                                 {role && (
                                     <Badge
                                         variant={getRoleBadgeVariant(role)}
-                                        className='text-[10px] px-1.5 py-0 h-4 leading-none'
+                                        size='sm'
                                     >
                                         {role.charAt(0).toUpperCase() + role.slice(1)}
                                     </Badge>
@@ -88,7 +88,7 @@ export function NavUser() {
                         </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
-                        className='w-(--anchor-width) min-w-56 rounded-lg [&_[data-slot=dropdown-menu-item][data-variant=default]_svg]:text-sidebar-foreground'
+                        className='min-w-56 rounded-lg [&_[data-slot=dropdown-menu-item][data-variant=default]_svg]:text-sidebar-foreground'
                         side={isMobile ? 'bottom' : 'right'}
                         align='end'
                         sideOffset={4}
@@ -96,8 +96,8 @@ export function NavUser() {
                         {/* Show user info as menu item when sidebar is collapsed */}
                         {isCollapsed && !isMobile && (
                             <>
-                                <DropdownMenuItem className='flex items-center gap-2 py-2 px-2 cursor-default hover:bg-transparent focus:bg-transparent'>
-                                    <User className='size-4 shrink-0' />
+                                <DropdownMenuItem className='hover:bg-transparent focus:bg-transparent'>
+                                    <User />
                                     <div className='grid flex-1 text-left text-sm leading-tight'>
                                         <div className='flex items-center gap-2'>
                                             <span className='truncate font-medium'>
@@ -106,7 +106,7 @@ export function NavUser() {
                                             {role && (
                                                 <Badge
                                                     variant={getRoleBadgeVariant(role)}
-                                                    className='text-[10px] px-1.5 py-0 h-4 leading-none'
+                                                    size='sm'
                                                 >
                                                     {role.charAt(0).toUpperCase() +
                                                         role.slice(1)}

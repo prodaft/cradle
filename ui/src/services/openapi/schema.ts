@@ -236,7 +236,7 @@ export interface paths {
         put?: never;
         /**
          * Create entity
-         * @description Creates a new entity. Admins can create any entity; team leads can create entities owned by a team they lead (`team_id`).
+         * @description Creates a new entity. Admins can create any entity; team leads can create entities owned by a team they lead (`team_id`). An entity type linked to teams can only be created, by non-admins, for one of those teams.
          */
         post: operations["entities_create"];
         delete?: never;
@@ -1269,14 +1269,14 @@ export interface paths {
         post?: never;
         /**
          * Delete note
-         * @description Deletes an existing note. User must have note write permission (admin, or read-write access to all referenced entities).
+         * @description Deletes an existing note. User must have note write permission (admin, or read-write access to all referenced entities); a fleeting note can only be deleted by its author.
          */
         delete: operations["notes_delete"];
         options?: never;
         head?: never;
         /**
          * Update note
-         * @description Updates an existing note. User must have note write permission (admin, or read-write access to all referenced entities).
+         * @description Updates an existing note. User must have note write permission (admin, read-write access to all referenced entities, or a read-write share of a fleeting note).
          */
         patch: operations["notes_update"];
         trace?: never;
@@ -1352,7 +1352,7 @@ export interface paths {
         put?: never;
         /**
          * Publish a fleeting note
-         * @description Publishes a fleeting (draft) note as a regular note and runs the processing pipeline. Only the owner can publish it.
+         * @description Publishes a fleeting (draft) note as a regular note and runs the processing pipeline. Only the owner can publish it; its shares are removed.
          */
         post: operations["notes_publish_create"];
         delete?: never;
@@ -1375,6 +1375,66 @@ export interface paths {
          * @description Queues a re-run of the note processing pipeline (entry creation, linking, metadata) for this note, rebuilding its relations in the background. Admin only.
          */
         post: operations["notes_relink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notes/{note_id}/shares/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List users a fleeting note is shared with
+         * @description Returns the users the note is shared with and their access. Only available to the note's author.
+         */
+        get: operations["notes_shares_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notes/{note_id}/shares/{user_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Share a fleeting note with a user
+         * @description Shares the note with a user at read or read-write access, or stops sharing it with `none`. Read-write lets them edit the note and upload files to it; deleting, publishing and sharing stay with the author. Publishing the note removes its shares. Only available to the note's author.
+         */
+        put: operations["notes_shares_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notes/{note_id}/shares/candidates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List users a fleeting note can be shared with
+         * @description Returns active users the note is not yet shared with, other than its author. Only available to the note's author.
+         */
+        get: operations["notes_shares_candidates_list"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1745,7 +1805,7 @@ export interface paths {
         post?: never;
         /**
          * Delete team
-         * @description Deletes a team, its memberships and its entity access. Entities it owned become unowned. Direct user grants are kept. Only available to admins.
+         * @description Deletes a team, its memberships and its entity access. Entities it owned become unowned. Direct user grants are kept. Refused while the team is the only one an entity type is reserved for. Only available to admins.
          */
         delete: operations["teams_destroy"];
         options?: never;
@@ -2359,6 +2419,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/me/teams/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List my teams
+         * @description Returns every team the authenticated user belongs to, with their role in it.
+         */
+        get: operations["users_me_teams_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2410,6 +2490,11 @@ export interface components {
         AccessGrantedNotification: {
             /** Format: uuid */
             readonly id?: string;
+            /**
+             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "access_granted_notification";
             /** @description Human-readable notification text. */
             message: string;
             /** @description Whether the notification is unread: not yet seen, or marked unread by the user. */
@@ -2421,11 +2506,6 @@ export interface components {
              * @description When the notification was created.
              */
             readonly created_at?: string;
-            /**
-             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "access_granted_notification";
         };
         /** @description Serializer for updating access privileges (none, read, or read-write). */
         AccessRequest: {
@@ -2442,6 +2522,11 @@ export interface components {
         AccessRequestNotification: {
             /** Format: uuid */
             readonly id?: string;
+            /**
+             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "request_access_notification";
             /** @description Human-readable notification text. */
             message: string;
             /** @description Whether the notification is unread: not yet seen, or marked unread by the user. */
@@ -2458,11 +2543,6 @@ export interface components {
              * @description When the notification was created.
              */
             readonly created_at?: string;
-            /**
-             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
-             * @enum {string}
-             */
-            type: "request_access_notification";
         };
         /** @description A team through which a user gets access to an entity. */
         AccessTeamGrant: {
@@ -2554,10 +2634,9 @@ export interface components {
             readonly id?: string;
             /** @description Human-readable title for the digest */
             title: string;
-            /** @description Who uploaded the digest */
-            readonly created_by?: components["schemas"]["EssentialUserRetrieve"];
-            /** Format: date-time */
-            readonly created_at?: string;
+            /** @description Subclass name (e.g. CradleDigest, FalconDigest) */
+            digest_type: string;
+            readonly display_name?: string;
             /**
              * @description Processing status of the digest
              *
@@ -2571,11 +2650,12 @@ export interface components {
             errors?: unknown;
             /** @description List of warning messages from processing */
             warnings?: unknown;
-            /** @description Subclass name (e.g. CradleDigest, FalconDigest) */
-            digest_type: string;
-            readonly display_name?: string;
             /** @description Entities associated with this digest */
             readonly entities?: components["schemas"]["Entry"][];
+            /** @description Who uploaded the digest */
+            readonly created_by?: components["schemas"]["EssentialUserRetrieve"];
+            /** Format: date-time */
+            readonly created_at?: string;
         };
         /** @description Serializer for creating digests with file upload. */
         BaseDigestCreateRequest: {
@@ -2634,23 +2714,6 @@ export interface components {
             /** @description Optional entity IDs to associate with this digest */
             entity_ids?: number[];
         };
-        /** @description Response serializer for digest upload initiation. */
-        DigestUploadResponse: {
-            /**
-             * Format: uuid
-             * @description UUID for this upload session
-             */
-            upload_id: string;
-            /** @description URL to upload the file to */
-            presigned_url: string;
-            /** @description S3 object key for the uploaded file */
-            object_key: string;
-            /**
-             * Format: date-time
-             * @description When the presigned URL expires
-             */
-            expires_at: string;
-        };
         /** @description Serializer for disabling 2FA with step-up password confirmation. */
         Disable2FARequest: {
             /** @description Current password (required for password-based accounts) */
@@ -2679,7 +2742,7 @@ export interface components {
             created_at: string;
             /**
              * Format: date-time
-             * @description When the relation was last observed
+             * @description When the newest relation between the two entries was created
              */
             last_seen_at: string;
         };
@@ -2697,39 +2760,39 @@ export interface components {
         EnrichmentCompleteNotification: {
             /** Format: uuid */
             readonly id?: string;
+            /**
+             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "enrichment_complete_notification";
             /** @description Human-readable notification text. */
             message: string;
             /** @description Whether the notification is unread: not yet seen, or marked unread by the user. */
             readonly is_unread?: boolean;
-            /**
-             * Format: date-time
-             * @description When the notification was created.
-             */
-            readonly created_at?: string;
             /**
              * Format: uuid
              * @description ID of the completed enrichment request.
              */
             enrichment_request_id: string;
             /**
-             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
-             * @enum {string}
+             * Format: date-time
+             * @description When the notification was created.
              */
-            type: "enrichment_complete_notification";
+            readonly created_at?: string;
         };
         /** @description Serializer for enrichment error notifications. */
         EnrichmentErrorNotification: {
             /** Format: uuid */
             readonly id?: string;
+            /**
+             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "enrichment_error_notification";
             /** @description Human-readable notification text. */
             message: string;
             /** @description Whether the notification is unread: not yet seen, or marked unread by the user. */
             readonly is_unread?: boolean;
-            /**
-             * Format: date-time
-             * @description When the notification was created.
-             */
-            readonly created_at?: string;
             /**
              * Format: uuid
              * @description ID of the failed enrichment request.
@@ -2738,10 +2801,10 @@ export interface components {
             /** @description Error details from the enrichment failure. */
             error_message?: string | null;
             /**
-             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
-             * @enum {string}
+             * Format: date-time
+             * @description When the notification was created.
              */
-            type: "enrichment_error_notification";
+            readonly created_at?: string;
         };
         /**
          * @description Serializer for relations created by enrichment requests.
@@ -2757,16 +2820,6 @@ export interface components {
             /** @description Destination entry */
             readonly dst?: components["schemas"]["EntrySerializerMinimal"];
             /**
-             * Format: date-time
-             * @description Creation timestamp
-             */
-            readonly created_at?: string;
-            /**
-             * Format: date-time
-             * @description Last observation
-             */
-            readonly last_seen_at?: string;
-            /**
              * @description Why this relation exists (digest, enrichment, contains, etc.)
              *
              *     * `digest` - Digest
@@ -2778,6 +2831,11 @@ export interface components {
             reason: components["schemas"]["RelationReasonEnum"];
             /** @description Extra relation metadata */
             details?: unknown;
+            /**
+             * Format: date-time
+             * @description Creation timestamp
+             */
+            readonly created_at?: string;
         };
         /** @description Serializer for enrichment requests. */
         EnrichmentRequest: {
@@ -2785,13 +2843,6 @@ export interface components {
             readonly id?: string;
             /** @description Human-readable title */
             title: string;
-            /** Format: date-time */
-            readonly created_at?: string;
-            /**
-             * Format: date-time
-             * @description When all enrichers finished
-             */
-            readonly completed_at?: string | null;
             /**
              * @description Overall status of the enrichment request
              *
@@ -2802,8 +2853,6 @@ export interface components {
              *     * `error` - Error
              */
             readonly status?: components["schemas"]["EnrichmentStatusEnum"];
-            /** @description Who created the request */
-            readonly created_by?: components["schemas"]["EssentialUserRetrieve"];
             /** @description Entities that scope who can see the request */
             readonly entities?: components["schemas"]["Entry"][];
             /** @description The enrichment settings used for this request */
@@ -2816,15 +2865,8 @@ export interface components {
             readonly errors?: {
                 [key: string]: string[];
             };
-        };
-        /** @description Serializer for full enrichment request detail including ignored items. */
-        EnrichmentRequestDetail: {
-            /** Format: uuid */
-            readonly id?: string;
-            /** @description Human-readable title */
-            readonly title?: string;
-            /** @description Ignored artifact (no matching enricher), at most one object matching `artifact` shape */
-            readonly ignored?: unknown;
+            /** @description Who created the request */
+            readonly created_by?: components["schemas"]["EssentialUserRetrieve"];
             /** Format: date-time */
             readonly created_at?: string;
             /**
@@ -2832,6 +2874,13 @@ export interface components {
              * @description When all enrichers finished
              */
             readonly completed_at?: string | null;
+        };
+        /** @description Serializer for full enrichment request detail including ignored items. */
+        EnrichmentRequestDetail: {
+            /** Format: uuid */
+            readonly id?: string;
+            /** @description Human-readable title */
+            readonly title?: string;
             /**
              * @description Overall status of the enrichment request
              *
@@ -2842,11 +2891,20 @@ export interface components {
              *     * `error` - Error
              */
             readonly status?: components["schemas"]["EnrichmentStatusEnum"];
-            /** @description Who created the request */
-            readonly created_by?: components["schemas"]["EssentialUserRetrieve"];
             readonly enrichers?: components["schemas"]["EnrichmentRequestEnricherMinimal"][];
             /** @description Single artifact: {"entry_class": subtype string, "name": artifact value} */
             readonly artifact?: unknown;
+            /** @description Ignored artifact (no matching enricher), at most one object matching `artifact` shape */
+            readonly ignored?: unknown;
+            /** @description Who created the request */
+            readonly created_by?: components["schemas"]["EssentialUserRetrieve"];
+            /** Format: date-time */
+            readonly created_at?: string;
+            /**
+             * Format: date-time
+             * @description When all enrichers finished
+             */
+            readonly completed_at?: string | null;
         };
         /** @description Serializer for enrichment request enricher information including artifacts. */
         EnrichmentRequestEnricher: {
@@ -2856,14 +2914,14 @@ export interface components {
             readonly display_name?: string;
             /** @description Whether this enrichment is enabled */
             readonly enabled?: boolean;
+            /** @description Artifacts produced by this enrichment */
+            readonly artifacts?: unknown[];
             /** @description Status for this enrichment on the request */
             readonly status?: string;
             /** @description Errors from this enrichment */
             readonly errors?: unknown[];
             /** @description Warnings from this enrichment */
             readonly warnings?: unknown[];
-            /** @description Artifacts produced by this enrichment */
-            readonly artifacts?: unknown[];
         };
         /** @description Serializer for minimal enrichment request enricher information. */
         EnrichmentRequestEnricherMinimal: {
@@ -2882,14 +2940,6 @@ export interface components {
             readonly id?: string;
             /** @description Human-readable title */
             readonly title?: string;
-            readonly ignored_count?: number;
-            /** Format: date-time */
-            readonly created_at?: string;
-            /**
-             * Format: date-time
-             * @description When all enrichers finished
-             */
-            readonly completed_at?: string | null;
             /**
              * @description Overall status of the enrichment request
              *
@@ -2900,18 +2950,26 @@ export interface components {
              *     * `error` - Error
              */
             readonly status?: components["schemas"]["EnrichmentStatusEnum"];
-            /** @description Who created the request */
-            readonly created_by?: components["schemas"]["EssentialUserRetrieve"];
             readonly enrichers?: components["schemas"]["EnrichmentRequestEnricherMinimal"][];
             /** @description Single artifact: {"entry_class": subtype string, "name": artifact value} */
             readonly artifact?: unknown;
+            readonly ignored_count?: number;
+            /** @description Who created the request */
+            readonly created_by?: components["schemas"]["EssentialUserRetrieve"];
+            /** Format: date-time */
+            readonly created_at?: string;
+            /**
+             * Format: date-time
+             * @description When all enrichers finished
+             */
+            readonly completed_at?: string | null;
         };
         /** @description Serializer for enrichment requests. */
         EnrichmentRequestRequest: {
-            /** @description Note IDs; entries from selected notes must yield exactly one enrichable artifact combined with `artifact` */
-            note_ids?: string[];
             /** @description Human-readable title */
             title: string;
+            /** @description Note IDs; entries from selected notes must yield exactly one enrichable artifact combined with `artifact` */
+            note_ids?: string[];
             /** @description Optional entity IDs for access control */
             entity_ids?: number[];
             /** @description The names of the enrichers to use for this request */
@@ -2923,15 +2981,15 @@ export interface components {
         EnrichmentSettings: {
             /** Format: uuid */
             id?: string;
+            /** @description Stable identifier for this enrichment implementation */
+            readonly enricher_type?: string;
+            readonly display_name?: string;
             /** @description Whether this enricher is enabled */
             enabled?: boolean;
             /** @description Entry classes this enricher applies to */
-            readonly for_eclasses?: components["schemas"]["EntryClass"][];
-            /** @description Stable identifier for this enrichment implementation */
-            readonly enricher_type?: string;
+            readonly for_eclasses?: components["schemas"]["EntryClassSerializerNoTeams"][];
             /** @description Enricher-specific configuration */
             settings?: unknown;
-            readonly display_name?: string;
             readonly form_fields?: {
                 [key: string]: unknown;
             };
@@ -2958,10 +3016,32 @@ export interface components {
             readonly aliases?: components["schemas"]["Entry"][];
             /** @description Team that owns this entity */
             readonly team?: components["schemas"]["TeamSummary"] | null;
-            /** @description Type of the entry (should be 'entity') */
-            type: string;
-            /** @description Subtype for the entity */
+            /**
+             * @description Entity or artifact
+             *
+             *     * `entity` - Entity
+             *     * `artifact` - Artifact
+             */
+            type: components["schemas"]["EntryTypeEnum"];
+            /** @description Unique identifier (e.g. ip/address) */
             subtype: string;
+            /**
+             * @description Validation format: regex or options.
+             *
+             *     * `regex` - Regex
+             *     * `options` - Options
+             */
+            format?: components["schemas"]["EntryTypeFormatEnum"] | null;
+            /** @description Regex pattern for artifact validation */
+            regex?: string;
+            /** @description Regex for generating child entries from parent text */
+            generative_regex?: string;
+            /** @description Allowed values (alternative to regex) */
+            options?: string[];
+            /** @description Prefix for entity names (e.g. E- for cases) */
+            prefix?: string;
+            /** @description Hex color for UI display */
+            color?: string;
         };
         /** @description Request body for setting an entity's owning team. */
         EntityOwner: {
@@ -3019,9 +3099,34 @@ export interface components {
             readonly id?: number;
             /** @description Display name, validated by entry_class rules */
             name: string;
-            readonly entry_class?: components["schemas"]["EntryClassSerializerNoChildren"];
-            /** @description Subtype for the entry */
+            /**
+             * @description Entity or artifact
+             *
+             *     * `entity` - Entity
+             *     * `artifact` - Artifact
+             */
+            type: components["schemas"]["EntryTypeEnum"];
+            /** @description Unique identifier (e.g. ip/address) */
             subtype: string;
+            /** @description Human-readable description of this entry class */
+            description?: string | null;
+            /**
+             * @description Validation format: regex or options.
+             *
+             *     * `regex` - Regex
+             *     * `options` - Options
+             */
+            format?: components["schemas"]["EntryTypeFormatEnum"] | null;
+            /** @description Regex pattern for artifact validation */
+            regex?: string;
+            /** @description Regex for generating child entries from parent text */
+            generative_regex?: string;
+            /** @description Allowed values (alternative to regex) */
+            options?: string[];
+            /** @description Prefix for entity names (e.g. E- for cases) */
+            prefix?: string;
+            /** @description Hex color for UI display */
+            color?: string;
         };
         /** @description Full entry class with its children (read) and child_subtypes (write). */
         EntryClass: {
@@ -3036,16 +3141,6 @@ export interface components {
             subtype: string;
             /** @description Human-readable description of this entry class */
             description?: string | null;
-            /** @description Regex for generating child entries from parent text */
-            generative_regex?: string;
-            /** @description Regex pattern for artifact validation */
-            regex?: string;
-            /** @description Allowed values (alternative to regex) */
-            options?: string[];
-            /** @description Prefix for entity names (e.g. E- for cases) */
-            prefix?: string;
-            /** @description Hex color for UI display */
-            color?: string;
             /**
              * @description Validation format: regex or options.
              *
@@ -3053,9 +3148,21 @@ export interface components {
              *     * `options` - Options
              */
             format?: components["schemas"]["EntryTypeFormatEnum"] | null;
-            readonly children?: {
-                [key: string]: unknown;
-            }[];
+            /** @description Regex pattern for artifact validation */
+            regex?: string;
+            /** @description Regex for generating child entries from parent text */
+            generative_regex?: string;
+            /** @description Allowed values (alternative to regex) */
+            options?: string[];
+            /** @description Prefix for entity names (e.g. E- for cases) */
+            prefix?: string;
+            /** @description Hex color for UI display */
+            color?: string;
+            readonly children?: components["schemas"]["EntryClassSerializerNoChildren"][];
+            /** @description Teams this entity type is reserved for, limited to the teams the requester may see */
+            readonly teams?: components["schemas"]["TeamSummary"][];
+            /** @description Whether this entity type is reserved for teams; if not, any team may use it */
+            readonly is_team?: boolean;
         };
         /** @description Full entry class with its children (read) and child_subtypes (write). */
         EntryClassRequest: {
@@ -3070,10 +3177,17 @@ export interface components {
             subtype: string;
             /** @description Human-readable description of this entry class */
             description?: string | null;
-            /** @description Regex for generating child entries from parent text */
-            generative_regex?: string;
+            /**
+             * @description Validation format: regex or options.
+             *
+             *     * `regex` - Regex
+             *     * `options` - Options
+             */
+            format?: components["schemas"]["EntryTypeFormatEnum"] | null;
             /** @description Regex pattern for artifact validation */
             regex?: string;
+            /** @description Regex for generating child entries from parent text */
+            generative_regex?: string;
             /** @description Allowed values (alternative to regex) */
             options?: string[];
             /** @description Prefix for entity names (e.g. E- for cases) */
@@ -3082,13 +3196,8 @@ export interface components {
             color?: string;
             /** @description Subtypes of the child entry classes */
             child_subtypes?: string[];
-            /**
-             * @description Validation format: regex or options.
-             *
-             *     * `regex` - Regex
-             *     * `options` - Options
-             */
-            format?: components["schemas"]["EntryTypeFormatEnum"] | null;
+            /** @description Teams this entity type is reserved for; only admins and their leads may create such entities */
+            team_ids?: string[];
         };
         /** @description Entry class with entry count (admin only, capped at 100). */
         EntryClassSerializerCount: {
@@ -3103,19 +3212,28 @@ export interface components {
             subtype: string;
             /** @description Human-readable description of this entry class */
             description?: string | null;
-            /** @description Regex for generating child entries from parent text */
-            generative_regex?: string;
+            /**
+             * @description Validation format: regex or options.
+             *
+             *     * `regex` - Regex
+             *     * `options` - Options
+             */
+            format?: components["schemas"]["EntryTypeFormatEnum"] | null;
             /** @description Regex pattern for artifact validation */
             regex?: string;
+            /** @description Regex for generating child entries from parent text */
+            generative_regex?: string;
             /** @description Allowed values (alternative to regex) */
             options?: string[];
             /** @description Prefix for entity names (e.g. E- for cases) */
             prefix?: string;
             /** @description Hex color for UI display */
             color?: string;
-            readonly children?: {
-                [key: string]: unknown;
-            }[];
+            readonly children?: components["schemas"]["EntryClassSerializerNoChildren"][];
+            /** @description Teams this entity type is reserved for, limited to the teams the requester may see */
+            readonly teams?: components["schemas"]["TeamSummary"][];
+            /** @description Whether this entity type is reserved for teams; if not, any team may use it */
+            readonly is_team?: boolean;
             readonly count?: number;
         };
         /** @description Minimal entry class: type, subtype, color. */
@@ -3145,16 +3263,6 @@ export interface components {
             subtype: string;
             /** @description Human-readable description of this entry class */
             description?: string | null;
-            /** @description Regex for generating child entries from parent text */
-            generative_regex?: string;
-            /** @description Regex pattern for artifact validation */
-            regex?: string;
-            /** @description Allowed values (alternative to regex) */
-            options?: string[];
-            /** @description Prefix for entity names (e.g. E- for cases) */
-            prefix?: string;
-            /** @description Hex color for UI display */
-            color?: string;
             /**
              * @description Validation format: regex or options.
              *
@@ -3162,6 +3270,16 @@ export interface components {
              *     * `options` - Options
              */
             format?: components["schemas"]["EntryTypeFormatEnum"] | null;
+            /** @description Regex pattern for artifact validation */
+            regex?: string;
+            /** @description Regex for generating child entries from parent text */
+            generative_regex?: string;
+            /** @description Allowed values (alternative to regex) */
+            options?: string[];
+            /** @description Prefix for entity names (e.g. E- for cases) */
+            prefix?: string;
+            /** @description Hex color for UI display */
+            color?: string;
         };
         /** @description Entry class without children relation (for nesting in entry serializers). */
         EntryClassSerializerNoChildrenRequest: {
@@ -3176,16 +3294,6 @@ export interface components {
             subtype: string;
             /** @description Human-readable description of this entry class */
             description?: string | null;
-            /** @description Regex for generating child entries from parent text */
-            generative_regex?: string;
-            /** @description Regex pattern for artifact validation */
-            regex?: string;
-            /** @description Allowed values (alternative to regex) */
-            options?: string[];
-            /** @description Prefix for entity names (e.g. E- for cases) */
-            prefix?: string;
-            /** @description Hex color for UI display */
-            color?: string;
             /**
              * @description Validation format: regex or options.
              *
@@ -3193,6 +3301,81 @@ export interface components {
              *     * `options` - Options
              */
             format?: components["schemas"]["EntryTypeFormatEnum"] | null;
+            /** @description Regex pattern for artifact validation */
+            regex?: string;
+            /** @description Regex for generating child entries from parent text */
+            generative_regex?: string;
+            /** @description Allowed values (alternative to regex) */
+            options?: string[];
+            /** @description Prefix for entity names (e.g. E- for cases) */
+            prefix?: string;
+            /** @description Hex color for UI display */
+            color?: string;
+        };
+        /** @description Entry class without its team reservation, for nesting in entries, enricher settings and reports. */
+        EntryClassSerializerNoTeams: {
+            /**
+             * @description Entity or artifact
+             *
+             *     * `entity` - Entity
+             *     * `artifact` - Artifact
+             */
+            type: components["schemas"]["EntryTypeEnum"];
+            /** @description Unique identifier (e.g. ip/address) */
+            subtype: string;
+            /** @description Human-readable description of this entry class */
+            description?: string | null;
+            /**
+             * @description Validation format: regex or options.
+             *
+             *     * `regex` - Regex
+             *     * `options` - Options
+             */
+            format?: components["schemas"]["EntryTypeFormatEnum"] | null;
+            /** @description Regex pattern for artifact validation */
+            regex?: string;
+            /** @description Regex for generating child entries from parent text */
+            generative_regex?: string;
+            /** @description Allowed values (alternative to regex) */
+            options?: string[];
+            /** @description Prefix for entity names (e.g. E- for cases) */
+            prefix?: string;
+            /** @description Hex color for UI display */
+            color?: string;
+            readonly children?: components["schemas"]["EntryClassSerializerNoChildren"][];
+        };
+        /** @description Entry class without its team reservation, for nesting in entries, enricher settings and reports. */
+        EntryClassSerializerNoTeamsRequest: {
+            /**
+             * @description Entity or artifact
+             *
+             *     * `entity` - Entity
+             *     * `artifact` - Artifact
+             */
+            type: components["schemas"]["EntryTypeEnum"];
+            /** @description Unique identifier (e.g. ip/address) */
+            subtype: string;
+            /** @description Human-readable description of this entry class */
+            description?: string | null;
+            /**
+             * @description Validation format: regex or options.
+             *
+             *     * `regex` - Regex
+             *     * `options` - Options
+             */
+            format?: components["schemas"]["EntryTypeFormatEnum"] | null;
+            /** @description Regex pattern for artifact validation */
+            regex?: string;
+            /** @description Regex for generating child entries from parent text */
+            generative_regex?: string;
+            /** @description Allowed values (alternative to regex) */
+            options?: string[];
+            /** @description Prefix for entity names (e.g. E- for cases) */
+            prefix?: string;
+            /** @description Hex color for UI display */
+            color?: string;
+            /** @description Subtypes of the child entry classes */
+            child_subtypes?: string[];
         };
         /**
          * EntryCompressedTreeObjectValue
@@ -3241,34 +3424,88 @@ export interface components {
             readonly id?: number;
             /** @description Display name, validated by entry_class rules */
             name: string;
-            /** @description Description of the entry */
             description?: string | null;
-            /** @description Type of the entry (e.g., entity, artifact) */
-            type: string;
-            /** @description Subtype for the entry */
+            /**
+             * @description Entity or artifact
+             *
+             *     * `entity` - Entity
+             *     * `artifact` - Artifact
+             */
+            type: components["schemas"]["EntryTypeEnum"];
+            /** @description Unique identifier (e.g. ip/address) */
             subtype: string;
-            /** @description Color associated with the entry class */
-            color?: string | null;
+            /**
+             * @description Validation format: regex or options.
+             *
+             *     * `regex` - Regex
+             *     * `options` - Options
+             */
+            format?: components["schemas"]["EntryTypeFormatEnum"] | null;
+            /** @description Regex pattern for artifact validation */
+            regex?: string;
+            /** @description Regex for generating child entries from parent text */
+            generative_regex?: string;
+            /** @description Allowed values (alternative to regex) */
+            options?: string[];
+            /** @description Prefix for entity names (e.g. E- for cases) */
+            prefix?: string;
+            /** @description Hex color for UI display */
+            color?: string;
+            readonly children?: components["schemas"]["EntryClassSerializerNoChildren"][];
         };
         /** @description Minimal entry: id, name, entry_class (flattened). */
         EntrySerializerMinimal: {
             readonly id?: number;
             /** @description Display name, validated by entry_class rules */
             name: string;
-            readonly entry_class?: components["schemas"]["EntryClassSerializerMinimal"];
-            type?: string;
-            subtype?: string;
+            /**
+             * @description Entity or artifact
+             *
+             *     * `entity` - Entity
+             *     * `artifact` - Artifact
+             */
+            type: components["schemas"]["EntryTypeEnum"];
+            /** @description Unique identifier (e.g. ip/address) */
+            subtype: string;
+            /** @description Hex color for UI display */
             color?: string;
         };
         EntryTypesCompressedTree: string[];
-        /** @description Entry with flattened entry_class for create/update. */
+        /** @description Entry with graph traversal depth. Output is flattened (type, subtype, color at top level). */
         EntryWithDepth: {
             readonly id?: number;
             /** @description Display name, validated by entry_class rules */
             name: string;
-            readonly entry_class?: components["schemas"]["EntryClassSerializerNoChildren"];
-            /** @description Subtype for the entry */
+            /** @description Hops from source in graph traversal */
+            readonly depth?: number;
+            /**
+             * @description Entity or artifact
+             *
+             *     * `entity` - Entity
+             *     * `artifact` - Artifact
+             */
+            type: components["schemas"]["EntryTypeEnum"];
+            /** @description Unique identifier (e.g. ip/address) */
             subtype: string;
+            /** @description Human-readable description of this entry class */
+            description?: string | null;
+            /**
+             * @description Validation format: regex or options.
+             *
+             *     * `regex` - Regex
+             *     * `options` - Options
+             */
+            format?: components["schemas"]["EntryTypeFormatEnum"] | null;
+            /** @description Regex pattern for artifact validation */
+            regex?: string;
+            /** @description Regex for generating child entries from parent text */
+            generative_regex?: string;
+            /** @description Allowed values (alternative to regex) */
+            options?: string[];
+            /** @description Prefix for entity names (e.g. E- for cases) */
+            prefix?: string;
+            /** @description Hex color for UI display */
+            color?: string;
         };
         /** @description Minimal user serializer (id, username) for nested references. */
         EssentialUserRetrieve: {
@@ -3290,11 +3527,6 @@ export interface components {
              */
             readonly id?: string;
             /**
-             * Format: date-time
-             * @description When the event was recorded
-             */
-            readonly created_at?: string;
-            /**
              * @description Event type (create, edit, delete, fetch, login)
              *
              *     * `create` - Create
@@ -3304,7 +3536,6 @@ export interface components {
              *     * `login` - Login
              */
             type: components["schemas"]["EventTypeEnum"];
-            user: components["schemas"]["EssentialUserRetrieve"];
             /** @description Optional extra context: a diff-match-patch patch for note create/edit events, otherwise free text (some events store a JSON string) */
             details?: string | null;
             readonly src_log?: {
@@ -3313,6 +3544,12 @@ export interface components {
             readonly content_type?: string;
             /** @description Primary key of the content object */
             readonly object_id?: string;
+            user: components["schemas"]["EssentialUserRetrieve"];
+            /**
+             * Format: date-time
+             * @description When the event was recorded
+             */
+            readonly created_at?: string;
             readonly object_repr?: string;
         };
         /** @description File metadata for the file dashboard. */
@@ -3322,23 +3559,23 @@ export interface components {
              * @description Unique identifier for the file reference
              */
             readonly id?: string;
+            /** @description Original filename for display and download */
+            readonly name?: string | null;
             /** @description MIME type detected from file content */
             readonly mime_type?: string | null;
             /** @description File size in bytes */
             readonly size?: number | null;
-            /** @description Original filename for display and download */
-            readonly name?: string | null;
-            /**
-             * Format: date-time
-             * @description When the file was first uploaded
-             */
-            readonly created_at?: string;
             /** @description MD5 hash of file contents */
             readonly md5?: string | null;
             /** @description SHA-1 hash of file contents */
             readonly sha1?: string | null;
             /** @description SHA-256 hash of file contents */
             readonly sha256?: string | null;
+            /**
+             * Format: date-time
+             * @description When the file was first uploaded
+             */
+            readonly created_at?: string;
         };
         /** @description Response serializer for file download. */
         FileDownload: {
@@ -3357,28 +3594,30 @@ export interface components {
              * @description File reference UUID
              */
             id: string;
-            /** @description MIME type of the file */
-            mime_type: string;
             /** @description Original filename */
             name: string;
-            /**
-             * Format: date-time
-             * @description When the file was uploaded
-             */
-            created_at: string;
-            /**
-             * Format: uuid
-             * @description Note UUID the file is attached to
-             */
-            note_id: string | null;
+            /** @description MIME type of the file */
+            mime_type: string;
+            /** @description File size in bytes */
+            size: number | null;
             /** @description MD5 hash of file contents */
             md5: string | null;
             /** @description SHA-1 hash of file contents */
             sha1: string | null;
             /** @description SHA-256 hash of file contents */
             sha256: string | null;
+            /**
+             * Format: uuid
+             * @description Note UUID the file is attached to
+             */
+            note_id: string | null;
             /** @description Entities linked to this file */
             entities: components["schemas"]["OptimizedEntryResponse"][];
+            /**
+             * Format: date-time
+             * @description When the file was uploaded
+             */
+            created_at: string;
         };
         /** @description File reference with note_id and entities for list views. */
         FileReferenceWithNote: {
@@ -3387,26 +3626,26 @@ export interface components {
              * @description Unique identifier for the file reference
              */
             readonly id?: string;
-            /** @description MIME type detected from file content */
-            readonly mime_type?: string | null;
-            readonly entities?: components["schemas"]["OptimizedEntryResponse"][];
-            /** @description File size in bytes */
-            readonly size?: number | null;
             /** @description Original filename for display and download */
             readonly name?: string | null;
-            /**
-             * Format: date-time
-             * @description When the file was first uploaded
-             */
-            readonly created_at?: string;
-            /** Format: uuid */
-            readonly note_id?: string | null;
+            /** @description MIME type detected from file content */
+            readonly mime_type?: string | null;
+            /** @description File size in bytes */
+            readonly size?: number | null;
             /** @description MD5 hash of file contents */
             readonly md5?: string | null;
             /** @description SHA-1 hash of file contents */
             readonly sha1?: string | null;
             /** @description SHA-256 hash of file contents */
             readonly sha256?: string | null;
+            /** Format: uuid */
+            readonly note_id?: string | null;
+            readonly entities?: components["schemas"]["OptimizedEntryResponse"][];
+            /**
+             * Format: date-time
+             * @description When the file was first uploaded
+             */
+            readonly created_at?: string;
         };
         /** @description Request serializer for finalizing file upload. */
         FileUploadFinalizeRequest: {
@@ -3459,6 +3698,10 @@ export interface components {
              * @description Unique identifier for the note.
              */
             readonly id?: string;
+            /** @description Note title from metadata or first heading. */
+            title?: string;
+            /** @description Note description from metadata or first paragraph. */
+            description?: string;
             /** @description Note body. Uses default template if empty. */
             content?: string;
             /**
@@ -3466,19 +3709,15 @@ export interface components {
              * @description When the note was created.
              */
             readonly created_at?: string;
-            /** @description Note title from metadata or first heading. */
-            title?: string;
-            /** @description Note description from metadata or first paragraph. */
-            description?: string;
         };
         /** @description Serializer for fleeting notes; bypasses processing pipeline for quick note taking. */
         FleetingNoteRequest: {
-            /** @description Note body. Uses default template if empty. */
-            content?: string;
             /** @description Note title from metadata or first heading. */
             title?: string;
             /** @description Note description from metadata or first paragraph. */
             description?: string;
+            /** @description Note body. Uses default template if empty. */
+            content?: string;
         };
         /** @description Serializer for graph inaccessible response. */
         GraphInaccessibleResponse: {
@@ -3539,25 +3778,11 @@ export interface components {
         MessageNotification: {
             /** Format: uuid */
             readonly id?: string;
-            /** @description Human-readable notification text. */
-            message: string;
-            /** @description Whether the notification is unread: not yet seen, or marked unread by the user. */
-            readonly is_unread?: boolean;
-            /**
-             * Format: date-time
-             * @description When the notification was created.
-             */
-            readonly created_at?: string;
             /**
              * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             type: "message_notification";
-        };
-        /** @description Serializer for new user registration notifications. */
-        NewUserNotification: {
-            /** Format: uuid */
-            readonly id?: string;
             /** @description Human-readable notification text. */
             message: string;
             /** @description Whether the notification is unread: not yet seen, or marked unread by the user. */
@@ -3567,13 +3792,27 @@ export interface components {
              * @description When the notification was created.
              */
             readonly created_at?: string;
-            /** @description The newly registered user. */
-            new_user: components["schemas"]["EssentialUserRetrieve"];
+        };
+        /** @description Serializer for new user registration notifications. */
+        NewUserNotification: {
+            /** Format: uuid */
+            readonly id?: string;
             /**
              * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
              * @enum {string}
              */
             type: "new_user_notification";
+            /** @description Human-readable notification text. */
+            message: string;
+            /** @description Whether the notification is unread: not yet seen, or marked unread by the user. */
+            readonly is_unread?: boolean;
+            /** @description The newly registered user. */
+            new_user: components["schemas"]["EssentialUserRetrieve"];
+            /**
+             * Format: date-time
+             * @description When the notification was created.
+             */
+            readonly created_at?: string;
         };
         /** @description Serializer for the next available name response. */
         NextNameResponse: {
@@ -3586,6 +3825,12 @@ export interface components {
              * @description Note UUID
              */
             readonly id?: string;
+            /** @description Note title */
+            readonly title?: string;
+            /** @description Note description */
+            readonly description?: string;
+            /** @description May be truncated based on truncate param */
+            readonly content?: string;
             /** @description Whether the note is fleeting (quick capture) */
             readonly fleeting?: boolean;
             /** @description Processing status */
@@ -3597,19 +3842,23 @@ export interface components {
              * @description When status was set
              */
             readonly status_changed_at?: string | null;
-            /** @description May be truncated based on truncate param */
-            readonly content?: string;
-            /** @description Note title */
-            readonly title?: string;
-            /** @description Note description */
-            readonly description?: string;
             /** @description Extracted metadata from content */
             readonly metadata?: unknown;
+            /** @description Entities referenced in the note */
+            readonly entities?: components["schemas"]["OptimizedEntryResponse"][];
+            /** @description Entry class subtypes in the note */
+            readonly entry_classes?: string[];
+            /** @description Files attached to the note */
+            readonly files?: components["schemas"]["FileReferenceInNoteList"][];
+            /** @description Who created the note */
+            readonly created_by?: components["schemas"]["EssentialUserRetrieve"] | null;
             /**
              * Format: date-time
              * @description When the note was created
              */
             readonly created_at?: string;
+            /** @description Who last edited the note */
+            readonly updated_by?: components["schemas"]["EssentialUserRetrieve"] | null;
             /**
              * Format: date-time
              * @description When the note was last edited
@@ -3620,16 +3869,6 @@ export interface components {
              * @description When entries were last linked
              */
             readonly linked_at?: string | null;
-            /** @description Who created the note */
-            readonly created_by?: components["schemas"]["EssentialUserRetrieve"] | null;
-            /** @description Who last edited the note */
-            readonly updated_by?: components["schemas"]["EssentialUserRetrieve"] | null;
-            /** @description Entities referenced in the note */
-            readonly entities?: components["schemas"]["OptimizedEntryResponse"][];
-            /** @description Entry class subtypes in the note */
-            readonly entry_classes?: string[];
-            /** @description Files attached to the note */
-            readonly files?: components["schemas"]["FileReferenceInNoteList"][];
             /**
              * @description The user can access this note.
              * @enum {boolean}
@@ -3658,7 +3897,14 @@ export interface components {
              * @description Unique identifier for the note.
              */
             readonly id?: string;
-            readonly entities?: components["schemas"]["OptimizedEntryResponse"][];
+            /** @description Note title from metadata or first heading. */
+            title?: string;
+            /** @description Note description from metadata or first paragraph. */
+            description?: string;
+            /** @description Markdown content with cradle links. */
+            content: string;
+            /** @description SHA-256 of the full content; send as base_content_hash when editing. */
+            readonly content_hash?: string;
             /** @description If true, note bypasses entity/entry validation (quick notes). */
             fleeting?: boolean;
             /**
@@ -3672,46 +3918,130 @@ export interface components {
             status?: components["schemas"]["NoteStatusEnum"];
             /** @description Message describing status (e.g. validation error). */
             status_message?: string;
+            /** @description Problem links behind an invalid status. */
+            readonly status_issues?: components["schemas"]["NoteStatusIssue"][];
             /**
              * Format: date-time
              * @description When the status was last updated.
              */
             readonly status_changed_at?: string | null;
-            /** @description Markdown content with cradle links. */
-            content: string;
-            /** @description Note title from metadata or first heading. */
-            title?: string;
-            /** @description Note description from metadata or first paragraph. */
-            description?: string;
             /** @description Additional metadata from frontmatter. */
             metadata?: unknown;
+            readonly entities?: components["schemas"]["OptimizedEntryResponse"][];
+            /** @description Entry class subtypes in the note. */
+            entry_classes: components["schemas"]["EntryTypesCompressedTree"];
+            files: components["schemas"]["FileReferenceWithNote"][];
+            /** @description none: no access; read: view only; read-write: edit, save, upload files to, and delete. */
+            readonly permission?: components["schemas"]["AccessTypeEnum"];
+            /** @description Who created the note. */
+            readonly created_by?: components["schemas"]["EssentialUserRetrieve"] | null;
             /**
              * Format: date-time
              * @description When the note was created.
              */
             readonly created_at?: string;
-            /** @description Who created the note. */
-            readonly created_by?: components["schemas"]["EssentialUserRetrieve"] | null;
-            entries: components["schemas"]["EntryTypesCompressedTree"];
+            /** @description Who last edited the note. */
+            readonly updated_by?: components["schemas"]["EssentialUserRetrieve"] | null;
             /**
              * Format: date-time
              * @description When the note was last edited.
              */
             readonly updated_at?: string | null;
-            /** @description Who last edited the note. */
-            readonly updated_by?: components["schemas"]["EssentialUserRetrieve"] | null;
             /**
              * Format: date-time
              * @description When relations were last computed from this note.
              */
             readonly linked_at?: string | null;
-            files: components["schemas"]["FileReferenceWithNote"][];
-            /** @description none: no access; read: view only; read-write: edit, save, upload files to, and delete. */
-            readonly permission?: components["schemas"]["AccessTypeEnum"];
-            /** @description SHA-256 of the full content; send as base_content_hash when editing. */
-            readonly content_hash?: string;
         };
-        Notification: components["schemas"]["MessageNotification"] | components["schemas"]["AccessGrantedNotification"] | components["schemas"]["NewUserNotification"] | components["schemas"]["AccessRequestNotification"] | components["schemas"]["TeamMembershipNotification"] | components["schemas"]["ReportRenderNotification"] | components["schemas"]["ReportProcessingErrorNotification"] | components["schemas"]["EnrichmentCompleteNotification"] | components["schemas"]["EnrichmentErrorNotification"];
+        /** @description A user a fleeting note is shared with. */
+        NoteShare: {
+            /** @description User the note is shared with */
+            user: components["schemas"]["EssentialUserRetrieve"];
+            /**
+             * @description Permission level on the note: read or read-write
+             *
+             *     * `none` - No access
+             *     * `read` - Read access
+             *     * `read-write` - Read-write access
+             */
+            access_type?: components["schemas"]["AccessTypeEnum"];
+            /**
+             * Format: date-time
+             * @description When the note was shared with the user.
+             */
+            readonly created_at?: string;
+        };
+        /** @description A user a fleeting note can be shared with. */
+        NoteShareCandidate: {
+            /** Format: uuid */
+            readonly id?: string;
+            /** @description Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only. */
+            username: string;
+        };
+        /** @description Request body for sharing a fleeting note with a user; ``none`` stops sharing it. */
+        NoteShareUpdate: {
+            /**
+             * @description Access to give the user: none (stop sharing), read or read-write
+             *
+             *     * `none` - No access
+             *     * `read` - Read access
+             *     * `read-write` - Read-write access
+             */
+            access_type: components["schemas"]["AccessTypeEnum"];
+        };
+        /** @description Request body for sharing a fleeting note with a user; ``none`` stops sharing it. */
+        NoteShareUpdateRequest: {
+            /**
+             * @description Access to give the user: none (stop sharing), read or read-write
+             *
+             *     * `none` - No access
+             *     * `read` - Read access
+             *     * `read-write` - Read-write access
+             */
+            access_type: components["schemas"]["AccessTypeEnum"];
+        };
+        /** @description Serializer for note shared notifications. */
+        NoteSharedNotification: {
+            /** Format: uuid */
+            readonly id?: string;
+            /**
+             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "note_shared_notification";
+            /** @description Human-readable notification text. */
+            message: string;
+            /** @description Whether the notification is unread: not yet seen, or marked unread by the user. */
+            readonly is_unread?: boolean;
+            /**
+             * Format: uuid
+             * @description ID of the note shared with the user.
+             */
+            note_id: string;
+            /**
+             * Format: date-time
+             * @description When the notification was created.
+             */
+            readonly created_at?: string;
+        };
+        /** @description A problem link behind an invalid note status. */
+        NoteStatusIssue: {
+            /**
+             * @description What is wrong.
+             *
+             *     * `not_allowed` - not_allowed
+             *     * `unknown_type` - unknown_type
+             *     * `missing_entry` - missing_entry
+             *     * `invalid_value` - invalid_value
+             * @enum {string}
+             */
+            code: "not_allowed" | "unknown_type" | "missing_entry" | "invalid_value";
+            /** @description Entry type of the link. */
+            key: string;
+            /** @description Linked value; null when every link of the type is. */
+            value: string | null;
+        };
+        Notification: components["schemas"]["MessageNotification"] | components["schemas"]["AccessGrantedNotification"] | components["schemas"]["NewUserNotification"] | components["schemas"]["AccessRequestNotification"] | components["schemas"]["TeamMembershipNotification"] | components["schemas"]["NoteSharedNotification"] | components["schemas"]["ReportRenderNotification"] | components["schemas"]["ReportProcessingErrorNotification"] | components["schemas"]["EnrichmentCompleteNotification"] | components["schemas"]["EnrichmentErrorNotification"];
         /** @description Serializer for OAuth connect/login. Validates redirect_uri against whitelist. */
         OAuthConnectRequest: {
             /** @description OAuth provider ID (e.g. google, github) */
@@ -3841,6 +4171,15 @@ export interface components {
             total_pages: number;
             results: components["schemas"]["NoteListResponse"][];
         };
+        PaginatedNoteShareCandidateSerializerResponse: {
+            /** @description Current page number */
+            page: number;
+            /** @description Total number of items */
+            count: number;
+            /** @description Total number of pages */
+            total_pages: number;
+            results: components["schemas"]["NoteShareCandidate"][];
+        };
         PaginatedNotificationResponse: {
             /** @description Current page number */
             page: number;
@@ -3948,6 +4287,24 @@ export interface components {
              */
             total_pages: number;
             results: components["schemas"]["PaginatedEventLogSerializerResponse"][];
+        };
+        PaginatedPaginatedNoteShareCandidateSerializerResponseList: {
+            /**
+             * @description Current page number
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Total number of items
+             * @example 100
+             */
+            count: number;
+            /**
+             * @description Total number of pages
+             * @example 10
+             */
+            total_pages: number;
+            results: components["schemas"]["PaginatedNoteShareCandidateSerializerResponse"][];
         };
         PaginatedPaginatedTeamAccessSerializerResponseList: {
             /**
@@ -4214,8 +4571,6 @@ export interface components {
             email?: string;
             /** @description Whether to enable Vim keybindings in the editor */
             vim_mode?: boolean;
-            /** @description UI theme settings (JSON object) */
-            theme?: unknown;
             /**
              * @description User role for access control
              *
@@ -4228,11 +4583,6 @@ export interface components {
             email_confirmed?: boolean;
             /** @description Whether the user can log in */
             is_active?: boolean;
-            /**
-             * Format: int64
-             * @description File upload limit in bytes
-             */
-            file_upload_limit_override?: number | null;
         };
         /** @description Input serializer for creating a new published report. */
         PublishReportRequest: {
@@ -4298,16 +4648,6 @@ export interface components {
             /** @description Destination entry */
             readonly dst?: components["schemas"]["EntrySerializerMinimal"];
             /**
-             * Format: date-time
-             * @description Creation timestamp
-             */
-            readonly created_at?: string;
-            /**
-             * Format: date-time
-             * @description Last observation
-             */
-            readonly last_seen_at?: string;
-            /**
              * @description Why the relation exists
              *
              *     * `digest` - Digest
@@ -4319,6 +4659,11 @@ export interface components {
             reason: components["schemas"]["RelationReasonEnum"];
             /** @description Additional relation metadata */
             details?: unknown;
+            /**
+             * Format: date-time
+             * @description Creation timestamp
+             */
+            readonly created_at?: string;
         };
         /** @description Detailed serializer for Relation with attachments. */
         RelationDetail: {
@@ -4328,16 +4673,6 @@ export interface components {
             readonly src?: components["schemas"]["EntrySerializerMinimal"];
             /** @description Destination entry */
             readonly dst?: components["schemas"]["EntrySerializerMinimal"];
-            /**
-             * Format: date-time
-             * @description Creation timestamp
-             */
-            readonly created_at?: string;
-            /**
-             * Format: date-time
-             * @description Last observation
-             */
-            readonly last_seen_at?: string;
             /**
              * @description Why this relation exists (digest, enrichment, contains, etc.)
              *
@@ -4355,6 +4690,11 @@ export interface components {
             /** @description Whether this relation is virtual (e.g. alias) */
             virtual?: boolean;
             readonly attachments?: components["schemas"]["Attachment"][];
+            /**
+             * Format: date-time
+             * @description Creation timestamp
+             */
+            readonly created_at?: string;
         };
         /** @description Serializer for full report details including presigned download URL and note IDs. */
         ReportDetail: {
@@ -4366,15 +4706,16 @@ export interface components {
             /** @description Display title of the report. */
             title?: string;
             /**
-             * @description Current publication status.
+             * @description Export format strategy.
              *
-             *     * `working` - Working
-             *     * `done` - Done
-             *     * `error` - Error
+             *     * `html` - HTML
+             *     * `plain` - Plain Text
+             *     * `json` - JSON
+             *     * `pdf` - PDF
              */
-            status?: components["schemas"]["ReportStatusEnum"];
-            /** @description Whether the report content has been anonymized. */
-            anonymized?: boolean;
+            strategy: components["schemas"]["DownloadStrategyEnum"];
+            /** @description Human-readable strategy name. */
+            readonly strategy_label?: string;
             /**
              * @description TLP sharing label shown on the report.
              *
@@ -4386,30 +4727,29 @@ export interface components {
              * @enum {string}
              */
             tlp?: "clear" | "green" | "amber" | "amber+strict" | "red";
+            /** @description Whether the report content has been anonymized. */
+            anonymized?: boolean;
+            /** @description IDs of notes included in the report. */
+            readonly note_ids?: string[];
+            /**
+             * @description Current publication status.
+             *
+             *     * `working` - Working
+             *     * `done` - Done
+             *     * `error` - Error
+             */
+            status?: components["schemas"]["ReportStatusEnum"];
+            /** @description Error details when status is error. */
+            error_message?: string | null;
+            /** @description Presigned URL to download the report file. */
+            readonly report_url?: string | null;
+            /** @description Additional strategy-specific metadata. */
+            extra_data?: unknown;
             /**
              * Format: date-time
              * @description When the report was created.
              */
             readonly created_at?: string;
-            /**
-             * @description Export format strategy.
-             *
-             *     * `html` - HTML
-             *     * `plain` - Plain Text
-             *     * `json` - JSON
-             *     * `pdf` - PDF
-             */
-            strategy: components["schemas"]["DownloadStrategyEnum"];
-            /** @description Human-readable strategy name. */
-            readonly strategy_label?: string;
-            /** @description Presigned URL to download the report file. */
-            readonly report_url?: string | null;
-            /** @description Error details when status is error. */
-            error_message?: string | null;
-            /** @description IDs of notes included in the report. */
-            readonly note_ids?: string[];
-            /** @description Additional strategy-specific metadata. */
-            extra_data?: unknown;
         };
         /** @description Serializer for report list items (summary view, no report_url or note_ids). */
         ReportList: {
@@ -4421,15 +4761,16 @@ export interface components {
             /** @description Display title of the report. */
             title?: string;
             /**
-             * @description Current publication status.
+             * @description Export format strategy.
              *
-             *     * `working` - Working
-             *     * `done` - Done
-             *     * `error` - Error
+             *     * `html` - HTML
+             *     * `plain` - Plain Text
+             *     * `json` - JSON
+             *     * `pdf` - PDF
              */
-            status?: components["schemas"]["ReportStatusEnum"];
-            /** @description Whether the report content has been anonymized. */
-            anonymized?: boolean;
+            strategy: components["schemas"]["DownloadStrategyEnum"];
+            /** @description Human-readable strategy name. */
+            readonly strategy_label?: string;
             /**
              * @description TLP sharing label shown on the report.
              *
@@ -4441,26 +4782,25 @@ export interface components {
              * @enum {string}
              */
             tlp?: "clear" | "green" | "amber" | "amber+strict" | "red";
+            /** @description Whether the report content has been anonymized. */
+            anonymized?: boolean;
+            /**
+             * @description Current publication status.
+             *
+             *     * `working` - Working
+             *     * `done` - Done
+             *     * `error` - Error
+             */
+            status?: components["schemas"]["ReportStatusEnum"];
+            /** @description Error details when status is error. */
+            error_message?: string | null;
+            /** @description Additional strategy-specific metadata. */
+            extra_data?: unknown;
             /**
              * Format: date-time
              * @description When the report was created.
              */
             readonly created_at?: string;
-            /**
-             * @description Export format strategy.
-             *
-             *     * `html` - HTML
-             *     * `plain` - Plain Text
-             *     * `json` - JSON
-             *     * `pdf` - PDF
-             */
-            strategy: components["schemas"]["DownloadStrategyEnum"];
-            /** @description Human-readable strategy name. */
-            readonly strategy_label?: string;
-            /** @description Error details when status is error. */
-            error_message?: string | null;
-            /** @description Additional strategy-specific metadata. */
-            extra_data?: unknown;
         };
         ReportListPaginatedResponse: {
             /** @description Current page number */
@@ -4475,15 +4815,15 @@ export interface components {
         ReportProcessingErrorNotification: {
             /** Format: uuid */
             readonly id?: string;
+            /**
+             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "report_processing_error_notification";
             /** @description Human-readable notification text. */
             message: string;
             /** @description Whether the notification is unread: not yet seen, or marked unread by the user. */
             readonly is_unread?: boolean;
-            /**
-             * Format: date-time
-             * @description When the notification was created.
-             */
-            readonly created_at?: string;
             /**
              * Format: uuid
              * @description ID of the report that failed.
@@ -4492,34 +4832,34 @@ export interface components {
             /** @description Error details from the processing failure. */
             error_message?: string | null;
             /**
-             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
-             * @enum {string}
+             * Format: date-time
+             * @description When the notification was created.
              */
-            type: "report_processing_error_notification";
+            readonly created_at?: string;
         };
         /** @description Serializer for report ready notifications. */
         ReportRenderNotification: {
             /** Format: uuid */
             readonly id?: string;
+            /**
+             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "report_render_notification";
             /** @description Human-readable notification text. */
             message: string;
             /** @description Whether the notification is unread: not yet seen, or marked unread by the user. */
             readonly is_unread?: boolean;
-            /**
-             * Format: date-time
-             * @description When the notification was created.
-             */
-            readonly created_at?: string;
             /**
              * Format: uuid
              * @description ID of the published report.
              */
             report_id: string;
             /**
-             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
-             * @enum {string}
+             * Format: date-time
+             * @description When the notification was created.
              */
-            type: "report_render_notification";
+            readonly created_at?: string;
         };
         /** @description Serializer for access request validation. */
         RequestAccessRequest: {
@@ -4535,12 +4875,12 @@ export interface components {
              * @description Unique identifier.
              */
             readonly id?: string;
-            /** @description Who created the snippet; null for system snippets. */
-            readonly created_by?: components["schemas"]["EssentialUserRetrieve"] | null;
             /** @description Snippet name identifier */
             name: string;
             /** @description Snippet content (markdown or plain text) */
             content: string;
+            /** @description Who created the snippet; null for system snippets. */
+            readonly created_by?: components["schemas"]["EssentialUserRetrieve"] | null;
             /**
              * Format: date-time
              * @description When the snippet was created.
@@ -4696,25 +5036,25 @@ export interface components {
         TeamMembershipNotification: {
             /** Format: uuid */
             readonly id?: string;
+            /**
+             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
+             * @enum {string}
+             */
+            type: "team_membership_notification";
             /** @description Human-readable notification text. */
             message: string;
             /** @description Whether the notification is unread: not yet seen, or marked unread by the user. */
             readonly is_unread?: boolean;
-            /**
-             * Format: date-time
-             * @description When the notification was created.
-             */
-            readonly created_at?: string;
             /**
              * Format: uuid
              * @description ID of the team the user was added to.
              */
             team_id: string;
             /**
-             * @description Discriminator for polymorphic type. (enum property replaced by openapi-typescript)
-             * @enum {string}
+             * Format: date-time
+             * @description When the notification was created.
              */
-            type: "team_membership_notification";
+            readonly created_at?: string;
         };
         /** @description Team details plus the requester's relation to it. */
         TeamRequest: {
@@ -4744,13 +5084,13 @@ export interface components {
         };
         /** @description Response schema for token obtain and refresh endpoints; the tokens themselves are set as HttpOnly cookies. */
         TokenPairRetrieve: {
-            /** @description User role */
-            role: string;
             /**
              * Format: uuid
              * @description Signed-in user ID (sign-in only)
              */
             user_id?: string;
+            /** @description User role */
+            role: string;
             /**
              * Format: date-time
              * @description Access token expiry
@@ -4789,8 +5129,6 @@ export interface components {
             password: string;
             /** @description Whether to enable Vim keybindings in the editor */
             vim_mode?: boolean;
-            /** @description UI theme settings (JSON object) */
-            theme?: unknown;
         };
         /** @description Admin serializer for user creation/update. Skips password validation, allows role/status fields. */
         UserCreateSerializerAdminRequest: {
@@ -4805,8 +5143,6 @@ export interface components {
             password: string;
             /** @description Whether to enable Vim keybindings in the editor */
             vim_mode?: boolean;
-            /** @description UI theme settings (JSON object) */
-            theme?: unknown;
             /**
              * @description User role for access control
              *
@@ -4819,11 +5155,6 @@ export interface components {
             email_confirmed?: boolean;
             /** @description Whether the user can log in */
             is_active?: boolean;
-            /**
-             * Format: int64
-             * @description File upload limit in bytes
-             */
-            file_upload_limit_override?: number | null;
         };
         UserMeSessionsPaginatedResponse: {
             /** @description Current page number */
@@ -4834,7 +5165,7 @@ export interface components {
             total_pages: number;
             results: components["schemas"]["UserSession"][];
         };
-        /** @description Serializer for user detail response. Includes role, 2FA status, theme, OAuth connections. */
+        /** @description Serializer for user detail response. Includes role, 2FA status, OAuth connections. */
         UserRetrieve: {
             /** Format: uuid */
             readonly id?: string;
@@ -4845,6 +5176,8 @@ export interface components {
              * @description User email address (used for login)
              */
             email: string;
+            /** @description Whether the email address has been verified */
+            email_confirmed?: boolean;
             /**
              * @description User role for access control
              *
@@ -4853,27 +5186,18 @@ export interface components {
              *     * `author` - User
              */
             role?: components["schemas"]["UserRoleEnum"];
-            /** @description Whether 2FA is enabled for this account */
-            two_factor_enabled?: boolean;
             /** @description Whether the user can log in */
             is_active?: boolean;
-            /** @description Whether to enable Vim keybindings in the editor */
-            vim_mode?: boolean;
-            /** @description Whether the email address has been verified */
-            email_confirmed?: boolean;
-            /**
-             * Format: int64
-             * @description File upload limit in bytes
-             */
-            file_upload_limit_override?: number | null;
-            /** @description Theme settings to use in the UI */
-            theme?: unknown;
+            /** @description Return True if the user has a local password (vs OAuth-only). */
+            readonly has_password?: boolean;
+            /** @description Whether the user has a confirmed 2FA device */
+            readonly two_factor_enabled?: boolean;
             /** @description Return dict of provider -> connected for each configured OAuth provider. */
             readonly oauth_connections?: {
                 [key: string]: unknown;
             };
-            /** @description Return True if the user has a local password (vs OAuth-only). */
-            readonly has_password?: boolean;
+            /** @description Whether to enable Vim keybindings in the editor */
+            vim_mode?: boolean;
         };
         /** @description Serializer for user session information. */
         UserSession: {
@@ -14032,7 +14356,7 @@ export interface operations {
                 page_size?: number;
                 /** @description Only files whose note references these entry IDs */
                 references?: string[];
-                /** @description Free-text search over file name, mimetype and MD5/SHA1/SHA256 hashes. Supports the search syntax: terms/"phrases" (contains), =exact, wildcards (*.pdf), AND/OR, NOT/-term, parentheses. */
+                /** @description Free-text search over file name, MIME type and MD5/SHA1/SHA256 hashes. Supports the search syntax: terms/"phrases" (contains), =exact, wildcards (*.pdf), AND/OR, NOT/-term, parentheses. */
                 search?: string;
                 /** @description Filter files by status: 'healthy' (has sha256 hash) or 'warning' (missing sha256 hash) */
                 status?: "healthy" | "warning";
@@ -17769,7 +18093,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DigestUploadResponse"];
+                    "application/json": components["schemas"]["FileUploadResponse"];
                 };
             };
             /** @description INVALID_FILE_NAME; INVALID_FILE_SIZE */
@@ -24236,7 +24560,7 @@ export interface operations {
                 created_at_lte?: string;
                 /** @description Destination entry IDs */
                 dsts: number[];
-                /** @description Only use relations last seen at or after this time (ISO datetime format) */
+                /** @description Only use edges whose newest relation was created at or after this time (ISO datetime format) */
                 last_seen_at_gte?: string;
                 /** @description Source entry ID */
                 src: number;
@@ -26075,7 +26399,7 @@ export interface operations {
                 references?: string[];
                 /** @description Free-text search over content, title, author and editor username. Supports the search syntax: terms/"phrases" (contains), =exact, wildcards (adm*n), AND/OR, NOT/-term, parentheses. */
                 search?: string;
-                /** @description Filter by note status (repeat for OR). `published` means non-fleeting notes; `fleeting` limits to the current user's fleeting notes. Omit this parameter for the default list (accessible notes plus your fleeting notes). */
+                /** @description Filter by note status (repeat for OR). `published` means non-fleeting notes; `fleeting` limits to fleeting notes you wrote or that were shared with you. Omit this parameter for the default list (accessible notes plus those fleeting notes). */
                 status?: components["schemas"]["NoteListStatusEnum"][];
                 /** @description Number of characters to truncate note content to */
                 truncate?: number;
@@ -28898,6 +29222,1101 @@ export interface operations {
             };
             /** @description NOTE_NOT_FOUND */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description INTERNAL_SERVER_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    notes_shares_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteShare"][];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description PERMISSION_DENIED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description NOTE_NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description NOTE_NOT_FLEETING */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description INTERNAL_SERVER_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    notes_shares_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteShareUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteShareUpdate"];
+                };
+            };
+            /** @description INVALID_REQUEST; VALIDATION_ERROR */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description PERMISSION_DENIED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description NOTE_NOT_FOUND; USER_NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description NOTE_NOT_FLEETING */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description INTERNAL_SERVER_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    notes_shares_candidates_list: {
+        parameters: {
+            query?: {
+                /** @description Page number */
+                page?: number;
+                /** @description Page size */
+                page_size?: number;
+                /** @description Search users by username */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedNoteShareCandidateSerializerResponse"];
+                };
+            };
+            /** @description INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description PERMISSION_DENIED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description NOTE_NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description NOTE_NOT_FLEETING */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -35594,6 +37013,66 @@ export interface operations {
             };
             /** @description TEAM_NOT_FOUND */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description TEAM_RESERVES_ENTRY_TYPES */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -48135,6 +49614,205 @@ export interface operations {
             };
         };
     };
+    users_me_teams_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserTeamMembership"][];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description PERMISSION_DENIED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description INTERNAL_SERVER_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+        };
+    };
 }
 type FlattenedDeepRequired<T> = {
     [K in keyof T]-?: FlattenedDeepRequired<T[K] extends unknown[] | undefined | null ? Extract<T[K], unknown[]>[number] : T[K]>;
@@ -48153,6 +49831,8 @@ export const enrichmentErrorNotificationTypeValues: ReadonlyArray<FlattenedDeepR
 export const entityTeamAccessAccess_typeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EntityTeamAccess"]["access_type"]> = ["read", "read-write"];
 export const messageNotificationTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MessageNotification"]["type"]> = ["message_notification"];
 export const newUserNotificationTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["NewUserNotification"]["type"]> = ["new_user_notification"];
+export const noteSharedNotificationTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["NoteSharedNotification"]["type"]> = ["note_shared_notification"];
+export const noteStatusIssueCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["NoteStatusIssue"]["code"]> = ["not_allowed", "unknown_type", "missing_entry", "invalid_value"];
 export const publishReportRequestTlpValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PublishReportRequest"]["tlp"]> = ["clear", "green", "amber", "amber+strict", "red"];
 export const reportDetailTlpValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ReportDetail"]["tlp"]> = ["clear", "green", "amber", "amber+strict", "red"];
 export const reportListTlpValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ReportList"]["tlp"]> = ["clear", "green", "amber", "amber+strict", "red"];

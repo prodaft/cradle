@@ -13,6 +13,7 @@ from .models import (
     EnrichmentErrorNotification,
     MessageNotification,
     NewUserNotification,
+    NoteSharedNotification,
     ReportProcessingErrorNotification,
     ReportRenderNotification,
     TeamMembershipNotification,
@@ -27,13 +28,11 @@ class MessageNotificationSerializer(serializers.ModelSerializer):
     is_unread = serializers.SerializerMethodField(
         help_text="Whether the notification is unread: not yet seen, or marked unread by the user."
     )
-    created_at = serializers.DateTimeField(
-        source="timestamp", read_only=True, help_text="When the notification was created."
-    )
+    created_at = serializers.DateTimeField(read_only=True, help_text="When the notification was created.")
 
     class Meta:
         model = MessageNotification
-        fields = ["id", "message", "is_unread", "created_at", "type"]
+        fields = ["id", "type", "message", "is_unread", "created_at"]
 
     def get_type(self, obj: Any) -> str:
         """Return the notification type discriminator."""
@@ -51,7 +50,7 @@ class AccessGrantedNotificationSerializer(MessageNotificationSerializer):
 
     class Meta:
         model = AccessGrantedNotification
-        fields = ["id", "message", "is_unread", "entity_id", "created_at", "type"]
+        fields = ["id", "type", "message", "is_unread", "entity_id", "created_at"]
 
 
 class NewUserNotificationSerializer(MessageNotificationSerializer):
@@ -62,7 +61,7 @@ class NewUserNotificationSerializer(MessageNotificationSerializer):
 
     class Meta:
         model = NewUserNotification
-        fields = ["id", "message", "is_unread", "created_at", "new_user", "type"]
+        fields = ["id", "type", "message", "is_unread", "new_user", "created_at"]
 
 
 class AccessRequestNotificationSerializer(MessageNotificationSerializer):
@@ -76,7 +75,7 @@ class AccessRequestNotificationSerializer(MessageNotificationSerializer):
 
     class Meta:
         model = AccessRequestNotification
-        fields = ["id", "message", "is_unread", "entity_id", "requesting_user_id", "created_at", "type"]
+        fields = ["id", "type", "message", "is_unread", "entity_id", "requesting_user_id", "created_at"]
 
 
 class TeamMembershipNotificationSerializer(MessageNotificationSerializer):
@@ -87,7 +86,18 @@ class TeamMembershipNotificationSerializer(MessageNotificationSerializer):
 
     class Meta:
         model = TeamMembershipNotification
-        fields = ["id", "message", "is_unread", "created_at", "team_id", "type"]
+        fields = ["id", "type", "message", "is_unread", "team_id", "created_at"]
+
+
+class NoteSharedNotificationSerializer(MessageNotificationSerializer):
+    """Serializer for note shared notifications."""
+
+    type_value = "note_shared_notification"
+    note_id = serializers.UUIDField(help_text="ID of the note shared with the user.")
+
+    class Meta:
+        model = NoteSharedNotification
+        fields = ["id", "type", "message", "is_unread", "note_id", "created_at"]
 
 
 class ReportRenderNotificationSerializer(MessageNotificationSerializer):
@@ -98,7 +108,7 @@ class ReportRenderNotificationSerializer(MessageNotificationSerializer):
 
     class Meta:
         model = ReportRenderNotification
-        fields = ["id", "message", "is_unread", "created_at", "report_id", "type"]
+        fields = ["id", "type", "message", "is_unread", "report_id", "created_at"]
 
 
 class ReportProcessingErrorNotificationSerializer(MessageNotificationSerializer):
@@ -109,7 +119,7 @@ class ReportProcessingErrorNotificationSerializer(MessageNotificationSerializer)
 
     class Meta:
         model = ReportProcessingErrorNotification
-        fields = ["id", "message", "is_unread", "created_at", "report_id", "error_message", "type"]
+        fields = ["id", "type", "message", "is_unread", "report_id", "error_message", "created_at"]
 
 
 class EnrichmentCompleteNotificationSerializer(MessageNotificationSerializer):
@@ -122,7 +132,7 @@ class EnrichmentCompleteNotificationSerializer(MessageNotificationSerializer):
 
     class Meta:
         model = EnrichmentCompleteNotification
-        fields = ["id", "message", "is_unread", "created_at", "enrichment_request_id", "type"]
+        fields = ["id", "type", "message", "is_unread", "enrichment_request_id", "created_at"]
 
 
 class EnrichmentErrorNotificationSerializer(MessageNotificationSerializer):
@@ -135,7 +145,7 @@ class EnrichmentErrorNotificationSerializer(MessageNotificationSerializer):
 
     class Meta:
         model = EnrichmentErrorNotification
-        fields = ["id", "message", "is_unread", "created_at", "enrichment_request_id", "error_message", "type"]
+        fields = ["id", "type", "message", "is_unread", "enrichment_request_id", "error_message", "created_at"]
 
 
 NOTIFICATION_SERIALIZER_MAP: dict[type, type[serializers.ModelSerializer]] = {
@@ -144,6 +154,7 @@ NOTIFICATION_SERIALIZER_MAP: dict[type, type[serializers.ModelSerializer]] = {
     NewUserNotification: NewUserNotificationSerializer,
     AccessRequestNotification: AccessRequestNotificationSerializer,
     TeamMembershipNotification: TeamMembershipNotificationSerializer,
+    NoteSharedNotification: NoteSharedNotificationSerializer,
     ReportRenderNotification: ReportRenderNotificationSerializer,
     ReportProcessingErrorNotification: ReportProcessingErrorNotificationSerializer,
     EnrichmentCompleteNotification: EnrichmentCompleteNotificationSerializer,

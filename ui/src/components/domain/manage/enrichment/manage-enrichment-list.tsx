@@ -78,7 +78,7 @@ export default function ManageEnrichmentList() {
                     collapsible='none'
                     className='border-r bg-background text-foreground [&_[data-slot=sidebar-inner]]:bg-background [&_[data-slot=sidebar-inner]]:text-foreground'
                 >
-                    <SidebarHeader className='flex flex-col p-4 gap-2 border-b border-border'>
+                    <SidebarHeader className='p-4 border-b border-border'>
                         <SearchInput
                             schema={FREE_TEXT_SCHEMA}
                             value={searchState}
@@ -92,7 +92,7 @@ export default function ManageEnrichmentList() {
                             <SidebarMenu>
                                 {isPending ? (
                                     <div className='px-4 py-2 text-sm text-muted-foreground flex items-center gap-2'>
-                                        <Spinner className='size-4' /> Loading...
+                                        <Spinner /> Loading...
                                     </div>
                                 ) : enrichers.length === 0 ? (
                                     <div className='p-2'>

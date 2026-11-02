@@ -1,9 +1,11 @@
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
+import { SelectContent } from '@/components/custom/select';
 import {
     entryClassFormat,
     formatOptions,
     typeOptions,
 } from '@/components/domain/manage/entry-type/entry-class-options';
+import { useTeamOptions } from '@/components/domain/manage/entry-type/use-team-options';
 import { Button } from '@/components/ui/button';
 import { DialogClose, DialogFooter } from '@/components/ui/dialog';
 import {
@@ -20,13 +22,7 @@ import {
     InputGroupInput,
     InputGroupTextarea,
 } from '@/components/ui/input-group';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { useNdjsonQuery } from '@/hooks/query';
 import { GoldenRatioColorGenerator } from '@/utils/colors/color-utils';
@@ -71,6 +67,7 @@ const entryTypeSchema = z.object({
     generativeRegex: z.string().default(''),
     color: z.string().min(1, { error: 'Color is required' }),
     children: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
+    teams: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
 });
 
 type FormData = z.infer<typeof entryTypeSchema>;
@@ -100,6 +97,7 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
             generativeRegex: '',
             color: colorGenerator.nextHexColor(),
             children: [],
+            teams: [],
         },
     });
 
@@ -109,6 +107,8 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
+
+    const teamOptions = useTeamOptions();
 
     const entryTypes = useMemo<ChildOption[]>(() => {
         const results = entryClasses ?? [];
@@ -159,6 +159,10 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
             regex: data.regex,
             options: data.options.split('\n'),
             child_subtypes: data.children?.map((child) => child.value) ?? [],
+            team_ids:
+                data.type?.value === 'entity'
+                    ? data.teams.map((team) => team.value)
+                    : [],
         };
         try {
             await createEntryClass.mutateAsync(payload);
@@ -316,7 +320,6 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
                                 >
                                     <svg
                                         xmlns='http://www.w3.org/2000/svg'
-                                        className='h-4 w-4'
                                         fill='none'
                                         viewBox='0 0 24 24'
                                         stroke='currentColor'
@@ -403,6 +406,34 @@ export default function AddEntryTypeForm({ onAdd }: AddEntryTypeFormProps) {
                                     </FieldDescription>
                                     {errors.prefix && (
                                         <FieldError>{errors.prefix.message}</FieldError>
+                                    )}
+                                </Field>
+                            )}
+
+                            {isEntity && (
+                                <Field data-invalid={Boolean(errors.teams)}>
+                                    <FieldLabel htmlFor='teams'>Teams</FieldLabel>
+                                    <Controller
+                                        name='teams'
+                                        control={control}
+                                        render={({ field }) => (
+                                            <MultipleSelector
+                                                inlineDropdown
+                                                value={field.value}
+                                                defaultOptions={teamOptions}
+                                                placeholder='Any team'
+                                                onChange={field.onChange}
+                                                emptyIndicator={<p>No teams found</p>}
+                                            />
+                                        )}
+                                    />
+                                    <FieldDescription>
+                                        Only admins and leads of these teams can create
+                                        entities of this type. Leave empty to allow any
+                                        team.
+                                    </FieldDescription>
+                                    {errors.teams && (
+                                        <FieldError>{errors.teams.message}</FieldError>
                                     )}
                                 </Field>
                             )}

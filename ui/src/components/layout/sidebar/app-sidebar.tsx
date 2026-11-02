@@ -234,7 +234,7 @@ export function AppSidebar({
                             )}
                         >
                             <span className='relative inline-flex size-4 shrink-0 items-center justify-center'>
-                                <Bell className='size-4' aria-hidden />
+                                <Bell aria-hidden />
                                 {hasUnreadNotifications && isCollapsed ? (
                                     <span
                                         className={cn(

@@ -34,6 +34,7 @@ from ..serializers import (
     EnrichmentErrorNotificationSerializer,
     MessageNotificationSerializer,
     NewUserNotificationSerializer,
+    NoteSharedNotificationSerializer,
     NotificationSerializer,
     ReportProcessingErrorNotificationSerializer,
     ReportRenderNotificationSerializer,
@@ -98,6 +99,7 @@ def _get_notification_or_404(user: CradleUser, notification_id: UUID) -> Message
                             NewUserNotificationSerializer,
                             AccessRequestNotificationSerializer,
                             TeamMembershipNotificationSerializer,
+                            NoteSharedNotificationSerializer,
                             ReportRenderNotificationSerializer,
                             ReportProcessingErrorNotificationSerializer,
                             EnrichmentCompleteNotificationSerializer,
@@ -145,7 +147,7 @@ class NotificationList(APIView):
                     default=False,
                 )
             )
-            .order_by("-is_unread_status", "-timestamp")
+            .order_by("-is_unread_status", "-created_at")
         )
 
         paginator = self.pagination_class()

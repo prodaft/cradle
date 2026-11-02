@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Spinner } from '@/components/ui/spinner';
-import { useTheme } from '@/contexts/ui/theme-context';
 import { logger } from '@/utils/logger';
 import { FunnelIcon, GearIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import {
@@ -23,6 +22,7 @@ import EdgeCurveProgram, {
 } from '@sigma/edge-curve';
 import { MultiDirectedGraph } from 'graphology';
 import type { ForceAtlas2LayoutParameters } from 'graphology-layout-forceatlas2';
+import { useTheme } from 'next-themes';
 import {
     createContext,
     useContext,
@@ -283,22 +283,25 @@ function createNodeHoverRenderer(
 
 function SigmaGraphThemeColors() {
     const setSettings = useSetSettings();
-    const { activeTheme } = useTheme();
+    const isDarkMode = useTheme().resolvedTheme === 'dark';
 
     useEffect(() => {
-        const mutedColor = toSigmaColor('var(--color-muted-foreground)');
-        setSettings({
-            enableEdgeEvents: true,
-            defaultEdgeColor: mutedColor,
-            defaultNodeColor: toSigmaColor('var(--color-primary)'),
-            labelColor: { color: toSigmaColor('var(--color-foreground)') },
-            edgeLabelColor: { color: mutedColor },
-            defaultDrawNodeHover: createNodeHoverRenderer(
-                toSigmaColor('var(--color-popover)'),
-                toSigmaColor('var(--color-popover-foreground)'),
-            ),
+        const frame = requestAnimationFrame(() => {
+            const mutedColor = toSigmaColor('var(--color-muted-foreground)');
+            setSettings({
+                enableEdgeEvents: true,
+                defaultEdgeColor: mutedColor,
+                defaultNodeColor: toSigmaColor('var(--color-primary)'),
+                labelColor: { color: toSigmaColor('var(--color-foreground)') },
+                edgeLabelColor: { color: mutedColor },
+                defaultDrawNodeHover: createNodeHoverRenderer(
+                    toSigmaColor('var(--color-popover)'),
+                    toSigmaColor('var(--color-popover-foreground)'),
+                ),
+            });
         });
-    }, [setSettings, activeTheme]);
+        return () => cancelAnimationFrame(frame);
+    }, [setSettings, isDarkMode]);
 
     return null;
 }
@@ -542,7 +545,7 @@ function GraphControls({
                     onClick={() => zoomIn()}
                     title='Zoom in'
                 >
-                    <AiOutlineZoomIn className='size-4 text-foreground' />
+                    <AiOutlineZoomIn />
                 </Button>
                 <Button
                     type='button'
@@ -552,7 +555,7 @@ function GraphControls({
                     onClick={() => zoomOut()}
                     title='Zoom out'
                 >
-                    <AiOutlineZoomOut className='size-4 text-foreground' />
+                    <AiOutlineZoomOut />
                 </Button>
             </ButtonGroup>
             <ButtonGroup aria-label='View and layout' orientation='vertical'>
@@ -564,7 +567,7 @@ function GraphControls({
                     onClick={() => resetCamera()}
                     title='See whole graph'
                 >
-                    <MdFilterCenterFocus className='size-4 text-foreground' />
+                    <MdFilterCenterFocus />
                 </Button>
                 {document.fullscreenEnabled && (
                     <Button
@@ -576,9 +579,9 @@ function GraphControls({
                         title={isFullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                     >
                         {isFullScreen ? (
-                            <AiOutlineFullscreenExit className='size-4 text-foreground' />
+                            <AiOutlineFullscreenExit />
                         ) : (
-                            <AiOutlineFullscreen className='size-4 text-foreground' />
+                            <AiOutlineFullscreen />
                         )}
                     </Button>
                 )}
@@ -590,11 +593,7 @@ function GraphControls({
                     onClick={() => (layout.isRunning ? layout.stop() : layout.start())}
                     title={layout.isRunning ? 'Stop layout' : 'Start layout'}
                 >
-                    {layout.isRunning ? (
-                        <AiFillPauseCircle className='size-4 text-foreground' />
-                    ) : (
-                        <AiFillPlayCircle className='size-4 text-foreground' />
-                    )}
+                    {layout.isRunning ? <AiFillPauseCircle /> : <AiFillPlayCircle />}
                 </Button>
             </ButtonGroup>
         </>
@@ -762,31 +761,43 @@ export default function GraphViewer({
                                     type='button'
                                     variant='outline'
                                     size='icon'
-                                    className={`p-1.5 w-8 h-8 ${activePanel === 'explorer' ? 'border-primary' : ''}`}
+                                    className={
+                                        activePanel === 'explorer'
+                                            ? 'border-primary'
+                                            : undefined
+                                    }
                                     title='Toggle explorer panel'
                                     onClick={() => onTogglePanel('explorer')}
                                 >
-                                    <MagnifyingGlassIcon size={16} weight='bold' />
+                                    <MagnifyingGlassIcon weight='bold' />
                                 </Button>
                                 <Button
                                     type='button'
                                     variant='outline'
                                     size='icon'
-                                    className={`p-1.5 w-8 h-8 ${activePanel === 'display' ? 'border-primary' : ''}`}
+                                    className={
+                                        activePanel === 'display'
+                                            ? 'border-primary'
+                                            : undefined
+                                    }
                                     title='Toggle display panel'
                                     onClick={() => onTogglePanel('display')}
                                 >
-                                    <GearIcon size={16} weight='bold' />
+                                    <GearIcon weight='bold' />
                                 </Button>
                                 <Button
                                     type='button'
                                     variant='outline'
                                     size='icon'
-                                    className={`p-1.5 w-8 h-8 ${activePanel === 'filters' ? 'border-primary' : ''}`}
+                                    className={
+                                        activePanel === 'filters'
+                                            ? 'border-primary'
+                                            : undefined
+                                    }
                                     title='Toggle filters panel'
                                     onClick={() => onTogglePanel('filters')}
                                 >
-                                    <FunnelIcon size={16} weight='bold' />
+                                    <FunnelIcon weight='bold' />
                                 </Button>
                             </>
                         )}

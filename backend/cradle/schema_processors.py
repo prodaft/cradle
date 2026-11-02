@@ -155,6 +155,7 @@ def postprocess_schema_pagination_refs(result, generator, request, public):
         "PaginatedPaginatedTeamMemberSerializerResponseList": "PaginatedTeamMemberSerializerResponse",
         "PaginatedPaginatedTeamAccessSerializerResponseList": "PaginatedTeamAccessSerializerResponse",
         "PaginatedPaginatedTeamCandidateSerializerResponseList": "PaginatedTeamCandidateSerializerResponse",
+        "PaginatedPaginatedNoteShareCandidateSerializerResponseList": "PaginatedNoteShareCandidateSerializerResponse",
     }
     _update_schema_refs(result, pagination_ref_fixes)
     return result

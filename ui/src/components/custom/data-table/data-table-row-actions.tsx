@@ -28,11 +28,7 @@ export function DataTableRowActions({ children }: { children: ReactNode }) {
                         />
                     }
                 >
-                    <DotsThreeIcon
-                        className='w-4 h-4'
-                        weight='bold'
-                        aria-hidden='true'
-                    />
+                    <DotsThreeIcon weight='bold' aria-hidden='true' />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='end'>{children}</DropdownMenuContent>
             </DropdownMenu>

@@ -109,7 +109,7 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
     return (
         <div className='px-4 pt-3'>
             <Tabs defaultValue='appearance' className='w-full'>
-                <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
+                <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
                     <TabsTrigger value='appearance'>Appearance</TabsTrigger>
                     <TabsTrigger value='physics'>Physics</TabsTrigger>
                     <TabsTrigger value='advanced'>Advanced</TabsTrigger>
@@ -172,7 +172,7 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
 
                             <div className='border-t pt-3 space-y-2'>
                                 <Field orientation='horizontal'>
-                                    <FieldContent className='flex-1'>
+                                    <FieldContent>
                                         <FieldLabel
                                             htmlFor='showLinks'
                                             className='text-xs'
@@ -194,7 +194,7 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                     />
                                 </Field>
                                 <Field orientation='horizontal'>
-                                    <FieldContent className='flex-1'>
+                                    <FieldContent>
                                         <FieldLabel
                                             htmlFor='curvedLinks'
                                             className='text-xs'
@@ -227,7 +227,7 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                 variant='outline'
                                 size='sm'
                                 onClick={applyPreset}
-                                className='w-full text-xs h-7 mb-3'
+                                className='w-full mb-3'
                             >
                                 Reset to defaults
                             </Button>
@@ -334,7 +334,6 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                         }))
                                     }
                                     placeholder='42 or "my-seed"'
-                                    className='w-full text-xs h-8'
                                 />
                             </Field>
 
@@ -383,7 +382,7 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
 
                             <div className='border-t pt-3 space-y-2'>
                                 <Field orientation='horizontal'>
-                                    <FieldContent className='flex-1'>
+                                    <FieldContent>
                                         <FieldLabel
                                             htmlFor='scaleLinksOnZoom'
                                             className='text-xs'

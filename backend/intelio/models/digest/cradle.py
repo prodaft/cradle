@@ -3,6 +3,7 @@ import json
 from celery import group
 from django.db import transaction
 
+from entries.constants import INTERNAL_SUBTYPES
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from file_transfer.storage import FileTransferStorage
@@ -32,26 +33,45 @@ class CradleDigest(BaseDigest):
                 return
 
         valid_entryclass_fields = {f.name for f in EntryClass._meta.fields}
+        entry_classes_imported = 0
+        skipped_entry_classes = []
 
         for eclass in report_data.get("entry_classes", []):
-            if not EntryClass.objects.filter(subtype=eclass["subtype"]).exists():
-                fields = {k: v for k, v in eclass.items() if k in valid_entryclass_fields}
-                if isinstance(fields.get("options"), list):
-                    fields["options"] = "\n".join(fields["options"])
-                EntryClass.objects.create(**fields)
+            if EntryClass.objects.filter(subtype=eclass["subtype"]).exists():
+                continue
+            if not self.user.is_manager or eclass["subtype"] in INTERNAL_SUBTYPES:
+                skipped_entry_classes.append(eclass["subtype"])
+                continue
+            fields = {k: v for k, v in eclass.items() if k in valid_entryclass_fields}
+            if isinstance(fields.get("options"), list):
+                fields["options"] = "\n".join(fields["options"])
+            EntryClass.objects.create(**fields)
+            entry_classes_imported += 1
+        if skipped_entry_classes:
+            self.append_warning(
+                f"Entry types not created, as you may not create them: {', '.join(skipped_entry_classes)}"
+            )
 
         entity_subtypes = set(EntryClass.objects.filter(type=EntryType.ENTITY).values_list("subtype", flat=True))
+        skipped_entities = []
 
         for entry in report_data.get("entries", []):
             if (
                 entry["subtype"] in entity_subtypes
                 and not Entry.objects.filter(name=entry["name"], entry_class_id=entry["subtype"]).exists()
             ):
+                if not self.user.is_admin:
+                    skipped_entities.append(f"{entry['subtype']}:{entry['name']}")
+                    continue
                 Entry.objects.create(
                     name=entry["name"],
                     entry_class_id=entry["subtype"],
                     description=entry.get("description", ""),
                 )
+        if skipped_entities:
+            self.append_warning(
+                f"Entities not created, as only administrators can import them: {', '.join(skipped_entities)}"
+            )
 
         created_notes = []
         download_tasks = []
@@ -76,7 +96,7 @@ class CradleDigest(BaseDigest):
 
         self.summary = {
             "notes_imported": len(created_notes),
-            "entry_classes_imported": len(report_data.get("entry_classes", [])),
+            "entry_classes_imported": entry_classes_imported,
             "files_scheduled": len(download_tasks),
             "files_failed": 0,
             "files_downloaded": 0,

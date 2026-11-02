@@ -1,6 +1,7 @@
 """Knowledge graph API views: path finding, neighbors, and full graph."""
 
 import datetime
+from collections import Counter
 
 from django.db.models import prefetch_related_objects
 from django.utils import timezone
@@ -69,7 +70,7 @@ def _validate_depth(value: str | None, default: int) -> int:
             name="last_seen_at_gte",
             type=str,
             location=OpenApiParameter.QUERY,
-            description="Only use relations last seen at or after this time (ISO datetime format)",
+            description="Only use edges whose newest relation was created at or after this time (ISO datetime format)",
             required=False,
         ),
         OpenApiParameter(
@@ -136,7 +137,13 @@ class GraphPathFindView(APIView):
 
         entry_ids = {edge.src for edge in edges} | {edge.dst for edge in edges}
 
-        entries = Entry.objects.filter(id__in=entry_ids).select_related("entry_class")
+        entries = list(Entry.objects.filter(id__in=entry_ids).select_related("entry_class"))
+
+        degree_map: Counter[int] = Counter()
+        for pair in {frozenset((edge.src, edge.dst)) for edge in edges if edge.src != edge.dst}:
+            degree_map.update(pair)
+        for entry in entries:
+            entry.degree = degree_map.get(entry.id, 0)
 
         colors = {e.entry_class.subtype: e.entry_class.color for e in entries if e.entry_class.subtype is not None}
 
@@ -273,7 +280,7 @@ class GraphNeighborsView(APIView):
                 lambda qs: qs.filter(query_filter),
                 page_size=page_size + 1,
                 page_number=page,
-                order_by="-last_seen",
+                order_by="-created_at",
             )
         else:
             filterset = EntryFilter(request.query_params, request=request)
@@ -288,7 +295,7 @@ class GraphNeighborsView(APIView):
                     lambda qs: EntryFilter(request.query_params, queryset=qs, request=request).qs,
                     page_size=page_size + 1,
                     page_number=page,
-                    order_by="-last_seen",
+                    order_by="-created_at",
                 )
             else:
                 raise DRFValidationError(filterset.errors)

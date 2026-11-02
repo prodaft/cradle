@@ -164,6 +164,10 @@ export function createCradleTheme(isDarkMode: boolean) {
                 padding: '4px',
                 zIndex: 50,
             },
+            // The file hover card draws its own sections edge to edge.
+            '.cm-tooltip-hover:has(.cm-file-card)': {
+                padding: '0',
+            },
             '.cm-tooltip-autocomplete': {
                 minWidth: '220px',
             },

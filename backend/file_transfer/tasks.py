@@ -13,7 +13,7 @@ from django.db import transaction
 import file_transfer.uploads.tasks as _upload_tasks  # noqa: F401 - Celery autodiscover only loads this module, not uploads.tasks
 from file_transfer.models import FileReference
 from file_transfer.storage import FileTransferStorage
-from management.settings import cradle_settings
+from management.settings import system_settings
 
 logger = logging.getLogger("django.request")
 
@@ -54,22 +54,22 @@ def process_file_task(file_id):
         except Exception as e:
             logger.error(f"Failed to fetch file size for {file_ref.file.name}: {str(e)}")
 
-    if file_ref.mimetype is None:
+    if file_ref.mime_type is None:
         try:
             with file_ref.file.open("rb") as f:
                 header_bytes = f.read(8192)
 
             if header_bytes:
                 mimetype = magic.from_buffer(header_bytes, mime=True)
-                file_ref.mimetype = mimetype
-                file_ref.save(update_fields=["mimetype"])
+                file_ref.mime_type = mimetype
+                file_ref.save(update_fields=["mime_type"])
         except Exception as e:
             logger.error(f"Failed to fetch mimetype for {file_ref.file.name}: {str(e)}")
             return
 
     if (
         file_ref.file_size is not None
-        and file_ref.file_size <= cradle_settings.files.max_file_size_for_hashing
+        and file_ref.file_size <= system_settings.files.max_file_size_for_hashing
         and not (file_ref.md5_hash and file_ref.sha1_hash and file_ref.sha256_hash)
     ):
         try:

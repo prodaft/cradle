@@ -206,7 +206,7 @@ export default function FindReplace({
                         {/* Find Input */}
                         <div className='flex flex-col gap-1'>
                             <div className='flex items-center gap-1 min-w-0'>
-                                <InputGroup className='flex-1 min-w-0 bg-muted'>
+                                <InputGroup className='flex-1 bg-muted'>
                                     <InputGroupAddon
                                         align='inline-start'
                                         className='pr-0'
@@ -303,7 +303,7 @@ export default function FindReplace({
                                         className='text-muted-foreground hover:bg-secondary hover:text-foreground'
                                         aria-label='Close'
                                     >
-                                        <XIcon size={18} weight='bold' />
+                                        <XIcon weight='bold' />
                                     </Button>
                                 </div>
                             </div>

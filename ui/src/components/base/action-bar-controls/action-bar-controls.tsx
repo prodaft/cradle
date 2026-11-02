@@ -183,7 +183,7 @@ export const ActionBarSearch = memo(function ActionBarSearch({
                     flushAndSubmit((e.target as HTMLInputElement).value);
                 }
             }}
-            className={cn('h-8 w-full min-w-0 pl-9', inputClassName)}
+            className={cn('pl-9', inputClassName)}
         />
     );
 

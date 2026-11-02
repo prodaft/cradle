@@ -83,7 +83,7 @@ class UserAccessList(ListAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context["is_admin"] = getattr(self, "_access_user", None) and self._access_user.is_cradle_admin
+        context["is_admin"] = getattr(self, "_access_user", None) and self._access_user.is_admin
         return context
 
 

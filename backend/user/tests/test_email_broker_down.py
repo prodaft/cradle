@@ -47,7 +47,7 @@ class EmailBrokerDownTest(UserTestCase):
 
     def test_expired_confirmation_does_not_claim_a_resend(self, _delay):
         self.user.email_confirmation_token = "t"
-        self.user.email_confirmation_token_expiry = timezone.now() - timedelta(hours=1)
+        self.user.email_confirmation_token_expires_at = timezone.now() - timedelta(hours=1)
         self.user.save()
 
         response = self.post("auth_email_confirm", {"token": "t"})

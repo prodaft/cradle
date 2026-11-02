@@ -41,8 +41,8 @@ class BasePublishStrategy:
             content=content,
             author=note.author,
             editor=note.editor,
-            timestamp=note.timestamp,
-            edit_timestamp=note.edit_timestamp,
+            created_at=note.created_at,
+            updated_at=note.updated_at,
         )
 
     def _anonymize_entry(self, entry: Entry) -> Entry:

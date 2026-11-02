@@ -1,13 +1,12 @@
-import Logo from '@/components/base/logo/logo';
+import { AuthHeader, AuthLayout } from '@/components/domain/auth/auth-layout';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { useAuthActions, useAuthState } from '@/hooks/auth/use-auth';
 import { getDisplayMessage, parseAPIError } from '@/utils/api';
 import { fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-
-const OAUTH_CALLBACK_IMAGES = ['/1.png', '/2.png', '/3.png', '/4.png'];
 
 type OAuthAction = 'oauth_login' | 'oauth_connect';
 
@@ -41,12 +40,6 @@ export default function OAuthCallback() {
     const router = useRouter();
     const exchangedRef = useRef(false);
     const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
-    const [callbackImage] = useState(
-        () =>
-            OAUTH_CALLBACK_IMAGES[
-                Math.floor(Math.random() * OAUTH_CALLBACK_IMAGES.length)
-            ],
-    );
 
     const urlParams = useMemo(() => {
         const url = new URL(window.location.href);
@@ -159,49 +152,30 @@ export default function OAuthCallback() {
         : 'Completing sign-in...';
 
     return (
-        <div className='grid min-h-svh lg:grid-cols-2'>
-            <div className='flex flex-col gap-4 p-6 md:p-10 relative'>
-                <div className='flex justify-between items-center gap-2'>
-                    <a href='#' className='flex items-center gap-2 font-medium'>
-                        <Logo text={true} width='120px' />
-                    </a>
-                </div>
-
-                <div className='flex flex-1 items-center justify-center'>
-                    <div className='w-full max-w-sm text-center space-y-4'>
-                        <h1 className='text-2xl font-bold'>{statusMessage}</h1>
-                        {errorMessage ? (
-                            <>
-                                <p className='text-muted-foreground'>{errorMessage}</p>
-                                <Button
-                                    variant='default'
-                                    onClick={() =>
-                                        router.navigate({ to: '/login', replace: true })
-                                    }
-                                >
-                                    Back to Login
-                                </Button>
-                            </>
-                        ) : (
-                            <p className='text-muted-foreground'>
-                                Please wait while we finalize your sign-in.
-                            </p>
-                        )}
+        <AuthLayout>
+            <div className='flex flex-col gap-4'>
+                {errorMessage ? (
+                    <>
+                        <AuthHeader title={statusMessage} description={errorMessage} />
+                        <Button
+                            className='w-full'
+                            onClick={() =>
+                                router.navigate({ to: '/login', replace: true })
+                            }
+                        >
+                            Back to sign in
+                        </Button>
+                    </>
+                ) : (
+                    <div className='flex items-start gap-3'>
+                        <Spinner className='mt-1.5 size-5 text-primary' />
+                        <AuthHeader
+                            title={statusMessage}
+                            description='Please wait while we finalize your sign-in.'
+                        />
                     </div>
-                </div>
+                )}
             </div>
-
-            <div
-                className='bg-muted relative hidden lg:block select-none'
-                onContextMenu={(e) => e.preventDefault()}
-            >
-                <img
-                    src={callbackImage}
-                    alt=''
-                    className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale pointer-events-none'
-                    draggable={false}
-                />
-            </div>
-        </div>
+        </AuthLayout>
     );
 }

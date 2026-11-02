@@ -182,10 +182,7 @@ export default function ApiKeyGenerateDialog({
                                     readOnly
                                     className='font-mono'
                                 />
-                                <InputGroupAddon
-                                    align='inline-end'
-                                    className='flex gap-1'
-                                >
+                                <InputGroupAddon align='inline-end' className='gap-1'>
                                     <InputGroupButton
                                         type='button'
                                         onClick={() => setIsRevealed(!isRevealed)}

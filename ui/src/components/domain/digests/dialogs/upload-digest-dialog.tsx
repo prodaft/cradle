@@ -4,6 +4,7 @@ import {
     FileUploadTrigger,
 } from '@/components/custom/file-upload';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
+import { SelectContent } from '@/components/custom/select';
 import {
     Attachment,
     AttachmentAction,
@@ -26,13 +27,7 @@ import {
 import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { queryKeys } from '@/hooks/query';
 import { formatFileSize, uploadFile } from '@/utils/files';
@@ -585,7 +580,7 @@ export default function UploadDigestDialog({
                                 </>
                             ) : (
                                 <>
-                                    <UploadSimpleIcon size={16} weight='bold' />
+                                    <UploadSimpleIcon weight='bold' />
                                     Upload
                                 </>
                             )}

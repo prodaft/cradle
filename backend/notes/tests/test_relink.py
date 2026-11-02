@@ -65,6 +65,17 @@ class RelinkTest(NotesTestCase):
         self.assertEqual(self.note.status, NoteStatus.PROCESSING)
         self.assertFalse(Relation.objects.filter(pk=self.relation.pk).exists())
 
+    def test_note_with_bad_links_keeps_its_relations_and_gets_its_issues(self):
+        Note.objects.filter(pk=self.note.pk).update(content="[[case:a]] [[case:Missing]]")
+
+        with self.captureOnCommitCallbacks(execute=False):
+            relink_note_task(self.note.id, self.user.id)
+
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.status, NoteStatus.INVALID)
+        self.assertEqual(self.note.status_issues, [{"code": "missing_entry", "key": "case", "value": "Missing"}])
+        self.assertTrue(Relation.objects.filter(pk=self.relation.pk).exists())
+
     def test_failed_relink_keeps_relations(self):
         with patch.object(TaskScheduler, "run_pipeline", side_effect=RuntimeError("boom")):
             with self.assertRaises(RuntimeError):

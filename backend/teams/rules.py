@@ -31,7 +31,7 @@ def leads_owning_team(user: CradleUser, entity: Entry) -> bool:
 
 def can_set_team_access(user: CradleUser, team: Team, entity: Entry, access_type: AccessType) -> bool:
     """Whether ``user`` may set ``team``'s access to ``entity`` to ``access_type``."""
-    if user.is_cradle_admin:
+    if user.is_admin:
         return True
     if entity.team_id is not None:
         allowed = leads_owning_team(user, entity)
@@ -42,9 +42,9 @@ def can_set_team_access(user: CradleUser, team: Team, entity: Entry, access_type
 
 def can_set_user_access(user: CradleUser, target: CradleUser, entity: Entry, access_type: AccessType) -> bool:
     """Whether ``user`` may set ``target``'s direct access to ``entity`` to ``access_type``."""
-    if target.is_cradle_admin:
+    if target.is_admin:
         return False
-    if user.is_cradle_admin:
+    if user.is_admin:
         return True
     if entity.team_id is None:
         return user.is_manager

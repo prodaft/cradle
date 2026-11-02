@@ -17,7 +17,9 @@ that node so you can trace where the data came from.
 ## Common example
 Importing a JSON report from another CRADLE instance. When you create the
 digest, CRADLE automatically creates the artifacts and related objects in the
-backend, and links them into the graph.
+backend, and links them into the graph. Missing entry types are created only
+for managers and administrators, and missing entities only for administrators;
+anything skipped is listed in the digest's warnings.
 
 Files attached to the report's notes are downloaded from the links in the
 report. Links to this instance's own storage and to public addresses work.

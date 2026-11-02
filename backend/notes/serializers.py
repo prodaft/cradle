@@ -14,11 +14,11 @@ from entries.serializers import (
     EntryTypesCompressedTreeSerializer,
 )
 from file_transfer.models import FileReference
-from management.settings import cradle_settings
+from management.settings import system_settings
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer
 
-from .models import Note, Snippet
+from .models import Note, NoteShare, Snippet
 from .processor.task_scheduler import TaskScheduler
 
 
@@ -34,13 +34,11 @@ class SnippetSerializer(serializers.ModelSerializer):
     created_by = EssentialUserRetrieveSerializer(
         source="owner", read_only=True, allow_null=True, help_text="Who created the snippet; null for system snippets."
     )
-    created_at = serializers.DateTimeField(
-        source="created_on", read_only=True, help_text="When the snippet was created."
-    )
+    created_at = serializers.DateTimeField(read_only=True, help_text="When the snippet was created.")
 
     class Meta:
         model = Snippet
-        fields = ["id", "created_by", "name", "content", "created_at"]
+        fields = ["id", "name", "content", "created_by", "created_at"]
         read_only_fields = ["id"]
         extra_kwargs = {
             "name": {"help_text": "Snippet name identifier"},
@@ -73,7 +71,7 @@ class NoteEditSerializer(serializers.ModelSerializer):
             content = validated_data.pop("content", None)
 
             if content is not None:
-                TaskScheduler(user, content=content, **validated_data).run_pipeline(instance)
+                TaskScheduler(user, content=content, **validated_data).run_pipeline(instance, allow_invalid=True)
         else:
             content = validated_data.get("content")
             if content is not None:
@@ -102,10 +100,8 @@ class FileReferenceBaseSerializer(serializers.ModelSerializer):
     name = serializers.CharField(
         source="file_name", read_only=True, allow_null=True, help_text="Original filename for display and download"
     )
+    mime_type = serializers.CharField(read_only=True, allow_null=True, help_text="MIME type detected from file content")
     size = serializers.IntegerField(source="file_size", read_only=True, allow_null=True, help_text="File size in bytes")
-    mime_type = serializers.CharField(
-        source="mimetype", read_only=True, allow_null=True, help_text="MIME type detected from file content"
-    )
     md5 = serializers.CharField(
         source="md5_hash", read_only=True, allow_null=True, help_text="MD5 hash of file contents"
     )
@@ -115,9 +111,7 @@ class FileReferenceBaseSerializer(serializers.ModelSerializer):
     sha256 = serializers.CharField(
         source="sha256_hash", read_only=True, allow_null=True, help_text="SHA-256 hash of file contents"
     )
-    created_at = serializers.DateTimeField(
-        source="timestamp", read_only=True, help_text="When the file was first uploaded"
-    )
+    created_at = serializers.DateTimeField(read_only=True, help_text="When the file was first uploaded")
 
 
 class FileReferenceWithNoteSerializer(FileReferenceBaseSerializer):
@@ -130,15 +124,15 @@ class FileReferenceWithNoteSerializer(FileReferenceBaseSerializer):
         model = FileReference
         fields = [
             "id",
-            "mime_type",
-            "entities",
-            "size",
             "name",
-            "created_at",
-            "note_id",
+            "mime_type",
+            "size",
             "md5",
             "sha1",
             "sha256",
+            "note_id",
+            "entities",
+            "created_at",
         ]
 
     @extend_schema_field(serializers.UUIDField(allow_null=True))
@@ -153,13 +147,13 @@ class FileDetailSerializer(FileReferenceBaseSerializer):
         model = FileReference
         fields = [
             "id",
+            "name",
             "mime_type",
             "size",
-            "name",
-            "created_at",
             "md5",
             "sha1",
             "sha256",
+            "created_at",
         ]
 
 
@@ -170,15 +164,15 @@ class FileReferenceListSerializer(serializers.BaseSerializer):
         """Serialize a single file reference."""
         return {
             "id": str(file_ref.id),
-            "mime_type": file_ref.mimetype,
             "name": file_ref.file_name,
-            "created_at": file_ref.timestamp.isoformat(),
-            "note_id": str(file_ref.note.id) if file_ref.note else None,
+            "mime_type": file_ref.mime_type,
+            "size": file_ref.file_size,
             "md5": file_ref.md5_hash,
             "sha1": file_ref.sha1_hash,
             "sha256": file_ref.sha256_hash,
-            "size": file_ref.file_size,
+            "note_id": str(file_ref.note.id) if file_ref.note else None,
             "entities": self._get_entities_optimized(file_ref),
+            "created_at": file_ref.created_at.isoformat(),
         }
 
     def _get_entities_optimized(self, file_ref):
@@ -190,38 +184,39 @@ class FileReferenceInNoteListSerializer(serializers.Serializer):
     """Schema for file reference in note list responses."""
 
     id = serializers.UUIDField(help_text="File reference UUID")
-    mime_type = serializers.CharField(help_text="MIME type of the file")
     name = serializers.CharField(help_text="Original filename")
-    created_at = serializers.DateTimeField(help_text="When the file was uploaded")
-    note_id = serializers.UUIDField(allow_null=True, help_text="Note UUID the file is attached to")
+    mime_type = serializers.CharField(help_text="MIME type of the file")
+    size = serializers.IntegerField(allow_null=True, help_text="File size in bytes")
     md5 = serializers.CharField(allow_null=True, help_text="MD5 hash of file contents")
     sha1 = serializers.CharField(allow_null=True, help_text="SHA-1 hash of file contents")
     sha256 = serializers.CharField(allow_null=True, help_text="SHA-256 hash of file contents")
+    note_id = serializers.UUIDField(allow_null=True, help_text="Note UUID the file is attached to")
     entities = OptimizedEntryResponseSerializer(many=True, help_text="Entities linked to this file")
+    created_at = serializers.DateTimeField(help_text="When the file was uploaded")
 
 
 class NoteListResponseSerializer(serializers.Serializer):
     """OpenAPI schema for note list items. Content may be truncated per truncate param."""
 
     id = serializers.UUIDField(read_only=True, help_text="Note UUID")
+    title = serializers.CharField(read_only=True, help_text="Note title")
+    description = serializers.CharField(read_only=True, help_text="Note description")
+    content = serializers.CharField(read_only=True, help_text="May be truncated based on truncate param")
     fleeting = serializers.BooleanField(read_only=True, help_text="Whether the note is fleeting (quick capture)")
     status = serializers.CharField(read_only=True, help_text="Processing status")
     status_message = serializers.CharField(read_only=True, allow_null=True, help_text="Status message if any")
     status_changed_at = serializers.DateTimeField(read_only=True, allow_null=True, help_text="When status was set")
-    content = serializers.CharField(read_only=True, help_text="May be truncated based on truncate param")
-    title = serializers.CharField(read_only=True, help_text="Note title")
-    description = serializers.CharField(read_only=True, help_text="Note description")
     metadata = serializers.JSONField(read_only=True, help_text="Extracted metadata from content")
-    created_at = serializers.DateTimeField(read_only=True, help_text="When the note was created")
-    updated_at = serializers.DateTimeField(read_only=True, allow_null=True, help_text="When the note was last edited")
-    linked_at = serializers.DateTimeField(read_only=True, allow_null=True, help_text="When entries were last linked")
-    created_by = EssentialUserRetrieveSerializer(allow_null=True, read_only=True, help_text="Who created the note")
-    updated_by = EssentialUserRetrieveSerializer(allow_null=True, read_only=True, help_text="Who last edited the note")
     entities = OptimizedEntryResponseSerializer(many=True, read_only=True, help_text="Entities referenced in the note")
     entry_classes = serializers.ListField(
         child=serializers.CharField(), read_only=True, help_text="Entry class subtypes in the note"
     )
     files = FileReferenceInNoteListSerializer(many=True, read_only=True, help_text="Files attached to the note")
+    created_by = EssentialUserRetrieveSerializer(allow_null=True, read_only=True, help_text="Who created the note")
+    created_at = serializers.DateTimeField(read_only=True, help_text="When the note was created")
+    updated_by = EssentialUserRetrieveSerializer(allow_null=True, read_only=True, help_text="Who last edited the note")
+    updated_at = serializers.DateTimeField(read_only=True, allow_null=True, help_text="When the note was last edited")
+    linked_at = serializers.DateTimeField(read_only=True, allow_null=True, help_text="When entries were last linked")
 
 
 class NoteListResponseSerializerExtension(OpenApiSerializerExtension):
@@ -276,63 +271,48 @@ class NoteListSerializer:
             return {
                 "id": str(note.id),
                 "accessible": False,
-                "created_at": note.timestamp.isoformat(),
-                "updated_at": note.edit_timestamp.isoformat() if note.edit_timestamp else None,
+                "created_at": note.created_at.isoformat(),
+                "updated_at": note.updated_at.isoformat() if note.updated_at else None,
             }
 
-        data = {
-            "id": str(note.id),
-            "fleeting": note.fleeting,
-            "status": note.status,
-            "status_message": note.status_message,
-            "status_changed_at": note.status_timestamp.isoformat() if note.status_timestamp else None,
-            "content": self._truncate_content(note),
-            "title": note.title,
-            "description": note.description,
-            "metadata": note.metadata,
-            "created_at": note.timestamp.isoformat(),
-            "updated_at": note.edit_timestamp.isoformat() if note.edit_timestamp else None,
-            "linked_at": note.last_linked.isoformat() if note.last_linked else None,
-        }
-
-        if note.author:
-            data["created_by"] = {
-                "id": str(note.author.id),
-                "username": note.author.username,
-            }
-        else:
-            data["created_by"] = None
-
-        if note.editor:
-            data["updated_by"] = {
-                "id": str(note.editor.id),
-                "username": note.editor.username,
-            }
-        else:
-            data["updated_by"] = None
-
-        data["entities"] = entities = _serialize_entities(note.entries.all())
-
-        data["entry_classes"] = list(note.entries.values_list("entry_class__subtype", flat=True).distinct())
+        entities = _serialize_entities(note.entries.all())
 
         files_data = []
         for file_ref in note.files.all():
             file_data = {
                 "id": str(file_ref.id),
-                "mime_type": file_ref.mimetype,
                 "name": file_ref.file_name,
-                "created_at": file_ref.timestamp.isoformat(),
-                "note_id": str(note.id),
+                "mime_type": file_ref.mime_type,
+                "size": file_ref.file_size,
                 "md5": file_ref.md5_hash,
                 "sha1": file_ref.sha1_hash,
                 "sha256": file_ref.sha256_hash,
+                "note_id": str(note.id),
                 "entities": entities,
+                "created_at": file_ref.created_at.isoformat(),
             }
             files_data.append(file_data)
-        data["files"] = files_data
-        data["accessible"] = True
 
-        return data
+        return {
+            "id": str(note.id),
+            "title": note.title,
+            "description": note.description,
+            "content": self._truncate_content(note),
+            "fleeting": note.fleeting,
+            "status": note.status,
+            "status_message": note.status_message,
+            "status_changed_at": note.status_changed_at.isoformat() if note.status_changed_at else None,
+            "metadata": note.metadata,
+            "entities": entities,
+            "entry_classes": list(note.entries.values_list("entry_class__subtype", flat=True).distinct()),
+            "files": files_data,
+            "created_by": {"id": str(note.author.id), "username": note.author.username} if note.author else None,
+            "created_at": note.created_at.isoformat(),
+            "updated_by": {"id": str(note.editor.id), "username": note.editor.username} if note.editor else None,
+            "updated_at": note.updated_at.isoformat() if note.updated_at else None,
+            "linked_at": note.linked_at.isoformat() if note.linked_at else None,
+            "accessible": True,
+        }
 
     def _truncate_content(self, note):
         """Truncate content if needed."""
@@ -351,6 +331,16 @@ class NoteListSerializer:
         return self
 
 
+class NoteStatusIssueSerializer(serializers.Serializer):
+    """A problem link behind an invalid note status."""
+
+    code = serializers.ChoiceField(
+        choices=["not_allowed", "unknown_type", "missing_entry", "invalid_value"], help_text="What is wrong."
+    )
+    key = serializers.CharField(help_text="Entry type of the link.")
+    value = serializers.CharField(allow_null=True, help_text="Linked value; null when every link of the type is.")
+
+
 class NoteRetrieveSerializer(serializers.ModelSerializer):
     """Full note detail with entries, files, creator and last editor."""
 
@@ -361,21 +351,23 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
     updated_by = EssentialUserRetrieveSerializer(
         source="editor", read_only=True, allow_null=True, help_text="Who last edited the note."
     )
-    entries = EntryTypesCompressedTreeSerializer(exclude=INTERNAL_SUBTYPES)
-    entities = OptimizedEntryResponseSerializer(many=True, read_only=True)
+    entry_classes = EntryTypesCompressedTreeSerializer(
+        source="entries", exclude=INTERNAL_SUBTYPES, help_text="Entry class subtypes in the note."
+    )
+    entities = serializers.SerializerMethodField()
+    status_issues = NoteStatusIssueSerializer(
+        many=True, read_only=True, help_text="Problem links behind an invalid status."
+    )
     permission = serializers.SerializerMethodField()
     content_hash = serializers.CharField(
         read_only=True, help_text="SHA-256 of the full content; send as base_content_hash when editing."
     )
-    created_at = serializers.DateTimeField(source="timestamp", read_only=True, help_text="When the note was created.")
-    updated_at = serializers.DateTimeField(
-        source="edit_timestamp", read_only=True, allow_null=True, help_text="When the note was last edited."
-    )
+    created_at = serializers.DateTimeField(read_only=True, help_text="When the note was created.")
+    updated_at = serializers.DateTimeField(read_only=True, allow_null=True, help_text="When the note was last edited.")
     status_changed_at = serializers.DateTimeField(
-        source="status_timestamp", read_only=True, allow_null=True, help_text="When the status was last updated."
+        read_only=True, allow_null=True, help_text="When the status was last updated."
     )
     linked_at = serializers.DateTimeField(
-        source="last_linked",
         read_only=True,
         allow_null=True,
         help_text="When relations were last computed from this note.",
@@ -394,28 +386,33 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
             return AccessType.NONE
         return obj.get_user_permission(cast(CradleUser, request.user))
 
+    @extend_schema_field(OptimizedEntryResponseSerializer(many=True))
+    def get_entities(self, obj: Note) -> list:
+        return _serialize_entities(obj.entries.all())
+
     class Meta:
         model = Note
         fields = [
             "id",
-            "entities",
+            "title",
+            "description",
+            "content",
+            "content_hash",
             "fleeting",
             "status",
             "status_message",
+            "status_issues",
             "status_changed_at",
-            "content",
-            "title",
-            "description",
             "metadata",
-            "created_at",
-            "created_by",
-            "entries",
-            "updated_at",
-            "updated_by",
-            "linked_at",
+            "entities",
+            "entry_classes",
             "files",
             "permission",
-            "content_hash",
+            "created_by",
+            "created_at",
+            "updated_by",
+            "updated_at",
+            "linked_at",
         ]
 
     def __init__(self, *args, truncate=-1, **kwargs) -> None:
@@ -425,8 +422,6 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
     def to_representation(self, obj: Any) -> Dict[str, Any]:
         """Serialize note; truncate content if truncate param is set and content exceeds it."""
         data = super().to_representation(obj)
-        data["entry_classes"] = data.pop("entries")
-        data["entities"] = _serialize_entities(obj.entries.all())
         content = data["content"]
 
         if self.truncate == -1 or len(content) - obj.content_offset <= self.truncate:
@@ -442,16 +437,16 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
     content = serializers.CharField(
         required=False, allow_blank=True, help_text="Note body. Uses default template if empty."
     )
-    created_at = serializers.DateTimeField(source="timestamp", read_only=True, help_text="When the note was created.")
+    created_at = serializers.DateTimeField(read_only=True, help_text="When the note was created.")
 
     class Meta:
         model = Note
         fields = [
             "id",
-            "content",
-            "created_at",
             "title",
             "description",
+            "content",
+            "created_at",
         ]
         read_only_fields = ["id"]
 
@@ -465,11 +460,13 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
 
         content = validated_data.get("content")
         if not content:
-            validated_data["content"] = user.default_note_template or cradle_settings.notes.default_note_template
+            validated_data["content"] = user.default_note_template or system_settings.notes.default_note_template
 
         note = Note(**validated_data)
-        if not note.title:
-            note.apply_metadata()
+        title, description = note.title, note.description
+        note.apply_metadata()
+        if title:
+            note.title, note.description = title, description
         note.save(force_insert=True)
         return note
 
@@ -488,3 +485,29 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+class NoteShareSerializer(serializers.ModelSerializer):
+    """A user a fleeting note is shared with."""
+
+    user = EssentialUserRetrieveSerializer(help_text="User the note is shared with")
+
+    class Meta:
+        model = NoteShare
+        fields = ["user", "access_type", "created_at"]
+
+
+class NoteShareUpdateSerializer(serializers.Serializer):
+    """Request body for sharing a fleeting note with a user; ``none`` stops sharing it."""
+
+    access_type = serializers.ChoiceField(
+        choices=AccessType.choices, help_text="Access to give the user: none (stop sharing), read or read-write"
+    )
+
+
+class NoteShareCandidateSerializer(serializers.ModelSerializer):
+    """A user a fleeting note can be shared with."""
+
+    class Meta:
+        model = CradleUser
+        fields = ["id", "username"]

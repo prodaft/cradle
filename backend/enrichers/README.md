@@ -86,8 +86,7 @@ ENRICHER_EXTERNAL_NETWORK=enricher_external
       "e1_class": "hash",
       "e2_name": "Enrichment Request ...",
       "e2_class": "__enrichment__",
-      "details": {"detections": 5},
-      "inherit_av": true
+      "details": {"detections": 5}
     }
   ],
   "warnings": [],

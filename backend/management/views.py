@@ -29,17 +29,17 @@ from user.permissions import HasAdminRole
 
 from .models import BaseSettingsSection, Setting
 from .serializers import ManagementActionResponseSerializer
-from .settings import cradle_settings
+from .settings import system_settings
 
 logger = logging.getLogger(__name__)
 
 
 def _settings_sections() -> list[BaseSettingsSection]:
-    """Return every settings section registered on ``cradle_settings``."""
+    """Return every settings section registered on ``system_settings``."""
     return [
         section
-        for name in dir(cradle_settings)
-        if not name.startswith("_") and isinstance(section := getattr(cradle_settings, name), BaseSettingsSection)
+        for name in dir(system_settings)
+        if not name.startswith("_") and isinstance(section := getattr(system_settings, name), BaseSettingsSection)
     ]
 
 

@@ -13,7 +13,7 @@ from django.template.loader import get_template
 from entries.models import EntryClass
 from file_transfer.s3_utils import fetch_bytes
 from file_transfer.storage import FileTransferStorage
-from notes.markdown.constants import LINK_REGEX
+from notes.markdown.constants import ENTRY_LINK_REGEX
 from notes.markdown.to_html import markdown_to_html
 from notes.models import Note
 
@@ -27,7 +27,7 @@ _HEADING_RE = re.compile(r"<h([1-6])>(.*?)</h\1>", re.S)
 _TAG_RE = re.compile(r"<[^>]+>")
 _FIGURE_RE = re.compile(r"<p>\s*(<img [^>]*>)\s*</p>")
 _ALT_RE = re.compile(r'alt="([^"]*)"')
-_LINK_RE = re.compile(LINK_REGEX)
+_ENTRY_LINK_RE = re.compile(ENTRY_LINK_REGEX)
 # Entry type names and colors are written into a <style> block, so only plain values pass.
 _CSS_SUBTYPE_RE = re.compile(r"[\w .:/+-]+")
 _CSS_COLOR_RE = re.compile(r"#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})")
@@ -86,8 +86,8 @@ _TLP_COLORS = {
 
 
 def _link_text(match: re.Match) -> str:
-    """How a cradle link reads in plain text: its alias, else its value."""
-    return (match["cl_alias"] or match["cl_value"]).strip()
+    """How an entry link reads in plain text: its alias, else its value."""
+    return (match["el_alias"] or match["el_value"]).strip()
 
 
 def download_title(title: str, anonymized: bool) -> str:
@@ -96,7 +96,7 @@ def download_title(title: str, anonymized: bool) -> str:
     Links show as text, or as "[redacted]" in anonymized reports (their fake values exist
     only inside the rendered file). Quotes and line breaks would break the header.
     """
-    text = _LINK_RE.sub(lambda match: "[redacted]" if anonymized else _link_text(match), title)
+    text = _ENTRY_LINK_RE.sub(lambda match: "[redacted]" if anonymized else _link_text(match), title)
     return " ".join(re.sub(r'["\\]', "", text).split()) or "report"
 
 
@@ -347,16 +347,15 @@ class HTMLPublish(BasePublishStrategy):
         return body, toc
 
     def _plain_title(self, text: str) -> str:
-        """Show cradle links in a title as their text, anonymized like the note bodies."""
+        """Show entry links in a title as their text, anonymized like the note bodies."""
 
         def link(match: re.Match) -> str:
             if not self.anonymize:
                 return _link_text(match)
-            # Aliases are dropped like in anonymized notes, since they can identify the entry.
-            eclass = self.eclasses.get(match["cl_type"].strip())
-            return self.anonymizer.anonymize(eclass, match["cl_value"].strip()) if eclass else "[redacted]"
+            eclass = self.eclasses.get(match["el_type"].strip())
+            return self.anonymizer.anonymize(eclass, match["el_value"].strip()) if eclass else "[redacted]"
 
-        return _LINK_RE.sub(link, text).strip()
+        return _ENTRY_LINK_RE.sub(link, text).strip()
 
     def _caption_figures(self, body: str) -> str:
         """Turn images that stand alone in a paragraph into numbered figures captioned by their alt text."""

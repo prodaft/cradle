@@ -18,7 +18,7 @@ from ..models import Team, TeamAccess, TeamMembership
 
 class TeamsTestCase(TestCase):
     def setUp(self):
-        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         self.patcher.start()
 
         self.entry_class = EntryClass.objects.create(type=EntryType.ENTITY, subtype="case")
@@ -354,6 +354,19 @@ class UserTeamListTest(TeamsTestCase):
         response = self.client.get(missing, **self._auth(self.admin))
         self.assertEqual(response.status_code, 404)
 
+    def test_user_lists_own_teams(self):
+        TeamMembership.objects.create(team=self.other_team, user=self.member)
+        url = reverse("user_team_list_me")
+        response = self.client.get(url, **self._auth(self.member))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [(m["team"]["name"], m["role"]) for m in response.json()], [("Blue", "member"), ("Red", "member")]
+        )
+
+        response = self.client.get(url, **self._auth(self.outsider))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
+
 
 class TeamSearchTest(TeamsTestCase):
     def test_members_and_access_search(self):
@@ -449,3 +462,116 @@ class PlainUserLeadTest(TeamsTestCase):
 
         other_url = reverse("entity_access_list", kwargs={"entity_id": self.other_entity.id})
         self.assertEqual(self.client.get(other_url, **self._auth(self.lead)).status_code, 403)
+
+
+class EntryClassTeamsTest(TeamsTestCase):
+    """Entity types linked to teams can only be created by admins and leads of those teams."""
+
+    def setUp(self):
+        super().setUp()
+        self.entry_class.teams.set([self.team])
+
+    def _create_entity(self, actor, name, team=None):
+        body = {"name": name, "subtype": "case"}
+        if team is not None:
+            body["team_id"] = str(team.id)
+        return self.client.post(reverse("entity_list"), body, content_type="application/json", **self._auth(actor))
+
+    def test_linked_team_lead_creates_entity(self):
+        self.assertEqual(self._create_entity(self.lead, "a", self.team).status_code, 201)
+
+    def test_other_team_lead_cannot_create_entity(self):
+        response = self._create_entity(self.other_lead, "b", self.other_team)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["code"], "ENTRY_TYPE_TEAM_RESTRICTED")
+        self.assertFalse(Entry.entities.filter(name="b").exists())
+
+    def test_admin_creates_entity_for_any_team(self):
+        self.assertEqual(self._create_entity(self.admin, "c", self.other_team).status_code, 201)
+        self.assertEqual(self._create_entity(self.admin, "d").status_code, 201)
+
+    def test_unlinked_type_is_open_to_any_lead(self):
+        self.entry_class.teams.clear()
+        self.assertEqual(self._create_entity(self.other_lead, "e", self.other_team).status_code, 201)
+
+    def test_manager_links_teams_to_entry_type(self):
+        url = reverse("entry_class_detail", kwargs={"class_subtype": "case"})
+        response = self.client.put(
+            url,
+            {"type": "entity", "subtype": "case", "team_ids": [str(self.other_team.id)]},
+            content_type="application/json",
+            **self._auth(self.manager),
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual([t["id"] for t in response.json()["teams"]], [str(self.other_team.id)])
+        self.assertEqual(list(self.entry_class.teams.all()), [self.other_team])
+
+    def test_retyping_entity_into_reserved_type_needs_a_linked_owner(self):
+        EntryClass.objects.create(type=EntryType.ENTITY, subtype="open")
+        entity = Entry.objects.create(name="x", entry_class=EntryClass.objects.get(subtype="open"))
+        Access.objects.create(user=self.manager, entity=entity, access_type=AccessType.READ_WRITE)
+        url = reverse("entity_detail", kwargs={"entity_id": entity.id})
+
+        def retype():
+            return self.client.patch(
+                url, {"subtype": "case"}, content_type="application/json", **self._auth(self.manager)
+            )
+
+        self.assertEqual(retype().status_code, 403)
+        self.other_team.take_ownership(entity)
+        self.assertEqual(retype().status_code, 403)
+        self.team.take_ownership(entity)
+        self.assertEqual(retype().status_code, 200)
+
+    def test_artifact_type_drops_linked_teams(self):
+        response = self.client.put(
+            reverse("entry_class_detail", kwargs={"class_subtype": "case"}),
+            {"type": "artifact", "subtype": "case"},
+            content_type="application/json",
+            **self._auth(self.admin),
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertFalse(self.entry_class.teams.exists())
+
+    def test_rename_keeps_linked_teams(self):
+        renamed = self.entry_class.rename("case2")
+        self.assertEqual(list(renamed.teams.all()), [self.team])
+
+    def test_artifact_types_cannot_be_linked(self):
+        response = self.client.post(
+            reverse("entry_class_list"),
+            {"type": "artifact", "subtype": "ip", "team_ids": [str(self.team.id)]},
+            content_type="application/json",
+            **self._auth(self.manager),
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_team_reserving_a_type_alone_cannot_be_deleted(self):
+        url = reverse("team_detail", kwargs={"team_id": self.team.id})
+        response = self.client.delete(url, **self._auth(self.admin))
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()["code"], "TEAM_RESERVES_ENTRY_TYPES")
+
+        self.entry_class.teams.add(self.other_team)
+        self.assertEqual(self.client.delete(url, **self._auth(self.admin)).status_code, 204)
+        self.assertEqual(list(self.entry_class.teams.all()), [self.other_team])
+
+    def test_non_managers_only_see_their_own_teams_on_entry_types(self):
+        self.entry_class.teams.add(self.other_team)
+        url = reverse("entry_class_detail", kwargs={"class_subtype": "case"})
+
+        member_view = self.client.get(url, **self._auth(self.member)).json()
+        self.assertEqual([t["id"] for t in member_view["teams"]], [str(self.team.id)])
+        self.assertTrue(member_view["is_team"])
+
+        outsider_view = self.client.get(url, **self._auth(self.outsider)).json()
+        self.assertEqual(outsider_view["teams"], [])
+        self.assertTrue(outsider_view["is_team"])
+
+        manager_view = self.client.get(url, **self._auth(self.manager)).json()
+        self.assertEqual(len(manager_view["teams"]), 2)
+
+    def test_entries_do_not_expose_entry_type_teams(self):
+        from entries.serializers import EntryResponseSerializer
+
+        self.assertNotIn("teams", EntryResponseSerializer(self.entity).data)

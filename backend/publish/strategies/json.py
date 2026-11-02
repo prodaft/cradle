@@ -3,7 +3,7 @@ import logging
 from datetime import timedelta
 from typing import List
 
-from entries.serializers import EntryClassSerializer, EntryPublishSerializer
+from entries.serializers import EntryClassSerializerNoTeams, EntryPublishSerializer
 from notes.models import Note
 
 from ..models import PublishedReport
@@ -62,7 +62,7 @@ class JSONPublish(BasePublishStrategy):
         report["entries"] = entries_data
 
         linked_entry_classes = {entry.entry_class for entry in linked_entries_set}
-        entry_classes_data = EntryClassSerializer(linked_entry_classes, many=True).data
+        entry_classes_data = EntryClassSerializerNoTeams(linked_entry_classes, many=True).data
         report["entry_classes"] = entry_classes_data
 
         return report

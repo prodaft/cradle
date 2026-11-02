@@ -15,8 +15,7 @@ Stdout contract (``EnricherResult`` JSON):
                 "e1_class": "hash",
                 "e2_name": "Enrichment Request Title [uuid]",
                 "e2_class": "__enrichment__",
-                "details": {},
-                "inherit_av": true
+                "details": {}
             }
         ],
         "warnings": ["..."],
@@ -38,7 +37,6 @@ class RelationSpec(BaseModel):
     e2_name: str
     e2_class: str
     details: dict[str, Any] = Field(default_factory=dict)
-    inherit_av: bool = True
 
 
 class EnricherResult(BaseModel):

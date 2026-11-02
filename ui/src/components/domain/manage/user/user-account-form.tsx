@@ -2,6 +2,7 @@ import {
     SettingsHeaderActionsPortal,
     SettingsSaveButton,
 } from '@/components/base/settings-header-actions/settings-header-actions';
+import { SelectContent } from '@/components/custom/select';
 import {
     Field,
     FieldContent,
@@ -11,13 +12,7 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useAuthState } from '@/hooks/auth/use-auth';
@@ -26,7 +21,6 @@ import { USER_ROLE_OPTIONS } from '@/utils/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { $api, fetchClient } from '@services/openapi/client';
 import { useMutation } from '@tanstack/react-query';
-import bytes from 'bytes';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -43,18 +37,6 @@ const schema = z.object({
     role: z.string().min(1, { error: 'Role is required' }),
     emailConfirmed: z.boolean().optional(),
     isActive: z.boolean().optional(),
-    fileUploadLimitOverride: z
-        .string()
-        .optional()
-        .refine(
-            (value) => {
-                if (!value || value === '') return true;
-                return typeof bytes(value) === 'number';
-            },
-            {
-                error: 'Enter a valid size (e.g. 100MB, 1GB) or leave empty to use global default',
-            },
-        ),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -104,7 +86,6 @@ export default function UserAccountForm({
             role: 'author',
             emailConfirmed: false,
             isActive: false,
-            fileUploadLimitOverride: '',
         },
     });
 
@@ -117,11 +98,6 @@ export default function UserAccountForm({
             role: user.role || 'author',
             emailConfirmed: user.email_confirmed || false,
             isActive: user.is_active || false,
-            fileUploadLimitOverride: user.file_upload_limit_override
-                ? (bytes.format(user.file_upload_limit_override, {
-                      unitSeparator: ' ',
-                  }) ?? '')
-                : '',
         };
         reset(values);
     }, [user, reset]);
@@ -135,11 +111,6 @@ export default function UserAccountForm({
         if (dirtyFields.role) payload.role = values.role;
         if (dirtyFields.emailConfirmed) payload.email_confirmed = values.emailConfirmed;
         if (dirtyFields.isActive) payload.is_active = values.isActive;
-        if (dirtyFields.fileUploadLimitOverride) {
-            payload.file_upload_limit_override = values.fileUploadLimitOverride?.trim()
-                ? bytes.parse(values.fileUploadLimitOverride)
-                : null;
-        }
 
         updateUser.mutate(
             { userId: values.id, payload },
@@ -171,7 +142,7 @@ export default function UserAccountForm({
                                     orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
-                                    <FieldContent className='flex-1'>
+                                    <FieldContent>
                                         <FieldLabel
                                             htmlFor='username'
                                             className='text-sm block'
@@ -210,7 +181,7 @@ export default function UserAccountForm({
                                     orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
-                                    <FieldContent className='flex-1'>
+                                    <FieldContent>
                                         <FieldLabel
                                             htmlFor='email'
                                             className='text-sm block'
@@ -243,7 +214,7 @@ export default function UserAccountForm({
                         <Separator />
 
                         <Field orientation='responsive'>
-                            <FieldContent className='flex-1'>
+                            <FieldContent>
                                 <FieldLabel htmlFor='userId' className='text-sm block'>
                                     User ID
                                 </FieldLabel>
@@ -273,7 +244,7 @@ export default function UserAccountForm({
                                     orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
-                                    <FieldContent className='flex-1'>
+                                    <FieldContent>
                                         <FieldLabel className='text-sm block'>
                                             Role
                                         </FieldLabel>
@@ -322,7 +293,7 @@ export default function UserAccountForm({
                             control={control}
                             render={({ field }) => (
                                 <Field orientation='responsive'>
-                                    <FieldContent className='flex-1'>
+                                    <FieldContent>
                                         <FieldLabel
                                             htmlFor='emailConfirmed'
                                             className='text-sm block mb-0.5'
@@ -353,7 +324,7 @@ export default function UserAccountForm({
                             control={control}
                             render={({ field }) => (
                                 <Field orientation='responsive'>
-                                    <FieldContent className='flex-1'>
+                                    <FieldContent>
                                         <FieldLabel
                                             htmlFor='isActive'
                                             className='text-sm block mb-0.5'
@@ -373,55 +344,6 @@ export default function UserAccountForm({
                                         disabled={isOtherAdmin || isSelf}
                                         className='self-start md:self-center'
                                     />
-                                </Field>
-                            )}
-                        />
-
-                        <Separator />
-
-                        <Controller
-                            name='fileUploadLimitOverride'
-                            control={control}
-                            render={({ field, fieldState }) => (
-                                <Field
-                                    orientation='responsive'
-                                    data-invalid={fieldState.invalid}
-                                >
-                                    <FieldContent className='flex-1'>
-                                        <FieldLabel
-                                            htmlFor='fileUploadLimitOverride'
-                                            className='text-sm block'
-                                        >
-                                            Upload Limit
-                                        </FieldLabel>
-                                        <FieldDescription>
-                                            Override global file upload limit for this
-                                            user (e.g., 100MB, 1GB). Leave empty to use
-                                            global default.
-                                        </FieldDescription>
-                                        {fieldState.invalid && (
-                                            <FieldError
-                                                id='fileUploadLimitOverride-error'
-                                                className='text-sm mt-1'
-                                            >
-                                                {fieldState.error?.message}
-                                            </FieldError>
-                                        )}
-                                    </FieldContent>
-                                    <div className='w-64 shrink-0 self-start md:self-center'>
-                                        <Input
-                                            {...field}
-                                            id='fileUploadLimitOverride'
-                                            placeholder='e.g., 100MB, 1GB'
-                                            disabled={isOtherAdmin || isSelf}
-                                            aria-invalid={fieldState.invalid}
-                                            aria-describedby={
-                                                fieldState.invalid
-                                                    ? 'fileUploadLimitOverride-error'
-                                                    : undefined
-                                            }
-                                        />
-                                    </div>
                                 </Field>
                             )}
                         />

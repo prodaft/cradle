@@ -1,4 +1,4 @@
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/custom/badge';
 import { Button } from '@/components/ui/button';
 import {
     Command,
@@ -99,7 +99,7 @@ export default function SearchFilterSection({
                                   key={subtype}
                                   variant='outline'
                                   onClick={() => toggleSubtype(subtype)}
-                                  className='shrink-0 cursor-pointer text-[11px] px-1.5 py-0 h-5 gap-0.5'
+                                  className='cursor-pointer'
                                   style={
                                       color
                                           ? {
@@ -112,7 +112,7 @@ export default function SearchFilterSection({
                               >
                                   {subtype}
                                   <XIcon
-                                      className='size-2.5 cursor-pointer opacity-70 hover:opacity-100'
+                                      className='cursor-pointer opacity-70 hover:opacity-100'
                                       weight='bold'
                                       onClick={(e) => removeSubtype(subtype, e)}
                                   />
@@ -126,7 +126,7 @@ export default function SearchFilterSection({
                                   key={subtype}
                                   variant='outline'
                                   onClick={() => toggleSubtype(subtype)}
-                                  className='shrink-0 cursor-pointer select-none text-[11px] px-1.5 py-0 h-5 opacity-50 hover:opacity-80 transition-opacity'
+                                  className='cursor-pointer select-none opacity-50 hover:opacity-80 transition-opacity'
                                   style={
                                       color ? { borderColor: color, color } : undefined
                                   }
@@ -141,13 +141,14 @@ export default function SearchFilterSection({
             <Popover open={isPickerOpen} onOpenChange={setIsPickerOpen}>
                 <PopoverTrigger
                     render={
-                        <button
-                            type='button'
-                            className='shrink-0 inline-flex items-center gap-1 border border-dashed px-2 h-5 text-[11px] text-muted-foreground hover:border-foreground/30 hover:text-foreground transition-colors'
+                        <Button
+                            variant='outline'
+                            size='xs'
+                            className='border-dashed text-muted-foreground'
                         />
                     }
                 >
-                    <ChevronsUpDown className='size-2.5' />
+                    <ChevronsUpDown />
                     {selectedSubtypes.length > 0 ? 'Edit' : 'Select'}
                 </PopoverTrigger>
                 <PopoverContent className='w-56 p-0' align='end'>
@@ -165,7 +166,6 @@ export default function SearchFilterSection({
                                             key={subtype}
                                             value={subtype}
                                             onSelect={() => toggleSubtype(subtype)}
-                                            className='gap-2'
                                         >
                                             <div
                                                 className={cn(
@@ -201,7 +201,7 @@ export default function SearchFilterSection({
                                         variant='ghost'
                                         size='sm'
                                         onClick={clearSubtypes}
-                                        className='w-full text-xs text-muted-foreground'
+                                        className='w-full text-muted-foreground'
                                     >
                                         Clear all
                                     </Button>
@@ -222,7 +222,7 @@ export default function SearchFilterSection({
                         variant='ghost'
                         size='xs'
                         onClick={clearSubtypes}
-                        className='shrink-0 text-[11px] text-muted-foreground h-5 px-1'
+                        className='text-muted-foreground'
                     >
                         Clear
                     </Button>

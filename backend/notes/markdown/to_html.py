@@ -1,4 +1,4 @@
-"""Convert markdown to HTML with cradle link and footnote support."""
+"""Convert markdown to HTML with entry link and footnote support."""
 
 import datetime
 import html
@@ -10,11 +10,11 @@ import mistune
 from mistune.plugins.table import table
 from mistune.renderers.html import HTMLRenderer as BaseHTMLRenderer
 
-from .utils import ErrorBypassYAMLHandler, cradle_link_plugin, embed_image_as_data_url, footnote_plugin
+from .utils import ErrorBypassYAMLHandler, embed_image_as_data_url, entry_link_plugin, footnote_plugin
 
 
 class HTMLRenderer(BaseHTMLRenderer):
-    """A renderer for converting Markdown to HTML with special handling for cradle links."""
+    """A renderer for converting Markdown to HTML with special handling for entry links."""
 
     def __init__(self, fetch_image: Callable[[str, str], Optional[BytesIO]], **kwargs) -> None:
         self.fetch_image = fetch_image
@@ -32,7 +32,7 @@ class HTMLRenderer(BaseHTMLRenderer):
         safe_value = html.escape(value)
         return f'<img src="{img_data}" alt="{safe_value}" title="{safe_value}">'
 
-    def cradle_link(
+    def entry_link(
         self,
         key: str,
         value: str,
@@ -53,7 +53,7 @@ def markdown_to_html(
     footnotes: Dict[str, Tuple[str, str]],
     fetch_image: Callable[[str, str], Optional[BytesIO]],
 ) -> str:
-    """Convert markdown to HTML with special handling for cradle links and images.
+    """Convert markdown to HTML with special handling for entry links and images.
 
     Args:
         md: Markdown content to convert.
@@ -66,7 +66,7 @@ def markdown_to_html(
     _, content = frontmatter.parse(md, handler=ErrorBypassYAMLHandler())
 
     renderer = HTMLRenderer(fetch_image)
-    markdown = mistune.create_markdown(renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin])
+    markdown = mistune.create_markdown(renderer=renderer, plugins=[table, entry_link_plugin, footnote_plugin])
 
     state = markdown.block.state_cls()
     state.env["ref_footnotes"] = footnotes

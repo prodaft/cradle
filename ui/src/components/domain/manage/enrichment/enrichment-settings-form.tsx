@@ -1,5 +1,6 @@
 import { SettingsSaveButton } from '@/components/base/settings-header-actions/settings-header-actions';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
+import { SelectContent } from '@/components/custom/select';
 import {
     Field,
     FieldContent,
@@ -11,13 +12,7 @@ import {
     FieldSet,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { SelectOption } from '@/types/models';
@@ -453,11 +448,7 @@ export default function EnrichmentSettingsForm({
                 <div key={key} className='space-y-4'>
                     {content}
                     {index < entries.length - 1 && (
-                        <Separator
-                            data-orientation='horizontal'
-                            role='none'
-                            className='shrink-0'
-                        />
+                        <Separator data-orientation='horizontal' role='none' />
                     )}
                 </div>
             );
@@ -490,7 +481,7 @@ export default function EnrichmentSettingsForm({
                 <Separator
                     data-orientation='horizontal'
                     role='none'
-                    className='shrink-0 mt-2 mb-4 lg:mb-6'
+                    className='mt-2 mb-4 lg:mb-6'
                 />
             </div>
 
@@ -508,7 +499,7 @@ export default function EnrichmentSettingsForm({
                 <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
                     <div className='flex flex-col gap-6'>
                         {/* General Information */}
-                        <FieldSet id='general' className='gap-4'>
+                        <FieldSet id='general'>
                             <div className='space-y-4'>
                                 <FieldLegend className='mb-0'>
                                     General Information
@@ -620,7 +611,7 @@ export default function EnrichmentSettingsForm({
                         </FieldSet>
 
                         {Object.keys(formFields).length > 0 && (
-                            <FieldSet id='settings' className='gap-4'>
+                            <FieldSet id='settings'>
                                 <div className='space-y-4'>
                                     <FieldLegend className='mb-0'>
                                         Enrichment Parameters

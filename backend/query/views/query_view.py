@@ -56,7 +56,7 @@ class EntryListQuery(ListAPIView):
     filter_backends = [DjangoFilterBackend]
     filterset_class = EntryFilter
     pagination_class = TotalPagesPagination
-    ordering = ["-last_seen"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
@@ -147,7 +147,7 @@ class AdvancedQueryView(APIView):
 
         filtered_entries = accessible_entries.filter(query_filter)
 
-        filtered_entries = filtered_entries.order_by("-last_seen")
+        filtered_entries = filtered_entries.order_by("-created_at")
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(filtered_entries, request)
 

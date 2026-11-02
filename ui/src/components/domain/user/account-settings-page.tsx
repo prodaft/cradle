@@ -6,16 +6,27 @@ import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ClockCounterClockwiseIcon, PencilSimpleIcon } from '@phosphor-icons/react';
+import {
+    ClockCounterClockwiseIcon,
+    PencilSimpleIcon,
+    UserIcon,
+} from '@phosphor-icons/react';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Link, Lock, Palette } from 'lucide-react';
 import AccountAppearanceForm from './account-appearance-form';
 import AccountEditorForm from './account-editor-form';
 import AccountOAuthList from './account-oauth-list';
+import AccountProfile from './account-profile';
 import AccountSecurityActions from './account-security-actions';
 import ActiveSessions from './active-sessions';
 
 const ACCOUNT_SETTINGS_ITEMS = [
+    {
+        id: 'account',
+        label: 'Account',
+        icon: UserIcon,
+        description: 'Account identity and team membership',
+    },
     {
         id: 'security',
         label: 'Security',
@@ -38,7 +49,7 @@ const ACCOUNT_SETTINGS_ITEMS = [
         id: 'appearance',
         label: 'Appearance',
         icon: Palette,
-        description: 'Customize your visual appearance and theme',
+        description: 'Choose the color theme for this browser',
     },
     {
         id: 'editor',
@@ -48,7 +59,7 @@ const ACCOUNT_SETTINGS_ITEMS = [
     },
 ];
 
-const defaultAccountSettingsTabId = ACCOUNT_SETTINGS_ITEMS[0]?.id ?? 'security';
+const defaultAccountSettingsTabId = ACCOUNT_SETTINGS_ITEMS[0]?.id ?? 'account';
 
 interface AccountSettingsProps {
     target?: string;
@@ -75,9 +86,14 @@ export default function AccountSettingsPage({ target = 'me' }: AccountSettingsPr
         });
     };
 
+    const settingsItems =
+        target === 'me'
+            ? ACCOUNT_SETTINGS_ITEMS
+            : ACCOUNT_SETTINGS_ITEMS.filter((item) => item.id !== 'appearance');
+
     const currentTab =
-        ACCOUNT_SETTINGS_ITEMS.find((item) => item.id === tab) ??
-        ACCOUNT_SETTINGS_ITEMS.find((item) => item.id === defaultAccountSettingsTabId);
+        settingsItems.find((item) => item.id === tab) ??
+        settingsItems.find((item) => item.id === defaultAccountSettingsTabId);
 
     return (
         <SettingsHeaderActionsProvider>
@@ -96,12 +112,12 @@ export default function AccountSettingsPage({ target = 'me' }: AccountSettingsPr
                 </div>
                 <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
                     <Tabs value={tab} onValueChange={changeTab}>
-                        <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
-                            {ACCOUNT_SETTINGS_ITEMS.map((item) => {
+                        <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
+                            {settingsItems.map((item) => {
                                 const Icon = item.icon;
                                 return (
                                     <TabsTrigger key={item.id} value={item.id}>
-                                        <Icon className='w-4 h-4' />
+                                        <Icon />
                                         {item.label}
                                     </TabsTrigger>
                                 );
@@ -123,8 +139,9 @@ export default function AccountSettingsPage({ target = 'me' }: AccountSettingsPr
                                     <Separator
                                         data-orientation='horizontal'
                                         role='none'
-                                        className='bg-border mb-4 flex-none'
+                                        className='mb-4 flex-none'
                                     />
+                                    {tab === 'account' && <AccountProfile />}
                                     {tab === 'security' && (
                                         <AccountSecurityActions target={target} />
                                     )}
@@ -134,8 +151,8 @@ export default function AccountSettingsPage({ target = 'me' }: AccountSettingsPr
                                     {tab === 'oauth' && (
                                         <AccountOAuthList target={target} />
                                     )}
-                                    {tab === 'appearance' && (
-                                        <AccountAppearanceForm target={target} />
+                                    {tab === 'appearance' && target === 'me' && (
+                                        <AccountAppearanceForm />
                                     )}
                                     {tab === 'editor' && (
                                         <AccountEditorForm target={target} />

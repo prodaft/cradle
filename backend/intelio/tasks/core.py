@@ -102,13 +102,19 @@ def start_enrich(enrich_id):
 
 @shared_task
 def propagate_acvec_digest(digest_id):
-    """Propagate access vector from digest entities to its relations."""
+    """Propagate access vector from digest entities to its relations, then to the edges built from them."""
+    from entries.tasks import refresh_edges_materialized_view
+
     digest = BaseDigest.objects.get(id=digest_id)
     digest.update_access_vector()
+    refresh_edges_materialized_view.apply_async()
 
 
 @shared_task
 def propagate_acvec_enrich(enrich_id):
-    """Propagate access vector from enrichment entities to its relations."""
+    """Propagate access vector from enrichment entities to its relations, then to the edges built from them."""
+    from entries.tasks import refresh_edges_materialized_view
+
     request = EnrichmentRequest.objects.get(id=enrich_id)
     request.update_access_vector()
+    refresh_edges_materialized_view.apply_async()

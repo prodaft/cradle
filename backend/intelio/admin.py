@@ -7,7 +7,7 @@ from intelio.models import EnricherSettings, EnrichmentRequest
 
 @admin.register(EnricherSettings)
 class EnricherSettingsAdmin(admin.ModelAdmin):
-    list_display = ("enricher_type", "enabled", "id")
+    list_display = ("id", "enricher_type", "enabled")
     list_filter = ("enabled", "enricher_type")
     search_fields = ("enricher_type",)
     filter_horizontal = ("for_eclasses",)

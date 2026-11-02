@@ -86,7 +86,6 @@ def make_relation(
     e2_name: str,
     e2_class: str,
     details: dict | None = None,
-    inherit_av: bool = True,
 ) -> dict:
     """Build a relation dict for the result envelope."""
     return {
@@ -95,5 +94,4 @@ def make_relation(
         "e2_name": e2_name,
         "e2_class": e2_class,
         "details": details or {},
-        "inherit_av": inherit_av,
     }

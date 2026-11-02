@@ -1,16 +1,14 @@
-import Logo from '@/components/base/logo/logo';
+import { AuthHeader, AuthLayout } from '@/components/domain/auth/auth-layout';
 import { useAuthActions } from '@/hooks/auth/use-auth';
 import { getDisplayMessage, getSuccessMessage, parseAPIError } from '@/utils/api';
-import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { WarningCircleIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import { Link, useRouter, useSearch } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 
-const CONFIRM_EMAIL_IMAGES = ['/1.png', '/2.png', '/3.png', '/4.png'];
 const STORAGE_KEY = 'confirm-email-result';
 const tokensInFlight = new Set<string>();
 
@@ -22,12 +20,6 @@ const tokensInFlight = new Set<string>();
 export default function ConfirmEmail() {
     const router = useRouter();
     const { isLoggedIn } = useAuthActions();
-    const [confirmEmailImage] = useState(
-        () =>
-            CONFIRM_EMAIL_IMAGES[
-                Math.floor(Math.random() * CONFIRM_EMAIL_IMAGES.length)
-            ],
-    );
     const search = useSearch({ from: '/confirm-email' });
     const rawToken = (search as { token?: unknown }).token;
     const token = typeof rawToken === 'string' ? rawToken : undefined;
@@ -117,106 +109,49 @@ export default function ConfirmEmail() {
     }
 
     return (
-        <div className='grid min-h-svh lg:grid-cols-2'>
-            {/* Left Column - Content */}
-            <div className='flex flex-col gap-4 p-6 md:p-10 relative'>
-                {/* Branding */}
-                <div className='flex justify-between items-center gap-2'>
-                    <a href='#' className='flex items-center gap-2 font-medium'>
-                        <Logo text={true} width='120px' />
-                    </a>
-                    <Button
-                        onClick={() => router.navigate({ to: '/login', replace: true })}
-                        variant='ghost'
-                        size='icon-sm'
-                        className='p-2 rounded-lg'
-                        data-testid='back-button'
-                        title='Back to Login'
-                    >
-                        <ArrowUUpLeftIcon size={18} weight='bold' />
-                    </Button>
-                </div>
-
-                {/* Content */}
-                <div className='flex flex-1 items-center justify-center'>
-                    <div className='w-full max-w-xs text-center'>
-                        {(status === 'loading' || (status === 'idle' && token)) && (
-                            <>
-                                <div className='flex justify-center mb-4'>
-                                    <Spinner className='size-10' />
-                                </div>
-                                <h1 className='text-2xl font-bold'>
-                                    Confirming your email
-                                </h1>
-                                <p className='mt-2 text-sm text-muted-foreground'>
-                                    Please wait...
-                                </p>
-                            </>
-                        )}
-                        {status === 'success' && (
-                            <>
-                                <h1 className='text-2xl font-bold text-green-600 dark:text-green-500'>
-                                    Email confirmed
-                                </h1>
-                                {successMessage && (
-                                    <p className='mt-2 text-sm text-muted-foreground'>
-                                        {successMessage}
-                                    </p>
-                                )}
-                            </>
-                        )}
-                        {status === 'error' && (
-                            <>
-                                <h1 className='text-2xl font-bold text-destructive'>
-                                    {token ? 'Confirmation failed' : 'Invalid link'}
-                                </h1>
-                                {errorMessage && (
-                                    <Alert
-                                        variant='destructive'
-                                        className='mt-4 text-left'
-                                    >
-                                        <WarningCircleIcon
-                                            className='size-4'
-                                            weight='bold'
-                                        />
-                                        <AlertTitle>{errorTitle || 'Error'}</AlertTitle>
-                                        <AlertDescription>
-                                            {errorMessage}
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
-                            </>
-                        )}
-                        {(status === 'success' || status === 'error') && (
-                            <Link
-                                to='/login'
-                                className='mt-6 inline-block font-semibold text-primary underline underline-offset-4 hover:text-primary/90'
-                                replace={true}
-                            >
-                                Go to login
-                            </Link>
-                        )}
-                        <div className='mt-6 text-center'>
-                            <span className='text-xs text-muted-foreground font-mono tracking-wider'>
-                                {__APP_VERSION_LABEL__}
-                            </span>
-                        </div>
+        <AuthLayout>
+            <div className='flex flex-col gap-4'>
+                {(status === 'loading' || (status === 'idle' && token)) && (
+                    <div className='flex items-start gap-3'>
+                        <Spinner className='mt-1.5 size-5 text-primary' />
+                        <AuthHeader
+                            title='Confirming your email'
+                            description='Please wait…'
+                        />
                     </div>
-                </div>
+                )}
+                {status === 'success' && (
+                    <AuthHeader
+                        title='Email confirmed'
+                        description={successMessage || undefined}
+                    />
+                )}
+                {status === 'error' && (
+                    <>
+                        <AuthHeader
+                            title={token ? 'Confirmation failed' : 'Invalid link'}
+                        />
+                        {errorMessage && (
+                            <Alert variant='destructive'>
+                                <WarningCircleIcon weight='bold' />
+                                <AlertTitle>{errorTitle || 'Error'}</AlertTitle>
+                                <AlertDescription>{errorMessage}</AlertDescription>
+                            </Alert>
+                        )}
+                    </>
+                )}
+                {(status === 'success' || status === 'error') && (
+                    <p className='border-t pt-3.5 text-sm'>
+                        <Link
+                            to='/login'
+                            className='text-primary underline-offset-4 hover:underline'
+                            replace={true}
+                        >
+                            Go to sign in
+                        </Link>
+                    </p>
+                )}
             </div>
-
-            {/* Right Column - Image */}
-            <div
-                className='bg-muted relative hidden lg:block select-none'
-                onContextMenu={(e) => e.preventDefault()}
-            >
-                <img
-                    src={confirmEmailImage}
-                    alt=''
-                    className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale pointer-events-none'
-                    draggable={false}
-                />
-            </div>
-        </div>
+        </AuthLayout>
     );
 }

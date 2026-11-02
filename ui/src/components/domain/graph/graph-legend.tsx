@@ -87,7 +87,7 @@ const GraphLegend = ({
                     <Button
                         variant='ghost'
                         size='sm'
-                        className='text-xs px-2 py-1 hover:bg-card'
+                        className='hover:bg-card'
                         onClick={toggleAll}
                     >
                         {allItemsDisabled ? 'Show All' : 'Hide All'}
@@ -152,7 +152,7 @@ const GraphLegend = ({
                                                     <Button
                                                         variant='ghost'
                                                         size='sm'
-                                                        className='text-xs px-2 py-1 hover:bg-card'
+                                                        className='hover:bg-card'
                                                         onClick={() =>
                                                             toggleAllAtPath(
                                                                 path,

@@ -224,7 +224,7 @@ export function DataTable<TData>({
                                     colSpan={table.getAllColumns().length}
                                     className='p-0'
                                 >
-                                    <Empty className='min-h-24 flex-none gap-2 border-0 rounded-none py-8'>
+                                    <Empty className='min-h-24 flex-none gap-2 border-0 py-8'>
                                         <EmptyHeader className='max-w-none'>
                                             <EmptyDescription>
                                                 {emptyMessage}

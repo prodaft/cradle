@@ -1,4 +1,4 @@
-import { useTheme } from '@contexts/ui';
+import { useTheme } from 'next-themes';
 import { JSX, useEffect, useState } from 'react';
 
 import logo_dark from '@/assets/logos/dark_notext.svg';
@@ -36,7 +36,7 @@ export default function Logo({
     text = false,
     onClick = null,
 }: LogoProps): JSX.Element {
-    const { isDarkMode } = useTheme();
+    const isDarkMode = useTheme().resolvedTheme === 'dark';
     const [logo, setLogo] = useState<string | null>(null);
 
     useEffect(() => {

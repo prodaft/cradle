@@ -194,13 +194,8 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                         <h3 className='text-sm font-semibold text-foreground font-mono tracking-wide'>
                             Note Snippets
                         </h3>
-                        <Button
-                            onClick={handleAddSnippet}
-                            variant='default'
-                            size='sm'
-                            className='flex items-center gap-2'
-                        >
-                            <PlusIcon className='w-4 h-4' weight='bold' />
+                        <Button onClick={handleAddSnippet} variant='default' size='sm'>
+                            <PlusIcon weight='bold' />
                             New Snippet
                         </Button>
                     </div>
@@ -240,11 +235,11 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                                             }
                                             variant='ghost'
                                             size='icon-sm'
-                                            className='p-1 hover:bg-muted'
+                                            className='hover:bg-muted'
                                             title='Edit snippet'
                                         >
                                             <PencilIcon
-                                                className='w-4 h-4 text-primary'
+                                                className='text-primary'
                                                 weight='bold'
                                             />
                                         </Button>
@@ -254,11 +249,11 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                                             }
                                             variant='ghost'
                                             size='icon-sm'
-                                            className='p-1 hover:bg-destructive/10'
+                                            className='hover:bg-destructive/10'
                                             title='Delete snippet'
                                         >
                                             <TrashIcon
-                                                className='w-4 h-4 text-destructive'
+                                                className='text-destructive'
                                                 weight='bold'
                                             />
                                         </Button>

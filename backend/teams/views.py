@@ -9,7 +9,7 @@ from typing import cast
 from uuid import UUID
 
 from django.db import IntegrityError, transaction
-from django.db.models import Count, OuterRef, QuerySet, Subquery
+from django.db.models import Count
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.generics import ListAPIView, ListCreateAPIView
@@ -23,8 +23,9 @@ from core.exceptions import CoreErrorCodes, PermissionDeniedException
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
 from core.query_lang import search_q
-from entries.exceptions import EntityNotFoundException, EntriesErrorCodes
-from entries.models import Entry
+from entries.exceptions import EntriesErrorCodes
+from entries.lookup import get_entity
+from entries.models import EntryClass
 from notifications.models import TeamMembershipNotification
 from user.authentication import CookieJWTAuthentication
 from user.exceptions import UserErrorCodes, UserNotFoundException
@@ -39,8 +40,9 @@ from .exceptions import (
     TeamErrorCodes,
     TeamMemberAlreadyExistsException,
     TeamMemberNotFoundException,
-    TeamNotFoundException,
+    TeamReservesEntryTypesException,
 )
+from .lookup import get_managed_team, get_visible_team
 from .models import Team, TeamAccess, TeamMembership
 from .permissions import CanViewEntityAccess
 from .rules import can_set_team_access
@@ -64,32 +66,6 @@ PAGE_PARAMS = [
     ),
 ]
 PAGE_ERRORS = (CoreErrorCodes.INVALID_PAGE_SIZE, CoreErrorCodes.PAGE_SIZE_TOO_LARGE)
-
-
-def visible_teams(user: CradleUser) -> QuerySet:
-    """Teams ``user`` may see, annotated with member count and the user's role."""
-    role = TeamMembership.objects.filter(team=OuterRef("pk"), user=user).values("role")[:1]
-    return Team.objects.visible_to(user).annotate(num_members=Count("memberships"), requester_role=Subquery(role))
-
-
-def _get_team(user: CradleUser, team_id: UUID) -> Team:
-    """Fetch a team visible to ``user`` or raise TeamNotFoundException."""
-    try:
-        return visible_teams(user).get(pk=team_id)
-    except Team.DoesNotExist:
-        raise TeamNotFoundException(detail="That team could not be found.")
-
-
-def _require_manage(user: CradleUser, team: Team) -> None:
-    if not team.can_manage(user):
-        raise TeamChangeNotAllowedException(detail="Only admins and the team's leads can change this team.")
-
-
-def _get_entity(entity_id: int) -> Entry:
-    try:
-        return Entry.entities.select_related("team").get(pk=entity_id)
-    except Entry.DoesNotExist:
-        raise EntityNotFoundException(detail="That entity could not be found.")
 
 
 @extend_schema_view(
@@ -149,7 +125,7 @@ class TeamList(ListCreateAPIView):
         if getattr(self, "swagger_fake_view", False):
             return Team.objects.none()
         user = cast(CradleUser, self.request.user)
-        teams = visible_teams(user)
+        teams = Team.objects.visible_to(user).with_member_info(user)
         if self.request.query_params.get("mine") in ("true", "1"):
             teams = teams.member_of(user)
         q = search_q(self.request.query_params.get("search"), ["name"])
@@ -159,7 +135,7 @@ class TeamList(ListCreateAPIView):
 
     def create(self, request: Request, *args, **kwargs) -> Response:
         user = cast(CradleUser, request.user)
-        if not user.is_cradle_admin:
+        if not user.is_admin:
             raise PermissionDeniedException(detail="Only administrators can create teams.")
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -204,11 +180,16 @@ class TeamList(ListCreateAPIView):
         summary="Delete team",
         description=(
             "Deletes a team, its memberships and its entity access. Entities it owned become unowned. "
-            "Direct user grants are kept. Only available to admins."
+            "Direct user grants are kept. Refused while the team is the only one an entity type is reserved for. "
+            "Only available to admins."
         ),
         responses={
             204: {"description": "Team deleted"},
-            **get_error_responses(TeamErrorCodes.TEAM_NOT_FOUND, CoreErrorCodes.PERMISSION_DENIED),
+            **get_error_responses(
+                TeamErrorCodes.TEAM_NOT_FOUND,
+                TeamErrorCodes.TEAM_RESERVES_ENTRY_TYPES,
+                CoreErrorCodes.PERMISSION_DENIED,
+            ),
             **get_common_error_responses(),
         },
     ),
@@ -221,13 +202,12 @@ class TeamDetail(APIView):
     serializer_class = TeamSerializer
 
     def get(self, request: Request, team_id: UUID) -> Response:
-        team = _get_team(cast(CradleUser, request.user), team_id)
+        team = get_visible_team(cast(CradleUser, request.user), team_id)
         return Response(TeamSerializer(team, context={"request": request}).data)
 
     def patch(self, request: Request, team_id: UUID) -> Response:
         user = cast(CradleUser, request.user)
-        team = _get_team(user, team_id)
-        _require_manage(user, team)
+        team = get_managed_team(user, team_id)
         serializer = TeamSerializer(team, data=request.data, partial=True, context={"request": request})
         serializer.is_valid(raise_exception=True)
         try:
@@ -240,9 +220,20 @@ class TeamDetail(APIView):
 
     def delete(self, request: Request, team_id: UUID) -> Response:
         user = cast(CradleUser, request.user)
-        team = _get_team(user, team_id)
-        if not user.is_cradle_admin:
+        team = get_visible_team(user, team_id)
+        if not user.is_admin:
             raise PermissionDeniedException(detail="Only administrators can delete teams.")
+        reserved = list(
+            EntryClass.objects.filter(pk__in=team.entry_classes.values("pk"))
+            .annotate(num_teams=Count("teams"))
+            .filter(num_teams=1)
+            .values_list("subtype", flat=True)
+        )
+        if reserved:
+            raise TeamReservesEntryTypesException(
+                detail=f"This team is the only one these entity types are reserved for: {', '.join(reserved)}. "
+                "Change their teams first."
+            )
         with transaction.atomic():
             team.log_delete(user, details=team.name)
             team.delete()
@@ -302,7 +293,7 @@ class TeamMemberList(ListCreateAPIView):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return TeamMembership.objects.none()
-        team = _get_team(cast(CradleUser, self.request.user), self.kwargs["team_id"])
+        team = get_visible_team(cast(CradleUser, self.request.user), self.kwargs["team_id"])
         members = team.memberships.select_related("user")
         q = search_q(self.request.query_params.get("search"), ["user__username"])
         if q is not None:
@@ -311,8 +302,7 @@ class TeamMemberList(ListCreateAPIView):
 
     def create(self, request: Request, team_id: UUID, *args, **kwargs) -> Response:
         user = cast(CradleUser, request.user)
-        team = _get_team(user, team_id)
-        _require_manage(user, team)
+        team = get_managed_team(user, team_id)
 
         body = TeamMemberAddSerializer(data=request.data)
         body.is_valid(raise_exception=True)
@@ -321,10 +311,10 @@ class TeamMemberList(ListCreateAPIView):
             member = CradleUser.objects.get(pk=body.validated_data["user_id"])
         except CradleUser.DoesNotExist:
             raise UserNotFoundException(detail="That user could not be found.")
-        if member.is_cradle_admin:
+        if member.is_admin:
             raise TeamChangeNotAllowedException(detail="Administrators already have access to everything.")
 
-        if role == TeamRole.LEAD and not user.is_cradle_admin:
+        if role == TeamRole.LEAD and not user.is_admin:
             raise TeamChangeNotAllowedException(detail="Only administrators can assign team leads.")
 
         try:
@@ -376,8 +366,7 @@ class TeamMemberCandidates(ListAPIView):
         if getattr(self, "swagger_fake_view", False):
             return CradleUser.objects.none()
         user = cast(CradleUser, self.request.user)
-        team = _get_team(user, self.kwargs["team_id"])
-        _require_manage(user, team)
+        team = get_managed_team(user, self.kwargs["team_id"])
         users = CradleUser.objects.non_admins().exclude(team_memberships__team=team)
         q = search_q(self.request.query_params.get("search"), ["username"])
         if q is not None:
@@ -435,8 +424,8 @@ class TeamMemberDetail(APIView):
 
     def patch(self, request: Request, team_id: UUID, user_id: UUID) -> Response:
         user = cast(CradleUser, request.user)
-        team = _get_team(user, team_id)
-        if not user.is_cradle_admin:
+        team = get_visible_team(user, team_id)
+        if not user.is_admin:
             raise TeamChangeNotAllowedException(detail="Only administrators can change team roles.")
         membership = self._membership(team, user_id)
 
@@ -456,12 +445,13 @@ class TeamMemberDetail(APIView):
 
     def delete(self, request: Request, team_id: UUID, user_id: UUID) -> Response:
         user = cast(CradleUser, request.user)
-        team = _get_team(user, team_id)
+        team = get_visible_team(user, team_id)
         membership = self._membership(team, user_id)
 
         leaving = membership.user_id == user.pk
-        if not (user.is_cradle_admin or leaving):
-            _require_manage(user, team)
+        if not (user.is_admin or leaving):
+            if not team.can_manage(user):
+                raise TeamChangeNotAllowedException(detail="Only admins and the team's leads can change this team.")
             if membership.role == TeamRole.LEAD:
                 raise TeamChangeNotAllowedException(detail="Only administrators can remove team leads.")
 
@@ -498,6 +488,28 @@ class UserTeamList(APIView):
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="users_me_teams_list",
+        summary="List my teams",
+        description="Returns every team the authenticated user belongs to, with their role in it.",
+        responses={
+            200: UserTeamMembershipSerializer(many=True),
+            **get_common_error_responses(),
+        },
+    ),
+)
+class UserMeTeamList(APIView):
+    """List the teams the requesting user belongs to."""
+
+    authentication_classes = [CookieJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        memberships = TeamMembership.objects.filter(user=request.user).select_related("team").order_by("team__name")
+        return Response(UserTeamMembershipSerializer(memberships, many=True).data)
+
+
+@extend_schema_view(
+    get=extend_schema(
         operation_id="teams_access_list",
         summary="List team entity access",
         description="Returns the entities a team visible to the requester can access.",
@@ -529,7 +541,7 @@ class TeamAccessList(ListAPIView):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return TeamAccess.objects.none()
-        team = _get_team(cast(CradleUser, self.request.user), self.kwargs["team_id"])
+        team = get_visible_team(cast(CradleUser, self.request.user), self.kwargs["team_id"])
         accesses = team.accesses.select_related("entity", "entity__entry_class")
         q = search_q(self.request.query_params.get("search"), ["entity__name"])
         if q is not None:
@@ -569,8 +581,8 @@ class TeamAccessUpdate(APIView):
 
     def put(self, request: Request, team_id: UUID, entity_id: int) -> Response:
         user = cast(CradleUser, request.user)
-        team = _get_team(user, team_id)
-        entity = _get_entity(entity_id)
+        team = get_visible_team(user, team_id)
+        entity = get_entity(entity_id)
 
         body = TeamAccessUpdateSerializer(data=request.data)
         body.is_valid(raise_exception=True)
@@ -617,7 +629,7 @@ class EntityTeamAccessList(APIView):
     permission_classes = [IsAuthenticated, CanViewEntityAccess]
 
     def get(self, request: Request, entity_id: int) -> Response:
-        entity = _get_entity(entity_id)
+        entity = get_entity(entity_id)
         accesses = entity.team_accesses.select_related("team", "entity").order_by("team__name")
         return Response(EntityTeamAccessSerializer(accesses, many=True).data)
 
@@ -652,14 +664,14 @@ class EntityOwner(APIView):
 
     def put(self, request: Request, entity_id: int) -> Response:
         user = cast(CradleUser, request.user)
-        if not user.is_cradle_admin:
+        if not user.is_admin:
             raise PermissionDeniedException(detail="Only administrators can change an entity's owning team.")
-        entity = _get_entity(entity_id)
+        entity = get_entity(entity_id)
 
         body = EntityOwnerSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         team_id = body.validated_data["team_id"]
-        team = _get_team(user, team_id) if team_id else None
+        team = get_visible_team(user, team_id) if team_id else None
 
         with transaction.atomic():
             if team is None:

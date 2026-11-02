@@ -4,8 +4,16 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from '@/components/ui/empty';
 import { Separator } from '@/components/ui/separator';
 import { HeaderNode } from '@/utils/editor/outline';
+import { TreeViewIcon } from '@phosphor-icons/react';
 import { ChevronRightIcon } from 'lucide-react';
 import { Fragment } from 'react';
 
@@ -92,6 +100,22 @@ export default function NoteOutline({
     currentLine,
 }: NoteOutlineProps) {
     const options = { showSeparators, currentLine };
+
+    if (data.length === 0) {
+        return (
+            <Empty className='h-full gap-3 p-4'>
+                <EmptyHeader>
+                    <EmptyMedia variant='icon'>
+                        <TreeViewIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>No headings</EmptyTitle>
+                    <EmptyDescription>
+                        Headings you add will appear here.
+                    </EmptyDescription>
+                </EmptyHeader>
+            </Empty>
+        );
+    }
 
     return (
         <div className='flex flex-col gap-1 p-3'>

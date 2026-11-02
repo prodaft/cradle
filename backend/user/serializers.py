@@ -28,7 +28,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
     """Serializer for user creation (signup). Validates username, email, password."""
 
     email = serializers.EmailField(required=True, help_text="User email address")
-    theme = serializers.JSONField(required=False, help_text="UI theme settings (JSON object)")
 
     class Meta:
         model = CradleUser
@@ -37,7 +36,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "email",
             "password",
             "vim_mode",
-            "theme",
         ]
         extra_kwargs: Dict[str, Dict[str, List]] = {
             "username": {"validators": [], "help_text": "Unique username for login"},
@@ -76,14 +74,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
         return super().validate(data)
 
-    def validate_theme(self, value: Any) -> Any:
-        """Ensure theme is a dict of named settings or None."""
-        if value is None:
-            return value
-        if not isinstance(value, dict):
-            raise serializers.ValidationError("Use a single object of named options, not a list or plain value.")
-        return value
-
     def create(self, validated_data: Any):
         """Creates a new Users entry based on the validated data.
 
@@ -98,7 +88,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         )
 
     def update(self, instance: CradleUser, validated_data: dict[str, Any]):
-        """Update vim_mode and theme only. Username and email cannot be changed."""
+        """Update vim_mode only. Username and email cannot be changed."""
         if validated_data.get("username", instance.username) != instance.username:
             raise ActionNotAllowedException(detail="You cannot change your username.")
 
@@ -106,7 +96,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
             raise ActionNotAllowedException(detail="You cannot change your email.")
 
         instance.vim_mode = validated_data.get("vim_mode", instance.vim_mode)
-        instance.theme = validated_data.get("theme", instance.theme)
         instance.save()
 
         return instance
@@ -122,11 +111,9 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
             "email",
             "password",
             "vim_mode",
-            "theme",
             "role",
             "email_confirmed",
             "is_active",
-            "file_upload_limit_override",
         ]
         extra_kwargs: Dict[str, Dict[str, List]] = {
             "username": {"validators": [], "help_text": "Unique username for login"},
@@ -173,10 +160,13 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class UserRetrieveSerializer(serializers.ModelSerializer):
-    """Serializer for user detail response. Includes role, 2FA status, theme, OAuth connections."""
+    """Serializer for user detail response. Includes role, 2FA status, OAuth connections."""
 
     oauth_connections = serializers.SerializerMethodField()
     has_password = serializers.SerializerMethodField()
+    two_factor_enabled = serializers.BooleanField(
+        read_only=True, help_text="Whether the user has a confirmed 2FA device"
+    )
 
     class Meta:
         model = CradleUser
@@ -184,15 +174,13 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "id",
             "username",
             "email",
-            "role",
-            "two_factor_enabled",
-            "is_active",
-            "vim_mode",
             "email_confirmed",
-            "file_upload_limit_override",
-            "theme",
-            "oauth_connections",
+            "role",
+            "is_active",
             "has_password",
+            "two_factor_enabled",
+            "oauth_connections",
+            "vim_mode",
         ]
 
     def get_has_password(self, obj) -> bool:
@@ -255,8 +243,8 @@ class UserConfigSerializer(serializers.Serializer):
 class TokenPairRetrieveSerializer(serializers.Serializer):
     """Response schema for token obtain and refresh endpoints; the tokens themselves are set as HttpOnly cookies."""
 
-    role = serializers.CharField(required=True, help_text="User role")
     user_id = serializers.UUIDField(required=False, help_text="Signed-in user ID (sign-in only)")
+    role = serializers.CharField(required=True, help_text="User role")
     access_expires_at = serializers.DateTimeField(required=True, help_text="Access token expiry")
     refresh_expires_at = serializers.DateTimeField(required=True, help_text="Refresh token expiry")
 
@@ -434,9 +422,7 @@ class DefaultNoteTemplateResponseSerializer(serializers.Serializer):
 class UserSessionSerializer(serializers.ModelSerializer):
     """Serializer for user session information."""
 
-    last_activity_at = serializers.DateTimeField(
-        source="last_activity", read_only=True, help_text="Last activity timestamp"
-    )
+    last_activity_at = serializers.DateTimeField(read_only=True, help_text="Last activity timestamp")
     is_current = serializers.SerializerMethodField(help_text="Whether this is the session making the request")
 
     class Meta:

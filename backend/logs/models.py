@@ -24,20 +24,10 @@ class EventLog(models.Model):
         editable=False,
         help_text="Unique identifier for the log entry.",
     )
-    timestamp: models.DateTimeField = models.DateTimeField(
-        auto_now_add=True,
-        help_text="When the event was recorded.",
-    )
     type: models.CharField = models.CharField(
         choices=EventType.choices,
         null=False,
         help_text="Kind of event (create, edit, delete, fetch, login).",
-    )
-    user: models.ForeignKey = models.ForeignKey(
-        "user.CradleUser",
-        on_delete=models.CASCADE,
-        related_name="event_logs",
-        help_text="User who performed the action.",
     )
     details: Optional[str] = models.CharField(
         blank=True,
@@ -61,14 +51,24 @@ class EventLog(models.Model):
         help_text="Primary key of the content object.",
     )
     content_object: Union[models.Model, None] = GenericForeignKey("content_type", "object_id")
+    user: models.ForeignKey = models.ForeignKey(
+        "user.CradleUser",
+        on_delete=models.CASCADE,
+        related_name="event_logs",
+        help_text="User who performed the action.",
+    )
+    created_at: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When the event was recorded.",
+    )
 
     class Meta:
-        ordering = ["-timestamp"]
+        ordering = ["-created_at"]
         verbose_name = "event log"
         verbose_name_plural = "event logs"
 
     def __str__(self) -> str:
-        return f'<"{self.type}" object [{self.content_type}]({self.object_id}) by {self.user} on {self.timestamp}>'
+        return f'<"{self.type}" object [{self.content_type}]({self.object_id}) by {self.user} on {self.created_at}>'
 
     def propagate(self, obj) -> "EventLog":
         """Create a propagated log entry for a related object, linked via src_log."""

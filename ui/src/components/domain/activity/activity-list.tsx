@@ -1,9 +1,9 @@
 import { SearchInput } from '@/components/base/search-input/search-input';
 import { TableSkeleton } from '@/components/base/table-skeleton';
+import { Badge } from '@/components/custom/badge';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
 import OfflineIndicator from '@/components/feedback/offline-indicator';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { EMPTY_SEARCH_STATE, type SearchState } from '@/lib/search-query/search-schema';
@@ -50,7 +50,7 @@ interface SrcLog {
 
 interface ActivityEvent {
     id: string;
-    timestamp: string;
+    createdAt: string;
     type: string;
     username: string;
     contentType: string;
@@ -187,7 +187,7 @@ function ExpandedRowDetail({ item }: { item: ActivityEvent }) {
                             <div className='flex flex-wrap items-baseline gap-2 mb-2'>
                                 <Badge
                                     variant={typeBadgeVariant(item.srcLog!.type)}
-                                    className='capitalize text-xs'
+                                    className='capitalize'
                                 >
                                     {item.srcLog!.type}
                                 </Badge>
@@ -299,7 +299,7 @@ export default function ActivityList({
 
         return logsPage.results.map((log: any): ActivityEvent => ({
             id: log.id || '',
-            timestamp:
+            createdAt:
                 typeof log.created_at === 'string'
                     ? log.created_at
                     : new Date().toISOString(),
@@ -431,7 +431,7 @@ export default function ActivityList({
                 enableSorting: false,
             },
             {
-                accessorKey: 'timestamp',
+                accessorKey: 'createdAt',
                 id: 'date',
                 header: () => <span className='block text-right'>Date</span>,
                 meta: { label: 'Date' },
@@ -440,7 +440,7 @@ export default function ActivityList({
                     const item = row.original;
                     return (
                         <div className='text-right text-muted-foreground text-sm'>
-                            {format(new Date(item.timestamp), 'dd/MM/yyyy HH:mm')}
+                            {format(new Date(item.createdAt), 'dd/MM/yyyy HH:mm')}
                         </div>
                     );
                 },

@@ -168,7 +168,6 @@ def _apply_result(
                 Relation(
                     e1=e1,
                     e2=e2,
-                    inherit_av=rel_spec.inherit_av,
                     content_object=request,
                     access_vector=access_vector,
                     reason=RelationReason.ENRICHMENT,

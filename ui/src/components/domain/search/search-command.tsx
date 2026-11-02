@@ -1,3 +1,4 @@
+import { SelectContent } from '@/components/custom/select';
 import { Button } from '@/components/ui/button';
 import {
     Command,
@@ -16,13 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Kbd } from '@/components/ui/kbd';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { useNdjsonQuery } from '@/hooks/query';
 import { fetchClient } from '@services/openapi/client';

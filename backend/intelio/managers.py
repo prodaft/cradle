@@ -13,7 +13,7 @@ class BaseDigestQuerySet(models.QuerySet):
 
     def accessible_by(self, user: CradleUser) -> models.QuerySet:
         """Return digests the user can access (admin sees all, others their own)."""
-        if user.is_cradle_admin:
+        if user.is_admin:
             return self
         return self.filter(user=user)
 
@@ -23,7 +23,7 @@ class EnrichmentRequestQuerySet(models.QuerySet):
 
     def accessible_by(self, user: CradleUser) -> models.QuerySet:
         """Return enrichment requests the user can access (admin sees all)."""
-        if user.is_cradle_admin:
+        if user.is_admin:
             return self
 
         accessible_entity_ids = Access.objects.get_accessible_entity_ids(user.id)

@@ -66,7 +66,7 @@ class AccessManager(models.Manager):
         Returns:
             QuerySet of entity entries the user cannot access.
         """
-        if user.is_cradle_admin:
+        if user.is_admin:
             return Entry.entities.none()
 
         entities = entries.filter(entry_class__type=EntryType.ENTITY)
@@ -90,7 +90,7 @@ class AccessManager(models.Manager):
             True if the user's access types for all entities are in access_types;
             False if any entity has a different access type.
         """
-        if user.is_cradle_admin:
+        if user.is_admin:
             return True
 
         needed = {e.pk for e in entities if not (AccessType.READ in access_types and e.is_public)}
@@ -102,7 +102,7 @@ class AccessManager(models.Manager):
 
     def effective_access_type(self, user: CradleUser, entity: Entry) -> AccessType:
         """The strongest access ``user`` has to ``entity`` from any source."""
-        if user.is_cradle_admin:
+        if user.is_admin:
             return AccessType.READ_WRITE
 
         direct = self.get_queryset().filter(user=user, entity=entity).values_list("access_type", flat=True)

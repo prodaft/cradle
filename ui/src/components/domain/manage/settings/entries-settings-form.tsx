@@ -80,7 +80,7 @@ export default function EntriesSettingsForm() {
                 </div>
                 <FieldGroup className='gap-4'>
                     <Field orientation='responsive'>
-                        <FieldContent className='flex-1'>
+                        <FieldContent>
                             <FieldLabel className='text-sm block mb-0.5'>
                                 Propagate Access Vectors
                             </FieldLabel>
@@ -96,7 +96,7 @@ export default function EntriesSettingsForm() {
                             onClick={propagate}
                             disabled={propagateAccess.isPending}
                         >
-                            <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
+                            <HardDrivesIcon weight='bold' />
                             {propagateAccess.isPending ? 'Propagating…' : 'Propagate'}
                         </Button>
                     </Field>
@@ -104,7 +104,7 @@ export default function EntriesSettingsForm() {
                     <Separator />
 
                     <Field orientation='responsive'>
-                        <FieldContent className='flex-1'>
+                        <FieldContent>
                             <FieldLabel className='text-sm block mb-0.5'>
                                 Delete Hanging Artifacts
                             </FieldLabel>
@@ -120,7 +120,7 @@ export default function EntriesSettingsForm() {
                             onClick={deleteHanging}
                             disabled={deleteHangingArtifacts.isPending}
                         >
-                            <TrashIcon className='w-3.5 h-3.5' weight='bold' />
+                            <TrashIcon weight='bold' />
                             {deleteHangingArtifacts.isPending ? 'Deleting…' : 'Delete'}
                         </Button>
                     </Field>

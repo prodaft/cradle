@@ -17,6 +17,7 @@ from file_transfer.s3_utils import (
     presign_client,
     storage_for_bucket,
 )
+from management.settings import system_settings
 
 from .exceptions import (
     AlreadyUploadingException,
@@ -97,7 +98,7 @@ def check_upload_quota(user, file_size: int) -> None:
     """Raise QuotaExceededException if one file of ``file_size`` bytes is over the user's limit or quota."""
     from file_transfer.models import FileReference
 
-    limit = user.file_upload_limit
+    limit = system_settings.files.upload_limit
     if file_size > limit:
         raise QuotaExceededException(detail=f"File size ({file_size} bytes) exceeds your upload limit ({limit} bytes).")
 

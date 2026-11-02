@@ -24,7 +24,7 @@ from core.query_lang import search_q
 from core.throttling import AuthRateThrottle
 from core.utils import validate_order_by
 from management.serializers import ManagementActionResponseSerializer
-from management.settings import cradle_settings
+from management.settings import system_settings
 from notifications.models import MessageNotification, NewUserNotification
 
 from ..authentication import APIKeyAuthentication, CookieJWTAuthentication
@@ -179,7 +179,7 @@ class SignupView(APIView):
     throttle_classes = [AuthRateThrottle]
 
     def post(self, request: Request) -> Response:
-        if not cradle_settings.users.allow_registration:
+        if not system_settings.users.allow_registration:
             raise RegistrationUnavailableException(detail="New account registration is not available.")
 
         serializer = UserCreateSerializer(data=request.data)
@@ -235,7 +235,7 @@ class UserConfigView(APIView):
     def get(self, request: Request) -> Response:
         payload = {
             "oauth_methods": settings.OAUTH_METHODS,
-            "signup": cradle_settings.users.allow_registration,
+            "signup": system_settings.users.allow_registration,
         }
         serializer = UserConfigSerializer(data=payload)
         serializer.is_valid(raise_exception=True)
@@ -316,7 +316,7 @@ class UserDetail(APIView):
         if data.get("email") == edited.email:
             data.pop("email", None)
 
-        if editor.is_cradle_admin and editor.pk != edited.pk:
+        if editor.is_admin and editor.pk != edited.pk:
             serializer = UserUpdateSerializer(edited, data=data, partial=True)
         else:
             serializer = UserCreateSerializer(edited, data=data, partial=True)
@@ -557,7 +557,7 @@ class UserConfirmationEmailView(_AdminUserAction):
 class UserSimulateView(_AdminUserAction):
     def post(self, request: Request, user_id: UUID) -> Response:
         user = resolve_visible_user(request.user, user_id)
-        if user.is_cradle_admin:
+        if user.is_admin:
             raise ActionNotAllowedException(detail="You do not have permission to impersonate an administrator.")
 
         admin_jti = current_refresh_jti(request)
@@ -673,7 +673,7 @@ class EmailConfirm(APIView):
 
         user = serializer.user
 
-        if user.email_confirmation_token_expiry < timezone.now():
+        if user.email_confirmation_token_expires_at < timezone.now():
             if user.send_email_confirmation():
                 detail = "Your confirmation link has expired. A new one was sent to your email."
             else:
@@ -682,8 +682,8 @@ class EmailConfirm(APIView):
 
         user.email_confirmed = True
         user.email_confirmation_token = None
-        user.email_confirmation_token_expiry = None
-        user.save(update_fields=["email_confirmed", "email_confirmation_token", "email_confirmation_token_expiry"])
+        user.email_confirmation_token_expires_at = None
+        user.save(update_fields=["email_confirmed", "email_confirmation_token", "email_confirmation_token_expires_at"])
 
         return Response({"detail": "Email confirmed."}, status=status.HTTP_200_OK)
 
@@ -763,7 +763,7 @@ class PasswordResetConfirm(APIView):
             except CradleUser.DoesNotExist:
                 raise InvalidPasswordResetLinkException(detail="The password reset link is invalid or has expired.")
 
-            if user.password_reset_token_expiry < timezone.now():
+            if user.password_reset_token_expires_at < timezone.now():
                 raise InvalidPasswordResetLinkException(detail="The password reset link is invalid or has expired.")
 
             user.change_password(password)
@@ -928,7 +928,7 @@ class UserSessionsListView(APIView):
         initiator = cast(CradleUser, request.user)
         user = resolve_visible_user(initiator, user_id)
 
-        sessions = UserSession.objects.active().filter(user=user).order_by("-last_activity")
+        sessions = UserSession.objects.active().filter(user=user).order_by("-last_activity_at")
 
         search = search_q(request.query_params.get("search"), ("device_info", "ip_address"))
         if search is not None:
@@ -940,7 +940,7 @@ class UserSessionsListView(APIView):
                 "device_info": "device_info",
                 "ip_address": "ip_address",
                 "created_at": "created_at",
-                "last_activity_at": "last_activity",
+                "last_activity_at": "last_activity_at",
                 "expires_at": "expires_at",
             }
             order_fields = validate_order_by(order_by, valid_order_fields)

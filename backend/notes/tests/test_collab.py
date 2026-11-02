@@ -16,6 +16,7 @@ from user.testing import session_access_token
 
 from ..collab import consumers
 from ..collab.changes import InvalidChangeSet, apply_changes, replace_all
+from ..enums import NoteStatus
 from ..models import Note
 
 # Generated with @codemirror/state: (document, ChangeSet.toJSON(), result).
@@ -161,6 +162,28 @@ class NoteCollabConsumerTest(TransactionTestCase):
         self.assertEqual(saved["version"], 1)
         await sync_to_async(self.note.refresh_from_db)()
         self.assertEqual(self.note.content, "hello!")
+        await comm.disconnect()
+
+    async def test_invalid_edit_is_saved_as_invalid(self):
+        entity = await sync_to_async(self.shared.entries.get)()
+        await sync_to_async(Access.objects.create)(user=self.author, entity=entity, access_type=AccessType.READ_WRITE)
+        await sync_to_async(Note.objects.filter(id=self.shared.id).update)(access_vector=0b101)
+        comm = await self.connect(self.author, self.shared)
+        await self.request(comm, type="getDocument")
+        await self.request(
+            comm, type="pushUpdates", version=0, updates=[{"clientID": "a", "changes": [6, [0, " [[case:nope]]"]]}]
+        )
+        await consumers.persist_now(str(self.shared.id))
+        await self.receive_type(comm, "saveState", state="saved")
+
+        note = await sync_to_async(Note.objects.get)(id=self.shared.id)
+        self.assertEqual(note.content, "shared [[case:nope]]")
+        self.assertEqual(note.status, NoteStatus.INVALID)
+        self.assertEqual(note.status_message, "This linked entry does not exist: [[case:nope]].")
+        self.assertEqual(note.status_issues, [{"code": "missing_entry", "key": "case", "value": "nope"}])
+        # Not processed while invalid: the last valid links stay, and access only narrows.
+        self.assertEqual(await sync_to_async(lambda: list(note.entries.all()))(), [entity])
+        self.assertEqual(note.access_vector & 0b101, 0b101)
         await comm.disconnect()
 
     async def test_outside_change_is_a_conflict_until_resolved(self):

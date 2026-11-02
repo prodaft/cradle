@@ -5,14 +5,9 @@ import {
 } from '@/components/base/settings-header-actions/settings-header-actions';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
+import { SelectContent } from '@/components/custom/select';
 import { Button } from '@/components/ui/button';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { queryKeys } from '@/hooks/query';
 import {

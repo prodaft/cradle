@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog"
-import { cn } from "@/lib/utils"
+import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
 
@@ -141,20 +141,14 @@ function AlertDialogDescription({
   )
 }
 
-// Cradle: Action is a Close part (like Radix's AlertDialog.Action) so confirming dismisses
-// the dialog; callers rely on that.
 function AlertDialogAction({
   className,
-  variant,
-  size,
   ...props
-}: AlertDialogPrimitive.Close.Props &
-  Pick<React.ComponentProps<typeof Button>, "variant" | "size">) {
+}: React.ComponentProps<typeof Button>) {
   return (
-    <AlertDialogPrimitive.Close
+    <Button
       data-slot="alert-dialog-action"
       className={cn(className)}
-      render={<Button variant={variant} size={size} />}
       {...props}
     />
   )

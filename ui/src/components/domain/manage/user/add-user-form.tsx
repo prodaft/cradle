@@ -1,3 +1,4 @@
+import { SelectContent } from '@/components/custom/select';
 import { Button } from '@/components/ui/button';
 import { DialogClose, DialogFooter } from '@/components/ui/dialog';
 import {
@@ -14,13 +15,7 @@ import {
     InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { USER_ROLE_OPTIONS } from '@/utils/auth';
@@ -35,7 +30,6 @@ import {
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
-import bytes from 'bytes';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -56,18 +50,6 @@ const addUserSchema = z.object({
     role: z.string().min(1, { error: 'Role is required' }),
     emailConfirmed: z.boolean().default(false),
     isActive: z.boolean().default(true),
-    fileUploadLimitOverride: z
-        .string()
-        .optional()
-        .refine(
-            (value) => {
-                if (!value || value === '') return true;
-                return typeof bytes(value) === 'number';
-            },
-            {
-                error: 'Enter a valid size (e.g. 100MB, 1GB) or leave empty to use global default',
-            },
-        ),
 });
 
 type FormData = z.infer<typeof addUserSchema>;
@@ -90,7 +72,6 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
             role: 'author',
             emailConfirmed: false,
             isActive: true,
-            fileUploadLimitOverride: '',
         },
     });
 
@@ -104,15 +85,6 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                 email_confirmed: data.emailConfirmed,
                 is_active: data.isActive,
             };
-
-            if (
-                data.fileUploadLimitOverride &&
-                data.fileUploadLimitOverride.trim() !== ''
-            ) {
-                payload.file_upload_limit_override = bytes.parse(
-                    data.fileUploadLimitOverride,
-                );
-            }
 
             const {
                 data: newUser,
@@ -344,29 +316,6 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                                 />
                             )}
                         />
-                    </Field>
-
-                    <Field data-invalid={Boolean(errors.fileUploadLimitOverride)}>
-                        <FieldLabel htmlFor='fileUploadLimitOverride'>
-                            Upload Limit
-                        </FieldLabel>
-                        <InputGroup>
-                            <InputGroupInput
-                                id='fileUploadLimitOverride'
-                                placeholder='e.g., 100MB, 1GB'
-                                {...register('fileUploadLimitOverride')}
-                                aria-invalid={Boolean(errors.fileUploadLimitOverride)}
-                            />
-                        </InputGroup>
-                        <FieldDescription>
-                            Custom upload limit (e.g., 100MB, 1GB). Leave empty to use
-                            global default.
-                        </FieldDescription>
-                        {errors.fileUploadLimitOverride && (
-                            <FieldError>
-                                {errors.fileUploadLimitOverride.message}
-                            </FieldError>
-                        )}
                     </Field>
                 </FieldGroup>
             </div>

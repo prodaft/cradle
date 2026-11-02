@@ -33,7 +33,9 @@ Who may grant what is decided in `teams/rules.py`: leads of an entity's
 owning `team` control access to owned entities (up to their own access level),
 and team leads grant their own team access to unowned entities. Any user can
 lead a team; leads also create entities owned by their team (`team_id` on
-`POST /entries/entities/`, checked in `EntitySerializer`). Anyone who can read an
+`POST /entries/entities/`, checked in `EntitySerializer`). Non-admins can only
+create an entity of a type with linked `teams` (`EntryClass.teams`), or change
+an entity to such a type, when one of those teams owns it. Anyone who can read an
 entity can fetch it (`GET /entries/entities/<id>/`); `teams/permissions.py` lets
 owning-team leads read its access lists, which are otherwise manager-only.
 

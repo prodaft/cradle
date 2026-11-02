@@ -49,7 +49,7 @@ class TeamSerializer(serializers.ModelSerializer):
         user = self._requester()
         if user is None:
             return False
-        return user.is_cradle_admin or self.get_my_role(obj) == TeamRole.LEAD
+        return user.is_admin or self.get_my_role(obj) == TeamRole.LEAD
 
 
 class TeamMemberSerializer(serializers.ModelSerializer):

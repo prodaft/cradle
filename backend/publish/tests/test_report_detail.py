@@ -14,7 +14,7 @@ from ..models import DownloadStrategies, PublishedReport
 
 class ReportDetailTest(TestCase):
     def setUp(self):
-        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         self.patcher.start()
         self.user = CradleUser.objects.create_user(
             username="user", password="user", email="user@example.com", is_active=True, email_confirmed=True

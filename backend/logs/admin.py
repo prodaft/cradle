@@ -10,32 +10,33 @@ class EventLogAdmin(admin.ModelAdmin):
 
     list_display = (
         "id",
-        "timestamp",
         "type",
-        "user",
+        "src_log",
         "content_type",
         "object_id",
-        "src_log",
+        "user",
+        "created_at",
     )
-    list_filter = ("type", "timestamp", "user")
-    search_fields = ("type", "user__username", "content_type__model", "object_id")
+    list_filter = ("type", "user", "created_at")
+    search_fields = ("type", "content_type__model", "object_id", "user__username")
     readonly_fields = (
         "id",
-        "timestamp",
         "type",
-        "user",
         "details",
         "src_log",
         "content_type",
         "object_id",
         "content_object",
+        "user",
+        "created_at",
     )
-    ordering = ["-timestamp"]
+    ordering = ["-created_at"]
 
     fieldsets = (
-        (None, {"fields": ("id", "timestamp", "type", "user", "details")}),
+        (None, {"fields": ("id", "type", "details")}),
         ("Source Log", {"fields": ("src_log",)}),
         ("Content Object", {"fields": ("content_type", "object_id", "content_object")}),
+        ("Audit", {"fields": ("user", "created_at")}),
     )
 
     def has_add_permission(self, request, obj=None):

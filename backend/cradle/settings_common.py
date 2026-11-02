@@ -101,16 +101,16 @@ def get_log_directory():
     Returns:
         str: The log directory for the application.
     """
-    log_dir = "/var/log/"
-    cradle_log_dir = "/var/log/cradle/"
+    parent = "/var/log/"
+    log_dir = "/var/log/cradle/"
 
-    if os.path.exists(log_dir) and os.access(log_dir, os.W_OK):
-        if not os.path.exists(cradle_log_dir):
+    if os.path.exists(parent) and os.access(parent, os.W_OK):
+        if not os.path.exists(log_dir):
             try:
-                os.mkdir(cradle_log_dir)
+                os.mkdir(log_dir)
             except OSError:
                 return str(BASE_DIR)
-        return cradle_log_dir
+        return log_dir
 
     return str(BASE_DIR)
 

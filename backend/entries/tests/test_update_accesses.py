@@ -14,7 +14,7 @@ from ..tasks import update_accesses
 
 class UpdateAccessesTest(TestCase):
     def setUp(self):
-        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         self.patcher.start()
         user = CradleUser.objects.create_user(username="user", password="user", email="a@b.c")
         entity_class = EntryClass.objects.create(type=EntryType.ENTITY, subtype="case")
@@ -40,4 +40,21 @@ class UpdateAccessesTest(TestCase):
 
         self.entity.refresh_from_db()
         self.assertFalse(self.entity.is_public)
-        self.assertEqual(self.entity.status, {})
+
+
+class EntryClassTypeChangeTest(TestCase):
+    """Artifacts turned into entities start private, however they were created."""
+
+    def test_artifacts_become_private_entities(self):
+        artifact_class = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype="actor")
+        saved = Entry.objects.create(name="saved", entry_class=artifact_class)
+        Entry.objects.bulk_create([Entry(name="bulk", entry_class=artifact_class)])
+        self.assertTrue(saved.is_public)
+
+        artifact_class.type = EntryType.ENTITY
+        artifact_class.save()
+
+        entries = list(Entry.objects.filter(entry_class=artifact_class))
+        self.assertEqual([e.is_public for e in entries], [False, False])
+        self.assertEqual(len({e.acvec_offset for e in entries}), 2)
+        self.assertNotIn(0, {e.acvec_offset for e in entries})

@@ -115,12 +115,12 @@ export default function ManageSettingsPage() {
                     </div>
                     <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
                         <Tabs value={tab} onValueChange={changeTab}>
-                            <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
+                            <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
                                 {MANAGE_SETTINGS_ITEMS.map((item) => {
                                     const Icon = item.icon;
                                     return (
                                         <TabsTrigger key={item.id} value={item.id}>
-                                            <Icon className='w-4 h-4' />
+                                            <Icon />
                                             {item.label}
                                         </TabsTrigger>
                                     );
@@ -142,7 +142,7 @@ export default function ManageSettingsPage() {
                                         <Separator
                                             data-orientation='horizontal'
                                             role='none'
-                                            className='bg-border mb-4 flex-none'
+                                            className='mb-4 flex-none'
                                         />
                                         {ActiveSettingsComponent ? (
                                             <ActiveSettingsComponent />

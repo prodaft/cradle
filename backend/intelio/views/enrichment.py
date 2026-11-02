@@ -73,7 +73,7 @@ class EnrichmentRequestObjectMixin:
 
     def _check_owner_or_admin(self, enrichment_request, user, action: str):
         """Raise PermissionDeniedException if user is not owner or admin."""
-        if enrichment_request.user != user and not user.is_cradle_admin:
+        if enrichment_request.user != user and not user.is_admin:
             detail = INTELIO_ENRICHMENT_MESSAGE_ACTION_DENIED.get(
                 action,
                 INTELIO_ENRICHMENT_MESSAGE_ACTION_DENIED_DEFAULT,
@@ -426,9 +426,12 @@ class EnrichmentDetailAPIView(EnrichmentRequestObjectMixin, APIView):
         if enrichment_request is None:
             raise EnrichmentNotFoundException(detail="That enrichment could not be found.")
 
+        from entries.tasks import refresh_edges_materialized_view
+
         self._check_owner_or_admin(enrichment_request, request.user, "delete")
         with transaction.atomic():
             enrichment_request.delete()
+            transaction.on_commit(refresh_edges_materialized_view.apply_async)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

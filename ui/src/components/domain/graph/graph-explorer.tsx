@@ -278,7 +278,6 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         <div className='w-full h-full overflow-y-hidden relative'>
             <ResizablePanelGroup
                 orientation='horizontal'
-                className='h-full'
                 defaultLayout={{
                     'graph-explorer-query': 0,
                     'graph-explorer-main': 100,

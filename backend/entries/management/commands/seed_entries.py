@@ -100,7 +100,8 @@ class Command(BaseCommand):
             children = fields.pop("children", [])
             fields.pop("type_mappings", None)
             fields.pop("enrichment_techniques", None)
-            timestamp = fields.pop("timestamp", None)
+            legacy_created_at = fields.pop("timestamp", None)  # key used by seed files before the rename
+            created_at = fields.pop("created_at", None) or legacy_created_at
 
             if overwrite:
                 _, created = EntryClass.objects.update_or_create(subtype=subtype, defaults=fields)
@@ -110,11 +111,11 @@ class Command(BaseCommand):
                 if created:
                     update_children_for.add(subtype)
 
-            if timestamp and (overwrite or created):
-                parsed = parse_datetime(timestamp)
+            if created_at and (overwrite or created):
+                parsed = parse_datetime(created_at)
                 if not parsed:
-                    raise CommandError(f"Invalid timestamp for entry class {subtype}: {timestamp}")
-                EntryClass.objects.filter(subtype=subtype).update(timestamp=parsed)
+                    raise CommandError(f"Invalid created_at for entry class {subtype}: {created_at}")
+                EntryClass.objects.filter(subtype=subtype).update(created_at=parsed)
 
             children_map[subtype] = children
 

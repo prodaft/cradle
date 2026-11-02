@@ -67,9 +67,8 @@
         0 32px 64px -20px color-mix(in oklch, var(--foreground) 26%, transparent);
 }
 
-/* Colors here are only the pre-hydration fallback: ThemeProvider writes the active preset's
-   color tokens inline on <html>. Structural tokens (radius, fonts, shadows) are owned by this
-   file and filtered out of themes, so the lyra look can't be overridden by a stored profile. */
+/* Light palette; [data-theme='dark'] below overrides it. ThemeProvider (next-themes) sets
+   data-theme on <html> before hydration. */
 :root {
     --background: oklch(0.984 0.003 247.858);
     --foreground: oklch(0.145 0 0);

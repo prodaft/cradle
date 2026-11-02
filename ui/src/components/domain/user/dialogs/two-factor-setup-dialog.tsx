@@ -251,7 +251,7 @@ export default function TwoFactorSetupDialog({
                                     </FieldLabel>
                                     <InputGroup>
                                         <InputGroupAddon align='inline-start'>
-                                            <QrCodeIcon className='size-4' />
+                                            <QrCodeIcon />
                                         </InputGroupAddon>
                                         <InputGroupInput
                                             id={secretId}

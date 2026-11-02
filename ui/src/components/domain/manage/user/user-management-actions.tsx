@@ -1,7 +1,7 @@
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
 import SetUserPasswordDialog from '@/components/domain/manage/user/dialogs/set-password-dialog';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -115,7 +115,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                 <div className='flex flex-col gap-4'>
                     <FieldGroup className='gap-4'>
                         <Field orientation='responsive'>
-                            <FieldContent className='flex-1'>
+                            <FieldContent>
                                 <FieldLabel className='text-sm block'>
                                     Simulate Session
                                 </FieldLabel>
@@ -137,7 +137,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                         <Separator />
 
                         <Field orientation='responsive'>
-                            <FieldContent className='flex-1'>
+                            <FieldContent>
                                 <FieldLabel className='text-sm block'>
                                     Email Confirmation
                                 </FieldLabel>
@@ -159,7 +159,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                         <Separator />
 
                         <Field orientation='responsive'>
-                            <FieldContent className='flex-1'>
+                            <FieldContent>
                                 <FieldLabel className='text-sm block'>
                                     Password Reset
                                 </FieldLabel>
@@ -181,7 +181,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                         <Separator />
 
                         <Field orientation='responsive'>
-                            <FieldContent className='flex-1'>
+                            <FieldContent>
                                 <FieldLabel className='text-sm block'>
                                     Password
                                 </FieldLabel>
@@ -203,7 +203,7 @@ export default function UserManagementActions({ userId }: UserManagementActionsP
                         <Separator />
 
                         <Field orientation='responsive'>
-                            <FieldContent className='flex-1'>
+                            <FieldContent>
                                 <FieldLabel className='text-sm block'>
                                     Delete
                                 </FieldLabel>

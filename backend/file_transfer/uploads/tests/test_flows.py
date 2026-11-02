@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
@@ -15,6 +15,7 @@ from file_transfer.uploads.flows import (
     check_upload_quota,
     sanitize_upload_filename,
 )
+from management.settings import FileSettings
 from user.models import CradleUser
 
 
@@ -104,8 +105,11 @@ class PresignedUploadInitiatePresignTests(TestCase):
 class CheckUploadQuotaTests(TestCase):
     def setUp(self):
         self.user = CradleUser.objects.create_user(
-            username="quota_u", email="quota_u@example.com", password="test-pass-123", file_upload_limit_override=100
+            username="quota_u", email="quota_u@example.com", password="test-pass-123"
         )
+        limit = patch.object(FileSettings, "upload_limit", new_callable=PropertyMock, return_value=100)
+        limit.start()
+        self.addCleanup(limit.stop)
 
     def test_file_over_limit_rejected(self):
         with self.assertRaises(QuotaExceededException):

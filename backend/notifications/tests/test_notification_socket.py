@@ -20,7 +20,7 @@ from ..models import AccessRequestNotification, MessageNotification
 
 class NotificationSocketTest(TransactionTestCase):
     def setUp(self):
-        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         self.patcher.start()
         self.user = CradleUser.objects.create_user(username="notify", password="pass", email="n@x.y", is_active=True)
         self.other = CradleUser.objects.create_user(username="other", password="pass", email="o@x.y", is_active=True)

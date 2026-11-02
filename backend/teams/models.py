@@ -59,7 +59,7 @@ class Team(LoggableModelMixin, models.Model):
 
     def can_manage(self, user: CradleUser) -> bool:
         """Whether ``user`` may change this team's details, members and access (admins and leads)."""
-        return user.is_cradle_admin or self.is_lead(user)
+        return user.is_admin or self.is_lead(user)
 
     def take_ownership(self, entity: Entry) -> None:
         """Make this team own ``entity`` and give it read-write access."""

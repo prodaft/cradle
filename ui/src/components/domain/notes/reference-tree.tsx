@@ -59,7 +59,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
         },
     });
 
-    if (!note?.entries?.length) {
+    if (!note?.entry_classes?.length) {
         return null;
     }
 
@@ -146,7 +146,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <div className='mt-4'>
-                        {new SubtypeHierarchy(note.entries).convert(
+                        {new SubtypeHierarchy(note.entry_classes).convert(
                             (value, children) => (
                                 <div
                                     className='text-muted-foreground text-xs w-full pt-1'

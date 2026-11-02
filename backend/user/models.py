@@ -2,7 +2,6 @@
 
 import secrets
 import uuid
-from copy import deepcopy
 from datetime import datetime, timedelta
 
 from django.apps import apps
@@ -16,9 +15,9 @@ from access.enums import AccessType
 from core.fields import BitStringField
 from logs.models import LoggableModelMixin
 from mail.models import ConfirmationMail, ResetPasswordMail
-from management.settings import cradle_settings
+from management.settings import system_settings
 
-from .constants import USER_ACCESS_VECTOR_LENGTH, USER_DEFAULT_THEME
+from .constants import USER_ACCESS_VECTOR_LENGTH
 from .managers import CradleUserManager, UserSessionQuerySet, hash_api_key
 
 _ACCESS_VECTOR_FIELD = BitStringField(max_length=USER_ACCESS_VECTOR_LENGTH, null=False, default=1, varying=False)
@@ -32,17 +31,18 @@ class UserRoles(models.TextChoices):
     USER = "author"  # Writer of notes
 
 
-def default_theme():
-    """Return a mutable copy of the default theme."""
-    return deepcopy(USER_DEFAULT_THEME)
-
-
 class CradleUser(AbstractUser, LoggableModelMixin):
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email: models.EmailField = models.EmailField(unique=True, help_text="User email address (used for login)")
+
+    email_confirmed: models.BooleanField = models.BooleanField(
+        default=False, help_text="Whether the email address has been verified"
+    )
     role: models.CharField = models.CharField(
         max_length=32, choices=UserRoles.choices, default=UserRoles.USER, help_text="User role for access control"
     )
+
+    is_active: models.BooleanField = models.BooleanField(default=False, help_text="Whether the user can log in")
 
     api_key: models.CharField = models.CharField(
         max_length=64,
@@ -55,24 +55,16 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     password_reset_token: models.TextField = models.TextField(
         null=True, blank=True, help_text="Token for password reset flow"
     )
-    password_reset_token_expiry: models.DateTimeField = models.DateTimeField(
-        null=True, blank=True, help_text="When the password reset token expires"
-    )
 
-    email_confirmed: models.BooleanField = models.BooleanField(
-        default=False, help_text="Whether the email address has been verified"
+    password_reset_token_expires_at: models.DateTimeField = models.DateTimeField(
+        null=True, blank=True, help_text="When the password reset token expires"
     )
     email_confirmation_token: models.TextField = models.TextField(
         null=True, blank=True, help_text="Token for email confirmation"
     )
-    email_confirmation_token_expiry: models.DateTimeField = models.DateTimeField(
+
+    email_confirmation_token_expires_at: models.DateTimeField = models.DateTimeField(
         null=True, blank=True, help_text="When the email confirmation token expires"
-    )
-
-    is_active: models.BooleanField = models.BooleanField(default=False, help_text="Whether the user can log in")
-
-    two_factor_enabled: models.BooleanField = models.BooleanField(
-        default=False, help_text="Whether 2FA is enabled for this account"
     )
 
     default_note_template: models.TextField = models.TextField(
@@ -80,12 +72,6 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     )
     vim_mode: models.BooleanField = models.BooleanField(
         default=False, help_text="Whether to enable Vim keybindings in the editor"
-    )
-
-    theme: models.JSONField = models.JSONField(default=default_theme, help_text="Theme settings to use in the UI")
-
-    file_upload_limit_override: models.PositiveBigIntegerField = models.PositiveBigIntegerField(
-        null=True, help_text="File upload limit in bytes"
     )
 
     USERNAME_FIELD = "username"
@@ -114,11 +100,11 @@ class CradleUser(AbstractUser, LoggableModelMixin):
             return True
 
         self.email_confirmation_token = secrets.token_hex(32)
-        self.email_confirmation_token_expiry = timezone.now() + timedelta(hours=24)
+        self.email_confirmation_token_expires_at = timezone.now() + timedelta(hours=24)
         self.save(
             update_fields=[
                 "email_confirmation_token",
-                "email_confirmation_token_expiry",
+                "email_confirmation_token_expires_at",
             ]
         )
 
@@ -130,8 +116,8 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         Returns False if the email could not be queued; the failure is logged and the new token stays saved.
         """
         self.password_reset_token = secrets.token_hex(32)
-        self.password_reset_token_expiry = timezone.now() + timedelta(hours=1)
-        self.save(update_fields=["password_reset_token", "password_reset_token_expiry"])
+        self.password_reset_token_expires_at = timezone.now() + timedelta(hours=1)
+        self.save(update_fields=["password_reset_token", "password_reset_token_expires_at"])
 
         return ResetPasswordMail(self).dispatch_safely()
 
@@ -148,23 +134,19 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         return
 
     @property
-    def file_upload_limit(self) -> int:
-        """Max upload size in bytes (admin unlimited, else override or global default)."""
-        if self.is_cradle_admin:
-            return 2**64  # Sentinel for unlimited
-        if self.file_upload_limit_override is None:
-            return cradle_settings.files.upload_limit
-        return self.file_upload_limit_override
-
-    @property
-    def is_cradle_admin(self) -> bool:
-        """True if user has admin role."""
+    def is_admin(self) -> bool:
+        """True if user has the Cradle admin role (unrelated to Django's ``is_staff``/``is_superuser``)."""
         return self.role == UserRoles.ADMIN
 
     @property
     def is_manager(self) -> bool:
         """True if user manages entities and entry types, and grants access to entities."""
-        return self.role == UserRoles.MANAGER or self.is_cradle_admin
+        return self.role == UserRoles.MANAGER or self.is_admin
+
+    @property
+    def two_factor_enabled(self) -> bool:
+        """True if the user has a confirmed TOTP device."""
+        return TOTPDevice.objects.filter(user=self, confirmed=True).exists()
 
     @property
     def can_see_restricted_notes(self) -> bool:
@@ -172,7 +154,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
         Off unless enabled in the search settings; admins can read every note, so it never applies to them.
         """
-        return not self.is_cradle_admin and cradle_settings.search.reveal_restricted_matches
+        return not self.is_admin and system_settings.search.reveal_restricted_matches
 
     def generate_api_key(self) -> str:
         """Issue a new API key, replacing any previous one, and return it.
@@ -205,11 +187,11 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
     def can_view(self, other: "CradleUser") -> bool:
         """Whether this user may view ``other``'s account data (themselves, or any user if admin)."""
-        return self.pk == other.pk or self.is_cradle_admin
+        return self.pk == other.pk or self.is_admin
 
     def can_manage(self, other: "CradleUser") -> bool:
         """Whether this user may change ``other``'s account (themselves, or a non-admin if admin)."""
-        return self.pk == other.pk or (self.is_cradle_admin and not other.is_cradle_admin)
+        return self.pk == other.pk or (self.is_admin and not other.is_admin)
 
     def _compute_access_bitmask(self) -> int:
         """Compute the access bitmask from the user's direct and team entity accesses."""
@@ -224,45 +206,36 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     @property
     def access_vector(self) -> str:
         """Bitstring of entity access permissions (all 1s for admin)."""
-        if self.is_cradle_admin:
+        if self.is_admin:
             return "1" * USER_ACCESS_VECTOR_LENGTH
         return _ACCESS_VECTOR_FIELD.get_prep_value(self._compute_access_bitmask())
 
     @property
     def access_vector_inv(self) -> str:
         """Inverted access vector for exclusion queries."""
-        if self.is_cradle_admin:
+        if self.is_admin:
             return "0" * USER_ACCESS_VECTOR_LENGTH
         inverter = (1 << USER_ACCESS_VECTOR_LENGTH) - 1
         return _ACCESS_VECTOR_FIELD.get_prep_value(self._compute_access_bitmask() ^ inverter)
 
     def enable_2fa(self) -> str | None:
-        """Enable 2FA for the user and return the config URL for the TOTP device.
+        """Start 2FA setup and return the config URL of the pending TOTP device.
 
-        Uses database transactions and select_for_update to prevent race conditions
-        when multiple requests are sent simultaneously. Returns None if 2FA is
-        already enabled.
+        Reuses the newest pending device and drops older ones. Returns None if 2FA is already enabled.
         """
-        if not self.two_factor_enabled:
-            with transaction.atomic():
-                devices = TOTPDevice.objects.select_for_update().filter(user=self)
-
-                if devices.exists():
-                    device = devices.order_by("-id").first()
-
-                    if not device.confirmed:
-                        devices.exclude(id=device.id).filter(confirmed=False).delete()
-                        return device.config_url
-                    else:
-                        devices.delete()
-
+        with transaction.atomic():
+            devices = list(TOTPDevice.objects.select_for_update().filter(user=self).order_by("-id"))
+            if any(device.confirmed for device in devices):
+                return None
+            if not devices:
                 device = TOTPDevice.objects.create(
                     user=self,
                     name=f"Default device for {self.username}",
                     confirmed=False,
                 )
                 return device.config_url
-        return None
+            TOTPDevice.objects.filter(pk__in=[device.pk for device in devices[1:]]).delete()
+            return devices[0].config_url
 
     def verify_otp(self, otp: str) -> bool:
         """Verify a 2FA one-time password against the user's TOTP devices."""
@@ -284,11 +257,8 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         return False
 
     def disable_2fa(self) -> None:
-        """Disable 2FA and remove all TOTP devices for the user."""
-        with transaction.atomic():
-            TOTPDevice.objects.filter(user=self).delete()
-            self.two_factor_enabled = False
-            self.save(update_fields=["two_factor_enabled"])
+        """Disable 2FA by removing all TOTP devices for the user."""
+        TOTPDevice.objects.filter(user=self).delete()
 
 
 class ExternalIdentity(models.Model):
@@ -359,15 +329,15 @@ class UserSession(models.Model):
         max_length=45, blank=True, null=True, help_text="IP address of the session"
     )
     created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True, help_text="When the session was created")
-    last_activity: models.DateTimeField = models.DateTimeField(auto_now=True, help_text="Last activity timestamp")
+    last_activity_at: models.DateTimeField = models.DateTimeField(auto_now=True, help_text="Last activity timestamp")
     expires_at: models.DateTimeField = models.DateTimeField(help_text="When the refresh token expires")
 
     objects = UserSessionQuerySet.as_manager()
 
     class Meta:
-        ordering = ["-last_activity"]
+        ordering = ["-last_activity_at"]
         indexes = [
-            models.Index(fields=["user", "-last_activity"]),
+            models.Index(fields=["user", "-last_activity_at"]),
         ]
 
     def __str__(self) -> str:

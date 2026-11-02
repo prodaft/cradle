@@ -19,7 +19,7 @@ from user.testing import session_access_token
 
 class IntelioTestCase(TestCase):
     def setUp(self):
-        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         self.patcher.start()
         self.client = APIClient()
         self.admin = CradleUser.objects.create_user(

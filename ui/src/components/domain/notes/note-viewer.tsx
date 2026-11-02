@@ -1,4 +1,5 @@
-import FileUploadDialog from '@/components/domain/notes/dialogs/file-upload-dialog';
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
+import ShareNoteDialog from '@/components/domain/notes/dialogs/share-note-dialog';
 import RestrictedNote from '@/components/domain/notes/restricted-note';
 import ReportGenerationDialog from '@/components/domain/reports/dialogs/report-generation-dialog';
 import NotFound from '@/components/feedback/not-found';
@@ -9,7 +10,6 @@ import {
 } from '@/components/layout/dock-panel-tab-context';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -51,13 +51,20 @@ import type { LivePeer } from '@/utils/editor/sync/remote-cursors';
 import { parseMarkdownInline } from '@/utils/parser';
 import { Prec } from '@codemirror/state';
 import { keymap, type EditorView } from '@codemirror/view';
-import { BookOpenIcon, InfoIcon, PencilSimpleIcon } from '@phosphor-icons/react';
+import { BookOpenIcon, InfoIcon, PencilSimpleIcon, XIcon } from '@phosphor-icons/react';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useParams, useRouter, useSearch } from '@tanstack/react-router';
 import { format } from 'date-fns';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+    Fragment,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import ActivityList from '../activity/activity-list';
@@ -65,12 +72,13 @@ import { EnrichmentRequestDialog } from '../enrichment';
 import GraphExplorer from '../graph/graph-explorer';
 import NoteGraphSearch from '../graph/note-graph-search';
 import ActionsDropdown from './actions-dropdown';
-import { ViewMode } from './constants';
-import FilesView from './files-view';
+import { ViewMode, type SidebarSection } from './constants';
+import FilesOutline from './files-outline';
 import FindReplace from './find-replace';
 import NoteOutline from './note-outline';
 import ReferenceTree from './reference-tree';
 import RichEditor from './rich-editor';
+import { useNoteFileUploads } from './use-note-file-uploads';
 
 type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 type NoteRetrieve = components['schemas']['NoteRetrieve'];
@@ -87,6 +95,26 @@ interface LocationState {
 }
 
 const EMPTY_FILES: FileReferenceWithNote[] = [];
+
+const SIDEBAR_SECTIONS_KEY = 'noteSidebarSections';
+
+/** Sidebar sections to show, top to bottom in the order they were turned on. */
+function readSidebarSections(): SidebarSection[] {
+    try {
+        const stored: unknown = JSON.parse(
+            localStorage.getItem(SIDEBAR_SECTIONS_KEY) ?? 'null',
+        );
+        if (Array.isArray(stored)) {
+            return (['outline', 'files'] as const)
+                .filter((section) => stored.includes(section))
+                .sort((a, b) => stored.indexOf(a) - stored.indexOf(b));
+        }
+    } catch {
+        // Unreadable value: fall through to the default.
+    }
+    // Before sections, the sidebar held only the outline.
+    return localStorage.getItem('showOutline') === 'true' ? ['outline'] : [];
+}
 const MAX_LIVE_AVATARS = 3;
 
 /**
@@ -134,7 +162,7 @@ export default function NoteViewer() {
     const [isReportOpen, setIsReportOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isUnpublishOpen, setIsUnpublishOpen] = useState(false);
-    const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [isShareOpen, setIsShareOpen] = useState(false);
     const [isAboutOpen, setIsAboutOpen] = useState(false);
     const [files, setFiles] = useState<FileReferenceWithNote[]>([]);
     const [initialMarkdown, setInitialMarkdown] = useState('');
@@ -150,9 +178,9 @@ export default function NoteViewer() {
     const liveUnsentRef = useRef(false);
     const [isFindOpen, setIsFindOpen] = useState(false);
     const [isReplaceMode, setIsReplaceMode] = useState(false);
-    const [isOutlineOpen, setIsOutlineOpen] = useState(() => {
-        return localStorage.getItem('showOutline') === 'true';
-    });
+    const [sidebarSections, setSidebarSections] =
+        useState<SidebarSection[]>(readSidebarSections);
+    const isSidebarOpen = sidebarSections.length > 0;
     const [lineNumber, setLineNumber] = useState(0);
     const [noteOutline, setNoteOutline] = useState<HeaderNode[]>([]);
     const [isLspLoaded, setIsLspLoaded] = useState(false);
@@ -255,17 +283,6 @@ export default function NoteViewer() {
         };
     }, [editorUtils]);
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard
-            .writeText(text)
-            .then(() => {
-                toast.success('Copied to clipboard');
-            })
-            .catch((_error) => {
-                toast.error('Failed to copy to clipboard');
-            });
-    };
-
     const changeView = useCallback(
         (view: ViewMode) => {
             router.navigate({
@@ -289,11 +306,17 @@ export default function NoteViewer() {
         [router, location.pathname, search],
     );
 
-    const toggleOutline = useCallback(() => {
-        const newValue = !isOutlineOpen;
-        setIsOutlineOpen(newValue);
-        localStorage.setItem('showOutline', newValue.toString());
-    }, [isOutlineOpen]);
+    useEffect(() => {
+        localStorage.setItem(SIDEBAR_SECTIONS_KEY, JSON.stringify(sidebarSections));
+    }, [sidebarSections]);
+
+    const toggleSidebarSection = useCallback((section: SidebarSection) => {
+        setSidebarSections((prev) =>
+            prev.includes(section)
+                ? prev.filter((shown) => shown !== section)
+                : [...prev, section],
+        );
+    }, []);
 
     const toggleEditing = useCallback(() => {
         setEnableEditing((current) => !current);
@@ -652,8 +675,41 @@ export default function NoteViewer() {
         unpublishNote.mutate(noteId);
     }, [noteId, unpublishNote]);
 
-    const openUpload = useCallback((_filesList?: any[]) => {
-        setIsUploadOpen(true);
+    const {
+        uploads,
+        upload: startUploads,
+        retry: retryUpload,
+        dismiss: dismissUpload,
+    } = useNoteFileUploads(noteId, setFiles);
+
+    const uploadFiles = useCallback(
+        (selected: File[]) => {
+            if (selected.length === 0) return;
+            if (isSidebarOpen)
+                setSidebarSections((prev) =>
+                    prev.includes('files') ? prev : [...prev, 'files'],
+                );
+            else
+                toast.info(
+                    `Uploading ${selected.length} file${selected.length === 1 ? '' : 's'}. Open Files from the note menu to follow progress.`,
+                );
+            startUploads(selected);
+        },
+        [isSidebarOpen, startUploads],
+    );
+
+    const jumpToPosition = useCallback((pos: number) => {
+        const view: EditorView | undefined = editorRef.current?.view;
+        if (!view || pos > view.state.doc.length) return;
+        view.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
+        view.focus();
+    }, []);
+
+    const insertIntoEditor = useCallback((text: string) => {
+        const view: EditorView | undefined = editorRef.current?.view;
+        if (!view) return;
+        view.dispatch(view.state.replaceSelection(text));
+        view.focus();
     }, []);
 
     const find = useCallback(() => {
@@ -749,6 +805,55 @@ export default function NoteViewer() {
         );
     }, [markdownContent, editorRef]);
 
+    const sidebarSectionContent = (section: SidebarSection) => {
+        const title = section === 'files' ? 'Files' : 'Outline';
+        return (
+            <div className='flex h-full flex-col'>
+                <div className='flex h-8 shrink-0 items-center gap-2 border-b border-border pr-1 pl-3 text-xs font-medium'>
+                    <span>{title}</span>
+                    {section === 'files' && hasFiles && (
+                        <span className='font-mono text-muted-foreground'>
+                            {files.length}
+                        </span>
+                    )}
+                    <Button
+                        variant='ghost'
+                        size='icon-xs'
+                        className='ml-auto text-muted-foreground'
+                        aria-label={`Hide ${title.toLowerCase()}`}
+                        title={`Hide ${title.toLowerCase()}`}
+                        onClick={() => toggleSidebarSection(section)}
+                    >
+                        <XIcon weight='bold' />
+                    </Button>
+                </div>
+                <ScrollArea className='min-h-0 flex-1'>
+                    {section === 'files' ? (
+                        <FilesOutline
+                            files={files}
+                            setFiles={setFiles}
+                            content={markdownContent}
+                            currentLine={lineNumber}
+                            insertText={insertIntoEditor}
+                            jumpToPosition={jumpToPosition}
+                            canEdit={enableEditing}
+                            onUpload={uploadFiles}
+                            uploads={uploads}
+                            onRetryUpload={retryUpload}
+                            onDismissUpload={dismissUpload}
+                        />
+                    ) : (
+                        <NoteOutline
+                            data={noteOutline}
+                            showSeparators={true}
+                            currentLine={lineNumber}
+                        />
+                    )}
+                </ScrollArea>
+            </div>
+        );
+    };
+
     if (isLoading) {
         return (
             <div className='flex items-center justify-center h-full w-full py-8'>
@@ -809,12 +914,12 @@ export default function NoteViewer() {
                                             variant='ghost'
                                             size='icon'
                                             onClick={() => setIsAboutOpen(true)}
-                                            className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                            className='text-muted-foreground hover:bg-secondary hover:text-foreground'
                                             data-testid='about-note-btn'
                                         />
                                     }
                                 >
-                                    <InfoIcon size={20} weight='bold' />
+                                    <InfoIcon weight='bold' />
                                 </TooltipTrigger>
                                 <TooltipContent>About</TooltipContent>
                             </Tooltip>
@@ -827,15 +932,15 @@ export default function NoteViewer() {
                                             variant='ghost'
                                             size='icon'
                                             onClick={() => toggleEditing()}
-                                            className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                            className='text-muted-foreground hover:bg-secondary hover:text-foreground'
                                             data-testid='edit-mode-toggle-btn'
                                         />
                                     }
                                 >
                                     {enableEditing ? (
-                                        <PencilSimpleIcon size={20} weight='bold' />
+                                        <PencilSimpleIcon weight='bold' />
                                     ) : (
-                                        <BookOpenIcon size={20} weight='bold' />
+                                        <BookOpenIcon weight='bold' />
                                     )}
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -850,14 +955,15 @@ export default function NoteViewer() {
                                 enableEditing={enableEditing && isWritable}
                                 setActiveView={changeView}
                                 setRichEditor={changeRichEditor}
-                                isOutlineOpen={isOutlineOpen}
-                                toggleOutline={toggleOutline}
+                                sidebarSections={sidebarSections}
+                                toggleSidebarSection={toggleSidebarSection}
                                 isLspLoaded={isLspLoaded}
                                 smartLink={smartLink}
                                 isAdmin={isAdmin}
                                 relink={relink}
                                 isFleeting={isFleeting}
-                                hasFiles={hasFiles}
+                                isAuthor={isAuthor}
+                                share={() => setIsShareOpen(true)}
                                 publish={publish}
                                 isSaving={isSaving}
                                 exportReport={exportReport}
@@ -865,7 +971,6 @@ export default function NoteViewer() {
                                 canUnpublish={!isFleeting && isAuthor}
                                 confirmUnpublish={confirmUnpublish}
                                 isWritable={isWritable}
-                                openUpload={openUpload}
                                 find={find}
                                 replace={replace}
                                 enrich={enrich}
@@ -882,11 +987,8 @@ export default function NoteViewer() {
                     {activeView === ViewMode.CONTENT && (
                         <div className='w-full h-full overflow-hidden flex flex-col'>
                             <div className='h-full w-full overflow-y-hidden'>
-                                {isOutlineOpen ? (
-                                    <ResizablePanelGroup
-                                        orientation='horizontal'
-                                        className='h-full'
-                                    >
+                                {isSidebarOpen ? (
+                                    <ResizablePanelGroup orientation='horizontal'>
                                         {/* Editor Panel - conditionally renders Rich or Normal editor */}
                                         <ResizablePanel defaultSize='85%' minSize='50%'>
                                             <div className='h-full flex flex-col border-r border-border relative'>
@@ -916,7 +1018,7 @@ export default function NoteViewer() {
                                                             setMarkdownContent
                                                         }
                                                         files={files}
-                                                        setFiles={setFiles}
+                                                        onUploadFiles={uploadFiles}
                                                         source={!richEditor}
                                                         saveNote={saveNow}
                                                         enableEditing={enableEditing}
@@ -932,6 +1034,9 @@ export default function NoteViewer() {
                                                         noteStatus={note?.status}
                                                         noteStatusMessage={
                                                             note?.status_message
+                                                        }
+                                                        noteStatusIssues={
+                                                            note?.status_issues
                                                         }
                                                         onEditorViewChange={
                                                             handleEditorViewChange
@@ -954,13 +1059,25 @@ export default function NoteViewer() {
                                             minSize='10%'
                                             maxSize='30%'
                                         >
-                                            <ScrollArea className='h-full'>
-                                                <NoteOutline
-                                                    data={noteOutline}
-                                                    showSeparators={true}
-                                                    currentLine={lineNumber}
-                                                />
-                                            </ScrollArea>
+                                            <ResizablePanelGroup orientation='vertical'>
+                                                {sidebarSections.map(
+                                                    (section, index) => (
+                                                        <Fragment key={section}>
+                                                            {index > 0 && (
+                                                                <ResizableHandle />
+                                                            )}
+                                                            <ResizablePanel
+                                                                id={section}
+                                                                minSize='15%'
+                                                            >
+                                                                {sidebarSectionContent(
+                                                                    section,
+                                                                )}
+                                                            </ResizablePanel>
+                                                        </Fragment>
+                                                    ),
+                                                )}
+                                            </ResizablePanelGroup>
                                         </ResizablePanel>
                                     </ResizablePanelGroup>
                                 ) : (
@@ -983,7 +1100,7 @@ export default function NoteViewer() {
                                                 markdownContent={markdownContent}
                                                 setMarkdownContent={setMarkdownContent}
                                                 files={files}
-                                                setFiles={setFiles}
+                                                onUploadFiles={uploadFiles}
                                                 source={!richEditor}
                                                 saveNote={saveNow}
                                                 enableEditing={enableEditing}
@@ -996,6 +1113,7 @@ export default function NoteViewer() {
                                                 onLiveUsersChange={setLiveUsers}
                                                 noteStatus={note?.status}
                                                 noteStatusMessage={note?.status_message}
+                                                noteStatusIssues={note?.status_issues}
                                                 onEditorViewChange={
                                                     handleEditorViewChange
                                                 }
@@ -1017,13 +1135,6 @@ export default function NoteViewer() {
                     {/* Graph View */}
                     {activeView === ViewMode.GRAPH && note && noteId && (
                         <GraphExplorer GraphSearchComponent={NoteGraphSearch(noteId)} />
-                    )}
-
-                    {activeView === ViewMode.FILES && note && (
-                        <FilesView
-                            files={files || []}
-                            copyToClipboard={copyToClipboard}
-                        />
                     )}
 
                     {activeView === ViewMode.HISTORY && noteId && (
@@ -1107,8 +1218,8 @@ export default function NoteViewer() {
                         <AlertDialogTitle>Unpublish this note?</AlertDialogTitle>
                         <AlertDialogDescription>
                             The note becomes a private draft again. It is removed from
-                            the graph, and only you can see it until you publish it
-                            again.
+                            the graph, and only you can see it until you share it or
+                            publish it again.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -1125,13 +1236,13 @@ export default function NoteViewer() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            <FileUploadDialog
-                open={isUploadOpen}
-                onOpenChange={setIsUploadOpen}
-                files={files}
-                onFilesChange={setFiles}
-                noteId={noteId}
-            />
+            {isFleeting && isAuthor && (
+                <ShareNoteDialog
+                    open={isShareOpen}
+                    onOpenChange={setIsShareOpen}
+                    noteId={noteId}
+                />
+            )}
             {note && (
                 <Dialog open={isAboutOpen} onOpenChange={setIsAboutOpen}>
                     <DialogContent>

@@ -1,11 +1,11 @@
 import Pagination from '@/components/base/pagination/pagination';
 import { SearchInput } from '@/components/base/search-input/search-input';
+import { Badge } from '@/components/custom/badge';
+import { Checkbox } from '@/components/custom/checkbox';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Empty, EmptyDescription, EmptyHeader } from '@/components/ui/empty';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
@@ -96,9 +96,8 @@ function expandedFor(
 
 const entryLabel = (entry?: EntrySerializerMinimal | null): EntryLabel | null => {
     if (!entry) return null;
-    const subtype =
-        entry.subtype || entry.entry_class?.subtype || entry.type || 'entry';
-    const color = entry.color || entry.entry_class?.color;
+    const subtype = entry.subtype || entry.type || 'entry';
+    const color = entry.color;
     return {
         subtype,
         name: entry.name,
@@ -713,9 +712,7 @@ export default function EnrichmentResults() {
                     return (
                         <div className='flex items-center gap-2'>
                             {artifact.subtype && (
-                                <Badge variant='secondary' className='flex-shrink-0'>
-                                    {artifact.subtype}
-                                </Badge>
+                                <Badge variant='secondary'>{artifact.subtype}</Badge>
                             )}
                             <span className='text-foreground truncate'>
                                 {typeof artifact === 'string'
@@ -802,8 +799,8 @@ export default function EnrichmentResults() {
                                 {isShowingIgnored ? (
                                     <Button
                                         variant='ghost'
-                                        size='sm'
-                                        className='h-auto gap-1 px-2 py-1 text-xs text-muted-foreground'
+                                        size='xs'
+                                        className='text-muted-foreground'
                                         onClick={() => {
                                             const first = request.enrichers?.[0];
                                             if (first) {
@@ -821,14 +818,11 @@ export default function EnrichmentResults() {
                                 ) : (
                                     <Button
                                         variant='ghost'
-                                        size='sm'
-                                        className='h-auto gap-1 px-2 py-1 text-xs text-muted-foreground'
+                                        size='xs'
+                                        className='text-muted-foreground'
                                         onClick={viewIgnored}
                                     >
-                                        <EyeSlashIcon
-                                            className='size-3.5'
-                                            weight='bold'
-                                        />
+                                        <EyeSlashIcon weight='bold' />
                                         Ignored ({ignoredArtifacts.length})
                                     </Button>
                                 )}
@@ -866,7 +860,6 @@ export default function EnrichmentResults() {
                                         <Button
                                             variant='outline'
                                             size='icon'
-                                            className='size-8'
                                             onClick={download}
                                             disabled={
                                                 !activeArtifactId ||
@@ -875,10 +868,7 @@ export default function EnrichmentResults() {
                                             }
                                             title='Download results as JSON'
                                         >
-                                            <DownloadSimpleIcon
-                                                size={18}
-                                                weight='bold'
-                                            />
+                                            <DownloadSimpleIcon weight='bold' />
                                         </Button>
                                         {rows.length > 0 && (
                                             <DataTableViewOptions

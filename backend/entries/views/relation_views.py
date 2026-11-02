@@ -26,6 +26,7 @@ from ..exceptions import (
 )
 from ..models import Relation
 from ..serializers import RelationDetailSerializer, RelationSerializer
+from ..tasks import refresh_edges_materialized_view
 
 
 class RelationListView(APIView):
@@ -151,4 +152,5 @@ class RelationDetailView(APIView):
         except Relation.DoesNotExist:
             raise RelationNotFoundException(detail="That relation could not be found.")
         relation.delete()
+        refresh_edges_materialized_view.apply_async()
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -22,6 +22,11 @@ class TeamErrorCodes(ErrorCode):
         "Team Access Change Not Allowed",
         "team-access-change-not-allowed",
     )
+    TEAM_RESERVES_ENTRY_TYPES = (
+        status.HTTP_409_CONFLICT,
+        "Team Reserves Entry Types",
+        "team-reserves-entry-types",
+    )
 
 
 class TeamNotFoundException(CradleAPIException):
@@ -60,6 +65,12 @@ class TeamAccessChangeNotAllowedException(CradleAPIException):
     error_code = TeamErrorCodes.TEAM_ACCESS_CHANGE_NOT_ALLOWED
 
 
+class TeamReservesEntryTypesException(CradleAPIException):
+    """Raised when deleting the only team an entity type is reserved for, which would open the type to everyone."""
+
+    error_code = TeamErrorCodes.TEAM_RESERVES_ENTRY_TYPES
+
+
 __all__ = [
     "TeamErrorCodes",
     "TeamNotFoundException",
@@ -68,4 +79,5 @@ __all__ = [
     "TeamMemberNotFoundException",
     "TeamMemberAlreadyExistsException",
     "TeamAccessChangeNotAllowedException",
+    "TeamReservesEntryTypesException",
 ]

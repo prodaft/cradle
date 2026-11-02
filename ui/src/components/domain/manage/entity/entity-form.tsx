@@ -2,10 +2,11 @@ import {
     SettingsHeaderActionsPortal,
     SettingsSaveButton,
 } from '@/components/base/settings-header-actions/settings-header-actions';
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
 import MultipleSelector, { type Option } from '@/components/custom/multi-select';
+import { SelectContent } from '@/components/custom/select';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -23,13 +24,7 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
@@ -389,7 +384,7 @@ export default function EntityForm({ id = null }: EntityFormProps) {
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='name'
                                                 className='text-sm block mb-0.5'
@@ -438,7 +433,7 @@ export default function EntityForm({ id = null }: EntityFormProps) {
                                             orientation='responsive'
                                             data-invalid={fieldState.invalid}
                                         >
-                                            <FieldContent className='flex-1'>
+                                            <FieldContent>
                                                 <FieldLabel
                                                     htmlFor='entity-subtype'
                                                     className='text-sm block mb-0.5'
@@ -505,7 +500,7 @@ export default function EntityForm({ id = null }: EntityFormProps) {
                                         orientation='horizontal'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='isPublic'
                                                 className='text-sm block mb-0.5'
@@ -548,7 +543,7 @@ export default function EntityForm({ id = null }: EntityFormProps) {
                                 control={control}
                                 render={({ field }) => (
                                     <Field orientation='responsive'>
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='entity-owning-team'
                                                 className='text-sm block mb-0.5'
@@ -608,7 +603,6 @@ export default function EntityForm({ id = null }: EntityFormProps) {
                                 render={({ field, fieldState }) => (
                                     <Field
                                         orientation='vertical'
-                                        className='w-full'
                                         data-invalid={fieldState.invalid}
                                     >
                                         <FieldContent>
@@ -656,7 +650,7 @@ export default function EntityForm({ id = null }: EntityFormProps) {
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='entity-aliases'
                                                 className='text-sm block mb-0.5'
@@ -717,7 +711,7 @@ export default function EntityForm({ id = null }: EntityFormProps) {
                                     <Separator />
 
                                     <Field orientation='responsive'>
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel className='text-sm block'>
                                                 Delete
                                             </FieldLabel>

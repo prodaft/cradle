@@ -15,7 +15,7 @@ from entries.constants import INTERNAL_SUBTYPES
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass, Relation
 from entries.serializers import (
-    EntryClassSerializer,
+    EntryClassSerializerNoTeams,
     EntrySerializer,
     EntrySerializerMinimal,
 )
@@ -101,7 +101,9 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
         required=False,
         help_text="Subtypes of the entry classes this enricher applies to",
     )
-    for_eclasses = EntryClassSerializer(many=True, read_only=True, help_text="Entry classes this enricher applies to")
+    for_eclasses = EntryClassSerializerNoTeams(
+        many=True, read_only=True, help_text="Entry classes this enricher applies to"
+    )
     enricher_type = serializers.CharField(
         read_only=True, help_text="Stable identifier for this enrichment implementation"
     )
@@ -111,12 +113,12 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
         model = EnricherSettings
         fields = [
             "id",
+            "enricher_type",
+            "display_name",
             "enabled",
             "for_eclass_subtypes",
             "for_eclasses",
-            "enricher_type",
             "settings",
-            "display_name",
             "form_fields",
         ]
 
@@ -157,14 +159,14 @@ class BaseDigestSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
-            "created_by",
-            "created_at",
+            "digest_type",
+            "display_name",
             "status",
             "errors",
             "warnings",
-            "digest_type",
-            "display_name",
             "entities",
+            "created_by",
+            "created_at",
         ]
         read_only_fields = ["id", "created_at", "display_name"]
 
@@ -200,15 +202,6 @@ class BaseDigestCreateSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         return super().to_internal_value(_select_digest_model(self, data))
-
-
-class DigestUploadResponseSerializer(serializers.Serializer):
-    """Response serializer for digest upload initiation."""
-
-    upload_id = serializers.UUIDField(help_text="UUID for this upload session")
-    presigned_url = serializers.CharField(help_text="URL to upload the file to")
-    object_key = serializers.CharField(help_text="S3 object key for the uploaded file")
-    expires_at = serializers.DateTimeField(help_text="When the presigned URL expires")
 
 
 class DigestUploadFinalizeCreateSerializer(serializers.ModelSerializer):
@@ -273,10 +266,10 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
     )
     display_name = serializers.CharField(read_only=True, help_text="Display name for this enrichment")
     enabled = serializers.BooleanField(read_only=True, help_text="Whether this enrichment is enabled")
+    artifacts = serializers.ListField(read_only=True, help_text="Artifacts produced by this enrichment")
     status = serializers.CharField(read_only=True, help_text="Status for this enrichment on the request")
     errors = serializers.ListField(read_only=True, help_text="Errors from this enrichment")
     warnings = serializers.ListField(read_only=True, help_text="Warnings from this enrichment")
-    artifacts = serializers.ListField(read_only=True, help_text="Artifacts produced by this enrichment")
 
     @classmethod
     def for_enrichment(cls, request: EnrichmentRequest, enricher_type: str):
@@ -331,10 +324,10 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
                 "enricher_type": enricher_type,
                 "display_name": BaseEnricher.display_label_for_type(enricher_type),
                 "enabled": enricher_settings.enabled,
+                "artifacts": artifacts,
                 "status": request.enricher_status.get(enricher_type, EnrichmentStatus.WAITING),
                 "errors": errors,
                 "warnings": warnings,
-                "artifacts": artifacts,
             }
         )
 
@@ -351,13 +344,13 @@ class EnrichmentRequestListSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
-            "ignored_count",
-            "created_at",
-            "completed_at",
             "status",
-            "created_by",
             "enrichers",
             "artifact",
+            "ignored_count",
+            "created_by",
+            "created_at",
+            "completed_at",
         ]
         read_only_fields = fields
 
@@ -386,13 +379,13 @@ class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
-            "ignored",
-            "created_at",
-            "completed_at",
             "status",
-            "created_by",
             "enrichers",
             "artifact",
+            "ignored",
+            "created_by",
+            "created_at",
+            "completed_at",
         ]
         read_only_fields = fields
 
@@ -462,20 +455,20 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         model = EnrichmentRequest
         fields = [
             "id",
-            "note_ids",
             "title",
-            "created_at",
-            "completed_at",
             "status",
-            "created_by",
+            "note_ids",
             "entity_ids",
             "entities",
-            "enricher_names",  # write-only input field
+            "enricher_names",
             "enrichment_setting_ids",
             "enricher_classes",
             "enricher_names_display",
             "artifact",
             "errors",
+            "created_by",
+            "created_at",
+            "completed_at",
         ]
         read_only_fields = [
             "id",
@@ -618,7 +611,6 @@ class EnrichmentRelationSerializer(serializers.ModelSerializer):
 
     src = EntrySerializerMinimal(source="e1", read_only=True, help_text="Source entry")
     dst = EntrySerializerMinimal(source="e2", read_only=True, help_text="Destination entry")
-    last_seen_at = serializers.DateTimeField(source="last_seen", read_only=True, help_text="Last observation")
 
     class Meta:
         model = Relation
@@ -626,10 +618,9 @@ class EnrichmentRelationSerializer(serializers.ModelSerializer):
             "id",
             "src",
             "dst",
-            "created_at",
-            "last_seen_at",
             "reason",
             "details",
+            "created_at",
         ]
         read_only_fields = ["created_at", "id"]
         ref_name = "EnrichmentRelation"

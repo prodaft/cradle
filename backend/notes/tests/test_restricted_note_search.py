@@ -71,8 +71,8 @@ class RestrictedNoteSearchTest(NotesTestCase):
         return {
             "id": str(note.id),
             "accessible": False,
-            "created_at": note.timestamp.isoformat(),
-            "updated_at": note.edit_timestamp.isoformat() if note.edit_timestamp else None,
+            "created_at": note.created_at.isoformat(),
+            "updated_at": note.updated_at.isoformat() if note.updated_at else None,
         }
 
     def test_restricted_note_listed_after_accessible_ones(self):

@@ -59,13 +59,13 @@ class BaseDigest(EntitiesAccessVectorMixin, LifecycleModel):
     title: models.CharField = models.CharField(
         max_length=255, null=False, blank=False, help_text="Human-readable title for the digest"
     )
+    digest_type = models.CharField(
+        max_length=255, null=False, blank=False, help_text="Subclass name (e.g. CradleDigest, FalconDigest)"
+    )
     user = models.ForeignKey(
         "user.CradleUser", on_delete=models.CASCADE, related_name="digests", help_text="User who created the digest"
     )
 
-    objects = BaseDigestQuerySet.as_manager()
-
-    # Digest file stored in S3
     file: models.FileField = models.FileField(
         upload_to=digest_upload_path,
         storage=DigestStorage,
@@ -73,8 +73,6 @@ class BaseDigest(EntitiesAccessVectorMixin, LifecycleModel):
         blank=True,
         help_text="Uploaded digest file (stored in S3)",
     )
-
-    created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
         max_length=255,
         choices=DigestStatus.choices,
@@ -83,16 +81,17 @@ class BaseDigest(EntitiesAccessVectorMixin, LifecycleModel):
     )
     errors = models.JSONField(default=list, blank=True, help_text="List of error messages from processing")
     warnings = models.JSONField(default=list, blank=True, help_text="List of warning messages from processing")
-    digest_type = models.CharField(
-        max_length=255, null=False, blank=False, help_text="Subclass name (e.g. CradleDigest, FalconDigest)"
-    )
+    summary = models.JSONField(default=dict, blank=True, help_text="Summary statistics from digest processing")
     entities = models.ManyToManyField(
         Entry,
         related_name="digests",
         help_text="Entities associated with this digest",
     )
     relations = GenericRelation(Relation, related_query_name="digest")
-    summary = models.JSONField(default=dict, blank=True, help_text="Summary statistics from digest processing")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = BaseDigestQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at"]
@@ -337,15 +336,15 @@ class EnricherSettings(models.Model):
     """A strategy for enriching an entry with additional information."""
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    enricher_type = models.CharField(
+        max_length=255, unique=True, help_text="Enricher class name (e.g. AbuseIPDBEnricher)"
+    )
+    enabled = models.BooleanField(default=False, help_text="Whether this enricher is enabled")
 
     for_eclasses = models.ManyToManyField(
         EntryClass, related_name="enrichers", blank=True, help_text="Entry classes this enricher applies to"
     )
-    enricher_type = models.CharField(
-        max_length=255, unique=True, help_text="Enricher class name (e.g. AbuseIPDBEnricher)"
-    )
     settings = models.JSONField(default=dict, blank=True, help_text="Enricher-specific configuration")
-    enabled = models.BooleanField(default=False, help_text="Whether this enricher is enabled")
 
     def __str__(self):
         display = self.enricher_type
@@ -400,11 +399,7 @@ class EnrichmentRequest(EntitiesAccessVectorMixin, LifecycleModel):
     """A request to enrich exactly one artifact using configured enrichers."""
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    enrichers_settings = models.ManyToManyField(EnricherSettings, help_text="Enrichers to run for this request")
     title = models.CharField(max_length=255, help_text="Human-readable title")
-    started_at = models.DateTimeField(null=True, blank=True, help_text="When enrichment last started")
-    completed_at = models.DateTimeField(null=True, blank=True, help_text="When all enrichers finished")
-    created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
         max_length=255,
         choices=EnrichmentStatus.choices,
@@ -418,6 +413,7 @@ class EnrichmentRequest(EntitiesAccessVectorMixin, LifecycleModel):
         related_name="enrichment_requests",
         help_text="User who created the request",
     )
+    enrichers_settings = models.ManyToManyField(EnricherSettings, help_text="Enrichers to run for this request")
     entities = models.ManyToManyField(
         Entry,
         related_name="enrichment_requests",
@@ -427,7 +423,6 @@ class EnrichmentRequest(EntitiesAccessVectorMixin, LifecycleModel):
     enricher_status = models.JSONField(
         default=dict, blank=True, help_text="Per-enricher status (enricher_type -> status)"
     )
-    relations = GenericRelation(Relation, related_query_name="enrichment")
     artifact = models.JSONField(
         default=dict,
         blank=False,
@@ -440,6 +435,10 @@ class EnrichmentRequest(EntitiesAccessVectorMixin, LifecycleModel):
         blank=True,
         help_text="Ignored artifact (no matching enricher), at most one object matching `artifact` shape",
     )
+    relations = GenericRelation(Relation, related_query_name="enrichment")
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True, help_text="When enrichment last started")
+    completed_at = models.DateTimeField(null=True, blank=True, help_text="When all enrichers finished")
 
     objects = EnrichmentRequestManager()
 

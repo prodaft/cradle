@@ -48,7 +48,7 @@ class RequestNoteAccess(APIView):
         """Request access to a restricted note's entities. See schema."""
         user = cast(CradleUser, request.user)
         note = Note.objects.non_fleeting().filter(id=note_id).first()
-        if note is None or not (user.is_cradle_admin or user.can_see_restricted_notes):
+        if note is None or not (user.is_admin or user.can_see_restricted_notes):
             raise NoteNotFoundException(detail="That note could not be found.")
 
         if note.has_read_access(user):

@@ -17,12 +17,12 @@ from core.fields import BitStringField
 from entries.models import Entry, Relation
 from intelio.models.base import BaseDigest
 from logs.models import LoggableModelMixin
-from management.settings import cradle_settings
+from management.settings import system_settings
 from user.models import CradleUser
 
 from .enums import NoteStatus
 from .managers import NoteManager
-from .markdown.to_links import Node, compress_tree, cradle_connections
+from .markdown.to_links import Node, build_reference_tree, compress_tree
 
 
 class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
@@ -37,8 +37,17 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, help_text="Unique identifier for the note."
     )
+
+    title: models.CharField = models.CharField(
+        max_length=255, default="", help_text="Note title from metadata or first heading."
+    )
+    description: models.TextField = models.TextField(
+        default="", max_length=4096, help_text="Note description from metadata or first paragraph."
+    )
     content: models.CharField = models.CharField(help_text="Markdown content with cradle links.")
-    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True, help_text="When the note was created.")
+    content_offset: models.IntegerField = models.IntegerField(
+        default=0, help_text="Byte offset where content starts (after frontmatter)."
+    )
     fleeting: models.BooleanField = models.BooleanField(
         default=False, help_text="If true, note bypasses entity/entry validation (quick notes)."
     )
@@ -52,26 +61,41 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
     status_message: models.CharField = models.CharField(
         default="", help_text="Message describing status (e.g. validation error)."
     )
-    status_timestamp: models.DateTimeField = models.DateTimeField(
+
+    status_issues: models.JSONField = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Problem links behind an invalid status: [{code, key, value}], value null for a whole entry type.",
+    )
+
+    status_changed_at: models.DateTimeField = models.DateTimeField(
         null=True, help_text="When the status was last updated."
+    )
+    metadata: models.JSONField = models.JSONField(
+        default=dict, blank=True, null=True, help_text="Additional metadata from frontmatter."
     )
 
     entries: models.ManyToManyField = models.ManyToManyField(
         Entry, related_name="notes", help_text="Entries referenced by this note."
     )
 
-    title: models.CharField = models.CharField(
-        max_length=255, default="", help_text="Note title from metadata or first heading."
+    digest = models.ForeignKey(
+        BaseDigest,
+        related_name="notes",
+        null=True,
+        on_delete=models.CASCADE,
+        help_text="Digest this note was imported from, if any.",
     )
-    description: models.TextField = models.TextField(
-        default="", max_length=4096, help_text="Note description from metadata or first paragraph."
+
+    access_vector: BitStringField = BitStringField(
+        max_length=2048,
+        null=False,
+        default=1 << 2047,
+        varying=False,
+        help_text="Bitmask for access control; entities with matching bits can read.",
     )
-    metadata: models.JSONField = models.JSONField(
-        default=dict, blank=True, null=True, help_text="Additional metadata from frontmatter."
-    )
-    content_offset: models.IntegerField = models.IntegerField(
-        default=0, help_text="Byte offset where content starts (after frontmatter)."
-    )
+
+    relations = GenericRelation(Relation, related_query_name="note")
 
     author = models.ForeignKey[CradleUser](
         CradleUser,
@@ -89,48 +113,33 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         help_text="User who last edited the note.",
     )
 
-    access_vector: BitStringField = BitStringField(
-        max_length=2048,
-        null=False,
-        default=1 << 2047,
-        varying=False,
-        help_text="Bitmask for access control; entities with matching bits can read.",
-    )
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True, help_text="When the note was created.")
 
-    edit_timestamp: models.DateTimeField = models.DateTimeField(null=True, help_text="When the note was last edited.")
+    updated_at: models.DateTimeField = models.DateTimeField(null=True, help_text="When the note was last edited.")
 
-    objects: NoteManager = NoteManager()
-
-    relations = GenericRelation(Relation, related_query_name="note")
-
-    digest = models.ForeignKey(
-        BaseDigest,
-        related_name="notes",
-        null=True,
-        on_delete=models.CASCADE,
-        help_text="Digest this note was imported from, if any.",
-    )
-
-    last_linked = models.DateTimeField(
+    linked_at = models.DateTimeField(
         default=None, null=True, help_text="When relations were last computed from this note."
     )
+
+    objects: NoteManager = NoteManager()
 
     _reference_tree = None
 
     class Meta:
         indexes = [
-            models.Index(fields=["-timestamp", "fleeting"]),  # For get_accessible_notes ordering
-            models.Index(fields=["fleeting", "timestamp"]),  # Alternative order
-            models.Index(fields=["author", "-timestamp"]),  # For author filtering
-            models.Index(fields=["editor", "-edit_timestamp"]),  # For editor filtering
+            models.Index(fields=["-created_at", "fleeting"]),  # For get_accessible_notes ordering
+            models.Index(fields=["fleeting", "created_at"]),  # Alternative order
+            models.Index(fields=["author", "-created_at"]),  # For author filtering
+            models.Index(fields=["editor", "-updated_at"]),  # For editor filtering
         ]
 
-    STATUS_FIELDS = ("status", "status_message", "status_timestamp")
+    STATUS_FIELDS = ("status", "status_message", "status_changed_at", "status_issues")
 
-    def set_status(self, status: NoteStatus, message: str = ""):
+    def set_status(self, status: NoteStatus, message: str = "", issues: list | None = None):
         self.status = status
         self.status_message = message
-        self.status_timestamp = timezone.now()
+        self.status_issues = issues or []
+        self.status_changed_at = timezone.now()
 
     def write_fields(self, *fields: str) -> None:
         """Write only ``fields`` to this note's row, without hooks or a full save.
@@ -157,16 +166,16 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         self.metadata = json.loads(json.dumps(metadata, cls=DjangoJSONEncoder))
         return [f for f in self.metadata_fields.values() if f] + ["metadata", "content_offset"]
 
-    def write_status(self, status: NoteStatus, message: str = "") -> None:
+    def write_status(self, status: NoteStatus, message: str = "", issues: list | None = None) -> None:
         """Set the status and write only the status fields (see ``write_fields``)."""
-        self.set_status(status, message)
+        self.set_status(status, message, issues)
         self.write_fields(*self.STATUS_FIELDS)
 
     @property
     def reference_tree(self) -> Node:
         if self._reference_tree is None:
-            tree = cradle_connections(self.content, str(self.id))
-            compress_tree(tree, cradle_settings.notes.max_clique_size)
+            tree = build_reference_tree(self.content, str(self.id))
+            compress_tree(tree, system_settings.notes.max_clique_size)
             self._reference_tree = tree
 
         return self._reference_tree
@@ -183,14 +192,15 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
     def has_read_access(self, user: CradleUser) -> bool:
         """Return whether the user may view this note.
 
-        Non-fleeting notes with no linked entity entries are restricted to the author
+        Fleeting notes are private to the author and the users they are shared with, admins
+        included. Non-fleeting notes with no linked entity entries are restricted to the author
         (legacy rows used to appear world-readable via empty ``has_access_to_entities``).
         """
-        if user.is_cradle_admin:
-            return True
-
         if self.fleeting:
-            return self.author_id == user.id
+            return self.author_id == user.id or self.shares.filter(user=user).exists()
+
+        if user.is_admin:
+            return True
 
         entities = set(self.entries.is_entity())
         if not entities:
@@ -205,13 +215,16 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
     def has_write_access(self, user: CradleUser) -> bool:
         """Return whether the user may edit, upload files to, or delete this note.
 
-        Read-write access to every linked entity grants it, whoever wrote the note.
+        Read-write access to every linked entity grants it, whoever wrote the note; for a fleeting
+        note, a read-write share does (deleting, publishing and sharing stay with the author), admins included.
         """
-        if user.is_cradle_admin:
-            return True
-
         if self.fleeting:
-            return self.author_id == user.id
+            return (
+                self.author_id == user.id or self.shares.filter(user=user, access_type=AccessType.READ_WRITE).exists()
+            )
+
+        if user.is_admin:
+            return True
 
         entities = set(self.entries.is_entity())
         if not entities:
@@ -240,6 +253,32 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         transaction.on_commit(lambda: propagate_acvec.apply_async((self.id,)))
 
 
+class NoteShare(models.Model):
+    """A user the author shared a fleeting note with. Dropped when the note is published."""
+
+    id: models.UUIDField = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False, help_text="Unique identifier."
+    )
+    note = models.ForeignKey(
+        Note, on_delete=models.CASCADE, related_name="shares", help_text="Fleeting note being shared."
+    )
+    user = models.ForeignKey(
+        CradleUser, on_delete=models.CASCADE, related_name="note_shares", help_text="User the note is shared with."
+    )
+    access_type: models.CharField = models.CharField(
+        max_length=20,
+        choices=AccessType.choices,
+        default=AccessType.READ,
+        help_text="Permission level on the note: read or read-write",
+    )
+    created_at: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True, help_text="When the note was shared with the user."
+    )
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["note", "user"], name="unique_note_share_note_user")]
+
+
 class ArchivedNote(models.Model):
     """Archived copy of a note, used for history/audit."""
 
@@ -247,7 +286,7 @@ class ArchivedNote(models.Model):
         primary_key=True, default=uuid.uuid4, editable=False, help_text="Unique identifier."
     )
     content: models.CharField = models.CharField(help_text="Archived note content.")
-    timestamp: models.DateTimeField = models.DateTimeField(help_text="When the note was archived.")
+    archived_at: models.DateTimeField = models.DateTimeField(help_text="When the note was archived.")
 
 
 class Snippet(models.Model):
@@ -256,6 +295,8 @@ class Snippet(models.Model):
     id: models.UUIDField = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, help_text="Unique identifier."
     )
+    name: models.CharField = models.CharField(max_length=255, help_text="Display name of the snippet.")
+    content: models.TextField = models.TextField(help_text="Snippet content (markdown).")
     owner = models.ForeignKey(
         CradleUser,
         related_name="snippets",
@@ -263,12 +304,7 @@ class Snippet(models.Model):
         null=True,
         help_text="Owner of the snippet; null for system snippets.",
     )
-    default: models.BooleanField = models.BooleanField(
-        default=False, help_text="Whether this is the default snippet for new notes."
-    )
-    name: models.CharField = models.CharField(max_length=255, help_text="Display name of the snippet.")
-    content: models.TextField = models.TextField(help_text="Snippet content (markdown).")
-    created_on: models.DateTimeField = models.DateTimeField(
+    created_at: models.DateTimeField = models.DateTimeField(
         auto_now_add=True, help_text="When the snippet was created."
     )
 

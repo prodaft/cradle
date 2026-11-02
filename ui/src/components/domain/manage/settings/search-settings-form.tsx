@@ -142,7 +142,7 @@ export default function SearchSettingsForm() {
                                 control={control}
                                 render={({ field }) => (
                                     <Field orientation='responsive'>
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='revealRestrictedMatches'
                                                 className='text-sm block mb-0.5'

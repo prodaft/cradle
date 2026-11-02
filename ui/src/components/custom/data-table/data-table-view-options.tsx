@@ -43,8 +43,7 @@ export function DataTableViewOptions<TData>({
                         aria-label='Toggle columns'
                         role='combobox'
                         variant='outline'
-                        size='sm'
-                        className='ml-auto h-8 font-normal max-sm:w-8 max-sm:px-0'
+                        className='ml-auto font-normal max-sm:w-8 max-sm:px-0'
                     />
                 }
             >

@@ -8,11 +8,13 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/custom/action-bar';
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
+import { Badge } from '@/components/custom/badge';
+import { Checkbox } from '@/components/custom/checkbox';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -20,8 +22,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useAuthActions } from '@/hooks/auth/use-auth';
 import {
@@ -306,9 +306,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                                 {formatDeviceInfo(item.device_info || null)}
                             </span>
                             {item.is_current && (
-                                <Badge variant='default' className='text-xs'>
-                                    Current
-                                </Badge>
+                                <Badge variant='default'>Current</Badge>
                             )}
                         </div>
                     );
@@ -393,7 +391,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                                         }}
                                         variant='destructive'
                                     >
-                                        <TrashIcon size={18} weight='bold' />
+                                        <TrashIcon weight='bold' />
                                         Revoke
                                     </DropdownMenuItem>
                                 </TableActionsButton>
@@ -467,7 +465,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                         disabled={isPending || checkedIds.length === 0}
                         className='text-destructive'
                     >
-                        <TrashIcon size={18} weight='bold' />
+                        <TrashIcon weight='bold' />
                         Revoke
                     </ActionBarItem>
                 </ActionBarGroup>

@@ -33,5 +33,6 @@ If a file is an image, it renders in the note when you prepend its reference
 with an exclamation mark, for example `![image][image.png]`.
 
 ## Storage and limits
-Upload limits and total storage are set by system configuration and may vary by
-user or team. If you hit a limit, contact an administrator to adjust settings.
+Upload limits and total storage are set by system configuration and are the same
+for every user except administrators, who have no limit. If you hit a limit,
+contact an administrator to adjust settings.

@@ -36,8 +36,11 @@ class NoteQuerySet(models.QuerySet):
 
     def accessible(self, user: CradleUser) -> models.QuerySet:
         """Return notes accessible by the user."""
-        if user.is_cradle_admin:
-            return self.filter(Q(fleeting=False) | Q(fleeting=True, author=user))
+        from .models import NoteShare
+
+        shared = Exists(NoteShare.objects.filter(note=OuterRef("pk"), user=user))
+        if user.is_admin:
+            return self.filter(Q(fleeting=False) | Q(fleeting=True, author=user) | Q(shared, fleeting=True))
 
         v = user.access_vector
 
@@ -50,11 +53,17 @@ class NoteQuerySet(models.QuerySet):
             _has_linked_entity=Exists(linked_entity),
         ).filter(
             Q(fleeting=True, author=user)
+            | Q(shared, fleeting=True)
             | Q(fleeting=False, _has_linked_entity=True, bit_or=v)
             | Q(fleeting=False, _has_linked_entity=False, author=user)
         )
 
         return queryset
+
+    def restricted(self, user: CradleUser) -> models.QuerySet:
+        """Return non-fleeting notes the user cannot access."""
+        accessible_ids = self.model.objects.accessible(user).values("id")
+        return self.non_fleeting().exclude(id__in=accessible_ids)
 
 
 class NoteManager(models.Manager):
@@ -65,6 +74,10 @@ class NoteManager(models.Manager):
     def accessible(self, user: CradleUser) -> models.QuerySet:
         """Notes visible to ``user`` (bitmask + entity links + orphan author-only rule)."""
         return self.get_queryset().accessible(user)
+
+    def restricted(self, user: CradleUser) -> models.QuerySet:
+        """Non-fleeting notes hidden from ``user``."""
+        return self.get_queryset().restricted(user)
 
     def get_accessible_notes(self, user: CradleUser, entry_id: Optional[UUID] = None) -> models.QuerySet:
         """Get notes of an entity that the user has access to.
@@ -85,7 +98,7 @@ class NoteManager(models.Manager):
         else:
             qs = self.get_queryset()
 
-        return qs.accessible(user).order_by("-timestamp").distinct()
+        return qs.accessible(user).order_by("-created_at").distinct()
 
     def fleeting(self) -> models.QuerySet:
         """Return only fleeting notes."""

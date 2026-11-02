@@ -2,6 +2,7 @@ import {
     SettingsHeaderActionsPortal,
     SettingsSaveButton,
 } from '@/components/base/settings-header-actions/settings-header-actions';
+import { SelectContent } from '@/components/custom/select';
 import { Button } from '@/components/ui/button';
 import {
     Field,
@@ -12,13 +13,7 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
@@ -285,7 +280,7 @@ export default function FileSettingsForm() {
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='autoprocessFiles'
                                                 className='text-sm block mb-0.5'
@@ -322,7 +317,7 @@ export default function FileSettingsForm() {
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel className='text-sm block mb-0.5'>
                                                 MD5 Subtype
                                             </FieldLabel>
@@ -391,7 +386,7 @@ export default function FileSettingsForm() {
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel className='text-sm block mb-0.5'>
                                                 SHA1 Subtype
                                             </FieldLabel>
@@ -460,7 +455,7 @@ export default function FileSettingsForm() {
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel className='text-sm block mb-0.5'>
                                                 SHA256 Subtype
                                             </FieldLabel>
@@ -529,7 +524,7 @@ export default function FileSettingsForm() {
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='maxFileSizeForHashing'
                                                 className='text-sm block mb-0.5'
@@ -574,7 +569,7 @@ export default function FileSettingsForm() {
                                         orientation='responsive'
                                         data-invalid={fieldState.invalid}
                                     >
-                                        <FieldContent className='flex-1'>
+                                        <FieldContent>
                                             <FieldLabel
                                                 htmlFor='uploadLimit'
                                                 className='text-sm block mb-0.5'
@@ -582,8 +577,9 @@ export default function FileSettingsForm() {
                                                 Upload Limit
                                             </FieldLabel>
                                             <FieldDescription>
-                                                Maximum file size allowed for uploads
-                                                (per user limit can override this)
+                                                Total size of files each user may
+                                                upload, which also caps a single file.
+                                                Administrators have no limit.
                                             </FieldDescription>
                                             {fieldState.invalid && (
                                                 <FieldError
@@ -619,7 +615,7 @@ export default function FileSettingsForm() {
                         </div>
                         <FieldGroup className='gap-4'>
                             <Field orientation='responsive'>
-                                <FieldContent className='flex-1'>
+                                <FieldContent>
                                     <FieldLabel className='text-sm block mb-0.5'>
                                         Process All Files
                                     </FieldLabel>
@@ -635,10 +631,7 @@ export default function FileSettingsForm() {
                                     onClick={() => reprocessFiles.mutate()}
                                     disabled={reprocessFiles.isPending}
                                 >
-                                    <ArrowClockwiseIcon
-                                        className='w-3.5 h-3.5'
-                                        weight='bold'
-                                    />
+                                    <ArrowClockwiseIcon weight='bold' />
                                     {reprocessFiles.isPending
                                         ? 'Processing\u2026'
                                         : 'Process'}

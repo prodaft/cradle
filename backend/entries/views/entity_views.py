@@ -65,7 +65,8 @@ from ..tasks import refresh_edges_materialized_view
         summary="Create entity",
         description=(
             "Creates a new entity. Admins can create any entity; team leads can create entities owned by a "
-            "team they lead (`team_id`)."
+            "team they lead (`team_id`). An entity type linked to teams can only be created, by non-admins, for one of "
+            "those teams."
         ),
         request=EntitySerializer,
         responses={
@@ -73,6 +74,7 @@ from ..tasks import refresh_edges_materialized_view
             **get_error_responses(
                 EntriesErrorCodes.DUPLICATE_ENTITY,
                 EntriesErrorCodes.ADMIN_ONLY_ENTITY_CREATE,
+                EntriesErrorCodes.ENTRY_TYPE_TEAM_RESTRICTED,
                 EntriesErrorCodes.ADMIN_ONLY_ENTITY_PUBLIC_STATUS,
                 TeamErrorCodes.TEAM_NOT_FOUND,
                 CoreErrorCodes.PERMISSION_DENIED,
@@ -173,7 +175,7 @@ class EntityDetail(APIView):
     def delete(self, request: Request, entity_id: int) -> Response:
         """Delete entity and remap note links (admin only)."""
         entity = get_readable_entity(request.user, entity_id)
-        if not request.user.is_cradle_admin:
+        if not request.user.is_admin:
             raise AdminOnlyEntityDeleteException(detail="Only administrators can delete entities.")
         entity.delete_renaming(request.user.id)
         refresh_edges_materialized_view.apply_async()
@@ -191,7 +193,7 @@ class EntityDetail(APIView):
 
         if (
             serializer.validated_data.get("is_public", entity.is_public) != entity.is_public
-            and not request.user.is_cradle_admin
+            and not request.user.is_admin
         ):
             raise AdminOnlyEntityPublicStatusException(
                 detail="Only administrators can change the public status of entities."

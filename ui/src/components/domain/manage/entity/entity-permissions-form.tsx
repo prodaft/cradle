@@ -3,18 +3,13 @@ import {
     SettingsHeaderActionsPortal,
     SettingsSaveButton,
 } from '@/components/base/settings-header-actions/settings-header-actions';
+import { Badge } from '@/components/custom/badge';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
+import { SelectContent } from '@/components/custom/select';
 import { ACCESS_OPTIONS } from '@/components/domain/manage/access-options';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import {
     EMPTY_SEARCH_STATE,

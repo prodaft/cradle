@@ -5,7 +5,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
-from file_transfer.s3_utils import ensure_cradle_buckets_exist
+from file_transfer.s3_utils import ensure_all_buckets_exist
 
 from .models import CradleUser
 
@@ -14,7 +14,7 @@ from .models import CradleUser
 def ensure_storage_buckets(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet[CradleUser]) -> None:
     """Ensure all CRADLE S3/MinIO buckets exist (best-effort)."""
     try:
-        ensure_cradle_buckets_exist()
+        ensure_all_buckets_exist()
         modeladmin.message_user(request, "Storage buckets ensured.")
     except Exception as e:
         modeladmin.message_user(request, f"Failed: {e}", level=40)
@@ -40,8 +40,8 @@ class CradleUserAdmin(UserAdmin):
         "id",
         "last_login",
         "date_joined",
-        "password_reset_token_expiry",
-        "email_confirmation_token_expiry",
+        "password_reset_token_expires_at",
+        "email_confirmation_token_expires_at",
         "two_factor_enabled",
     )
 
@@ -74,9 +74,9 @@ class CradleUserAdmin(UserAdmin):
             {
                 "fields": (
                     "password_reset_token",
-                    "password_reset_token_expiry",
+                    "password_reset_token_expires_at",
                     "email_confirmation_token",
-                    "email_confirmation_token_expiry",
+                    "email_confirmation_token_expires_at",
                 )
             },
         ),

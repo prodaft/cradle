@@ -7,6 +7,7 @@ from diff_match_patch import diff_match_patch
 from django.db import transaction
 from django.utils import timezone
 
+from core.exceptions import CradleAPIException
 from entries.enums import EntryType
 from entries.models import calculate_acvec
 from user.models import CradleUser
@@ -36,11 +37,18 @@ class TaskScheduler:
         note: Optional[Note] = None,
         validate: bool = True,
         update_acvec: bool = True,
+        allow_invalid: bool = False,
     ):
         """Perform checks for creating a note and build referenced entries list.
 
         Maps entry types to referenced entries, runs validation, returns entries
         with persisted IDs.
+
+        With ``allow_invalid``, a note that fails validation is still saved, as INVALID with
+        the problems in its status: it keeps its last processed entries and links (nothing is
+        processed until it is valid again), and its access vector only ever narrows, so an
+        invalid edit can't expose the note to anyone who couldn't read it before or after.
+        Access checks on the links that did resolve still apply.
 
         Returns:
             A list of all referenced entries. Their id fields are populated to
@@ -67,25 +75,33 @@ class TaskScheduler:
 
                 if patches:
                     note.editor = self.user
-                    note.edit_timestamp = timezone.now()
+                    note.updated_at = timezone.now()
 
             entries = []
             tasks = []
+            invalid = None
 
             for task in self.processing:
                 if task.is_validator and not validate:
                     continue
 
-                async_task, entries = task.run(note, entries)
+                try:
+                    async_task, entries = task.run(note, entries)
+                except CradleAPIException as e:
+                    if not (allow_invalid and task.is_validator and hasattr(e, "valid_entries")):
+                        raise
+                    invalid, entries = e, e.valid_entries
+                    continue
                 if async_task:
                     tasks.append(async_task)
 
-            if tasks:
+            if tasks and not invalid:
                 task_chain = chain(*tasks).on_error(note_processing_failed_task.si(note.id))
                 transaction.on_commit(lambda c=task_chain: c.apply_async())
 
             if update_acvec:
-                note.access_vector = calculate_acvec([x for x in entries if x.entry_class.type == EntryType.ENTITY])
+                acvec = calculate_acvec([x for x in entries if x.entry_class.type == EntryType.ENTITY])
+                note.access_vector = acvec | (note.access_vector or 0) if invalid else acvec
 
             if len(note.description) > Note.description.field.max_length:
                 raise MaxLengthExceededException("description", Note.description.field.max_length)
@@ -93,8 +109,11 @@ class TaskScheduler:
             if len(note.title) > Note.title.field.max_length:
                 raise MaxLengthExceededException("title", Note.title.field.max_length)
 
-            note.set_status(NoteStatus.PROCESSING)
-            note.metadata = None
+            if invalid:
+                note.set_status(NoteStatus.INVALID, str(invalid.detail), invalid.link_issues)
+            else:
+                note.set_status(NoteStatus.PROCESSING)
+                note.metadata = None
             note.save()
 
         if patches is None:

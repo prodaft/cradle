@@ -2,6 +2,7 @@
 
 from django.apps import apps
 from django.db import models
+from django.db.models import Count, OuterRef, Subquery
 
 
 class TeamQuerySet(models.QuerySet):
@@ -16,3 +17,9 @@ class TeamQuerySet(models.QuerySet):
     def visible_to(self, user):
         """Return the teams ``user`` may see: all of them for managers, otherwise the ones they belong to."""
         return self if user.is_manager else self.member_of(user)
+
+    def with_member_info(self, user):
+        """Annotate each team with its member count and ``user``'s role in it (None if not a member)."""
+        TeamMembership = apps.get_model("teams", "TeamMembership")
+        role = TeamMembership.objects.filter(team=OuterRef("pk"), user=user).values("role")[:1]
+        return self.annotate(num_members=Count("memberships"), requester_role=Subquery(role))

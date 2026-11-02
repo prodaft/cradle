@@ -1,5 +1,6 @@
+import { Checkbox } from '@/components/custom/checkbox';
+import { SelectContent } from '@/components/custom/select';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogClose,
@@ -20,13 +21,7 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -56,25 +51,25 @@ const TLP_ITEMS: Record<ReportTlp, string> = {
 const FORMAT_ITEMS: Record<ReportFormat, React.ReactNode> = {
     html: (
         <>
-            <FileTextIcon className='size-4' weight='bold' />
+            <FileTextIcon weight='bold' />
             <span>HTML</span>
         </>
     ),
     pdf: (
         <>
-            <FilePdfIcon className='size-4' weight='bold' />
+            <FilePdfIcon weight='bold' />
             <span>PDF</span>
         </>
     ),
     json: (
         <>
-            <CodeIcon className='size-4' weight='bold' />
+            <CodeIcon weight='bold' />
             <span>JSON</span>
         </>
     ),
     plain: (
         <>
-            <DownloadSimpleIcon className='size-4' weight='bold' />
+            <DownloadSimpleIcon weight='bold' />
             <span>Plain Text</span>
         </>
     ),
@@ -345,7 +340,7 @@ export default function ReportGenerationDialog({
                             </Field>
 
                             <Field orientation='horizontal'>
-                                <FieldContent className='flex-1'>
+                                <FieldContent>
                                     <FieldLabel
                                         htmlFor='include-toc'
                                         className='text-sm'
@@ -366,7 +361,7 @@ export default function ReportGenerationDialog({
                             </Field>
 
                             <Field orientation='horizontal'>
-                                <FieldContent className='flex-1'>
+                                <FieldContent>
                                     <FieldLabel
                                         htmlFor='include-entries'
                                         className='text-sm'
@@ -390,7 +385,7 @@ export default function ReportGenerationDialog({
                     )}
 
                     <Field orientation='horizontal'>
-                        <FieldContent className='flex-1'>
+                        <FieldContent>
                             <FieldLabel htmlFor='anonymized' className='text-sm'>
                                 Anonymized
                             </FieldLabel>

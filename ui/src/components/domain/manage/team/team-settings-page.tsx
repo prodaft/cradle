@@ -2,10 +2,10 @@ import {
     SettingsHeaderActionsProvider,
     SettingsHeaderActionsTarget,
 } from '@/components/base/settings-header-actions/settings-header-actions';
+import { Badge } from '@/components/custom/badge';
 import ActivityList from '@/components/domain/activity/activity-list';
 import NotFound from '@/components/feedback/not-found';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
-import { Badge } from '@/components/ui/badge';
 import { CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -160,12 +160,12 @@ export default function TeamSettingsPage() {
                     </div>
                     <div className='flex flex-1 flex-col space-y-2 overflow-hidden mt-4'>
                         <Tabs value={currentTab?.id} onValueChange={changeTab}>
-                            <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 h-auto justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
+                            <TabsList className='flex-nowrap overflow-x-auto overflow-y-hidden w-full md:w-fit min-w-0 justify-start md:justify-center [&>button]:shrink-0 [&>button]:flex-none'>
                                 {items.map((item) => {
                                     const Icon = item.icon;
                                     return (
                                         <TabsTrigger key={item.id} value={item.id}>
-                                            <Icon className='w-4 h-4' />
+                                            <Icon />
                                             {item.label}
                                         </TabsTrigger>
                                     );
@@ -184,7 +184,7 @@ export default function TeamSettingsPage() {
                                                 {currentTab?.description}
                                             </p>
                                         </div>
-                                        <Separator className='bg-border mb-4 flex-none' />
+                                        <Separator className='mb-4 flex-none' />
                                         {currentTab?.id === 'members' ? (
                                             <TeamMembersForm team={teamWithId} />
                                         ) : currentTab?.id === 'access' ? (

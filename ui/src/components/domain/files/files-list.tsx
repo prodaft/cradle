@@ -7,13 +7,15 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/custom/action-bar';
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
+import { Badge } from '@/components/custom/badge';
+import { Checkbox } from '@/components/custom/checkbox';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
 import OfflineIndicator from '@/components/feedback/offline-indicator';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -21,9 +23,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -541,7 +541,6 @@ export default function FilesList({
                                         }
                                     >
                                         <DotsThreeIcon
-                                            className='w-4 h-4'
                                             weight='bold'
                                             aria-hidden='true'
                                         />
@@ -556,26 +555,20 @@ export default function FilesList({
                                                     })
                                                 }
                                             >
-                                                <FileTextIcon size={16} weight='bold' />
+                                                <FileTextIcon weight='bold' />
                                                 Open note
                                             </DropdownMenuItem>
                                         )}
                                         <DropdownMenuItem
                                             onClick={() => download(item)}
                                         >
-                                            <DownloadSimpleIcon
-                                                size={16}
-                                                weight='bold'
-                                            />
+                                            <DownloadSimpleIcon weight='bold' />
                                             Download
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onClick={() => reprocess(item)}
                                         >
-                                            <ArrowClockwiseIcon
-                                                size={16}
-                                                weight='bold'
-                                            />
+                                            <ArrowClockwiseIcon weight='bold' />
                                             Reprocess
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
@@ -583,7 +576,7 @@ export default function FilesList({
                                             variant='destructive'
                                             onClick={() => confirmDelete(item)}
                                         >
-                                            <TrashIcon size={16} weight='bold' />
+                                            <TrashIcon weight='bold' />
                                             Delete
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -683,7 +676,7 @@ export default function FilesList({
                             isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                     >
-                        <DownloadSimpleIcon size={18} weight='bold' />
+                        <DownloadSimpleIcon weight='bold' />
                         Download
                     </ActionBarItem>
                     <ActionBarItem
@@ -692,7 +685,7 @@ export default function FilesList({
                             isLoading || rows.length === 0 || checkedIds.length === 0
                         }
                     >
-                        <ArrowClockwiseIcon size={18} weight='bold' />
+                        <ArrowClockwiseIcon weight='bold' />
                         Reprocess
                     </ActionBarItem>
                     <ActionBarItem
@@ -702,7 +695,7 @@ export default function FilesList({
                         }
                         className='text-destructive'
                     >
-                        <TrashIcon size={18} weight='bold' />
+                        <TrashIcon weight='bold' />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>

@@ -8,13 +8,14 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/custom/action-bar';
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
+import { Checkbox } from '@/components/custom/checkbox';
 import { DataTable } from '@/components/custom/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/custom/data-table/data-table-column-header';
 import { DataTableRowActions } from '@/components/custom/data-table/data-table-row-actions';
 import { useDockPanelTab } from '@/components/layout/dock-panel-tab-context';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -23,7 +24,6 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -248,13 +248,13 @@ export default function TeamsList() {
                     return (
                         <DataTableRowActions>
                             <DropdownMenuItem onClick={() => openSettings(item.id)}>
-                                <PencilIcon size={16} weight='bold' />
+                                <PencilIcon weight='bold' />
                                 Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={() => openSettings(item.id, 'members')}
                             >
-                                <UsersThreeIcon size={16} weight='bold' />
+                                <UsersThreeIcon weight='bold' />
                                 Members
                             </DropdownMenuItem>
                             {isAdmin && (
@@ -264,10 +264,7 @@ export default function TeamsList() {
                                             openSettings(item.id, 'activity')
                                         }
                                     >
-                                        <ClockCounterClockwiseIcon
-                                            size={16}
-                                            weight='bold'
-                                        />
+                                        <ClockCounterClockwiseIcon weight='bold' />
                                         Activity
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
@@ -275,7 +272,7 @@ export default function TeamsList() {
                                         variant='destructive'
                                         onClick={() => confirmDelete([item.id])}
                                     >
-                                        <TrashIcon size={16} weight='bold' />
+                                        <TrashIcon weight='bold' />
                                         Delete
                                     </DropdownMenuItem>
                                 </>
@@ -407,7 +404,7 @@ export default function TeamsList() {
                         disabled={isPending || checkedIds.length === 0}
                         className='text-destructive'
                     >
-                        <TrashIcon size={18} weight='bold' />
+                        <TrashIcon weight='bold' />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>

@@ -1,12 +1,13 @@
 """Exceptions and error codes for the notes app."""
 
-from typing import Iterable, Protocol
+from typing import Iterable, Literal, Protocol, TypedDict
 
 from rest_framework import status
+from rest_framework.exceptions import ErrorDetail
 
 from core.exceptions import CradleAPIException, ErrorCode
 from entries.models import Entry
-from management.settings import cradle_settings
+from management.settings import system_settings
 
 
 class _LinkLike(Protocol):
@@ -14,6 +15,35 @@ class _LinkLike(Protocol):
 
     key: str
     value: str
+
+
+class NoteLinkIssue(TypedDict):
+    """One problem link in a note, so clients can point at it.
+
+    ``value`` is None when the entry type itself is the problem, so every link of that type is.
+    """
+
+    code: Literal["not_allowed", "unknown_type", "missing_entry", "invalid_value"]
+    key: str
+    value: str | None
+
+
+def with_link_issues(
+    errors: list[CradleAPIException], issues: list[NoteLinkIssue], valid_entries: list[Entry]
+) -> CradleAPIException:
+    """Report a note's validation errors as one: the first error, with every message.
+
+    It also carries every problem link (``link_issues``) and the entries that did resolve
+    (``valid_entries``), so a caller that tolerates invalid notes can still save one
+    (see ``TaskScheduler.run_pipeline``).
+    """
+    exc = errors[0]
+    if len(errors) > 1:
+        messages = dict.fromkeys(str(e.detail) for e in errors)
+        exc.detail = ErrorDetail(" ".join(messages), code=getattr(exc.detail, "code", None))
+    exc.link_issues = issues
+    exc.valid_entries = valid_entries
+    return exc
 
 
 class NotesErrorCodes(ErrorCode):
@@ -79,6 +109,11 @@ class NotesErrorCodes(ErrorCode):
         "Note Is Processing",
         "note-is-processing",
     )
+    NOTE_NOT_FLEETING = (
+        status.HTTP_409_CONFLICT,
+        "Note Not Fleeting",
+        "note-not-fleeting",
+    )
     SNIPPET_NOT_FOUND = (
         status.HTTP_404_NOT_FOUND,
         "Snippet Not Found",
@@ -113,8 +148,8 @@ class NotEnoughReferencesException(CradleAPIException):
     error_code = NotesErrorCodes.NOT_ENOUGH_REFERENCES
 
     def __init__(self, *args, **kwargs) -> None:
-        min_entities = cradle_settings.notes.min_entities
-        min_entries = cradle_settings.notes.min_entries
+        min_entities = system_settings.notes.min_entities
+        min_entries = system_settings.notes.min_entries
         entity_word = "entity" if min_entities == 1 else "entities"
         entry_word = "entry" if min_entries == 1 else "entries"
         detail = f"A note must reference at least {min_entities} {entity_word} and {min_entries} {entry_word}."
@@ -201,6 +236,17 @@ class NoteIsProcessingException(CradleAPIException):
     def __init__(self, detail=None, error_code=None):
         if detail is None:
             detail = "This note is still being processed. Try again once processing finishes."
+        super().__init__(detail=detail, error_code=error_code)
+
+
+class NoteNotFleetingException(CradleAPIException):
+    """Exception raised when an action needs a fleeting note but the note is published."""
+
+    error_code = NotesErrorCodes.NOTE_NOT_FLEETING
+
+    def __init__(self, detail=None, error_code=None):
+        if detail is None:
+            detail = "Only fleeting notes can be shared. Published notes follow the access of their entities."
         super().__init__(detail=detail, error_code=error_code)
 
 

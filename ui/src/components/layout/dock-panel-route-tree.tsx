@@ -81,7 +81,7 @@ const tabSearch = z.object({
 
 const noteSearch = z.object({
     heading: z.string().optional(),
-    view: z.enum(['content', 'graph', 'history', 'files']).optional(),
+    view: z.enum(['content', 'graph', 'history']).optional().catch(undefined),
     source: z.boolean().optional(),
 });
 

@@ -160,8 +160,8 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
                         <Separator />
 
                         <FieldGroup className='gap-4'>
-                            <Field orientation='horizontal' className='gap-2'>
-                                <FieldContent className='flex-1'>
+                            <Field orientation='horizontal'>
+                                <FieldContent>
                                     <FieldLabel
                                         className='text-sm block mb-0.5'
                                         htmlFor={noteTemplateActionId}
@@ -181,17 +181,15 @@ export default function AccountEditorForm({ target = 'me' }: AccountEditorFormPr
                                     onClick={openNoteTemplateDialog}
                                     disabled={isTemplateFetching}
                                 >
-                                    {isTemplateFetching ? (
-                                        <Spinner className='size-4' />
-                                    ) : null}
+                                    {isTemplateFetching ? <Spinner /> : null}
                                     Edit
                                 </Button>
                             </Field>
 
                             <Separator />
 
-                            <Field orientation='horizontal' className='gap-2'>
-                                <FieldContent className='flex-1'>
+                            <Field orientation='horizontal'>
+                                <FieldContent>
                                     <FieldLabel
                                         className='text-sm block mb-0.5'
                                         htmlFor={noteSnippetsActionId}

@@ -1,6 +1,6 @@
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,

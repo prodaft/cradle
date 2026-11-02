@@ -74,7 +74,7 @@ def ensure_bucket_exists(bucket_name: str) -> None:
         raise
 
 
-def ensure_cradle_buckets_exist() -> None:
+def ensure_all_buckets_exist() -> None:
     """Ensure all CRADLE-owned buckets exist (best-effort)."""
     for bucket in _STORAGES:
         ensure_bucket_exists(bucket)

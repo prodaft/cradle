@@ -1,5 +1,5 @@
 import { PageLoader } from '@/components/base/page-loader';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/custom/badge';
 import { Button } from '@/components/ui/button';
 import {
     Empty,
@@ -37,7 +37,10 @@ const OVERSCAN = 5;
  * Rendered as a resizable side panel in MainLayout. Fetches notifications on mount
  * with infinite scroll pagination. Uses virtual scrolling for performance.
  */
-export default function NotificationsPanel({ unreadCount, onClose }: NotificationsPanelProps) {
+export default function NotificationsPanel({
+    unreadCount,
+    onClose,
+}: NotificationsPanelProps) {
     const queryClient = useQueryClient();
     const [filter, setFilter] = useState<FilterMode>('all');
     const scrollAreaContainerRef = useRef<HTMLDivElement>(null);
@@ -146,10 +149,7 @@ export default function NotificationsPanel({ unreadCount, onClose }: Notificatio
                         Notifications
                     </h2>
                     {unreadCount > 0 && (
-                        <Badge
-                            variant='default'
-                            className='h-5 min-w-5 px-1.5 tabular-nums'
-                        >
+                        <Badge variant='default' className='min-w-5 tabular-nums'>
                             {unreadCount > 99 ? '99+' : unreadCount}
                         </Badge>
                     )}
@@ -166,7 +166,7 @@ export default function NotificationsPanel({ unreadCount, onClose }: Notificatio
                                 />
                             }
                         >
-                            <XIcon size={16} weight='bold' />
+                            <XIcon weight='bold' />
                         </TooltipTrigger>
                         <TooltipContent>Close</TooltipContent>
                     </Tooltip>
@@ -183,7 +183,8 @@ export default function NotificationsPanel({ unreadCount, onClose }: Notificatio
                             {unreadCount > 0 && (
                                 <Badge
                                     variant='secondary'
-                                    className='h-4 min-w-4 px-1 text-[10px] tabular-nums'
+                                    size='sm'
+                                    className='min-w-4 tabular-nums'
                                 >
                                     {unreadCount > 99 ? '99+' : unreadCount}
                                 </Badge>
@@ -203,7 +204,7 @@ export default function NotificationsPanel({ unreadCount, onClose }: Notificatio
                     <Empty className='border-0'>
                         <EmptyHeader>
                             <EmptyMedia variant='icon'>
-                                <BellRingingIcon size={24} weight='duotone' />
+                                <BellRingingIcon weight='duotone' />
                             </EmptyMedia>
                             <EmptyTitle>
                                 {filter === 'unread'
@@ -223,7 +224,7 @@ export default function NotificationsPanel({ unreadCount, onClose }: Notificatio
                     ref={scrollAreaContainerRef}
                     className='flex min-h-0 flex-1 flex-col min-w-0'
                 >
-                    <ScrollArea className='relative min-h-0 flex-1'>
+                    <ScrollArea className='min-h-0 flex-1'>
                         <div
                             style={{
                                 height: `${virtualizer.getTotalSize()}px`,

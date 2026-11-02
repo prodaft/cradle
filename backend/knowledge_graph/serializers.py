@@ -3,24 +3,19 @@
 import uuid
 from collections import Counter
 
-from drf_spectacular.extensions import OpenApiSerializerExtension
 from rest_framework import serializers
 
 from core.utils import flatten
 from entries.constants import SUBTYPE_NOTE
 from entries.models import Edge, Entry, Relation
-from entries.serializers import (
-    EntryClassSerializerNoChildren,
-    EntryListCompressedTreeSerializer,
-    EntrySerializer,
-)
+from entries.serializers import EntryListCompressedTreeSerializer, EntrySerializer
 from notes.models import Note
 
 
 class EdgeRelationSerializer(serializers.ModelSerializer):
     """Edge between two entries for graph visualization."""
 
-    last_seen_at = serializers.DateTimeField(source="last_seen", help_text="When the relation was last observed")
+    last_seen_at = serializers.DateTimeField(help_text="When the newest relation between the two entries was created")
 
     class Meta:
         model = Edge
@@ -97,7 +92,7 @@ class SubGraphSerializer(serializers.Serializer):
                         src=int(r.e1.id),
                         dst=int(r.e2.id),
                         created_at=r.created_at,
-                        last_seen=r.last_seen,
+                        last_seen_at=r.created_at,
                     )
                     for r in relations
                 ],
@@ -108,51 +103,9 @@ class SubGraphSerializer(serializers.Serializer):
         return serializer
 
 
-class EntryWithDepthSerializerExtension(OpenApiSerializerExtension):
-    target_class = "knowledge_graph.serializers.EntryWithDepthSerializer"
-    match_subclasses = True
-
-    def map_serializer(self, auto_schema, direction):
-        schema = super().map_serializer(auto_schema, direction)
-        properties = schema.get("properties", {})
-        properties.pop("entry_class", None)
-
-        properties["depth"] = {
-            "type": "integer",
-            "description": "Depth of the entry in the graph traversal",
-            "readOnly": True,
-        }
-        properties["type"] = {
-            "type": "string",
-            "description": "Type of the entry (e.g., entity, artifact)",
-        }
-        properties["subtype"] = {
-            "type": "string",
-            "description": "Subtype for the entry",
-        }
-        properties["description"] = {
-            "type": "string",
-            "description": "Description of the entry",
-            "nullable": True,
-        }
-        properties["color"] = {
-            "type": "string",
-            "description": "Color associated with the entry class",
-            "nullable": True,
-        }
-
-        required = set(schema.get("required", []))
-
-        required.add("subtype")
-        required.add("type")
-        schema["required"] = list(required)
-        return schema
-
-
 class EntryWithDepthSerializer(EntrySerializer):
     """Entry with graph traversal depth. Output is flattened (type, subtype, color at top level)."""
 
-    entry_class = EntryClassSerializerNoChildren(read_only=True)
     depth = serializers.IntegerField(read_only=True, help_text="Hops from source in graph traversal")
 
     class Meta:

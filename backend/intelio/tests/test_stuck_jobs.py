@@ -21,7 +21,7 @@ from user.models import CradleUser
 
 class StuckJobsTestCase(TestCase):
     def setUp(self):
-        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         self.patcher.start()
         self.user = CradleUser.objects.create_user(username="user", password="user", email="user@example.com")
         self.tmp = tempfile.TemporaryDirectory()

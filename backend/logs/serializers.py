@@ -13,27 +13,27 @@ from .models import EventLog
 class EventLogSerializer(serializers.ModelSerializer):
     """Serializer for EventLog list/detail API responses."""
 
-    user = EssentialUserRetrieveSerializer()
     src_log = SerializerMethodField()
 
     content_type = SerializerMethodField()
     object_id = serializers.CharField(read_only=True, help_text="Primary key of the content object")
 
-    object_repr = SerializerMethodField()
+    user = EssentialUserRetrieveSerializer()
+    created_at = serializers.DateTimeField(read_only=True, help_text="When the event was recorded")
 
-    created_at = serializers.DateTimeField(source="timestamp", read_only=True, help_text="When the event was recorded")
+    object_repr = SerializerMethodField()
 
     class Meta:
         model = EventLog
         fields = [
             "id",
-            "created_at",
             "type",
-            "user",
             "details",
             "src_log",
             "content_type",
             "object_id",
+            "user",
+            "created_at",
             "object_repr",
         ]
         extra_kwargs = {

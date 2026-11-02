@@ -19,6 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from 'src/components/ui/toolt
 type Notification = components['schemas']['Notification'];
 type AccessRequestNotification = components['schemas']['AccessRequestNotification'];
 type NewUserNotification = components['schemas']['NewUserNotification'];
+type NoteSharedNotification = components['schemas']['NoteSharedNotification'];
 type ReportRenderNotification = components['schemas']['ReportRenderNotification'];
 type EnrichmentCompleteNotification =
     components['schemas']['EnrichmentCompleteNotification'];
@@ -180,6 +181,7 @@ export default function NotificationCard({
     const isActionable = !!(
         notification.type === 'request_access_notification' ||
         notification.type === 'new_user_notification' ||
+        notification.type === 'note_shared_notification' ||
         notification.type === 'report_render_notification' ||
         notification.type === 'report_processing_error_notification' ||
         notification.type === 'enrichment_complete_notification' ||
@@ -246,6 +248,22 @@ export default function NotificationCard({
                         {notification.type === 'new_user_notification' && (
                             <Button size='xs' onClick={activateNewUser}>
                                 Activate user
+                            </Button>
+                        )}
+
+                        {notification.type === 'note_shared_notification' && (
+                            <Button
+                                size='xs'
+                                onClick={() => {
+                                    const notif =
+                                        notification as NoteSharedNotification;
+                                    if (!notif.note_id) return;
+                                    router.navigate({
+                                        to: `/notes/${notif.note_id}` as any,
+                                    });
+                                }}
+                            >
+                                Open note
                             </Button>
                         )}
 

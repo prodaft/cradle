@@ -1,6 +1,8 @@
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
+import { Badge } from '@/components/custom/badge';
+import { SelectContent } from '@/components/custom/select';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -9,7 +11,6 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Command,
@@ -31,13 +32,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import {
     Table,
@@ -131,7 +126,7 @@ const InternalClassCombobox = ({
                 <span className={cn('truncate', !label && 'text-muted-foreground')}>
                     {label || placeholder}
                 </span>
-                <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
+                <ChevronsUpDown className='opacity-50' />
             </PopoverTrigger>
             <PopoverContent className='w-(--anchor-width) p-0' align='start'>
                 <Command>
@@ -773,7 +768,6 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        className='w-full'
                                                         min={colDef.min}
                                                         max={colDef.max}
                                                         placeholder={
@@ -797,7 +791,6 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        className='w-full'
                                                         minLength={colDef.minLength}
                                                         maxLength={colDef.maxLength}
                                                         pattern={colDef.pattern}
@@ -818,14 +811,14 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                     render={
                                                         <Button
                                                             variant='ghost'
-                                                            className='size-8 p-0'
+                                                            size='icon'
                                                         />
                                                     }
                                                 >
                                                     <span className='sr-only'>
                                                         Open menu
                                                     </span>
-                                                    <MoreHorizontal className='size-4' />
+                                                    <MoreHorizontal />
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align='end'>
                                                     <DropdownMenuGroup>
@@ -840,7 +833,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                     saveRow(index)
                                                                 }
                                                             >
-                                                                <Save className='size-4' />
+                                                                <Save />
                                                                 Save row
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
@@ -856,7 +849,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                             }
                                                             nativeButton={false}
                                                         >
-                                                            <Trash2 className='size-4' />
+                                                            <Trash2 />
                                                             Delete mapping
                                                         </AlertDialogTrigger>
                                                         <AlertDialogContent>
@@ -900,7 +893,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                 <div className='flex justify-end gap-2 mt-4'>
                     {unsavedChanges > 0 && (
                         <Button variant='outline' onClick={discard}>
-                            <Undo2 className='size-4' />
+                            <Undo2 />
                             Discard Changes
                         </Button>
                     )}
@@ -909,7 +902,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                         onClick={saveAll}
                         disabled={!rows.some((row) => row.edited)}
                     >
-                        <Save className='size-4' />
+                        <Save />
                         Save Changes
                     </Button>
                 </div>

@@ -20,7 +20,7 @@ class GraphTestCase(TestCase):
     """Admin client, a ``case`` entity class, and helpers to build and query the graph."""
 
     def setUp(self):
-        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         self.patcher.start()
         self.client = APIClient()
         self.admin = CradleUser.objects.create_user(
@@ -50,7 +50,7 @@ class GraphTestCase(TestCase):
     def refresh_edges(self):
         # Postgres now() is frozen at the test transaction's start, so backdate relations to keep edge age positive.
         hour_ago = timezone.now() - timedelta(hours=1)
-        Relation.objects.update(created_at=hour_ago, last_seen=hour_ago)
+        Relation.objects.update(created_at=hour_ago)
         with connection.cursor() as cursor:
             cursor.execute("REFRESH MATERIALIZED VIEW edges;")
 

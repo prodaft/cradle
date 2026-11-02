@@ -55,6 +55,13 @@ their team; admins set or change the owner on the entity's **Settings** tab. The
 owning team is given read-write access, which cannot be lowered while it owns
 the entity. Only admins can make an entity public.
 
+Managers can reserve an entity type for specific teams with the **Teams** field
+in the entry type's settings. Only admins and leads of those teams can then
+create entities of that type; leads of other teams don't see it when creating
+an entity. Leave the field empty to let any team use the type. A team that is
+the only one an entity type is reserved for can't be deleted until the type's
+teams are changed, so the type never silently opens up to every team.
+
 ## Access management
 
 Nobody can modify access for admins, who can access everything. Read-write

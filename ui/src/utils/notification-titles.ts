@@ -2,6 +2,7 @@ import {
     BellSimpleIcon,
     CheckCircleIcon,
     FileTextIcon,
+    ShareNetworkIcon,
     ShieldCheckIcon,
     SparkleIcon,
     UserPlusIcon,
@@ -25,6 +26,7 @@ const NOTIFICATIONS: Record<
     access_granted_notification: { title: 'Access granted', icon: CheckCircleIcon },
     new_user_notification: { title: 'New user', icon: UserPlusIcon },
     team_membership_notification: { title: 'Team membership', icon: UsersThreeIcon },
+    note_shared_notification: { title: 'Note shared', icon: ShareNetworkIcon },
     report_render_notification: { title: 'Report ready', icon: FileTextIcon },
     report_processing_error_notification: {
         title: 'Report failed',

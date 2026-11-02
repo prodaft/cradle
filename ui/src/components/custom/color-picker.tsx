@@ -4,17 +4,12 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { PipetteIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { SelectContent } from '@/components/custom/select';
 import { VisuallyHiddenInput } from '@/components/custom/visually-hidden-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAsRef } from '@/hooks/use-as-ref';
 import { useIsomorphicLayoutEffect } from '@/hooks/use-isomorphic-layout-effect';
 import { useLazyRef } from '@/hooks/use-lazy-ref';
@@ -750,7 +745,6 @@ function ColorPickerContent(props: ColorPickerContentProps) {
         alignOffset,
         side,
         sideOffset,
-        anchor,
         initialFocus,
         finalFocus,
         ...popoverContentProps
@@ -786,7 +780,6 @@ function ColorPickerContent(props: ColorPickerContentProps) {
             alignOffset={alignOffset}
             side={side}
             sideOffset={sideOffset}
-            anchor={anchor}
             initialFocus={initialFocus}
             finalFocus={finalFocus}
             style={style}

@@ -76,6 +76,11 @@ class EntriesErrorCodes(ErrorCode):
         "Admin Only Entity Create",
         "admin-only-entity-create",
     )
+    ENTRY_TYPE_TEAM_RESTRICTED = (
+        status.HTTP_403_FORBIDDEN,
+        "Entry Type Team Restricted",
+        "entry-type-team-restricted",
+    )
     ADMIN_ONLY_ENTITY_DELETE = (
         status.HTTP_403_FORBIDDEN,
         "Admin Only Entity Delete",
@@ -264,6 +269,12 @@ class AdminOnlyEntityCreateException(CradleAPIException):
     """Raised when a non-admin creates an entity without a team they lead."""
 
     error_code = EntriesErrorCodes.ADMIN_ONLY_ENTITY_CREATE
+
+
+class EntryTypeTeamRestrictedException(CradleAPIException):
+    """Raised when a non-admin creates an entity of a type linked to teams other than the owning one."""
+
+    error_code = EntriesErrorCodes.ENTRY_TYPE_TEAM_RESTRICTED
 
 
 class AdminOnlyEntityDeleteException(CradleAPIException):

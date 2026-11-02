@@ -1,8 +1,4 @@
 import { useOpenExternalLink } from '@/components/base/external-link-confirm/external-link-confirm';
-import FileUploadDialog from '@/components/domain/notes/dialogs/file-upload-dialog';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useTheme } from '@/contexts/ui';
 import { useAuthActions } from '@/hooks/auth/use-auth';
 import { useNdjsonQuery } from '@/hooks/query';
 import { CradleEditor } from '@/utils/editor/enhancements';
@@ -11,7 +7,13 @@ import {
     cradleLinksPlugin,
     headingGutterLineClass,
     headingLineClassPlugin,
+    hoveredGutterLineClass,
 } from '@/utils/editor/link-plugin';
+import {
+    highlightNoteIssues,
+    locateNoteIssues,
+    noteIssueHighlight,
+} from '@/utils/editor/note-issues';
 import { revealAfterPointerSelection } from '@/utils/editor/plugin-decoration-utils';
 import {
     referenceLinksPlugin,
@@ -33,6 +35,7 @@ import {
 import { tablePlugin } from '@/utils/editor/table-plugin';
 import { handleLinkClick } from '@/utils/editor/text-editor';
 import { createCradleTheme } from '@/utils/editor/theme';
+import { titleLineExtension } from '@/utils/editor/title-line';
 import { logger } from '@/utils/logger';
 import {
     acceptCompletion,
@@ -72,7 +75,6 @@ import {
 } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
 import { GFM } from '@lezer/markdown';
-import { CaretDownIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import {
     additionalMarkdownSyntaxTags,
     baseSyntaxHighlights,
@@ -84,11 +86,12 @@ import {
     prosemarkMarkdownSyntaxExtensions,
 } from '@prosemark/core';
 import { htmlBlockExtension } from '@prosemark/render-html';
-import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
+import { CodeMirror, getCM, vim, Vim } from '@replit/codemirror-vim';
 import { $api, fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
+import { useTheme } from 'next-themes';
 import {
     forwardRef,
     memo,
@@ -103,39 +106,32 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import { type ConnectionNotice, ConnectionToast } from './connection-toast';
-import FileTable from './file-table';
+import {
+    countText,
+    EditorStatusBar,
+    formatNoteStatusLabel,
+    type TextCounts,
+    type VimMode,
+} from './editor-status-bar';
 import { getSaveStatus } from './status-indicators';
 
 type FileDownload = components['schemas']['FileDownload'];
 type FileReferenceWithNote = components['schemas']['FileReferenceWithNote'];
 type NoteProcessingStatus = components['schemas']['NoteRetrieve']['status'];
+type NoteStatusIssue = components['schemas']['NoteStatusIssue'];
 
-function noteStatusIconClass(status: NoteProcessingStatus | undefined): string {
-    switch (status) {
-        case 'healthy':
-            return 'text-primary';
-        case 'processing':
-            return 'text-amber-500 dark:text-amber-400';
-        case 'warning':
-            return 'text-muted-foreground';
-        case 'invalid':
-            return 'text-destructive';
-        default:
-            return 'text-muted-foreground';
-    }
-}
+const NO_NOTE_ISSUES: NoteStatusIssue[] = [];
 
-function formatNoteStatusLabel(status: NoteProcessingStatus | undefined): string {
-    if (!status) return '—';
-    return status.charAt(0).toUpperCase() + status.slice(1);
-}
+// Vim instances whose mode changes already feed the status bar.
+const vimModeListeners = new WeakSet<CodeMirror>();
 
 interface RichEditorProps {
     noteid: string;
     markdownContent: string;
     setMarkdownContent: (content: string) => void;
     files: FileReferenceWithNote[];
-    setFiles: (data: FileReferenceWithNote[]) => void;
+    /** Uploads files pasted or dropped into the editor. */
+    onUploadFiles?: (files: File[]) => void;
     saveNote: () => void;
     additionalExtensions?: Extension[];
     enableEditing?: boolean;
@@ -151,6 +147,7 @@ interface RichEditorProps {
     onLiveUsersChange?: (users: LivePeer[]) => void;
     noteStatus?: NoteProcessingStatus;
     noteStatusMessage?: string | null;
+    noteStatusIssues?: NoteStatusIssue[];
     onEditorViewChange?: (view: EditorView | null) => void;
 }
 
@@ -227,7 +224,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         markdownContent,
         setMarkdownContent,
         files,
-        setFiles,
+        onUploadFiles,
         saveNote,
         additionalExtensions = [],
         enableEditing = true,
@@ -243,14 +240,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         onLiveUsersChange,
         noteStatus,
         noteStatusMessage,
+        noteStatusIssues = NO_NOTE_ISSUES,
         onEditorViewChange,
     },
     ref,
 ) {
-    const [isFileListOpen, setIsFileListOpen] = useState(false);
-    const [isUploadOpen, setIsUploadOpen] = useState(false);
-    const [initialUploadFiles, setInitialUploadFiles] = useState<File[]>([]);
     const [isEditorReady, setIsEditorReady] = useState(false);
+    const [selectionCounts, setSelectionCounts] = useState<TextCounts | null>(null);
+    const [vimMode, setVimMode] = useState<VimMode>('normal');
     const { isLoggedIn } = useAuthActions();
     const { data: profile } = $api.useQuery(
         'get',
@@ -258,7 +255,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         { params: { path: { user_id: 'me' } } },
         { enabled: isLoggedIn(), meta: { showErrorToast: false } },
     );
-    const { isDarkMode } = useTheme();
+    const isDarkMode = useTheme().resolvedTheme === 'dark';
     const router = useRouter();
     const openExternalLink = useOpenExternalLink();
     const routerRef = useRef(router);
@@ -289,6 +286,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const setMarkdownContentRef = useRef(setMarkdownContent);
     const saveNoteRef = useRef(saveNote);
     const setLineNumberRef = useRef(setLineNumber);
+    const onUploadFilesRef = useRef(onUploadFiles);
     const prevNoteIdRef = useRef(noteid);
     const editorSyncInitDocRef = useRef('');
     const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
@@ -300,7 +298,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const [liveUnavailable, setLiveUnavailable] = useState(false);
     const [liveConnected, setLiveConnected] = useState(true);
     const [liveRetryAt, setLiveRetryAt] = useState<number | null>(null);
-    // Retries the live session while it can't be established.
     const [liveRetry] = useState(() => {
         const retry = new ReconnectTimer(
             () => setEditorSyncEpoch((epoch) => epoch + 1),
@@ -458,6 +455,25 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         () =>
             EditorView.updateListener.of((u) => {
                 if (u.docChanged) setMarkdownContentRef.current(u.state.doc.toString());
+                if (u.docChanged || u.selectionSet) {
+                    const sel = u.state.selection.main;
+                    const next = sel.empty
+                        ? null
+                        : countText(u.state.sliceDoc(sel.from, sel.to));
+                    setSelectionCounts((prev) =>
+                        prev?.words === next?.words && prev?.chars === next?.chars
+                            ? prev
+                            : next,
+                    );
+                }
+                const cm = getCM(u.view);
+                if (cm && !vimModeListeners.has(cm)) {
+                    vimModeListeners.add(cm);
+                    setVimMode('normal');
+                    cm.on('vim-mode-change', (e: { mode: VimMode }) =>
+                        setVimMode(e.mode),
+                    );
+                }
                 const line = u.state.doc.lineAt(u.state.selection.main.head).number;
                 setLineNumberRef.current(line);
             }),
@@ -544,7 +560,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         setMarkdownContentRef.current = setMarkdownContent;
         saveNoteRef.current = saveNote;
         setLineNumberRef.current = setLineNumber;
-    }, [setMarkdownContent, saveNote, setLineNumber]);
+        onUploadFilesRef.current = onUploadFiles;
+    }, [setMarkdownContent, saveNote, setLineNumber, onUploadFiles]);
 
     const codeBlockCopyExtension = useMemo(() => {
         return EditorView.domEventHandlers({
@@ -577,16 +594,11 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         });
     }, []);
 
-    const openUploadDialog = useCallback((selectedFiles: File[]) => {
-        if (selectedFiles.length === 0) return;
-        setInitialUploadFiles(selectedFiles);
-        setIsUploadOpen(true);
-    }, []);
-
     const fileUploadInteractionHandler = useMemo(() => {
         return Prec.high(
             EditorView.domEventHandlers({
-                paste: (event) => {
+                paste: (event, view) => {
+                    if (view.state.readOnly || !onUploadFilesRef.current) return false;
                     const items = event.clipboardData?.items;
                     if (!items) return false;
 
@@ -608,13 +620,13 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
                     if (pastedFiles.length > 0 && !hasText) {
                         event.preventDefault();
-                        openUploadDialog(pastedFiles);
+                        onUploadFilesRef.current(pastedFiles);
                         return true;
                     }
                     return false;
                 },
                 dragover: (event, view) => {
-                    if (view.state.readOnly) return false;
+                    if (view.state.readOnly || !onUploadFilesRef.current) return false;
                     const types = event.dataTransfer?.types;
                     if (!types) return false;
 
@@ -630,17 +642,17 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     return true;
                 },
                 drop: (event, view) => {
-                    if (view.state.readOnly) return false;
+                    if (view.state.readOnly || !onUploadFilesRef.current) return false;
                     const droppedFiles = Array.from(event.dataTransfer?.files ?? []);
                     if (droppedFiles.length === 0) return false;
 
                     event.preventDefault();
-                    openUploadDialog(droppedFiles);
+                    onUploadFilesRef.current(droppedFiles);
                     return true;
                 },
             }),
         );
-    }, [openUploadDialog]);
+    }, []);
 
     const referenceMappings = useMemo(() => {
         if (propReferenceMappings) return propReferenceMappings;
@@ -678,6 +690,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             headingLineClassPlugin(source),
             referenceLinksPlugin(referenceMappings, fileDownloadFn, source),
             tablePlugin(entryColors, navigate, source),
+            noteIssueHighlight,
             languageExtension,
             ...(!source
                 ? [
@@ -689,6 +702,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                       codeBlockCopyExtension,
                       renderedCopy,
                       revealAfterPointerSelection,
+                      titleLineExtension,
                       clickLinkHandler.of(openExternalLink),
                       EditorView.domEventHandlers({
                           click: onLinkClick,
@@ -752,6 +766,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             // from cradleTheme (Prec.high) so it reads like prosemark's.
             exts.push(
                 headingGutterLineClass,
+                hoveredGutterLineClass,
                 Prec.highest(
                     EditorView.theme({
                         '.cm-gutters': {
@@ -790,12 +805,17 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                             height: '12px',
                             backgroundColor: 'var(--muted-foreground)',
                             mask: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E") center / contain no-repeat`,
+                            // Shown only on the hovered line (hoveredGutterLineClass)
+                            // or when folded, so a fold can always be found again.
+                            opacity: '0',
                         },
+                        '.cm-foldGutter .cm-gutterElement.cm-gutter-hovered > span::before':
+                            { opacity: '1' },
                         '.cm-foldGutter .cm-gutterElement:hover > span::before': {
                             backgroundColor: 'var(--foreground)',
                         },
                         '.cm-foldGutter .cm-gutterElement > span[title="Unfold line"]::before':
-                            { transform: 'rotate(-90deg)' },
+                            { transform: 'rotate(-90deg)', opacity: '1' },
                         '.cm-content': { padding: '1rem 1rem 1rem 0' },
                     }),
                 ),
@@ -856,6 +876,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 editorViewRef.current.destroy();
                 editorViewRef.current = null;
                 setIsEditorReady(false);
+                setSelectionCounts(null);
+                setVimMode('normal');
             }
             prevNoteIdRef.current = noteid;
         }
@@ -973,20 +995,25 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         return () => observer.disconnect();
     }, [isEditorReady]);
 
-    const insertTextToCodeMirror = useCallback((text: string) => {
-        const view = editorViewRef.current;
-        if (view) {
-            view.dispatch(view.state.replaceSelection(text));
-        }
-    }, []);
-
-    const toggleFileList = useCallback(() => setIsFileListOpen((prev) => !prev), []);
-
-    const wordCount = useMemo(
-        () => markdownContent.trim().split(/\s+/).filter(Boolean).length,
-        [markdownContent],
+    const counts = useMemo(() => countText(markdownContent), [markdownContent]);
+    const noteIssueRows = useMemo(
+        () => locateNoteIssues(markdownContent, noteStatusIssues),
+        [markdownContent, noteStatusIssues],
     );
-    const charCount = markdownContent.length;
+    useEffect(() => {
+        const view = editorViewRef.current;
+        if (view && isEditorReady) highlightNoteIssues(view, noteIssueRows);
+    }, [noteIssueRows, isEditorReady]);
+    const jumpToNoteIssue = useCallback((pos: number) => {
+        const view = editorViewRef.current;
+        if (!view) return;
+        if (pos > view.state.doc.length) return;
+        view.dispatch({
+            selection: { anchor: pos },
+            effects: EditorView.scrollIntoView(pos, { y: 'center' }),
+        });
+        view.focus();
+    }, []);
     const saveStatus = getSaveStatus(markdownContent, isSaving, isDirty, !!saveError);
 
     const noteStatusBadgeDescription =
@@ -1032,174 +1059,19 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     tabIndex={0}
                 />
             </div>
-            {files && files.length > 0 && (
-                <div className='flex-none max-h-[30%] flex flex-col z-30 border-t border-border bg-card'>
-                    <button
-                        type='button'
-                        className='flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors cursor-pointer w-full text-left'
-                        onClick={toggleFileList}
-                    >
-                        <CaretDownIcon
-                            className={`size-4 text-muted-foreground transition-transform duration-200 ${isFileListOpen ? '' : '-rotate-90'}`}
-                            weight='bold'
-                        />
-                        <span>Attached Files</span>
-                        <span className='text-xs text-muted-foreground ml-1'>
-                            ({files.length})
-                        </span>
-                    </button>
-                    {isFileListOpen && (
-                        <ScrollArea className='flex-1 min-h-24 border-t border-border'>
-                            <FileTable
-                                files={files}
-                                setFiles={setFiles}
-                                insertTextCallback={insertTextToCodeMirror}
-                                canRemove={enableEditing}
-                            />
-                            <ScrollBar orientation='horizontal' />
-                        </ScrollArea>
-                    )}
-                </div>
-            )}
 
-            {saveStatus === 'error' && saveError && (
-                <div
-                    role='alert'
-                    className='flex-none flex items-start gap-2 px-3 py-2 border-t border-destructive/40 bg-destructive/10 text-destructive text-xs'
-                    data-testid='save-error-banner'
-                >
-                    <WarningCircleIcon
-                        className='size-4 shrink-0 mt-px'
-                        weight='bold'
-                    />
-                    <span className='flex-1 min-w-0 break-words'>
-                        <span className='font-semibold'>Not saved: </span>
-                        {saveError}
-                    </span>
-                    {onSaveErrorClick && (
-                        <button
-                            type='button'
-                            onClick={onSaveErrorClick}
-                            className='shrink-0 font-semibold underline underline-offset-2 cursor-pointer'
-                        >
-                            Resolve
-                        </button>
-                    )}
-                </div>
-            )}
-
-            {/* Bottom toolbar: word count, character count, vim, save status, check badge */}
-            <div className='flex-none flex items-center justify-end gap-2 px-3 py-1.5 border-t border-border bg-muted/30 text-muted-foreground text-xs'>
-                <span>{wordCount} words</span>
-                <span>{charCount} chars</span>
-                {profile?.vim_mode && (
-                    <Tooltip>
-                        <TooltipTrigger
-                            render={
-                                <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent' />
-                            }
-                        >
-                            <span className='w-1.5 h-1.5 rounded-full bg-green-500' />
-                            <span className='cradle-mono'>Vim</span>
-                        </TooltipTrigger>
-                        <TooltipContent>Vim mode enabled</TooltipContent>
-                    </Tooltip>
-                )}
-                <Tooltip>
-                    <TooltipTrigger
-                        render={
-                            saveStatus === 'error' ? (
-                                <button
-                                    type='button'
-                                    onClick={onSaveErrorClick}
-                                    className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-destructive border border-destructive/50 cursor-pointer'
-                                    data-testid='save-status-dot'
-                                    data-state={saveStatus}
-                                />
-                            ) : (
-                                <span
-                                    className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent cursor-default'
-                                    data-testid='save-status-dot'
-                                    data-state={saveStatus}
-                                />
-                            )
-                        }
-                    >
-                        <span
-                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                saveStatus === 'saved'
-                                    ? 'bg-green-500'
-                                    : saveStatus === 'saving'
-                                      ? 'bg-amber-500 dark:bg-amber-400'
-                                      : saveStatus === 'unsaved' ||
-                                          saveStatus === 'error'
-                                        ? 'bg-destructive'
-                                        : 'bg-muted-foreground'
-                            }`}
-                        />
-                        <span
-                            className={`cradle-mono tabular-nums ${
-                                saveStatus === 'saving'
-                                    ? 'text-amber-800 dark:text-amber-300'
-                                    : ''
-                            }`}
-                        >
-                            {saveStatus === 'saved'
-                                ? 'Saved'
-                                : saveStatus === 'saving'
-                                  ? 'Saving'
-                                  : saveStatus === 'unsaved'
-                                    ? 'Unsaved'
-                                    : saveStatus === 'error'
-                                      ? 'Not saved'
-                                      : '—'}
-                        </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        {saveStatus === 'saved'
-                            ? 'All changes saved'
-                            : saveStatus === 'saving'
-                              ? 'Saving...'
-                              : saveStatus === 'unsaved'
-                                ? 'Unsaved changes'
-                                : saveStatus === 'error'
-                                  ? `${saveError} Click to resolve.`
-                                  : 'Cannot save empty note'}
-                    </TooltipContent>
-                </Tooltip>
-                <span
-                    className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'
-                    title={noteStatusBadgeDescription}
-                    aria-label={noteStatusBadgeDescription}
-                >
-                    <svg
-                        xmlns='http://www.w3.org/2000/svg'
-                        width='14'
-                        height='14'
-                        fill='currentColor'
-                        viewBox='0 0 256 256'
-                        className={`shrink-0 ${noteStatusIconClass(noteStatus)}`}
-                        aria-hidden
-                    >
-                        <path d='M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z' />
-                    </svg>
-                    <span className='cradle-mono'>
-                        {formatNoteStatusLabel(noteStatus)}
-                    </span>
-                </span>
-            </div>
-
-            {/* File Upload Dialog */}
-            <FileUploadDialog
-                open={isUploadOpen}
-                onOpenChange={(open) => {
-                    setIsUploadOpen(open);
-                    if (!open) setInitialUploadFiles([]);
-                }}
-                files={files}
-                onFilesChange={setFiles}
-                initialFiles={initialUploadFiles}
-                noteId={noteid}
+            <EditorStatusBar
+                counts={counts}
+                selection={selectionCounts}
+                vimMode={profile?.vim_mode ? vimMode : null}
+                liveStatus={connectionNotice ?? (liveSession ? 'live' : null)}
+                saveStatus={saveStatus}
+                saveError={saveError}
+                onSaveErrorClick={onSaveErrorClick}
+                noteStatus={noteStatus}
+                noteStatusDescription={noteStatusBadgeDescription}
+                noteStatusIssues={noteIssueRows}
+                onNoteIssueSelect={jumpToNoteIssue}
             />
         </div>
     );
@@ -1214,7 +1086,7 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.source === nextProps.source &&
         prevProps.enableEditing === nextProps.enableEditing &&
         prevProps.editorUtils === nextProps.editorUtils &&
-        prevProps.setFiles === nextProps.setFiles &&
+        prevProps.onUploadFiles === nextProps.onUploadFiles &&
         prevProps.setMarkdownContent === nextProps.setMarkdownContent &&
         prevProps.saveNote === nextProps.saveNote &&
         prevProps.setLineNumber === nextProps.setLineNumber &&
@@ -1226,6 +1098,7 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.onLiveSessionChange === nextProps.onLiveSessionChange &&
         prevProps.onLiveUsersChange === nextProps.onLiveUsersChange &&
         prevProps.noteStatus === nextProps.noteStatus &&
-        prevProps.noteStatusMessage === nextProps.noteStatusMessage
+        prevProps.noteStatusMessage === nextProps.noteStatusMessage &&
+        prevProps.noteStatusIssues === nextProps.noteStatusIssues
     );
 });

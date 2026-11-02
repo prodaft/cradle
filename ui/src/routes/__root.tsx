@@ -1,10 +1,9 @@
 import { ExternalLinkConfirmProvider } from '@/components/base/external-link-confirm/external-link-confirm';
 import { PageLoader } from '@/components/base/page-loader';
-import { AppToaster } from '@/components/base/toaster';
+import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/contexts/auth/auth-provider';
 import { QueryProvider } from '@/contexts/query/query-provider';
-import { ThemeProvider } from '@/contexts/ui';
 import * as Sentry from '@sentry/tanstackstart-react';
 import '@styles/main.css';
 import {
@@ -15,6 +14,7 @@ import {
     type ErrorComponentProps,
 } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { ThemeProvider } from 'next-themes';
 import { Suspense, useEffect, type ReactNode } from 'react';
 
 function RootErrorComponent({ error }: ErrorComponentProps) {
@@ -72,8 +72,13 @@ function RootComponent() {
         <RootDocument>
             <AuthProvider>
                 <QueryProvider>
-                    <ThemeProvider>
-                        <AppToaster />
+                    <ThemeProvider
+                        attribute='data-theme'
+                        defaultTheme='dark'
+                        disableTransitionOnChange
+                        storageKey='ui-theme'
+                    >
+                        <Toaster />
                         <TooltipProvider>
                             <div id='root-content'>
                                 <ExternalLinkConfirmProvider>
@@ -96,7 +101,7 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: ReactNode }) {
     return (
-        <html data-theme='light' lang='en'>
+        <html lang='en' suppressHydrationWarning>
             <head>
                 <HeadContent />
             </head>

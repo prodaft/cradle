@@ -28,6 +28,7 @@ _SOCKET_TYPES = {
     "AccessGrantedNotification": "access_granted_notification",
     "AccessRequestNotification": "request_access_notification",
     "TeamMembershipNotification": "team_membership_notification",
+    "NoteSharedNotification": "note_shared_notification",
     "NewUserNotification": "new_user_notification",
     "ReportRenderNotification": "report_render_notification",
     "ReportProcessingErrorNotification": "report_processing_error_notification",
@@ -45,18 +46,19 @@ class MessageNotification(LifecycleModel):
     """Base notification model. Dispatches email on creation via get_mail."""
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    message: models.CharField = models.CharField(help_text="Human-readable notification text.")
     user: models.ForeignKey = models.ForeignKey(
         CradleUser, on_delete=models.CASCADE, help_text="Recipient of the notification."
     )
-    timestamp: models.DateTimeField = models.DateTimeField(
-        auto_now_add=True, help_text="When the notification was created."
-    )
+    message: models.CharField = models.CharField(help_text="Human-readable notification text.")
     is_unread: models.BooleanField = models.BooleanField(
         default=True, help_text="Whether the notification has been read."
     )
     is_marked_unread: models.BooleanField = models.BooleanField(
         default=False, help_text="User manually marked as unread."
+    )
+
+    created_at: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True, help_text="When the notification was created."
     )
 
     objects = NotificationManager()
@@ -137,6 +139,14 @@ class TeamMembershipNotification(MessageNotification):
 
     team: models.ForeignKey = models.ForeignKey(
         "teams.Team", on_delete=models.CASCADE, help_text="Team the recipient was added to."
+    )
+
+
+class NoteSharedNotification(MessageNotification):
+    """Notification when a fleeting note is shared with the recipient or their access to it changes."""
+
+    note: models.ForeignKey = models.ForeignKey(
+        "notes.Note", on_delete=models.CASCADE, help_text="Fleeting note shared with the recipient."
     )
 
 

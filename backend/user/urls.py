@@ -3,7 +3,7 @@
 from django.urls import include, path
 
 from notes.views.snippet_view import UserMeSnippetsView, UserSnippetsView
-from teams.views import UserTeamList
+from teams.views import UserMeTeamList, UserTeamList
 
 from .views import user_view
 from .views.oauth_view import OAuthConnectView, OAuthDisconnectView
@@ -14,6 +14,7 @@ urlpatterns = [
     path("me/", user_view.UserMeDetail.as_view(), kwargs={"user_id": "me"}, name="user_detail_me"),
     path("<uuid:user_id>/", user_view.UserDetail.as_view(), name="user_detail"),
     path("<uuid:user_id>/access/", include("access.user_urls")),
+    path("me/teams/", UserMeTeamList.as_view(), name="user_team_list_me"),
     path("<uuid:user_id>/teams/", UserTeamList.as_view(), name="user_team_list"),
     path("me/snippets/", UserMeSnippetsView.as_view(), kwargs={"user_id": "me"}, name="user_snippets_me"),
     path("<uuid:user_id>/snippets/", UserSnippetsView.as_view(), name="user_snippets"),

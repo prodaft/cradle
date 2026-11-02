@@ -12,7 +12,7 @@ class EntriesTestCase(TestCase):
     """Base test case with mocked storage bucket creation and sample entry classes."""
 
     def setUp(self):
-        self.patcher = patch("file_transfer.s3_utils.ensure_cradle_buckets_exist")
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
         self.patcher.start()
 
         self.entryclass_username = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype="username")

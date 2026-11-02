@@ -42,7 +42,7 @@ class NoteHistoryTest(NotesTestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_non_admin_reader_sees_only_this_note(self):
-        self.assertFalse(self.user.is_cradle_admin)
+        self.assertFalse(self.user.is_admin)
 
         response = self.client.get(reverse("note_history", kwargs={"note_id": self.note.id}), **self.headers)
 

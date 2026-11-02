@@ -2,9 +2,9 @@ import {
     SettingsHeaderActionsPortal,
     SettingsSaveButton,
 } from '@/components/base/settings-header-actions/settings-header-actions';
+import { AlertDialogAction } from '@/components/custom/alert-dialog';
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -127,7 +127,7 @@ export default function TeamForm({ team }: TeamFormProps) {
                                 orientation='responsive'
                                 data-invalid={fieldState.invalid}
                             >
-                                <FieldContent className='flex-1'>
+                                <FieldContent>
                                     <FieldLabel
                                         htmlFor='name'
                                         className='text-sm block'
@@ -190,7 +190,7 @@ export default function TeamForm({ team }: TeamFormProps) {
                             <Separator />
 
                             <Field orientation='responsive'>
-                                <FieldContent className='flex-1'>
+                                <FieldContent>
                                     <FieldLabel className='text-sm block'>
                                         Delete
                                     </FieldLabel>
