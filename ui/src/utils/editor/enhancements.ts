@@ -1199,7 +1199,7 @@ export class CradleEditor {
     MARKDOWN LANGUAGE INTEGRATION
   =============================================================================*/
 
-    extension(): MarkdownExtension {
+    static extension(): MarkdownExtension {
         const CradleLinkExtension = {
             defineNodes: [
                 {
@@ -1378,7 +1378,7 @@ export class CradleEditor {
             content: markdown({
                 base: config.base,
                 codeLanguages: config.codeLanguages || [],
-                extensions: [this.extension(), ...(config.extensions || [])],
+                extensions: [CradleEditor.extension(), ...(config.extensions || [])],
             }),
         });
     }

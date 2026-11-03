@@ -12,6 +12,7 @@ import {
     EmptyTitle,
 } from '@/components/ui/empty';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 import { HeaderNode } from '@/utils/editor/outline';
 import { TreeViewIcon } from '@phosphor-icons/react';
 import { ChevronRightIcon } from 'lucide-react';
@@ -46,51 +47,65 @@ function OutlineNode({
     nodeData: HeaderNode;
     options: OutlineOptions;
 }) {
-    if (nodeData.children.length > 0) {
-        return (
-            <Collapsible defaultOpen>
-                <CollapsibleTrigger
-                    render={
-                        <Button
-                            variant='ghost'
-                            size='sm'
-                            className='group w-full justify-start transition-none'
-                            onClick={nodeData.onNodeClick}
-                        />
-                    }
-                >
-                    <ChevronRightIcon className='transition-transform group-data-panel-open:rotate-90' />
-                    <span className='truncate'>{nodeData.nodeName}</span>
-                </CollapsibleTrigger>
-                <CollapsibleContent className='mt-1 ml-5 flex flex-col gap-1'>
-                    {renderOutlineNodes(nodeData.children, options)}
-                </CollapsibleContent>
-            </Collapsible>
-        );
-    }
-
     const { currentLine } = options;
+    const firstChild = nodeData.children[0];
+    // A heading is current while the cursor is in its own text, before any sub-heading.
+    const ownEndLine = firstChild ? firstChild.startLine - 1 : nodeData.endLine;
     const isCurrent =
         currentLine !== undefined &&
         currentLine >= nodeData.startLine &&
-        currentLine <= nodeData.endLine;
+        currentLine <= ownEndLine;
 
-    return (
+    const label = (
         <Button
-            variant='link'
+            variant='ghost'
             size='sm'
-            className='w-full justify-start text-foreground no-underline hover:no-underline'
+            className='min-w-0 flex-1 justify-start'
             onClick={nodeData.onNodeClick}
         >
-            <span className='flex size-4 shrink-0 items-center justify-center text-sm leading-none'>
-                #
-            </span>
             <span
-                className={`truncate${isCurrent ? ' underline decoration-primary' : ''}`}
+                className={cn('truncate', isCurrent && 'underline decoration-primary')}
             >
                 {nodeData.nodeName}
             </span>
         </Button>
+    );
+
+    if (!firstChild) {
+        return (
+            <div className='flex items-center'>
+                <span
+                    className='flex size-7 shrink-0 items-center justify-center text-sm leading-none text-muted-foreground'
+                    aria-hidden='true'
+                >
+                    #
+                </span>
+                {label}
+            </div>
+        );
+    }
+
+    return (
+        <Collapsible defaultOpen>
+            <div className='flex items-center'>
+                <CollapsibleTrigger
+                    render={
+                        <Button
+                            variant='ghost'
+                            size='icon-sm'
+                            className='group shrink-0 text-muted-foreground'
+                            aria-label={`Toggle ${nodeData.nodeName}`}
+                        />
+                    }
+                >
+                    <ChevronRightIcon className='transition-transform group-data-panel-open:rotate-90' />
+                </CollapsibleTrigger>
+                {label}
+            </div>
+            <CollapsibleContent className='mt-1 ml-5 flex flex-col gap-1'>
+                {renderOutlineNodes(nodeData.children, options)}
+            </CollapsibleContent>
+        </Collapsible>
     );
 }
 

@@ -41,7 +41,7 @@ function findReferencedFile(
 }
 
 const CHIP_CLASS =
-    'inline-flex max-w-full items-center gap-1.5 h-[1.8em] pr-2 pl-1.5 align-[-0.4em] border text-[0.9em] font-medium leading-none whitespace-nowrap';
+    'inline-flex max-w-full items-center gap-1.5 h-[1.8em] pr-2 pl-1.5 align-middle border text-[0.9em] font-medium leading-none whitespace-nowrap';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 

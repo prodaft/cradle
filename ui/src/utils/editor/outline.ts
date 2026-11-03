@@ -1,5 +1,10 @@
+import { CradleEditor } from '@/utils/editor/enhancements';
 import { titleHeadingNumber } from '@/utils/editor/title-line';
+import { markdown } from '@codemirror/lang-markdown';
+import { yamlFrontmatter } from '@codemirror/lang-yaml';
 import { Text } from '@codemirror/state';
+import type { SyntaxNode } from '@lezer/common';
+import { GFM } from '@lezer/markdown';
 
 export interface HeaderNode {
     nodeName: string;
@@ -10,103 +15,105 @@ export interface HeaderNode {
     endLine: number;
 }
 
+/** Same block and link syntax as the editor, so code blocks and frontmatter are skipped. */
+const parser = yamlFrontmatter({
+    content: markdown({ extensions: [GFM, CradleEditor.extension()] }),
+}).language.parser;
+
+const HEADING = /^(?:ATXHeading|SetextHeading)(\d)$/;
+
+/** Syntax markers left out of a heading's displayed text. */
+const HIDDEN_NODES = new Set([
+    'HeaderMark',
+    'EmphasisMark',
+    'CodeMark',
+    'StrikethroughMark',
+    'LinkMark',
+]);
+
+/** The value and alias of a cradle link's `[[type:value|alias]]` body. */
+const CRADLE_LINK_BODY = /^[^:]*:?((?:\\.|[^|\\])*)(?:\|(.*))?$/s;
+
+/** A heading's plain text: markdown markers removed, cradle links shown by alias or value. */
+function inlineText(node: SyntaxNode, source: string): string {
+    if (HIDDEN_NODES.has(node.name)) return '';
+    if (node.name === 'Escape') return source.slice(node.from + 1, node.to);
+    if (node.name === 'CradleLink') {
+        // Read the raw link: the parser's value range is off when it has spaces.
+        const raw = source.slice(node.from, node.to);
+        const body = raw.slice(raw.indexOf('[[') + 2, raw.lastIndexOf(']]'));
+        const [, value = '', alias] = CRADLE_LINK_BODY.exec(body) ?? [];
+        return (alias ?? value).trim().replace(/\\([[\]|])/g, '$1');
+    }
+
+    // A link shows only its label, not its destination, title or reference.
+    const end =
+        node.name === 'Link' || node.name === 'Image'
+            ? (node.getChildren('LinkMark')[1]?.from ?? node.to)
+            : node.to;
+    let text = '';
+    let pos = node.from;
+    for (
+        let child = node.firstChild;
+        child && child.from < end;
+        child = child.nextSibling
+    ) {
+        text += source.slice(pos, child.from) + inlineText(child, source);
+        // A cradle link's timestamp child ends past the link node itself.
+        pos = Math.max(child.to, child.getChild('CradleLinkTimestamp')?.to ?? 0);
+    }
+    return text + source.slice(pos, Math.max(pos, end));
+}
+
 /**
- * Extracts header nodes from markdown content.
- * It detects header lines (those starting with '#' characters)
- * and marks a header with `separatorBefore: true` if a markdown
- * separator was found between it and the previous header. The note's title
- * heading is left out.
- *
- * Additionally, each header node's onNodeClick calls the provided `onClick`
- * callback with the offset (the line number in the file) of the header's start.
- *
- * @param content The markdown content as a string.
- * @param onClickLine A callback that receives the line number of the header when a node is clicked.
- * @param onClickHeaderName A callback that receives the header name when a node is clicked.
- * @returns An array of header nodes representing the markdown header hierarchy.
+ * Builds the heading hierarchy of a markdown note, leaving out its title heading.
+ * A heading gets `separatorBefore` when a horizontal rule sits between it and the
+ * previous heading. Clicking a node calls `onClick` with the end of its first line.
  */
 export default function extractHeaderHierarchy(
     content: string,
-    onClickLine: ((lineNumber: number) => void) | undefined,
-    onClickHeaderName: ((headerName: string) => void) | undefined,
+    onClick?: (pos: number) => void,
 ): HeaderNode[] {
-    const lines = content.split('\n');
-    const titleNumber = titleHeadingNumber(Text.of(lines));
+    const doc = Text.of(content.split('\n'));
+    const titleNumber = titleHeadingNumber(doc);
     const result: HeaderNode[] = [];
-
     const stack: { level: number; node: HeaderNode }[] = [];
-
-    let headerFound = false;
     let pendingSeparator = false;
 
-    function isHorizontalRule(line: string): boolean {
-        return /^(\s*)([-*_])(?:\s*\2){2,}\s*$/.test(line);
-    }
+    parser.parse(content).iterate({
+        enter: (ref) => {
+            if (ref.name === 'HorizontalRule') {
+                pendingSeparator = true;
+                return false;
+            }
+            const match = HEADING.exec(ref.name);
+            if (!match) return;
+            const level = Number(match[1]);
 
-    function parseLink(text: string): string {
-        const linkPattern = /\[\[[^:\]]+:([^|\]]+)(?:\|([^\]]+))?\]\]/g;
-        return text.replace(linkPattern, (_match, value, alias) => {
-            return alias ? alias : value;
-        });
-    }
-
-    for (let i = 0; i < lines.length; i++) {
-        const raw = lines[i];
-        if (raw === undefined || i + 1 === titleNumber) continue;
-        const line = raw.trim();
-
-        if (isHorizontalRule(line)) {
-            pendingSeparator = true;
-        } else if (line.startsWith('#')) {
-            const match = line.match(/^(#+)\s+(.*)$/);
-            if (!match) continue;
-
-            const hashes = match[1];
-            const body = match[2];
-            if (hashes === undefined || body === undefined) continue;
-
-            const level = hashes.length;
-            const text = parseLink(body.trim());
+            const startLine = doc.lineAt(ref.from).number;
+            const nodeName = inlineText(ref.node, content).replace(/\s+/g, ' ').trim();
+            if (startLine === titleNumber || !nodeName) return false;
 
             const node: HeaderNode = {
-                nodeName: text,
-                onNodeClick: () => {
-                    onClickLine?.(i + 1);
-                    onClickHeaderName?.(text);
-                },
+                nodeName,
+                onNodeClick: () => onClick?.(doc.line(startLine).to),
                 children: [],
-                startLine: i + 1,
-                endLine: lines.length,
+                startLine,
+                endLine: doc.lines,
             };
-
-            if (headerFound && pendingSeparator) {
-                node.separatorBefore = true;
-            }
-            headerFound = true;
+            if (pendingSeparator && result.length > 0) node.separatorBefore = true;
             pendingSeparator = false;
 
-            while (stack.length > 0) {
-                const top = stack[stack.length - 1];
-                if (!top || top.level < level) break;
-                stack.pop()!.node.endLine = i;
-            }
+            while (stack.length > 0 && stack[stack.length - 1]!.level >= level)
+                stack.pop()!.node.endLine = startLine - 1;
 
-            if (stack.length === 0) {
-                result.push(node);
-            } else {
-                const parent = stack[stack.length - 1];
-                if (parent) {
-                    parent.node.children.push(node);
-                }
-            }
-
+            const parent = stack[stack.length - 1];
+            if (parent) parent.node.children.push(node);
+            else result.push(node);
             stack.push({ level, node });
-        }
-    }
-
-    while (stack.length > 0) {
-        stack.pop()!.node.endLine = lines.length;
-    }
+            return false;
+        },
+    });
 
     return result;
 }

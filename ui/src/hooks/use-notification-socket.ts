@@ -1,7 +1,10 @@
 import { queryKeys } from '@/hooks/query';
 import { ReconnectTimer } from '@/utils/editor/sync/reconnect-timer';
 import { requestNotificationPermission } from '@/utils/notification-sound';
-import { claimNotificationToast, presentNotification } from '@/utils/notification-toasts';
+import {
+    claimNotificationToast,
+    presentNotification,
+} from '@/utils/notification-toasts';
 import { apiWebSocketUrl } from '@/utils/websocket';
 import { ensureClientSession, fetchClient } from '@services/openapi/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -43,7 +46,9 @@ export function useNotificationSocket(enabled: boolean): boolean {
         const invalidate = () => {
             clearTimeout(invalidateTimer);
             invalidateTimer = setTimeout(() => {
-                void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+                void queryClient.invalidateQueries({
+                    queryKey: queryKeys.notifications.all,
+                });
             }, 200);
         };
 

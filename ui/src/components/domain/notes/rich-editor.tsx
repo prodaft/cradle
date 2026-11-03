@@ -671,7 +671,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     codeLanguages: languages,
                     extensions: [
                         GFM,
-                        editorUtils.extension(),
+                        CradleEditor.extension(),
                         referenceLinkSyntax(referenceMappings || {}),
                         ...(source
                             ? [additionalMarkdownSyntaxTags]
@@ -679,7 +679,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     ],
                 }),
             }),
-        [editorUtils, referenceMappings, source],
+        [referenceMappings, source],
     );
 
     const extensions = useMemo(() => {

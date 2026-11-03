@@ -29,7 +29,8 @@ function chimeSrc(): string | null {
     const buffer = new ArrayBuffer(44 + dataSize);
     const view = new DataView(buffer);
     const write = (offset: number, text: string) => {
-        for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
+        for (let i = 0; i < text.length; i++)
+            view.setUint8(offset + i, text.charCodeAt(i));
     };
     write(0, 'RIFF');
     view.setUint32(4, 36 + dataSize, true);
@@ -44,7 +45,8 @@ function chimeSrc(): string | null {
     view.setUint16(34, 16, true);
     write(36, 'data');
     view.setUint32(40, dataSize, true);
-    for (let i = 0; i < samples.length; i++) view.setInt16(44 + i * 2, samples[i] ?? 0, true);
+    for (let i = 0; i < samples.length; i++)
+        view.setInt16(44 + i * 2, samples[i] ?? 0, true);
 
     chimeUrl = URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
     return chimeUrl;
@@ -66,12 +68,14 @@ function playChime(): Promise<boolean> {
  * can also show the system notification.
  */
 export function requestNotificationPermission(): void {
-    if (typeof Notification === 'undefined' || Notification.permission !== 'default') return;
+    if (typeof Notification === 'undefined' || Notification.permission !== 'default')
+        return;
     void Notification.requestPermission().catch(() => {});
 }
 
 function ringInBackground(title: string, message: string, silent: boolean): void {
-    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted')
+        return;
     try {
         new Notification(title, { body: message || undefined, silent });
     } catch {

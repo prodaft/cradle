@@ -780,42 +780,8 @@ export default function NoteViewer() {
     }, [isDirty, isSaving]);
 
     useEffect(() => {
-        const content = markdownContent || '';
-        setNoteOutline(
-            extractHeaderHierarchy(
-                content,
-                (lineNumber: number) => {
-                    if (!editorRef.current?.view || typeof lineNumber !== 'number')
-                        return;
-
-                    const view = editorRef.current.view;
-                    if (view) {
-                        const state = view.state;
-                        if (lineNumber === 1) {
-                            view.dispatch({
-                                selection: { anchor: 0, head: 0 },
-                                scrollIntoView: true,
-                            });
-                        } else {
-                            const targetLinePos = state.doc.line(
-                                Math.max(1, lineNumber + 2),
-                            ).from;
-                            const selection = {
-                                anchor: targetLinePos,
-                                head: targetLinePos,
-                            };
-
-                            view.dispatch({
-                                selection,
-                                scrollIntoView: true,
-                            });
-                        }
-                    }
-                },
-                undefined,
-            ),
-        );
-    }, [markdownContent, editorRef]);
+        setNoteOutline(extractHeaderHierarchy(markdownContent || '', jumpToPosition));
+    }, [markdownContent, jumpToPosition]);
 
     const sidebarSectionContent = (section: SidebarSection) => {
         const title = section === 'files' ? 'Files' : 'Outline';

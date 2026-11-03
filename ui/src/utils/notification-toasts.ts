@@ -99,12 +99,18 @@ function drainToasts(): void {
     }
 }
 
-function showNotificationToast(type: string | undefined, message: string | undefined): void {
+function showNotificationToast(
+    type: string | undefined,
+    message: string | undefined,
+): void {
     waiting.push({ type, message });
     drainToasts();
 }
 
-export function presentNotification(type: string | undefined, message: string | undefined): void {
+export function presentNotification(
+    type: string | undefined,
+    message: string | undefined,
+): void {
     showNotificationToast(type, message);
     playNotificationSound({ notificationType: type, message });
 }
