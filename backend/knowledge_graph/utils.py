@@ -13,49 +13,51 @@ from entries.models import Edge, Entry
 User = get_user_model()
 
 
-def _virtual_destinations(level: QuerySet) -> QuerySet:
-    """Ids of the entries reached from ``level`` through virtual (alias) edges."""
-    return Edge.objects.filter(src__in=level, virtual=True).values_list("dst", flat=True).distinct()
+class _Traversal:
+    """Level-by-level traversal of the edges a user can see, optionally collapsing virtual (alias) edges."""
 
+    def __init__(self, user: Optional[User], skip_virtual: bool):
+        self.user = user
+        self.skip_virtual = skip_virtual
 
-def _get_next_level(
-    current_level: QuerySet,
-    visited: list,
-    user: Optional[User],
-    skip_virtual: bool,
-) -> QuerySet:
-    """Compute raw next level of neighbors from current_level, excluding visited nodes."""
-    if skip_virtual:
-        virt_ids = _virtual_destinations(current_level)
-        edges = Edge.objects.filter(Q(src__in=current_level, virtual=False) | Q(src__in=virt_ids, virtual=True))
-    else:
-        edges = Edge.objects.filter(src__in=current_level)
+    def _edges(self, *args, **kwargs) -> QuerySet:
+        """Edges matching the filters, restricted to those the user can see."""
+        edges = Edge.objects.filter(*args, **kwargs)
+        return edges.accessible(user=self.user) if self.user else edges
 
-    if user:
-        edges = edges.accessible(user=user)
+    def _virtual_destinations(self, level: QuerySet) -> QuerySet:
+        """Ids of the entries reached from ``level`` through virtual (alias) edges the user can see."""
+        return self._edges(src__in=level, virtual=True).values_list("dst", flat=True).distinct()
 
-    dst_ids = edges.values_list("dst", flat=True).distinct()
-    qs = Entry.objects.filter(id__in=dst_ids)
-    for v in visited:
-        qs = qs.exclude(pk__in=v)
-    return qs.distinct()
+    def _next_level(self, level: QuerySet, visited: list) -> QuerySet:
+        """Compute raw next level of neighbors from ``level``, excluding visited nodes."""
+        if self.skip_virtual:
+            virt_ids = self._virtual_destinations(level)
+            edges = self._edges(Q(src__in=level, virtual=False) | Q(src__in=virt_ids))
+        else:
+            edges = self._edges(src__in=level)
 
+        dst_ids = edges.values_list("dst", flat=True).distinct()
+        qs = Entry.objects.filter(id__in=dst_ids)
+        for v in visited:
+            qs = qs.exclude(pk__in=v)
+        return qs.distinct()
 
-def _levels(sourceset: QuerySet, depth: int, user: Optional[User], skip_virtual: bool) -> Iterator[QuerySet]:
-    """Yield the source set, then each level of neighbors up to ``depth`` hops away.
+    def levels(self, sourceset: QuerySet, depth: int) -> Iterator[QuerySet]:
+        """Yield the source set, then each level of neighbors up to ``depth`` hops away.
 
-    Each level excludes the entries of earlier levels (and, with ``skip_virtual``, those reached through their
-    virtual edges), so no entry is visited twice.
-    """
-    visited: list = []
-    level = sourceset
-    for hop in range(depth + 1):
-        if hop:
-            level = _get_next_level(level, visited, user, skip_virtual)
-        visited.append(level)
-        if skip_virtual:
-            visited.append(_virtual_destinations(level))
-        yield level
+        Each level excludes the entries of earlier levels (and, with ``skip_virtual``, those reached through their
+        virtual edges), so no entry is visited twice.
+        """
+        visited: list = []
+        level = sourceset
+        for hop in range(depth + 1):
+            if hop:
+                level = self._next_level(level, visited)
+            visited.append(level)
+            if self.skip_virtual:
+                visited.append(self._virtual_destinations(level))
+            yield level
 
 
 def get_neighbors(
@@ -71,7 +73,7 @@ def get_neighbors(
     Follows only accessible relations; avoids revisiting nodes from earlier depths.
     """
     result = None
-    for level in _levels(sourceset, depth, user, skip_virtual):
+    for level in _Traversal(user, skip_virtual).levels(sourceset, depth):
         filtered = level_filter(level) if level_filter else level
         result = result | filtered if cumulative and result is not None else filtered
     return result
@@ -105,7 +107,7 @@ def get_neighbors_paginated(
     and ``page_size`` apply to that level only).
     """
     offset = (page_number - 1) * page_size
-    levels = _levels(sourceset, depth, user, skip_virtual)
+    levels = _Traversal(user, skip_virtual).levels(sourceset, depth)
 
     if cumulative:
         skip_remaining = offset
@@ -170,19 +172,17 @@ def get_edges_for_paths(
 
     Filters edges by time range and user access vector.
     """
-    # Safely format the target array as SQL literal
     target_array = "ARRAY[%s]" % ",".join(str(int(t)) for t in targets)
 
-    # The dynamic SQL for the filtered edge set
     inner_sql = f"""
-        SELECT id, src AS source, dst AS target, age AS cost
+        SELECT DISTINCT ON (id) id, src AS source, dst AS target, age AS cost
         FROM edges
         WHERE created_at <= %s
           AND last_seen_at >= %s
           AND (%s & access_vector) = '{fieldtype.get_prep_value(0)}'
+        ORDER BY id, age
     """
 
-    # The full pgr_dijkstra SQL
     full_sql = f"""
         SELECT seq, path_seq, node, edge, cost, agg_cost
         FROM pgr_dijkstra(
@@ -207,13 +207,5 @@ def get_edges_for_paths(
     if not edge_ids:
         return []
 
-    edges = list(Edge.objects.filter(id__in=edge_ids))
-    return edges
-
-
-def filter_valid_edges(edges: List[Edge]) -> List[Edge]:
-    """Drop edges whose src or dst entry no longer exists."""
-    ids = {e.src for e in edges} | {e.dst for e in edges}
-    valid_ids = set(Entry.objects.filter(id__in=ids).values_list("id", flat=True))
-
-    return [e for e in edges if e.src in valid_ids and e.dst in valid_ids]
+    rows = Edge.objects.accessible(user).filter(id__in=edge_ids, created_at__lte=end_time, last_seen_at__gte=start_time)
+    return list({edge.id: edge for edge in rows}.values())

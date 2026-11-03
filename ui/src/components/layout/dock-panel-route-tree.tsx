@@ -29,6 +29,7 @@ const AccountSettings = lazy(
     () => import('@/components/domain/user/account-settings-page'),
 );
 const DigestsList = lazy(() => import('@/components/domain/digests/digests-list'));
+const DigestDetail = lazy(() => import('@/components/domain/digests/digest-detail'));
 const EnrichmentLayout = lazy(
     () => import('@/components/domain/enrichment/enrichment-layout'),
 );
@@ -171,8 +172,19 @@ const filesRoute = createRoute({
 const digestDataRoute = createRoute({
     getParentRoute: () => authenticatedRoute,
     path: 'digest-data',
+});
+
+const digestDataIndexRoute = createRoute({
+    getParentRoute: () => digestDataRoute,
+    path: '/',
     validateSearch: digestsValidateSearchSchema,
     component: DigestsList,
+});
+
+const digestDetailRoute = createRoute({
+    getParentRoute: () => digestDataRoute,
+    path: '$id',
+    component: DigestDetail,
 });
 
 const settingsRoute = createRoute({
@@ -401,7 +413,7 @@ export const panelRouteTree = rootRoute.addChildren([
         notesRoute.addChildren([notesIndexRoute, noteRoute]),
         reportsRoute,
         filesRoute,
-        digestDataRoute,
+        digestDataRoute.addChildren([digestDataIndexRoute, digestDetailRoute]),
         settingsRoute,
         knowledgeGraphRoute,
         enrichmentRoute.addChildren([enrichmentIndexRoute, enrichmentResultRoute]),

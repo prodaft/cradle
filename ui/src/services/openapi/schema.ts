@@ -761,6 +761,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/intelio/digests/{digest_id}/notes/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List digest notes
+         * @description Notes imported by a digest that the current user can access, newest first.
+         */
+        get: operations["intelio_digest_notes_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/intelio/digests/{digest_id}/relations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List digest relations
+         * @description Relations created by a digest that the current user can access, oldest first.
+         */
+        get: operations["intelio_digest_relations_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/intelio/digests/uploads/": {
         parameters: {
             query?: never;
@@ -2650,6 +2690,8 @@ export interface components {
             errors?: unknown;
             /** @description List of warning messages from processing */
             warnings?: unknown;
+            /** @description Summary statistics from digest processing */
+            readonly summary?: unknown;
             /** @description Entities associated with this digest */
             readonly entities?: components["schemas"]["Entry"][];
             /** @description Who uploaded the digest */
@@ -2690,6 +2732,51 @@ export interface components {
         DefaultNoteTemplateResponse: {
             /** @description Current default template for new notes */
             template: string | null;
+        };
+        /** @description Serializer for notes imported by a digest. */
+        DigestNote: {
+            /**
+             * Format: uuid
+             * @description Unique identifier for the note.
+             */
+            readonly id?: string;
+            /** @description Note title from metadata or first heading. */
+            readonly title?: string;
+            /** @description Note description from metadata or first paragraph. */
+            readonly description?: string;
+            /** @description Who owns the note */
+            readonly created_by?: components["schemas"]["EssentialUserRetrieve"];
+            /**
+             * Format: date-time
+             * @description When the note was created.
+             */
+            readonly created_at?: string;
+        };
+        /** @description Serializer for relations created by a digest; same fields, its own schema name. */
+        DigestRelation: {
+            /** Format: uuid */
+            readonly id?: string;
+            /** @description Source entry */
+            readonly src?: components["schemas"]["EntrySerializerMinimal"];
+            /** @description Destination entry */
+            readonly dst?: components["schemas"]["EntrySerializerMinimal"];
+            /**
+             * @description Why this relation exists (digest, enrichment, contains, etc.)
+             *
+             *     * `digest` - Digest
+             *     * `enrichment` - Enrichment
+             *     * `contains` - Contains
+             *     * `alias` - Alias
+             *     * `note` - Note
+             */
+            reason: components["schemas"]["RelationReasonEnum"];
+            /** @description Extra relation metadata */
+            details?: unknown;
+            /**
+             * Format: date-time
+             * @description Creation timestamp
+             */
+            readonly created_at?: string;
         };
         /** @description Serializer for digest subclass information. */
         DigestSubclass: {
@@ -4089,6 +4176,24 @@ export interface components {
             /** @description Total number of pages */
             total_pages: number;
             results: components["schemas"]["BaseDigest"][];
+        };
+        PaginatedDigestNoteSerializerResponse: {
+            /** @description Current page number */
+            page: number;
+            /** @description Total number of items */
+            count: number;
+            /** @description Total number of pages */
+            total_pages: number;
+            results: components["schemas"]["DigestNote"][];
+        };
+        PaginatedDigestRelationSerializerResponse: {
+            /** @description Current page number */
+            page: number;
+            /** @description Total number of items */
+            count: number;
+            /** @description Total number of pages */
+            total_pages: number;
+            results: components["schemas"]["DigestRelation"][];
         };
         PaginatedEnrichmentRelationSerializerResponse: {
             /** @description Current page number */
@@ -17831,6 +17936,662 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description PERMISSION_DENIED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description DIGEST_NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description INTERNAL_SERVER_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    intelio_digest_notes_list: {
+        parameters: {
+            query?: {
+                /** @description Page number for pagination */
+                page?: number;
+                /** @description Number of results to return per page. Max 100. */
+                page_size?: number;
+                /** @description Search the note title or description (case-insensitive). Supports the search syntax: AND/OR/NOT (or -term), "quoted phrases", =exact, and * wildcards. */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                digest_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedDigestNoteSerializerResponse"];
+                };
+            };
+            /** @description INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE; INVALID_SEARCH_SYNTAX */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description PERMISSION_DENIED */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description DIGEST_NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+            /** @description INTERNAL_SERVER_ERROR */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    intelio_digest_relations_list: {
+        parameters: {
+            query?: {
+                /** @description Page number for pagination */
+                page?: number;
+                /** @description Number of results to return per page. Max 100. */
+                page_size?: number;
+                /** @description Search either endpoint's name or subtype, or the JSON `details` (case-insensitive). Supports the search syntax: AND/OR/NOT (or -term), "quoted phrases", =exact, and * wildcards. */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                digest_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedDigestRelationSerializerResponse"];
+                };
+            };
+            /** @description INVALID_PAGE_SIZE; PAGE_SIZE_TOO_LARGE; INVALID_SEARCH_SYNTAX */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description URI reference identifying the problem type
+                         * @example /errors/validation-error
+                         */
+                        type: string;
+                        /**
+                         * @description Short, human-readable summary of the problem type
+                         * @example Validation Error
+                         */
+                        title: string;
+                        /**
+                         * @description HTTP status code
+                         * @example 400
+                         */
+                        status: number;
+                        /**
+                         * @description Human-readable explanation specific to this occurrence
+                         * @example Some values could not be accepted.
+                         */
+                        detail: string;
+                        /**
+                         * @description URI reference identifying the specific occurrence
+                         * @example /api/users/create
+                         */
+                        instance?: string;
+                        /**
+                         * Format: date-time
+                         * @description ISO 8601 timestamp when the error occurred
+                         * @example 2026-11-08T14:32:10.123456Z
+                         */
+                        timestamp: string;
+                        /**
+                         * @description Machine-readable error code
+                         * @example VALIDATION_ERROR
+                         */
+                        code: string;
+                        /**
+                         * @description Validation messages by user-facing label (same keys as in API responses after key transformation)
+                         * @example {
+                         *       "Page number": [
+                         *         "This may not be less than 1."
+                         *       ],
+                         *       "Email": [
+                         *         "Enter a valid email address."
+                         *       ]
+                         *     }
+                         */
+                        errors?: {
+                            [key: string]: string[];
+                        };
+                    };
                 };
             };
             /** @description UNAUTHENTICATED */

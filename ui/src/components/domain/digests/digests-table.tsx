@@ -26,6 +26,7 @@ import { truncateText } from '@/utils/dashboard';
 import { TrashIcon } from '@phosphor-icons/react';
 import { fetchClient } from '@services/openapi/client';
 import type { components } from '@services/openapi/schema';
+import { useRouter } from '@tanstack/react-router';
 import {
     getCoreRowModel,
     useReactTable,
@@ -63,6 +64,7 @@ export default function DigestsTable({
     onPageSizeChange = () => {},
     toolbar,
 }: DigestsTableProps) {
+    const router = useRouter();
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -391,7 +393,18 @@ export default function DigestsTable({
 
     return (
         <>
-            <DataTable table={table} showViewOptions isLoading={isLoading}>
+            <DataTable
+                table={table}
+                showViewOptions
+                isLoading={isLoading}
+                onRowClick={(item) =>
+                    router.navigate({
+                        to: '/digest-data/$id',
+                        params: { id: String(item.id) },
+                    })
+                }
+                getRowHref={(item) => `/digest-data/${item.id}`}
+            >
                 <div className='flex min-w-0 flex-1 items-center gap-2'>{toolbar}</div>
             </DataTable>
             <ActionBar

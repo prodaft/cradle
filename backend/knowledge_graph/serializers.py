@@ -2,14 +2,18 @@
 
 import uuid
 from collections import Counter
+from collections.abc import Iterable
+from datetime import datetime
 
+from django.db.models import Max, Min, Q, QuerySet
 from rest_framework import serializers
 
-from core.utils import flatten
 from entries.constants import SUBTYPE_NOTE
 from entries.models import Edge, Entry, Relation
 from entries.serializers import EntryListCompressedTreeSerializer, EntrySerializer
 from notes.models import Note
+
+EdgeRow = tuple[int | str, int, int, datetime, datetime]
 
 
 class EdgeRelationSerializer(serializers.ModelSerializer):
@@ -51,19 +55,24 @@ class SubGraphSerializer(serializers.Serializer):
     colors = serializers.DictField(help_text="Colors keyed by entry subtype")
 
     @classmethod
-    def from_relations(cls, relations: list[Relation]) -> "SubGraphSerializer":
-        """Create a SubGraphSerializer instance from relations (select e1/e2 entry classes up front).
+    def build(cls, edges: Iterable[EdgeRow], entries: Iterable[Entry]) -> dict:
+        """Response data for ``edges`` (one row per pair) between ``entries`` (entry classes selected up front).
 
-        Ensures consistent ID types (integers) for src and dst. Calculates node degrees.
+        Drops edges with an endpoint missing from ``entries`` (such as an entry deleted since the edges view was
+        refreshed) and entries left without edges, counts degree as distinct neighbours, and labels note hub entries
+        with their note's title. Edges are written directly rather than through ``EdgeRelationSerializer``, which is
+        too slow for whole-graph responses.
         """
-        entries = set(flatten([(r.e1, r.e2) for r in relations]))
+        entries = {int(entry.id): entry for entry in entries}
+        edges = [edge for edge in edges if edge[1] in entries and edge[2] in entries]
+        endpoints = {edge[1] for edge in edges} | {edge[2] for edge in edges}
+        entries = {entry_id: entry for entry_id, entry in entries.items() if entry_id in endpoints}
 
         degree_map: Counter[int] = Counter()
-        for r in relations:
-            degree_map[int(r.e1.id)] += 1
-            degree_map[int(r.e2.id)] += 1
+        for pair in {frozenset((edge[1], edge[2])) for edge in edges if edge[1] != edge[2]}:
+            degree_map.update(pair)
 
-        for entry in entries:
+        for entry in entries.values():
             entry.degree = degree_map.get(int(entry.id), 0)
             entry.note_id = None
             if entry.entry_class.subtype == SUBTYPE_NOTE and entry.name and len(entry.name) >= 36:
@@ -72,35 +81,47 @@ class SubGraphSerializer(serializers.Serializer):
                 except ValueError:
                     pass
 
-        note_ids = {entry.note_id for entry in entries if entry.note_id}
+        note_ids = {entry.note_id for entry in entries.values() if entry.note_id}
         titles = {
             str(note.id): (note.metadata or {}).get("title") or note.title
             for note in Note.objects.filter(id__in=note_ids).only("id", "title", "metadata")
         }
-        for entry in entries:
+        for entry in entries.values():
             if entry.note_id:
                 entry.name = titles.get(entry.note_id) or entry.note_id
 
-        colors = {e.entry_class.subtype: e.entry_class.color for e in entries if e.entry_class.subtype is not None}
+        colors = {
+            e.entry_class.subtype: e.entry_class.color for e in entries.values() if e.entry_class.subtype is not None
+        }
+        to_datetime = serializers.DateTimeField().to_representation
 
-        serializer = cls(
-            {
-                "entries": entries,
-                "relations": [
-                    Edge(
-                        id=r.id,
-                        src=int(r.e1.id),
-                        dst=int(r.e2.id),
-                        created_at=r.created_at,
-                        last_seen_at=r.created_at,
-                    )
-                    for r in relations
-                ],
-                "colors": colors,
-            }
+        return {
+            "entries": cls().fields["entries"].to_representation(entries.values()),
+            "relations": [
+                {
+                    "id": str(edge_id),
+                    "src": src,
+                    "dst": dst,
+                    "created_at": to_datetime(created_at),
+                    "last_seen_at": to_datetime(last_seen_at),
+                }
+                for edge_id, src, dst, created_at, last_seen_at in edges
+            ],
+            "colors": colors,
+        }
+
+    @classmethod
+    def from_relations(cls, relations: QuerySet[Relation]) -> dict:
+        """Response data for ``relations`` (already access-filtered), merged into one edge per pair in the database."""
+        rows = list(
+            relations.values_list("e1_id", "e2_id").annotate(first_seen=Min("created_at"), newest=Max("created_at"))
         )
+        if not rows:
+            return {"entries": {}, "relations": [], "colors": {}}
 
-        return serializer
+        edges = [((src << 32) | dst, src, dst, first_seen, newest) for src, dst, first_seen, newest in rows]
+        entries = Entry.objects.filter(Q(id__in=relations.values("e1")) | Q(id__in=relations.values("e2")))
+        return cls.build(edges, entries.select_related("entry_class"))
 
 
 class EntryWithDepthSerializer(EntrySerializer):

@@ -1,7 +1,6 @@
 """Knowledge graph API views: path finding, neighbors, and full graph."""
 
 import datetime
-from collections import Counter
 
 from django.db.models import prefetch_related_objects
 from django.utils import timezone
@@ -34,7 +33,7 @@ from .serializers import (
     GraphInaccessibleResponseSerializer,
     SubGraphSerializer,
 )
-from .utils import filter_valid_edges, get_edges_for_paths, get_neighbors, get_neighbors_paginated
+from .utils import get_edges_for_paths, get_neighbors, get_neighbors_paginated
 
 MAX_DEPTH = 5
 
@@ -125,31 +124,13 @@ class GraphPathFindView(APIView):
         if min_date is None or max_date is None:
             raise BadRequestException(detail="Enter valid start and end values for the date range.")
 
-        edges = filter_valid_edges(
-            get_edges_for_paths(
-                start,
-                ends,
-                request.user,
-                min_date,
-                max_date,
-            )
-        )
+        edges = get_edges_for_paths(start, ends, request.user, min_date, max_date)
 
         entry_ids = {edge.src for edge in edges} | {edge.dst for edge in edges}
+        entries = Entry.objects.filter(id__in=entry_ids).select_related("entry_class")
+        rows = [(edge.id, edge.src, edge.dst, edge.created_at, edge.last_seen_at) for edge in edges]
 
-        entries = list(Entry.objects.filter(id__in=entry_ids).select_related("entry_class"))
-
-        degree_map: Counter[int] = Counter()
-        for pair in {frozenset((edge.src, edge.dst)) for edge in edges if edge.src != edge.dst}:
-            degree_map.update(pair)
-        for entry in entries:
-            entry.degree = degree_map.get(entry.id, 0)
-
-        colors = {e.entry_class.subtype: e.entry_class.color for e in entries if e.entry_class.subtype is not None}
-
-        serializer = SubGraphSerializer({"relations": edges, "entries": entries, "colors": colors})
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(SubGraphSerializer.build(rows, entries), status=status.HTTP_200_OK)
 
 
 @extend_schema(
@@ -387,8 +368,5 @@ class KnowledgeGraphView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        rels = list(Relation.objects.accessible(user=request.user).select_related("e1__entry_class", "e2__entry_class"))
-        if not rels:
-            return Response({"entries": {}, "relations": [], "colors": {}}, status=status.HTTP_200_OK)
-
-        return Response(SubGraphSerializer.from_relations(rels).data, status=status.HTTP_200_OK)
+        relations = Relation.objects.accessible(user=request.user)
+        return Response(SubGraphSerializer.from_relations(relations), status=status.HTTP_200_OK)

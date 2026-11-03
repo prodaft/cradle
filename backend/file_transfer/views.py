@@ -8,6 +8,7 @@ import uuid
 from datetime import timedelta
 
 from botocore.exceptions import ClientError
+from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -323,5 +324,10 @@ class FileDetail(NoteFileDetail):
                 file_reference.file.delete(save=False)
             except OSError, ClientError:
                 pass
+        note_id = file_reference.note_id
         file_reference.delete()
+        if note_id:
+            from notes.tasks import link_files_task
+
+            transaction.on_commit(lambda: link_files_task.apply_async(args=(str(note_id),)))
         return Response(status=status.HTTP_204_NO_CONTENT)

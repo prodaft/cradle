@@ -28,6 +28,7 @@ from user.permissions import HasAdminRole
 from ..constants import (
     INTELIO_ENRICHMENT_MESSAGE_ACTION_DENIED,
     INTELIO_ENRICHMENT_MESSAGE_ACTION_DENIED_DEFAULT,
+    INTELIO_RELATION_SEARCH_FIELDS,
 )
 from ..enums import EnrichmentStatus
 from ..exceptions import (
@@ -48,14 +49,6 @@ from ..serializers import (
     EnrichmentSubclassSerializer,
 )
 from ..utils import get_or_default_enricher
-
-RELATION_SEARCH_FIELDS = (
-    "e1__name",
-    "e2__name",
-    "e1__entry_class__subtype",
-    "e2__entry_class__subtype",
-    "details",
-)
 
 
 class EnrichmentRequestObjectMixin:
@@ -629,7 +622,7 @@ class EnrichmentRelationsAPIView(EnrichmentRequestObjectMixin, APIView):
         if entry_id is not None:
             relations = relations.filter(Q(e1__id=entry_id) | Q(e2__id=entry_id))
 
-        search = search_q(request.query_params.get("search"), RELATION_SEARCH_FIELDS)
+        search = search_q(request.query_params.get("search"), INTELIO_RELATION_SEARCH_FIELDS)
         if search is not None:
             relations = relations.filter(search)
         else:

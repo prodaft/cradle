@@ -25,8 +25,9 @@ images, tables, and blockquotes.
 Use double brackets to link entries by subtype. A basic link looks like
 `[[subtype:value]]`, for example `[[case:PTI-42]]` or `[[ip:1.1.1.1]]`. To
 display an alias, use `[[subtype:value|alias]]`, for example
-`[[ip:1.1.1.1|C2 IP]]`. Linking with an alias also creates an `alias` entry in
-the graph, and the original entry is linked to that alias node. When adding
+`[[ip:1.1.1.1|C2 IP]]`. Linking an entity with an alias also creates an `alias`
+entry in the graph, and the entity is linked to that alias node. Aliases on
+artifacts are shown in the note but not linked in the graph. When adding
 links in tables, escape the alias separator, for example `[[ip:1.1.1.1\|C2 IP]]`.
 
 ### Link dates
@@ -62,15 +63,10 @@ with an exclamation mark, for example `![image][image.png]`.
 
 ## Role of notes in linking entries
 
-Publishing a note triggers detection of entry links. Links that appear in the
-same markdown section are connected to each other in the graph. If a section
-contains too many links, CRADLE creates a `virtual` note node and connects all
-linked entries to that node instead of creating every pairwise edge. This keeps
-the graph from exploding in size. The clustering threshold is configurable by
-an administrator.
-
-This graph clustering does not change graph search or discovery algorithms; it
-only changes how connections are rendered and stored.
+Publishing a note triggers detection of entry links. Every artifact linked in
+the note is connected to every entity linked in it, and the note itself appears
+in the graph as a `note` node connected to those entities. Artifacts are not
+connected to each other, and a note that links no entities adds no connections.
 
 If an edit to a published note adds a link CRADLE can't use, such as an
 unknown entry type or an entity that doesn't exist, the edit is still saved,

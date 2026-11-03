@@ -19,14 +19,14 @@ files can also be browsed in the `Files` panel.
 Click a file in the `Files` panel, or in a dashboard's `Files` tab, to open its
 dashboard. It shows the file's size, type and hashes, and has a download button.
 The `Notes` tab lists the notes holding the file or a copy of it (same SHA-256),
-and `Linked Entries` lists the entities and artifacts referenced in those notes.
+and `Entries` lists the entities and artifacts referenced in those notes.
 To jump straight to the note a file was uploaded to, use `Open note` in the
 row's actions menu.
 
 ## Files in the graph
-Every uploaded file is automatically linked in the graph as an entry. Files
-below a configured size threshold are automatically hashed and linked to their
-hash entries.
+Every uploaded file is automatically added to the graph as an entry, linked to
+the entities referenced in its note. Files below a configured size threshold
+are also hashed, and their hash entries are linked to the same entities.
 
 ## Render images inline
 If a file is an image, it renders in the note when you prepend its reference

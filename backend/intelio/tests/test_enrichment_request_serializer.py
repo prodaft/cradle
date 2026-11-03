@@ -4,10 +4,10 @@ from django.test import TestCase
 from rest_framework.test import APIRequestFactory
 
 from core.exceptions import PermissionDeniedException
-from entries.enums import EntryType
-from entries.models import Entry, EntryClass
-from intelio.models.base import EnricherSettings
-from intelio.serializers import EnrichmentRequestSerializer
+from entries.enums import EntryType, RelationReason
+from entries.models import Entry, EntryClass, Relation
+from intelio.models.base import EnricherSettings, EnrichmentRequest
+from intelio.serializers import EnrichmentRequestEnricherSerializer, EnrichmentRequestSerializer
 from user.models import CradleUser, UserRoles
 
 
@@ -51,3 +51,62 @@ class EnrichmentRequestSerializerTest(TestCase):
             serializer = EnrichmentRequestSerializer(data=self.data, context=self.context)
             with self.assertRaises(PermissionDeniedException):
                 serializer.is_valid(raise_exception=True)
+
+
+class EnricherResultsTest(TestCase):
+    """One enricher's results on a request: its artifact, relation count, warnings and errors."""
+
+    def setUp(self):
+        self.patcher = patch("file_transfer.s3_utils.ensure_all_buckets_exist")
+        self.patcher.start()
+        user = CradleUser.objects.create_user(username="admin", password="pw", email="a@x.y", role=UserRoles.ADMIN)
+        ip = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype="ip")
+        EntryClass.objects.create(type=EntryType.ARTIFACT, subtype="file")
+        case = Entry.objects.create(
+            name="c1", entry_class=EntryClass.objects.create(type=EntryType.ENTITY, subtype="case")
+        )
+        self.artifact = Entry.objects.create(name="1.1.1.1", entry_class=ip)
+        Entry.objects.create(name="2.2.2.2", entry_class=ip)
+        for enricher_type in ("A", "B"):
+            EnricherSettings.objects.create(enricher_type=enricher_type).for_eclasses.add(ip)
+
+        self.request = EnrichmentRequest.objects.create(
+            title="t",
+            user=user,
+            artifact={"entry_class": "ip", "name": "1.1.1.1"},
+            warnings={"A": ["slow"]},
+            errors={"B": ["failed"]},
+        )
+        self.request.enrichers_settings.set(EnricherSettings.objects.all())
+        Relation.objects.bulk_create(
+            [
+                Relation(
+                    content_object=self.request,
+                    e1=self.artifact,
+                    e2=case,
+                    reason=RelationReason.ENRICHMENT,
+                    reason_context=enricher_type,
+                )
+                for enricher_type in ("A", "A", "B")
+            ]
+        )
+
+    def tearDown(self):
+        self.patcher.stop()
+        super().tearDown()
+
+    def results(self, enricher_type):
+        return EnrichmentRequestEnricherSerializer.for_enrichment(self.request, enricher_type).data
+
+    def test_counts_only_this_enrichers_relations(self):
+        self.assertEqual([(a["name"], a["count"]) for a in self.results("A")["artifacts"]], [("1.1.1.1", 2)])
+        self.assertEqual([a["count"] for a in self.results("B")["artifacts"]], [1])
+
+    def test_returns_this_enrichers_warnings_and_errors(self):
+        self.assertEqual((self.results("A")["warnings"], self.results("A")["errors"]), (["slow"], []))
+        self.assertEqual((self.results("B")["warnings"], self.results("B")["errors"]), ([], ["failed"]))
+
+    def test_artifact_the_enricher_does_not_handle_lists_nothing(self):
+        self.request.artifact = {"entry_class": "file", "name": "sample.bin"}
+        self.request.save()
+        self.assertEqual(self.results("A")["artifacts"], [])

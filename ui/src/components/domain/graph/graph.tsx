@@ -30,6 +30,7 @@ import {
     useMemo,
     useRef,
     type CSSProperties,
+    type ReactNode,
     type RefObject,
 } from 'react';
 import {
@@ -169,7 +170,7 @@ function buildForceAtlas2Params(
     nodeCount: number,
 ): ForceAtlas2LayoutParameters {
     const friction = config.simulationFriction ?? 0.75;
-    const repulsion = config.simulationRepulsion ?? 1.6;
+    const repulsion = config.simulationRepulsion ?? 0;
     const gravity = config.simulationGravity ?? 0.15;
     const linkSpring = config.simulationLinkSpring ?? 0.6;
     const linkDistance = config.simulationLinkDistance ?? 16;
@@ -522,11 +523,8 @@ function SigmaGraphEvents({
     return null;
 }
 
-function GraphControls({
-    layout,
-}: {
-    layout: ReturnType<typeof useWorkerLayoutForceAtlas2>;
-}) {
+function GraphControls() {
+    const layout = useContext(ForceAtlas2LayoutContext);
     const {
         zoomIn,
         zoomOut,
@@ -590,10 +588,12 @@ function GraphControls({
                     variant='outline'
                     size='icon-sm'
                     className='text-foreground'
-                    onClick={() => (layout.isRunning ? layout.stop() : layout.start())}
-                    title={layout.isRunning ? 'Stop layout' : 'Start layout'}
+                    onClick={() =>
+                        layout?.isRunning ? layout.stop() : layout?.start()
+                    }
+                    title={layout?.isRunning ? 'Stop layout' : 'Start layout'}
                 >
-                    {layout.isRunning ? <AiFillPauseCircle /> : <AiFillPlayCircle />}
+                    {layout?.isRunning ? <AiFillPauseCircle /> : <AiFillPlayCircle />}
                 </Button>
             </ButtonGroup>
         </>
@@ -610,7 +610,6 @@ function GraphScene({
     onTogglePanel,
     activePanel,
 }: SigmaGraphBindingsProps) {
-    const sigma = useSigma();
     const fa2Params = useMemo(
         () => buildForceAtlas2Params(config, validNodes.length),
         // eslint-disable-next-line react-hooks/exhaustive-deps -- explicit simulation keys only (not whole `config`)
@@ -625,38 +624,15 @@ function GraphScene({
             config.simulationCluster,
         ],
     );
-    const layout = useWorkerLayoutForceAtlas2(fa2Params);
-    const layoutContextValue = useMemo(
-        () => ({
-            stop: layout.stop,
-            start: layout.start,
-            isRunning: layout.isRunning,
-        }),
-        [layout.stop, layout.start, layout.isRunning],
-    );
-
-    useEffect(() => {
-        if (!sigma || sigma.getGraph().order === 0) return;
-        layout.start();
-        return () => {
-            layout.stop();
-        };
-    }, [sigma, layout.start, layout.stop]); // eslint-disable-line react-hooks/exhaustive-deps -- stable `layout.start`/`layout.stop` only
+    const runMs = config.simulationDecay ?? 10000;
 
     return (
-        <ForceAtlas2LayoutContext.Provider value={layoutContextValue}>
+        <>
             <SigmaGraphThemeColors />
             <SigmaGraphologyLoader
                 validNodes={validNodes}
                 linksData={linksData}
                 config={config}
-            />
-            <SigmaGraphEvents
-                idToNode={idToNode}
-                selectedNodes={selectedNodes}
-                setSelectedNodes={setSelectedNodes}
-                onTogglePanel={onTogglePanel}
-                activePanel={activePanel}
             />
             <ControlsContainer
                 position='top-right'
@@ -664,12 +640,78 @@ function GraphScene({
             >
                 <MiniMap width='120px' height='120px' />
             </ControlsContainer>
-            <ControlsContainer
-                position='bottom-right'
-                className='!border-0 !bg-transparent !p-0 flex flex-col gap-2'
+            {/* Remounted on new parameters: @react-sigma's worker hook keeps the settings it was created with. */}
+            <ForceAtlas2Runner
+                key={JSON.stringify(fa2Params)}
+                params={fa2Params}
+                runMs={runMs}
             >
-                <GraphControls layout={layout} />
-            </ControlsContainer>
+                <SigmaGraphEvents
+                    idToNode={idToNode}
+                    selectedNodes={selectedNodes}
+                    setSelectedNodes={setSelectedNodes}
+                    onTogglePanel={onTogglePanel}
+                    activePanel={activePanel}
+                />
+                <ControlsContainer
+                    position='bottom-right'
+                    className='!border-0 !bg-transparent !p-0 flex flex-col gap-2'
+                >
+                    <GraphControls />
+                </ControlsContainer>
+            </ForceAtlas2Runner>
+        </>
+    );
+}
+
+/** Runs ForceAtlas2 when mounted and stops each run after `runMs`: it never converges on its own (Barnes-Hut keeps nodes jittering). */
+function ForceAtlas2Runner({
+    params,
+    runMs,
+    children,
+}: {
+    params: ForceAtlas2LayoutParameters;
+    runMs: number;
+    children: ReactNode;
+}) {
+    const sigma = useSigma();
+    const {
+        start: startFa2,
+        stop: stopFa2,
+        isRunning,
+    } = useWorkerLayoutForceAtlas2(params);
+    const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const layoutContextValue = useMemo(() => {
+        const clearStopTimer = () => {
+            if (stopTimerRef.current) {
+                clearTimeout(stopTimerRef.current);
+                stopTimerRef.current = null;
+            }
+        };
+        return {
+            stop: () => {
+                clearStopTimer();
+                stopFa2();
+            },
+            start: () => {
+                clearStopTimer();
+                startFa2();
+                stopTimerRef.current = setTimeout(stopFa2, runMs);
+            },
+            isRunning,
+        };
+    }, [startFa2, stopFa2, isRunning, runMs]);
+
+    const { start: startLayout, stop: stopLayout } = layoutContextValue;
+    useEffect(() => {
+        if (sigma.getGraph().order === 0) return;
+        startLayout();
+        return stopLayout;
+    }, [sigma, startFa2, stopFa2]); // eslint-disable-line react-hooks/exhaustive-deps -- restart only when the worker changes, not when isRunning toggles
+
+    return (
+        <ForceAtlas2LayoutContext.Provider value={layoutContextValue}>
+            {children}
         </ForceAtlas2LayoutContext.Provider>
     );
 }

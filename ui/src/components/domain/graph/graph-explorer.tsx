@@ -75,7 +75,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         scaleLinksOnZoom: false,
         showLinkWidthLegend: false,
         simulationGravity: 0.15,
-        simulationRepulsion: 1.6,
+        simulationRepulsion: 0,
         simulationLinkSpring: 0.6,
         simulationLinkDistance: 16,
         simulationFriction: 0.75,

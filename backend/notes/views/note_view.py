@@ -1014,15 +1014,9 @@ class NoteGraph(APIView):
         user = cast(CradleUser, request.user)
         note = get_readable_note(user, note_id)
 
-        rels = list(note.relations.accessible(user=user).select_related("e1__entry_class", "e2__entry_class"))
-        if not rels:
-            return Response(
-                {"entries": {}, "relations": [], "colors": {}},
-                status=status.HTTP_200_OK,
-            )
-
-        serializer = SubGraphSerializer.from_relations(rels)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            SubGraphSerializer.from_relations(note.relations.accessible(user=user)), status=status.HTTP_200_OK
+        )
 
 
 @extend_schema_view(

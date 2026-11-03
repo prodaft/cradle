@@ -27,6 +27,8 @@ import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as OauthCallbackRouteImport } from './routes/oauth/callback'
+import { Route as AuthenticatedDigestDataIndexRouteImport } from './routes/_authenticated/digest-data/index'
+import { Route as AuthenticatedDigestDataIdRouteImport } from './routes/_authenticated/digest-data/$id'
 import { Route as AuthenticatedEnrichmentIndexRouteImport } from './routes/_authenticated/enrichment/index'
 import { Route as AuthenticatedEnrichmentIdRouteImport } from './routes/_authenticated/enrichment/$id'
 import { Route as AuthenticatedManageIndexRouteImport } from './routes/_authenticated/manage/index'
@@ -139,6 +141,18 @@ const OauthCallbackRoute = OauthCallbackRouteImport.update({
   path: '/oauth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedDigestDataIndexRoute =
+  AuthenticatedDigestDataIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedDigestDataRoute,
+  } as any)
+const AuthenticatedDigestDataIdRoute =
+  AuthenticatedDigestDataIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedDigestDataRoute,
+  } as any)
 const AuthenticatedEnrichmentIndexRoute =
   AuthenticatedEnrichmentIndexRouteImport.update({
     id: '/',
@@ -277,7 +291,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
   '/$': typeof AuthenticatedSplatRoute
-  '/digest-data': typeof AuthenticatedDigestDataRoute
+  '/digest-data': typeof AuthenticatedDigestDataRouteWithChildren
   '/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren
   '/files': typeof AuthenticatedFilesRoute
   '/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute
@@ -286,8 +300,10 @@ export interface FileRoutesByFullPath {
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/oauth/callback': typeof OauthCallbackRoute
+  '/digest-data/$id': typeof AuthenticatedDigestDataIdRoute
   '/enrichment/$id': typeof AuthenticatedEnrichmentIdRoute
   '/notes/$id': typeof AuthenticatedNotesIdRoute
+  '/digest-data/': typeof AuthenticatedDigestDataIndexRoute
   '/enrichment/': typeof AuthenticatedEnrichmentIndexRoute
   '/manage/': typeof AuthenticatedManageIndexRoute
   '/notes/': typeof AuthenticatedNotesIndexRoute
@@ -316,15 +332,16 @@ export interface FileRoutesByTo {
   '/login': typeof AuthLoginRoute
   '/signup': typeof AuthSignupRoute
   '/$': typeof AuthenticatedSplatRoute
-  '/digest-data': typeof AuthenticatedDigestDataRoute
   '/files': typeof AuthenticatedFilesRoute
   '/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/oauth/callback': typeof OauthCallbackRoute
+  '/digest-data/$id': typeof AuthenticatedDigestDataIdRoute
   '/enrichment/$id': typeof AuthenticatedEnrichmentIdRoute
   '/manage': typeof AuthenticatedManageIndexRoute
   '/notes/$id': typeof AuthenticatedNotesIdRoute
+  '/digest-data': typeof AuthenticatedDigestDataIndexRoute
   '/enrichment': typeof AuthenticatedEnrichmentIndexRoute
   '/notes': typeof AuthenticatedNotesIndexRoute
   '/dashboards/$subtype/$name': typeof AuthenticatedDashboardsSubtypeNameRoute
@@ -351,7 +368,7 @@ export interface FileRoutesById {
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/signup': typeof AuthSignupRoute
   '/_authenticated/$': typeof AuthenticatedSplatRoute
-  '/_authenticated/digest-data': typeof AuthenticatedDigestDataRoute
+  '/_authenticated/digest-data': typeof AuthenticatedDigestDataRouteWithChildren
   '/_authenticated/enrichment': typeof AuthenticatedEnrichmentRouteWithChildren
   '/_authenticated/files': typeof AuthenticatedFilesRoute
   '/_authenticated/knowledge-graph': typeof AuthenticatedKnowledgeGraphRoute
@@ -360,9 +377,11 @@ export interface FileRoutesById {
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/oauth/callback': typeof OauthCallbackRoute
+  '/_authenticated/digest-data/$id': typeof AuthenticatedDigestDataIdRoute
   '/_authenticated/enrichment/$id': typeof AuthenticatedEnrichmentIdRoute
   '/_authenticated/manage/_manage-auth': typeof AuthenticatedManageManageAuthRouteWithChildren
   '/_authenticated/notes/$id': typeof AuthenticatedNotesIdRoute
+  '/_authenticated/digest-data/': typeof AuthenticatedDigestDataIndexRoute
   '/_authenticated/enrichment/': typeof AuthenticatedEnrichmentIndexRoute
   '/_authenticated/manage/': typeof AuthenticatedManageIndexRoute
   '/_authenticated/notes/': typeof AuthenticatedNotesIndexRoute
@@ -402,8 +421,10 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/oauth/callback'
+    | '/digest-data/$id'
     | '/enrichment/$id'
     | '/notes/$id'
+    | '/digest-data/'
     | '/enrichment/'
     | '/manage/'
     | '/notes/'
@@ -432,15 +453,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/$'
-    | '/digest-data'
     | '/files'
     | '/knowledge-graph'
     | '/reports'
     | '/settings'
     | '/oauth/callback'
+    | '/digest-data/$id'
     | '/enrichment/$id'
     | '/manage'
     | '/notes/$id'
+    | '/digest-data'
     | '/enrichment'
     | '/notes'
     | '/dashboards/$subtype/$name'
@@ -475,9 +497,11 @@ export interface FileRouteTypes {
     | '/_authenticated/reports'
     | '/_authenticated/settings'
     | '/oauth/callback'
+    | '/_authenticated/digest-data/$id'
     | '/_authenticated/enrichment/$id'
     | '/_authenticated/manage/_manage-auth'
     | '/_authenticated/notes/$id'
+    | '/_authenticated/digest-data/'
     | '/_authenticated/enrichment/'
     | '/_authenticated/manage/'
     | '/_authenticated/notes/'
@@ -635,6 +659,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/oauth/callback'
       preLoaderRoute: typeof OauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/digest-data/': {
+      id: '/_authenticated/digest-data/'
+      path: '/'
+      fullPath: '/digest-data/'
+      preLoaderRoute: typeof AuthenticatedDigestDataIndexRouteImport
+      parentRoute: typeof AuthenticatedDigestDataRoute
+    }
+    '/_authenticated/digest-data/$id': {
+      id: '/_authenticated/digest-data/$id'
+      path: '/$id'
+      fullPath: '/digest-data/$id'
+      preLoaderRoute: typeof AuthenticatedDigestDataIdRouteImport
+      parentRoute: typeof AuthenticatedDigestDataRoute
     }
     '/_authenticated/enrichment/': {
       id: '/_authenticated/enrichment/'
@@ -807,6 +845,22 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface AuthenticatedDigestDataRouteChildren {
+  AuthenticatedDigestDataIdRoute: typeof AuthenticatedDigestDataIdRoute
+  AuthenticatedDigestDataIndexRoute: typeof AuthenticatedDigestDataIndexRoute
+}
+
+const AuthenticatedDigestDataRouteChildren: AuthenticatedDigestDataRouteChildren =
+  {
+    AuthenticatedDigestDataIdRoute: AuthenticatedDigestDataIdRoute,
+    AuthenticatedDigestDataIndexRoute: AuthenticatedDigestDataIndexRoute,
+  }
+
+const AuthenticatedDigestDataRouteWithChildren =
+  AuthenticatedDigestDataRoute._addFileChildren(
+    AuthenticatedDigestDataRouteChildren,
+  )
+
 interface AuthenticatedEnrichmentRouteChildren {
   AuthenticatedEnrichmentIdRoute: typeof AuthenticatedEnrichmentIdRoute
   AuthenticatedEnrichmentIndexRoute: typeof AuthenticatedEnrichmentIndexRoute
@@ -957,7 +1011,7 @@ const AuthenticatedNotesRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
-  AuthenticatedDigestDataRoute: typeof AuthenticatedDigestDataRoute
+  AuthenticatedDigestDataRoute: typeof AuthenticatedDigestDataRouteWithChildren
   AuthenticatedEnrichmentRoute: typeof AuthenticatedEnrichmentRouteWithChildren
   AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute
   AuthenticatedKnowledgeGraphRoute: typeof AuthenticatedKnowledgeGraphRoute
@@ -970,7 +1024,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSplatRoute: AuthenticatedSplatRoute,
-  AuthenticatedDigestDataRoute: AuthenticatedDigestDataRoute,
+  AuthenticatedDigestDataRoute: AuthenticatedDigestDataRouteWithChildren,
   AuthenticatedEnrichmentRoute: AuthenticatedEnrichmentRouteWithChildren,
   AuthenticatedFilesRoute: AuthenticatedFilesRoute,
   AuthenticatedKnowledgeGraphRoute: AuthenticatedKnowledgeGraphRoute,

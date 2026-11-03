@@ -28,6 +28,9 @@ from .models import Note
 
 logger = logging.getLogger(__name__)
 
+# ``reason_context`` of the relations link_files_task creates, so a re-run can replace them.
+FILE_RELATION_CONTEXT = "file"
+
 # Failures that a retry cannot fix: the note marks itself INVALID, or it was deleted while queued.
 _PERMANENT_FAILURES = (EntriesNotFoundException, EntryTypesNotFoundException, Note.DoesNotExist)
 
@@ -123,12 +126,11 @@ def smart_linker_task(note_id, user_id=None):
 
 @shared_task
 @distributed_lock("link_files_note_{note_id}", timeout=1800)
-def link_files_task(note_id, file_ref_id=None):
-    """Link file references in a note to entries (hashes, entities).
+def link_files_task(note_id):
+    """Link a note's files and their hashes to the note's entities, replacing the links of an earlier run.
 
     Args:
         note_id: ID of the Note object to process.
-        file_ref_id: Optional specific file reference ID; if omitted, all files are processed.
     """
     from entries.tasks import refresh_edges_materialized_view
 
@@ -146,70 +148,35 @@ def link_files_task(note_id, file_ref_id=None):
         EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=sha1_subclass).first() if sha1_subclass else None
     )
 
-    relations = []
-    if file_ref_id is None:
-        files = note.files.all()
-    else:
-        file_ref = note.files.filter(id=file_ref_id).first()
-        if not file_ref:
-            logger.warning(f"File reference with ID {file_ref_id} not found in note {note_id}.")
-            return note_id
-
-        files = [file_ref]
-
-    for f in files:
-        note.entries.add(f.entry)
-
-        for e in f.entities:
-            relations.append(
-                Relation(
-                    e1=e,
-                    e2=f.entry,
-                    content_object=note,
-                    access_vector=note.access_vector,
-                    reason=RelationReason.NOTE,
-                    virtual=True,
-                )
-            )
-
-        hashes = []
+    linked: list[Entry] = []
+    for f in note.files.all():
+        linked.append(f.entry)
         if f.md5_hash and md5_et:
-            entry, _ = Entry.objects.get_or_create(name=f.md5_hash, entry_class=md5_et)
-            note.entries.add(entry)
-            hashes.append(entry)
-
+            linked.append(Entry.objects.get_or_create(name=f.md5_hash, entry_class=md5_et)[0])
         if f.sha256_hash and sha256_et:
-            entry, _ = Entry.objects.get_or_create(name=f.sha256_hash, entry_class=sha256_et)
-            note.entries.add(entry)
-            hashes.append(entry)
-
+            linked.append(Entry.objects.get_or_create(name=f.sha256_hash, entry_class=sha256_et)[0])
         if f.sha1_hash and sha1_et:
-            entry, _ = Entry.objects.get_or_create(name=f.sha1_hash, entry_class=sha1_et)
-            note.entries.add(entry)
-            hashes.append(entry)
+            linked.append(Entry.objects.get_or_create(name=f.sha1_hash, entry_class=sha1_et)[0])
+    note.entries.add(*linked)
 
-        for h in hashes:
-            if not Relation.includes_entity(h, f.entry):
-                logger.warning(
-                    "Skipping hash-file artifact-artifact relation for note %s (entries %s, %s)",
-                    note_id,
-                    h.id,
-                    f.entry.id,
-                )
-                continue
-            relations.append(
-                Relation(
-                    e1=h,
-                    e2=f.entry,
-                    content_object=note,
-                    access_vector=note.access_vector,
-                    reason=RelationReason.ENRICHMENT,
-                    virtual=True,
-                )
-            )
+    entities = list(note.entries.is_entity())
+    relations = [
+        Relation(
+            e1=entity,
+            e2=entry,
+            content_object=note,
+            access_vector=note.access_vector,
+            reason=RelationReason.NOTE,
+            reason_context=FILE_RELATION_CONTEXT,
+        )
+        for entry in {e.id: e for e in linked}.values()
+        for entity in entities
+    ]
 
-    if relations:
+    with transaction.atomic():
+        deleted, _ = note.relations.filter(reason=RelationReason.NOTE, reason_context=FILE_RELATION_CONTEXT).delete()
         Relation.objects.bulk_create(relations)
+    if deleted or relations:
         refresh_edges_materialized_view.apply_async()
 
     return note_id

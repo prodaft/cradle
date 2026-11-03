@@ -1,8 +1,8 @@
-import Pagination from '@/components/base/pagination/pagination';
 import { SearchInput } from '@/components/base/search-input/search-input';
 import { Badge } from '@/components/custom/badge';
 import { Checkbox } from '@/components/custom/checkbox';
 import { DataTable } from '@/components/custom/data-table/data-table';
+import { DataTablePagination } from '@/components/custom/data-table/data-table-pagination';
 import { DataTableViewOptions } from '@/components/custom/data-table/data-table-view-options';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,6 +44,7 @@ import {
     useReactTable,
     type ColumnDef,
     type ExpandedState,
+    type PaginationState,
     type Row,
     type Updater,
     type VisibilityState,
@@ -559,6 +560,27 @@ export default function EnrichmentResults() {
         getRowCanExpand: () => true,
     });
 
+    // Only drives the pagination bar: the active artifact's relations render in its sub-row.
+    const relationsTable = useReactTable({
+        data: results,
+        columns: [],
+        state: { pagination: { pageIndex: page - 1, pageSize } },
+        onPaginationChange: (updater) => {
+            const current: PaginationState = { pageIndex: page - 1, pageSize };
+            const next = typeof updater === 'function' ? updater(current) : updater;
+            if (next.pageSize !== pageSize) {
+                setPageSize(next.pageSize);
+                setPage(1);
+            } else {
+                setPage(next.pageIndex + 1);
+            }
+        },
+        getCoreRowModel: getCoreRowModel(),
+        manualPagination: true,
+        pageCount: totalPages,
+        rowCount: relationsPage?.count,
+    });
+
     const subRow = useCallback(
         (row: Row<EnricherArtifact>) => {
             const aid = normalizeId(row.original.id);
@@ -933,18 +955,9 @@ export default function EnrichmentResults() {
                                             </ScrollArea>
                                         </div>
                                         {activeArtifactId && (
-                                            <div className='flex flex-col gap-2.5'>
-                                                <Pagination
-                                                    currentPage={page}
-                                                    totalPages={totalPages}
-                                                    onPageChange={setPage}
-                                                    pageSize={pageSize}
-                                                    onPageSizeChange={(size) => {
-                                                        setPageSize(size);
-                                                        setPage(1);
-                                                    }}
-                                                />
-                                            </div>
+                                            <DataTablePagination
+                                                table={relationsTable}
+                                            />
                                         )}
                                     </div>
                                 )

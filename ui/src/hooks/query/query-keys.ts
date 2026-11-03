@@ -127,5 +127,18 @@ export const queryKeys = {
     digests: {
         all: ['digests'] as const,
         lists: () => [...queryKeys.digests.all, 'list'] as const,
+        detail: (id: string) => [...queryKeys.digests.all, 'detail', id] as const,
+        relations: (params: {
+            id: string;
+            page: number;
+            pageSize: number;
+            search?: string;
+        }) => [...queryKeys.digests.all, 'relations', params] as const,
+        notes: (params: {
+            id: string;
+            page: number;
+            pageSize: number;
+            search?: string;
+        }) => [...queryKeys.digests.all, 'notes', params] as const,
     },
 } as const;

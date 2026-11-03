@@ -5,6 +5,8 @@ from django.urls import path
 from .views.digest import (
     DigestAPIView,
     DigestDetailAPIView,
+    DigestNotesAPIView,
+    DigestRelationsAPIView,
     DigestSubclassesAPIView,
     DigestUploadAPIView,
     DigestUploadFinalizeAPIView,
@@ -44,6 +46,8 @@ urlpatterns = [
         name="digest_upload_finalize",
     ),
     path("digests/<uuid:digest_id>/", DigestDetailAPIView.as_view(), name="digest_detail"),
+    path("digests/<uuid:digest_id>/relations/", DigestRelationsAPIView.as_view(), name="digest_relations"),
+    path("digests/<uuid:digest_id>/notes/", DigestNotesAPIView.as_view(), name="digest_notes"),
     # Enrichments: requests to run enrichers on an artifact, and each enricher's results.
     path("enrichments/", EnrichmentAPIView.as_view(), name="enrichment_requests"),
     path("enrichments/<uuid:enrichment_id>/", EnrichmentDetailAPIView.as_view(), name="enrichment_detail"),

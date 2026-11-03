@@ -32,7 +32,7 @@ export default function DigestsList() {
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ from: '/_authenticated/digest-data' });
+    const search = useSearch({ from: '/_authenticated/digest-data/' });
     const statusSlug = parseParam(search.status);
     const page = Number(search.digests_page ?? 1) || 1;
     const pageSize = (() => {

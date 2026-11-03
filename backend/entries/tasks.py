@@ -3,6 +3,7 @@
 from celery import group, shared_task
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection, transaction
+from django.db.models import Q
 
 from core.decorators import debounce_task, distributed_lock
 from intelio.tasks import propagate_acvec_digest, propagate_acvec_enrich
@@ -19,7 +20,7 @@ from .models import Entry, Relation, calculate_acvec
 @shared_task
 @distributed_lock("update_accesses_{entry_id}", timeout=3600)
 def update_accesses(entry_id):
-    """Propagate access vector changes from an entry to its notes, digests, and enrichments."""
+    """Propagate access vector changes from an entry to its notes, alias relations, digests, and enrichments."""
     entry = Entry.objects.get(id=entry_id)
 
     notes = entry.notes.all()
@@ -35,6 +36,19 @@ def update_accesses(entry_id):
     if update_notes:
         note_model = update_notes[0].__class__
         note_model.objects.bulk_update(update_notes, ["access_vector"])
+
+    alias_relations = list(
+        Relation.objects.filter(
+            Q(e1=entry) | Q(e2=entry),
+            reason=RelationReason.ALIAS,
+            content_type=ContentType.objects.get_for_model(Entry),
+        ).select_related("e1__entry_class", "e2__entry_class")
+    )
+    for relation in alias_relations:
+        relation.access_vector = Relation.alias_acvec(relation.e1, relation.e2)
+    if alias_relations:
+        Relation.objects.bulk_update(alias_relations, ["access_vector"])
+        transaction.on_commit(lambda: refresh_edges_materialized_view.apply_async())
 
     digest_ids = entry.digests.all().values_list("id", flat=True)
     enrich_ids = entry.enrichment_requests.all().values_list("id", flat=True)
@@ -114,7 +128,7 @@ def refresh_edges_materialized_view():
 
     Ensure that a unique index (e.g., on 'id') exists on the view, like:
 
-        CREATE UNIQUE INDEX idx_edges_id ON edges(id);
+        CREATE UNIQUE INDEX idx_edges_id_access_vector ON edges(id, access_vector);
 
     This allows the materialized view to be refreshed concurrently,
     which minimizes downtime for reads.

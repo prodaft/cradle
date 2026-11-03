@@ -57,7 +57,11 @@ def attachment_upload_path(instance: "Attachment", filename: str) -> str:
 
 
 class Edge(LifecycleModel):
-    """Materialized view row representing a directed edge between two entries in the graph."""
+    """Materialized view row: a directed edge between two entries, one row per distinct access vector.
+
+    A pair whose relations carry different access vectors has one row per vector, so access is checked
+    against each vector as stored rather than a merged one. ``id`` identifies the pair, not the row.
+    """
 
     id = models.CharField(primary_key=True)
     src = models.BigIntegerField(help_text="Source entry ID")
@@ -75,7 +79,6 @@ class Edge(LifecycleModel):
     class Meta:
         managed = False
         db_table = "edges"
-        unique_together = ["src", "dst"]
 
 
 class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
@@ -433,7 +436,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
 
     def get_acvec(self):
         """Return access vector bitmask for this entry."""
-        return 1 | (1 << self.acvec_offset)
+        return calculate_acvec([self])
 
     def reconnect_aliases(self):
         from entries.models import Relation
@@ -450,7 +453,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
                 e2=e,
                 content_object=root,
                 reason=RelationReason.ALIAS,
-                access_vector=e.get_acvec(),
+                access_vector=Relation.alias_acvec(root, e),
                 virtual=True,
             )
 
@@ -510,6 +513,11 @@ class Relation(LifecycleModel):
     def includes_entity(e1: "Entry", e2: "Entry") -> bool:
         """True if at least one endpoint is an entity (enforced on save and Relation.objects.bulk_create)."""
         return e1.entry_class.type == EntryType.ENTITY or e2.entry_class.type == EntryType.ENTITY
+
+    @staticmethod
+    def alias_acvec(e1: "Entry", e2: "Entry") -> int:
+        """Access vector for an alias relation: the bits of whichever endpoints are entities."""
+        return calculate_acvec(e for e in (e1, e2) if e.entry_class.type == EntryType.ENTITY)
 
     def save(self, *args, **kwargs):
         if self.e1.id > self.e2.id:

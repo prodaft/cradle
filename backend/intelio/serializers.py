@@ -164,11 +164,12 @@ class BaseDigestSerializer(serializers.ModelSerializer):
             "status",
             "errors",
             "warnings",
+            "summary",
             "entities",
             "created_by",
             "created_at",
         ]
-        read_only_fields = ["id", "created_at", "display_name"]
+        read_only_fields = ["id", "summary", "created_at", "display_name"]
 
     def to_internal_value(self, data):
         return super().to_internal_value(_select_digest_model(self, data))
@@ -202,6 +203,24 @@ class BaseDigestCreateSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         return super().to_internal_value(_select_digest_model(self, data))
+
+
+class DigestNoteSerializer(serializers.ModelSerializer):
+    """Serializer for notes imported by a digest."""
+
+    created_by = EssentialUserRetrieveSerializer(source="author", read_only=True, help_text="Who owns the note")
+
+    class Meta:
+        model = Note
+        fields = [
+            "id",
+            "title",
+            "description",
+            "created_by",
+            "created_at",
+        ]
+        read_only_fields = fields
+        ref_name = "DigestNote"
 
 
 class DigestUploadFinalizeCreateSerializer(serializers.ModelSerializer):
@@ -274,26 +293,25 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
     @classmethod
     def for_enrichment(cls, request: EnrichmentRequest, enricher_type: str):
         enricher_settings = request.enrichers_settings.get(enricher_type=enricher_type)
-        errors = []
-        warnings = []
+        errors = list((request.errors or {}).get(enricher_type, []))
+        warnings = list((request.warnings or {}).get(enricher_type, []))
 
         if enricher_settings is None:
             raise serializers.ValidationError("That enrichment is not available.")
 
         enabled_eclasses = set(enricher_settings.for_eclasses.values_list("subtype", flat=True))
 
-        q = Q()
+        # An artifact this enricher does not handle has nothing to list (the request reports it as ignored).
+        entries = Entry.objects.none()
         artifacts_full = set()
         class_colors = {}
         art = request.artifact if isinstance(request.artifact, dict) else {}
         subtype, name = art.get("entry_class"), art.get("name")
         if subtype and name is not None and name != "" and subtype in enabled_eclasses:
             artifacts_full.add((subtype, name))
-            q = Q(name=name) & Q(entry_class__subtype=subtype)
+            entries = Entry.objects.filter(name=name, entry_class__subtype=subtype)
             if subtype not in class_colors:
                 class_colors[subtype] = EntryClass.objects.get(subtype=subtype).color
-
-        entries = Entry.objects.filter(q)
 
         artifacts = []
         for entry in entries:
@@ -303,7 +321,9 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
                     "name": entry.name,
                     "id": entry.id,
                     "color": class_colors.get(entry.entry_class.subtype, "#e66100"),
-                    "count": request.relations.filter(Q(e1=entry) | Q(e2=entry)).values("id")[:101].count(),
+                    "count": request.relations.filter(Q(e1=entry) | Q(e2=entry), reason_context=enricher_type)
+                    .values("id")[:101]
+                    .count(),
                 }
             )
             artifacts_full.remove((entry.entry_class.subtype, entry.name))
@@ -624,3 +644,10 @@ class EnrichmentRelationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["created_at", "id"]
         ref_name = "EnrichmentRelation"
+
+
+class DigestRelationSerializer(EnrichmentRelationSerializer):
+    """Serializer for relations created by a digest; same fields, its own schema name."""
+
+    class Meta(EnrichmentRelationSerializer.Meta):
+        ref_name = "DigestRelation"

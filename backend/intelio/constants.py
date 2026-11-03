@@ -1,6 +1,15 @@
-"""IntelIO constants: user-visible enrichment messages (never raw exception text) and limits."""
+"""IntelIO constants: user-visible enrichment messages (never raw exception text), limits, and search fields."""
 
 from datetime import timedelta
+
+# Fields the `search` parameter matches on the relation lists of enrichments and digests.
+INTELIO_RELATION_SEARCH_FIELDS = (
+    "e1__name",
+    "e2__name",
+    "e1__entry_class__subtype",
+    "e2__entry_class__subtype",
+    "details",
+)
 
 # An unfinished enrichment may be restarted once it has run this long: each enricher is capped at ENRICHER_TIMEOUT
 # (plus a kill grace period) and they run in parallel, so anything older is stuck, e.g. after a worker crash.

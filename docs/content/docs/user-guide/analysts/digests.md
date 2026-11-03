@@ -26,3 +26,16 @@ report. Links to this instance's own storage and to public addresses work.
 Links to other internal addresses are refused unless an administrator lists
 that host in `DIGEST_TRUSTED_FILE_HOSTS`; refused files are counted as failed
 in the digest summary. Each file must also fit within your upload limit.
+
+## Viewing a digest
+Open **Digest Data** and click a digest to see what it imported. The page
+shows its status, type, uploader and summary counts, and the entities it is
+linked to. Tabs list:
+
+- **Relations**: the links the digest created between entries. Click a
+  relation to see its details, such as the tags carried over from the source.
+- **Notes**: the notes the digest imported. Click one to open it.
+- **Warnings** and **Errors**: everything skipped or refused while processing.
+
+Relations and notes are only listed when you can access them. While a digest
+is still processing, the page refreshes until it finishes.

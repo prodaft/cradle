@@ -24,7 +24,7 @@ type LinkedEntry = components['schemas']['OptimizedEntryResponse'];
 
 const FILE_DASHBOARD_TABS = [
     { id: 'notes', label: 'Notes', icon: FileText },
-    { id: 'entries', label: 'Linked Entries', icon: Share2 },
+    { id: 'entries', label: 'Entries', icon: Share2 },
 ];
 
 const EMPTY_ENTRIES: LinkedEntry[] = [];

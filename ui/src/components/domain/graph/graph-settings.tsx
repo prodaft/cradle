@@ -29,12 +29,17 @@ interface GraphConfig {
 const PRESET: Partial<GraphConfig> = {
     // Spread out + untangle for dense graphs - optimized for minimal overlaps
     simulationGravity: 0.15,
-    simulationRepulsion: 1.6,
+    simulationRepulsion: 0,
     simulationLinkSpring: 0.6,
     simulationLinkDistance: 16,
     simulationFriction: 0.75,
     simulationDecay: 10000,
 };
+
+/** Base UI passes a bare number for single-thumb pointer changes even when `value` is an array. */
+function sliderValue(values: number | readonly number[]): number | undefined {
+    return typeof values === 'number' ? values : values[0];
+}
 
 interface GraphSettingsProps {
     config: GraphConfig;
@@ -97,7 +102,7 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
         },
         {
             label: 'Decay',
-            description: 'How quickly simulation stabilizes',
+            description: 'How long the layout runs before it stops (ms)',
             value: config.simulationDecay,
             min: 1000,
             max: 15000,
@@ -134,7 +139,7 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                     step={0.1}
                                     value={[config.nodeRadiusCoefficient]}
                                     onValueChange={(values) => {
-                                        const v = values[0];
+                                        const v = sliderValue(values);
                                         if (v === undefined) return;
                                         setConfig((prev) => ({
                                             ...prev,
@@ -160,7 +165,7 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                     step={0.1}
                                     value={[config.linkWidthCoefficient]}
                                     onValueChange={(values) => {
-                                        const v = values[0];
+                                        const v = sliderValue(values);
                                         if (v === undefined) return;
                                         setConfig((prev) => ({
                                             ...prev,
@@ -278,7 +283,7 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                                 step={step}
                                                 value={[value]}
                                                 onValueChange={(values) => {
-                                                    const v = values[0];
+                                                    const v = sliderValue(values);
                                                     if (v === undefined) return;
                                                     setConfig((prev) => ({
                                                         ...prev,
@@ -370,7 +375,7 @@ export default function GraphSettings({ config, setConfig }: GraphSettingsProps)
                                     step={0.01}
                                     value={[config.simulationCluster]}
                                     onValueChange={(values) => {
-                                        const v = values[0];
+                                        const v = sliderValue(values);
                                         if (v === undefined) return;
                                         setConfig((prev) => ({
                                             ...prev,

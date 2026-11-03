@@ -1,4 +1,4 @@
-"""Digest API views: list, create, upload, and detail."""
+"""Digest API views: list, create, upload, detail, and the relations and notes a digest created."""
 
 import uuid
 
@@ -18,6 +18,7 @@ from rest_framework.views import APIView
 from core.exceptions import CoreErrorCodes
 from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
+from core.query_lang import search_q
 from core.utils import validate_order_by
 from file_transfer.serializers import FileUploadInitiateSerializer, FileUploadResponseSerializer
 from file_transfer.storage import DigestStorage
@@ -34,8 +35,11 @@ from file_transfer.uploads.exceptions import (
     UploadExpiredException,
     UploadNotFoundException,
 )
+from notes.models import Note
+from query.exceptions import QueryErrorCodes
 from user.authentication import APIKeyAuthentication, CookieJWTAuthentication
 
+from ..constants import INTELIO_RELATION_SEARCH_FIELDS
 from ..enums import DigestStatus
 from ..exceptions import (
     DigestNotFoundException,
@@ -50,10 +54,40 @@ from ..models.uploads import PendingDigestUpload
 from ..serializers import (
     BaseDigestCreateSerializer,
     BaseDigestSerializer,
+    DigestNoteSerializer,
+    DigestRelationSerializer,
     DigestSubclassSerializer,
     DigestUploadFinalizeCreateSerializer,
 )
 from ..tasks import start_digest
+
+NOTE_SEARCH_FIELDS = ("title", "description")
+
+_SEARCH_PARAMETER_HINT = 'Supports the search syntax: AND/OR/NOT (or -term), "quoted phrases", =exact, and * wildcards.'
+_PAGE_PARAMETERS = [
+    OpenApiParameter(
+        name="page",
+        type=int,
+        location=OpenApiParameter.QUERY,
+        description="Page number for pagination",
+    ),
+    OpenApiParameter(
+        name="page_size",
+        type=int,
+        location=OpenApiParameter.QUERY,
+        description="Number of results to return per page. Max 100.",
+        default=10,
+    ),
+]
+_LIST_ERROR_RESPONSES = {
+    **get_error_responses(
+        IntelIOErrorCodes.DIGEST_NOT_FOUND,
+        CoreErrorCodes.INVALID_PAGE_SIZE,
+        CoreErrorCodes.PAGE_SIZE_TOO_LARGE,
+        QueryErrorCodes.INVALID_SEARCH_SYNTAX,
+    ),
+    **get_common_error_responses(),
+}
 
 
 def _get_digest_or_404(request: Request, pk: uuid.UUID) -> BaseDigest:
@@ -410,3 +444,88 @@ class DigestDetailAPIView(APIView):
 
         refresh_edges_materialized_view.apply_async()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="intelio_digest_relations_list",
+        summary="List digest relations",
+        description="Relations created by a digest that the current user can access, oldest first.",
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Search either endpoint's name or subtype, or the JSON `details` (case-insensitive). "
+                    + _SEARCH_PARAMETER_HINT
+                ),
+                required=False,
+            ),
+            *_PAGE_PARAMETERS,
+        ],
+        responses={
+            200: TotalPagesPagination().get_paginated_response_serializer(DigestRelationSerializer),
+            **_LIST_ERROR_RESPONSES,
+        },
+    ),
+)
+class DigestRelationsAPIView(APIView):
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = TotalPagesPagination
+
+    def get(self, request: Request, digest_id: uuid.UUID) -> Response:
+        digest = _get_digest_or_404(request, digest_id)
+        relations = digest.relations.accessible(request.user)
+
+        search = search_q(request.query_params.get("search"), INTELIO_RELATION_SEARCH_FIELDS)
+        if search is not None:
+            relations = relations.filter(search)
+
+        relations = relations.select_related("e1__entry_class", "e2__entry_class").order_by("created_at", "id")
+
+        paginator = self.pagination_class(max_page_size=100)
+        page = paginator.paginate_queryset(relations, request)
+        return paginator.get_paginated_response(DigestRelationSerializer(page, many=True).data)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="intelio_digest_notes_list",
+        summary="List digest notes",
+        description="Notes imported by a digest that the current user can access, newest first.",
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Search the note title or description (case-insensitive). " + _SEARCH_PARAMETER_HINT,
+                required=False,
+            ),
+            *_PAGE_PARAMETERS,
+        ],
+        responses={
+            200: TotalPagesPagination().get_paginated_response_serializer(DigestNoteSerializer),
+            **_LIST_ERROR_RESPONSES,
+        },
+    ),
+)
+class DigestNotesAPIView(APIView):
+    authentication_classes = [CookieJWTAuthentication, APIKeyAuthentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = TotalPagesPagination
+
+    def get(self, request: Request, digest_id: uuid.UUID) -> Response:
+        digest = _get_digest_or_404(request, digest_id)
+        notes = Note.objects.accessible(request.user).filter(digest=digest)
+
+        search = search_q(request.query_params.get("search"), NOTE_SEARCH_FIELDS)
+        if search is not None:
+            notes = notes.filter(search)
+
+        notes = notes.select_related("author").order_by("-created_at", "id")
+
+        paginator = self.pagination_class(max_page_size=100)
+        page = paginator.paginate_queryset(notes, request)
+        return paginator.get_paginated_response(DigestNoteSerializer(page, many=True).data)
